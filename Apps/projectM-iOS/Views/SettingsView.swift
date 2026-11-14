@@ -480,6 +480,7 @@ struct SettingsView: View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
+        ParameterSearchLinkSection(settings: settings, open: inspectParameter).id("parameterSearch")   // UIX-009-R5
         if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
         QuantizeChangesSection(quantizer: settings.parameterQuantizer).id("quantize")   // MOD-017-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
@@ -542,6 +543,7 @@ struct SettingsView: View {
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
         if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality).id("recordingFrameRate") }   // REC-006-R9; QA-009 anchor
+        if let recordingQuality { RecordingAspectSection(setting: recordingQuality).id("recordingAspect") }   // REC-014-R8
         if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
         if let recordingTimedStop { RecordingTimedStopSection(setting: recordingTimedStop) }   // REC-008-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13
@@ -558,6 +560,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("showEditorLink")
             }
             .id("show")
+            QuantizeCueStepsSection(quantizer: settings.showCueQuantizer).id("quantizeCues")   // SHOW-003-R1
         }
         if let openGuide {   // UIX-001-R8
             Section {

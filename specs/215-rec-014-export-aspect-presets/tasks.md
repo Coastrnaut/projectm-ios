@@ -1,0 +1,52 @@
+# Tasks: REC-014 Export aspect presets
+
+**Input**: `specs/215-rec-014-export-aspect-presets/` (spec, plan, research, data-model, contracts/aspect-presets.md, quickstart)
+**Tests**: requested by the roadmap acceptance (geometry sweep, short real encode) and the brief (UserDefaults key lists, picker UI test).
+
+## Phase 1: Setup
+
+- [X] REC-014-T01 Write ADR-0060 (crop to fill in the writer's scaler, exact even preset multiples without upscale, per-device-class output cap; amends ADR-0027's geometry, research REC-014-D1 to D4) in docs/adr/0060-recording-aspect-and-output-cap.md and list it in docs/adr/README.md (next free number at commit time) — Verified 2026-11-14: docs/adr/0060-recording-aspect-and-output-cap.md written and listed in docs/adr/README.md (0059 is the highest in the main checkout); validate_docs OK
+
+## Phase 2: Foundational
+
+- [X] REC-014-T02 Add `RecordingAspect` (+ `Kind` raw values `screen`, `portrait`, `square`, `landscape`, `custom`; unknown → `screen`), `RecordingCustomSize` ("each even, 128...4096", odd rounds down then clamps; default 1080×1350), `RecordingOutputCap` (compact 2560 / 3 686 400, regular 4096 / 8 294 400, `device(physicalMemory:maxTextureSide:)`) and the reduced-size notice text in Packages/Compositor/Sources/FrameRecording/RecordingAspect.swift (plain Swift) — Verified 2026-11-14: RecordingAspectTests.testCustomSizeValidation, testDeviceCapClasses (swift test, host)
+- [X] REC-014-T03 Extend `RecordingSettings` (`aspect`, `outputCap`) and `RecordingGeometry` (contract C1: settings initializer, cap on Match screen, preset multiples, custom exact/reduced, `cropsToFill`, `reducedCustomSize`; old initializer unchanged in behaviour) in Packages/Compositor/Sources/FrameRecording/RecordingSettings.swift; build geometry from settings in MetalFrameRecorder.swift; `ResizeAspectFill` when `cropsToFill` in VideoFileWriter.swift (contract C3) — Verified 2026-11-14: RecordingAspectTests sweep and testMatchScreenIsUnchangedAndCapped; existing FrameRecording suite 141 tests, 0 failures (host, 50.7 s); writer mode checked by the fixture (mutation to ResizeAspect fails it)
+- [X] REC-014-T04 Add `outputCap` (default `.regular`) to `RecordingEncoderCapabilities` and `aspect:` (default Match screen) to `RecordingQualityCatalog.availability/availabilities/resolve` and `RecordingFrameRateCatalog.availability/resolve`; append the reduced-custom notice to `RecordingRecordResolution.notice` (contracts C2, C4) in RecordingQualityAvailability.swift and RecordingFrameRate.swift — Verified 2026-11-14: RecordingAspectTests.testCatalogUsesTheAspectAndTheCapabilitiesCap, testProfileFallbackKeepsTheAspect, testReducedCustomSizeIsAnnounced; REC-005/REC-006 suites unchanged and passing
+
+## Phase 3: User Story 1 - Record in a social format (P1) MVP
+
+**Goal**: preset files with exact ratio, never upscaled, within the cap.
+**Independent test**: geometry sweep and the short encode.
+
+- [X] REC-014-T05 [P] [US1] Geometry sweep in Packages/Compositor/Tests/FrameRecordingTests/RecordingAspectTests.swift: each preset × profile (Draft, Standard, High, Max) × drawables (1179×2556, 2048×2732, 2732×2048, 2064×2752, 320×240) × caps (compact, regular) against exact expected sizes from an independent reference, plus invariants (even, exact ratio, ≤ cap side and pixels, ≤ crop); Match screen equals REC-005's geometry; spec scenarios (1178×1178, 1080×1920, 1152×648); a profile fallback (`resolve` with HEVC unavailable) keeps the aspect (REC-014-R12) (REC-014-S1, S3) — Verified 2026-11-14: RecordingAspectTests.testPresetsMatchTheReferenceForEveryProfileDrawableAndCap (120 cases vs brute force), testSpecScenarios (1178×1178, 1080×1920, 1152×648), testProfileFallbackKeepsTheAspect; 9 tests in 0.02 s
+- [X] REC-014-T06 [US1] Short real encode in Packages/Compositor/Tests/FrameRecordingTests/RecordingAspectFixtureTests.swift: two tiny clips (Square and Landscape from a 64×128 drawable whose top and bottom quarters are red and middle green, offline writer, about 0.3 s each) read back with exactly the planned size; the first decoded frame's corners are green (crop, not bars) (REC-014-S2) — Verified 2026-11-14: RecordingAspectFixtureTests 1 test, 0.51 s (host): Square 128×128 and Landscape 128×72 read back at the planned size, 10 frames, decoded corners and centre green; with ResizeAspect instead of ResizeAspectFill the test fails (bars, checked 2026-11-14)
+- [X] REC-014-T07 [US1] App: `aspect` choice and custom size in `RecordingQualitySetting` (keys `settings.recording.aspect`, `settings.recording.customWidth`, `settings.recording.customHeight`, nothing stored until changed, reset by `-uitestResetNotice`; aspect passed to every availability; `DisplayBoundCapabilities.outputCap` from `RecordingOutputCap.device`) in Apps/projectM-iOS/Coordinators/RecordingQualitySetting.swift; keys in `ALLOWED_KEYS` (scripts/run_device_tests.py), `excludedKeys` (Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift), the Settings erase (LibraryErasePolicy.swift) and LibraryBackupAppTests if needed (REC-014-R7) — Verified 2026-11-14: RecordingAspectAppTests.testDefaultsToMatchScreenAndPersists, testDeviceCapIsThisDevicesClass (REC14 iOS 27.2 simulator); keys in ALLOWED_KEYS, excludedKeys, LibraryErasePolicy.recordingAspectKeys (LibraryBackup 77/77, swift test host) and LibraryBackupAppTests.appKeys (testIncludedKeysAndFolderNamesAgreeWithTheStores passes); reset in the setting initializer
+- [X] REC-014-T08 [US1] Record with the aspect: `Context.aspect`, resolution with `aspect:`, storage-estimate geometry from settings in Apps/projectM-iOS/Coordinators/VideoRecordingCoordinator.swift; one line in AppCoordinator.swift (REC-014-R9, R10) — Verified 2026-11-14: RecordingAspectAppTests.testSquareRecordingUsesThePlannedSizeAndKeepsItsAspect (recorder geometry 128×128 crop-to-fill, probe 128x128, aspect fixed while recording); VideoRecordingAppTests 18/18, RecordingQualityAppTests 6/6, RecordingFrameRateAppTests 5/5 unchanged (simulator)
+- [X] REC-014-T09 [US1] App tests in Apps/projectM-iOS/Tests/RecordingAspectAppTests.swift: default Match screen and persistence, custom validation (1081 → 1080, 50 → 128, 9000 → 4096), rows show planned sizes, Record with Square on a fake 1179×2556 source and Standard plans exactly 1178×1178 with injected capabilities, and a running recording keeps its aspect when the setting changes (REC-014-R10) — Verified 2026-11-14: RecordingAspectAppTests 6/6 on the REC14 iOS 27.2 simulator (1.3 s): validation 1081 → 1080, 50/9000 → 128/4096; rows 1178×1178, 1152×648, 884×1920; Square Record exact 128×128 from a 128×256 drawable (simulator stand-in for 1179×2556 → 1178×1178, which RecordingAspectTests asserts)
+
+## Phase 4: User Story 2 - Custom size, kept safe (P1)
+
+- [X] REC-014-T10 [US2] Custom cases in RecordingAspectTests.swift: fits exactly (1080×1350 on 2048×2732), exceeds crop, exceeds compact cap (4096×4096 → ≤ 2560 side, ≤ 3 686 400 px, ratio kept), large reduced ratio (1918×1080 → uniform fallback within one rounding step); notice text via `RecordingFrameRateCatalog.resolve(... aspect:)` (REC-014-S1, R6) — Verified 2026-11-14: RecordingAspectTests.testCustomSizesFitExactlyOrAreReducedWithinTheCap (1080×1350 exact; 2000×2500 → 1176×1470; 4096² compact → 1920×1920; 1918×1080 → 1280×720) and testReducedCustomSizeIsAnnounced
+- [X] REC-014-T11 [US2] App test: Record with a reduced custom size sets the X9c notice "Recording at W×H: Custom size reduced to fit this device." (RecordingAspectAppTests.swift) — Verified 2026-11-14: RecordingAspectAppTests.testReducedCustomSizeIsAnnouncedAsX9c: "Recording at 128×128: Custom size reduced to fit this device." routed as X9c, file 128x128
+
+## Phase 5: User Story 3 - See the result before recording (P2)
+
+- [X] REC-014-T12 [US3] `RecordingAspectSection` (five rows, planned size or reason, checkmark, custom width/height fields, accessibility, identifiers `recordingAspect.<kind>`) in Apps/projectM-iOS/Views/RecordingAspectSection.swift; wire it after the frame-rate section in Apps/projectM-iOS/Views/SettingsView.swift (`audioSections`, anchor `recordingAspect`) (REC-014-R8) — Verified 2026-11-14: RecordingAspectSection wired after RecordingFrameRateSection (anchor recordingAspect); build with -warn-long-function-bodies=300 / -warn-long-expression-type-checking=150: no warnings; row labels checked by testRowsShowThePlannedSizeAndAReducedCustomSize
+- [X] REC-014-T13 [US3] UI test in Apps/projectM-iOS/UITests/RecordingAspectUITests.swift: open Settings, reveal the section, pick Square, see it selected (< 30 s) (REC-014-S4) — Verified 2026-11-14: RecordingAspectUITests.testPickerSelectsSquare passed in 10.3 s (REC14 iOS 27.2 simulator)
+
+## Phase 6: Polish
+
+- [X] REC-014-T14 Confirm no frame-loop file changed (REC-014-R11: `git diff --stat` shows no visual host edits); Linux shape build of Compositor, repo checks (compliance, validate_docs, motion, permission catalog, status events, test_scripts), privacy manifest and network symbols on the Debug app, type-check budget flags on touched files — Verified 2026-11-14: no visual host file changed (git diff); Linux-shape swift build of Compositor (-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE) OK; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 164 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; type-check flags: no warnings
+- [ ] REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5)
+
+## Dependencies
+
+T01 → T02 → T03 → T04 → (T05, T06, T10 in parallel) ; T04 → T07 → T08 → T09, T11 ; T07 → T12 → T13 ; all → T14.
+
+## Implementation Strategy
+
+MVP = Phases 1-3 (presets end to end). Then custom safety (US2), then Settings UI polish (US3).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Applied: `cropsToFill` defined once as "aspect is not Match screen" (contract C1.6, data model); T09 made exact; R12's fallback-keeps-aspect added to T05; R10 to T09; R11 check added to T14. R12's "stills unaffected" needs no task (the still path does not read recording settings). No constitution conflict; every requirement R1-R12 maps to a task (R1/R7 T02, T07; R2/R3/R5 T03, T05; R4 T03, T06; R6 T02, T10, T11; R8 T12, T13; R9 T04, T08).

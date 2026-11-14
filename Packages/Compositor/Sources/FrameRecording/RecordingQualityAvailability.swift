@@ -13,11 +13,14 @@ public protocol RecordingEncoderCapabilities: Sendable {
     /// REC-006-D4: the encoder's highest frame rate for `codec` at `width × height`. Default 60 (VideoToolbox
     /// publishes no per-size rate limit; the writer's `canApply` stays the final gate).
     func maxEncodedFramesPerSecond(_ codec: RecordingCodec, width: Int, height: Int) -> Int
+    /// REC-014-R5: the device class's largest encoded frame. Default `.regular`.
+    var outputCap: RecordingOutputCap { get }
 }
 
 extension RecordingEncoderCapabilities {
     public var renderLimit: RecordingRenderLimit? { nil }
     public func maxEncodedFramesPerSecond(_ codec: RecordingCodec, width: Int, height: Int) -> Int { 60 }
+    public var outputCap: RecordingOutputCap { .regular }
 }
 
 /// Why a profile cannot record here (REC-005-R5). The texts are shown and spoken as they are.
@@ -101,11 +104,15 @@ public enum RecordingQualityCatalog {
 
     /// Contract C2: frame rate, then codec, then size. REC-006: `frameRate` (24, 30 or 60) replaces the profile's
     /// rate; nil keeps it (REC-005 unchanged).
+    /// REC-014 (contract C2): `aspect` and the capabilities' output cap shape the geometry.
     public static func availability(of profile: RecordingQualityProfile, frameRate: Int? = nil, drawableWidth: Int, drawableHeight: Int,
+                                    aspect: RecordingAspect = .matchScreen,
                                     capabilities: any RecordingEncoderCapabilities) -> RecordingProfileAvailability {
-        let settings: RecordingSettings = profile.settings(frameRate: frameRate)
+        var settings: RecordingSettings = profile.settings(frameRate: frameRate)
+        settings.aspect = aspect
+        settings.outputCap = capabilities.outputCap
         guard let geometry = RecordingGeometry(drawableWidth: drawableWidth, drawableHeight: drawableHeight,
-                                               maxLongSide: settings.maxLongSide) else { return .unavailable(.noPicture) }
+                                               settings: settings) else { return .unavailable(.noPicture) }
         if settings.maxFrameRate > capabilities.maxFramesPerSecond {
             return .unavailable(.frameRateUnsupported(maximum: capabilities.maxFramesPerSecond))
         }
@@ -129,25 +136,26 @@ public enum RecordingQualityCatalog {
 
     /// Every profile's availability, in table order (the Settings rows).
     public static func availabilities(frameRate: Int? = nil, drawableWidth: Int, drawableHeight: Int,
-                                      capabilities: any RecordingEncoderCapabilities)
+                                      aspect: RecordingAspect = .matchScreen, capabilities: any RecordingEncoderCapabilities)
         -> [(profile: RecordingQualityProfile, availability: RecordingProfileAvailability)] {
         RecordingQualityProfile.allCases.map { (p: RecordingQualityProfile) -> (profile: RecordingQualityProfile, availability: RecordingProfileAvailability) in
             (p, availability(of: p, frameRate: frameRate, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
-                             capabilities: capabilities))
+                             aspect: aspect, capabilities: capabilities))
         }
     }
 
     /// The selected profile when available, else the first available one below it (REC-005-D5), else refuse.
     public static func resolve(_ selected: RecordingQualityProfile, frameRate: Int? = nil, drawableWidth: Int, drawableHeight: Int,
+                               aspect: RecordingAspect = .matchScreen,
                                capabilities: any RecordingEncoderCapabilities) -> RecordingProfileResolution {
         let first = availability(of: selected, frameRate: frameRate, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
-                                 capabilities: capabilities)
+                                 aspect: aspect, capabilities: capabilities)
         if let plan = first.plan { return .record(plan, fallbackFrom: nil, reason: nil) }
         let order: [RecordingQualityProfile] = RecordingQualityProfile.fallbackOrder
         guard let start = order.firstIndex(of: selected) else { return .refuse }
         for profile in order[(start + 1)...] {
             let candidate = availability(of: profile, frameRate: frameRate, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
-                                         capabilities: capabilities)
+                                         aspect: aspect, capabilities: capabilities)   // REC-014-R12: the aspect stays
             if let plan = candidate.plan { return .record(plan, fallbackFrom: selected, reason: first.reason) }
         }
         return .refuse

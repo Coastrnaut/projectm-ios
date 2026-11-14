@@ -60,7 +60,7 @@ final class PhotoLayerUITests: XCTestCase {
         XCTAssertFalse(photoVisual.exists, "projectM is the default visual")
         openSettings()
         let row = app.visualRow("Photo")
-        XCTAssertTrue(row.appears(within: 5))
+        XCTAssertTrue(app.reveal(row), "the visual row (below the fold as visuals grow)")
         row.tap()
         XCTAssertTrue(app.reveal(app.buttons["removePhoto"]), "a stored photo offers Remove Photo")
         XCTAssertTrue(app.buttons["choosePhotoFromFiles"].exists)

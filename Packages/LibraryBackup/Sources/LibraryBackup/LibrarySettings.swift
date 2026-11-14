@@ -124,9 +124,12 @@ public enum LibrarySettingsPolicy {
         "settings.scene.locked",   // SCN-015: a performance lock is session state of this device
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
+        "settings.show.quantizeCues",   // SHOW-003: a performance timing choice of this device
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
+        "settings.recording.aspect", "settings.recording.customWidth",   // REC-014-R7: sizes depend on this device's
+        "settings.recording.customHeight",                               // screen and memory class
         "settings.externalDisplay.fit", "settings.externalDisplay.shape",   // OUT-004-R8: the user's display hardware
         "settings.externalDisplay.pixelAspect",
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
