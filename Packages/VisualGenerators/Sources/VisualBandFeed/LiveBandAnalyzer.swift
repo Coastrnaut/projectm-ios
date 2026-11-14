@@ -26,6 +26,9 @@ public struct LiveBandFrameInfo: Sendable, Equatable {
     /// The frame's capture-session generation (ANL-016 `AnalysisTimestamp.session`); ANL-003's
     /// smoother restarts when it changes.
     public var session: UInt64 = 0
+    /// PERF-013: the frame's session sample (ANL-016 `AnalysisTimestamp.sessionSample`, the end of its window), so the
+    /// feature age meter can relate the frame's audio position to when it was read.
+    public var sessionSample: Int64 = 0
     /// ANL-007's kick envelope (0…1) of the frame, for MOD-002's Kick source.
     public var kickEnvelope: Float = 0
     /// ANL-010's normalized spectral centroid (0…1) of the frame, for MOD-002's Centroid source.
@@ -59,7 +62,8 @@ public final class LiveBandOutput: Sendable {
     public func readLatest(into destination: UnsafeMutablePointer<Float>, capacity: Int) -> LiveBandFrameInfo? {
         guard let frame = subscription.latestFrame(into: destination, capacity: capacity) else { return nil }
         return LiveBandFrameInfo(count: min(frame.bandCount, max(capacity, 0)), timestampNanoseconds: frame.time.hostNanoseconds,
-                                 sequence: frame.id, session: frame.time.session, kickEnvelope: frame.kickEnvelope,
+                                 sequence: frame.id, session: frame.time.session, sessionSample: frame.time.sessionSample,
+                                 kickEnvelope: frame.kickEnvelope,
                                  centroid: frame.centroid, loudness: frame.loudness, midTransient: frame.midTransient,
                                  highTransient: frame.highTransient, rolloff: frame.rolloff,
                                  flatness: frame.flatness, correlation: frame.correlation,

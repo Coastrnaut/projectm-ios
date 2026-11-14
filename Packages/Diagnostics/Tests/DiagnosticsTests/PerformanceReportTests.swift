@@ -63,6 +63,27 @@ final class PerformanceReportTests: XCTestCase {
         XCTAssertEqual(decoded, report(frames: fullFrames))
     }
 
+    /// PERF-013-R9: the optional audioSync section validates when present, is absent without samples, and the
+    /// drift estimate is reported only while drift is detected.
+    func testAudioSyncSectionValidatesAndIsAbsentWithoutSamples() throws {
+        var full = report(frames: fullFrames)
+        full.audioSync = PerformanceReport.AudioSync(sampleCount: 240, p50Ms: 24.1, p95Ms: 31.0, maxMs: 44.2, driftDetected: true,
+                                                     driftPpm: -512.3, detections: 1)
+        let data: Data = try DiagnosticsExporter.encode(full)
+        XCTAssertEqual(try schemaErrors(data), [])
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let section = try XCTUnwrap(object["audioSync"] as? [String: Any])
+        XCTAssertEqual(section["driftPpm"] as? Double, -512.3)
+        XCTAssertEqual(try JSONDecoder().decode(PerformanceReport.self, from: data), full)
+        XCTAssertNil(PerformanceReport.AudioSync(sampleCount: 0, p50Ms: nil, p95Ms: nil, maxMs: nil, driftDetected: false,
+                                                 driftPpm: nil, detections: 0))
+        let quiet = try XCTUnwrap(PerformanceReport.AudioSync(sampleCount: 5, p50Ms: 20, p95Ms: 21, maxMs: 22, driftDetected: false,
+                                                              driftPpm: 12, detections: 0))
+        XCTAssertNil(quiet.driftPpm, "no estimate without a verdict")
+        let plain = try JSONSerialization.jsonObject(with: DiagnosticsExporter.encode(report(frames: fullFrames))) as? [String: Any]
+        XCTAssertNil(plain?["audioSync"], "absent, never empty")
+    }
+
     /// PERF-012 US2: no frame measured → sampleCount 0 and no percentile keys (absent, never 0); still valid.
     func testNoFramesLeavesPercentilesAbsent() throws {
         let frames = PerformanceReport.Frames(sampleCount: 0, measuredSeconds: 0, resolutionMs: 0.1, p50Ms: 0, maxMs: 0)

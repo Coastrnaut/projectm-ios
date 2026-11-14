@@ -213,6 +213,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// PERF-001: the stage timer while the performance overlay is shown (AppCoordinator+FrameStages.swift).
     @ObservationIgnored let frameStages = FrameStageAttachment()
     @ObservationIgnored let frameDrops = FrameDropAttachment()   // PERF-007
+    @ObservationIgnored let featureAges = FeatureAgeAttachment()   // PERF-013
     /// PERF-012: the session's state timeline and memory peak, and the Export performance report action.
     @ObservationIgnored let performanceRecorder = PerformanceStateRecorder()
     @ObservationIgnored private(set) lazy var performanceReport = PerformanceReportExport { [unowned self] (date: Date) throws -> Data in
