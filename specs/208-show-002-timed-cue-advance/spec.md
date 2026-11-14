@@ -42,6 +42,14 @@ local-first option.
 - Q: What happens on the last cue? → A: The show stops there: the last cue never counts down (its dwell is kept but ignored), as SHOW-001's Next does not wrap. No loop option in this feature.
 - Q: What happens at Standby? → A: Nothing counts down; the performer starts the show with Next or Go to Cue.
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Does a cue's transition time count inside its dwell? → A: Yes. The dwell counts from the step that made the cue active, so a 30 s cue with a 2 s crossfade is on screen 30 s in total; the performer sets one number per cue.
+- Q: Does Duplicate Scene copy the cue's dwell? → A: Yes, as it copies the SCN-007 transition (SCN-003-R8 pattern); a template copy (SCN-011) or pack import (SCN-014) has no dwell.
+- Q: What does a timed advance announce? → A: Exactly what a manual Next announces (the cue lane, ACC-004); no extra "auto" message, so a self-running show is no noisier for VoiceOver than a manual one.
+- Q: Does an open scene repair report (SCN-012) hold the countdown? → A: Yes. While the repair report waits for the performer, the countdown holds, so the show never moves past a cue whose repair the performer is reading; it continues when the report closes.
+- Q: Which dwell values does the editor offer? → A: Off, 1, 2, 3, 5, 10, 15, 20, 30 and 45 s, and 1, 1.5, 2, 3, 5, 10, 15, 20, 30, 45 and 60 min; a stored value not in the list (any whole second 1…3600 from a file) is shown and kept as its own entry. The performance pad's cue readout shows the same countdown.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A self-running show (Priority: P1)
@@ -107,7 +115,7 @@ edit is refused.
 - The active cue is removed, or the show is replaced: the countdown is cancelled.
 - The active cue is moved so it becomes the last: at its deadline Next reports "at end" and nothing changes.
 - The active cue's dwell is edited: its countdown restarts from the edit with the new dwell (Off cancels it).
-- A step while held (paused, blacked out, in the background): the new cue's countdown starts held with its full dwell.
+- A step while held (paused, blacked out, repair report open, in the background): the new cue's countdown starts held with its full dwell.
 - A show file with an invalid `advanceAfter` (not a whole number, 0, over 3600, a string): that dwell is dropped with a warning (SCN-012-style reporting), the rest of the show loads.
 - A show written by this version opened by an older build: the unknown field is ignored (the older build keeps the show manual).
 
@@ -121,13 +129,14 @@ edit is refused.
 - **SHOW-002-R4**: At or after the deadline (never before), the show MUST advance once, through the same path as a manual Next (scene, transition, SCN-012 repair, MOD-017 queued changes, announcements).
 - **SHOW-002-R5**: When the clock passes several deadlines at once, the show MUST advance once; the new cue's countdown starts at the moment of that advance.
 - **SHOW-002-R6**: Any manual step MUST cancel the pending advance and start the new cue's countdown from the step.
-- **SHOW-002-R7**: Pause, blackout (any phase other than live) and the app leaving the foreground MUST hold the countdown, keeping the remaining time; it MUST continue from that remaining time when no hold remains.
+- **SHOW-002-R7**: Pause, blackout (any phase other than live), an open scene repair report (SCN-012) and the app leaving the foreground MUST hold the countdown, keeping the remaining time; it MUST continue from that remaining time when no hold remains.
 - **SHOW-002-R8**: The last cue, Standby and cues without a dwell MUST NOT count down.
-- **SHOW-002-R9**: The cue row in the controls MUST show the remaining time ("Next in m:ss", "held" while held), and VoiceOver MUST read it as part of the show status ("next cue in 42 seconds", "countdown held").
+- **SHOW-002-R9**: The cue row in the controls and the performance pad's cue readout MUST show the remaining time ("Next in m:ss", "held" while held), and VoiceOver MUST read it as part of the show status ("next cue in 42 seconds", "countdown held").
 - **SHOW-002-R10**: The show editor MUST offer "Advance After…" per cue (context menu, swipe action, VoiceOver action) and show the dwell under the label; editing it MUST save at once, never apply a scene, and restart the active cue's countdown when it is the active cue.
 - **SHOW-002-R11**: A dwell edit MUST be refused while the scene is locked (SCN-015); timed advances MUST continue while locked.
 - **SHOW-002-R12**: The timeline MUST be a pure, deterministic engine with an injected monotonic clock, testable without the app, and MUST build on Linux.
 - **SHOW-002-R13**: No network access, no new stored settings key, and no wall-clock time.
+- **SHOW-002-R14**: Duplicate Scene MUST copy the source cue's dwell to the new cue.
 
 ### Key Entities
 
