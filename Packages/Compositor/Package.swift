@@ -15,7 +15,7 @@
 //   CMP-013 (specs/113-cmp-013-render-caching, ADR-0040) adds render caching: the plain-Swift dependency and
 //   key model (`LayerRenderCache.swift`, Linux-testable) and, in the compositor, reuse of unchanged layer
 //   pictures and of an unchanged composite; the photo and text layers declare their dependencies.
-//   CMP-014 (specs/116-cmp-014-compositor-transition-bus, ADR-0041) adds the scene transition model (spec, easing,
+//   CMP-014 (specs/116-cmp-014-compositor-transition-bus, ADR-0042) adds the scene transition model (spec, easing,
 //   the frame-timeline clock, weights; `SceneTransition.swift`, Linux-testable) and `SceneTransitionBus`, which blends
 //   two compositors' composites and runs one flash guard on the shown frame (`Compositor.encodeScene`).
 // * `SpectrumLayers` adapts the native spectra (VIS-001, VIS-002, FX-001 glow) to the contract.

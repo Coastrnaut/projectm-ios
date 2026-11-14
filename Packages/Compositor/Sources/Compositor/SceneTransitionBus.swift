@@ -1,5 +1,5 @@
 // SceneTransitionBus.swift — blends whole scene outputs on one transition clock (CMP-014-R2 to R9;
-// ADR-0041; specs/116-cmp-014-compositor-transition-bus/contracts/transition-bus.md).
+// ADR-0042; specs/116-cmp-014-compositor-transition-bus/contracts/transition-bus.md).
 //
 // A scene output is one CMP-001 compositor with its CMP-002 stack. The bus shows the live scene and,
 // during a transition, the outgoing scene too (at most two). Per frame:

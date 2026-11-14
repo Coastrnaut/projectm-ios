@@ -77,7 +77,7 @@
 // no layer rendered and every draw input is unchanged, the previous composite is kept and only the layer passes
 // are skipped (level 2); the flash guard, output, capture and recording run every frame. Global triggers bump
 // the epoch. Output is bit-identical to `isRenderCachingEnabled = false`.
-// CMP-014 (contracts/transition-bus.md in specs/116, ADR-0041): `encodeScene` runs only the stack phase and returns
+// CMP-014 (contracts/transition-bus.md in specs/116, ADR-0042): `encodeScene` runs only the stack phase and returns
 // the composite, so a `SceneTransitionBus` can blend two scenes and run one flash guard on the shown frame;
 // `composite(into:)` runs the same phase and then its own guard and output pass, unchanged.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL

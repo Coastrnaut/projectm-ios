@@ -1,4 +1,4 @@
-// SceneTransition.swift — the scene transition model (CMP-014-R1, R3, R10, R12; ADR-0041;
+// SceneTransition.swift — the scene transition model (CMP-014-R1, R3, R10, R12; ADR-0042;
 // specs/116-cmp-014-compositor-transition-bus/contracts/transition-bus.md).
 //
 // Plain Swift (builds on Linux): the transition spec (style, duration, easing; validated, Codable so

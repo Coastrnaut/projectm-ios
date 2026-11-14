@@ -1,4 +1,4 @@
-# ADR-0041: One Transition Clock and a Two-Scene Transition Bus with One Flash Guard
+# ADR-0042: One Transition Clock and a Two-Scene Transition Bus with One Flash Guard
 
 - **Status**: Accepted 2026-11-14 (decided by Claude under the owner's best-judgement rule, owner
   rule 4)
@@ -7,7 +7,7 @@
   X (evidence-based quality); flash safety (FR-072, FX-019); accessibility (ACC-001)
 - **Builds on**: ADR-0013 (unified layer protocol), CMP-002 (stack), PERF-004 (texture pool), FX-019
   (composite flash guard), REC-003 (recording output), ADR-0040 (render caching), ADR-0033 (show cues)
-- **Number**: 0041 is the next free number; 0015, 0016, 0025, 0026 and 0031 stay unused.
+- **Number**: 0042 (0041 went to FILE-005's backup ADR at integration); 0015, 0016, 0025, 0026 and 0031 stay unused.
 
 ## Context
 

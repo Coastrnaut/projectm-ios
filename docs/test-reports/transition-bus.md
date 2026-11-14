@@ -1,6 +1,6 @@
 # Test report: CMP-014 Compositor transition bus
 
-Feature: `specs/116-cmp-014-compositor-transition-bus` (branch `feature/cmp-014`), ADR-0041. Host: the Mac
+Feature: `specs/116-cmp-014-compositor-transition-bus` (branch `feature/cmp-014`), ADR-0042. Host: the Mac
 Studio (build machine of record), Xcode 27.2, Swift 6.4.2. Simulator results are not device evidence; no
 device run was made. GPU timings are Mac timings, recorded, not asserted, and not device evidence.
 
@@ -78,5 +78,5 @@ Logs: `.autonomous/logs/CMP-014/` in the worktree (not committed).
 ## Not verified
 
 - No device run; GPU timings are Mac only.
-- The app's live output, external display and recording are not fed from the bus in this row (ADR-0041
+- The app's live output, external display and recording are not fed from the bus in this row (ADR-0042
   decision 11); cue changes in the app stay cuts.

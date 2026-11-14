@@ -41,7 +41,7 @@ GPU performance). Budgets (owner rule 7): a unit test about 1–2 s and at most 
 
 ## Phase 7: Polish & cross-cutting
 
-- [X] CMP-014-T13 [P] ADR `docs/adr/0041-scene-transition-bus.md` (clock, bus, guard placement, interruption, persistence deferral) and the `docs/adr/README.md` index row. — Verified 2026-11-14: docs/adr/0041-scene-transition-bus.md and index row; validate_docs OK
+- [X] CMP-014-T13 [P] ADR `docs/adr/0042-scene-transition-bus.md` (clock, bus, guard placement, interruption, persistence deferral) and the `docs/adr/README.md` index row. — Verified 2026-11-14: docs/adr/0042-scene-transition-bus.md and index row; validate_docs OK
 - [X] CMP-014-T14 [P] Report `docs/test-reports/transition-bus.md`; the package header in `Packages/Compositor/Package.swift` and `Compositor.swift` mention CMP-014. — Verified 2026-11-14: docs/test-reports/transition-bus.md; Package.swift and Compositor.swift headers
 - [X] CMP-014-T15 Regressions: Compositor (full and Linux shape), RenderGoldens (goldens unchanged), SceneFormat, ShowControl, ImportFuzz, SceneArchive, app unit tests on a private iOS 27.2 simulator, and the six scripts; confirm no file format changed (R13: `git diff` shows no change under `Packages/ShowControl` or `Packages/SceneFormat`). — Verified 2026-11-14: Compositor 379 + Linux shape 199, RenderGoldens 39 (goldens identical), SceneFormat 112, ShowControl 42, ImportFuzz 15, SceneArchive 27, app 514, scripts 153 and the five checks all pass; no change under Packages/ShowControl or Packages/SceneFormat
 

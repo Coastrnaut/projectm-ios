@@ -35,7 +35,7 @@ sums the presentation-time durations of the frames shown.
   (decorative → cut). The live output is not moved onto the bus in this row (Clarifications); cues stay
   cuts.
 
-ADR-0041 records the clock and the bus. Report: `docs/test-reports/transition-bus.md`.
+ADR-0042 records the clock and the bus. Report: `docs/test-reports/transition-bus.md`.
 
 ## Technical Context
 
@@ -81,7 +81,7 @@ Packages/Compositor/Tests/CompositorTests/
 └── SceneTransitionBusTests.swift     # new: acceptance, cancel, interrupt, cache, flash, timing
 Apps/projectM-iOS/Views/MotionPolicy.swift       # sceneTransition(_:)
 Apps/projectM-iOS/Tests/MotionPolicyTests.swift  # Reduce Motion → cut
-docs/adr/0041-scene-transition-bus.md
+docs/adr/0042-scene-transition-bus.md
 docs/test-reports/transition-bus.md
 ```
 
