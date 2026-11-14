@@ -431,6 +431,7 @@ struct SettingsView: View {
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
+        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 

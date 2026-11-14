@@ -25,6 +25,11 @@ public struct RecordedVideoInfo: Sendable, Equatable {
     /// REC-005-R10: the video track's compressed bytes (audio excluded).
     public var videoBytes: Int = 0
 
+    /// REC-006-R5: the video track's nominal frame rate as AVFoundation reports it, and its shortest frame
+    /// duration in 1/600 s (nil when unknown).
+    public var trackNominalFrameRate: Double = 0
+    public var minFrameDurationTicks: Int64? = nil
+
     /// REC-005: frames per second of the file (frames / duration).
     public var nominalFrameRate: Double { durationSeconds > 0 ? Double(frameCount) / durationSeconds : 0 }
 
@@ -58,6 +63,13 @@ public enum RecordedVideoInspector {
                                      videoTrackCount: videoTracks.count, audioTrackCount: audioTracks.count,
                                      metadataCount: metadata.count)
         info.videoBytes = bytes
+        if let (rate, minimum) = try? await track.load(.nominalFrameRate, .minFrameDuration) {   // REC-006-R5
+            info.trackNominalFrameRate = Double(rate)
+            if minimum.isValid, minimum.seconds > 0 {
+                info.minFrameDurationTicks = CMTimeConvertScale(minimum, timescale: RecordingSettings.timescale,
+                                                                method: .roundHalfAwayFromZero).value
+            }
+        }
         if let audio = audioTracks.first, let audioDescriptions = try? await audio.load(.formatDescriptions),
            let description = audioDescriptions.first {
             info.audioCodec = fourCC(CMFormatDescriptionGetMediaSubType(description))

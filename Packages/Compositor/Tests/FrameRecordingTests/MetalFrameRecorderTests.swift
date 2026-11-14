@@ -110,6 +110,7 @@ final class MetalFrameRecorderTests: XCTestCase {
         XCTAssertEqual(sink.ticks, [0, 20, 40, 240])
         XCTAssertEqual(recorder.statistics.droppedNotIncreasing, 1)
         XCTAssertEqual(recorder.statistics.written, 4)
+        XCTAssertEqual(recorder.statistics.droppedSlots, 9, "REC-006 C2: slots 3-11 between ticks 40 and 240 got no frame")
     }
 
     /// A drawable of another size stops the recording; odd sizes crop to even.

@@ -1389,7 +1389,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  audioTap: manager.recordingTap,
                                                  setAudioTapArmed: { (armed: Bool) -> Void in manager.setRecordingTapArmed(armed) },
                                                  qualityProfile: recordingQuality.profile,   // REC-005
-                                                 qualityCapabilities: RecordingQualitySetting.deviceCapabilities())
+                                                 qualityCapabilities: RecordingQualitySetting.deviceCapabilities(),
+                                                 frameRateChoice: recordingQuality.frameRate)   // REC-006
     }
 
     var activeVideoRecordingSource: (any VideoRecordingSource)? {
