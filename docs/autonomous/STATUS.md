@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T09:26:26Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T09:28:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 193 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 129 |
+| integrated | 130 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 105 | 2 | 1 | 43 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 105 | 2 | 44 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 196 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)
+- 195 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)
 
 ## Integrated
 
@@ -95,13 +94,14 @@ The physical-device suite may **not** start:
 | CMP-012 | Solo and mute | `bc4817f3` | `feature/cmp-012` |
 | CMP-013 | Render caching | `473ebfec` | `feature/cmp-013` |
 | CMP-014 | Compositor transition bus | `90032727` | `feature/cmp-014` |
+| CMP-015 | Layer inspector | `d045d58f` | `feature/cmp-015` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
 | FILE-004 | Import conflict resolver | `b211a998` | `feature/file-004` |
 | FILE-005 | Local library backup | `31456ffe` | `feature/file-005` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
-| FILE-008 | User asset deduplication | `0025fbd29268` | `feature/file-008` |
+| FILE-008 | User asset deduplication | `d045d58f` | `feature/file-008` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
 | FILE-012 | No-telemetry verification | `3a8ad2044000` | `feature/file-012` |
@@ -765,11 +765,12 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 518 + ReduceMotion/PhotoLayer UI tests 2; gate ran Compositor and downstream suites`: pass at `90032727` (log `.autonomous/logs/integration/cmp-014/app-tests.log`)
 
-### CMP-015 Layer inspector (unit_passed)
+### CMP-015 Layer inspector (integrated)
 - `python3 scripts/check_compliance.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `69def87e9547` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-015/20261114T042522/autonomous-tests.log`)
+- `post-merge (FILE-008 + CMP-015): projectM-iOSTests 547 + LayerInspector/PhotoLayer/VideoLayer/LibraryBackup UI tests 5`: pass at `d045d58f` (log `.autonomous/logs/integration/file-008-cmp-015/app-tests.log`)
 
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
@@ -837,6 +838,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `843942169142` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-008/20261114T042047/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `843942169142` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-008/20261114T042047/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `843942169142` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-008/20261114T042047/swift-test_ShowControl.log`)
+- `post-merge (FILE-008 + CMP-015): projectM-iOSTests 547 + LayerInspector/PhotoLayer/VideoLayer/LibraryBackup UI tests 5`: pass at `d045d58f` (log `.autonomous/logs/integration/file-008-cmp-015/app-tests.log`)
 
 ### FILE-009 Storage usage explorer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d7df58dcb6e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-009/20261113T165948/compliance.log`)

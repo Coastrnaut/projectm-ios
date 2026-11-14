@@ -13,8 +13,7 @@
   "P1": {
    "audited": 105,
    "implementing": 2,
-   "integrated": 43,
-   "unit_passed": 1
+   "integrated": 44
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 193,
   "implementing": 2,
-  "integrated": 129,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 130,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -60,7 +58,6 @@
    "CMP-008",
    "CMP-009",
    "CMP-010",
-   "CMP-015",
    "FILE-006",
    "FILE-011",
    "FX-002",
@@ -236,7 +233,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "196 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)"
+   "195 features are not implemented yet (first: ACC-007, ACC-008, ACC-009, ACC-010, ACC-012)"
   ]
  },
  "features": {
@@ -1095,10 +1092,10 @@
    "branch": "feature/cmp-015",
    "branch_sha": "69def87e9547cf692cd4b19378b8d0e598650117",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "d045d58f",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "FILE-001": {
    "attempts": 0,
@@ -1175,7 +1172,7 @@
    "branch": "feature/file-008",
    "branch_sha": "8439421691423311fbb048e5962694773433bea6",
    "error_category": null,
-   "integrated_sha": "0025fbd292685871aa33aaa7b5978dce07eb93f8",
+   "integrated_sha": "d045d58f",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3813,6 +3810,11 @@
    "sha": "90032727"
   },
   {
+   "branch": "feature/cmp-015",
+   "id": "CMP-015",
+   "sha": "d045d58f"
+  },
+  {
    "branch": "feature/file-001",
    "id": "FILE-001",
    "sha": "c3886d1cb0bb2fc8bfeec909a094332bdfb8ff71"
@@ -3845,7 +3847,7 @@
   {
    "branch": "feature/file-008",
    "id": "FILE-008",
-   "sha": "0025fbd292685871aa33aaa7b5978dce07eb93f8"
+   "sha": "d045d58f"
   },
   {
    "branch": "feature/file-009",
@@ -4173,5 +4175,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T09:26:26Z"
+ "updated": "2026-11-14T09:28:52Z"
 }
