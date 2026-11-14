@@ -28,6 +28,19 @@ SCN-001 / SCN-012 (scene document and its issue report), QA-004 (scene migration
 | Scenes | `lfos` entries are kept verbatim (unknown fields included); an unknown shape is reported (`unknownLFO`) and the oscillator is kept but not used. |
 | Editor UI | None for oscillators (MOD-007 and MOD-009 decided the same); oscillators come from scene files. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: How is a sample-and-hold level made so it depends only on the seed and the step number? → A: A counter-based generator, not a running random stream: the level of step n is a fixed 64-bit mix (SplitMix64's finalizer) of the seed's own mix plus n, mapped to 0…1 with 53 bits. No state is carried from frame to frame, so frame rate, dropped frames and jitter cannot change a level, and any step can be computed directly (MOD-008-R3).
+- Q: What seed does an oscillator use when the scene does not store one, and can it be changed? → A: The stored `seed` (a whole number 0…4294967295, exact in JSON) when present; otherwise a default derived from the oscillator's position (outside the stored range, so it never equals a stored seed), so unseeded oscillators in one scene differ and every playback repeats. Reseeding means writing a new `seed` in the scene; no editor UI exists for oscillators (MOD-007), so none is added (MOD-008-R5).
+- Q: What duty-cycle range and default does the square use, and which side of the boundary is high? → A: Default 0.5, allowed 0.05…0.95 (narrower pulses are near-flashes and add little to slow modulation). Phase < duty is high; the frame exactly at the duty boundary is low and the frame exactly at a cycle boundary is high again (MOD-008-R2).
+- Q: Is smoothing (glide) offered for sample-and-hold, and how is it bounded? → A: Yes, optional: `glide` 0…1 is the fraction of each step spent ramping linearly from the previous step's level (itself a pure function of seed and step − 1), default 0 (a hard step). The ramp never crosses into the next step, so values stay pure and repeatable. Square has no glide (MOD-008-R6).
+- Q: Does the step count survive a rate change for a tempo-synced stepped oscillator, and what limits apply? → A: Yes: MOD-009's phase segment also carries the whole-cycle count, so a new segment continues counting steps (no restart, no repeated level). Reduce flashing keeps capping the effective rate at 3 Hz, which bounds square cycles and steps to 3 per second (MOD-008-R7, R8). No UserDefaults key, no new settings row, no new scene issue codes: out-of-range values use MOD-007's existing `invalidLFO`, and older apps already report the new shapes as `unknownLFO` and keep the entry.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Random steps that repeat exactly for the same seed (Priority: P1)
