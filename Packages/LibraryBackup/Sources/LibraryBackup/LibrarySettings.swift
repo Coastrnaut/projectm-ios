@@ -97,6 +97,7 @@ public enum LibrarySettingsPolicy {
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9
         "settings.beatRings.life",   // VIS-006-R9
         "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   // VIS-007-R9
+        "settings.particleFountain.gravity",   // VIS-008-R10
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",

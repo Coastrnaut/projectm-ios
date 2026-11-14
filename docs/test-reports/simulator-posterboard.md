@@ -47,3 +47,10 @@ repository. It shows up in bursts when simulators are booted, erased or resumed.
    fresh device of the same type.
 3. Do not turn off macOS crash reporting globally (it would hide real crashes); that needs the
    owner.
+
+## 2026-11-14 afternoon (autonomous run)
+
+Four new reports (14:52, 15:14, 15:17 twice; total 26 → 28 counted with the two 15:17 files), all
+`EXC_BREAKPOINT` in PosterBoard under `launchd_sim`, each while a feature agent booted a fresh
+per-feature simulator (VIS-008, CAM-003, UIX-007 iPad). Same signature as above; no burst on a
+long-lived simulator, so no simulator was erased. No action beyond this note.
