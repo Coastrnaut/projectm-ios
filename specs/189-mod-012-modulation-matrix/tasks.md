@@ -35,3 +35,10 @@ Tests are requested by the spec (acceptance, reorder, round trip, undo, UI). Bud
 
 - [ ] MOD-012-T09 Spec status, repository checks, type-check budget, privacy manifest and network symbols on the
   Debug app, Linux shape of the changed packages
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1, R2 → T06; R3, R4 → T01, T02; R5 → T03; R6 → T01, T02, T06; R7 → T06; R8 → T05, T07; R9 → T01;
+R10 → T06; S1 → T02; S2 → T02; S3 → T03; S4 → T07; S5 → T08; S6 → T09. Fixed: the inspector's "(off)" marking
+had no requirement (added to MOD-012-R7); the undo restore restarting replaced layers' signals is stated in the
+spec's Edge Cases and contract M2, so T07 asserts the list, not the signals.

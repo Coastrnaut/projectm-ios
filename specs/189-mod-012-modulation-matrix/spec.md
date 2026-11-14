@@ -120,7 +120,7 @@ the new order; a move across destinations is refused.
 - **MOD-012-R4**: With every layer of a parameter off, its value MUST be its base value exactly; a disabled layer's signal MUST keep advancing.
 - **MOD-012-R5**: Scenes MUST store the flag as an optional `enabled` field written only when false; absent MUST mean enabled; no format version change.
 - **MOD-012-R6**: Layers MUST be reorderable within one destination (Edit mode drag and VoiceOver Move Up/Move Down); the new order MUST be the fold order; moves across destinations MUST be refused.
-- **MOD-012-R7**: Tapping a row MUST show its details (source, ranges, curve preview, envelope times, live values at ≤ 10 Hz while open) and a way to open the UIX-003 inspector for the destination.
+- **MOD-012-R7**: Tapping a row MUST show its details (source, ranges, curve preview, envelope times, live values at ≤ 10 Hz while open) and a way to open the UIX-003 inspector for the destination; the inspector MUST mark a disabled layer "(off)".
 - **MOD-012-R8**: Each toggle and move MUST change the current scene at once (SCN-002 autosave) and be one SCN-010 undo step with a descriptive name.
 - **MOD-012-R9**: Toggling and moving MUST keep per-frame evaluation allocation-free and deterministic.
 - **MOD-012-R10**: Creating and deleting routes is out of scope; the screen MUST say routes come with scenes.
