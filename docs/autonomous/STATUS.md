@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T21:16:52Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T21:27:31Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,26 @@
 
 | State | Features |
 |---|---|
-| audited | 95 |
-| implementing | 6 |
+| audited | 92 |
+| implementing | 4 |
+| built | 4 |
 | unit_passed | 1 |
-| integrated | 223 |
+| integrated | 224 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 20 | 5 | 1 | 125 | 0 |
-| P2 | 64 | 1 | 0 | 14 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 20 | 1 | 4 | 0 | 126 | 0 |
+| P2 | 61 | 3 | 0 | 1 | 14 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 102 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)
+- 101 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-004, CAM-005)
 
 ## Integrated
 
@@ -205,6 +206,7 @@ The physical-device suite may **not** start:
 | QA-006 | Render soak test | `dc341318c32b` | `None` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
 | QA-008 | Recording validation suite | `2a986abd` | `None` |
+| QA-009 | Accessibility snapshot suite | `5995f52e` | `feature/qa-009` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
 | REC-004 | Recording audio mux | `787bb98e2086` | `feature/rec-004` |
@@ -912,6 +914,18 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `2719c33f2261` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T154202/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `2719c33f2261` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-003/20261114T154202/swift-test_ShowControl.log`)
 - `post-merge batch56: Compositor 867, SceneFormat 173, ShowControl 105, Diagnostics 29, LibraryBackup 77, projectM-iOSTests 971 + 9 UI tests`: pass at `611fbf89` (log `.autonomous/logs/integration/batch56/app-tests.log`)
+
+### CAM-004 Camera exposure lock (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `dfb2608715f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-004/20261114T162015/swift-test_ShowControl.log`)
 
 ### CAM-007 Camera crop and rotation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbfa49c59ca0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CAM-007/20261114T001920/compliance.log`)
@@ -2136,11 +2150,12 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `bd661ef22a94` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-008/20261114T104021/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 782 + UI 5 (MIDI discovery, monitor, learn, video recording)`: pass at `2a986abd` (log `.autonomous/logs/integration/batch20/app-tests.log`)
 
-### QA-009 Accessibility snapshot suite (unit_passed)
+### QA-009 Accessibility snapshot suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/autonomous-tests.log`)
+- `post-merge batch61+61b: projectM-iOSTests 982, accessibility UI 9 (ACC-004 3, QA-009 6 incl. Storage AX5/standard) after fix/a11y-postmerge`: pass at `42364260` (log `.autonomous/logs/integration/batch61b/app-tests.log`)
 
 ### REC-001 Still frame capture (integrated)
 - `python3 scripts/check_compliance.py`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/compliance.log`)
