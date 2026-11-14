@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MED-010-T01-T24 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; device task T25 `{device}` open; report `docs/test-reports/logo-overlay.md`)
 
 **Input**: User description: "Implement MED-010 (Logo overlay) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Add local transparent image as a

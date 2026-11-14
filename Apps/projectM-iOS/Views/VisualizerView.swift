@@ -266,8 +266,7 @@ struct VisualizerView: View {
                 }
             }
             #if DEBUG
-            if coordinator.photoVisual != nil { SlideshowProbe(slideshow: coordinator.slideshow) }   // MED-006-R15
-            LogoProbe(logo: coordinator.logo)   // MED-010-R14
+            MediaProbes(coordinator: coordinator)   // MED-006-R15 slideshow, MED-010-R14 logo (own view: keeps `layers` quick to type-check)
             #endif
             if let video = coordinator.videoVisual {   // MED-002: frames shown and the shown picture's index
                 TimelineView(.periodic(from: .now, by: 0.25)) { _ in

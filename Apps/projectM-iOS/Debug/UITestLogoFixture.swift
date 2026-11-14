@@ -46,6 +46,23 @@ enum UITestLogoFixture {
     }
 }
 
+/// The visualizer's DEBUG media probes: the slideshow's (while Photo is shown) and the logo's.
+struct MediaProbes: View {
+    let coordinator: AppCoordinator
+
+    var body: some View {
+        if showsSlideshow { SlideshowProbe(slideshow: slideshow) }
+        LogoProbe(logo: logo)
+    }
+
+    private var slideshow: SlideshowCoordinator { coordinator.slideshow }
+    private var logo: LogoCoordinator { coordinator.logo }
+    private var showsSlideshow: Bool {
+        guard case .some = coordinator.photoVisual else { return false }
+        return true
+    }
+}
+
 /// "drawn=<frames> logo=<yes|no>": frames in which a live logo layer showed the logo.
 struct LogoProbe: View {
     let logo: LogoCoordinator
