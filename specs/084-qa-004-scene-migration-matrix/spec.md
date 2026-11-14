@@ -141,8 +141,8 @@ shown to fail on a deliberately incomplete matrix or table (in-memory).
 - **QA-004-R2**: The matrix MUST name every container that stores a scene (decode entry point, SCN-012
   report, SHOW-001 show store, FILE-001/002 archive, SCN-002 autosave, QA-002 golden harness) with its
   reader, its test file and how it surfaces each outcome.
-- **QA-004-R3**: Every row × container cell MUST compare its outcome exactly (refusal value and
-  message; migration source, target and log; canonical bytes for current documents) and MUST be run by that container's test through the
+- **QA-004-R3**: Every row × container cell MUST compare its outcome exactly (refusal case and full
+  message, which carries every associated value; migration source, target and log; canonical bytes for current documents) and MUST be run by that container's test through the
   container's real reader, or be marked not applicable with a written reason.
 - **QA-004-R4**: The production rows MUST cover every version from the oldest supported to the
   current (every historical fixture of each), oldest−1, current+1, the 64-bit limits, non-integer
@@ -178,8 +178,8 @@ shown to fail on a deliberately incomplete matrix or table (in-memory).
   not-applicable reason; 0 cells end in an undocumented error.
 - **QA-004-S2**: 100% of refusal cases in code have a table entry and a documented report text; the
   meta-test fails within one run when one is missing.
-- **QA-004-S3**: Every historical fixture (11 today) is read through every container that holds
-  scenes of its kind.
+- **QA-004-S3**: Every historical fixture (11 today) is read through the decode, report, show,
+  archive and autosave containers, and every committed golden scene (7) through the golden harness.
 - **QA-004-S4**: Each new test file runs in under 10 s and each touched package suite in under
   1 minute (owner rule 7).
 
