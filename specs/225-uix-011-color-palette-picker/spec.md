@@ -43,6 +43,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does ACC-003's colour-blind-safe switch still win? → A: Yes. While it is on, every native visual draws with the colour-blind-safe palette whatever is linked (accessibility first); the link is kept.
 - Q: Where do palettes go in backup and erase? → A: The palette library is backed up and restored by FILE-005 (one record per palette, the usual Keep both / Replace / Skip choices); FILE-011 erases it with "Scenes and show"; FILE-009 counts it under Scenes.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How are swatch colours stored? → A: As 8-bit sRGB hex text (`#RRGGBB`), opaque. The system colour picker's result is converted to sRGB and rounded; alpha is not offered (layer opacity is CMP-002's job).
+- Q: Which IDs do palettes have? → A: User palettes get a canonical uppercase UUID at creation, kept through renames and edits; a duplicate gets a new UUID. Built-ins use fixed IDs `builtin.spectrum`, `builtin.ice`, `builtin.mono`, `builtin.colorBlindSafe`, and draw exactly as VIS-001 draws them today.
+- Q: How does the Swatches style map colours onto bars, rings and particles? → A: Evenly: with n colours, the first 1/n of the positions take colour 1, the next 1/n colour 2, and so on (no cycling), so a 2-colour palette splits a spectrum in half.
+- Q: Is a palette edit undoable? → A: No. Palette edits change the library, not the scene (the editor has explicit add, remove and delete actions; delete asks for confirmation). Choosing the scene's palette is a scene edit and is undoable.
+- Q: How does a restore treat a palette that exists on both sides with different content? → A: Like other keyed records: Keep both (default) adds the backup's palette as a copy under a derived ID and "<name> copy"; Replace takes the backup's content under the same ID; Skip keeps the device's. If the copy would exceed 64 palettes, the device's palette is kept (`fellBack`).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Make my own palette and see it on the visual (Priority: P1) — MVP
