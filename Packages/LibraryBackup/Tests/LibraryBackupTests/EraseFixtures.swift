@@ -34,6 +34,7 @@ enum EraseFixtures {
         LibrarySettingsPolicy.photoKey: .string(String(BackupFixtures.photoName(1).dropLast(4))),
         LibraryErasePolicy.videoLoopKey: .data(Data("{\"start\":1}".utf8)),
         LibraryErasePolicy.videoSpeedKey: .data(Data("{\"percent\":50}".utf8)),   // MED-004
+        LibrarySettingsPolicy.slideshowKey: .data(Data("{\"enabled\":true}".utf8)),   // MED-006
         LibraryErasePolicy.colorBlindSafePaletteKey: .bool(true),
         "settings.performanceOverlay": .bool(true),
     ]) { (_: LibrarySettingValue, new: LibrarySettingValue) -> LibrarySettingValue in new }
