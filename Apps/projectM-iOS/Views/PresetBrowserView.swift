@@ -250,6 +250,8 @@ struct PresetRow: View {
         HStack {
             Button(action: onChoose) {
                 HStack {
+                    // PRE-001: a picture of the preset (placeholder until it exists).
+                    PresetThumbnailView(preset: preset, playable: presets.isPlayable(preset), locked: locked, model: presets.thumbnails)
                     VStack(alignment: .leading, spacing: 2) {
                         // ACC-004: label colour. `.primary` inside a button resolves to the tint, and blue
                         // text on white failed the contrast audit ("nearly passed", about 4:1).
