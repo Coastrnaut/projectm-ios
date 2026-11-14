@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:57:57Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:03:09Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -166,7 +166,7 @@ The physical-device suite may **not** start:
 | PRE-003 | Preset tags | `ddce41418d7c` | `feature/pre-003` |
 | PRE-006 | Recently played history | `b4fe95151be2` | `feature/pre-006` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
-| PRE-010 | Preset quick audition | `a653f631233a` | `feature/pre-010` |
+| PRE-010 | Preset quick audition | `a653f631` | `feature/pre-010` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
@@ -1616,6 +1616,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/autonomous-tests.log`)
+- `post-merge: projectM-iOSTests 793 + UI 14 (audition, preset library, settings, external display, cue transitions, stage overlay)`: pass at `a653f631` (log `.autonomous/logs/integration/batch22/app-tests.log`)
 
 ### PRE-012 Preset import validation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/compliance.log`)

@@ -2313,7 +2313,7 @@
    "branch": "feature/pre-010",
    "branch_sha": "e9ec9e9eeee3eb31436a965052baa619b1ce509c",
    "error_category": null,
-   "integrated_sha": "a653f631233a28ce0c467c788ebc7b92510b4f77",
+   "integrated_sha": "a653f631",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -4123,7 +4123,7 @@
   {
    "branch": "feature/pre-010",
    "id": "PRE-010",
-   "sha": "a653f631233a28ce0c467c788ebc7b92510b4f77"
+   "sha": "a653f631"
   },
   {
    "branch": "feature/pre-012",
@@ -4371,5 +4371,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:57:57Z"
+ "updated": "2026-11-14T16:03:09Z"
 }
