@@ -46,6 +46,7 @@ first.
 - Implementation finding (T04, 2026-11-13): stationary white and pink noise through the real pipeline give ANL-005 no estimate at all (confidence 0, always searching), so they cannot exercise the thresholds. Random noise bursts were added: they give estimates (largest confidence 0.29-0.37), are shown as uncertain at most, and never stable. Inputs were trimmed (white 3 → 2 seeds, 12 → 10 s) and the noise test split in two so each test stays under the 10 s budget in the Linux shape (owner rule 7).
 - Implementation finding (T04, 2026-11-13): during the exit dwell after a tempo change the estimate already reports the new BPM; the indicator keeps showing the last BPM within the tolerance until it leaves stable, so a new tempo is never displayed as stable before it earns it (ANL-006-R4).
 - Q: How is "uncertain" shown, and are state changes announced? → A: With "≈" before the number and the word "Uncertain"; no dimming (ACC-004's contrast audit runs over the controls) and no animation. State changes are not announced to VoiceOver (an analysis that changes state every few seconds would interrupt the user); the readout's accessibility value carries the state in words whenever it is read. The "—" of the searching state keeps ACC-004's existing em-dash audit filter valid (ANL-006-R8, R9, R11).
+- Regression fix (2026-11-14, decided under owner rule 4): the searching line reads "— BPM", not a lone "—". The readout is one accessibility element, so the audit reported the dash's contrast failure without an element ("Contrast failed for SwiftUI.AccessibilityNode"), which the em-dash filter (matched by element label) could never match; `AccessibilityScreensUITests`' controls and show-row audits failed whenever no tempo had been found yet (always on a simulator whose playback reached the analysis silent). With the unit the line is measurable, both audits pass without a filter, and ACC-004's em-dash filter was removed. Still no number while searching (ANL-006-R8).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -63,7 +64,7 @@ Debug fake estimate sees the readout change state.
 
 **Acceptance Scenarios**:
 
-1. **Given** no estimate, **When** the controls are shown, **Then** the readout shows "—" with the word "Searching" and no BPM number, and VoiceOver reads "Tempo, Searching for tempo".
+1. **Given** no estimate, **When** the controls are shown, **Then** the readout shows "— BPM" with the word "Searching" and no BPM number, and VoiceOver reads "Tempo, Searching for tempo".
 2. **Given** an estimate that is not (yet) trusted, **When** the readout is shown, **Then** it shows "≈" before the BPM with the word "Uncertain", and VoiceOver reads "About 124 BPM, uncertain".
 3. **Given** an estimate that has held its tempo with high confidence for the dwell time, **When** the readout is shown, **Then** it shows "124 BPM" with the word "Stable", and VoiceOver reads "124 BPM, stable".
 4. **Given** a manual (tapped) tempo, **When** the readout is shown, **Then** it shows the tapped BPM with "Manual", exactly as today; Reset returns to whatever state the analysis is in at that moment.

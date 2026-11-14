@@ -60,7 +60,7 @@ final class TempoCoordinatorTests: XCTestCase {
         XCTAssertEqual(tempo.tapsInSequence, 0)
         XCTAssertEqual(log.said.last, "Manual tempo cleared. Searching for tempo")
         XCTAssertEqual(tempo.readout, .searching)
-        XCTAssertEqual(TempoCoordinator.readoutText(tempo.readout), "—")
+        XCTAssertEqual(TempoCoordinator.readoutText(tempo.readout), "— BPM")
         XCTAssertEqual(TempoCoordinator.accessibilityValue(tempo.readout), "Searching for tempo")
     }
 
@@ -86,7 +86,7 @@ final class TempoCoordinatorTests: XCTestCase {
             (.manual(bpm: 120.4), "120 BPM", "Manual", "120 BPM, manual"),
             (.stable(bpm: 119.6), "120 BPM", "Stable", "120 BPM, stable"),
             (.uncertain(bpm: 124.4), "≈124 BPM", "Uncertain", "About 124 BPM, uncertain"),
-            (.searching, "—", "Searching", "Searching for tempo"),
+            (.searching, "— BPM", "Searching", "Searching for tempo"),
         ]
         for (readout, number, word, spoken) in cases {
             XCTAssertEqual(TempoCoordinator.readoutText(readout), number)

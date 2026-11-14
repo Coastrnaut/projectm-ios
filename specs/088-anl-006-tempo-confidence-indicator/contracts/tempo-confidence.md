@@ -42,7 +42,7 @@ Guarantees:
 | manual(120) | 120 BPM | Manual | 120 BPM, manual |
 | stable(120) | 120 BPM | Stable | 120 BPM, stable |
 | uncertain(120) | ≈120 BPM | Uncertain | About 120 BPM, uncertain |
-| searching | — | Searching | Searching for tempo |
+| searching | — BPM | Searching | Searching for tempo |
 
 - BPM is rounded to a whole number. The element stays static text (ACC-004), identifier
   `tempoReadout`; the Tap control's value uses the same accessibility value outside a tap sequence.

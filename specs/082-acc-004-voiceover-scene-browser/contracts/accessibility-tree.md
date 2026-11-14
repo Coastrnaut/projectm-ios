@@ -63,7 +63,10 @@ Filtered (each entry in `AccessibilityScreensUITests.filters` with its reason):
 | settings | contrast | "Visual" headers (≤ 2), element-less findings (≤ 3), the Visual footer | system header and footer styles (secondary grey); bounded counts |
 | showEditor | contrast | footer; "Cues" header | system header/footer styles. The "Add Current Scene" filter was removed by ACC-003 (2026-11-14, ACC-003-R11): the app's AccentColor (`0062CC`, 5.8:1 on white) replaced systemBlue (≈ 4:1) |
 | controls | contrast | Visual unavailable | PERF-014 placeholder caught mid-fade; 0.55 grey on black ≈ 6:1 at full opacity |
-| controls, showRow | contrast | "—" (tempo readout) | one-point em dash the pixel sampler cannot measure; VoiceOver reads "Tempo, Searching for tempo" (ANL-006; was "No tempo") |
+
+The tempo readout's em-dash filter (controls, showRow) was removed on 2026-11-14: the readout is one
+element, so the dash's contrast failure came without an element and the filter never matched it; the
+searching line now reads "— BPM" (ANL-006 Clarifications) and passes the audit.
 
 Test design notes (from the triage):
 

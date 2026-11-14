@@ -69,7 +69,18 @@ final class SceneDuplicateUITests: XCTestCase {
         XCTAssertEqual(field.value as? String, "Build copy", "prefilled with the scene name")
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 14) + "Build B")
-        alert.buttons["Rename"].tap()
+        XCTAssertTrue(poll(2) { (field.value as? String) == "Build B" }, "typed: \(field.value ?? "nil")")
+        // On a simulator with a hardware keyboard attached (one shown in a live simulator panel), the
+        // first touch after typing only brings up the software keyboard, which lifts the alert: that
+        // Rename tap is swallowed and the alert stays (3 of 3 there, video frames 2026-11-14). The
+        // rename itself works. So when the alert is still up, wait for it to stop moving and tap again.
+        let rename = alert.buttons["Rename"]
+        rename.tap()
+        if !alert.disappears(within: 1.5) {
+            XCTAssertTrue(rename.settles(), "the alert holds still")
+            rename.tap()
+        }
+        XCTAssertTrue(alert.disappears(within: 3), "Rename closes the alert")
         XCTAssertTrue(poll(3) { (copy.value as? String) == "Cue 3 of 6, scene Build B" }, "renamed: \(copy.value ?? "nil")")
         XCTAssertEqual(copy.label, "Build copy", "the cue label is not the scene name")
         XCTAssertEqual(second.value as? String, "Cue 2 of 6", "the original scene keeps its name")
