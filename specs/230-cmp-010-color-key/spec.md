@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-010-T01-T18 verified on the Mac host, the Linux shape and the iOS 27.2
+simulator; T19 needs D1; report `docs/test-reports/color-key.md`)
 
 **Input**: User description: "Implement CMP-010 (Color key) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Remove selected color with tolerance and feather controls."
