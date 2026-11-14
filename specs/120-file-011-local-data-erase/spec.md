@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+**speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T08/T09, R2 T09/T11, R3 T04/T08, R4 T01/T03/T05, R5 T01/T05, R6 T03/T06, R7 T10, R8 T07, R9 T02, R10 T09, R11 T12; S1 T05, S2 T06, S3 T07, S4 T07, S5 T11). Fixes applied: R8 named in T07; R7 (stores load empty after an erase) and the pending-restore exclusion get app tests in T10.
+
 **Input**: User description: "Implement FILE-011 (Local data erase) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Provide explicit confirmation to
 erase user-created scenes and mappings." Acceptance, verbatim: "Erase deletes selected data and leaves

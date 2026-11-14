@@ -23,13 +23,13 @@
 
 ## Phase 4: User Story 4 - References stay consistent (P2)
 
-- [ ] FILE-011-T07 [US4] Scenes erase releases scene-only photo and video references and keeps the current ones; media erase leaves scenes naming IDs that no longer resolve; no write-back: an autosave tick after the request is gone after the launch erase and a store loaded afterwards reads empty, in LibraryEraseReferenceTests.swift (FILE-011-S3, S4)
+- [ ] FILE-011-T07 [US4] Scenes erase releases scene-only photo and video references and keeps the current ones; media erase leaves scenes naming IDs that no longer resolve; no write-back: an autosave tick after the request is gone after the launch erase and a store loaded afterwards reads empty, in LibraryEraseReferenceTests.swift (FILE-011-R8, S3, S4)
 
 ## Phase 5: User Story 2 and 5 - Confirmation, pending state, result (P1/P2)
 
 - [ ] FILE-011-T08 [US2] `LibraryEraseCoordinator` (inventory off the main thread, selection, request, cancel, result once, `library` lane, mutual exclusion with a pending restore) owned by LibraryBackupCoordinator; the launch hook runs the erase before the restore; the settings bridge removes keys (FILE-011-R1-R3, R7)
 - [ ] FILE-011-T09 [US2] `LibraryEraseSection` and `LibraryEraseSheet` (checkboxes with count and size, Select All, Back Up Library First…, Erase… → destructive confirmation naming the categories) in Apps/projectM-iOS/Views/LibraryEraseSection.swift, one line in StorageUsageView.swift (FILE-011-R1, R2, R10)
-- [ ] FILE-011-T10 [US2] App tests: policy folders and keys agree with the stores and FILE-005's lists; coordinator request, cancel, launch erase removes keys and folders, result once and announced; confirmation text names the categories, in Apps/projectM-iOS/Tests/LibraryEraseAppTests.swift
+- [ ] FILE-011-T10 [US2] App tests: policy folders and keys agree with the stores and FILE-005's lists; coordinator request, cancel, launch erase removes keys and folders, result once and announced; confirmation text names the categories; Erase Data… refused while a restore is pending; after a launch erase the stores (presets, collections, show) load as empty with no error (FILE-011-R7), in Apps/projectM-iOS/Tests/LibraryEraseAppTests.swift
 - [ ] FILE-011-T11 [US2] UI test: seeded show; the confirmation names the category; Cancel records nothing; Erase at Next Launch, relaunch, the result is shown and the show's records are gone, in Apps/projectM-iOS/UITests/LibraryEraseUITests.swift (FILE-011-S5)
 
 ## Phase 6: Polish
