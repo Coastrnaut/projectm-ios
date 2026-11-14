@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-018-T01-T16 verified on the Mac: PresetLibrary host tests 319 (8 new),
+projectM-iOSTests LibraryIntegrityAcceptanceTests 3, LibraryCheckUITests 1 (13.5 s) on the feature's simulator
+"PRE18"; no device claim). Linux: not run here; CI's Linux job builds and tests PresetLibrary.
 
 **Input**: Roadmap row PRE-018 (`docs/FEATURE_ROADMAP_AUTONOMOUS.md`, PRE table), verbatim: "Scan user
 library for missing textures and invalid references." Acceptance, verbatim: "Broken fixture is reported
