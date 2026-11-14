@@ -32,8 +32,12 @@ tests ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 ## Phase 5: Polish
 
-- [ ] OUT-002-T11 Regression: `ExternalDisplayCoordinatorTests`, `OutputBlackoutCoordinatorTests`, `StatusEventsTests`, `ExternalDisplayUITests`, `OutputBlackoutUITests`; repo checks; type-check budget (OUT-002-S4)
+- [ ] OUT-002-T11 Regression: `ExternalDisplayCoordinatorTests`, `OutputBlackoutCoordinatorTests`, `StatusEventsTests`, `ExternalDisplayUITests`, `OutputBlackoutUITests`; repo checks (compliance: public APIs only, OUT-002-R9; no new UserDefaults key), iOS 26.5 simulator build, type-check budget (OUT-002-S4)
 - [ ] OUT-002-T12 {device} Quickstart B on D1, D2, D3 (cable and AirPlay hot-plug, recording hold, blackout, quick wiggle)
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+No critical issues. Fixed: R3 now says the 0.3 s settle applies in the app (tests may use 0); R9 is mapped to T11. Coverage: R1, R2 → T05, T06; R3 → T04, T07; R4 → T05, T06; R5 → T09; R6 → T08, T09; R7 → T03, T06; R8 → T04, T07; R9 → T11. 12 tasks, 100 % of requirements covered.
 
 ## Dependencies
 

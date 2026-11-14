@@ -106,7 +106,7 @@ With the output blacked out, the performer plugs in a projector: it stays black.
 
 - **OUT-002-R1**: Connecting, disconnecting or reconnecting an external display MUST NOT create, recreate, pause, restart or re-apply the internal render session (visual host, renderer or compositor, engine), the scene, the preset, the parameters or the audio source.
 - **OUT-002-R2**: Hot-plug MUST NOT trigger a trails reset of its own; trails reset only when the visual's output size changes (FX-009-R5).
-- **OUT-002-R3**: A connect MUST settle for 0.3 s before the visual moves; a disconnect during that time MUST cancel it with no move and no announcement; a disconnect of a settled display MUST be applied at once.
+- **OUT-002-R3**: In the app, a connect MUST settle for 0.3 s before the visual moves (unit tests of OUT-001's in-call rules construct the coordinator with a settle time of 0); a disconnect during that time MUST cancel it with no move and no announcement; a disconnect of a settled display MUST be applied at once.
 - **OUT-002-R4**: While a recording runs, a connect or disconnect MUST NOT move the visual unless the slot holding it is gone; when the recording ends, the visual MUST be placed by OUT-001's rules.
 - **OUT-002-R5**: A newly connected display MUST show the current blackout state from its first frame.
 - **OUT-002-R6**: Settled connections and disconnections MUST be announced through the status-event router ("External display connected", "External display disconnected"), on their own lane.
