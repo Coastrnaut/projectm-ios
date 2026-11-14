@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-014-T01-T10 verified on the Mac: SceneArchive package tests on the host and
+the feature's iOS 27.2 simulator "SCN14 iPhone 17"; no device claim). SceneArchive 36 tests (0.3 s; 7 new), app
+ScenePackAcceptanceTests 6 (0.29 s), ScenePackUITests 1 (22.1 s, 14.6 s). Linux: not run here; the package's
+Linux-shape build (`-D*_NO_*`) passes and the new code is Foundation-only.
 
 **Input**: Roadmap row SCN-014 (P1, size L, depends on SCN-001, integrated). Observable behavior,
 verbatim: "Export scene with permitted user media and relative paths." Acceptance, verbatim: "Reimport

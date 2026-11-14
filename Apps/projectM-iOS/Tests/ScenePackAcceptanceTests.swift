@@ -12,7 +12,10 @@
 // with nothing written; the coordinator's export → import path adds the cue and announces it.
 import Foundation
 import LocalPortability
+import ImageIO
+import ImageLayer
 import ParameterGraph
+import UniformTypeIdentifiers
 import SceneArchive
 import SceneFormat
 import ShowControl
@@ -330,6 +333,31 @@ final class ScenePackAcceptanceTests: XCTestCase {
         XCTAssertThrowsError(try device.archive().export(document)) { (error: any Error) in
             XCTAssertEqual(error as? SceneArchiveServiceError, .archive(.missingMedia(key: "photo1")))
         }
+    }
+
+    // MARK: - Pictures kept byte for byte only when clean (research SCN-014-D9)
+
+    func testOnlyAPictureWithoutExtraMetadataIsKeptByteForByte() throws {
+        let limits = ImageImportLimits.standard
+        let clean = try ImageSanitizer.sanitize(try XCTUnwrap(UITestPhotoFixture.png(alpha: false)), limits: limits)
+        XCTAssertEqual(clean.fileExtension, "jpg")
+        let again = try ImageSanitizer.sanitize(clean.data, limits: limits)
+        // Re-encoding may or may not change a JPEG's bytes (it did for one slide in the acceptance test); either way the
+        // clean original qualifies.
+        XCTAssertTrue(ScenePackPicture.keepsOriginal(clean.data, sanitized: again.data, fileExtension: again.fileExtension))
+        // The same pixels with a location and a comment are re-encoded (the metadata is dropped).
+        let source = try XCTUnwrap(CGImageSourceCreateWithData(clean.data as CFData, nil))
+        let image = try XCTUnwrap(CGImageSourceCreateImageAtIndex(source, 0, nil))
+        let tagged = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(tagged as CFMutableData, UTType.jpeg.identifier as CFString, 1, nil))
+        let gps: [CFString: Any] = [kCGImagePropertyGPSLatitude: 48.1, kCGImagePropertyGPSLatitudeRef: "N"]
+        let exif: [CFString: Any] = [kCGImagePropertyExifUserComment: "private"]
+        let properties: [CFString: Any] = [kCGImagePropertyGPSDictionary: gps, kCGImagePropertyExifDictionary: exif]
+        CGImageDestinationAddImage(destination, image, properties as CFDictionary)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        let sanitizedTagged = try ImageSanitizer.sanitize(tagged as Data, limits: limits)
+        XCTAssertFalse(ScenePackPicture.keepsOriginal(tagged as Data, sanitized: sanitizedTagged.data, fileExtension: sanitizedTagged.fileExtension))
+        XCTAssertFalse(ScenePackPicture.keepsOriginal(clean.data, sanitized: again.data, fileExtension: "png"), "the type must match")
     }
 
     // MARK: - Coordinator (R6, R9)
