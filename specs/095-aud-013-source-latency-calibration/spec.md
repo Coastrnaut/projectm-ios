@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Planned 2026-11-13
+**Status**: Implemented 2026-11-14 (device task AUD-013-T15 open)
 
 **Input**: User description: "Implement AUD-013 (Source latency calibration) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md line 100. Observable behavior, verbatim: "Measure or set

@@ -51,7 +51,7 @@ test**: `LatencyOffsetAcceptanceTests` (AnalysisFeatures).
 
 ## Phase 7: Polish
 
-- [ ] AUD-013-T14 Write `docs/adr/0035-source-latency-delay.md` (next free number at commit time) and add it to `docs/adr/README.md`; run `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; count PosterBoard reports; delete the simulator. Evidence: all exit 0; counts recorded.
+- [X] AUD-013-T14 Write `docs/adr/0035-source-latency-delay.md` (next free number at commit time) and add it to `docs/adr/README.md`; run `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; count PosterBoard reports; delete the simulator. Evidence: all exit 0; counts recorded. — Verified 2026-11-14: ADR-0035 written (0035 was still free in this worktree, on `autonomous/integration` and in the ANL-014 and ACC-006 worktrees) and indexed; check_compliance OK, validate_docs OK (839 files), check_motion_policy OK, check_permission_catalog OK (4 permissions, unchanged), test_scripts 147 OK (1 skipped), check_privacy_manifest OK on the Debug simulator app; PosterBoard reports 25 before and after; simulator "AUD13 iPhone 17" deleted.
 - [ ] AUD-013-T15 {device} On D1: In-App Playback through the speaker, wired and Bluetooth headphones; record Estimate from Output per route; measure click-to-visual delay with a 240 fps camera at 0 ms and at the estimate (20 clicks, median); confirm the visuals line up within one display frame of the sound at the estimate; then route changes and an interruption with a non-zero delay.
 
 ## Dependencies
