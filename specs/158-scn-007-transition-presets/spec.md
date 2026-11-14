@@ -4,7 +4,13 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-007-T01-T14 verified on the Mac: host package tests and the
+feature's own iOS 27.2 simulator "SCN7"; no device claim). ShowControl 74 tests (1.8 s; 7 new), Compositor
+all suites pass (CompositorTests 498, 7 skipped; 4 new model tests, 1 new bus test), LibraryBackup 69 (13.4 s; 1 new),
+app CueTransitionAcceptanceTests 3 (0.04 s), CueTransitionUITests 1 (29.6 s, 27.6 s). Linux: not run here;
+the Compositor Linux shape builds on the Mac (`-DCOMPOSITOR_NO_METAL …`). Follow-up outside this row: the live
+renderer does not run the CMP-014 bus, so a cue's transition is recorded (`CueTransitionRecorder`) but the
+scene still changes at once on screen.
 
 **Input**: Roadmap row SCN-007 (P1, size M, depends on CMP-014, integrated). Observable behavior,
 verbatim: "Store transition type, duration and easing with each cue." Acceptance, verbatim:
@@ -41,8 +47,13 @@ conservative, local-first option.
 - Q: How do the bus and the cue meet? → A: The bus learns an optional `MappingCurve` on its spec (`SceneTransitionSpec.curve`, nil = the existing easing, so CMP-014's encoding and behaviour are unchanged). Each cue apply resolves the cue's transition to a `SceneTransitionSpec` and hands it to a transition driver before the scene is applied. Because the live renderer does not run the bus yet (baseline), the app's driver records the spec (a DEBUG probe); wiring the bus into the visualizer is outside this row and is recorded as a follow-up.
 - Q: What about Reduce Motion and Reduce flashing? → A: Reduce Motion first: CMP-014-R10 makes any transition a cut. Otherwise, with Reduce flashing on, a cut or a transition shorter than 0.5 s becomes a 0.5 s linear crossfade (a dip to black of under 0.5 s too), so a bright change is spread over at least half a second; the FX-019 flash guard still measures every shown frame. Reduce Motion beats Reduce flashing because a dissolve is still a decorative transition under CMP-014-R10, and the flash guard covers the cut. The stored values never change; only the applied spec is resolved.
 - Q: What happens to an unknown transition type in a file (a newer app)? → A: The cue keeps it verbatim (with its duration and easing) and writes it back unchanged; reading reports a warning naming the type; applying such a cue is a cut; the editor shows "Unknown transition (<type>)". An invalid transition (bad duration, unreadable easing, wrong JSON type) is dropped from that cue with a counted warning; the show still loads.
-- Q: Where is it edited? → A: A "Transition" sheet per cue from Settings → Show (leading swipe "Transition", context menu "Transition…", VoiceOver action "Transition"), with a type picker, a duration slider (ACC-005 `.accessibleParameter`, 0…10 s in 0.1 s steps) and an easing picker (Linear, Ease In, Ease Out, Ease In-Out, plus "Custom" shown when the stored curve is another MappingCurve), and "Use Default" to remove it. The cue row shows "Transition: Crossfade 1.5 s" under its label. Edits save at once and never apply a scene.
+- Q: Where is it edited? → A: A "Transition" sheet per cue from Settings → Show (leading swipe "Transition", context menu "Transition…", VoiceOver action "Transition"), with a type picker, a duration slider (ACC-005 `.accessibleParameter`, 0…10 s in 0.1 s steps) and an easing picker (Linear, Ease In, Ease Out, Ease In-Out, plus "Custom" shown when the stored curve is another MappingCurve); the type picker's first choice, "Default", removes the transition. The cue row shows "Transition: Crossfade 1.5 s" under its label. Edits save at once and never apply a scene.
 - Q: Does Duplicate Scene copy the transition? → A: Yes, the inserted cue gets its source cue's transition (it behaves like its source, as with folder and tags).
+
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass over spec, plan and tasks: every requirement R1-R11 maps to a task (R3 → T06, T10; R9 → T11, T12; R11 → T13). One fix applied: "Use Default" became the type picker's first choice "Default" (one control instead of a separate button; R9 and the sheet agree).
+- Implementation note (2026-11-14): `-uitestResetNotice` removes the show folder, so the UI test's relaunch omits it.
 
 ### Session 2026-11-14 (speckit-clarify)
 
