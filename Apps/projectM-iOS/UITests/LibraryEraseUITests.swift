@@ -3,8 +3,12 @@
 // Data… → "Scenes and show" → Erase…: the confirmation names the category; Cancel records nothing; then
 // Erase at Next Launch shows the pending erase. Launch 2 (no reset, no seed): the erase runs before
 // anything loads, the result is shown once and the show's records are gone. `-uitestStorageSheet` opens
-// Storage at launch (no audio, no scrolling through Settings). Fixed fake entitlement. Simulator only;
-// never device evidence.
+// Storage at launch (no audio, no scrolling through Settings), and `-uitestSettingsSection libraryErase`
+// opens it at its end (Erase, with Backup's records probe above), so no drag is needed (owner rule 7, 2026-11-14). The
+// test had failed 3 of 5 runs: drags at the end of Storage in the right margin (x = 0.96) pressed on the
+// list's scroll indicator, still shown from the previous drag, and scrubbed the list back to its top, so
+// `reveal` never found the last rows holding still. Fixed fake entitlement. Simulator only; never device
+// evidence.
 import XCTest
 
 @MainActor
@@ -16,13 +20,15 @@ final class LibraryEraseUITests: XCTestCase {
     }
 
     private func launch(_ extra: [String]) {
-        app.launchArguments = ["-uitestStorageSheet"] + Self.noStore + extra
+        app.launchArguments = ["-uitestStorageSheet", "-uitestSettingsSection", "libraryErase"] + Self.noStore + extra
         app.launch()
         XCTAssertTrue(app.navigationBars["Storage"].appears(within: 20), "Storage opens at launch")
     }
 
     private func probe() -> String {
         let element = app.staticTexts["libraryRecordsProbe"]
+        // Each row is awaited before `reveal`, which drags at once for a row that does not exist yet.
+        XCTAssertTrue(element.appears(within: 10), "the records probe")
         XCTAssertTrue(app.reveal(element))
         XCTAssertTrue(poll(10) { element.label.contains("port") }, element.label)
         return element.label
@@ -61,12 +67,14 @@ final class LibraryEraseUITests: XCTestCase {
         XCTAssertTrue(alert.appears(within: 5))
         alert.buttons.matching(identifier: "Erase at Next Launch").firstMatch.tap()
         let pending = app.staticTexts["libraryErasePending"]
+        XCTAssertTrue(pending.appears(within: 5), "the pending erase")
         XCTAssertTrue(app.reveal(pending))
         XCTAssertTrue(pending.label.contains("Scenes and show will be erased."), pending.label)
 
         app.terminate()
         launch([])
         let message = app.staticTexts["libraryEraseMessage"]
+        XCTAssertTrue(message.appears(within: 10), "the erase result")
         XCTAssertTrue(app.reveal(message))
         XCTAssertEqual(message.label, "Erased: scenes and show.")
         XCTAssertFalse(app.staticTexts["libraryErasePending"].exists)
