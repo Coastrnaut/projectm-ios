@@ -44,6 +44,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Does live traffic speak to VoiceOver? → A: No. A busy controller sends dozens of messages per second; announcing them would make VoiceOver unusable. Rows are readable one by one with combined labels, and pause freezes the list so they can be read (MIDI-002-R10).
 - Q: Does the visualizer get a "MIDI receiving" badge (as MIDI-001 deferred to this row)? → A: No. The monitor receives only while its own screen is open, so the screen is the indicator. MIDI-003's learn mode can revisit it.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How big is the queue between the MIDI system and the screen, and what happens when it is full? → A: 512 messages; when full, the newest message that does not fit is dropped and counted ("N dropped" in the summary line). At a 30 Hz drain that is over 15,000 messages per second, far above a MIDI cable's ~3,100; drop-newest keeps the producer from ever touching the consumer's position (MIDI-002-R5). Rejected: drop-oldest (needs the producer to move the reader's index) and an unbounded queue (constitution VII).
+- Q: How is the time of an entry shown? → A: Seconds since the monitor opened (or was last cleared) with two decimals, for example "12.40 s"; the spoken label leaves the time out so rows stay short. Rejected: wall-clock time of day (records when the user played, which nothing needs).
+- Q: How are notes named? → A: The number plus its name with middle C (60) as C4 and sharps only, for example "60 C4", "61 C♯4"; spoken "note 60 C sharp 4". Rejected: C3 for 60 (some apps use it, but C4 matches the MIDI Association's and scientific pitch naming).
+- Q: Where is the monitor opened when listening is off? → A: The "MIDI Monitor" row is always in the MIDI section and opens the screen; while listening is off (or MIDI is unavailable) the screen says "Turn on Listen for MIDI devices to see messages." and receives nothing; turning listening off while it is open stops receiving at once (MIDI-002-R1).
+- Q: How fast does the screen update? → A: The queue is drained on the display's refresh, capped at 30 updates per second; messages within one update are added together, newest first. 30 Hz is faster than anyone can read and keeps the list cheap (MIDI-002-R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I see what my controller sends (Priority: P1) — MVP
@@ -120,11 +130,12 @@ nothing is left.
 - **MIDI-002-R2**: While receiving, the app MUST connect every input MIDI-001 lists and only those (never a network MIDI endpoint), following plug and unplug changes.
 - **MIDI-002-R3**: Messages MUST be decoded per MIDI 1.0: note on, note off (and note on with velocity 0 as note off), control change, program change, pitch bend (14-bit, 0–16383), channel pressure, poly pressure, the system common and transport messages, and system exclusive as its length only. Byte-stream input MUST support running status and real-time bytes interleaved inside other messages, and ignore stray data bytes.
 - **MIDI-002-R4**: Timing clock and active sensing MUST be counted, not listed; the monitor shows their counts in one summary line.
-- **MIDI-002-R5**: The path from the system's MIDI callback to the queue MUST be bounded and real-time safe: no allocation, lock, logging or main-thread hop per message, a preallocated bounded queue with a tested overflow policy (drop the newest message that does not fit, counted), and the screen drains the queue at display rate.
-- **MIDI-002-R6**: Each entry MUST show the message type, the channel (1–16, for channel messages), the number (note with its name, controller or program) where it applies, the value, and the time since the monitor opened; VoiceOver reads one combined label per row (for example "Control change, channel 1, controller 7, value 100").
+- **MIDI-002-R5**: The path from the system's MIDI callback to the queue MUST be bounded and real-time safe: no allocation, lock, logging or main-thread hop per message, a preallocated bounded queue of 512 messages with a tested overflow policy (drop the newest message that does not fit, counted), and the screen drains the queue on the display refresh, at most 30 times per second.
+- **MIDI-002-R6**: Each entry MUST show the message type, the channel (1–16, for channel messages), the number (note with its name, controller or program) where it applies, the value, and the time since the monitor opened or was last cleared ("12.40 s"); notes show their number and name with middle C (60) as C4; VoiceOver reads one combined label per row (for example "Control change, channel 1, controller 7, value 100").
 - **MIDI-002-R7**: Entries, counters, status texts, diagnostics and logs MUST NOT contain a MIDI endpoint's unique number, stable ID, name, or device, entity or manufacturer name, nor which source sent a message. Message contents MUST NOT be logged.
 - **MIDI-002-R8**: The monitor MUST keep at most 64 entries (newest first) in memory only; nothing about messages is stored on disk or in settings, and closing the monitor drops entries and counters. No new stored setting is added.
 - **MIDI-002-R9**: The monitor MUST offer Pause/Resume (paused: the list is frozen, arriving messages are counted and not added) and Clear (entries and counters emptied).
+- **MIDI-002-R15**: The MIDI section MUST always offer a "MIDI Monitor" row; while listening is off or MIDI is unavailable the monitor says "Turn on Listen for MIDI devices to see messages." and receives nothing.
 - **MIDI-002-R10**: Live traffic MUST NOT be announced to VoiceOver; the monitor posts no announcement directly (status events check).
 - **MIDI-002-R11**: The message model, decoders and queue MUST build and pass their tests on Linux; the system input compiles only where the system MIDI framework exists, and elsewhere receiving reports unavailable.
 - **MIDI-002-R12**: A DEBUG-only stand-in (MIDI-001's `-uitestFakeMIDI`) MUST let a UI test inject a control change and a note into the monitor; Release builds never create it.
