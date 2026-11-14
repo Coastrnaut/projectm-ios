@@ -22,7 +22,10 @@
 //   drag, so the precise drags overshot and oscillated.
 // - Once visible, `scrollTo` waits for the row to stop moving, and counts a search field floating at
 //   the bottom (the preset browser's) as the end of the visible area: without the old idle re-checks,
-//   Collections at AX5 was tapped under the search field and did not open.
+//   Collections at AX5 was tapped under the search field and did not open. The smallest precise drag
+//   halves whenever the direction flips, and the visualizer controls' scroll area (still in the tree
+//   behind Settings) no longer narrows the visible area of a Settings row: the OSC port field reached
+//   from the end of Settings oscillated in 104 pt steps between the two different bounds.
 // - Moved assertions, each kept unchanged: Licenses (reached, opened, audited) moved from the Storage
 //   test to testLicensesAX5/AX3; the Text message field input (reached, typed) moved from the Text rows
 //   test to testTextMessageFieldAX5/AX3, which reaches it on the way down; the Rename Scene alert
@@ -213,8 +216,11 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             var area = window.frame
             area.origin.y = top()
             area.size.height = bottom() - top()
-            // Inside the visualizer controls' scroll view: its own frame is the visible part.
-            if controlsScroll.exists, controlsContent.exists, controlsContent.frame.contains(frame) {
+            // Inside the visualizer controls' scroll view: its own frame is the visible part. Not under a
+            // sheet: at AX sizes the controls' content behind Settings is tall enough to "contain" a
+            // Settings row, and the narrower area made the precise drags oscillate (2026-11-14).
+            if !app.navigationBars.firstMatch.exists, controlsScroll.exists, controlsContent.exists,
+               controlsContent.frame.contains(frame) {
                 area = area.intersection(controlsScroll.frame)
             }
             guard frame.height > 0, !area.isNull else { return false }
@@ -225,6 +231,10 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         var blind = 0
         var flinging = fromEnd && !down
         var backFromEnd = false
+        // The smallest precise drag; halved each time the direction flips, so a row that a drag carries
+        // past the visible area and back does not oscillate (seen from the end of Settings at AX5).
+        var minimum: CGFloat = 0.12
+        var lastTowardsTop: Bool?
         // Where the list stands: the first cell's label and top edge (unchanged after a fling = the end).
         func position() -> String {
             let cell = app.cells.firstMatch
@@ -271,6 +281,8 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             let upper: CGFloat = inControls ? controlsScroll.frame.minY : top()
             let lower: CGFloat = inControls ? controlsScroll.frame.maxY : bottom()
             let towardsTop = known ? element.frame.minY < upper : down   // above the visible area: drag down
+            if let last = lastTowardsTop, last != towardsTop { minimum = max(minimum / 2, 0.03) }
+            lastTowardsTop = towardsTop
             // Drag by what is missing (plus a margin), at most 60 % of the area, so a tall row does not
             // overshoot back and forth; held at the end, so there is no momentum.
             let span = area.frame.height
@@ -279,7 +291,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
                 let frame = element.frame
                 needed = towardsTop ? upper - frame.minY + 24 : frame.maxY - lower + 24
             }
-            let fraction: CGFloat = min(max(needed / span, 0.12), 0.6)
+            let fraction: CGFloat = min(max(needed / span, minimum), 0.6)
             let middle = area.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardsTop ? 0.2 : 0.8))
             let to = middle.withOffset(CGVector(dx: 0, dy: (towardsTop ? 1 : -1) * fraction * span))
             middle.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.15)
