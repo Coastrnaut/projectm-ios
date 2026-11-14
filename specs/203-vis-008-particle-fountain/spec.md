@@ -35,6 +35,20 @@ This is a gap row. The audit confirms the gap.
 | Golden images | VIS-003 to VIS-007 keep generator-level goldens per platform class. | One golden of a seeded fountain. |
 | Determinism | VIS-006 is a pure function of accepted births and time. | A seeded simulation that does not depend on how frames chunk time. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4); each answer is the
+conservative, local-first option. Lengths are in R, half the output's shorter side; positions are measured
+from the emitter, y up.
+
+- Q: How many particles does an onset spawn, and how are they launched? → A: The onset's excess e = clamp((strength − threshold) / 0.25, 0, 1) (non-finite reads 0) gives a burst of 4 + round(20·e) particles (4…24). Each particle draws, from a SplitMix64 generator seeded with a fixed seed (default 0x5EED0008, restored at every loop restart), a launch angle uniform within ±20° of vertical and a speed uniform in 3.0…4.0 R/s, from an emitter at the bottom centre 0.1 R above the bottom edge. Rejected: spawning from the band vector (not the row's input); system randomness (not repeatable); bursts unbounded in strength (a storm on loud material) (VIS-008-R2).
+- Q: How is motion integrated so it does not depend on frame timing? → A: A fixed step of 1/240 s on the injected frame clock: step k starts at anchor + ⌊k·10⁹/240⌋ ns (the anchor is the first frame time after a loop restart); a frame advances every step that ends at or before its time (at most 240 steps per frame; a longer gap skips the rest and re-anchors). Semi-implicit Euler: v ← v + (g − k·v)·Δt, then p ← p + v·Δt, with gravity g = (0, −G) and linear drag k = 0.8 per second. An onset spawns its burst at the first step starting at or after its time, before that step is integrated. Gravity G is the one setting: Low 2.0, Medium 3.0 (default), High 4.5 R/s². Rejected: variable steps of the frame duration (trajectories would depend on the frame rate); quadratic drag (no closed form for the tests) (VIS-008-R3, R6).
+- Q: What bounds the particle count, and when does a particle die? → A: A preallocated pool of 512 particles and a queue of 32 pending onsets; a burst that does not fit is truncated and onsets past the queue are dropped, both counted; a live particle is never replaced. A particle dies when its age reaches its lifetime (2.5 s), when it falls below −0.15 R (0.05 R below the bottom edge) or when |x| > 3 R (past any side of a 3:1 output). Bounds in R units keep the simulation independent of the output size. Rejected: replacing the oldest particle (a visible pop mid-flight); size-dependent bounds (the golden and the acceptance would depend on the view) (VIS-008-R4, R5).
+- Q: What does Reduce Motion change? → A: Bursts are halved, rounded up (2…12), and the motion is slowed by a time scale of 0.7: launch speed × 0.7, gravity × 0.49, drag × 0.7 and lifetime ÷ 0.7, so each particle traces the same arc 0.7 times as fast. Applies to particles spawned afterwards; particles in flight keep their parameters. Rejected: stopping the fountain (the brief asks for fewer and slower); only fewer particles (motion speed is what Reduce Motion is about) (VIS-008-R9).
+- Q: How is a particle drawn, and which settings are offered? → A: A flat square of side max(0.025 R, 2 px) centred on the particle, palette colour (spawn sequence mod 16) of 16 (ACC-003-R13), alpha 0.8 × min(1, age / 0.05 s) × (1 − age / lifetime), premultiplied over opaque black; the brightest alpha 0.8 is ACC-012's cap shared with VIS-006 and VIS-007. One setting, Gravity (Low/Medium/High). Rejected: additive blending (overlaps could reach full white); sliders for drag, speed or count (more keys and more motion risk) (VIS-008-R7, R10).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose the particle fountain (Priority: P1)
@@ -110,14 +124,14 @@ speeds with Reduce Motion off and on.
 ### Functional Requirements
 
 - **VIS-008-R1**: The particle fountain MUST be a native visual under VIS-001's generator contract and the shared host contract, drawn by the shared flat-triangle pass, driven by ANL-004's onset events from ANL-016's bus (the band vector is unused).
-- **VIS-008-R2**: Spawning: each onset event spawns a burst whose size grows with the onset's excess over its threshold, between a fixed minimum and maximum; each particle starts at the emitter (bottom centre) with a launch direction and speed drawn from a seeded pseudo-random generator within a fixed upward cone and speed range.
-- **VIS-008-R3**: Motion: particles move under constant downward gravity and linear drag, stepped with a fixed time step on the injected frame clock, so a particle's trajectory does not depend on the frame rate or on how frames divide time.
-- **VIS-008-R4**: Lifetime: a particle dies when its age reaches its lifetime or when it leaves fixed bounds around the visible area (below the emitter, or far to the sides); dead particles free their slot.
-- **VIS-008-R5**: Bounds: the pool has a fixed capacity; pending onsets have a fixed queue; overflow is dropped and counted; nothing is allocated per frame (Constitution VII).
+- **VIS-008-R2**: Spawning: each onset event spawns a burst of 4 + round(20·e) particles, e = clamp((strength − threshold) / 0.25, 0, 1) (non-finite reads 0); each particle starts at the emitter (bottom centre, 0.1 R above the bottom edge) with a launch angle uniform within ±20° of vertical and a speed uniform in 3.0…4.0 R/s, drawn from a seeded SplitMix64 generator (default seed 0x5EED0008, restored at every loop restart).
+- **VIS-008-R3**: Motion: particles move under constant downward gravity G (Low 2.0, Medium 3.0, High 4.5 R/s²) and linear drag 0.8 per second, integrated by semi-implicit Euler with a fixed step of 1/240 s on the injected frame clock (step k starts at anchor + ⌊k·10⁹/240⌋ ns; at most 240 steps per frame, a longer gap is skipped), so a trajectory does not depend on the frame rate or on how frames divide time. An onset spawns at the first step starting at or after its time.
+- **VIS-008-R4**: Lifetime: a particle dies when its age reaches its lifetime (2.5 s), when it falls below −0.15 R or when |x| > 3 R; dead particles free their slot.
+- **VIS-008-R5**: Bounds: a pool of 512 particles and a queue of 32 pending onsets; a burst that does not fit is truncated and excess onsets are dropped, both counted; a live particle is never replaced; nothing is allocated per frame (Constitution VII).
 - **VIS-008-R6**: Determinism: the particle state at any time is a pure function of the seed, the configuration, the onset event log (times and strengths) and the loop restarts; no wall clock is read and no system randomness is used.
-- **VIS-008-R7**: Drawing: each particle is a small flat square in a palette colour chosen by its spawn sequence (ACC-003-R13), fading in over a short attack and out over its life, with alpha at most 0.8 (below full white: ACC-012), premultiplied over an opaque black background.
+- **VIS-008-R7**: Drawing: each particle is a flat square of side max(0.025 R, 2 px) in palette colour (spawn sequence mod 16) of 16 (ACC-003-R13), alpha 0.8 × min(1, age / 0.05 s) × (1 − age / lifetime) (at most 0.8, below full white: ACC-012), premultiplied over an opaque black background.
 - **VIS-008-R8**: Flash safety: every frame passes FX-019's envelope with the 17-area model built from the particles' squares (FX-019-R4, R9, FX-001-R10), as the other native visuals; overlapping particles are counted twice (an overestimate).
-- **VIS-008-R9**: Reduce Motion (ACC-001): bursts are halved (rounded up) and launch speeds scaled by 0.7, with gravity and drag scaled so the arc keeps its height and reach; the change applies to particles spawned afterwards.
+- **VIS-008-R9**: Reduce Motion (ACC-001): bursts are halved (rounded up) and the motion slowed by a time scale of 0.7 (launch speed × 0.7, gravity × 0.49, drag × 0.7, lifetime ÷ 0.7), so each particle traces the same arc 0.7 times as fast; the change applies to particles spawned afterwards.
 - **VIS-008-R10**: The app MUST offer "Particle Fountain" as a Visual choice (stored `particleFountain` under `settings.visual`) with Gravity (`settings.particleFountain.gravity`: `low`/`medium`/`high`, anything else → medium). Glow shared, Bars hidden. Switching does not restart the audio source; lifecycle and fallback are VIS-001-R12 to R16's. The key is an FR-065 user setting, in the FILE-005 backup policy and the device privacy allow list, and is reset by `-uitestResetNotice`.
 - **VIS-008-R11**: Scene capture records the particle fountain as no native layer (as VIS-003-R12).
 - **VIS-008-R12**: Accessibility (FR-070): one element labeled "Particle Fountain visualization", identifier `particleFountain`, value naming the gravity and glow (for example "Medium gravity, Glow off"); the new control has a stable identifier.
@@ -136,10 +150,10 @@ speeds with Reduce Motion off and on.
 
 - **VIS-008-S1**: A fixed seed and event log replayed twice give identical live and spawned counts and identical positions at every frame.
 - **VIS-008-S2**: The same seed and log replayed with 60 Hz, 30 Hz and irregular frame intervals give equal counts and positions within 1e-9 at shared sample times.
-- **VIS-008-S3**: A burst's size grows monotonically with onset strength and stays within its fixed minimum and maximum; the live count never exceeds the pool's capacity.
+- **VIS-008-S3**: A burst's size grows monotonically with onset strength and stays within 4…24; the live count never exceeds 512.
 - **VIS-008-S4**: With no drag a particle's path matches the closed-form ballistic path of the fixed step within 1e-9; with drag its speed never increases while it rises.
 - **VIS-008-S5**: Onset bursts alternating with silence at 60 Hz stay within the transition budget in all 17 areas with Reduce flashing on and off, with and without the strongest glow.
-- **VIS-008-S6**: With Reduce Motion on, a burst has at most half the particles (rounded up) and launch speeds 0.7 times as fast.
+- **VIS-008-S6**: With Reduce Motion on, a burst has half the particles (rounded up) and each particle's path is the same arc traced 0.7 times as fast (positions within 1e-9 at matching path times).
 - **VIS-008-S7**: The seeded picture passes its golden on the macOS host and the iOS Simulator.
 - **VIS-008-S8**: One UI test of at most 30 s chooses Particle Fountain with the source started once; the setting key persists (unit test).
 - **VIS-008-S9**: Every existing native visual and golden test passes; the package builds in the Linux shape.
