@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-013-T01–T11, T13, T14 verified on the Mac: app unit and acceptance tests and three UI tests on a private iOS 27.2 simulator; LibraryBackup package tests on the host. Open: UIX-013-T12 `{device}` on D1. Simulator results are not device evidence.)
 
 **Input**: User description: "Implement UIX-013 (Scene performance HUD) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Show current cue, next cue, tempo and audio source without covering output."
