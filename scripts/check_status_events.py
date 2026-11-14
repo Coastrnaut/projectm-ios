@@ -54,6 +54,8 @@ CHECKED = [
     "Views/LogoSection.swift",
     "Views/RecordingAudioSection.swift",  # REC-004-R9: recording audio announces through the router (X9a, X9b)
     "Coordinators/RecordingAudioSetting.swift",
+    "Views/RecordingQualitySection.swift",  # REC-005-R6: the fallback announces through the router (X9c)
+    "Coordinators/RecordingQualitySetting.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane
     "Views/EffectChainView.swift",  # FX-020-R9: moves and presets announce through the announcer
     "Views/SceneTagsView.swift",  # SCN-005-R13: tag edits announce on the library lane

@@ -104,6 +104,7 @@ final class RecordingQualityProfileTests: XCTestCase {
         guard case .record(let plan, let from, let reason) = r else { return XCTFail("\(r)") }
         XCTAssertEqual(plan.profile, .standard, "High is also HEVC-only: the first available below Max is Standard")
         XCTAssertEqual(plan.codec, .h264)
+        XCTAssertEqual(plan.settings.codecPreference, [.h264], "the writer never tries the unavailable codec")
         XCTAssertEqual(from, .max)
         XCTAssertEqual(reason, .hevcUnavailable)
         XCTAssertEqual(r.fallbackNotice, "Recording at Standard: Needs HEVC, which this device cannot encode.")
@@ -115,6 +116,9 @@ final class RecordingQualityProfileTests: XCTestCase {
         XCTAssertEqual(ok.fallbackNotice, nil)
         guard case .record(let plan, nil, nil) = ok else { return XCTFail("\(ok)") }
         XCTAssertEqual(plan.profile, .high)
+        let standard = RecordingQualityCatalog.availability(of: .standard, drawableWidth: phone.width, drawableHeight: phone.height,
+                                                            capabilities: StubCapabilities()).plan
+        XCTAssertEqual(standard?.settings, RecordingSettings.standard, "both codecs encodable: today's settings exactly")
         let none = RecordingQualityCatalog.resolve(.max, drawableWidth: phone.width, drawableHeight: phone.height,
                                                    capabilities: StubCapabilities(hevc: false, h264: false))
         XCTAssertEqual(none, .refuse)

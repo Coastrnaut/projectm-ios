@@ -99,10 +99,15 @@ public enum RecordingQualityCatalog {
             return .unavailable(.frameRateUnsupported(maximum: capabilities.maxFramesPerSecond))
         }
         let width: Int = geometry.outputWidth, height: Int = geometry.outputHeight
-        if let codec = settings.codecPreference.first(where: { (c: RecordingCodec) -> Bool in
+        // Only the encodable codecs stay in the plan's preference, so the writer uses the planned codec (with
+        // every codec encodable, Standard's settings stay `RecordingSettings.standard`).
+        let usable: [RecordingCodec] = settings.codecPreference.filter { (c: RecordingCodec) -> Bool in
             capabilities.canEncode(c, width: width, height: height)
-        }) {
-            return .available(RecordingProfilePlan(profile: profile, geometry: geometry, codec: codec, settings: settings))
+        }
+        if let codec = usable.first {
+            var planned: RecordingSettings = settings
+            planned.codecPreference = usable
+            return .available(RecordingProfilePlan(profile: profile, geometry: geometry, codec: codec, settings: planned))
         }
         let hevcOnly: Bool = settings.codecPreference == [.hevc]
         if hevcOnly && !capabilities.canEncode(.hevc, width: probeWidth, height: probeHeight) {

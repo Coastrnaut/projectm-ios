@@ -80,6 +80,8 @@ struct SettingsView: View {
     /// REC-004: "Include microphone audio" and the next recording's audio status (nil hides the section).
     var recordingAudio: RecordingAudioSetting?
     var recordingAudioStatus: (() -> String)?
+    /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
+    var recordingQuality: RecordingQualitySetting?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -410,6 +412,7 @@ struct SettingsView: View {
         if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
+        if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 

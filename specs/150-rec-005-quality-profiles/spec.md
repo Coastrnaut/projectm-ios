@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-005-T01-T13 verified on the Mac: package fixtures on the host, app and UI tests on the REC5 iOS 27.2 simulator; device task T14 `{device}` open)
 
 **Input**: User description: "Implement REC-005 (Record quality profiles) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Offer documented resolution and bitrate presets within device

@@ -365,6 +365,7 @@ struct VisualizerView: View {
                          midi: coordinator.midi,   // MIDI-001
                          recordingAudio: coordinator.recordingAudio,   // REC-004
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
+                         recordingQuality: coordinator.recordingQuality,   // REC-005
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          announcer: coordinator.announcer)   // ACC-005-R7

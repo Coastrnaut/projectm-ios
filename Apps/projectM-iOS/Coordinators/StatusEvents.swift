@@ -116,7 +116,7 @@ enum StatusEventCatalog {
         StatusEvent(id: "X8", kind: .capture, visibleText: notice, announcement: notice, cause: .user)
     }
 
-    // MARK: Recording (X9-X14a)
+    // MARK: Recording (X9-X14a; X9c REC-005)
 
     /// X9-X11: the recording state. `idle` is reached through the offered panel (X11); a stop reason or a
     /// failure shows its notice instead (X13, X14).
@@ -145,6 +145,12 @@ enum StatusEventCatalog {
     static func recordingAudioEnded() -> StatusEvent {
         let text: String = RecordingAudioDecision.endedText
         return StatusEvent(id: "X9b", kind: .recording, visibleText: text, announcement: text, cause: .system)
+    }
+
+    /// REC-005-R6: X9c, the recording that just started uses a lower profile than the one selected
+    /// ("Recording at Standard: Needs HEVC, which this device cannot encode.").
+    static func recordingQualityFallback(_ notice: String) -> StatusEvent {
+        StatusEvent(id: "X9c", kind: .recording, visibleText: notice, announcement: notice, cause: .user)
     }
 
     static func recordingRefusal(_ refusal: RecordingRefusal) -> StatusEvent {
@@ -179,6 +185,7 @@ enum StatusEventCatalog {
         if notice == recordingSaved {
             return StatusEvent(id: "X14a", kind: .recording, visibleText: notice, announcement: notice, cause: .user)
         }
+        if notice.hasPrefix(RecordingQualityCatalog.fallbackPrefix) { return recordingQualityFallback(notice) }   // X9c
         if let refusal = RecordingRefusal.allCases.first(where: { $0.notice == notice }) {
             return recordingRefusal(refusal)
         }
