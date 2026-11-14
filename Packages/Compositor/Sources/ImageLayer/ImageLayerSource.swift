@@ -18,6 +18,9 @@
 // parameters = a fit generation. The dependency read takes the slot exactly as `render` does, so the
 // generation reported is never newer than what `render` draws. A reused frame still counts in `framesShown`;
 // `renderCount` counts actual renders.
+// MED-006 (specs/127-med-006-image-slideshow, contract C3): `preload` decodes the next slide ahead into a
+// one-entry prepared slot; setting `content` to that URL adopts it synchronously, so a slide change is a
+// cut that renders once (no transparent frame) and changes the cache key exactly once.
 import Foundation
 
 /// What the photo layer shows.
@@ -96,11 +99,18 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
                 return s.generation
             }
             heldGeneration = generation   // CMP-013: the dropped image's key never matches again
+            // MED-006-R9: a slide decoded ahead by `preload` is adopted now, so the next frame draws it.
+            if case .file(let url) = content, slot.adoptPrepared(url, generation: generation) {
+                slot.notify()
+                return
+            }
             slot.notify()
             guard case .file(let url) = content else { return }
             let slot = self.slot, device = self.device, decoder = self.decoder, limits = self.limits
             loads.async {
-                let result = Self.load(url, device: device, decoder: decoder, limits: limits)
+                let result: Result<MTLTexture, ImageImportError> = slot.takePrepared(url).map {
+                    (texture: MTLTexture) -> Result<MTLTexture, ImageImportError> in .success(texture)
+                } ?? Self.load(url, device: device, decoder: decoder, limits: limits)
                 let stored: Bool = slot.lock.withLockUnchecked { s in
                     guard s.generation == generation else { return false }   // a newer content won
                     switch result {
@@ -115,6 +125,35 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
                 if stored { slot.notify() }
             }
         }
+    }
+
+    /// MED-006-R9 (contract C3): decodes `url` on the load queue into the prepared slot (one entry; a
+    /// newer preload replaces it). Changes neither `content`, `state` nor the drawn picture; setting
+    /// `content` to `url` later adopts the decoded texture at once. A failed decode leaves nothing.
+    public func preload(_ url: URL) {
+        let token: UInt64 = slot.lock.withLockUnchecked { s in
+            if s.preparedURL == url { return 0 }   // already prepared or in flight
+            s.preparedToken &+= 1
+            s.preparedURL = url
+            s.preparedTexture = nil
+            return s.preparedToken
+        }
+        guard token != 0 else { return }
+        let slot = self.slot, device = self.device, decoder = self.decoder, limits = self.limits
+        loads.async {
+            guard case .success(let texture) = Self.load(url, device: device, decoder: decoder, limits: limits) else { return }
+            slot.lock.withLockUnchecked { s in
+                if s.preparedToken == token, s.preparedURL == url { s.preparedTexture = texture }
+            }
+        }
+    }
+
+    /// The URL in the prepared slot (tests, diagnostics).
+    public var preparedURL: URL? { slot.lock.withLockUnchecked { $0.preparedURL } }
+
+    /// True when the prepared slot holds a decoded texture for `url`.
+    public func isPrepared(_ url: URL) -> Bool {
+        slot.lock.withLockUnchecked { $0.preparedURL == url && $0.preparedTexture != nil }
     }
 
     /// Tests only: returns when every load started so far has finished.
@@ -271,8 +310,34 @@ final class ImageLoadSlot: Sendable {
         var texture: MTLTexture?
         var state: ImageLayerState = .empty
         var handler: (@MainActor @Sendable (ImageLayerState) -> Void)?
+        /// MED-006: the slide decoded ahead (`preload`).
+        var preparedURL: URL?
+        var preparedTexture: MTLTexture?
+        var preparedToken: UInt64 = 0
     }
     let lock = OSAllocatedUnfairLock(uncheckedState: State())
+
+    /// Moves a prepared texture for `url` into the slot under `generation`; false when none is ready.
+    func adoptPrepared(_ url: URL, generation: UInt64) -> Bool {
+        lock.withLockUnchecked { s in
+            guard s.generation == generation, s.preparedURL == url, let texture = s.preparedTexture else { return false }
+            s.texture = texture
+            s.state = .ready(width: texture.width, height: texture.height)
+            s.preparedURL = nil
+            s.preparedTexture = nil
+            return true
+        }
+    }
+
+    /// The prepared texture for `url`, taken out of the prepared slot (load queue).
+    func takePrepared(_ url: URL) -> MTLTexture? {
+        lock.withLockUnchecked { s in
+            guard s.preparedURL == url, let texture = s.preparedTexture else { return nil }
+            s.preparedURL = nil
+            s.preparedTexture = nil
+            return texture
+        }
+    }
 
     /// Hands the state to the handler on the main actor, read when it is delivered (so the last
     /// delivery is always the current state, whatever order the deliveries run in).
