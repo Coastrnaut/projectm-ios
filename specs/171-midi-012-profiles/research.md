@@ -20,9 +20,9 @@
 
 ## MIDI-012-D3: Line kinds for the report
 
-- `cc:` readable by `MIDIControlBinding` → control change; `pc:` lines and `note:…=cue.go:` → scene (MIDI-007's
-  classifier, readable or not counted as scene when readable, else unread); `note:` readable → note trigger; `ccbtn:` →
-  CC button; `rt:` → real time; anything else, or an owned line that does not read → unread. The report counts each
+- A line is classified by the list that would own it and counted under its kind only when that list can read it:
+  `cc:` → control change; `pc:` and `note:…=cue.go:` (MIDI-007's classifier) → scene; other `note:` → note trigger;
+  `ccbtn:` → CC button; `rt:` → real time. Any other line, or an owned line that does not read, is unread. The report counts each
   kind and says "<n> lines are not used by this version and are kept as they are."
 
 ## MIDI-012-D4: Validation limits

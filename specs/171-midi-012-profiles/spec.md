@@ -107,7 +107,7 @@ lines equal the original byte for byte and in order.
 
 - **MIDI-012-R1**: A profile MUST hold a name, the mapping lines (ordered, verbatim) and optionally a local link (a system unique number).
 - **MIDI-012-R2**: Save Current MUST snapshot the stored mapping list verbatim under a new name ("Profile <n>", the lowest free number); Rename and Delete MUST edit the store.
-- **MIDI-012-R3**: Profiles MUST be stored in one versioned file under Application Support, written atomically, at most 32 profiles, 512 lines per profile, 256 UTF-8 bytes per line, 60 characters per name; a file the app cannot read MUST never be overwritten.
+- **MIDI-012-R3**: Profiles MUST be stored in one versioned file under Application Support, written atomically, at most 32 profiles, 512 lines per profile, 256 UTF-8 bytes per line, 60 characters per name, a store file of at most 4 MB; a file the app cannot read MUST never be overwritten.
 - **MIDI-012-R4**: Export MUST write a `.pmmidi` JSON document (format tag, version 1, name, lines) through the system file mover; it MUST NOT contain the link, dates or device names.
 - **MIDI-012-R5**: Import MUST read at most 128 KB, validate the document (format, version, name, line count, line length, no control characters) and refuse it with a message on any problem; a valid file is added as a new profile (never applied) with a report of line kinds and of lines this version cannot read.
 - **MIDI-012-R6**: Apply MUST replace `settings.midi.mappings` with the profile's lines verbatim and in order, reload the CC, trigger and scene mappings, and be one Undo step that restores the previous list exactly; it MUST be announced on the `.midi` lane.
@@ -115,8 +115,8 @@ lines equal the original byte for byte and in order.
 - **MIDI-012-R8**: A profile MAY be linked to a listed input with a system unique number; a listed linked input whose profile differs from the current list MUST be suggested, never applied automatically.
 - **MIDI-012-R9**: The profiles file MUST be excluded from the FILE-005 library backup and erased by FILE-011's Settings category; no new UserDefaults key.
 - **MIDI-012-R10**: The Profiles section MUST sit in the MIDI Mappings screen with Save Current, Apply, Rename, Delete, Export, Import and Link, each with an accessibility label; no animation.
-- **MIDI-012-R12**: A profile whose lines equal the current list MUST show "In use"; Delete MUST be confirmed; the export file name MUST be the sanitized profile name plus `.pmmidi`; Import MUST accept any data file and decide by content; an import with the same lines as an existing profile is added and reported as such.
 - **MIDI-012-R11**: The profile model, codec and validation MUST be pure Swift and pass on Linux.
+- **MIDI-012-R12**: A profile whose lines equal the current list MUST show "In use"; Delete MUST be confirmed; the export file name MUST be the sanitized profile name plus `.pmmidi`; Import MUST accept any data file and decide by content; an import with the same lines as an existing profile is added and reported as such.
 
 ### Key Entities
 
