@@ -13,6 +13,7 @@ extension SceneDocument {
             switch asset.kind {
             case .photo: copy.assets[key] = SceneAsset(.photo(storeID: newID), extra: asset.extra)
             case .video: copy.assets[key] = SceneAsset(.video(storeID: newID), extra: asset.extra)
+            case .logo: copy.assets[key] = SceneAsset(.logo(storeID: newID), extra: asset.extra)   // MED-010
             default: continue
             }
         }
@@ -25,6 +26,7 @@ extension SceneDocument {
             switch assets[key]?.kind {
             case let .photo(id)?: (key, .photo, id)
             case let .video(id)?: (key, .video, id)
+            case let .logo(id)?: (key, .logo, id)   // MED-010
             default: nil
             }
         }
