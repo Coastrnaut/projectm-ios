@@ -20,7 +20,7 @@ Task IDs carry the feature ID (`QA-009-T01…`). Simulator: "QA9 iPhone 17" (iOS
 **Independent test**: `PrimaryScreensAccessibilityUITests` default subset passes; a broken label or an unreachable control fails naming screen, layout and control.
 
 - [ ] QA-009-T04 [US1] [US2] Write `Apps/projectM-iOS/UITests/PrimaryScreensAccessibilityUITests.swift`: launch per layout, open each route, walk required controls (exists, label trimmed non-empty and ≠ identifier, wholly visible and hittable after at most one held drag ≤ 70 % of the visible area), run the audit per research D2 with the existing filters, failure messages per contract M3, 39 tests with AX3 skipped unless `QA009_FULL=1` (QA-009-R2-R7)
-- [ ] QA-009-T05 [US1] [US2] Run the default subset on QA9; fix every defect found in the views (QA-009-R9) and list each fix in this file
+- [ ] QA-009-T05 [US1] [US2] Run the default subset on QA9; fix every defect found in the views (QA-009-R9) and list each fix in this file; record per-test and total times (S3: each ≤ 30 s, subset < 10 min)
 - [ ] QA-009-T06 [US2] Run the full matrix once (`TEST_RUNNER_QA009_FULL=1`); fix AX3-only defects; record per-test times
 
 ## Phase 4: User Story 3 — identifiers checked without a simulator (P2)

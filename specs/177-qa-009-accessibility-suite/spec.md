@@ -35,7 +35,7 @@ editor), FILE-009 (Storage), MOD-010 (parameter macros, not built yet).
 Answered by Claude under the owner's standing approval (owner rules 4 and 9); each answer is the
 conservative option that delivers the roadmap row without duplicating ACC-004 and ACC-006.
 
-- Q: Which screens are "primary"? → A: Fourteen entries in one manifest: visualizer controls, Settings top, preset browser, scene switcher, show editor, MIDI mappings, Storage, Licenses, parameter inspector, parameter shelf (in the controls), effect order, recording quality, recording frame rate. Macros (MOD-010) are listed as "not built" and enter the manifest when their screen lands; the suite fails nothing for them.
+- Q: Which screens are "primary"? → A: Thirteen built screens in one manifest: visualizer controls, Settings top, preset browser, scene switcher, show editor, MIDI mappings, Storage, Licenses, parameter inspector, parameter shelf (in the controls), effect order, recording quality, recording frame rate. Macros (MOD-010) are noted in the manifest as "not built" and enter the manifest when their screen lands; the suite fails nothing for them.
 - Q: What is a "required control"? → A: Each manifest entry names the controls a user must be able to reach on that screen to use it (by accessibility identifier and element type): the screen's actions and its main settings, not every decorative row.
 - Q: Which layouts? → A: Portrait at the default text size (Large), AX3 and AX5. Landscape on iPad is not added now: it needs a second simulator and launch per screen (doubling run time), the app's layouts adapt by size class, and ACC-006 found no landscape-only defect; recorded as a later candidate.
 - Q: What does "reachable" mean? → A: The control exists, and after at most one scroll gesture from where the previous required control left the screen (or from the screen's opening position for the first one) it lies wholly in the visible area and can be hit.
@@ -146,3 +146,9 @@ only the default subset in a few minutes; the full matrix runs on demand.
 - iPhone 17 simulator, iOS 27.2, portrait; the feature's own simulator "QA9".
 - ACC-004 and ACC-006 suites stay as they are (they also test announcements, alerts, notices and input);
   this suite reuses their audit filters rather than copying them.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+- I1 (medium, fixed): the screen count read "Fourteen entries" against S1's 13; now 13 built screens plus a not-built note for macros.
+- C1 (medium, fixed): S3's 10-minute default-subset budget had no measuring task; QA-009-T05 now records per-test and total times.
+- Coverage: 11/11 requirements have tasks; no constitution issues; 0 critical.
