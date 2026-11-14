@@ -350,6 +350,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .id("visualOptions")   // UITestSettingsSection: bars and glow without drags (SceneUndoUITests)
     }
 
     /// VIS-004-R11: the Lissajous's plot and persistence.
