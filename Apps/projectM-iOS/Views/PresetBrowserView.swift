@@ -64,6 +64,8 @@ struct PresetBrowserView: View {
                 switch route {
                 case .list: UserPresetsView(presets: presets, userPresets: userPresets, onChoose: onChoose) { dismiss() }
                 case .quarantine: PresetQuarantineView(userPresets: userPresets) { dismiss() }
+                case .check:   // PRE-018
+                    if let integrity = userPresets.integrity { LibraryCheckView(model: integrity) { dismiss() } }
                 }
             }
             .navigationDestination(for: RecentRoute.self) { (_: RecentRoute) in
