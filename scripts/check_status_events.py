@@ -32,6 +32,7 @@ CHECKED = [
     "Views/CameraIndicator.swift",
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",
+    "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")
