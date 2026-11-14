@@ -48,13 +48,17 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// Its ID keeps the `audio.` binding-source prefix so every stored-binding path (MOD-013 restore,
     /// migrations) reads it, and an older version orphans it instead of dropping it (research MOD-007-D4).
     case lfo(Int)
+    /// MOD-015: one band's fast, medium or slow envelope (0-based band index 0…127), read from
+    /// `AudioFeatureFrame.bandEnvelopes` (a `BandEnvelopeBank`'s values).
+    case bandEnvelope(Int, BandEnvelopeProfile)
 
     /// The highest band index (the largest band count is 128).
     public static let maximumBandIndex = 127
 
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
     /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`,
-    /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.correlation`, `audio.lfo.<index>` (MOD-007).
+    /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.correlation`, `audio.lfo.<index>` (MOD-007),
+    /// `audio.bandEnvelope.<fast|medium|slow>.<index>` (MOD-015).
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -70,6 +74,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case .flatness: "audio.flatness"
         case .correlation: "audio.correlation"
         case let .lfo(index): "audio.lfo.\(index)"
+        case let .bandEnvelope(index, profile): "audio.bandEnvelope.\(profile.rawValue).\(index)"
         }
     }
 
@@ -95,6 +100,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
                 self = .band(index)
             } else if let index = Self.index(in: id, prefix: "audio.lfo.", maximum: Self.maximumLFOIndex) {
                 self = .lfo(index)
+            } else if let envelope = Self.bandEnvelope(in: id) {
+                self = envelope
             } else {
                 return nil
             }
@@ -103,6 +110,25 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
 
     /// MOD-007: the highest oscillator index (`LFOBank.maximumOscillators` − 1).
     public static let maximumLFOIndex = LFOBank.maximumOscillators - 1
+
+    /// MOD-015: `audio.bandEnvelope.<fast|medium|slow>.<band>`, or nil.
+    private static func bandEnvelope(in id: String) -> AudioFeatureSource? {
+        guard id.hasPrefix("audio.bandEnvelope.") else { return nil }
+        for profile in BandEnvelopeProfile.allCases {
+            let prefix: String = "audio.bandEnvelope." + profile.rawValue + "."
+            if let index = index(in: id, prefix: prefix, maximum: maximumBandIndex) { return .bandEnvelope(index, profile) }
+        }
+        return nil
+    }
+
+    /// The band a band-level source reads (`band`, `bandEnvelope`), for range checks; nil for other sources.
+    public var bandIndex: Int? {
+        switch self {
+        case let .band(index): index
+        case let .bandEnvelope(index, _): index
+        default: nil
+        }
+    }
 
     /// The decimal index after `prefix` (no sign, no leading zeros, at most `maximum`), or nil.
     private static func index(in id: String, prefix: String, maximum: Int) -> Int? {
@@ -150,6 +176,11 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case let .lfo(index):
             guard index >= 0, index < frame.lfos.count else { return 0 }
             return min(max(Self.finite(frame.lfos[index]), 0), 1)
+        case let .bandEnvelope(index, profile):   // MOD-015: band-major, 3 per band
+            guard index >= 0 else { return 0 }
+            let i: Int = index * BandEnvelopeBank.profileCount + profile.index
+            guard i < frame.bandEnvelopes.count else { return 0 }
+            return min(max(Self.finite(frame.bandEnvelopes[i]), 0), 1)
         }
     }
 
@@ -181,11 +212,15 @@ public struct AudioFeatureFrame {
     /// MOD-007: the scene's oscillator values (0…1) by position, borrowed like `bands`; empty when the producer
     /// has no oscillators (every `.lfo` source then reads 0).
     public var lfos: UnsafeBufferPointer<Double>
+    /// MOD-015: every band's fast, medium and slow envelope, band-major (`band · 3 + profile.index`), borrowed like
+    /// `bands`; empty when the producer has no envelope bank (every `.bandEnvelope` source then reads 0).
+    public var bandEnvelopes: UnsafeBufferPointer<Double>
 
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
                 centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil,
                 highTransient: Float? = nil, rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
-                lfos: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0)) {
+                lfos: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0),
+                bandEnvelopes: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0)) {
         self.bands = bands
         self.onset = onset
         self.beatConfidence = beatConfidence
@@ -198,6 +233,7 @@ public struct AudioFeatureFrame {
         self.flatness = flatness
         self.correlation = correlation
         self.lfos = lfos
+        self.bandEnvelopes = bandEnvelopes
     }
 
     /// No audio: every feature reads 0.

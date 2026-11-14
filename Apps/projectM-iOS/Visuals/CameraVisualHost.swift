@@ -512,6 +512,7 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
             (UIScene.willConnectNotification, { host, note in if ExternalDisplayScenes.affectsDeviceVisuals(note) { host.sceneWillConnect() } }),
             (ProcessInfo.thermalStateDidChangeNotification, { host, _ in host.qualityChanged() }),
             (Notification.Name.NSProcessInfoPowerStateDidChange, { host, _ in host.qualityChanged() }),
+            (PowerProfileState.didChangeNotification, { host, _ in host.qualityChanged() }),   // PERF-008-R4
         ]
         for (name, action) in observed {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] (note: Notification) in

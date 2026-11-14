@@ -15,6 +15,8 @@
 // * OSC-003 (specs/191-osc-003-parameter-routes, contract R3): `routes` is the OSC Routes list; values applied
 //   through a route are read on the same gated refresh and handed to `applyLiveValues`, the live-value path
 //   MIDI-003 uses (then MOD-002 and the ACC-012 clamp). Live values are memory only; turning OSC off forgets them.
+// * OSC-008 (specs/200-osc-008-peer-allowlist): `peers` is Approved Devices; its blocked list and count are read on the
+//   same gated refresh.
 // The test value feeds nothing that renders (OSC-001-R7). The networking itself lives in
 // PerformanceControl's OSCTransport/ folder (FR-068 amendment, ADR-0008).
 import Foundation
@@ -37,6 +39,8 @@ final class OSCReceiverCoordinator {
     private(set) var liveValues: [ParameterID: Double] = [:]
     /// OSC-003-R10: the OSC Routes list (nil in tests that do not need it).
     var routes: OSCRoutesCoordinator?
+    /// OSC-008: Approved Devices (nil in tests that do not need it).
+    var peers: OSCPeersCoordinator?
     /// OSC-003: messages to addresses that are not on the route list, since launch.
     private(set) var unknownAddressCount = 0
 
@@ -79,9 +83,15 @@ final class OSCReceiverCoordinator {
 
     func setEnabled(_ enabled: Bool) {
         settings.oscEnabled = enabled
-        if !enabled { receiver.dispatcher.clearLiveValues() }   // OSC-003-R5: off returns the manual values
+        if !enabled {
+            receiver.dispatcher.clearLiveValues()   // OSC-003-R5: off returns the manual values
+            peers?.oscTurnedOff()                   // OSC-008-R11: blocked hosts are forgotten
+        }
         apply()
     }
+
+    /// OSC-008: the receiver's peer allowlist, checked per datagram.
+    var peerAllowlist: OSCPeerAllowlist { receiver.peerAllowlist }
 
     /// OSC-003: replaces the receiver's route allowlist.
     func setRoutes(_ routes: [OSCRoute]) {
@@ -126,6 +136,7 @@ final class OSCReceiverCoordinator {
         let counters = receiver.counters
         rateLimitedCount = counters.rateLimited + counters.coalesced
         unknownAddressCount = counters.unknownAddresses
+        peers?.refresh(droppedUnapproved: counters.droppedUnapproved)   // OSC-008: on the gated refresh only
         var live: [ParameterID: Double] = receiver.dispatcher.liveValues
         live[OSCReceiverCatalog.testValueID] = nil   // OSC-001-R7: the test value feeds nothing that renders
         if live != liveValues {

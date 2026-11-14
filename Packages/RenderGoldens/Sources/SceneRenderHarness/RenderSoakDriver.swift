@@ -175,7 +175,7 @@ public final class RenderSoakDriver {
     public func run(_ configuration: RenderSoakConfiguration) -> RenderSoakReport {
         let started = Date()
         let state = SoakState(configuration: configuration)
-        let usesDevice = device.currentAllocatedSize > 0
+        let usesDevice = device.currentAllocatedSize > 0 && !Self.isParavirtual(device)
         loop(state, usesDevice: usesDevice)
         let cycles = configuration.scenes.isEmpty ? 0 : configuration.frames / configuration.cycleFrames
         let settings: [String: String] = [
@@ -190,7 +190,7 @@ public final class RenderSoakDriver {
             "reduceFlashing": "on",
         ]
         return RenderSoakReport(name: configuration.name, platform: Self.platform,
-                                memorySource: usesDevice ? "deviceAllocatedSize" : "poolEstimate",
+                                memorySource: usesDevice ? "deviceAllocatedSize" : (Self.isParavirtual(device) ? "poolEstimate (paravirtual GPU)" : "poolEstimate"),
                                 width: configuration.resolution.width, height: configuration.resolution.height,
                                 frames: configuration.frames, simulatedSeconds: configuration.simulatedSeconds,
                                 wallSeconds: Date().timeIntervalSince(started), switches: state.switches, cycles: cycles,
@@ -339,6 +339,15 @@ public final class RenderSoakDriver {
                 state.leakedBytes += t.allocatedSize > 0 ? t.allocatedSize : TexturePool.estimatedBytes(d)
             }
         }
+    }
+
+    /// Research QA-006-D2b: a virtual machine's paravirtual GPU (CI's macOS runners) grows `currentAllocatedSize` in
+    /// ~1 MB driver steps every few scene builds for the whole soak while the pool, the live objects and the process
+    /// footprint stay flat (run 43631161188: +4.2 MB over 20 cycles, footprint 38.6 → 38.6 MB). There the soak judges
+    /// the pool estimate plus injected device leaks instead, which still catches both negative controls. Real
+    /// devices and Apple GPUs keep `deviceAllocatedSize`.
+    public static func isParavirtual(_ device: MTLDevice) -> Bool {
+        device.name.localizedCaseInsensitiveContains("paravirtual")
     }
 
     /// The process's physical footprint (`TASK_VM_INFO`), nil when unavailable. Reported only.

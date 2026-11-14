@@ -119,6 +119,23 @@ final class CacheCleanupTests: XCTestCase {
         XCTAssertTrue(plan.refused.isEmpty, "a missing root is not refused")
     }
 
+    // REC-010-R7, S5: the recording library is user data: never cleanable, a cache root inside it is refused.
+    func testSavedRecordingsAreNeverCleanable() throws {
+        let library = "/c/Library/Application Support/RecordingLibrary"
+        XCTAssertFalse(StorageCategory.savedRecordings.isCleanable)
+        XCTAssertTrue(StorageCategory.recordings.isCleanable)
+        let fs = FakeFileSystem([library: .directory, "\(library)/take.mp4": .file(10), recordings: .directory, "\(recordings)/x.mp4": .file(5)])
+        let cleaner = CacheCleaner(fileSystem: fs)
+        let saved = try cleaner.plan(CacheCleanupRequest(container: container, cacheRoots: [.savedRecordings: [library]],
+                                                         protectedRoots: [library], inUse: []))
+        XCTAssertEqual(saved.refused[library], .notCleanable)
+        XCTAssertTrue(saved.isEmpty)
+        let plan = try cleaner.plan(CacheCleanupRequest(container: container, cacheRoots: [.recordings: [recordings, library]],
+                                                        protectedRoots: [library], inUse: []))
+        XCTAssertEqual(paths(plan), ["\(recordings)/x.mp4"])
+        XCTAssertEqual(plan.refused[library], .overlapsProtected)
+    }
+
     // FILE-010-R5: an in-use file is kept, its folder entered, its siblings planned.
     func testInUseFilesAreKeptAndTheirFoldersEntered() throws {
         let fs = FakeFileSystem([

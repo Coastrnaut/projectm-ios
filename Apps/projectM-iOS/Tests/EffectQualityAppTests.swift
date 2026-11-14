@@ -20,6 +20,10 @@ final class EffectQualityAppTests: XCTestCase {
         guard let device = MTLCreateSystemDefaultDevice() else { throw XCTSkip("No Metal device in this simulator") }
         let host = try NativeSpectrumHost.make(device: device, reader: nil, style: .circular, barCount: .b32, glow: glow ?? self.glow)
         try host.bloom?.prepare(width: 1179, height: 2556)   // the frame loop does this on its first frame
+        // PERF-008: these tests measure the Standard profile. The profile is process-wide and the test host app may
+        // have restored Battery saver that a UI test left in the simulator's defaults.
+        PowerProfileState.current = .standard
+        addTeardownBlock { @MainActor in PowerProfileState.current = .standard }
         host.thermalOverride = thermal
         host.lowPowerOverride = false
         host.refreshQuality()

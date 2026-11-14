@@ -158,14 +158,25 @@ final class RecordingQualitySetting {
     static func deviceCapabilities() -> any RecordingEncoderCapabilities {
         let info = ProcessInfo.processInfo
         return DisplayBoundCapabilities(encoder: encoder, maxFramesPerSecond: screen?.maximumFramesPerSecond ?? 60,
-                                        renderLimit: renderLimit(thermal: ThermalLevel(info.thermalState), lowPower: info.isLowPowerModeEnabled))
+                                        renderLimit: renderLimit(thermal: ThermalLevel(info.thermalState), lowPower: info.isLowPowerModeEnabled,
+                                                                 budget: PowerProfileState.budget(lowPower: info.isLowPowerModeEnabled)))
     }
 
     /// REC-006-D4: the render loop's cap from QualityGovernor's rules (nil when it runs at full rate).
-    static func renderLimit(thermal: ThermalLevel, lowPower: Bool) -> RecordingRenderLimit? {
-        let cap: Int = QualityGovernor.settings(thermal: thermal, lowPower: lowPower).maxFramesPerSecond
+    /// PERF-008-R8: with the power budget; the reason is the system's (Low Power, thermal) when it alone caps,
+    /// else Battery saver.
+    static func renderLimit(thermal: ThermalLevel, lowPower: Bool, budget: PowerBudget = .standard) -> RecordingRenderLimit? {
+        let cap: Int = QualityGovernor.settings(thermal: thermal, lowPower: lowPower, adaptiveEffects: false,
+                                                budget: budget).maxFramesPerSecond
         guard cap < QualitySettings.full.maxFramesPerSecond else { return nil }
-        return RecordingRenderLimit(reason: lowPower ? .lowPowerMode : .thermal, maximumFramesPerSecond: cap)
+        let systemCap: Int = QualityGovernor.settings(thermal: thermal, lowPower: lowPower).maxFramesPerSecond
+        let reason: RecordingRenderLimit.Reason
+        if systemCap <= cap {
+            reason = lowPower ? .lowPowerMode : .thermal
+        } else {
+            reason = .batterySaver
+        }
+        return RecordingRenderLimit(reason: reason, maximumFramesPerSecond: cap)
     }
 
     /// The screen's native size in pixels, portrait (zero before a scene connects).

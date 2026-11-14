@@ -30,10 +30,13 @@ struct ShowEditorView: View {
     /// SCN-011: the template gallery (catalog read when it opens).
     @State private var templateCatalog: SceneTemplateCatalog?
 
+    /// SCN-015: the scene is locked (edits hidden or disabled; Go to Cue and Assign MIDI stay).
+    private var locked: Bool { show.isEditLocked }
+
     var body: some View {
         cueList
         .navigationTitle("Show")
-        .toolbar { if !show.list.cues.isEmpty { EditButton() } }
+        .toolbar { if !show.list.cues.isEmpty && !locked { EditButton() } }   // SCN-015-R6
         .alert("Rename Cue", isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             TextField("Label", text: $renameText).accessibilityIdentifier("showRenameField")
             Button("Rename") {
@@ -76,6 +79,7 @@ struct ShowEditorView: View {
                     Button("OK") { show.dismissEditorMessage() }
                 }
             }
+            if locked { Section { SceneLockNote() } }   // SCN-015-R6
             Section {
                 Button {
                     addCurrentScene()
@@ -88,7 +92,7 @@ struct ShowEditorView: View {
                         Text("Add Current Scene").fixedSize(horizontal: false, vertical: true)
                     }
                 }
-                .disabled(show.list.cues.count >= ShowCueList.maximumCues)
+                .disabled(show.list.cues.count >= ShowCueList.maximumCues || locked)
                 .accessibilityIdentifier("showAddCurrentScene")
                 addFromTemplateButton   // SCN-011
                 if !show.list.cues.isEmpty { sceneFoldersLink }   // SCN-004
@@ -98,6 +102,8 @@ struct ShowEditorView: View {
             Section(show.list.cues.isEmpty ? "No cues" : "Cues") {
                 ForEach(Array(show.list.cues.enumerated()), id: \.element.id) { (index: Int, cue: ShowCue) in
                     row(cue, number: index + 1)
+                        .deleteDisabled(locked)   // SCN-015-R6: no swipe-to-delete
+                        .moveDisabled(locked)     // and no drag reorder
                 }
                 .onMove { (offsets: IndexSet, destination: Int) in show.move(fromOffsets: offsets, toOffset: destination) }
                 .onDelete { (offsets: IndexSet) in
@@ -132,7 +138,7 @@ struct ShowEditorView: View {
                 Text("Add from Template…").fixedSize(horizontal: false, vertical: true)
             }
         }
-        .disabled(show.list.cues.count >= ShowCueList.maximumCues)
+        .disabled(show.list.cues.count >= ShowCueList.maximumCues || locked)
         .accessibilityIdentifier("showAddFromTemplate")
     }
 
@@ -216,31 +222,12 @@ struct ShowEditorView: View {
         return content
             .contextMenu {
                 Button("Go to Cue") { show.go(to: cue.id) }
-                Button("Rename…") { renameText = cue.label; renaming = cue }
-                Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
-                    .disabled(missing || full)
-                Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
+                if !locked { editMenuItems(cue, missing: missing, full: full) }   // SCN-015-R6
                 if midiMappings != nil { Button("Assign MIDI…") { assigningMIDI = cue } }   // MIDI-007-R8
-                Button("Transition…") { editingTransition = cue }   // SCN-007
-                Button("Delete", role: .destructive) { show.remove(cue.id) }
             }
             .swipeActions(edge: .leading) {
                 Button("Go") { show.go(to: cue.id) }.tint(.accentColor)
-                // SCN-003: also here (the context menu's live blur over the visualizer is slow to settle).
-                if !missing {
-                    Button("Duplicate") { show.duplicateScene(of: cue.id) }
-                        .tint(.indigo)
-                        .disabled(full)
-                        .accessibilityLabel("Duplicate Scene")
-                        .accessibilityIdentifier("showDuplicateScene")
-                    Button("Name") { startSceneRename(cue) }
-                        .tint(.gray)
-                        .accessibilityLabel("Rename Scene")
-                        .accessibilityIdentifier("showRenameScene")
-                }
-                Button("Transition") { editingTransition = cue }   // SCN-007
-                    .tint(.orange)
-                    .accessibilityIdentifier("showCueTransition")
+                if !locked { editSwipeActions(cue, missing: missing, full: full) }   // SCN-015-R6
                 if midiMappings != nil {   // MIDI-007-R8
                     Button("MIDI") { assigningMIDI = cue }
                         .tint(.teal)
@@ -250,17 +237,48 @@ struct ShowEditorView: View {
             }
     }
 
+    @ViewBuilder private func editMenuItems(_ cue: ShowCue, missing: Bool, full: Bool) -> some View {
+        Button("Rename…") { renameText = cue.label; renaming = cue }
+        Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
+            .disabled(missing || full)
+        Button("Rename Scene…") { startSceneRename(cue) }.disabled(missing)
+        Button("Transition…") { editingTransition = cue }   // SCN-007
+        Button("Delete", role: .destructive) { show.remove(cue.id) }
+    }
+
+    @ViewBuilder private func editSwipeActions(_ cue: ShowCue, missing: Bool, full: Bool) -> some View {
+        // SCN-003: also here (the context menu's live blur over the visualizer is slow to settle).
+        if !missing {
+            Button("Duplicate") { show.duplicateScene(of: cue.id) }
+                .tint(.indigo)
+                .disabled(full)
+                .accessibilityLabel("Duplicate Scene")
+                .accessibilityIdentifier("showDuplicateScene")
+            Button("Name") { startSceneRename(cue) }
+                .tint(.gray)
+                .accessibilityLabel("Rename Scene")
+                .accessibilityIdentifier("showRenameScene")
+        }
+        Button("Transition") { editingTransition = cue }   // SCN-007
+            .tint(.orange)
+            .accessibilityIdentifier("showCueTransition")
+    }
+
     private func rowActions(_ content: AnyView, cue: ShowCue, number: Int) -> some View {
         content
             .accessibilityAction(named: "Go to Cue") { show.go(to: cue.id) }
-            .accessibilityAction(named: "Rename") { renameText = cue.label; renaming = cue }
-            .accessibilityAction(named: "Duplicate Scene") { show.duplicateScene(of: cue.id) }
-            .accessibilityAction(named: "Rename Scene") { startSceneRename(cue) }
             .accessibilityAction(named: "Assign MIDI") { if midiMappings != nil { assigningMIDI = cue } }   // MIDI-007-R8
-            .accessibilityAction(named: "Transition") { editingTransition = cue }   // SCN-007
-            // ACC-004-R3: reordering without Edit mode's drag handles.
-            .accessibilityAction(named: "Move Up") { move(number - 1, by: -1) }
-            .accessibilityAction(named: "Move Down") { move(number - 1, by: 1) }
+            .accessibilityActions { if !locked { editAccessibilityActions(cue, number: number) } }   // SCN-015-R6
+    }
+
+    @ViewBuilder private func editAccessibilityActions(_ cue: ShowCue, number: Int) -> some View {
+        Button("Rename") { renameText = cue.label; renaming = cue }
+        Button("Duplicate Scene") { show.duplicateScene(of: cue.id) }
+        Button("Rename Scene") { startSceneRename(cue) }
+        Button("Transition") { editingTransition = cue }   // SCN-007
+        // ACC-004-R3: reordering without Edit mode's drag handles.
+        Button("Move Up") { move(number - 1, by: -1) }
+        Button("Move Down") { move(number - 1, by: 1) }
     }
 
     /// Moves the cue at `index` one place up (-1) or down (+1); nothing at either end.

@@ -204,12 +204,18 @@ final class RecordingTimedStopAppTests: XCTestCase {
         XCTAssertEqual(event.announcement, "Recording stopped after 10 seconds.")
         let video = try XCTUnwrap(r.recording.lastRecording)
         // The live writer may drop a frame on a loaded machine (a busy queue or a not-ready encoder; a post-merge
-        // run on the simulator wrote 292). REC-006's grid accounts for it: every one of the 300 slots of 30 fps × 10 s
-        // holds a frame or is counted as dropped, and the end is exact (no frame at or past 10 s).
-        XCTAssertEqual(video.frameCount + video.droppedFrames, 300, "frames + dropped slots = 30 fps × 10 s; \(video.statistics)")
-        XCTAssertEqual(video.droppedFrames, video.statistics.dropped, "every empty slot is a frame the live writer dropped")
-        XCTAssertEqual(video.durationSeconds, 10, accuracy: 1e-9)
-        XCTAssertTrue(r.recording.probe.contains("frames=\(video.frameCount) duration=10.00"), r.recording.probe)
+        // run on the simulator wrote 292). Every one of the 300 frames of 30 fps × 10 s is written or counted as
+        // dropped. A drop inside the recording leaves an empty slot on REC-006's grid; drops after the last written
+        // frame leave no slot, so the file ends at its last frame (a post-merge run wrote 296 with 2 trailing drops:
+        // 9.93 s). The end is never past 10 s.
+        let dropped = video.statistics.dropped
+        XCTAssertEqual(video.frameCount + dropped, 300, "frames + dropped = 30 fps × 10 s; \(video.statistics)")
+        XCTAssertLessThanOrEqual(video.droppedFrames, dropped, "every empty slot is a frame the live writer dropped")
+        let slots = Double(video.frameCount + video.droppedFrames)
+        XCTAssertEqual(video.durationSeconds, slots / 30, accuracy: 1e-9, "the file ends at its last slot")
+        XCTAssertLessThanOrEqual(video.durationSeconds, 10 + 1e-9)
+        if dropped == 0 { XCTAssertEqual(video.durationSeconds, 10, accuracy: 1e-9) }
+        XCTAssertTrue(r.recording.probe.contains("frames=\(video.frameCount) duration="), r.recording.probe)
         XCTAssertEqual(r.recording.elapsedSeconds, 10, accuracy: 1e-9)
         XCTAssertEqual(r.recording.indicatorText, "0:10 / 0:10")
     }

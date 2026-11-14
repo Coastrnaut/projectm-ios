@@ -32,6 +32,7 @@ extension SceneSnapshotCoordinator {
         }
         self.history = history
         self.announce = announce
+        sceneLock = settings.sceneLock   // SCN-015
         reload()
     }
 }

@@ -50,10 +50,10 @@ extension NativeSpectrumHost {
     /// The glow is switched on and can run: the ladder has an effect to reduce.
     var adaptiveEffectsOn: Bool { glow.enabled && !glowUnavailable }
 
-    /// The governor's settings for the current inputs (PERF-003-R7).
+    /// The governor's settings for the current inputs (PERF-003-R7), capped by the power profile (PERF-008-R3).
     var governedQuality: QualitySettings {
         QualityGovernor.settings(thermal: Self.governorThermal(effectThermal), lowPower: effectLowPower,
-                                 adaptiveEffects: adaptiveEffectsOn)
+                                 adaptiveEffects: adaptiveEffectsOn, budget: PowerProfileState.budget(lowPower: effectLowPower))
     }
 
     /// Reads the device's thermal state and Low Power Mode, or their overrides.

@@ -55,6 +55,8 @@ struct SettingsView: View {
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
     /// MED-013: Settings › Storage › Missing Media (nil hides the row).
     var missingMedia: MissingMediaCoordinator? = nil
+    /// REC-010: Settings › Storage › Recordings (nil hides the row).
+    var recordingLibrary: RecordingLibraryModel? = nil
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
@@ -98,6 +100,8 @@ struct SettingsView: View {
     var cameraLens: CameraLensChoice? = nil
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
+    /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
+    var powerProfile: PowerProfileSetting? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
@@ -232,10 +236,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                visualChoiceSection
-                visualOptionsSection
-                smoothingSection
-                mediaSections
+                SceneLockSection(lock: settings.sceneLock)   // SCN-015
+                sceneEditSections
+                safetySections
                 performanceSection
                 audioSections
                 tailSections
@@ -469,6 +472,20 @@ struct SettingsView: View {
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
+    }
+
+    /// SCN-015-R6: everything that edits the scene, disabled while the scene is locked (safety stays reachable).
+    private var sceneEditSections: some View {
+        Group {
+            visualChoiceSection
+            visualOptionsSection
+            smoothingSection
+            mediaSections
+        }
+        .disabled(settings.sceneLock.isLocked)
+    }
+
+    @ViewBuilder private var safetySections: some View {
         SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }
@@ -481,6 +498,7 @@ struct SettingsView: View {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
         .id("performance")
+        if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
     }
 
     @ViewBuilder private var audioSections: some View {
@@ -522,8 +540,9 @@ struct SettingsView: View {
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
         Section {
-            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
-                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)
+            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013, REC-010
+                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia,
+                                 recordingLibrary: recordingLibrary)   // REC-010
             }
                 .accessibilityIdentifier("storageLink")
             NavigationLink("Licenses") { LicensesView() }
@@ -791,6 +810,10 @@ struct SettingsView: View {
             if let routes = osc.routes {   // OSC-003-R10
                 NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
                     .accessibilityIdentifier("oscRoutesLink")
+            }
+            if let peers = osc.peers {   // OSC-008-R9
+                NavigationLink { OSCPeersView(peers: peers) } label: { LabeledContent("Approved Devices", value: peers.summaryText) }
+                    .accessibilityIdentifier("oscPeersLink")
             }
         } header: {
             Text("OSC")
