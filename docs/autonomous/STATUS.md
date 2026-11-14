@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T04:51:46Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T05:01:42Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 214 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 108 |
+| integrated | 109 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 5 | 0 | 1 | 80 | 1 |
-| P1 | 123 | 2 | 0 | 26 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 5 | 0 | 81 | 1 |
+| P1 | 123 | 2 | 26 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 217 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
+- 216 features are not implemented yet (first: ACC-003, ACC-005, ACC-007, ACC-008, ACC-009)
 
 ## Integrated
 
@@ -36,6 +35,7 @@ The physical-device suite may **not** start:
 | ACC-001 | Reduce motion mode | `c5433e4` | `feature/acc-001` |
 | ACC-002 | Reduced flash preset policy | `61c926cb8b59` | `feature/acc-002` |
 | ACC-004 | VoiceOver scene browser | `ff69b64` | `feature/acc-004` |
+| ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
 | ANL-002 | Log-frequency bands | `493269c77462` | `feature/anl-002` |
 | ANL-003 | Spectral smoothing | `214fa36` | `feature/anl-003` |
@@ -173,10 +173,11 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `237e51651b67` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-004/20261113T194946/docs.log`)
 - `post-merge: projectM-iOSTests 387 + AccessibilityScreens/ShowCue/ReduceMotion/Oscilloscope UI tests 11`: pass at `ff69b64` (log `.autonomous/logs/integration/acc-004/app-tests.log`)
 
-### ACC-006 Dynamic Type inspector (unit_passed)
+### ACC-006 Dynamic Type inspector (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/docs.log`)
 - `swift test --package-path Packages/CaptureUI`: pass at `a356ef676c45` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-006/20261113T233346/swift-test_CaptureUI.log`)
+- `post-merge in 3 batches: projectM-iOSTests 430 + AccessibilityScreens 7 + DynamicTypeInspector 30, all pass; inspector tests 14-103 s each (over the 30 s budget; shortening in chore/ui-test-budget-2)`: pass at `bb1439c7` (log `.autonomous/logs/integration/acc-006/app-tests.log`)
 
 ### ANL-001 Windowed FFT (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0d0eb4b9f656` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-001/20261113T061117/compliance.log`)
