@@ -7,3 +7,8 @@ extension LayerKind {
     /// MED-010 (logo) may lift the limit.
     public static let photo = LayerKind("photo", maximumInstances: 1)
 }
+
+extension LayerKind {
+    /// MED-010: the logo overlay, the top layer of a compositor visual (one per stack).
+    public static let logo = LayerKind("logo", maximumInstances: 1)
+}
