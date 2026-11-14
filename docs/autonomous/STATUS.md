@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T02:05:10Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T02:05:41Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 224 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 99 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 5 | 1 | 80 | 1 |
-| P1 | 133 | 1 | 17 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 5 | 1 | 0 | 80 | 1 |
+| P1 | 133 | 0 | 1 | 17 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -211,6 +212,12 @@ None.
 - `swift test --package-path Packages/AnalysisFeatures`: pass at `cff52d8eb33b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-005/20261113T094159/swift-test_AnalysisFeatures.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `cff52d8eb33b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-005/20261113T094159/swift-test_VisualGenerators.log`)
 - `integration checkout: AnalysisFeatures 91 on iOS 27.2 sim in 34 s; 91 (1 skipped) with -DANALYSIS_NO_ACCELERATE in 50 s; test-speed UI run with the full library 11/11 in 235 s; 0 PosterBoard reports`: pass at `18a7b93` (log `.autonomous/logs/integration/anl-005/analysis-sim.log`)
+
+### ANL-006 Tempo confidence indicator (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `020487c9f27a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-006/20261113T210514/swift-test_PerformanceControl.log`)
 
 ### ANL-016 Analysis event bus (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/compliance.log`)
