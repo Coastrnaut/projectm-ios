@@ -51,6 +51,10 @@ approved."
   gate. The consequence is a limit on claims, not on development: compatibility and performance
   claims cover only the device classes and OS versions actually tested (FR-062).
 
+### Session 2026-11-14
+
+- Q: Later features add actions to the controls (Switch Source, Black out, Lock scene, Save Frame, Record, Performance layout). Where do they go in compact width (FR-087)? → A: In a secondary row of icon buttons above the main row. The main row holds only the FR-082 controls (Stop, Pause/Resume, Previous, Next, Random, Presets, Settings) and stays one row at standard text sizes; both rows wrap only at accessibility sizes (ACC-006). A single grid of all 13 buttons needed 416 pt and wrapped on a 402 pt iPhone (fix 2026-11-14). A "More" menu was rejected: it would hide one-tap show actions (Black out) behind two taps.
+
 ## Delivery Gating *(mandatory for this feature)*
 
 This feature is delivered in stages. Each stage maps to the constitution's phases and gates:
