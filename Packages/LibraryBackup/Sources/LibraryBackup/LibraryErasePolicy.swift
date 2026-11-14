@@ -1,5 +1,5 @@
 // LibraryErasePolicy.swift — FILE-011 contract E1 (specs/120-file-011-local-data-erase; research
-// FILE-011-D4, D7; ADR-0045): what each erase category removes. The folder names are the stores' own
+// FILE-011-D4, D7; ADR-0048): what each erase category removes. The folder names are the stores' own
 // (an app test checks they agree); the setting keys come from FILE-005's lists, so a key added to the
 // backup is classified here too (a package test checks every key is erased by exactly one category or
 // deliberately kept).

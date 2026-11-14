@@ -1,4 +1,4 @@
-// LibraryEraser.swift — FILE-011 contracts E3-E5 (FILE-011-R4-R6; research FILE-011-D2, D3; ADR-0045):
+// LibraryEraser.swift — FILE-011 contracts E3-E5 (FILE-011-R4-R6; research FILE-011-D2, D3; ADR-0048):
 // plans an erase and runs it all or nothing.
 //
 //   1. Plan (reads only): the chosen categories' folders that exist, the keys to remove, and — when

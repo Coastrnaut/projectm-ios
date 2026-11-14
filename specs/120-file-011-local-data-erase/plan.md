@@ -65,7 +65,7 @@ Re-checked after Phase 1 design: unchanged.
 
 ```text
 specs/120-file-011-local-data-erase/  plan.md research.md data-model.md quickstart.md contracts/library-erase.md tasks.md
-docs/adr/<next>-local-data-erase.md
+docs/adr/0048-local-data-erase.md
 Packages/LibraryBackup/Sources/LibraryBackup/LibraryErasePolicy.swift      (new)
 Packages/LibraryBackup/Sources/LibraryBackup/LibraryEraseInventory.swift   (new)
 Packages/LibraryBackup/Sources/LibraryBackup/LibraryEraser.swift           (new: plan, run, recover)
@@ -75,7 +75,10 @@ Apps/projectM-iOS/Coordinators/LibraryEraseCoordinator.swift              (new)
 Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift             (owns it; launch hook; mutual exclusion)
 Apps/projectM-iOS/Coordinators/LibrarySettingsBridge.swift                (remove keys; read named keys)
 Apps/projectM-iOS/Views/LibraryEraseSection.swift                         (new: section, sheet, confirmation)
-Apps/projectM-iOS/Views/StorageUsageView.swift                            (one line: the section)
+Apps/projectM-iOS/Views/StorageUsageView.swift                            (two lines: the section, last; the sheet)
+Apps/projectM-iOS/Views/LibraryBackupSection.swift                        (Restore disabled while an erase waits)
+Apps/projectM-iOS/Debug/UITestLibraryBackup.swift                         (sheet body split for the type checker)
+scripts/check_status_events.py                                            (the erase files are checked)
 Apps/projectM-iOS/Tests/LibraryEraseAppTests.swift                        (new)
 Apps/projectM-iOS/UITests/LibraryEraseUITests.swift                       (new)
 docs/privacy-policy.md

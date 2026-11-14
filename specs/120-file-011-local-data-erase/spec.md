@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FILE-011-T01-T12 verified on the Mac Studio: LibraryBackup package tests on the host, app unit tests and UI tests on an own iOS 27.2 simulator; the Linux job is left to CI). ADR-0048.
 
 **speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T08/T09, R2 T09/T11, R3 T04/T08, R4 T01/T03/T05, R5 T01/T05, R6 T03/T06, R7 T10, R8 T07, R9 T02, R10 T09, R11 T12; S1 T05, S2 T06, S3 T07, S4 T07, S5 T11). Fixes applied: R8 named in T07; R7 (stores load empty after an erase) and the pending-restore exclusion get app tests in T10.
 
@@ -147,7 +147,7 @@ and videos.") and it is announced on the `library` lane.
 - **FILE-011-R7**: After an erase the app starts as with a fresh library for the erased categories: every store reads its folder as empty, no error is shown, and bundled presets play.
 - **FILE-011-R8**: Erasing photos and videos while scenes name them leaves the scenes unchanged; their media reads as "no longer stored" (SCN-003-R9).
 - **FILE-011-R9**: Counts and sizes per category come from the library itself (records counted by their stores' readers, as defined in Clarifications; sizes of the category's folders by FILE-009's measurement; settings have no size), measured off the main thread.
-- **FILE-011-R10**: The sheet and confirmation use standard rows and text that wraps at accessibility sizes; nothing animates; every control has an accessibility label; VoiceOver reads each category as "<name>, <count>, <size>, checked|not checked".
+- **FILE-011-R10**: The sheet and confirmation use standard rows and text that wraps at accessibility sizes; nothing animates; every control has an accessibility label; VoiceOver reads each category as "<name>, <count> items, <size>" with the Selected trait when chosen.
 - **FILE-011-R11**: No networking, no new permission, public APIs only; the privacy policy and the Storage footer say the erase removes data only on this device.
 
 ### Key Entities
