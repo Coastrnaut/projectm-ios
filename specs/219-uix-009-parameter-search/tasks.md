@@ -26,3 +26,8 @@
 ## Dependencies
 
 T01 → T02, T03 → T04 → T05, T06 → T07 → T08 → T09. No new UserDefaults key (spec Assumptions), so no key lists change. No `{device}` task.
+
+## speckit-analyze (2026-11-14)
+
+Coverage: R1→T01/T05, R2→T01/T02, R3→T02/T05, R4→T02, R5→T03/T04/T05, R6→T04/T06, R7→T07, R8→T04/T06; S1→T05, S2→T05, S3→T06, S4→T01 (by construction).
+Findings applied: (1) S4 has no timing test (owner rule: no wall-clock assertions); it is met by construction — one linear pass over the catalog per keystroke — and stated so in plan.md Performance Goals. (2) Terminology: "on screen" is used throughout for the current-visual mark (not "current layer"), since the mark never filters. No critical issues.
