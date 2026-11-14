@@ -122,7 +122,7 @@ unit tests of the edit rules (sorting, limits, add and remove).
 1. **Given** a layer without a gradient, **When** the author picks Linear, **Then** a left-to-right
    gradient from alpha 1 to alpha 0 appears with two stops.
 2. **Given** a gradient with two stops, **When** the author taps Add Stop, **Then** a third stop
-   appears between the widest gap, with the alpha the gradient has there (the picture is unchanged).
+   appears at the middle of the widest gap, with the alpha the gradient has there (the picture is unchanged).
 3. **Given** eight stops, **Then** Add Stop is disabled; **given** two stops, **then** remove is
    disabled.
 4. **Given** a stop moved past its neighbour, **Then** the stops are kept in position order.
@@ -191,10 +191,10 @@ and a radial gradient (with and without a shape mask); compare bytes.
 - **CMP-008-R10**: The layer inspector MUST edit the gradient's kind, direction (linear) or radius
   (radial) and its stops (add, remove, position, alpha) within the limits of R2, with help, VoiceOver
   adjustable controls and one undo step per drag or choice.
-- **CMP-008-R12**: Geometry MUST use layer fractions for points and the layer's shorter side for the
-  radial radius, so a radial gradient stays round on any output aspect.
 - **CMP-008-R11**: A gradient change applied to the stack MUST show from the next frame without
   re-creating the layer or its pictures.
+- **CMP-008-R12**: Geometry MUST use layer fractions for points and the layer's shorter side for the
+  radial radius, so a radial gradient stays round on any output aspect.
 
 ### Key Entities
 
