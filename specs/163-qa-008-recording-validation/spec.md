@@ -130,7 +130,11 @@ prints the report and exits non-zero when the file fails.
 - **QA-008-R10**: The timestamp, duration and frame-count rules (R3-R5) and the verdict MUST be plain
   logic over numbers, built and tested without the media frameworks (Linux).
 - **QA-008-R11**: A fixture corpus MUST be generated at test time (never committed as binaries): good
-  fixtures and one bad fixture per fault in R2-R8, each failing with exactly its reason.
+  fixtures and one bad file for every fault in R2-R8 that a real writer can produce (gap, duplicate,
+  wrong duration, truncated, wrong frame rate, audio offset, audio missing or unexpected, wrong codec,
+  location metadata), each failing with exactly its reason. Faults a writer refuses to produce
+  (decreasing times, a wrong first time, a wrong audio format, audio breaks, a missing marker, other
+  metadata) MUST be covered by tests on synthetic measurements.
 - **QA-008-R12**: The corpus MUST run in the package tests CI already runs on the macOS host, without
   needing a GPU, within the test budget (a few seconds per fixture).
 - **QA-008-R13**: The existing REC-003, REC-004 and REC-015 read-back assertions MUST use the validator
@@ -150,8 +154,8 @@ prints the report and exits non-zero when the file fails.
 
 - **QA-008-S1**: Every good fixture passes and each of the bad fixtures fails with exactly its expected
   reason code (one corpus test run on the macOS host).
-- **QA-008-S2**: The corpus runs in CI's existing macOS host package step, before any device step, in
-  under 30 s for the whole corpus.
+- **QA-008-S2**: The corpus runs in CI's existing macOS host package step on every push, so a bad file
+  fails CI before the final device phase; the whole corpus takes under 30 s.
 - **QA-008-S3**: The timestamp rules are covered by synthetic series tests that pass on Linux.
 - **QA-008-S4**: The REC-003/004/015 tests pass using the validator with no assertion removed.
 - **QA-008-S5**: A device export can be checked with one documented command.

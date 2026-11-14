@@ -8,7 +8,7 @@ most 10 s; the corpus under 30 s; no wall-clock assertions.
 ## Phase 1: Foundational (blocks every story)
 
 - [ ] QA-008-T01 Write the plain-Swift rules in `Packages/Compositor/Sources/FrameRecording/RecordingValidation.swift`: `RecordingExpectation` (defaults: allowedCodecs ["hvc1", "avc1"], frameRate 30, startTick 0, syncToleranceSeconds 0.020), `RecordingMeasurement`, `RecordingIssue` with the 17 codes of data-model.md, `RecordingValidationReport`, `checkTimestamps` and `evaluate` with research D6's precedence; no Apple imports (QA-008-R1-R10)
-- [ ] QA-008-T02 [P] Write `RecordingValidationRulesTests.swift` in `Packages/Compositor/Tests/FrameRecordingTests/`: synthetic series for each timestamp code, duration and frame-count rules, precedence, audio, marker and metadata rules; Foundation and XCTest only (QA-008-S3)
+- [ ] QA-008-T02 [P] Write `RecordingValidationRulesTests.swift` in `Packages/Compositor/Tests/FrameRecordingTests/`: synthetic series for each timestamp code (including a single frame), duration and frame-count rules, precedence, and synthetic measurements for the faults no writer produces (`notIncreasing`, `firstTimeNotAtStart`, `audioFormat`, `audioNotContiguous`, `syncMarkerMissing`, `markerTimeMismatch`, `unexpectedMetadata`); Foundation and XCTest only (QA-008-S3)
 
 ## Phase 2: User Story 1 - Bad recordings fail CI (P1) MVP
 
