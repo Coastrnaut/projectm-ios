@@ -55,6 +55,27 @@ First walk of the inspector suite at the largest accessibility size, before any 
 
 (Answered under the owner's standing delegation, rule 4: recommended option chosen.)
 
+- Q: Is the "inspector" an in-app overlay, a test suite, or both? → A: The inspector is the UI test
+  suite with its size and survey switches. An in-app DEBUG overlay that outlines clipped text is not
+  built: SwiftUI exposes no public way to ask a `Text` whether it truncated, so an overlay would
+  guess from frames, while the system audit's clipped-text check already measures the rendered text
+  (research ACC-006-D1). Nothing ships in Release (R8 holds trivially).
+- Q: Which sizes get fixed tests? → A: AX5 (largest) and AX3 (middle) for every screen group; AX1,
+  AX2, AX4 and the largest standard size through the survey switch on demand (owner rule 7).
+- Q: How do the controls behave when taller than the screen? → A: They scroll inside their own
+  backing (only at accessibility sizes, only when they do not fit) and take the height above them
+  first; the visualization stays visible above them. Not a sheet: the controls stay one tap away.
+- Q: How do one-line names behave at accessibility sizes? → A: Wrap to at most three lines, keeping
+  the middle truncation after that; the preset editor's Name field becomes a wrapping field (Return →
+  space) only at accessibility sizes, so standard-size behaviour and other suites are unchanged.
+- Q: System-owned elements flagged by the audit (navigation-bar buttons, alerts, large titles)? → A:
+  Filter per element with the reason (iOS draws them, and offers the Large Content Viewer for bar
+  items); never filter an app-owned element.
+- Q: Should the cue Rename (context menu and VoiceOver action only) get a visible button? → A: No:
+  the show editor's swipe actions (Go, Duplicate, Name) and VoiceOver actions already offer the scene
+  actions, and long press works at every text size; adding buttons to each row would crowd the AX5
+  layout. Recorded as a known hidden-gesture path (R4's alternative clause).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Use every core control at the largest text size (Priority: P1)
