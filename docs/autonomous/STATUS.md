@@ -10,8 +10,8 @@
 | State | Features |
 |---|---|
 | audited | 168 |
-| unit_passed | 6 |
-| integrated | 150 |
+| unit_passed | 5 |
+| integrated | 151 |
 | blocked | 1 |
 | skipped_existing | 1 |
 
@@ -20,14 +20,14 @@
 | Priority | audited | unit_passed | integrated | blocked | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 0 | 1 |
-| P1 | 83 | 5 | 63 | 0 | 0 |
+| P1 | 83 | 4 | 64 | 0 | 0 |
 | P2 | 74 | 1 | 3 | 1 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 174 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 173 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 - 1 feasible features are blocked (first: AUD-010); strict completion allows none
 
 ## Integrated
@@ -130,6 +130,7 @@ The physical-device suite may **not** start:
 | MIDI-002 | MIDI input monitor | `c7cd1169` | `feature/midi-002` |
 | MIDI-003 | MIDI learn | `d6ec9dc5e426` | `feature/midi-003` |
 | MIDI-004 | MIDI CC scaling | `6ac0c21c` | `None` |
+| MIDI-006 | MIDI note triggers | `22974302a3ed` | `None` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -1213,7 +1214,7 @@ The physical-device suite may **not** start:
 - `swift test --package-path Packages/PerformanceControl`: pass at `baadcbe1ee17` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-004/20261114T070939/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
-### MIDI-006 MIDI note triggers (unit_passed)
+### MIDI-006 MIDI note triggers (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc7e11f8e2cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-006/20261114T084721/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `bc7e11f8e2cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-006/20261114T084721/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `bc7e11f8e2cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-006/20261114T084721/script-tests.log`)
