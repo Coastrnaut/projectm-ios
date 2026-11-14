@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T06:42:46Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T06:43:51Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,8 +10,8 @@
 | State | Features |
 |---|---|
 | audited | 206 |
-| implementing | 2 |
-| unit_passed | 1 |
+| implementing | 1 |
+| unit_passed | 2 |
 | integrated | 116 |
 | skipped_existing | 1 |
 
@@ -20,7 +20,7 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 3 | 0 | 0 | 83 | 1 |
-| P1 | 117 | 2 | 1 | 31 | 0 |
+| P1 | 117 | 1 | 2 | 31 | 0 |
 | P2 | 77 | 0 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
@@ -795,6 +795,14 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `0f694e45ec38` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-014/20261113T145558/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `0f694e45ec38` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-014/20261113T145558/swift-test_Compositor.log`)
 - `post-merge: Compositor scheme on iPhone 17 sim (CompositorTests 183 incl. SafeDecoderIsolationTests, MediaSniffing 20, others); projectM-iOSTests 234; SafeMediaUITests 21.0 s, Photo, Video UI tests`: pass at `31e16534f057` (log `.autonomous/logs/integration/med-014/compositor-sim.log`)
+
+### MIDI-001 MIDI endpoint discovery (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `b12c71c61e6a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-001/20261114T014257/swift-test_PerformanceControl.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)
