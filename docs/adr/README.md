@@ -55,5 +55,6 @@
 | [0058](0058-osc-peer-allowlist.md) | Optional OSC peer allowlist: store user-approved local hosts on the device, show recently blocked hosts in memory | Accepted 2026-11-14 (OSC-008; owner rule 4) |
 | [0059](0059-photos-add-only-permission.md) | Add-only Photos permission, requested only when the user taps Save to Photos; the full-library key stays forbidden | Accepted 2026-11-14 (REC-011; owner rule 4) |
 | [0060](0060-recording-aspect-and-output-cap.md) | Recording aspect presets crop to fill in the encoder's scaler; every output has a per-device size cap | Accepted 2026-11-14 (REC-014; owner rule 4) |
+| [0061](0061-recording-fragmented-writing-and-salvage.md) | Recordings are written as movie fragments; a writer failure keeps the usable part (amends REC-003-R17) | Accepted 2026-11-14 (REC-016; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

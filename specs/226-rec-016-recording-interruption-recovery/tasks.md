@@ -5,7 +5,7 @@
 
 ## Phase 1: Setup
 
-- [ ] REC-016-T01 Write ADR-0061 (fragmented writing, salvage of usable output, amends REC-003-R17 / ADR-0027) in docs/adr/0061-recording-fragmented-writing-and-salvage.md and list it in docs/adr/README.md
+- [X] REC-016-T01 Write ADR-0061 (fragmented writing, salvage of usable output, amends REC-003-R17 / ADR-0027) in docs/adr/0061-recording-fragmented-writing-and-salvage.md and list it in docs/adr/README.md — Verified 2026-11-14: ADR written and listed (0060 is the highest in the main checkout); validate_docs OK
 
 ## Phase 2: Foundational
 
