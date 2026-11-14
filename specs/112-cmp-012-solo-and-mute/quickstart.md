@@ -11,8 +11,8 @@ Run on the Mac from the repository root (or the feature worktree).
    during and after), mute, multi-solo, solo plus mute, three group cases, bit-identical restore,
    0 preparations and 0 allocations caused by the overlay.
 4. Documents: `swift test --package-path Packages/SceneFormat --filter SceneSoloMuteTests`.
-5. GPU time (opt-in, Mac only, not device evidence):
-   `CMP012_BENCH=1 swift test -c release --package-path Packages/Compositor --filter LayerSoloMuteCompositeTests/testBench`.
+5. GPU time (opt-in, Mac only, not device evidence; `-DDEBUG` because other tests in the target use DEBUG-only hooks):
+   `CMP012_BENCH=1 swift test -c release -Xswiftc -DDEBUG --package-path Packages/Compositor --filter LayerSoloMuteCompositeTests/testBench`.
 6. Regression: full Compositor and SceneFormat suites, RenderGoldens, ImportFuzz, ShowControl,
    SceneArchive, app unit tests on an own iOS 27.2 simulator.
 
