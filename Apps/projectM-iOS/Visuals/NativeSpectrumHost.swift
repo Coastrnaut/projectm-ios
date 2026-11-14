@@ -883,7 +883,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// FR-049: frame-rate cap and render scale follow the thermal state and Low Power Mode.
     private func observeFrameRatePressure() {
         let center = NotificationCenter.default
-        for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
+        for name in QualityGovernor.changeNotifications {   // PERF-008: the power profile too
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.refreshQuality() }
             })

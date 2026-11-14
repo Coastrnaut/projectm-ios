@@ -79,7 +79,7 @@ extension AppCoordinator {
             frameDrops.stop()
             return []
         }
-        let drops: [String] = frameDropLines()   // PERF-007: after the stage and budget lines
+        let drops: [String] = frameDropLines() + powerProfileLines()   // PERF-007, then PERF-008-R9
         let report: FrameStageReport = Self.injectingSlowStage(timer.report())
         let native: NativeSpectrumHost? = showsNativeVisual ? nativeVisual : nil
         let cap: Int? = native?.qualitySettings.maxFramesPerSecond
@@ -87,6 +87,13 @@ extension AppCoordinator {
         guard let native else { return report.lines + verdict.lines + drops }
         native.effectBudget = verdict.flagged.isEmpty ? .within : .over   // PERF-003-R3
         return report.lines + verdict.lines + [native.effectQualityLine] + drops
+    }
+
+    /// PERF-008-R9: `power <profile> <fps> fps <scale>x` while the active budget is not Standard's.
+    func powerProfileLines() -> [String] {
+        let line: String? = PowerProfileSetting.overlayLine(profile: PowerProfileState.current,
+                                                            lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
+        return line.map { (l: String) -> [String] in [l] } ?? []
     }
 
     /// PERF-002-R1: the lower of the screen's maximum refresh rate and the frame-rate cap every visual's display

@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PERF-008-T01-T15 verified: Rendering tests on the feature's iOS 27.2 simulator
+"PERF8", host package tests, app unit and UI tests on "PERF8"; no device claim). Open: T16 `{device}` (D1 energy and
+frame time). Simulator results are not performance evidence.
 
 **Input**: User description: "Implement PERF-008 (Battery saver profile) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Offer explicit low-power settings beyond automatic thermal governor." Acceptance,

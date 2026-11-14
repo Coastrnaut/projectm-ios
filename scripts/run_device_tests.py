@@ -99,6 +99,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.qualityProfile",   # REC-005-R7 (record quality profile; Standard by default)
                 "settings.recording.frameRate",   # REC-006-R8 (record frame rate; Profile default by default)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
+                "settings.performance.powerProfile",   # PERF-008-R6 (power profile; Standard by default)
                 "settings.externalDisplay.fit", "settings.externalDisplay.shape",   # OUT-004-R8 (external output correction)
                 "settings.externalDisplay.pixelAspect",   # OUT-004-R8
                 "settings.recording.timedStop",   # REC-008-R9 (stop recording after a length; Off by default)

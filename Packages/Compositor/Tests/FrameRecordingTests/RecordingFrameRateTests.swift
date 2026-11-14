@@ -182,6 +182,7 @@ final class RecordingFrameRateTests: XCTestCase {
             (RateCapabilities(maxFramesPerSecond: 30), "This display shows at most 30 fps."),
             (RateCapabilities(renderLimit: RecordingRenderLimit(reason: .lowPowerMode)), "Low Power Mode limits the visual to 30 fps."),
             (RateCapabilities(renderLimit: RecordingRenderLimit(reason: .thermal)), "The device is too warm; the visual is limited to 30 fps."),
+            (RateCapabilities(renderLimit: RecordingRenderLimit(reason: .batterySaver)), "Battery saver limits the visual to 30 fps."),   // PERF-008-R8
             (RateCapabilities(encoderLimit: 30), "This device encodes at most 30 fps at 1178×2560."),
         ]
         for (caps, text) in cases {
