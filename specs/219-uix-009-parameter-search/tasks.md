@@ -9,14 +9,14 @@
 
 ## Phase 2: User Story 1 — find and open (P1, MVP)
 
-- [ ] UIX-009-T03 Add `ParameterSearchRows` (rows with name, group, value or "Read only", on-screen groups per visual) in `Apps/projectM-iOS/Coordinators/ParameterSearchModel.swift` (R5, D6, D7)
-- [ ] UIX-009-T04 Add `ParameterSearchLinkSection` and `ParameterSearchView` (`.searchable`, rows as buttons with the S4 identifiers and VoiceOver values) in `Apps/projectM-iOS/Views/ParameterSearchView.swift`; one line in `SettingsView.mediaSections` before Modulation, `.id("parameterSearch")`; choosing calls `inspectParameter` (R5, R6, R8)
-- [ ] UIX-009-T05 Acceptance unit tests in `Apps/projectM-iOS/Tests/ParameterSearchAppTests.swift` with the real catalog: identical IDs for "radius", "%", "bars", "orientation" with no layer, the circular and the linear visual; unit queries "%", "ms", "Hz" equal the catalog's unit sets; row values and on-screen marks (S1, S2)
-- [ ] UIX-009-T06 UI test `Apps/projectM-iOS/UITests/ParameterSearchUITests.swift`: circular visual, Settings › Search Parameters, type "orientation", choose `visual.linearSpectrum.orientation`, the inspector shows it; under 30 s
+- [X] UIX-009-T03 Add `ParameterSearchRows` (rows with name, group, value or "Read only", on-screen groups per visual) in `Apps/projectM-iOS/Coordinators/ParameterSearchModel.swift` (R5, D6, D7) — Verified 2026-11-14: ParameterSearchAppTests (6 tests pass on the UIX9 iPhone 17 iOS 27.2 simulator)
+- [X] UIX-009-T04 Add `ParameterSearchLinkSection` and `ParameterSearchView` (`.searchable`, rows as buttons with the S4 identifiers and VoiceOver values) in `Apps/projectM-iOS/Views/ParameterSearchView.swift`; one line in `SettingsView.mediaSections` before Modulation, `.id("parameterSearch")`; choosing calls `inspectParameter` (R5, R6, R8) — Verified 2026-11-14: ParameterSearchUITests passes (22.8 s): Settings row, searchable list, row identifiers/VoiceOver label and value, opens the inspector
+- [X] UIX-009-T05 Acceptance unit tests in `Apps/projectM-iOS/Tests/ParameterSearchAppTests.swift` with the real catalog: identical IDs for "radius", "%", "bars", "orientation" with no layer, the circular and the linear visual; unit queries "%", "ms", "Hz" equal the catalog's unit sets; row values and on-screen marks (S1, S2) — Verified 2026-11-14: `-only-testing:projectM-iOSTests/ParameterSearchAppTests` 6/6 pass (0.017 s)
+- [X] UIX-009-T06 UI test `Apps/projectM-iOS/UITests/ParameterSearchUITests.swift`: circular visual, Settings › Search Parameters, type "orientation", choose `visual.linearSpectrum.orientation`, the inspector shows it; under 30 s — Verified 2026-11-14: `-only-testing:projectM-iOSUITests/ParameterSearchUITests` 1/1 pass (22.8 s)
 
 ## Phase 3: User Story 2 — empty and no-result states (P2)
 
-- [ ] UIX-009-T07 Empty query lists every parameter under group headers; no-match shows `parameterSearchEmpty` (R7); covered by T05 (rows grouping) and T06 (asserts the no-result text for a nonsense query first)
+- [X] UIX-009-T07 Empty query lists every parameter under group headers; no-match shows `parameterSearchEmpty` (R7); covered by T05 (rows grouping) and T06 (asserts the no-result text for a nonsense query first) — Verified 2026-11-14: testEmptyQuerySectionsFollowTheCatalogGroups and the UI test's "zzz" empty state
 
 ## Phase 4: Polish
 
