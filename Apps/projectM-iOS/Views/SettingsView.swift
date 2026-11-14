@@ -185,184 +185,18 @@ struct SettingsView: View {
         }
     }
 
+    // Split into separately type-checked sections (2026-11-14): as one List the body took
+    // 406-438 ms to type-check on Xcode 27 (-warn-long-function-bodies), CI's Xcode 26 limit risk.
     var body: some View {
         NavigationStack {
             List {
-                // VIS-002-F1 (2026-11-13): one row per visual instead of a segmented control. Four
-                // segments ("projectM", "Circular Spectrum", "Linear Spectrum", "Camera") truncate on
-                // narrow iPhones and at large text sizes; rows never do. Row identifiers: `visual.<raw>`.
-                Section("Visual") {
-                    ForEach(VisualChoice.allCases, id: \.self) { choice in
-                        Button {
-                            choose(choice)   // UIX-015-R1: Camera may explain first
-                        } label: {
-                            HStack {
-                                Text(choice.title).foregroundStyle(Color.primary)   // ACC-004: label colour; `.primary` in a button resolves to the tint (blue failed the contrast audit)
-                                Spacer(minLength: 8)
-                                if settings.visual == choice {
-                                    Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityHidden(true)
-                                }
-                            }
-                            .contentShape(Rectangle())
-                        }
-                        .accessibilityAddTraits(settings.visual == choice ? .isSelected : [])
-                        .accessibilityIdentifier("visual.\(choice.rawValue)")
-                    }
-                }
-                Section {
-                    if settings.visual.isNative {
-                        if settings.visual != .oscilloscope {   // VIS-003: no bars on a waveform
-                            Picker("Bars", selection: $settings.circularSpectrumBars) {
-                                ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
-                            }
-                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
-                            .accessibilityLabel("Bars")
-                            .accessibilityIdentifier("barsPicker")
-                        }
-                        if settings.visual == .oscilloscope {   // VIS-003-R10
-                            Picker("Line", selection: $settings.oscilloscopeLine) {
-                                ForEach(OscilloscopeLine.allCases, id: \.self) { Text($0.title).tag($0) }
-                            }
-                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
-                            .accessibilityLabel("Line")
-                            .accessibilityIdentifier("oscilloscopeLinePicker")
-                            Picker("Window", selection: $settings.oscilloscopeWindowMilliseconds) {
-                                ForEach(AppSettings.oscilloscopeWindowChoices, id: \.self) { Text("\($0) ms").tag($0) }
-                            }
-                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
-                            .accessibilityLabel("Window")
-                            .accessibilityIdentifier("oscilloscopeWindowPicker")
-                        }
-                        if settings.visual == .linearSpectrum {
-                            Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
-                                ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
-                            }
-                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
-                            .accessibilityLabel("Orientation")
-                            .accessibilityIdentifier("orientationPicker")
-                            Picker("Spacing", selection: $settings.linearSpectrumSpacing) {
-                                ForEach(AppSettings.linearSpectrumSpacingChoices, id: \.value) { Text($0.title).tag($0.value) }
-                            }
-                            .segmentedUnlessAccessibilitySize()   // ACC-006-R1
-                            .accessibilityLabel("Spacing")
-                            .accessibilityIdentifier("spacingPicker")
-                        }
-                        Toggle("Glow", isOn: $settings.glowEnabled)
-                            .accessibilityIdentifier("glowToggle")
-                        if settings.glowEnabled {
-                            glowSlider(AccessibleParameterCatalog.glowIntensity, target: Self.glowTarget(settings, \.glowIntensity),
-                                       text: Self.percent(settings.glowIntensity))
-                            glowSlider(AccessibleParameterCatalog.glowRadius, target: Self.glowTarget(settings, \.glowRadius),
-                                       text: Self.percent(settings.glowRadius, decimals: 1))
-                            glowSlider(AccessibleParameterCatalog.glowThreshold, target: Self.glowTarget(settings, \.glowThreshold),
-                                       text: Self.percent(settings.glowThreshold))
-                        }
-                    }
-                } header: {
-                    Text("Visual")
-                } footer: {
-                    if nativeVisualUnavailable && settings.visual.replacesProjectM {
-                        Text("\(settings.visual.title) isn't available on this device, so projectM is shown.")
-                            .accessibilityIdentifier("nativeVisualUnavailableFooter")
-                    } else {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
-                            if settings.visual.isNative {
-                                if glowUnavailable {
-                                    Text(AppCoordinator.glowUnavailableMessage)
-                                        .accessibilityIdentifier("glowUnavailableFooter")
-                                } else {
-                                    Text("Glow adds a soft halo around the bright parts; dark areas stay dark.")
-                                }
-                            }
-                        }
-                    }
-                }
-                // ANL-003-R6: attack and release of the spectra's bars (Instant = today's look). A section
-                // of its own, so the Visual section and its footer keep their place.
-                if settings.visual == .circularSpectrum || settings.visual == .linearSpectrum {
-                    Section {
-                        Picker("Attack", selection: $settings.spectrumAttackMilliseconds) {
-                            ForEach(AppSettings.spectrumAttackChoices, id: \.self) { Text(AppSettings.smoothingTitle(milliseconds: $0)).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                        .accessibilityLabel("Attack")
-                        .accessibilityIdentifier("smoothingAttackPicker")
-                        Picker("Release", selection: $settings.spectrumReleaseMilliseconds) {
-                            ForEach(AppSettings.spectrumReleaseChoices, id: \.self) { Text(AppSettings.smoothingTitle(milliseconds: $0)).tag($0) }
-                        }
-                        .pickerStyle(.segmented)
-                        .accessibilityLabel("Release")
-                        .accessibilityIdentifier("smoothingReleasePicker")
-                    } header: {
-                        Text("Smoothing")
-                    } footer: {
-                        Text("Attack sets how quickly bars rise to a louder sound, Release how slowly they fall. Instant shows each analysis as it comes.")
-                    }
-                }
-                if let layerInspector { layersSection(layerInspector) }   // CMP-015
-                if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
-                    cameraSection
-                }
-                if settings.visual.usesPhoto, let photos {
-                    photoSection(photos)
-                }
-                if settings.visual.usesVideo, let videos {
-                    videoSection(videos)
-                }
-                if settings.visual.usesText, let texts {
-                    textSection(texts)
-                }
-                if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
-                SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
-                ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable)   // FR-072 (own view: ACC-012 body budget)
-                Section {
-                    Toggle("Performance overlay", isOn: $settings.showsPerformanceOverlay)
-                        .accessibilityIdentifier("performanceOverlayToggle")
-                } footer: {
-                    Text("Shows the frame rate and the audio state over the visualization.")
-                }
-                if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
-                if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
-                if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
-                if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
-                oscSection
-                if let midi { MIDISettingsSection(midi: midi) }   // MIDI-001-R8
-                if let show {   // SHOW-001-R14
-                    Section {
-                        NavigationLink {
-                            ShowEditorView(show: show, addCurrentScene: addCurrentScene)
-                        } label: {
-                            LabeledContent("Show", value: show.hasCues ? "\(show.list.cues.count) \(show.list.cues.count == 1 ? "cue" : "cues")" : "No cues")
-                        }
-                        .accessibilityIdentifier("showEditorLink")
-                    }
-                }
-                if let openGuide {   // UIX-001-R8
-                    Section {
-                        Button("Guided first scene", action: openGuide)
-                            .accessibilityIdentifier("guidedFirstSceneButton")
-                    } footer: {
-                        Text("A short guide to making a scene. Everything stays on this device.")
-                    }
-                }
-                Section {
-                    NavigationLink("Storage") { StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup) }   // FILE-009, FILE-010, FILE-005
-                        .accessibilityIdentifier("storageLink")
-                    NavigationLink("Licenses") { LicensesView() }
-                        .accessibilityIdentifier("licensesLink")
-                    LabeledContent("Version",
-                                   value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
-                }
-                #if DEBUG
-                // PERF-010-T15 ({device}): a real crash for the recovery check on D1. Debug builds only.
-                Section {
-                    Button("Crash now (DEBUG)", role: .destructive) { fatalError("PERF-010 DEBUG crash button") }
-                        .accessibilityIdentifier("debugCrashButton")
-                } footer: {
-                    Text("Debug builds only: ends the app abnormally to test session recovery.")
-                }
-                #endif
+                visualChoiceSection
+                visualOptionsSection
+                smoothingSection
+                mediaSections
+                performanceSection
+                audioSections
+                tailSections
             }
             .navigationTitle("Settings")
             .toolbar {
@@ -373,6 +207,199 @@ struct SettingsView: View {
         .accessibilityIdentifier("settings")
         .environment(\.parameterAnnouncer, announcer)   // ACC-005-R7
         .permissionExplainerSheet(explainers)   // UIX-015: over Settings, right before iOS's prompt
+    }
+
+    @ViewBuilder private var visualChoiceSection: some View {
+        Section("Visual") {
+            ForEach(VisualChoice.allCases, id: \.self) { choice in
+                Button {
+                    choose(choice)   // UIX-015-R1: Camera may explain first
+                } label: {
+                    HStack {
+                        Text(choice.title).foregroundStyle(Color.primary)   // ACC-004: label colour; `.primary` in a button resolves to the tint (blue failed the contrast audit)
+                        Spacer(minLength: 8)
+                        if settings.visual == choice {
+                            Image(systemName: "checkmark").foregroundStyle(.tint).accessibilityHidden(true)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                }
+                .accessibilityAddTraits(settings.visual == choice ? .isSelected : [])
+                .accessibilityIdentifier("visual.\(choice.rawValue)")
+            }
+        }
+    }
+
+    @ViewBuilder private var visualOptionsSection: some View {
+        Section {
+            if settings.visual.isNative {
+                if settings.visual != .oscilloscope {   // VIS-003: no bars on a waveform
+                    Picker("Bars", selection: $settings.circularSpectrumBars) {
+                        ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
+                    }
+                    .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+                    .accessibilityLabel("Bars")
+                    .accessibilityIdentifier("barsPicker")
+                }
+                if settings.visual == .oscilloscope {   // VIS-003-R10
+                    Picker("Line", selection: $settings.oscilloscopeLine) {
+                        ForEach(OscilloscopeLine.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+                    .accessibilityLabel("Line")
+                    .accessibilityIdentifier("oscilloscopeLinePicker")
+                    Picker("Window", selection: $settings.oscilloscopeWindowMilliseconds) {
+                        ForEach(AppSettings.oscilloscopeWindowChoices, id: \.self) { Text("\($0) ms").tag($0) }
+                    }
+                    .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+                    .accessibilityLabel("Window")
+                    .accessibilityIdentifier("oscilloscopeWindowPicker")
+                }
+                if settings.visual == .linearSpectrum {
+                    Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
+                        ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+                    .accessibilityLabel("Orientation")
+                    .accessibilityIdentifier("orientationPicker")
+                    Picker("Spacing", selection: $settings.linearSpectrumSpacing) {
+                        ForEach(AppSettings.linearSpectrumSpacingChoices, id: \.value) { Text($0.title).tag($0.value) }
+                    }
+                    .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+                    .accessibilityLabel("Spacing")
+                    .accessibilityIdentifier("spacingPicker")
+                }
+                Toggle("Glow", isOn: $settings.glowEnabled)
+                    .accessibilityIdentifier("glowToggle")
+                if settings.glowEnabled {
+                    glowSlider(AccessibleParameterCatalog.glowIntensity, target: Self.glowTarget(settings, \.glowIntensity),
+                               text: Self.percent(settings.glowIntensity))
+                    glowSlider(AccessibleParameterCatalog.glowRadius, target: Self.glowTarget(settings, \.glowRadius),
+                               text: Self.percent(settings.glowRadius, decimals: 1))
+                    glowSlider(AccessibleParameterCatalog.glowThreshold, target: Self.glowTarget(settings, \.glowThreshold),
+                               text: Self.percent(settings.glowThreshold))
+                }
+            }
+        } header: {
+            Text("Visual")
+        } footer: {
+            if nativeVisualUnavailable && settings.visual.replacesProjectM {
+                Text("\(settings.visual.title) isn't available on this device, so projectM is shown.")
+                    .accessibilityIdentifier("nativeVisualUnavailableFooter")
+            } else {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    if settings.visual.isNative {
+                        if glowUnavailable {
+                            Text(AppCoordinator.glowUnavailableMessage)
+                                .accessibilityIdentifier("glowUnavailableFooter")
+                        } else {
+                            Text("Glow adds a soft halo around the bright parts; dark areas stay dark.")
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private var smoothingSection: some View {
+        // ANL-003-R6: attack and release of the spectra's bars (Instant = today's look). A section
+        // of its own, so the Visual section and its footer keep their place.
+        if settings.visual == .circularSpectrum || settings.visual == .linearSpectrum {
+            Section {
+                Picker("Attack", selection: $settings.spectrumAttackMilliseconds) {
+                    ForEach(AppSettings.spectrumAttackChoices, id: \.self) { Text(AppSettings.smoothingTitle(milliseconds: $0)).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Attack")
+                .accessibilityIdentifier("smoothingAttackPicker")
+                Picker("Release", selection: $settings.spectrumReleaseMilliseconds) {
+                    ForEach(AppSettings.spectrumReleaseChoices, id: \.self) { Text(AppSettings.smoothingTitle(milliseconds: $0)).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Release")
+                .accessibilityIdentifier("smoothingReleasePicker")
+            } header: {
+                Text("Smoothing")
+            } footer: {
+                Text("Attack sets how quickly bars rise to a louder sound, Release how slowly they fall. Instant shows each analysis as it comes.")
+            }
+        }
+    }
+
+    @ViewBuilder private var mediaSections: some View {
+        if let layerInspector { layersSection(layerInspector) }   // CMP-015
+        if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
+            cameraSection
+        }
+        if settings.visual.usesPhoto, let photos {
+            photoSection(photos)
+        }
+        if settings.visual.usesVideo, let videos {
+            videoSection(videos)
+        }
+        if settings.visual.usesText, let texts {
+            textSection(texts)
+        }
+        if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
+        SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
+        ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable)   // FR-072 (own view: ACC-012 body budget)
+    }
+
+    @ViewBuilder private var performanceSection: some View {
+        Section {
+            Toggle("Performance overlay", isOn: $settings.showsPerformanceOverlay)
+                .accessibilityIdentifier("performanceOverlayToggle")
+        } footer: {
+            Text("Shows the frame rate and the audio state over the visualization.")
+        }
+    }
+
+    @ViewBuilder private var audioSections: some View {
+        if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
+        if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
+        if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
+        if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
+        oscSection
+        if let midi { MIDISettingsSection(midi: midi) }   // MIDI-001-R8
+    }
+
+    @ViewBuilder private var tailSections: some View {
+        if let show {   // SHOW-001-R14
+            Section {
+                NavigationLink {
+                    ShowEditorView(show: show, addCurrentScene: addCurrentScene)
+                } label: {
+                    LabeledContent("Show", value: show.hasCues ? "\(show.list.cues.count) \(show.list.cues.count == 1 ? "cue" : "cues")" : "No cues")
+                }
+                .accessibilityIdentifier("showEditorLink")
+            }
+        }
+        if let openGuide {   // UIX-001-R8
+            Section {
+                Button("Guided first scene", action: openGuide)
+                    .accessibilityIdentifier("guidedFirstSceneButton")
+            } footer: {
+                Text("A short guide to making a scene. Everything stays on this device.")
+            }
+        }
+        Section {
+            NavigationLink("Storage") { StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup) }   // FILE-009, FILE-010, FILE-005
+                .accessibilityIdentifier("storageLink")
+            NavigationLink("Licenses") { LicensesView() }
+                .accessibilityIdentifier("licensesLink")
+            LabeledContent("Version",
+                           value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+        }
+        #if DEBUG
+        // PERF-010-T15 ({device}): a real crash for the recovery check on D1. Debug builds only.
+        Section {
+            Button("Crash now (DEBUG)", role: .destructive) { fatalError("PERF-010 DEBUG crash button") }
+                .accessibilityIdentifier("debugCrashButton")
+        } footer: {
+            Text("Debug builds only: ends the app abnormally to test session recovery.")
+        }
+        #endif
     }
 
     // MARK: UIX-015 explainer gates
