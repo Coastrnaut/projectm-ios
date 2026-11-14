@@ -55,7 +55,7 @@ final class FlashPolicyUITests: XCTestCase {
         app.buttons["presets"].tap()
         XCTAssertTrue(app.buttons["node:included"].appears(within: 10), "library home")
         let myPresets = app.buttons["node:myPresets"]
-        for _ in 0..<4 where !(myPresets.exists && myPresets.isHittable) { app.swipeUp() }
+        for _ in 0..<4 { if myPresets.exists && myPresets.isHittable { break }; app.swipeUp() }
         myPresets.tap()
         let row = app.buttons["preset:Strobe"]
         XCTAssertTrue(poll(20) { self.dismissImportAlert(); return row.exists && !self.app.alerts["Import Preset"].exists },

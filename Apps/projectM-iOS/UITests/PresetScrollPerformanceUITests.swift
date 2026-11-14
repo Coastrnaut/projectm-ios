@@ -69,7 +69,7 @@ final class PresetScrollPerformanceUITests: XCTestCase {
         openBrowser()
         app.buttons["node:projectm-classic"].tap()
         let folder = app.buttons["node:projectm-classic/milkdrop"]
-        for _ in 0..<10 where !(folder.exists && folder.isHittable) { app.swipeUp() }
+        for _ in 0..<10 { if folder.exists && folder.isHittable { break }; app.swipeUp() }
         XCTAssertTrue(folder.waitForExistence(timeout: 5))
         XCTAssertEqual(folder.label, "milkdrop, 608 presets", "the largest folder")
         folder.tap()

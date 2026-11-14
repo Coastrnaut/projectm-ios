@@ -38,19 +38,22 @@ extension XCUIApplication {
     /// at most 8 held drags of 70 % of the screen; true when it is visible. Shared by every suite
     /// whose rows can fall below the fold as Settings grows (GlowUITests failed this way on
     /// 2026-11-13). Frames, not `isHittable`, which fails the test for an off-screen row.
+    /// `long`: up drags of 82 % (0.92 to 0.1) for a row several screens down; each drag costs about
+    /// 1.7 s however far it goes, so fewer, longer drags (owner rule 7, 2026-11-14).
     @discardableResult
-    func reveal(_ element: XCUIElement, down: Bool = false) -> Bool {
+    func reveal(_ element: XCUIElement, down: Bool = false, long: Bool = false) -> Bool {
         let window = windows.firstMatch
         let bar = navigationBars.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.18))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.88))
+        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: long ? 0.1 : 0.18))
+        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: long ? 0.92 : 0.88))
         func visible() -> Bool {
             guard element.exists else { return false }
             let frame = element.frame, screen = window.frame
             let limit: CGFloat = down ? bar.frame.maxY : screen.minY
             return frame.height > 0 && frame.minY >= limit && frame.maxY <= screen.maxY
         }
-        for _ in 0..<8 where !visible() {
+        for _ in 0..<8 {
+            if visible() { break }
             // Down (towards the top of the list) uses a short drag from mid-screen: a long pull from
             // near the top on a list already at its top dismisses the sheet instead of scrolling.
             let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42))

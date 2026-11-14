@@ -38,7 +38,8 @@ final class OSCNetworkAccessUITests: XCTestCase {
         let window = app.windows.firstMatch
         let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
         let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 where !(element.exists && element.isHittable) {
+        for _ in 0..<8 {
+            if element.exists && element.isHittable { break }
             bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
         }
         return element.exists
