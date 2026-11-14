@@ -229,10 +229,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                visualChoiceSection
-                visualOptionsSection
-                smoothingSection
-                mediaSections
+                SceneLockSection(lock: settings.sceneLock)   // SCN-015
+                sceneEditSections
+                safetySections
                 performanceSection
                 audioSections
                 tailSections
@@ -446,6 +445,20 @@ struct SettingsView: View {
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
+    }
+
+    /// SCN-015-R6: everything that edits the scene, disabled while the scene is locked (safety stays reachable).
+    private var sceneEditSections: some View {
+        Group {
+            visualChoiceSection
+            visualOptionsSection
+            smoothingSection
+            mediaSections
+        }
+        .disabled(settings.sceneLock.isLocked)
+    }
+
+    @ViewBuilder private var safetySections: some View {
         SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }

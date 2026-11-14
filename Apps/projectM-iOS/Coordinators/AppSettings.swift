@@ -120,7 +120,7 @@ final class AppSettings {
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
-                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010
+                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -377,11 +377,14 @@ final class AppSettings {
 
     /// ACC-012: the stored sensory safety profile.
     let sensorySafety: SensorySafetySetting
+    /// SCN-015: the scene lock (key `settings.scene.locked`), shared by every holder of the settings.
+    let sceneLock: SceneLock
 
     init(defaults: UserDefaults, systemReduceMotion: Bool) {
         self.defaults = defaults
         self.systemReduceMotion = systemReduceMotion
         sensorySafety = SensorySafetySetting(defaults: defaults)
+        sceneLock = SceneLock(defaults: defaults)   // SCN-015
         showsPerformanceOverlay = defaults.bool(forKey: Self.performanceOverlayKey)
         reduceFlashingChoice = defaults.object(forKey: Self.reduceFlashingKey) as? Bool
         let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM

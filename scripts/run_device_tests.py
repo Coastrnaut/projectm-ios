@@ -89,6 +89,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
+                "settings.scene.locked",  # SCN-015 (scene lock; absent = unlocked)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.playbackBalance.position",   # AUD-010-R7 (In-App Playback monitoring balance)

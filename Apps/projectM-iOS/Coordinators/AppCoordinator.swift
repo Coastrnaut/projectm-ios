@@ -617,6 +617,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #endif
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
+        connectSceneLock()   // SCN-015
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests

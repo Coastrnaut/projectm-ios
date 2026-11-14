@@ -87,6 +87,18 @@ final class ShowCoordinator {
     @ObservationIgnored weak var previews: ScenePreviewModel?
     /// SCN-014: scene pack export and import for Scene Folders (set by AppCoordinator; nil in tests of the show alone).
     @ObservationIgnored var scenePacks: ScenePackCoordinator?
+    /// SCN-015: the scene lock (set by AppCoordinator; nil in tests of the show alone). Steps never read it.
+    @ObservationIgnored var sceneLock: SceneLock?
+
+    /// SCN-015-R6: the editor hides its edit gestures while true.
+    var isEditLocked: Bool { sceneLock?.isLocked ?? false }
+
+    /// SCN-015-R3, R4: true (with the editor message) when the scene is locked; the lock announces the refusal.
+    func refusedByLock() -> Bool {
+        guard sceneLock?.refusesEdit() == true else { return false }
+        editorMessage = SceneLock.refusalMessage
+        return true
+    }
 
     init(store: ShowStore?, registry: ParameterRegistry?) {
         self.store = store
@@ -238,6 +250,7 @@ final class ShowCoordinator {
     /// Stores `document` (a snapshot with its own new scene ID) and appends a cue for it.
     @discardableResult
     func addScene(_ document: SceneDocument, label: String) -> Bool {
+        if refusedByLock() { return false }
         guard let store else { editorMessage = Self.saveFailedMessage; return false }
         do throws(ShowStoreError) {
             try store.saveScene(document)
@@ -264,6 +277,7 @@ final class ShowCoordinator {
     /// tagging the copies; all or nothing (capacity first, written copies removed on a failure). Returns the
     /// new cues, or nil with an editor message. `ShowCoordinator+Templates` calls it for a bundled template.
     func addCopies(_ scenes: [(document: SceneDocument, label: String, transition: ShowCueTransition?)], tags: [String]) -> [ShowCue]? {
+        if refusedByLock() { return nil }
         guard let store else { editorMessage = Self.saveFailedMessage; return nil }
         guard !scenes.isEmpty, list.cues.count + scenes.count <= ShowCueList.maximumCues else {
             editorMessage = ShowEditError.tooManyCues(limit: ShowCueList.maximumCues).description
@@ -309,6 +323,7 @@ final class ShowCoordinator {
     /// Installs an imported scene through FILE-004 (Keep both: a taken ID gives a copy; one cue appended);
     /// on `.installed` the coordinator takes the stored show. `plan` is the preview's plan for `[document]`.
     func installImportedScene(_ document: SceneDocument, plan: ShowSceneImportPlan) -> ShowSceneImportOutcome {
+        if refusedByLock() { return .refused(SceneLock.refusalMessage) }
         guard let store else { return .refused(Self.saveFailedMessage) }
         let outcome = store.installImportedScenes([document], plan: plan)
         if case let .installed(installed, scenes) = outcome {
@@ -328,6 +343,7 @@ final class ShowCoordinator {
     /// ("<label> copy") right after the cue. Returns the new cue, or nil with an editor message.
     @discardableResult
     func duplicateScene(of cueID: UUID) -> ShowCue? {
+        if refusedByLock() { return nil }
         guard let cue = list.cues.first(where: { (c: ShowCue) -> Bool in c.id == cueID }) else { return nil }
         guard let store else { editorMessage = Self.saveFailedMessage; return nil }
         // The limit first, so a refused duplicate writes no scene file.
@@ -372,6 +388,7 @@ final class ShowCoordinator {
     /// unchanged. False with an editor message when the name is invalid or the scene cannot be read.
     @discardableResult
     func renameScene(of cueID: UUID, to name: String) -> Bool {
+        if refusedByLock() { return false }
         guard let cue = list.cues.first(where: { (c: ShowCue) -> Bool in c.id == cueID }) else { return false }
         guard let store else { editorMessage = Self.saveFailedMessage; return false }
         do throws(ShowSceneEditError) {
@@ -395,6 +412,7 @@ final class ShowCoordinator {
     }
 
     func remove(_ cueID: UUID) {
+        if refusedByLock() { return }
         let before = Set(list.sceneIDs)
         guard (try? list.remove(cueID)) != nil else { return }
         save()
@@ -409,6 +427,7 @@ final class ShowCoordinator {
     }
 
     func move(fromOffsets offsets: IndexSet, toOffset destination: Int) {
+        if refusedByLock() { return }
         guard (try? list.move(fromOffsets: offsets, toOffset: destination)) != nil else { return }
         save()
     }
@@ -416,6 +435,7 @@ final class ShowCoordinator {
     /// False when the label is not 1…80 characters on one line.
     @discardableResult
     func rename(_ cueID: UUID, to label: String) -> Bool {
+        if refusedByLock() { return false }
         guard (try? list.rename(cueID, to: label)) != nil else { return false }
         save()
         return true
@@ -424,6 +444,7 @@ final class ShowCoordinator {
     /// SCN-007: sets or (nil) removes a cue's transition and saves; never applies anything.
     @discardableResult
     func setTransition(_ cueID: UUID, to transition: ShowCueTransition?) -> Bool {
+        if refusedByLock() { return false }
         guard (try? list.setTransition(cueID, to: transition)) != nil else { return false }
         save()
         return true
@@ -470,6 +491,7 @@ final class ShowCoordinator {
 
     @discardableResult
     func createFolder(named name: String, in parent: UUID?) -> SceneFolder? {
+        if refusedByLock() { return nil }
         do throws(SceneFolderError) {
             let folder = try list.createFolder(named: name, in: parent)
             save()
@@ -483,6 +505,7 @@ final class ShowCoordinator {
 
     @discardableResult
     func renameFolder(_ id: UUID, to name: String) -> Bool {
+        if refusedByLock() { return false }
         do throws(SceneFolderError) {
             try list.renameFolder(id, to: name)
             save()
@@ -496,6 +519,7 @@ final class ShowCoordinator {
 
     @discardableResult
     func moveFolder(_ id: UUID, to parent: UUID?) -> Bool {
+        if refusedByLock() { return false }
         guard let folder = list.folders.folder(id) else { return false }
         guard folder.parentID != parent else { return true }
         do throws(SceneFolderError) {
@@ -512,6 +536,7 @@ final class ShowCoordinator {
     /// Moves a scene to `folder` (nil = top level). Nothing is written when it is already there.
     @discardableResult
     func moveScene(_ sceneID: String, to folder: UUID?) -> Bool {
+        if refusedByLock() { return false }
         do throws(SceneFolderError) {
             guard try list.moveScene(sceneID, to: folder) else { return true }
             save()
@@ -527,6 +552,7 @@ final class ShowCoordinator {
     /// Deletes a folder; its scenes and subfolders move to its parent (no scene is removed).
     @discardableResult
     func deleteFolder(_ id: UUID) -> SceneFolderDeletion? {
+        if refusedByLock() { return nil }
         do throws(SceneFolderError) {
             let deletion = try list.deleteFolder(id)
             save()
@@ -557,6 +583,7 @@ final class ShowCoordinator {
     /// Adds a tag; false (with a message and an announcement) when refused.
     @discardableResult
     func addTag(_ tag: String, toScene sceneID: String) -> Bool {
+        if refusedByLock() { return false }
         do throws(SceneTagError) {
             let stored: String = try list.addTag(tag, toScene: sceneID)
             save()
@@ -571,6 +598,7 @@ final class ShowCoordinator {
 
     @discardableResult
     func removeTag(_ tag: String, fromScene sceneID: String) -> Bool {
+        if refusedByLock() { return false }
         do throws(SceneTagError) {
             let removed: String = try list.removeTag(tag, fromScene: sceneID)
             save()
