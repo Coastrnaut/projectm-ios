@@ -39,7 +39,18 @@ gap is definition, robustness, live editing, scene reporting and the step-respon
 
 ### Session 2026-11-14
 
-(Filled in by `/speckit-clarify`.)
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no
+human interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: Are the stored times one-pole time constants (63.2 % at τ) or 10–90 % rise times? → A: Time constants τ, MOD-002's existing meaning, so every stored scene keeps its exact behaviour; the 10–90 % rise time (τ·ln 9 ≈ 2.197 τ) is documented and offered as a conversion helper, not stored. Rejected: storing 10–90 % times (every existing scene would need a migration and would still be ambiguous for τ = 0) (MOD-005-R2).
+- Q: Should the allowed range shrink to 0…5 s, as the brief suggested as an example? → A: No, keep MOD-002's 0…60 s. Shrinking would reject bindings in scenes saved since MOD-002 (a behaviour change with no safety benefit: slow smoothing cannot flash). A future editor may offer a smaller slider range inside the valid one (MOD-005-R5).
+- Q: How is a long frame gap (backgrounding, a stall) handled? → A: Keep MOD-002's cap: one step counts at most 0.25 s, so the visual resumes smoothly instead of jumping. The analytic curve is guaranteed only for gaps up to 0.25 s; frame gaps in normal running (8–50 ms) are far below it (MOD-005-R4).
+- Q: When a binding's times change while it is moving, does the signal restart? → A: No: a new `setEnvelope` operation replaces only the times and continues from the current signal on the next frame; rebinding (a new binding) still restarts at 0 as MOD-002 defines. Invalid times are refused with MOD-002's `invalidEnvelope` and change nothing (MOD-005-R8).
+- Q: How is a scene's invalid envelope reported? → A: With SCN-012's existing `invalidBinding` code, but at the envelope's path (`$.bindings[i].envelope`) instead of the binding's, and the binding kept for re-save (MOD-013 "rejected"). No new issue code: the fault class is unchanged, only its location is more precise (MOD-005-R10).
+- Q: What happens to a non-finite or out-of-range previous signal (which valid inputs never produce)? → A: The step treats it as already at the target (snaps), and every result is clamped to 0…1. A non-finite source already reads position 0 (MOD-003). So no input can make the signal NaN or leave 0…1 (MOD-005-R6).
+- Q: Is MIDI CC value smoothing (MIDI-003/MIDI-004) in scope? → A: No. MIDI values are set directly today, MIDI-004 is being integrated in parallel, and adding smoothing there would change MIDI-003's contract. MIDI files stay untouched; the pure step function (MOD-005-R11) is ready for a later row to reuse.
+- Q: Is a user-facing attack/release control added? → A: No: there is no binding editor to host it (MOD-004 decided the same). The model, live change, scene persistence and validation are complete; the row's simulator verification is the app unit test host on the simulator (MOD-005-S4).
+- Q: Does this row change how existing scenes and bindings behave? → A: No. For valid inputs the step formula is unchanged and bit-identical; the clamp and the non-finite guard only affect values valid inputs never produce. The only visible change is the more precise issue path (MOD-005-R9, R10).
 
 ## User Scenarios & Testing *(mandatory)*
 
