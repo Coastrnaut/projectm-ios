@@ -35,6 +35,20 @@ final class AudioFeatureSourceTests: XCTestCase {
         }
     }
 
+    /// ANL-007-T09: the kick envelope source (ANL-007-R11).
+    func testKickSourceRoundTripsAndReadsTheEnvelope() {
+        XCTAssertEqual(AudioFeatureSource.kick.id, "audio.kick")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.kick"), .kick)
+        XCTAssertNil(AudioFeatureSource(id: "audio.Kick"))
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            XCTAssertEqual(AudioFeatureSource.kick.value(in: AudioFeatureFrame(bands: buffer, kick: 0.625)), 0.625)
+            XCTAssertEqual(AudioFeatureSource.kick.value(in: AudioFeatureFrame(bands: buffer, kick: .nan)), 0)
+            XCTAssertEqual(AudioFeatureSource.kick.value(in: AudioFeatureFrame(bands: buffer)), 0, "no kick feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.kick.value(in: .silent), 0)
+    }
+
     func testNonFiniteReadingsAreZero() {
         let bands: [Float] = [.nan, .infinity]
         bands.withUnsafeBufferPointer { buffer in

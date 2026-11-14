@@ -211,6 +211,7 @@ struct ExpressionCompiler {
             case .bandMean: ExpressionInstruction(opcode: .bandMean)
             case .onset: ExpressionInstruction(opcode: .onset)
             case .beatConfidence: ExpressionInstruction(opcode: .beatConfidence)
+            case .kick: ExpressionInstruction(opcode: .kick)
             }
             try append(instruction, at: position)
         case let .binding(slot, position):

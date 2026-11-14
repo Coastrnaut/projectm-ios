@@ -17,6 +17,8 @@ public enum ExpressionOpcode: UInt8, Sendable, Hashable, CaseIterable {
     case beatConfidence = 6
     case load = 7
     case store = 8
+    /// `audio.kick` (ANL-007).
+    case kick = 9
     case add = 10
     case subtract = 11
     case multiply = 12
@@ -39,7 +41,7 @@ public enum ExpressionOpcode: UInt8, Sendable, Hashable, CaseIterable {
     /// The change in stack depth.
     var stackEffect: Int {
         switch self {
-        case .constant, .time, .band, .bandMean, .onset, .beatConfidence, .load: 1
+        case .constant, .time, .band, .bandMean, .onset, .beatConfidence, .kick, .load: 1
         case .store: -1
         case .add, .subtract, .multiply, .divide, .min, .max, .step, .pow: -1
         case .negate, .abs, .sin, .cos, .floor, .fract, .sqrt: 0
@@ -197,6 +199,9 @@ public struct CompiledExpression: Sendable, Hashable {
                     top += 1
                 case .beatConfidence:
                     memory[top] = AudioFeatureSource.beatConfidence.value(in: frame)
+                    top += 1
+                case .kick:
+                    memory[top] = AudioFeatureSource.kick.value(in: frame)
                     top += 1
                 case .load:
                     memory[top] = memory[Int(instruction.index)]

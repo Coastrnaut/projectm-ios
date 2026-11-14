@@ -13,14 +13,14 @@ enum MigrationFixtures {
 
     /// The app's catalogs plus a history: `effect.glow.amount` became `effect.glow.strength` (table
     /// version 1), which became `effect.bloom.intensity` (2); `effect.glow.old` became
-    /// `effect.bloom.legacy` (1), retired later without a rule; `audio.kick` became `audio.onset`
+    /// `effect.bloom.legacy` (1), retired later without a rule; `audio.legacyPulse` became `audio.onset`
     /// (2); `audio.flux` was retired (2).
     static func registry() throws -> ParameterRegistry {
         let migrations = try ModulationIDMigrations([
             .renamed("effect.glow.amount", to: "effect.glow.strength", since: 1),
             .renamed("effect.glow.old", to: "effect.bloom.legacy", since: 1),
             .renamed("effect.glow.strength", to: IDs.bloomIntensity.rawValue, since: 2),
-            .renamed("audio.kick", to: "audio.onset", since: 2),
+            .renamed("audio.legacyPulse", to: "audio.onset", since: 2),
             .retired("audio.flux", since: 2),
         ])
         return try ParameterRegistry(descriptors: VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors,
@@ -46,7 +46,7 @@ enum MigrationFixtures {
             SceneBinding(source: .band(2), target: IDs.circularSpectrumGap,
                          mapping: LinearMapping(inputMinimum: 0, inputMaximum: 0.8, outputStart: 0, outputEnd: 0.5),
                          envelope: AudioFeatureEnvelope(attackSeconds: 0.05, releaseSeconds: 0.3), expression: "audio.onset * 2"),
-            multiply("audio.kick", "effect.glow.amount"),                                   // renamed twice + source renamed
+            multiply("audio.legacyPulse", "effect.glow.amount"),                                   // renamed twice + source renamed
             multiply("audio.onset", "effect.bloom.legacy"),                                 // retired (no rule)
             multiply("audio.beatConfidence", "visual.future.sparkle"),                      // unknown target
             multiply("audio.band.200", IDs.bloomThreshold, extra: ["futureCurve": .string("easeIn")]), // unknown source
@@ -58,7 +58,7 @@ enum MigrationFixtures {
             connection(.parameter(IDs.bloomKnee), .generator("lfo.one"), "rate"),          // closes a loop
             connection(.audio("audio.flux"), .generator("lfo.one"), "rate"),               // retired audio feature
             connection(.generator("lfo.one"), .parameter("visual.future.thing")),          // unknown target
-            connection(.audio("audio.kick"), .generator("lfo.one"), "rate"),               // renamed source
+            connection(.audio("audio.legacyPulse"), .generator("lfo.one"), "rate"),               // renamed source
         ]
         return SceneDocument(id: SceneFixtures.sceneID, name: "Edges", bindings: bindings,
                              modulation: SceneModulation(generators: [lfo], connections: connections))
@@ -79,7 +79,7 @@ final class SceneModulationRestoreTests: XCTestCase {
             "$.modulation.connections[0] restored", "$.modulation.connections[1] rejected", "$.modulation.connections[2] dropped",
             "$.modulation.connections[3] orphaned", "$.modulation.connections[4] rewritten",
         ])
-        XCTAssertEqual(report.entries[1].written, "audio.kick → effect.glow.amount")
+        XCTAssertEqual(report.entries[1].written, "audio.legacyPulse → effect.glow.amount")
         XCTAssertEqual(report.entries[1].applied, "audio.onset → effect.bloom.intensity")
         XCTAssertEqual(report.entries[2].reason, "\"effect.bloom.legacy\" is retired")
         XCTAssertEqual(report.entries[3].reason, "\"visual.future.sparkle\" is not a parameter of this version")
@@ -88,7 +88,7 @@ final class SceneModulationRestoreTests: XCTestCase {
         XCTAssertEqual(report.entries[11].applied, "audio.onset → lfo.one.rate")
         XCTAssertEqual(report.paths(.orphaned), ["$.bindings[3]", "$.bindings[4]", "$.modulation.connections[3]"])
         XCTAssertEqual("\(report.entries[1])",
-                       "rewritten $.bindings[1]: audio.kick → effect.glow.amount as audio.onset → effect.bloom.intensity (migrated to audio.onset → effect.bloom.intensity)")
+                       "rewritten $.bindings[1]: audio.legacyPulse → effect.glow.amount as audio.onset → effect.bloom.intensity (migrated to audio.onset → effect.bloom.intensity)")
 
         // The same outcomes as scene issues (all warnings), each at its path.
         XCTAssertEqual(loaded.warnings.map { (i: SceneIssue) -> String in "\(i.code.rawValue) \(i.path)" }, [
