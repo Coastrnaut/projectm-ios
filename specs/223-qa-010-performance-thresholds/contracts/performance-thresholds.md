@@ -33,7 +33,7 @@ python3 scripts/check_performance_thresholds.py REPORT [REPORT...] [--thresholds
 | `frameIntervalP50Ms` / `P95Ms` | PERF-012 `frames.p50Ms` / `p95Ms` | key absent (sampleCount 0) |
 | `droppedFramePercent` | `frameDrops.outputs[output == device]`: 100 × skipped ÷ (submitted + skipped) | no device output, a count absent, or zero slots |
 | `peakMemoryMB` | PERF-012 `resources.memory.peakFootprintBytes` ÷ 1,000,000 | absent |
-| `audioAgeP95Ms` | none today | always |
+| `audioAgeP95Ms` | an AutomationRunner report's top-level `audioAgeP95Ms` (additive key; no mode writes it yet) | absent (so today always) |
 | `coldLaunchMs` | max(`sc015` samples) × 1000 | empty list |
 
 A non-numeric, non-finite or negative value is not measured with reason `invalid value`. Two inputs giving one

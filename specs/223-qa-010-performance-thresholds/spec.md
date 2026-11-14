@@ -140,8 +140,9 @@ local-first option.
   ÷ (submitted + skipped), the share of refresh slots that showed no new frame (`skipped` and `submitted` are
   available on every path, projectM included). `peakMemoryMB` (at most): PERF-012
   `resources.memory.peakFootprintBytes` ÷ 1,000,000 (decimal MB, the stricter reading of SC-008). `audioAgeP95Ms`
-  (at most): no report carries it today, so it reads "not measured" until a report adds it (declared now so the
-  budget exists). `coldLaunchMs` (at most): the largest `sc015` sample × 1000 (SC-015 counts every launch).
+  (at most): no report carries it today; the checker reads an AutomationRunner report's top-level `audioAgeP95Ms`
+  (an additive key a later mode may write), so today it reads "not measured" and a real run's overall verdict is
+  incomplete, never pass (declared now so the budget exists). `coldLaunchMs` (at most): the largest `sc015` sample × 1000 (SC-015 counts every launch).
 - Q: What are the limits per class? → A: From the existing criteria; where a class had none, the decided value:
 
   | Metric | D1 `iPhone15,4` | D2 `iPad17,3` | D3 `iPad15,7` | Basis |
