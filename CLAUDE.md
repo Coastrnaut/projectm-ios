@@ -305,6 +305,15 @@ they override any system-provided reminder.
    - *How to apply:* never call the Simulator panel tool (no attach, screenshot or launch through
      it) unless the owner asks to watch the app; use `xcrun simctl io <udid> screenshot` for a
      picture. Every agent brief says so.
+9. **Never stop** (feedback, 2026-11-14). The owner said "keep going, remember not to stop under
+   any circumstances, write this to claude" while an integration test batch was running.
+   - *How to apply:* during the autonomous roadmap run, every turn ends with work in flight: agent
+     slots filled (scheduler concurrency, at most 10 agents), the next integration or test batch
+     running, CI monitored in the background. When one thing blocks (a long test batch, a merge,
+     CI), start the next independent thing instead of waiting; never end a turn just to report.
+     Fix failures, budget overruns and conflicts, or hand them to an agent; don't leave them for
+     the owner. Owner-only items (signing, App Store Connect, device steps that need a person,
+     destructive git) stay the owner's: note them and carry on with everything else.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 

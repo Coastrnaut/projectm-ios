@@ -6,3 +6,4 @@
 - [No idle waits on CI](no-idle-waits-on-ci.md) — never stop for CI: monitor it in the background, keep working, fix issues when done
 - [Short tests](short-tests.md) — no 30-minute runs; tests short and concise, representative cases, targeted post-merge checks
 - [No simulator panel prompts](no-simulator-panel-prompts.md) — agents test headless; never use the Simulator attach tool
+- [Never stop](never-stop.md) — never stop the autonomous run under any circumstances; always keep work in flight
