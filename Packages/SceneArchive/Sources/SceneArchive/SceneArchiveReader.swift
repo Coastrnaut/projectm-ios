@@ -6,7 +6,8 @@
 // unlisted files) → the manifest's `scene` and `assets` (types, unique keys, at most one photo and
 // one video, exact `assets/<key>.<ext>` paths) → files (scene present, every asset file listed,
 // nothing else) → SCN-001 decode and validation (errors refuse; no store availability here) →
-// records against the scene's photo/video assets → each asset's content check. Nothing is
+// records against the scene's photo/video assets → each asset's content check. The scene is migrated in
+// memory by SCN-013's chain (`migrator`); the archive is never rewritten. Nothing is
 // written; the caller stages the media through its stores.
 import Foundation
 import LocalPortability
@@ -22,8 +23,11 @@ public struct SceneArchiveContents: Sendable {
 }
 
 public enum SceneArchiveReader {
+    /// `migrator` is the app's chain; tests pass synthetic chains (QA-004 migration matrix, as ShowStore and
+    /// the autosave store do for SCN-013).
     public static func read(_ data: Data, registry: ParameterRegistry,
-                            limits: SceneArchiveLimits = .standard) throws(SceneArchiveError) -> SceneArchiveContents {
+                            limits: SceneArchiveLimits = .standard,
+                            migrator: SceneMigrator = .standard) throws(SceneArchiveError) -> SceneArchiveContents {
         guard data.count <= limits.maxArchiveBytes else { throw .archiveTooLarge(limit: limits.maxArchiveBytes) }
         let contents: PortableArchiveContents
         do {
@@ -67,7 +71,7 @@ public enum SceneArchiveReader {
         // Scene (SCN-001).
         let decoded: SceneDecodeResult
         do {
-            decoded = try SceneDocument.decode([UInt8](sceneData))
+            decoded = try SceneDocument.decode([UInt8](sceneData), migrator: migrator)
         } catch {
             throw .sceneRefused(error)
         }
