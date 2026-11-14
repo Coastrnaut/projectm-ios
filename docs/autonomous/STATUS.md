@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T22:31:45Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T22:38:12Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,25 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 82 |
-| implementing | 6 |
-| built | 1 |
-| unit_passed | 1 |
-| integrated | 235 |
+| implementing | 5 |
+| built | 2 |
+| integrated | 236 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 14 | 2 | 1 | 1 | 133 | 0 |
-| P2 | 57 | 4 | 0 | 0 | 18 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 14 | 2 | 1 | 134 | 0 |
+| P2 | 57 | 3 | 1 | 18 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 90 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
+- 89 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)
 
 ## Integrated
 
@@ -259,6 +258,7 @@ The physical-device suite may **not** start:
 | UIX-005 | Performance control layout | `19ea9810` | `feature/uix-005` |
 | UIX-007 | Split preview/editor | `c801a438` | `feature/uix-007` |
 | UIX-009 | Parameter search | `7a3ef2bf` | `feature/uix-009` |
+| UIX-011 | Color palette picker | `99cce200` | `feature/uix-011` |
 | UIX-015 | Onboarding permission explainer | `ae498579` | `feature/uix-015` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
@@ -2691,7 +2691,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `21fb80d34973` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-009/20261114T162829/swift-test_VisualGenerators.log`)
 - `post-merge batch63/63b/63c: PerformanceControl 257, ShowControl 110, ParameterGraph 226, LibraryBackup 77, projectM-iOSTests 1000, UI 6 (quantized cue steps, parameter search, show cues, auto advance, linear spectrum)`: pass at `1a6916ee` (log `.autonomous/logs/integration/batch63b/app-tests.log`)
 
-### UIX-011 Color palette picker (unit_passed)
+### UIX-011 Color palette picker (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/sim-test_ANGLERendering.log`)
@@ -2703,6 +2703,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/swift-test_VisualGenerators.log`)
+- `post-merge batch70: SceneFormat 184, VisualGenerators 249, LibraryBackup 80, projectM-iOSTests 1031, UI 4 (palette picker, colour-blind controls)`: pass at `99cce200` (log `.autonomous/logs/integration/batch70/app-tests.log`)
 
 ### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)
