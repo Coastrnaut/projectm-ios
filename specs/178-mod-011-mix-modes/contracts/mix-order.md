@@ -24,3 +24,6 @@ One layer: bit-identical to MOD-002.
 - Restore: bindings in document order; the 2nd–4th on a parameter are layers; a 5th, or a later layer with an
   expression, is `duplicateBindingTarget` at `$.bindings[i].target` (or `.expression`), kept verbatim.
 - Capture: the expression of a parameter is written on its first binding only.
+- Messages (SCN-012 `duplicateBindingTarget`, error):
+  - fifth layer: `Binding <i> targets "<id>", already bound by 4 bindings (the most per parameter).`
+  - expression on a later layer: `Binding <i> carries an expression for "<id>", already bound by binding <j>; only a parameter's first binding may carry one.`

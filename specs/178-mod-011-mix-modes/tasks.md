@@ -42,3 +42,10 @@ Linux shape). Budgets (owner rule 7): unit test ≤ 10 s, package suite < 1 min.
 
 - [ ] MOD-011-T10 ADR (order contract) in `docs/adr/`, scene contract note (SCN-001 `duplicateBindingTarget`
   message), spec status; repository checks; Linux shape (no Apple-only API in the changed package code)
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1, R2 → T02, T03; R3, R4 → T01, T03, T04; R5, R6 → T05, T09; R7 → T06, T07; R8 → T08, T09;
+R9 → T01, T10; S1 → T03; S2, S3 → T04; S4 → T05, T09; S5 → T06; S6 → T10. Fixed: the two new
+`duplicateBindingTarget` messages were unspecified (added to contract O3); T10 also updates the SCN-001
+scene-document contract table.
