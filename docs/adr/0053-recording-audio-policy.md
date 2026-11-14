@@ -1,4 +1,4 @@
-# ADR-0051: Recordings Contain Only Owned or Consented Audio, Decided at Record
+# ADR-0053: Recordings Contain Only Owned or Consented Audio, Decided at Record
 
 - **Status**: Accepted 2026-11-14 (decided by Claude under the owner's best-judgement rule, owner
   rule 4)

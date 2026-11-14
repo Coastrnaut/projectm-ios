@@ -13,7 +13,7 @@ stop or consent change ends the audio for good (no silence). Audio comes from a 
 recording tap on the normalized ring (Float32 stereo 44.1 kHz) that carries a host-time stamp of its
 newest sample; the recorder places each chunk relative to the first video frame on the same uptime
 clock, keeps the track contiguous within a 100 ms window and re-anchors beyond it. The owned-audio
-fixture (flash and click at one injected host time) proves ≤ 20 ms alignment. ADR-0051 records the
+fixture (flash and click at one injected host time) proves ≤ 20 ms alignment. ADR-0053 records the
 policy (it overrides REC-003's "no audio track" default and applies the constitution's privacy rule).
 
 ## Technical Context
@@ -37,7 +37,7 @@ policy (it overrides REC-003's "no audio track" default and applies the constitu
 | V. No universal-capture claims | Pass. Nothing claims other apps' audio can be recorded; the UI says it never is. |
 | VI. Modular boundaries | Pass. FrameRecording gains plain-Swift policy and timeline types with no AudioCore import; AudioCore gains the tap; the app maps one to the other. |
 | VII. Real-time safety | Pass. The tap is written on the analysis work queue (not an audio callback), preallocated, lock-free, drop-oldest; the consumer never blocks. |
-| Privacy | Pass with ADR-0051: audio reaches disk only inside a recording the user started, in the temporary folder, until the user saves it; microphone audio needs a separate opt-in plus the permission; the usage text and privacy policy are updated (REC-004-R11). |
+| Privacy | Pass with ADR-0053: audio reaches disk only inside a recording the user started, in the temporary folder, until the user saves it; microphone audio needs a separate opt-in plus the permission; the usage text and privacy policy are updated (REC-004-R11). |
 | X. Evidence | Device alignment is `{device}` (left open); simulator and host results are not device evidence. |
 
 Post-design re-check: unchanged (Pass).
@@ -76,7 +76,7 @@ Apps/projectM-iOS/Coordinators/
 Apps/projectM-iOS/Views/RecordingAudioSection.swift   # Settings → Recording
 Apps/projectM-iOS/Tests/RecordingAudioAppTests.swift
 Apps/projectM-iOS/UITests/RecordingAudioUITests.swift
-docs/adr/0051-recording-audio-policy.md
+docs/adr/0053-recording-audio-policy.md
 ```
 
 **Structure Decision**: extend the existing REC-003 module and coordinator; no new package.

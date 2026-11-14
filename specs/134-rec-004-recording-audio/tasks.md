@@ -5,7 +5,7 @@
 
 ## Phase 1: Setup
 
-- [X] REC-004-T01 Write ADR-0051 "Recording audio policy" (owned and consented audio only, decision at Record, end on switch, no silent track, consent excluded from backup, privacy-rule reconciliation) in docs/adr/0051-recording-audio-policy.md and list it in docs/adr/README.md — Verified 2026-11-14: docs/adr/0051-recording-audio-policy.md and README row; validate_docs OK
+- [X] REC-004-T01 Write ADR-0053 "Recording audio policy" (owned and consented audio only, decision at Record, end on switch, no silent track, consent excluded from backup, privacy-rule reconciliation) in docs/adr/0053-recording-audio-policy.md and list it in docs/adr/README.md — Verified 2026-11-14: docs/adr/0053-recording-audio-policy.md and README row; validate_docs OK
 
 ## Phase 2: Foundational
 
@@ -52,7 +52,7 @@
 
 ## Phase 7: Polish
 
-- [X] REC-004-T18 Privacy review in ADR-0051 (what reaches disk, when, for how long; REC-004-R10 evidence: no `AVPlayer`/`MPMusicPlayerController` playback path in Packages/CaptureKit or the app, by grep); repo checks (compliance, docs, motion, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, package note in Packages/Compositor/Package.swift, spec status — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 153 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app
+- [X] REC-004-T18 Privacy review in ADR-0053 (what reaches disk, when, for how long; REC-004-R10 evidence: no `AVPlayer`/`MPMusicPlayerController` playback path in Packages/CaptureKit or the app, by grep); repo checks (compliance, docs, motion, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, package note in Packages/Compositor/Package.swift, spec status — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 153 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app
 - [ ] REC-004-T19 {device} Device stage: quickstart "Device" steps 1-4 on D1 (In-App Playback alignment within 40 ms, REC-004-S5; microphone consent; System/App Capture video only)
 
 ## Dependencies

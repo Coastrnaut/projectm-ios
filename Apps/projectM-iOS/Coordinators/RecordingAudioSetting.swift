@@ -1,5 +1,5 @@
 // RecordingAudioSetting.swift — REC-004: "Include microphone audio" for recordings (REC-004-R3, R13;
-// specs/134-rec-004-recording-audio, data-model "Recording audio setting", ADR-0051).
+// specs/134-rec-004-recording-audio, data-model "Recording audio setting", ADR-0053).
 //
 // One device-local Bool, key `settings.recording.includeMicrophone`, default off (absent or not a Bool →
 // off). It is a consent: it is left out of the library backup (it never travels to another device), erased

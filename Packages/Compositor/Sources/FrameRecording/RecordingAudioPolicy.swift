@@ -1,5 +1,5 @@
 // RecordingAudioPolicy.swift — REC-004 which audio a recording may contain (REC-004-R1, R2, R4;
-// specs/134-rec-004-recording-audio, contracts/recording-audio.md C1, ADR-0051). Plain Swift; builds on Linux.
+// specs/134-rec-004-recording-audio, contracts/recording-audio.md C1, ADR-0053). Plain Swift; builds on Linux.
 //
 // Only audio the app owns (In-App Playback: files imported into the app's library, which the import
 // refuses when protected) or the user consented to (the Microphone, with the system permission and the

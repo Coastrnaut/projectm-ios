@@ -23,7 +23,7 @@
 //   (the package deletes the partial file). The value is used only for that, never stored or sent.
 //   DEBUG `-uitestStorage low|dropAfter:<n>` fakes the readings (1 s interval) and an offered file is
 //   read back into `probe`.
-// * REC-004 (specs/134-rec-004-recording-audio, contract C4, ADR-0051): at Record the audio decision is
+// * REC-004 (specs/134-rec-004-recording-audio, contract C4, ADR-0053): at Record the audio decision is
 //   made from the source mode, the microphone permission and "Include microphone audio"
 //   (`RecordingAudioPolicy`); only "include" gives the file an AAC track and arms the normalized ring's
 //   recording tap. After each frame the tap is drained into the recorder (`RecordingAudioFeed`). The

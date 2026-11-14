@@ -23,7 +23,7 @@
 - **Decision**: a second `AVAssetWriterInput` (`.audio`, AAC-LC `kAudioFormatMPEG4AAC`, 44,100 Hz, 2 channels, 128,000 b/s), added before `startWriting` only when the decision is "include". Chunks become LPCM Float32 interleaved `CMSampleBuffer`s with presentation time `CMTime(sample, 44_100)`; appended on the writer's serial queue. Live: a not-ready input drops the chunk and counts it (never waits). Offline (tests): waits like the video path. The track's priming is written by AVFoundation, and `AVAssetReader` removes it on read.
 - **Rationale**: one writer, one file (REC-003 layout); the queue keeps audio and video appends ordered.
 
-## REC-004-D5 Policy (ADR-0051)
+## REC-004-D5 Policy (ADR-0053)
 
 - In-App Playback included; Microphone included only with permission granted and the setting on; System/App Capture never; nothing else. Decided at Record; the file has an audio track only for "include". Any switch, stop, consent change or tap disarm ends audio for that recording; no silence is inserted and no track is added later.
 - DRM: In-App Playback plays only library files; `AVAudioFileInspector` refuses `hasProtectedContent` at import (CaptureKit `AudioFileInspector.swift`), decoding uses `AVAudioFile` (cannot open FairPlay content); the app has no `AVPlayer`/media-library playback path (verified by grep at audit time). No record-time DRM check is added because nothing protected can reach the tap through these sources.

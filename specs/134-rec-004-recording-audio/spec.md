@@ -147,7 +147,7 @@ setting's value; app unit tests check the status texts and the announcement for 
 - **REC-004-R10**: Only files that passed the import check (which refuses protected content) MUST be the In-App Playback source of recorded audio; the app MUST NOT add any decryption or protected-stream path.
 - **REC-004-R12**: The recorded audio MUST be the normalized source audio, before input trim, noise gate and latency offset.
 - **REC-004-R13**: "Include microphone audio" MUST be in a "Recording" section of Settings; it MUST NOT request the microphone permission itself.
-- **REC-004-R11**: The privacy policy MUST say what audio recordings contain and that microphone audio is in recordings only when the user turns it on. The microphone usage description stays as it is (FR-019 keeps it identical to the Microphone explainer, and it remains accurate: the microphone is used only in Microphone mode); the in-app opt-in is the point-of-use disclosure (ADR-0051).
+- **REC-004-R11**: The privacy policy MUST say what audio recordings contain and that microphone audio is in recordings only when the user turns it on. The microphone usage description stays as it is (FR-019 keeps it identical to the Microphone explainer, and it remains accurate: the microphone is used only in Microphone mode); the in-app opt-in is the point-of-use disclosure (ADR-0053).
 
 ### Key Entities
 

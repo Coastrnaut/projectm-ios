@@ -55,7 +55,7 @@
 //   MP4 video: settings, geometry, the timestamp timeline, the bounded frame gate and the outcomes are
 //   plain Swift and build on Linux; the AVAssetWriter writer, the read-back inspector and the Metal
 //   recorder (IOSurface pixel buffers through a texture cache, no CPU read-back) compile out there.
-//   REC-004 (specs/134-rec-004-recording-audio, ADR-0051) adds the audio policy and the audio timeline
+//   REC-004 (specs/134-rec-004-recording-audio, ADR-0053) adds the audio policy and the audio timeline
 //   (plain Swift, Linux-buildable) and an optional AAC input fed with host-timed LPCM chunks.
 // Nothing here imports projectM, ANGLE, capture or the app (Constitution VI). The projectM layer is
 // target `ProjectMLayer` in Packages/ANGLERendering.
