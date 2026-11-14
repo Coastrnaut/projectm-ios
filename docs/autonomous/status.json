@@ -12,8 +12,9 @@
   },
   "P1": {
    "audited": 109,
-   "implementing": 2,
-   "integrated": 40
+   "implementing": 1,
+   "integrated": 40,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 77,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 197,
-  "implementing": 2,
+  "implementing": 1,
   "integrated": 126,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1084,12 +1086,12 @@
   "CMP-014": {
    "attempts": 0,
    "branch": "feature/cmp-014",
-   "branch_sha": null,
+   "branch_sha": "601485f4c4998aaf3cd95bac358011aa61919c5d",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CMP-015": {
    "attempts": 0,
@@ -4159,5 +4161,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T08:30:05Z"
+ "updated": "2026-11-14T08:33:19Z"
 }
