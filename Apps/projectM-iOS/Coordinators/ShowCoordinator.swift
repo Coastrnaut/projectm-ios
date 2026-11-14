@@ -16,6 +16,9 @@
 // * SCN-003: Duplicate Scene stores a copy of a cue's scene under a new scene ID and inserts a cue for
 //   it right after that cue; Rename Scene renames the scene itself (every cue showing it), never a
 //   label or an ID. `sceneNames` caches each stored scene's name for the editor.
+// * SCN-004: scene folders are logical (the show index holds the tree and each scene's folder); folder
+//   edits save the show only, never write a scene file, apply anything or move the position, and
+//   announce on the library lane (`announceLibrary`). A duplicate goes into its source's folder.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -59,6 +62,8 @@ final class ShowCoordinator {
     @ObservationIgnored var announce: (String) -> Void = { (message: String) in
         UIAccessibility.post(notification: .announcement, argument: message)
     }
+    /// SCN-004-R13: folder results and refusals (AppCoordinator routes them to the library lane).
+    @ObservationIgnored var announceLibrary: (String) -> Void = { (_: String) in }
 
     init(store: ShowStore?, registry: ParameterRegistry?) {
         self.store = store
@@ -257,6 +262,9 @@ final class ShowCoordinator {
             return nil
         }
         sceneNames[copy.id] = copy.name
+        if let folder = list.folderID(ofScene: cue.sceneID) {   // SCN-004-R12: next to its source
+            _ = try? list.moveScene(copy.id, to: folder)
+        }
         save()
         return inserted
     }
@@ -305,6 +313,118 @@ final class ShowCoordinator {
     }
 
     func dismissEditorMessage() { editorMessage = nil }
+
+    // MARK: - Scene folders (SCN-004)
+
+    static let topLevelName = "Top Level"
+
+    /// The scene's folder path ("Set A / Encore"); nil at the top level.
+    func folderPath(ofScene sceneID: String) -> String? { list.folders.pathText(of: list.folderID(ofScene: sceneID)) }
+
+    /// A folder's path, or "Top Level" for nil.
+    func destinationName(_ folder: UUID?) -> String { list.folders.pathText(of: folder) ?? Self.topLevelName }
+
+    /// The first cue (in show order) that shows the scene.
+    func firstCue(ofScene sceneID: String) -> ShowCue? {
+        list.cues.first { (cue: ShowCue) -> Bool in cue.sceneID == sceneID }
+    }
+
+    /// The number of cues that show the scene.
+    func cueCount(ofScene sceneID: String) -> Int {
+        list.cues.filter { (cue: ShowCue) -> Bool in cue.sceneID == sceneID }.count
+    }
+
+    /// The scenes (distinct scene IDs in first-use order) whose folder is `folder`, sorted by name.
+    func scenes(in folder: UUID?) -> [String] {
+        let ids: [String] = list.folders.sceneIDs(in: folder, among: list.sceneIDs)
+        return ids.sorted { (a: String, b: String) -> Bool in
+            let na: String = SceneFolderTree.fold(sceneNames[a] ?? a)
+            let nb: String = SceneFolderTree.fold(sceneNames[b] ?? b)
+            return na == nb ? a < b : na < nb
+        }
+    }
+
+    /// Go to Cue for a scene: its first cue, exactly as SHOW-001's Go to Cue.
+    @discardableResult
+    func goToScene(_ sceneID: String) -> ShowStep? {
+        guard let cue = firstCue(ofScene: sceneID) else { return nil }
+        return go(to: cue.id)
+    }
+
+    @discardableResult
+    func createFolder(named name: String, in parent: UUID?) -> SceneFolder? {
+        do throws(SceneFolderError) {
+            let folder = try list.createFolder(named: name, in: parent)
+            save()
+            announceLibrary("Created folder \(folder.name).")
+            return folder
+        } catch {
+            refuse(error)
+            return nil
+        }
+    }
+
+    @discardableResult
+    func renameFolder(_ id: UUID, to name: String) -> Bool {
+        do throws(SceneFolderError) {
+            try list.renameFolder(id, to: name)
+            save()
+            announceLibrary("Renamed folder to \(list.folders.folder(id)?.name ?? name).")
+            return true
+        } catch {
+            refuse(error)
+            return false
+        }
+    }
+
+    @discardableResult
+    func moveFolder(_ id: UUID, to parent: UUID?) -> Bool {
+        guard let folder = list.folders.folder(id) else { return false }
+        guard folder.parentID != parent else { return true }
+        do throws(SceneFolderError) {
+            try list.moveFolder(id, to: parent)
+            save()
+            announceLibrary("Moved folder \(folder.name) to \(destinationName(parent)).")
+            return true
+        } catch {
+            refuse(error)
+            return false
+        }
+    }
+
+    /// Moves a scene to `folder` (nil = top level). Nothing is written when it is already there.
+    @discardableResult
+    func moveScene(_ sceneID: String, to folder: UUID?) -> Bool {
+        do throws(SceneFolderError) {
+            guard try list.moveScene(sceneID, to: folder) else { return true }
+            save()
+            let name: String = sceneNames[sceneID] ?? firstCue(ofScene: sceneID)?.label ?? "the scene"
+            announceLibrary("Moved \(name) to \(destinationName(folder)).")
+            return true
+        } catch {
+            refuse(error)
+            return false
+        }
+    }
+
+    /// Deletes a folder; its scenes and subfolders move to its parent (no scene is removed).
+    @discardableResult
+    func deleteFolder(_ id: UUID) -> SceneFolderDeletion? {
+        do throws(SceneFolderError) {
+            let deletion = try list.deleteFolder(id)
+            save()
+            announceLibrary("Deleted folder \(deletion.folder.name); its contents moved to \(destinationName(deletion.folder.parentID)).")
+            return deletion
+        } catch {
+            refuse(error)
+            return nil
+        }
+    }
+
+    private func refuse(_ error: SceneFolderError) {
+        editorMessage = error.description
+        announceLibrary(error.description)
+    }
 
     private func save() {
         guard let store else { return }

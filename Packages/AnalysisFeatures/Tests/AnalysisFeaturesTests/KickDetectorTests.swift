@@ -183,13 +183,13 @@ final class KickDetectorTests: XCTestCase {
         let r = try busRun(kick.samples)
         assertOrdered(r)
         let kicks = r.events.filter { (e: AnalysisEvent) -> Bool in
-            if case .transient(band: .kick, _, _, _) = e.kind { return true } else { return false }
+            if case .transient(band: .kick, _, _, _, _) = e.kind { return true } else { return false }
         }
         print("ANL-007 bus: \(r.frames.count) frames, \(kicks.count) kick events at \(kicks.map(\.eventSample)), starts \(kick.starts)")
         XCTAssertEqual(kicks.count, 3)
         for (event, start) in zip(kicks, kick.starts) {
             XCTAssertLessThanOrEqual(abs(event.eventSample - Int64(start)), Int64(TransientFixture.hop))
-            guard case let .transient(_, strength, threshold, level) = event.kind else { continue }
+            guard case let .transient(_, strength, threshold, level, _) = event.kind else { continue }
             XCTAssertGreaterThan(strength, threshold)
             XCTAssertGreaterThan(level, TransientDetectorConfiguration.kick.floorDecibels)
             // Its frame (same window end, the item just before it) carries envelope 1; the next decays.

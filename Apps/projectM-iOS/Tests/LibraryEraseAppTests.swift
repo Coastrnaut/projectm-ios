@@ -43,7 +43,7 @@ final class LibraryEraseAppTests: XCTestCase {
         XCTAssertEqual(LibraryErasePolicy.folders(.presets), [UserPresetStore.directoryName])
         XCTAssertEqual(LibraryErasePolicy.folders(.collections), [PresetCollectionStore.directoryName])
         XCTAssertEqual(LibraryErasePolicy.folders(.media), [PhotoStore.folderName, VideoStore.folderName])
-        let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys
+        let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, VideoStore.idKey, VideoStore.loopKey, TextOverlayStore.key,
                RecordingAudioSetting.includeMicrophoneKey])   // REC-004-R3

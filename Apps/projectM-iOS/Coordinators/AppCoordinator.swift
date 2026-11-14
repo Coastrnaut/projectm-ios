@@ -196,6 +196,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let latencyOffset: LatencyOffsetSetting
     /// FX-003: the colour grade (Settings → Color) of the compositor-backed visuals.
     let colorGrade: ColorGradeSetting
+    /// FX-009: Trails (Settings → Trails) of the compositor-backed visuals.
+    let motionFeedback: MotionFeedbackSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -330,6 +332,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: RecordingAudioSetting.includeMicrophoneKey)   // REC-004: off
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
             ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
+            MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
             defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -351,6 +354,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         recordingAudio = RecordingAudioSetting(defaults: defaults)
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
+        motionFeedback = MotionFeedbackSetting(defaults: defaults)   // FX-009
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -498,6 +502,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         videos.onSpeedChange = { [weak self] (speed: VideoPlaybackSpeed) in self?.videoVisual?.playbackSpeed = speed }   // MED-004
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         colorGrade.onChange = { [weak self] (_: ColorGrade) in self?.applyColorGrade() }   // FX-003
+        connectMotionFeedback()   // FX-009
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
         manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
@@ -506,6 +511,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         self.memoryPressure.register(presetLoader)   // PERF-006-R11: the archive's decompressed chunk
+        presets.thumbnails = Self.makeThumbnails(loader: presetLoader, renderer: { [weak self] in self?.renderer })   // PRE-001
         self.memoryPressure.register(self)           // PERF-006-R12: an idle native spectrum
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains(UITestMemoryPanel.argument) {
@@ -876,6 +882,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         videoVisual?.reduceFlashing = reduce    // MED-002
         textVisual?.reduceFlashing = reduce     // MED-009
         applyColorGrade()                       // FX-003: the profile's gain cap
+        applyMotionFeedback()                   // FX-009: the profile's and Reduce flashing's length caps
     }
 
     /// ACC-012-R4, R5: hands one clamp to every frame resolver (projectM's envelope pass, the native host's
@@ -1005,6 +1012,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
+            host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1039,6 +1047,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
+            host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1091,6 +1100,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
+            host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1140,6 +1150,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
+            host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1431,6 +1442,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
         }
         if let visual { settings.visual = visual }
+        resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
         sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
         statusEvents.post(StatusEventCatalog.lastSceneReopened())   // ACC-011 X25
     }

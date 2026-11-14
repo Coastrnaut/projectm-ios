@@ -358,6 +358,7 @@ struct VisualizerView: View {
                          noiseGate: coordinator.noiseGate,   // AUD-011
                          latencyOffset: coordinator.latencyOffset,   // AUD-013
                          colorGrade: coordinator.colorGrade,   // FX-003
+                         motionFeedback: coordinator.motionFeedback,   // FX-009
                          midi: coordinator.midi,   // MIDI-001
                          recordingAudio: coordinator.recordingAudio,   // REC-004
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },

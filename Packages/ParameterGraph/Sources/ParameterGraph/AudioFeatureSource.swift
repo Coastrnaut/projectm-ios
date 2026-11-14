@@ -5,7 +5,8 @@
 // allocated and this module stays independent of the analysis types (Constitution VI): the native
 // spectra pass their band scratch; a consumer of the analysis event bus (ANL-016) passes its copied
 // bands plus `AnalysisFrame.onsetFlux`, `beatConfidence`, `kickEnvelope` (ANL-007-R11) and the
-// normalized `centroid` (ANL-010-R8) and the `loudness` envelope (ANL-014-R8).
+// normalized `centroid` (ANL-010-R8), the `loudness` envelope (ANL-014-R8) and the mid transient
+// value `AnalysisFrame.midTransient` (ANL-008-R8).
 
 /// A normalized (0…1) audio feature a binding can follow.
 public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
@@ -25,12 +26,16 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// The loudness envelope (ANL-014): K-weighted level normalized −60…0 dB, smoothed (attack
     /// 100 ms, release 400 ms); 0 at silence.
     case loudness
+    /// "Mid transient" (ANL-008): a mid-band (1–4 kHz) percussive transient's envelope × its
+    /// confidence, 0…1. Not a snare detector: it never implies which instrument played.
+    case midTransient
 
     /// The highest band index (the largest band count is 128).
     public static let maximumBandIndex = 127
 
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
-    /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`.
+    /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`,
+    /// `audio.midTransient`.
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -40,6 +45,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case .kick: "audio.kick"
         case .centroid: "audio.centroid"
         case .loudness: "audio.loudness"
+        case .midTransient: "audio.midTransient"
         }
     }
 
@@ -55,6 +61,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case "audio.kick": self = .kick
         case "audio.centroid": self = .centroid
         case "audio.loudness": self = .loudness
+        case "audio.midTransient": self = .midTransient
         default:
             let prefix = "audio.band."
             guard id.hasPrefix(prefix) else { return nil }
@@ -87,6 +94,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             return frame.centroid.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
         case .loudness:
             return frame.loudness.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
+        case .midTransient:
+            return frame.midTransient.map { (value: Float) -> Double in Self.finite(Double(value)) } ?? 0
         }
     }
 
@@ -105,15 +114,18 @@ public struct AudioFeatureFrame {
     public var centroid: Float?
     /// ANL-014's loudness envelope (0…1); nil when the producer does not feed it.
     public var loudness: Float?
+    /// ANL-008's mid transient value (envelope × confidence, 0…1); nil when the producer does not feed it.
+    public var midTransient: Float?
 
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
-                centroid: Float? = nil, loudness: Float? = nil) {
+                centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil) {
         self.bands = bands
         self.onset = onset
         self.beatConfidence = beatConfidence
         self.kick = kick
         self.centroid = centroid
         self.loudness = loudness
+        self.midTransient = midTransient
     }
 
     /// No audio: every feature reads 0.

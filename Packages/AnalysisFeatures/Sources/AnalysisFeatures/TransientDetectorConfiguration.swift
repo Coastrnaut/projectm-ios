@@ -2,9 +2,13 @@
 // event it reports (ANL-007-R1 to R9; data-model.md; contracts/transient-detector.md C1; defaults
 // and their reasons in spec Clarifications and research ANL-007-D1 to D4).
 //
-// One detector type serves every band: the kick (ANL-007) is `.kick`; ANL-008 (snare-like) and
-// ANL-009 (high-frequency) add a `TransientBand` case and their own configuration. Invalid
-// configurations cannot be constructed.
+// One detector type serves every band: the kick (ANL-007) is `.kick`, the mid transient (ANL-008,
+// 1–4 kHz) is `.midTransient`; ANL-009 (high-frequency) adds a `TransientBand` case and its own
+// configuration. Invalid configurations cannot be constructed. Every event carries a confidence
+// (ANL-008-R6): √(margin · breadth′), see `breadthWeight` and `confidenceMarginDecibels`.
+//
+// The mid transient is NOT a snare classifier (ANL-008-R1): it reports percussive energy rising in
+// 1–4 kHz, whatever made it, and no name, event or value claims an instrument.
 #if canImport(Darwin)
 import Darwin
 #elseif canImport(Glibc)
@@ -17,6 +21,8 @@ import Musl
 public enum TransientBand: Sendable, Hashable, CaseIterable {
     /// Low-frequency transients, 40–150 Hz (ANL-007).
     case kick
+    /// Mid-band percussive transients, 1–4 kHz (ANL-008); no instrument identity is implied.
+    case midTransient
 }
 
 public enum TransientDetectorConfigurationError: Error, Equatable, Sendable {
@@ -38,6 +44,10 @@ public enum TransientDetectorConfigurationError: Error, Equatable, Sendable {
     case invalidRefractoryPeriod(Double)
     /// Greater than 0 and at most 5 s.
     case invalidEnvelopeTime(Double)
+    /// 0…1.
+    case invalidBreadthWeight(Float)
+    /// Greater than 0 and at most 40 dB.
+    case invalidConfidenceMargin(Float)
 }
 
 public struct TransientDetectorConfiguration: Sendable, Hashable {
@@ -50,7 +60,14 @@ public struct TransientDetectorConfiguration: Sendable, Hashable {
     public static let kick = TransientDetectorConfiguration(
         validBand: .kick, sampleRate: 44_100, lowerFrequency: 40, upperFrequency: 150, floorDecibels: -70,
         dominanceDecibels: -15, baselineSeconds: 1.0, minimumRiseDecibels: 9, deviationMultiplier: 4,
-        refractorySeconds: 0.1, envelopeSeconds: 0.1)
+        refractorySeconds: 0.1, envelopeSeconds: 0.1, breadthWeight: 0, confidenceMarginDecibels: 12)
+
+    /// The mid transient at 44,100 Hz (ANL-008; spec Clarifications): 1–4 kHz, 70 ms refractory,
+    /// 80 ms envelope, confidence weighted by the attack's breadth.
+    public static let midTransient = TransientDetectorConfiguration(
+        validBand: .midTransient, sampleRate: 44_100, lowerFrequency: 1_000, upperFrequency: 4_000, floorDecibels: -70,
+        dominanceDecibels: -15, baselineSeconds: 1.0, minimumRiseDecibels: 9, deviationMultiplier: 4,
+        refractorySeconds: 0.07, envelopeSeconds: 0.08, breadthWeight: 1, confidenceMarginDecibels: 12)
 
     public let band: TransientBand
     /// Hz; one detector serves one sample rate (its weight tables are built for it).
@@ -73,13 +90,18 @@ public struct TransientDetectorConfiguration: Sendable, Hashable {
     public let refractorySeconds: Double
     /// Time constant of the envelope's exponential decay.
     public let envelopeSeconds: Double
+    /// w in the confidence's breadth′ = 1 − w + w · breadth (0: the confidence is the margin alone).
+    public let breadthWeight: Float
+    /// The rise above the threshold that gives a full margin (margin = excess / this, clamped 0…1).
+    public let confidenceMarginDecibels: Float
 
     public init(band: TransientBand = .kick, sampleRate: Double = 44_100,
                 lowerFrequency: Double = 40, upperFrequency: Double = 150,
                 floorDecibels: Float = -70, dominanceDecibels: Float = -15,
                 baselineSeconds: Double = 1.0, minimumRiseDecibels: Float = 9,
                 deviationMultiplier: Float = 4, refractorySeconds: Double = 0.1,
-                envelopeSeconds: Double = 0.1) throws(TransientDetectorConfigurationError) {
+                envelopeSeconds: Double = 0.1, breadthWeight: Float = 0,
+                confidenceMarginDecibels: Float = 12) throws(TransientDetectorConfigurationError) {
         guard sampleRate.isFinite, sampleRate >= BandLayout.minimumSampleRate else { throw .invalidSampleRate(sampleRate) }
         let nyquist: Double = sampleRate / 2
         guard lowerFrequency.isFinite, upperFrequency.isFinite, lowerFrequency >= BandLayout.lowerEdgeHz,
@@ -93,15 +115,21 @@ public struct TransientDetectorConfiguration: Sendable, Hashable {
         guard deviationMultiplier >= 0, deviationMultiplier <= 20 else { throw .invalidDeviationMultiplier(deviationMultiplier) }
         guard refractorySeconds >= 0, refractorySeconds <= 2 else { throw .invalidRefractoryPeriod(refractorySeconds) }
         guard envelopeSeconds > 0, envelopeSeconds <= 5 else { throw .invalidEnvelopeTime(envelopeSeconds) }
+        guard breadthWeight >= 0, breadthWeight <= 1 else { throw .invalidBreadthWeight(breadthWeight) }
+        guard confidenceMarginDecibels > 0, confidenceMarginDecibels <= 40 else {
+            throw .invalidConfidenceMargin(confidenceMarginDecibels)
+        }
         self.init(validBand: band, sampleRate: sampleRate, lowerFrequency: lowerFrequency, upperFrequency: upperFrequency,
                   floorDecibels: floorDecibels, dominanceDecibels: dominanceDecibels, baselineSeconds: baselineSeconds,
                   minimumRiseDecibels: minimumRiseDecibels, deviationMultiplier: deviationMultiplier,
-                  refractorySeconds: refractorySeconds, envelopeSeconds: envelopeSeconds)
+                  refractorySeconds: refractorySeconds, envelopeSeconds: envelopeSeconds, breadthWeight: breadthWeight,
+                  confidenceMarginDecibels: confidenceMarginDecibels)
     }
 
     private init(validBand: TransientBand, sampleRate: Double, lowerFrequency: Double, upperFrequency: Double,
                  floorDecibels: Float, dominanceDecibels: Float, baselineSeconds: Double, minimumRiseDecibels: Float,
-                 deviationMultiplier: Float, refractorySeconds: Double, envelopeSeconds: Double) {
+                 deviationMultiplier: Float, refractorySeconds: Double, envelopeSeconds: Double, breadthWeight: Float,
+                 confidenceMarginDecibels: Float) {
         band = validBand
         self.sampleRate = sampleRate
         self.lowerFrequency = lowerFrequency
@@ -113,6 +141,8 @@ public struct TransientDetectorConfiguration: Sendable, Hashable {
         self.deviationMultiplier = deviationMultiplier
         self.refractorySeconds = refractorySeconds
         self.envelopeSeconds = envelopeSeconds
+        self.breadthWeight = breadthWeight
+        self.confidenceMarginDecibels = confidenceMarginDecibels
     }
 
     /// Detection values in the median/MAD window at `hop`: round(window · rate / hop), 1…128.
@@ -154,9 +184,13 @@ public struct TransientEvent: Sendable, Hashable {
     public let sampleRate: Double
     /// The producing frame's timestamp.
     public let timestampNanoseconds: UInt64
+    /// 0…1 (ANL-008-R6): √(margin · breadth′), how far above the threshold and how broadband the
+    /// attack was. An estimate of how clearly this is a percussive transient in the band, never of
+    /// which instrument made it.
+    public let confidence: Float
 
     public init(band: TransientBand, sequence: UInt64, sampleIndex: Int64, frameIndex: Int64, strength: Float,
-                threshold: Float, level: Float, sampleRate: Double, timestampNanoseconds: UInt64) {
+                threshold: Float, level: Float, sampleRate: Double, timestampNanoseconds: UInt64, confidence: Float = 1) {
         self.band = band
         self.sequence = sequence
         self.sampleIndex = sampleIndex
@@ -166,6 +200,7 @@ public struct TransientEvent: Sendable, Hashable {
         self.level = level
         self.sampleRate = sampleRate
         self.timestampNanoseconds = timestampNanoseconds
+        self.confidence = confidence
     }
 
     /// `sampleIndex / sampleRate`.

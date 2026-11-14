@@ -185,3 +185,11 @@ void *PMANGLECopyMetalSharedEvent(EGLDisplay dpy, EGLSync sync) {
     Copy copy = (Copy)eglGetProcAddress("eglCopyMetalSharedEventANGLE");
     return copy ? copy(dpy, sync) : 0;
 }
+
+void PMANGLEBindFramebuffer(unsigned int framebuffer) {
+    typedef void (*BindFramebuffer)(unsigned int, unsigned int);
+    BindFramebuffer bind = (BindFramebuffer)eglGetProcAddress("glBindFramebuffer");
+    if (bind) {
+        bind(GL_FRAMEBUFFER, framebuffer);
+    }
+}

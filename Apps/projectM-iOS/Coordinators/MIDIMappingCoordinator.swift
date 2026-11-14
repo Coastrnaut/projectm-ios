@@ -13,6 +13,9 @@
 // * The input client "mappings" is registered only while learning or while bindings exist (MIDI-003-R12).
 // * Announcements (learning started, mapped, timed out) go through the injected `.midi` announcer; values are
 //   never announced (MIDI-003-R11). Nothing here names a MIDI endpoint: `MIDIEvent` has no source.
+// * MIDI-004 (specs/140-midi-004-cc-scaling, contract C4): each mapping's curve and Invert are set from its options
+//   screen (`selectPreset`, `setInverted`): saved at once in the same line (`;curve=`, `;invert=1`), announced on
+//   the `.midi` lane, no Undo entry, and applied from the control's next message (no jump while nobody touches it).
 import Foundation
 import Observation
 import ParameterGraph
@@ -28,6 +31,10 @@ struct MIDIMappingRow: Identifiable, Equatable {
     /// "CC 7 · Ch 1"; nil when not mapped.
     let control: String?
     let isLearning: Bool
+    /// MIDI-004: "Ease in, inverted"; nil when not mapped.
+    var curveSummary: String? = nil
+    /// MIDI-004-R5: the stored curve could not be read; Linear is used.
+    var curveUnreadable: Bool = false
 
     var id: String { parameter.rawValue }
 
@@ -122,11 +129,11 @@ final class MIDIMappingCoordinator {
 
     var rows: [MIDIMappingRow] {
         learnable.map { (descriptor: ParameterDescriptor) -> MIDIMappingRow in
-            let control: String? = bindings.binding(for: descriptor.id).map { (binding: MIDIControlBinding) -> String in
-                Self.controlText(binding.key)
-            }
+            let binding: MIDIControlBinding? = bindings.binding(for: descriptor.id)
+            let control: String? = binding.map { (binding: MIDIControlBinding) -> String in Self.controlText(binding.key) }
             return MIDIMappingRow(parameter: descriptor.id, name: Self.name(descriptor), control: control,
-                                  isLearning: learningTarget == descriptor.id)
+                                  isLearning: learningTarget == descriptor.id, curveSummary: binding?.options.summary,
+                                  curveUnreadable: binding?.options.hasUnreadableCurve ?? false)
         }
     }
 
@@ -233,6 +240,37 @@ final class MIDIMappingCoordinator {
         guard bindings.remove(target: target) != nil else { return }
         rememberUndo(before)
         listChanged()
+    }
+
+    // MARK: Curve and inversion (MIDI-004, contract C4.1)
+
+    static let unreadableCurveText: String = "Curve not readable; using Linear."
+
+    /// The mapping's options; nil when `target` is not mapped.
+    func options(for target: ParameterID) -> MIDIMappingOptions? {
+        bindings.binding(for: target)?.options
+    }
+
+    func selectPreset(_ preset: MIDICurvePreset, for target: ParameterID) {
+        guard var options = options(for: target) else { return }
+        options.setCurve(preset.curve)
+        guard updateOptions(options, for: target) else { return }
+        announce(name(of: target) + " curve: " + preset.title + ".")
+    }
+
+    func setInverted(_ inverted: Bool, for target: ParameterID) {
+        guard var options = options(for: target) else { return }
+        options.inverted = inverted
+        guard updateOptions(options, for: target) else { return }
+        announce(name(of: target) + (inverted ? " inverted." : " not inverted."))
+    }
+
+    /// Saves changed options; false when nothing changed. Live values wait for the next message.
+    private func updateOptions(_ options: MIDIMappingOptions, for target: ParameterID) -> Bool {
+        guard self.options(for: target) != options else { return false }
+        bindings.setOptions(options, for: target)
+        save()
+        return true
     }
 
     func undo() {

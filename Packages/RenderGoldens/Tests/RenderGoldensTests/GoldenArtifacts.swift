@@ -68,7 +68,9 @@ enum GoldenArtifacts {
         var images: [(String, GoldenImage)] = [("actual.png", actual)]
         if let expected {
             images.insert(("expected.png", expected), at: 0)
-            images.append(("diff.png", GoldenDiffImage.make(expected: expected, actual: actual)))
+            // QA-003: the diff image uses the comparison's own tolerance (forgiven pixels, bounding box).
+            let tolerance: GoldenTolerance = comparison?.report?.tolerance ?? .golden
+            images.append(("diff.png", GoldenDiffImage.make(expected: expected, actual: actual, tolerance: tolerance)))
         }
         let summary = "\(capture) [\(platform.rawValue)]: " + (comparison?.summary ?? "no golden")
         do {

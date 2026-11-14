@@ -82,6 +82,8 @@ public struct ShowCueList: Sendable, Hashable {
     /// In show order.
     public private(set) var cues: [ShowCue]
     public private(set) var position: ShowPosition
+    /// SCN-004: the scene folder tree and each scene's folder (logical; scene files never move).
+    public internal(set) var folders: SceneFolderTree = SceneFolderTree()
 
     /// An empty show at Standby.
     public init(id: UUID = UUID(), name: String = ShowCueList.defaultName) {
@@ -244,6 +246,36 @@ public struct ShowCueList: Sendable, Hashable {
         guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .unknownCue(cueID) }
         guard let label = Self.normalizedLabel(label) else { throw .invalidLabel }
         cues[index].label = label
+    }
+
+    // MARK: - Scene folders (SCN-004: never changes cues, their order, the position or a scene ID)
+
+    /// The scene's folder (nil = top level).
+    public func folderID(ofScene sceneID: String) -> UUID? { folders.folderID(ofScene: sceneID) }
+
+    @discardableResult
+    public mutating func createFolder(named name: String, in parent: UUID?, id: UUID = UUID()) throws(SceneFolderError) -> SceneFolder {
+        try folders.createFolder(named: name, in: parent, id: id)
+    }
+
+    public mutating func renameFolder(_ id: UUID, to name: String) throws(SceneFolderError) {
+        try folders.renameFolder(id, to: name)
+    }
+
+    public mutating func moveFolder(_ id: UUID, to parent: UUID?) throws(SceneFolderError) {
+        try folders.moveFolder(id, to: parent)
+    }
+
+    /// Puts a scene the cues refer to in `folder` (nil = top level); false when it was already there.
+    @discardableResult
+    public mutating func moveScene(_ sceneID: String, to folder: UUID?) throws(SceneFolderError) -> Bool {
+        guard cues.contains(where: { (cue: ShowCue) -> Bool in cue.sceneID == sceneID }) else { throw .sceneNotInShow(sceneID) }
+        return try folders.moveScene(sceneID, to: folder)
+    }
+
+    @discardableResult
+    public mutating func deleteFolder(_ id: UUID) throws(SceneFolderError) -> SceneFolderDeletion {
+        try folders.deleteFolder(id)
     }
 
     // MARK: - Rules

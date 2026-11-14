@@ -248,29 +248,38 @@ public struct SceneBinding: Sendable, Hashable {
     public var envelope: AudioFeatureEnvelope
     /// SHD-009 source text; compiled by validation, evaluated by a later row.
     public var expression: String?
+    /// MOD-004: stored as the optional `curve` field, omitted for linear. A stored curve this version
+    /// cannot read stays in `extra["curve"]` verbatim and restore rejects the binding (`unsupportedCurve`).
+    public var curve: MappingCurve
     public var extra: [String: SceneJSON]
 
     public init(sourceID: String, target: ParameterID, mapping: LinearMapping, mix: ModulationMixMode = .replace,
-                envelope: AudioFeatureEnvelope = .none, expression: String? = nil, extra: [String: SceneJSON] = [:]) {
+                envelope: AudioFeatureEnvelope = .none, expression: String? = nil, curve: MappingCurve = .linear,
+                extra: [String: SceneJSON] = [:]) {
         self.sourceID = sourceID
         self.target = target
         self.mapping = mapping
         self.mix = mix
         self.envelope = envelope
         self.expression = expression
+        self.curve = curve
         self.extra = extra
     }
 
     public init(source: AudioFeatureSource, target: ParameterID, mapping: LinearMapping, mix: ModulationMixMode = .replace,
-                envelope: AudioFeatureEnvelope = .none, expression: String? = nil, extra: [String: SceneJSON] = [:]) {
+                envelope: AudioFeatureEnvelope = .none, expression: String? = nil, curve: MappingCurve = .linear,
+                extra: [String: SceneJSON] = [:]) {
         self.init(sourceID: source.id, target: target, mapping: mapping, mix: mix, envelope: envelope, expression: expression,
-                  extra: extra)
+                  curve: curve, extra: extra)
     }
 
     public init(_ binding: AudioFeatureBinding, expression: String? = nil) {
         self.init(source: binding.source, target: binding.target, mapping: binding.mapping, mix: binding.mixMode,
-                  envelope: binding.envelope, expression: expression)
+                  envelope: binding.envelope, expression: expression, curve: binding.curve)
     }
+
+    /// The stored curve could not be read by this version (kept verbatim in `extra`).
+    var hasUnreadableCurve: Bool { extra["curve"] != nil }
 
     /// The audio feature, when this version knows `sourceID`.
     public var source: AudioFeatureSource? {
@@ -285,7 +294,8 @@ public struct SceneBinding: Sendable, Hashable {
 
     func audioFeatureBinding(source: AudioFeatureSource, target: ParameterID) -> AudioFeatureBinding {
         AudioFeatureBinding(source: source, target: target, inputMinimum: mapping.inputMinimum, inputMaximum: mapping.inputMaximum,
-                            outputStart: mapping.outputStart, outputEnd: mapping.outputEnd, mixMode: mix, envelope: envelope)
+                            outputStart: mapping.outputStart, outputEnd: mapping.outputEnd, mixMode: mix, envelope: envelope,
+                            curve: curve)
     }
 
     /// `audio.band.2 → visual.circularSpectrum.gap`.

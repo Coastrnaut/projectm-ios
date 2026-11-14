@@ -81,6 +81,8 @@ final class PresetCoordinator {
     /// User presets that exist but are not in the library now (waiting for a check or for the
     /// unlock): their favorites are kept (PRE-015-R8).
     @ObservationIgnored var retainedUserPresetIDs: Set<String> = []
+    /// PRE-001: the rows' thumbnails (set by the app; nil in tests that do not need them).
+    @ObservationIgnored var thumbnails: PresetThumbnailModel?
     private(set) var current: IndexedPreset?
     private(set) var scope: PresetScope
     private(set) var unlocked = false

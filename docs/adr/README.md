@@ -45,6 +45,7 @@
 | [0048](0048-local-data-erase.md) | Local data erase by category, applied at the next launch under a journal | Accepted 2026-11-14 (FILE-011; owner rule 4) |
 | [0049](0049-sensory-safety-clamp.md) | One sensory safety clamp, applied after modulation and before render; the stricter limit wins | Accepted 2026-11-14 (ACC-012; owner rule 4) |
 | [0050](0050-output-color-grade.md) | The compositor's output pass grades the composite before the tone map, and the flash guard measures the graded colour | Accepted 2026-11-14 (FX-003; owner rule 4) |
+| [0051](0051-motion-feedback-trails.md) | Motion feedback ("Trails") runs on the composite before the grade and the flash guard, and every scene change resets it | Accepted 2026-11-14 (FX-009; owner rule 4) |
 | [0053](0053-recording-audio-policy.md) | Recordings contain only owned or consented audio, decided at Record; other apps' audio never | Accepted 2026-11-14 (REC-004; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
