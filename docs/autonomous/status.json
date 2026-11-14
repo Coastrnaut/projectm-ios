@@ -13,8 +13,7 @@
   "P1": {
    "audited": 98,
    "implementing": 2,
-   "integrated": 50,
-   "unit_passed": 1
+   "integrated": 51
   },
   "P2": {
    "audited": 77,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 186,
   "implementing": 2,
-  "integrated": 136,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 137,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -83,7 +81,6 @@
    "MED-011",
    "MED-012",
    "MED-013",
-   "MIDI-002",
    "MIDI-003",
    "MIDI-004",
    "MIDI-005",
@@ -229,7 +226,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "189 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
+   "188 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
   ]
  },
  "features": {
@@ -1578,10 +1575,10 @@
    "branch": "feature/midi-002",
    "branch_sha": "44b1f9f38d322994c1b2fbcefce414f29a844e75",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c7cd1169",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MIDI-003": {
    "attempts": 0,
@@ -3936,6 +3933,11 @@
    "sha": "5e7bcff1"
   },
   {
+   "branch": "feature/midi-002",
+   "id": "MIDI-002",
+   "sha": "c7cd1169"
+  },
+  {
    "branch": "feature/mod-001",
    "id": "MOD-001",
    "sha": "304f3bce431a7f6f0a1719bdced6b55b910c9668"
@@ -4201,5 +4203,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T10:36:35Z"
+ "updated": "2026-11-14T10:38:35Z"
 }
