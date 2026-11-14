@@ -17,9 +17,16 @@
 
 - **Decision**: residual r (ns) per first-read frame; bucket by audio time e = sessionSample / 44,100 into 1 s
   buckets keeping the minimum r and its e; least-squares slope through up to 64 bucket minima (ring); verdict needs
-  ≥ 8 buckets; detect |slope| ≥ 50 ppm, clear < 25 ppm. A closing bucket whose minimum differs from the previous
-  bucket's minimum + slope × Δe by more than 4 ms is a step: the ring restarts from that bucket and the previous
-  slope is held.
+  ≥ 10 buckets; detect |slope| ≥ 50 ppm and ≥ 3 standard errors, clear < 25 ppm. A closing bucket whose minimum
+  differs from the previous bucket's minimum + slope × Δe by more than 10 ms is a step: it starts a new segment, and
+  the fit is a pooled within-segment regression (one slope, one intercept per segment), so a step never biases the
+  slope and no history is lost.
+- **Measured during implementation** (AudioClockDriftTests' simulation: 512-sample hop, 0-10 ms one-sided jitter,
+  60 Hz reads): each bucket minimum carries about 1 ms of noise (the read quantization beats against the hop). With
+  8 buckets and no drift the slope reached ±100 ppm, and 4 ms steps fired spuriously. A lower-convex-hull fit (the
+  classic one-way-delay skew estimate) was tried and rejected: its two-point edges were noisier than least squares.
+  Restarting the fit after a step and holding the slope gave 7 ms errors (a short refit's slope error times the
+  whole session's audio time); segment intercepts fixed that.
 - **Rationale**: arrival jitter (10 ms worker timer, 512-sample hop, display interval) is one-sided, so the minimum
   per bucket tracks the floor latency; a linear fit of the floor gives the drift. 64 buckets bound the work (once per
   second) and memory (preallocated). Steps (AUD-013 offset slews, route changes) are not drift.
@@ -33,7 +40,8 @@
 - **Rationale**: the intercept of the fit is the true pipeline latency, which belongs to the age; only the slope is
   clock error. Slew-limited, monotone approach to the target cannot overshoot the target; the target cannot overshoot
   the truth beyond the slope error × e.
-- **Budget**: ±500 ppm → verdict at 8 s (error 4 ms), catch-up in ≤ 16 frames, error ≤ 1 ms from 10 s to 60 s.
+- **Budget**: ±500 ppm → verdict at about 11-13 s (error up to 6 ms before it), catch-up at 0.25 ms per frame,
+  error ≤ 3 ms from 15 s and ≤ 2 ms from 30 s to 60 s, correction ≤ 2 ms past the truth (four jitter sequences).
 
 ## PERF-013-D4 Age statistics
 

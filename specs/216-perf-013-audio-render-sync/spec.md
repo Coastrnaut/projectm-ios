@@ -66,8 +66,8 @@ brings the age error within budget in the documented time without overshooting; 
 **Acceptance Scenarios**:
 
 1. **Given** +500 ppm (and −500 ppm) drift with arrival jitter, **When** 60 s of frames are simulated, **Then** the
-   drift is detected, the age error is within 1 ms from 10 s on, and the applied correction never moves past the
-   true drift offset by more than 1 ms.
+   drift is detected, the age error is within 3 ms from 15 s and within 2 ms from 30 s on, and the applied correction
+   never moves past the true drift offset by more than 2 ms.
 2. **Given** no drift with the same jitter, **Then** no drift is detected and the correction stays exactly 0.
 3. **Given** a step in arrival latency (e.g. the AUD-013 offset changed by 100 ms), **Then** it is not mistaken for
    drift: no correction is applied.
@@ -79,7 +79,7 @@ brings the age error within budget in the documented time without overshooting; 
 - Ages longer than the measurement range (250 ms) count in the top bucket; the maximum stays exact.
 - A presentation time earlier than the frame's audio time (clock anomaly): counted separately, not as an age.
 - The display link pauses (background): no samples; nothing extrapolates across the gap.
-- Too few observations (under 8 s of audio): no drift verdict, no correction.
+- Too few observations (under 10 s of audio): no drift verdict, no correction.
 
 ## Requirements *(mandatory)*
 
@@ -91,12 +91,13 @@ brings the age error within budget in the documented time without overshooting; 
   session, with a fixed 0.1 ms resolution; unavailable values are absent, never 0.
 - **PERF-013-R3**: Drift between the analysis sample clock and the host clock is estimated from the arrival times of
   feature frames against their sample positions, robust to one-sided arrival jitter.
-- **PERF-013-R4**: Drift is reported as detected when its magnitude is at least 50 ppm over at least 8 s of audio,
-  and cleared below 25 ppm; below detection no correction is applied.
+- **PERF-013-R4**: Drift is reported as detected when its magnitude is at least 50 ppm and at least 3 standard errors
+  of the estimate over at least 10 s of audio, and cleared below 25 ppm; below detection no correction is applied.
 - **PERF-013-R5**: While drift is detected, the sample-to-host mapping is corrected toward the estimate; each step
   moves it by at most 0.25 ms per presented frame and never past the target.
-- **PERF-013-R6**: A sudden change of arrival latency (more than 4 ms between consecutive observation buckets beyond
-  the drift prediction) restarts the estimate without changing the applied correction.
+- **PERF-013-R6**: A sudden change of arrival latency (more than 10 ms between consecutive observation buckets beyond
+  the drift prediction) is a step, not drift: the estimate continues across it with a new intercept and the applied
+  correction is unaffected.
 - **PERF-013-R7**: A new analysis session resets the estimate, the correction and the per-session figures.
 - **PERF-013-R8**: The performance overlay shows one age line (smoothed age, p95, the AUD-013 offset when set, and
   the drift verdict with the estimate when detected); unavailable when no visual consumes analysis frames.
@@ -118,11 +119,11 @@ brings the age error within budget in the documented time without overshooting; 
 
 ## Success Criteria *(mandatory)*
 
-- **PERF-013-S1**: With ±500 ppm injected drift, the age error is within 1 ms within 10 s of audio after the session
-  start, and stays within 1 ms to the end of a 60 s run.
+- **PERF-013-S1**: With ±500 ppm injected drift and jittered arrivals, the age error is within 3 ms from 15 s of
+  audio after the session start and within 2 ms from 30 s to the end of a 60 s run, for every tested jitter sequence.
 - **PERF-013-S2**: With no drift, 0 corrections in 100% of runs (jittered arrivals included).
 - **PERF-013-S3**: No correction step exceeds 0.25 ms, and the applied correction never passes the true drift
-  offset by more than 1 ms.
+  offset by more than 2 ms.
 - **PERF-013-S4**: The overlay age equals a known injected age within 0.1 ms.
 - **PERF-013-S5**: On D1, the overlay age line shows a plausible age (under 100 ms) on a native visual with
   microphone audio, and a 5-minute session reports no false drift detection `{device}`.
@@ -151,13 +152,17 @@ local-first option.
 - Q: How is drift estimated robustly against jittery arrivals? → A: Arrival residual = first-read host time − bus host
   time. Residuals are grouped in 1 s buckets of audio time and each bucket keeps its minimum (arrival jitter is
   one-sided: frames are never early). A least-squares line through up to 64 bucket minima gives the drift (ppm). At
-  least 8 buckets are needed for a verdict; detection at ≥ 50 ppm, cleared below 25 ppm (hysteresis). A bucket more
-  than 4 ms off the previous one's drift prediction is a latency step: the buckets restart, the applied correction
-  stays (PERF-013-R3, R4, R6).
+  least 10 buckets are needed for a verdict; detection at ≥ 50 ppm and ≥ 3 standard errors, cleared below 25 ppm
+  (hysteresis). A bucket more than 10 ms off the previous one's drift prediction is a latency step: it starts a new
+  segment with its own intercept and the same slope, so the history is kept (PERF-013-R3, R4, R6). Revised during
+  implementation (2026-11-14): with realistic jitter each bucket minimum carries about 1 ms of noise, so 8 buckets
+  and a 4 ms step threshold gave false steps and ±100 ppm slopes without drift; a lower convex hull fit was tried
+  and was noisier (research PERF-013-D2).
 - Q: What is the correction budget? → A: Correction target = estimated drift × audio time since the session start;
   the applied correction moves toward it by at most 0.25 ms per presented frame and never past it. Budget: with
-  ±500 ppm drift, age error ≤ 1 ms from 10 s of audio on, until at least 60 s; no drift → no correction
-  (PERF-013-R5, S1-S3).
+  ±500 ppm drift, age error ≤ 3 ms from 15 s of audio and ≤ 2 ms from 30 s to 60 s, the correction never more than
+  2 ms past the true offset; no drift → no correction (PERF-013-R5, S1-S3). The first draft's 1 ms by 10 s did not
+  survive realistic jitter (about 1 ms of noise per 1 s bucket minimum); 2 ms is still an eighth of a 60 Hz frame.
 - Q: Does the PERF-012 report need a new schema version for the `audioSync` section? → A: No. PERF-012 was
   integrated on 2026-11-14 and has not shipped in any release, so no version 1 report exists outside development.
   The optional section is added to schema version 1 (contract amended, the copy kept equal, `additionalProperties:

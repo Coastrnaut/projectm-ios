@@ -7,10 +7,10 @@
 - `busHostNanoseconds: UInt64` — the bus's host time.
 
 ## AudioClockDriftEstimator (value, preallocated)
-- Configuration: `sampleRate` 44,100; `bucketSeconds` 1; `capacity` 64; `minimumBuckets` 8; `detectPPM` 50;
-  `clearPPM` 25; `stepNanoseconds` 4,000,000.
-- State: open bucket (start e, min r, e at min); ring of closed bucket minima; `slopePPM: Double?`; `detected: Bool`;
-  `restarts: Int`.
+- Configuration: `sampleRate` 44,100; `bucketSeconds` 1; `capacity` 64; `minimumBuckets` 10; `detectPPM` 50;
+  `clearPPM` 25; `significance` 3; `stepNanoseconds` 10,000,000.
+- State: open bucket (index, min r, e at min); ring of closed bucket minima with their segment; `driftPPM: Double?`;
+  `detected: Bool`; `detections`, `steps`.
 - `observe(sessionSample:residualNanoseconds:)`; `target(atSessionSample:) -> Double` (ns).
 
 ## FeatureAgeMeter (class, Mutex)
