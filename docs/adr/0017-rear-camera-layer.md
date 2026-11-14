@@ -2,7 +2,7 @@
 
 - **Status**: Accepted 2026-11-13 (decided by Claude under the owner's best-judgement rule, owner
   rule 4)
-- **Feature**: CAM-001 (`specs/033-cam-001-rear-camera-layer`); amended by CAM-002 (`specs/096-cam-002-front-camera-layer`) and CAM-007 (`specs/098-cam-007-camera-crop-and-rotation`)
+- **Feature**: CAM-001 (`specs/033-cam-001-rear-camera-layer`); amended by CAM-002 (`specs/096-cam-002-front-camera-layer`), CAM-007 (`specs/098-cam-007-camera-crop-and-rotation`) and CAM-013 (`specs/102-cam-013-camera-failure-recovery`)
 - **Constitution**: I, VI, X; Privacy
 
 ## Context
@@ -82,3 +82,28 @@ new ADR.
     transparent (the shader's bounds test equals `CameraPictureGeometry.contains`); in the Camera
     visual they show the black background on screen, in saved frames and in recordings. The
     uniforms are unchanged (visible, offset, rotation and mirror already carry the transform).
+
+## Amendment 2026-11-14: failure recovery (CAM-013)
+
+Decided by Claude under owner rule 4; `specs/102-cam-013-camera-failure-recovery`. No default is
+overridden (the camera still runs only while the Camera visual is shown, running and in the
+foreground), so this amends ADR-0017 instead of opening a new ADR.
+
+11. **Clear and explain.** An interruption or a runtime error draws no camera picture from the next
+    frame (the layer is transparent; decision 4's fallback), and the non-blocking camera notice
+    names the reason in plain words (`CameraStopReason`: another app, multitasking, system
+    pressure, background, other interruption, media reset, other error) with a Retry button. The
+    "Camera on" badge stays hidden unless the camera is starting or running.
+12. **The system's return is followed.** Every interruption, contention included, resumes by itself
+    when AVFoundation reports its end; the provider keeps its session through an interruption.
+    Refusing to resume after contention would leave a running session with a hidden picture.
+13. **Retry with backoff; one automatic retry.** Retry stops the camera completely and starts it
+    again (permission re-checked). Attempts in a row wait 0, 2, 4, 8, 16, then 30 s; 10 s of
+    running or any stop by the user or the app starts a new run. Only a media services reset is
+    retried by itself, once. A runtime error releases the session at once, so iOS's indicator
+    matches. Counts per reason and of retries are kept in memory as numbers only.
+14. **Revocation and background.** iOS ends the app when camera access is turned off in Settings
+    (Apple Developer Forums threads 720006 and 64740), so revocation is seen at the next start as
+    the denied notice with Open Settings (FILE-013). The camera never runs in the background
+    (AUD-015 unchanged); entering it cancels a waiting retry and the return starts afresh. Camera
+    frame-rate throttling on pressure and iPad multitasking camera access stay off.

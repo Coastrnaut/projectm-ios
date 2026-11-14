@@ -6,6 +6,9 @@
 // (`-uitestCamera <scenario>`) use it; release builds use `AVCameraFrameProvider`.
 // CAM-002: both positions (`select`), a missing front camera (`availablePositions`) and an asymmetric
 // `.marker` picture, so the mirror and the camera switch are testable without a camera.
+// CAM-013: `interrupt(_:)`, `endInterruption()`, `fail(_:)` and `withdrawAccess()` inject every
+// interruption reason, its end, both runtime error kinds and a revoked permission (seen, as on iOS,
+// at the next start); `stopReason` is set before the state callback.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 
@@ -49,6 +52,10 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     private var texture: MTLTexture?
     /// The scenario's answer once the (simulated) prompt was answered: later starts reuse it.
     private var decided: Bool?
+    /// CAM-013: access was withdrawn (in Settings); every later start finds it denied.
+    public private(set) var accessWithdrawn = false
+    /// CAM-013: why the feed is interrupted or failed (contracts/camera-recovery.md C1).
+    public private(set) var stopReason: CameraStopReason?
 
     public private(set) var state: CameraFeedState = .idle {
         didSet { if state != oldValue { onStateChange?(state) } }
@@ -86,6 +93,11 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
 
     /// The scenario's answer for the current position (also a camera switch, without passing through idle).
     private func startFeed() {
+        stopReason = nil
+        if accessWithdrawn, scenario != .unavailable, availablePositions.contains(position) {   // CAM-013-R8
+            state = .denied
+            return
+        }
         switch scenario {
         case .unavailable:
             state = .unavailable
@@ -111,6 +123,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         guard state != .idle else { return }
         stopCount += 1
         latest.close()
+        stopReason = nil
         state = .idle
     }
 
@@ -121,6 +134,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public func select(_ position: CameraPosition) {
         guard position != self.position else { return }
         selectCount += 1
+        stopReason = nil   // CAM-013: a switch clears the reason
         latest.clear()
         self.position = position
         latest.setPosition(position)
@@ -133,25 +147,34 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         }
     }
 
-    /// Another app or the system takes the camera.
-    public func interrupt() {
-        guard state == .running else { return }
+    /// Another app or the system takes the camera (CAM-013: for `reason`, an interruption kind).
+    public func interrupt(_ reason: CameraStopReason = .otherInterruption) {
+        guard state == .running || state == .starting, reason.isInterruption else { return }
         latest.clear()
+        stopReason = reason
         state = .interrupted
     }
 
     /// The camera is free again.
     public func endInterruption() {
         guard state == .interrupted, let texture else { return }
+        stopReason = nil
         state = .running
         latest.store(texture, position: position)
     }
 
-    /// A runtime error.
-    public func fail() {
-        guard state == .running || state == .interrupted else { return }
-        latest.clear()
+    /// A runtime error (CAM-013: of `reason`, an error kind). The slot closes, as a released session's would.
+    public func fail(_ reason: CameraStopReason = .runtimeError) {
+        guard state == .running || state == .starting || state == .interrupted, !reason.isInterruption else { return }
+        latest.close()
+        stopReason = reason
         state = .failed
+    }
+
+    /// CAM-013-R8: camera access turned off in Settings. iOS ends a running app when this happens,
+    /// so the stand-in only makes every later start find access denied.
+    public func withdrawAccess() {
+        accessWithdrawn = true
     }
 
     private func run() {
@@ -163,6 +186,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         }
         latest.open()
         latest.store(texture, position: position)
+        stopReason = nil
         state = .running
     }
 

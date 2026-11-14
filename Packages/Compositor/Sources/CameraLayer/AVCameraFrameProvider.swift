@@ -19,7 +19,10 @@
 // * The picture's rotation comes from `AVCaptureDevice.RotationCoordinator` (horizon-level capture
 //   angle), observed on the main thread.
 // * Interruption → `interrupted` and the picture is dropped; its end → `running`. A runtime error →
-//   `failed`. `stop()` closes the slot at once (no picture is shown or kept from then on), stops
+//   `failed`. CAM-013: each carries a `stopReason` mapped from the notification's reason key or
+//   error code (research CAM-013-D1); an interruption keeps the session (the system resumes it,
+//   D2), a runtime error releases it at once so iOS's indicator turns off and a Retry starts clean
+//   (D4). `stop()` closes the slot at once (no picture is shown or kept from then on), stops
 //   observing and sends `stopRunning` to the session queue immediately.
 // A generation number discards callbacks from an earlier start. Thread confinement: state,
 // session reference, observers and generation on the main thread; the cache and the slot on the
@@ -45,6 +48,8 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     private var generation: UInt64 = 0
     /// CAM-002: the chosen camera (main thread).
     public private(set) var position: CameraPosition = .back
+    /// CAM-013: why the feed is interrupted or failed (main thread).
+    public private(set) var stopReason: CameraStopReason?
 
     public private(set) var state: CameraFeedState = .idle {
         didSet { if state != oldValue { onStateChange?(state) } }
@@ -68,6 +73,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     public func start() {
         guard session == nil, state != .requestingAccess, state != .starting else { return }
         generation &+= 1
+        stopReason = nil
         let current = generation
         guard Self.camera(for: position) != nil else {   // checked first: no camera, no prompt (CAM-001-R6, CAM-002-R10)
             state = .unavailable
@@ -94,6 +100,14 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     }
 
     public func stop() {
+        releaseSession()
+        stopReason = nil
+        state = .idle
+    }
+
+    /// CAM-013-D4: no more pictures, observers removed, the session stopped and released, the cache
+    /// flushed. The state is left to the caller (`idle` for a stop, `failed` after a runtime error).
+    private func releaseSession() {
         generation &+= 1
         latest.close()
         observers.forEach(NotificationCenter.default.removeObserver)
@@ -110,7 +124,22 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
             let box = Unchecked(value: cache)
             videoQueue.async { CVMetalTextureCacheFlush(box.value, 0) }
         }
-        state = .idle
+    }
+
+    /// CAM-013-D1: the reason for an interruption (nil or unknown: `otherInterruption`).
+    public static func stopReason(interruption: AVCaptureSession.InterruptionReason?) -> CameraStopReason {
+        switch interruption {
+        case .videoDeviceInUseByAnotherClient?, .audioDeviceInUseByAnotherClient?: return .anotherApp
+        case .videoDeviceNotAvailableWithMultipleForegroundApps?: return .multitasking
+        case .videoDeviceNotAvailableDueToSystemPressure?: return .systemPressure
+        case .videoDeviceNotAvailableInBackground?: return .background
+        default: return .otherInterruption
+        }
+    }
+
+    /// CAM-013-D1: the reason for a runtime error.
+    public static func stopReason(error: AVError.Code?) -> CameraStopReason {
+        error == .mediaServicesWereReset ? .mediaServicesReset : .runtimeError
     }
 
     public func latestFrame() -> CameraFrame? { latest.read() }
@@ -120,6 +149,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
     public func select(_ position: CameraPosition) {
         guard position != self.position else { return }
         self.position = position
+        stopReason = nil   // CAM-013: a switch clears the reason
         latest.clear()
         latest.setPosition(position)
         switch state {
@@ -200,6 +230,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         }
         var newCache: CVMetalTextureCache?
         guard CVMetalTextureCacheCreate(kCFAllocatorDefault, nil, device, nil, &newCache) == kCVReturnSuccess, let newCache else {
+            stopReason = .runtimeError
             state = .failed
             return
         }
@@ -233,6 +264,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
             let running = box.value.isRunning
             DispatchQueue.main.async { [self] in
                 guard current == generation, state == .starting else { return }
+                if !running { stopReason = .runtimeError }
                 state = running ? .running : .failed
             }
         }
@@ -242,20 +274,28 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         let center = NotificationCenter.default
         let current = generation
         observers.append(center.addObserver(forName: AVCaptureSession.wasInterruptedNotification, object: session, queue: .main) {
-            [self] _ in
+            [self] (note: Notification) in
             guard current == generation, state == .running || state == .starting else { return }
+            let raw: Int? = (note.userInfo?[AVCaptureSessionInterruptionReasonKey] as? NSNumber)?.intValue
+            let reason: AVCaptureSession.InterruptionReason? = raw.flatMap { (value: Int) -> AVCaptureSession.InterruptionReason? in
+                AVCaptureSession.InterruptionReason(rawValue: value)
+            }
             latest.clear()
+            stopReason = Self.stopReason(interruption: reason)
             state = .interrupted
         })
         observers.append(center.addObserver(forName: AVCaptureSession.interruptionEndedNotification, object: session, queue: .main) {
             [self] _ in
             guard current == generation, state == .interrupted else { return }
+            stopReason = nil
             state = .running
         })
         observers.append(center.addObserver(forName: AVCaptureSession.runtimeErrorNotification, object: session, queue: .main) {
-            [self] _ in
+            [self] (note: Notification) in
             guard current == generation, state != .idle else { return }
-            latest.clear()
+            let code: AVError.Code? = (note.userInfo?[AVCaptureSessionErrorKey] as? AVError)?.code
+            releaseSession()   // CAM-013-D4: the session stops after a runtime error; release it now
+            stopReason = Self.stopReason(error: code)
             state = .failed
         })
     }

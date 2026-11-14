@@ -56,12 +56,18 @@ public protocol CameraFrameProvider: AnyObject {
     /// or running: switches, and no picture of the previous camera is returned afterwards.
     /// Unavailable, interrupted or failed: starts again with the new camera. Same position: no-op.
     func select(_ position: CameraPosition)
+    /// CAM-013 (contracts/camera-recovery.md C1): why the feed is `interrupted` or `failed` (main
+    /// thread). Set before `onStateChange` reports that state; nil while running, after `stop()` and
+    /// after a camera switch.
+    var stopReason: CameraStopReason? { get }
 }
 
 extension CameraFrameProvider {
     /// A provider without a front camera (CAM-001's stand-ins) stays on the rear camera.
     public var position: CameraPosition { .back }
     public func select(_ position: CameraPosition) {}
+    /// CAM-013: a provider that reports no reasons.
+    public var stopReason: CameraStopReason? { nil }
 }
 
 /// The newest-picture slot shared by a provider's camera thread and the render thread.

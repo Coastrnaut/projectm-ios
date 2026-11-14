@@ -38,6 +38,8 @@ struct PermissionNotice: Equatable, Sendable {
     let text: String
     /// The notice offers Open Settings (the app's page in iOS Settings).
     let offersSettings: Bool
+    /// CAM-013-R2: the notice offers Retry (the camera is interrupted or stopped by an error).
+    var offersRetry: Bool = false
 }
 
 /// The catalog's description of one permission.
@@ -128,10 +130,14 @@ enum PermissionCatalog {
     /// The camera visual's notice: the catalog's for denied and restricted, otherwise CAM-001's notice
     /// for the feed state (no camera, paused) without Open Settings; nil when none is needed.
     /// CAM-002-R10: denied and restricted are the same for both cameras; no camera names the position.
-    static func cameraNotice(for feed: CameraFeedState, position: CameraPosition = .back) -> PermissionNotice? {
+    /// CAM-013-R2, R3: interrupted or failed name the reason and offer Retry; denied and restricted
+    /// never offer Retry (R8).
+    static func cameraNotice(for feed: CameraFeedState, position: CameraPosition = .back,
+                             reason: CameraStopReason? = nil) -> PermissionNotice? {
         if let state = state(camera: feed), let notice = notice(.camera, state) { return notice }
-        guard let text = feed.notice(position: position) else { return nil }
-        return PermissionNotice(permission: .camera, state: nil, text: text, offersSettings: false)
+        guard let text = feed.notice(position: position, reason: reason) else { return nil }
+        return PermissionNotice(permission: .camera, state: nil, text: text, offersSettings: false,
+                                offersRetry: feed.offersRetry)
     }
 
     // MARK: Mappings (plan D5)

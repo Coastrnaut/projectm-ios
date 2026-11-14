@@ -19,6 +19,7 @@ import UIKit
 enum AnnouncementKind: String, CaseIterable, Sendable {
     case preset, cue, playback, output, recording, favorite
     /// ACC-011: capture and status lanes (contract C1 of specs/100-acc-011-captioned-status-events).
+    /// `camera` also carries CAM-013-R12's interruption and failure reasons.
     case source, route, background, capture, camera, osc, session
 }
 

@@ -74,7 +74,9 @@ final class CameraGeometryTests: XCTestCase {
     func testNoticesAndAccessibilityValues() {
         XCTAssertEqual(CameraFeedState.denied.notice, "Camera access is off. To show the camera, allow it in Settings.")
         XCTAssertEqual(CameraFeedState.unavailable.notice, "No rear camera is available. Showing the spectrum only.")
-        XCTAssertEqual(CameraFeedState.interrupted.notice, CameraFeedState.failed.notice)
+        // CAM-013: a failure no longer shares the interruption's promise of a return.
+        XCTAssertEqual(CameraFeedState.interrupted.notice, CameraStopReason.otherInterruption.notice)
+        XCTAssertEqual(CameraFeedState.failed.notice, CameraStopReason.runtimeError.notice)
         XCTAssertEqual(CameraFeedState.running.accessibilityValue, "Live")
         XCTAssertEqual(CameraFeedState.denied.accessibilityValue, "Camera access off")
         XCTAssertEqual(CameraFeedState.unavailable.accessibilityValue, "No rear camera")

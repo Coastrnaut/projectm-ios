@@ -195,6 +195,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraVisual: CameraVisualHost?
     /// The camera feed's state while the Camera visual exists (`idle` otherwise; CAM-001-R5 to R8).
     private(set) var cameraState: CameraFeedState = .idle
+    /// CAM-013: why the camera is interrupted or failed (nil otherwise), and whether a Retry waits.
+    private(set) var cameraStopReason: CameraStopReason?
+    private(set) var cameraRetryPending = false
     /// The imported photo (MED-001): the store, the pickers' results and the notice.
     let photos: PhotoCoordinator
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
@@ -883,6 +886,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.faultInjection = armedRenderFaults
             #endif
             host.onFeedStateChange = { [weak self] state in self?.cameraStateChanged(state) }
+            host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
+                self?.cameraRetryPending = host?.retryPending ?? false
+            }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             cameraVisual = host
         } catch {
@@ -1021,6 +1027,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.pause()
         cameraVisual = nil   // the presentation registry holds it weakly
         cameraState = .idle
+        cameraStopReason = nil   // CAM-013
+        cameraRetryPending = false
     }
 
     /// CAM-012-R1, R2: the in-app camera badge, from the feed state only (hidden off the visualizer).
@@ -1043,11 +1051,19 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private func cameraStateChanged(_ state: CameraFeedState) {
         let wasShown: Bool = CameraIndicator(state: cameraState).isShown
         cameraState = state
-        if state.notice(position: settings.cameraPosition) != nil {   // CAM-001-R14, CAM-002-R10 (ACC-011 X17)
-            statusEvents.post(StatusEventCatalog.camera(state, position: settings.cameraPosition))
+        cameraStopReason = cameraVisual?.stopReason   // CAM-013-R3
+        let reason: CameraStopReason? = cameraStopReason
+        // CAM-001-R14, CAM-002-R10, CAM-013-R12 (ACC-011 X17): the notice with its reason, through the router.
+        if state.notice(position: settings.cameraPosition, reason: reason) != nil {
+            statusEvents.post(StatusEventCatalog.camera(state, position: settings.cameraPosition, reason: reason))
         } else if !wasShown, CameraIndicator(state: state).isShown {   // ACC-011 X16: "Camera on"
             statusEvents.post(StatusEventCatalog.camera(state, position: settings.cameraPosition))
         }
+    }
+
+    /// CAM-013-R5, R6: the camera notice's Retry (backoff in the host).
+    func retryCamera() {
+        cameraVisual?.retryCamera()
     }
 
     /// CAM-002-R5, R7: Settings changed the camera or its mirror. Applied to the live Camera visual at

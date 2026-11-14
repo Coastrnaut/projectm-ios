@@ -178,7 +178,8 @@ enum StatusEventCatalog {
 
     // MARK: Camera (X15-X18)
 
-    static func camera(_ state: CameraFeedState, position: CameraPosition = .back) -> StatusEvent {
+    static func camera(_ state: CameraFeedState, position: CameraPosition = .back,
+                       reason: CameraStopReason? = nil) -> StatusEvent {   // CAM-013-R12: the reason's text
         switch state {
         case .idle:
             let off: String = CameraIndicator.stoppedAnnouncement
@@ -191,7 +192,7 @@ enum StatusEventCatalog {
             let label: String = CameraIndicator(state: state, position: position).label
             return StatusEvent(id: "X16", kind: .camera, visibleText: label, announcement: label, cause: .user)
         case .denied, .restricted, .unavailable, .interrupted, .failed:
-            let notice: String = state.notice(position: position) ?? ""
+            let notice: String = state.notice(position: position, reason: reason) ?? ""
             return StatusEvent(id: "X17", kind: .camera, visibleText: notice, announcement: notice, cause: .system)
         }
     }
