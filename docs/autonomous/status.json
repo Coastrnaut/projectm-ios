@@ -12,14 +12,12 @@
   },
   "P1": {
    "audited": 13,
-   "integrated": 137,
-   "unit_passed": 1
+   "integrated": 138
   },
   "P2": {
    "audited": 55,
    "implementing": 1,
-   "integrated": 22,
-   "unit_passed": 1
+   "integrated": 23
   },
   "P3": {
    "audited": 9
@@ -28,9 +26,8 @@
  "by_state": {
   "audited": 79,
   "implementing": 1,
-  "integrated": 243,
-  "skipped_existing": 1,
-  "unit_passed": 2
+  "integrated": 245,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -88,7 +85,6 @@
    "PRE-017",
    "QA-011",
    "QA-012",
-   "REC-002",
    "REC-013",
    "SHD-005",
    "SHD-006",
@@ -107,7 +103,6 @@
    "UIX-008",
    "UIX-010",
    "UIX-012",
-   "UIX-013",
    "UIX-014",
    "VIS-010",
    "VIS-011",
@@ -123,7 +118,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "82 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-006, CAM-008)"
+   "80 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-006, CAM-008)"
   ]
  },
  "features": {
@@ -2472,10 +2467,10 @@
    "branch": "feature/rec-002",
    "branch_sha": "cd6e5b72dc1afa09611b19fd6d31093fd9340897",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "a6c0a5ef",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "REC-003": {
    "attempts": 0,
@@ -3162,10 +3157,10 @@
    "branch": "feature/uix-013",
    "branch_sha": "a0d884722a9a5c39038beda0fe4617d96c305472",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "89ef6bce",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "UIX-014": {
    "attempts": 0,
@@ -4305,6 +4300,11 @@
    "sha": "5666cc2332ffd383299f9f9dc306a5f3d21c9ab9"
   },
   {
+   "branch": "feature/rec-002",
+   "id": "REC-002",
+   "sha": "a6c0a5ef"
+  },
+  {
    "branch": "feature/rec-003",
    "id": "REC-003",
    "sha": "bf82b49836a5e22aaad71259e373ef54d7b77d30"
@@ -4555,6 +4555,11 @@
    "sha": "99cce200"
   },
   {
+   "branch": "feature/uix-013",
+   "id": "UIX-013",
+   "sha": "89ef6bce"
+  },
+  {
    "branch": "feature/uix-015",
    "id": "UIX-015",
    "sha": "ae498579"
@@ -4630,5 +4635,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T23:08:49Z"
+ "updated": "2026-11-14T23:11:40Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T23:08:49Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T23:11:40Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 79 |
 | implementing | 1 |
-| unit_passed | 2 |
-| integrated | 243 |
+| integrated | 245 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 13 | 0 | 1 | 137 | 0 |
-| P2 | 55 | 1 | 1 | 22 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 13 | 0 | 138 | 0 |
+| P2 | 55 | 1 | 23 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 82 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-006, CAM-008)
+- 80 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-006, CAM-008)
 
 ## Integrated
 
@@ -216,6 +215,7 @@ The physical-device suite may **not** start:
 | QA-009 | Accessibility snapshot suite | `5995f52e` | `feature/qa-009` |
 | QA-010 | Performance budget thresholds | `695a13a2` | `feature/qa-010` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
+| REC-002 | Image batch export | `a6c0a5ef` | `feature/rec-002` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
 | REC-004 | Recording audio mux | `787bb98e2086` | `feature/rec-004` |
 | REC-005 | Record quality profiles | `6a8bdbbdffdf` | `feature/rec-005` |
@@ -266,6 +266,7 @@ The physical-device suite may **not** start:
 | UIX-007 | Split preview/editor | `c801a438` | `feature/uix-007` |
 | UIX-009 | Parameter search | `7a3ef2bf` | `feature/uix-009` |
 | UIX-011 | Color palette picker | `99cce200` | `feature/uix-011` |
+| UIX-013 | Scene performance HUD | `89ef6bce` | `feature/uix-013` |
 | UIX-015 | Onboarding permission explainer | `ae498579` | `feature/uix-015` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
@@ -2281,9 +2282,10 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/swift-test_Compositor.log`)
 - `post-merge (Text visual added as a capture source in the merge; compiled, shares the tested compositor path, no Text-specific capture test): projectM-iOSTests 230 incl. FrameCaptureAppTests; FrameCaptureUITests 2, TextOverlay, OutputBlackout, Camera 2 UI tests on iPhone 17 iOS 27.2 sim`: pass at `5666cc2332ff` (log `.autonomous/logs/integration/rec-001/app-tests.log`)
 
-### REC-002 Image batch export (unit_passed)
+### REC-002 Image batch export (integrated)
 - `python3 scripts/check_compliance.py`: pass at `cd6e5b72dc1a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-002/20261114T180456/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `cd6e5b72dc1a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-002/20261114T180456/docs.log`)
+- `post-merge batch76: LibraryBackup 83, projectM-iOSTests 1071, UI 5 (scene HUD 3, snapshot batch export, scene compare)`: pass at `a6c0a5ef` (log `.autonomous/logs/integration/batch76/app-tests.log`)
 
 ### REC-003 Video recording (integrated)
 - `python3 scripts/check_compliance.py`: pass at `482f39d4b03f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-003/20261113T150813/compliance.log`)
@@ -2802,13 +2804,14 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/swift-test_VisualGenerators.log`)
 - `post-merge batch70: SceneFormat 184, VisualGenerators 249, LibraryBackup 80, projectM-iOSTests 1031, UI 4 (palette picker, colour-blind controls)`: pass at `99cce200` (log `.autonomous/logs/integration/batch70/app-tests.log`)
 
-### UIX-013 Scene performance HUD (unit_passed)
+### UIX-013 Scene performance HUD (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/swift-test_LibraryBackup.log`)
+- `post-merge batch76: LibraryBackup 83, projectM-iOSTests 1071, UI 5 (scene HUD 3, snapshot batch export, scene compare)`: pass at `a6c0a5ef` (log `.autonomous/logs/integration/batch76/app-tests.log`)
 
 ### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)
