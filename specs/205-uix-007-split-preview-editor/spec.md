@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-007-T01-T12 verified on the Mac: 5 ShowControl unit tests, 4 app unit tests, 2 UI tests on an iPad Pro 13-inch (M5) iOS 27.2 simulator; T13 `{device}` open)
 
 **Input**: User description: "Implement UIX-007 (split preview/editor) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Keep live output visible while
@@ -46,7 +46,7 @@ conservative, local-first option.
 - Q: Is the width remembered? → A: Yes, the last editor width is stored on this device (one new key, `settings.splitEditor.width`). It depends on this device's screen, so it is never backed up (FILE-005 excluded key) and is erased with the Settings category (FILE-011). Rejected: not stored (a performer would re-drag every time).
 - Q: How is the divider accessible? → A: It is one VoiceOver element "Editor width" whose value is the width in points plus the snap name ("400 points, Standard"), adjustable: swipe up widens to the next snap point, swipe down narrows to the previous one. It is a 24 pt wide hit area with a visible grip; pointer hover shows the resize cursor shape where available. Keyboard: no new shortcut.
 - Q: How does the split close? → A: Done in Settings' navigation bar closes it, as it closes the sheet today; closing ends the SCN-010 undo coalescing and commits the autosave exactly as before.
-- Q: What happens to the controls and badges while the split is open? → A: They stay in the output pane, laid out to its width (not scaled), so badges, notices and the controls never sit under the editor. The tap target covers only the output pane.
+- Q: What happens to the controls and badges while the split is open? → A: They stay in the output pane, laid out to its width (not scaled), so badges, notices and the controls never sit under the editor. The tap target lies under the editor beyond the pane, so the editor receives every touch on its side. Implementation note (2026-11-14): inside the pane the controls and the UIX-005 pad use their compact-width layouts (the pane's horizontal size class is compact): the regular one-row controls are wider than the pane and pushed the editor off screen in the first UI test run.
 
 ### Session 2026-11-14 (speckit-clarify)
 
@@ -133,7 +133,7 @@ decrement step through the snap points within the bounds.
 - **UIX-007-R6**: The divider MUST be a single accessible, adjustable element ("Editor width", value in points and snap name) whose increment and decrement move to the next and previous snap point within the bounds.
 - **UIX-007-R7**: The last editor width MUST be remembered on this device under `settings.splitEditor.width`, never backed up, erased with Settings, removed by the UI-test reset; missing or invalid → 400 pt.
 - **UIX-007-R8**: Done MUST close the split with the same effects as closing the sheet (SCN-010 coalescing boundary, autosave commit).
-- **UIX-007-R9**: While the split is open, the status stack, controls, badges and the tap target MUST lie in the output pane.
+- **UIX-007-R9**: While the split is open, the status stack, controls and badges MUST lie in the output pane (compact-width layouts there), and the editor MUST receive every touch on its side.
 - **UIX-007-R10**: DEBUG builds MUST expose a probe (`splitOutputFrame`) of the output's on-screen frame, measured from the view hierarchy, and the window size for UI tests (no Release cost).
 
 ### Key Entities

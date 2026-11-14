@@ -18,26 +18,26 @@ Tests are requested by the spec (UIX-007-S1-S3). Budgets (owner rule 7): unit te
 
 **Independent test**: iPad simulator, open Settings: `splitEditor` exists, no sheet, the output frame lies in the pane.
 
-- [ ] UIX-007-T04 [P] [US1] Add `SplitEditorSetting` in `Apps/projectM-iOS/Coordinators/SplitEditorSetting.swift` (key `settings.splitEditor.width`, Double, absent/invalid → 400, `-uitestResetNotice` removes it, DEBUG `-uitestSplitEditorWidth <pt>`) and one `splitEditor` property in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`
-- [ ] UIX-007-T05 [P] [US1] Add the key to `ALLOWED_KEYS` in `scripts/run_device_tests.py` and to `LibrarySettingsPolicy.excludedKeys` in `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift`
-- [ ] UIX-007-T06 [US1] Build `Apps/projectM-iOS/Views/SplitEditorHost.swift`: host (regular width + `fits` + `showSettings`), trailing safe-area inset with divider and editor, environment `SplitOutputPlacement`, `.splitOutputScaled()` modifier, `splitEditorClose` environment, DEBUG probe `splitOutputFrame` (contract C1, C3, C4)
-- [ ] UIX-007-T07 [US1] Wire `Apps/projectM-iOS/Views/VisualizerView.swift` (wrap layers, scale visual, Settings view property shared by sheet and pane, sheet binding false while split) and Done in `Apps/projectM-iOS/Views/SettingsView.swift` (`splitEditorClose` else `dismiss()`)
-- [ ] UIX-007-T08 [P] [US1] Write `Apps/projectM-iOS/Tests/SplitEditorSettingTests.swift`: default 400, stored value round trip, invalid → 400, key listed in FILE-005 excluded keys
+- [X] UIX-007-T04 [P] [US1] Add `SplitEditorSetting` in `Apps/projectM-iOS/Coordinators/SplitEditorSetting.swift` (key `settings.splitEditor.width`, Double, absent/invalid → 400, `-uitestResetNotice` removes it, DEBUG `-uitestSplitEditorWidth <pt>`) and one `splitEditor` property in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` — Verified 2026-11-14: `SplitEditorSettingTests` 4/4 and `LibraryBackupAppTests` 5/5 on the UIX7 iPad simulator
+- [X] UIX-007-T05 [P] [US1] Add the key to `ALLOWED_KEYS` in `scripts/run_device_tests.py` and to `LibrarySettingsPolicy.excludedKeys` in `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift` — Verified 2026-11-14: `LibraryBackupAppTests.testIncludedKeysAndFolderNamesAgreeWithTheStores`, `SplitEditorSettingTests.testKeyIsExcludedFromBackupsAndErasedWithSettings`, LibraryBackup package 77 tests
+- [X] UIX-007-T06 [US1] Build `Apps/projectM-iOS/Views/SplitEditorHost.swift`: host (regular width + `fits` + `showSettings`), trailing safe-area inset with divider and editor, environment `SplitOutputPlacement`, `.splitOutputScaled()` modifier, `splitEditorClose` environment, DEBUG probe `splitOutputFrame` (contract C1, C3, C4) — Verified 2026-11-14: `SplitEditorUITests` 2/2 on the iPad simulator (probe C4 read from UIKit)
+- [X] UIX-007-T07 [US1] Wire `Apps/projectM-iOS/Views/VisualizerView.swift` (wrap layers, scale visual, Settings view property shared by sheet and pane, sheet binding false while split) and Done in `Apps/projectM-iOS/Views/SettingsView.swift` (`splitEditorClose` else `dismiss()`) — Verified 2026-11-14: `SplitEditorUITests` (Done closes, R8); `LayerInspectorUITests` 2/2 and `SettingsUITests.testPerformanceOverlay` pass through the split on iPad
+- [X] UIX-007-T08 [P] [US1] Write `Apps/projectM-iOS/Tests/SplitEditorSettingTests.swift`: default 400, stored value round trip, invalid → 400, key listed in FILE-005 excluded keys — Verified 2026-11-14: `SplitEditorSettingTests` 4/4
 
 ## Phase 4: User Story 2 — Resize without distortion (P1)
 
 **Independent test**: drag the divider; the probe's frame aspect equals the window aspect within 1% and its width changed.
 
-- [ ] UIX-007-T09 [US2] Divider drag (live clamp, snap on release, store) in `Apps/projectM-iOS/Views/SplitEditorHost.swift` (contract C2)
-- [ ] UIX-007-T10 [US2] Write `Apps/projectM-iOS/UITests/SplitEditorUITests.swift` on the iPad simulator: open Settings → split, no sheet, probe aspect = window aspect (1%), frame inside the pane; drag divider → width changes, aspect unchanged; the slot's bounds stay the window size (UIX-007-R4); the controls' Settings button lies inside the output pane (UIX-007-R9); Done closes and the output fills the window again (UIX-007-R8, S2)
+- [X] UIX-007-T09 [US2] Divider drag (live clamp, snap on release, store) in `Apps/projectM-iOS/Views/SplitEditorHost.swift` (contract C2) — Verified 2026-11-14: `SplitEditorUITests.testDraggingTheDividerNeverDistortsTheOutput` (drag widens, drag back snaps to 400)
+- [X] UIX-007-T10 [US2] Write `Apps/projectM-iOS/UITests/SplitEditorUITests.swift` on the iPad simulator: open Settings → split, no sheet, probe aspect = window aspect (1%), frame inside the pane; drag divider → width changes, aspect unchanged; the slot's bounds stay the window size (UIX-007-R4); the controls' Settings button lies inside the output pane (UIX-007-R9); Done closes and the output fills the window again (UIX-007-R8, S2) — Verified 2026-11-14: `SplitEditorUITests` 2/2 pass on the UIX7 iPad simulator (11.1 s, 11.2 s)
 
 ## Phase 5: User Story 3 — VoiceOver resizing (P2)
 
-- [ ] UIX-007-T11 [US3] Divider accessibility (label, value with snap name, adjustable increment/decrement through snaps) in `Apps/projectM-iOS/Views/SplitEditorHost.swift`; the UI test asserts its label and value (contract C2)
+- [X] UIX-007-T11 [US3] Divider accessibility (label, value with snap name, adjustable increment/decrement through snaps) in `Apps/projectM-iOS/Views/SplitEditorHost.swift`; the UI test asserts its label and value (contract C2) — Verified 2026-11-14: `SplitEditorUITests` asserts label "Editor width" and value "400 points, Standard"; stepping in `SplitEditorLayoutTests.testSteppingThroughSnapPoints`
 
 ## Phase 6: Polish
 
-- [ ] UIX-007-T12 Type-check budget run (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`) on the changed app files; repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), `check_privacy_manifest`, `check_network_symbols`; Settings UI test on iPhone still a sheet (UIX-007-S3)
+- [X] UIX-007-T12 Type-check budget run (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`) on the changed app files; repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), `check_privacy_manifest`, `check_network_symbols`; Settings UI test on iPhone still a sheet (UIX-007-S3) — Verified 2026-11-14: type-check run (new code under budget; `VisualizerView.layers` 173-231 ms under load avg 48-138 vs 167 ms at baseline, see final report), the six repo checks, `check_privacy_manifest`, `check_network_symbols` OK; iPhone 17 simulator: SettingsUITests, VisualizerUITests (2), FrameCaptureUITests, LayerInspectorUITests, PerformanceLayoutUITests pass, SplitEditorUITests skip (compact width)
 - [ ] UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4)
 
 ## Dependencies

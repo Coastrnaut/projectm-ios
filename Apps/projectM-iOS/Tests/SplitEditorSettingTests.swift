@@ -52,7 +52,7 @@ final class SplitEditorSettingTests: XCTestCase {
     func testPlacementScalesTheFullWindowIntoTheOutputRect() {
         let window = CGSize(width: 1376, height: 1032)
         let layout = SplitEditorLayout(containerWidth: 1376, containerHeight: 1032, editorWidth: 480)
-        let placement = SplitEditorHost<EmptyView, EmptyView>.placement(layout, window: window)
+        let placement = SplitEditorHost<EmptyView, EmptyView, EmptyView>.placement(layout, window: window)
         XCTAssertEqual(placement.fullSize, window)
         let shown = CGSize(width: window.width * placement.scale, height: window.height * placement.scale)
         XCTAssertEqual(Double(shown.width / shown.height), 1376.0 / 1032.0, accuracy: 1e-6)

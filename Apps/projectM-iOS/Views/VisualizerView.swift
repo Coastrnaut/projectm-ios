@@ -63,8 +63,7 @@ struct VisualizerView: View {
     // the same order; ZStack and VStack flatten each part's children as before.
     private var layers: some View {
         ZStack {
-            Color.black.ignoresSafeArea()
-            scaledVisual
+            // UIX-007: the black background and the visual are the split host's backdrop (`backdrop`).
             // PERF-014-R10: a visual that can show nothing fades to the placeholder (0.5 s, linear).
             RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
             externalDisplayLayer
@@ -80,12 +79,15 @@ struct VisualizerView: View {
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
     }
 
-    /// UIX-007-R3: the visual at full size, scaled into the output pane while editing (own property:
-    /// keeps `layers` quick to type-check).
-    private var scaledVisual: some View {
-        visual
-            .splitOutputScaled()
-            .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
+    /// UIX-007-R3: the black background and the visual at full size, scaled into the output pane while
+    /// editing (laid out by `SplitEditorHost` outside the editor's inset).
+    private var backdrop: some View {
+        ZStack {
+            Color.black.ignoresSafeArea()
+            visual
+                .splitOutputScaled()
+                .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
+        }
     }
 
     /// UIX-007: the layers with, while Settings is open on iPad, the editor beside the output.
@@ -94,7 +96,7 @@ struct VisualizerView: View {
         let settingsOpen: Bool = coordinator.showSettings
         let setting: SplitEditorSetting = coordinator.splitEditor
         let motion: MotionPolicy = coordinator.motion
-        return SplitEditorHost(content: layers, isOpen: settingsOpen, setting: setting, motion: motion,
+        return SplitEditorHost(backdrop: backdrop, content: layers, isOpen: settingsOpen, setting: setting, motion: motion,
                                onAvailabilityChange: splitEditorAvailabilityChanged, close: closeSplitEditor,
                                editor: splitEditorContent)
     }

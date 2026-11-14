@@ -39,13 +39,13 @@ private struct SplitOutputScaled: ViewModifier {
 
     func body(content: Content) -> some View {
         if let placement {
-            // The same modifiers whether split or not (scale 1, origin 0), so the visual keeps its identity.
+            // Render-only transforms (layout is unchanged): the host lays the backdrop out at the full
+            // window size, outside the editor's inset, so the visual keeps its frame and is only drawn
+            // scaled into the output rect. The same modifiers whether split or not (scale 1, origin 0)
+            // keep its identity.
             content
-                .frame(width: placement.fullSize.width, height: placement.fullSize.height)
                 .scaleEffect(placement.scale, anchor: .topLeading)
                 .offset(x: placement.origin.x, y: placement.origin.y)
-                .frame(width: placement.fullSize.width, height: placement.fullSize.height, alignment: .topLeading)
-                .ignoresSafeArea()
         } else {
             content
         }
@@ -57,7 +57,10 @@ extension View {
     func splitOutputScaled() -> some View { modifier(SplitOutputScaled()) }
 }
 
-struct SplitEditorHost<Content: View, Editor: View>: View {
+struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
+    /// The black background and the visual: always the full window, never inset (research UIX-007-D4).
+    let backdrop: Backdrop
+    /// Everything else (status, controls, overlays): laid out in the output pane while the editor shows.
     let content: Content
     /// Settings is open (`AppCoordinator.showSettings`).
     let isOpen: Bool
@@ -93,12 +96,23 @@ struct SplitEditorHost<Content: View, Editor: View>: View {
         let layout: SplitEditorLayout = layout(window)
         let available: Bool = available(layout)
         let shown: Bool = available && isOpen
-        return content
-            .environment(\.splitOutputPlacement, shown ? Self.placement(layout, window: window) : .identity(window))
+        return ZStack(alignment: .topLeading) {
+            backdrop
+                .frame(width: window.width, height: window.height)
+                .environment(\.splitOutputPlacement, shown ? Self.placement(layout, window: window) : .identity(window))
+            insetContent(layout, shown: shown)
+        }
+        .onAppear { onAvailabilityChange(available) }
+        .onChange(of: available) { (_: Bool, now: Bool) -> Void in onAvailabilityChange(now) }
+    }
+
+    private func insetContent(_ layout: SplitEditorLayout, shown: Bool) -> some View {
+        content
+            // The output pane is narrower than the window: the controls and the pad use their compact
+            // layouts there, so nothing outgrows the pane and pushes the editor off screen (UIX-007-R9).
+            .environment(\.horizontalSizeClass, shown ? .compact : sizeClass)
             .safeAreaInset(edge: .trailing, spacing: 0) { inset(layout, shown: shown) }
             .overlay { probe }
-            .onAppear { onAvailabilityChange(available) }
-            .onChange(of: available) { (_: Bool, now: Bool) -> Void in onAvailabilityChange(now) }
     }
 
     static func placement(_ layout: SplitEditorLayout, window: CGSize) -> SplitOutputPlacement {

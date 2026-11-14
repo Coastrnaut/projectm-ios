@@ -78,6 +78,16 @@ final class SplitEditorUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
 
+    /// R9: the controls (shown by the drag's touch or still up) lie in the output pane, the divider on screen.
+    private func assertControlsInPane(file: StaticString = #filePath, line: UInt = #line) {
+        let window: CGRect = app.windows.firstMatch.frame
+        XCTAssertLessThanOrEqual(divider.frame.maxX, window.maxX + 0.5, "the divider stays on screen", file: file, line: line)
+        let controls = app.otherElements["controls"]
+        if controls.exists {
+            XCTAssertLessThanOrEqual(controls.frame.maxX, divider.frame.minX + 0.5, "controls \(controls.frame)", file: file, line: line)
+        }
+    }
+
     /// UIX-007-S2: open → split; drag wider → smaller output, same aspect; Done → full window.
     func testDraggingTheDividerNeverDistortsTheOutput() throws {
         launch()
@@ -91,10 +101,7 @@ final class SplitEditorUITests: XCTestCase {
         XCTAssertTrue(divider.exists)
         XCTAssertEqual(divider.label, "Editor width")                 // R6
         XCTAssertEqual(divider.value as? String, "400 points, Standard")
-        let controls = app.otherElements["controls"]
-        if controls.exists {                                          // R9: the controls stay in the output pane
-            XCTAssertLessThanOrEqual(controls.frame.maxX, divider.frame.minX + 0.5, "controls \(controls.frame)")
-        }
+        assertControlsInPane()
         let before = assertUndistorted(inside: divider.frame.minX)
         XCTAssertLessThan(before?.frame.width ?? .infinity, full?.frame.width ?? 0, "the output shrank into its pane")
 
@@ -104,6 +111,7 @@ final class SplitEditorUITests: XCTestCase {
         let widened: String = (divider.value as? String) ?? ""
         XCTAssertNotEqual(widened, "400 points, Standard", "the editor width changed")
         let after = assertUndistorted(inside: divider.frame.minX)
+        assertControlsInPane()
         XCTAssertLessThan(after?.frame.width ?? .infinity, (before?.frame.width ?? 0) - 50, "the output is smaller")
 
         // Drag back near Standard: it snaps to 400 pt and the output returns to its earlier size.

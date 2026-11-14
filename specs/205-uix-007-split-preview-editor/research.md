@@ -20,7 +20,13 @@
   puts the divider and editor beside the layers, so everything that respects the safe area (status
   stack, controls, UIX-005 pad, overlays) lays out in the output pane at its real size, while views
   that ignore the safe area (black background, tap target) extend under the editor, which covers
-  them. The tap target is limited to the pane with a trailing padding of the inset width.
+  them. Implementation (2026-11-14): the black background and the visual are a separate *backdrop*
+  that the host lays out at the full window size outside the inset, with the visual only drawn
+  scaled (`scaleEffect` and `offset`, render-only). Three attempts that kept the visual inside the
+  inset content failed the UI test's probe: the visual's own `.ignoresSafeArea()` does not reach past
+  a `safeAreaInset` (it was laid out at the pane's width), and an explicit full-window frame either
+  set the layers' size (pushing the editor off screen) or leaked the inset into the width (1376 × 714
+  on screen for a 1376 × 1032 window).
 - **UIX-007-D5 Stored width.** One Double (points) under `settings.splitEditor.width`. FILE-005
   excluded (depends on the device's screen), so FILE-011's Settings erase covers it; `ALLOWED_KEYS`
   lists it; `-uitestResetNotice` removes it. Invalid (non-finite, ≤ 0) → 400.
