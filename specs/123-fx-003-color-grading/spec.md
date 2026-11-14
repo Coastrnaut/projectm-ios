@@ -23,7 +23,8 @@ sliders), ACC-012 (sensory safety profile, in parallel), FILE-005 (library backu
 ## Baseline: the audit (2026-11-14, commit `1a4da42b`)
 
 **No grading exists.** No lift, gamma, gain, saturation or temperature control exists anywhere in the app or
-its packages. The only colour controls are the native spectra's palette (VIS-001, ACC-003's colour-blind-safe
+its packages (a search over `Packages/*/Sources` and `Apps/projectM-iOS` finds only SHD-002's HSV graph node
+and SHD-001's per-material "Saturation" parameter, both inside one layer's generator, not a picture grade). The only colour controls are the native spectra's palette (VIS-001, ACC-003's colour-blind-safe
 ramp), FX-001's glow and ACC-008's overlay contrast; none changes the picture's tone or colour balance.
 
 **Where the picture is finished.** Four visuals are compositor-backed (CMP-001): Camera, Photo, Video and Text

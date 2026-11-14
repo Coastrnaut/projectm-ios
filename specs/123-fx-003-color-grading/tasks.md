@@ -11,24 +11,24 @@ finish. Logs go to `.autonomous/logs-fx-003/`.
 
 ## Phase 1: Setup
 
-- [ ] FX-003-T01 Audit: confirm no grading control exists (`grep -ri "lift\|saturation\|temperature"` over
+- [X] FX-003-T01 Audit: confirm no grading control exists (`grep -ri "lift\|saturation\|temperature"` over
   `Packages/*/Sources` and `Apps/projectM-iOS`), list the output passes (`Compositor.composite`,
   `encodeOutput`, `encodeCapture`, `SceneTransitionBus`) and the hosts that reach them (Camera, Photo, Video,
-  Text), and record it in spec.md's audit.
+  Text), and record it in spec.md's audit. — Verified 2026-11-14: grep over Packages/*/Sources and Apps/projectM-iOS (only SHD-002's HSV node and SHD-001's material saturation); output passes and hosts listed in spec.md's audit.
 
 ## Phase 2: Foundational
 
-- [ ] FX-003-T02 Create `Packages/Compositor/Sources/Compositor/ColorGrade.swift` (plain Swift, Linux): the
+- [X] FX-003-T02 Create `Packages/Compositor/Sources/Compositor/ColorGrade.swift` (plain Swift, Linux): the
   five fields with ranges "temperature −1…1 (0), lift −0.1…0.1 (0), gamma 0.5…2 (1), gain 0.5…2 (1),
   saturation 0…2 (1)", step hints, `neutral`, `clamped` ("NaN → neutral, out of range → nearest bound"),
   `isNeutral`, `ColorGradeCoefficients` (balance gains, lift scale/offset, exponent, gain, saturation, flags
   bit 0 temperature … bit 4 saturation) and `apply(_:)` (research D2 order, typed steps, flags 0 → input
-  unchanged).
-- [ ] FX-003-T03 [P] Write `Packages/Compositor/Tests/CompositorTests/ColorGradeReferenceTests.swift` (CPU):
+  unchanged). — Verified 2026-11-14: ColorGrade.swift builds in the Linux shape and on the host; ColorGradeReferenceTests 8/8.
+- [X] FX-003-T03 [P] Write `Packages/Compositor/Tests/CompositorTests/ColorGradeReferenceTests.swift` (CPU):
   neutral identity (bit for bit, including NaN/over-range), per-control identity at neutral while others are
   active, temperature keeps grey luminance and is identity at 0, saturation 0 → grey of equal luminance,
   luminance monotonicity under lift/gamma/gain over ≥ 10,000 sampled settings and inputs (FX-003-S3, under 2 s),
-  hand-checked values, clamping.
+  hand-checked values, clamping. — Verified 2026-11-14: ColorGradeReferenceTests 8/8 in the Linux shape (0.03 s; logs-fx-003/reference-linux-shape.log), 10,000 ordering checks.
 - [ ] FX-003-T04 Add `cmp_grade` and `cmp_display` (Swift string `displaySource`, which includes
   `toneMapSource`) and the `CMPGrade` block to `Packages/Compositor/Sources/Compositor/CompositorShaders.swift`;
   `cmp_output` reads the block at fragment buffer 2 and returns `cmp_display(c, grade).rgb × gain`; a Swift
