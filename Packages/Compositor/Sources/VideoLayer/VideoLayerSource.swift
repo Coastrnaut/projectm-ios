@@ -14,6 +14,10 @@
 // and the compositor shows the transparent fallback. It never decodes, waits or does I/O: the
 // failure flag is read with a lock taken only if free this instant. `suspendDecoding()` (background)
 // releases the decoder and pictures; `resumeDecoding()` restarts at the clock's playback time.
+// MED-003: `loopRegion` (nil: the whole file) is passed to every start; changing it restarts decoding
+// at the shown picture when that lies inside the new region, otherwise at in, keeping the clock (a
+// held picture outside the new region is dropped at once). `resumeDecoding()` restarts at the shown
+// picture. A wrap (the shown picture's file time going back) records its lateness, the joint's gap.
 // Not Sendable: the compositor's thread (the main thread in the app) sets `content`, renders and
 // suspends; `onStateChange` is called on the main actor.
 import CameraLayer
@@ -61,6 +65,33 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
     public private(set) var shownPresentationNanoseconds: Int64?
     /// The playback time of the last rendered frame.
     public var playbackNanoseconds: Int64 { clock.playbackNanoseconds }
+    /// MED-003: the file time of the picture shown last (nil when none).
+    public private(set) var shownMediaNanoseconds: Int64?
+    /// MED-003: wraps seen on screen (the shown picture's file time went back).
+    public private(set) var wraps = 0
+    /// MED-003: the largest lateness of the first picture after a wrap (playback time minus its
+    /// presentation time): the joint's gap; 0 when the next pass was ready in time.
+    public private(set) var maxWrapLatenessNanoseconds: Int64 = 0
+    /// MED-003: the first picture after a restart (region edit, resume) is not a wrap.
+    private var restarted = false
+    /// MED-003: the opened video's duration (nil until it opened; takes the slot's lock).
+    public var mediaDurationNanoseconds: Int64? { slot.lock.withLockUnchecked { $0.durationNanoseconds } }
+
+    /// MED-003: the loop region (nil: the whole file). Applied from the next frame.
+    public var loopRegion: VideoLoopRegion? {
+        didSet {
+            guard loopRegion != oldValue else { return }
+            if let media = shownMediaNanoseconds, let duration = mediaDurationNanoseconds,
+               !VideoLoopRegion.effective(loopRegion, duration: duration).contains(media) {
+                held = nil
+                shownPresentationNanoseconds = nil
+                shownMediaNanoseconds = nil
+            }
+            guard let pipeline, !suspended else { return }
+            restarted = true
+            pipeline.start(atNanoseconds: clock.playbackNanoseconds, region: loopRegion, mediaStartNanoseconds: shownMediaNanoseconds)
+        }
+    }
 
     /// Called on the main actor after every state change.
     public var onStateChange: (@MainActor @Sendable (VideoLayerState) -> Void)? {
@@ -94,9 +125,11 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
             pipeline = nil
             held = nil
             shownPresentationNanoseconds = nil
+            shownMediaNanoseconds = nil
             clock.reset()
             let generation: UInt64 = slot.lock.withLockUnchecked { s in
                 s.generation &+= 1
+                s.durationNanoseconds = nil
                 s.state = content == .none ? .empty : .loading
                 s.failed = false
                 return s.generation
@@ -109,7 +142,7 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
             }, makeReader: { () -> AVVideoFrameReader in
                 AVVideoFrameReader(url: url, device: device)
             })
-            if !suspended { pipeline?.start(atNanoseconds: 0) }
+            if !suspended { pipeline?.start(atNanoseconds: 0, region: loopRegion, mediaStartNanoseconds: nil) }
         }
     }
 
@@ -128,7 +161,8 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
         guard suspended else { return }
         suspended = false
         clock.forgetPresentation()
-        pipeline?.start(atNanoseconds: clock.playbackNanoseconds)
+        restarted = true
+        pipeline?.start(atNanoseconds: clock.playbackNanoseconds, region: loopRegion, mediaStartNanoseconds: shownMediaNanoseconds)
     }
 
     public func prepare(picture: LayerPictureDescriptor, device: MTLDevice) throws(LayerSourceError) {
@@ -168,10 +202,21 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
         if slot.lock.withLockIfAvailableUnchecked({ $0.failed }) == true {
             held = nil
             shownPresentationNanoseconds = nil
+            shownMediaNanoseconds = nil
             throw .notReady
         }
         let playback = clock.advance(to: frame.presentationTimeNanoseconds)
-        if let newest = pipeline.take(upTo: playback) { held = newest }
+        if let newest = pipeline.take(upTo: playback) {
+            if restarted {
+                restarted = false
+            } else if let previous = held, newest.mediaNanoseconds < previous.mediaNanoseconds,
+               newest.presentationNanoseconds > previous.presentationNanoseconds {
+                wraps += 1
+                let lateness: Int64 = playback - newest.presentationNanoseconds
+                maxWrapLatenessNanoseconds = max(maxWrapLatenessNanoseconds, lateness)
+            }
+            held = newest
+        }
         guard let shown = held, let renderPipeline, let sampler else { throw .notReady }
         let texture = shown.frame.texture
         let geometry = VideoPictureGeometry(pictureWidth: texture.width, pictureHeight: texture.height, rotation: shown.frame.rotation,
@@ -192,6 +237,7 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
         encoder.endEncoding()
         framesShown += 1
         shownPresentationNanoseconds = shown.presentationNanoseconds
+        shownMediaNanoseconds = shown.mediaNanoseconds
     }
 
     static let shaderSource = """
@@ -241,6 +287,8 @@ final class VideoStateSlot: Sendable {
         var state: VideoLayerState = .empty
         /// Read by `render` (try-lock): the session failed, show the fallback.
         var failed = false
+        /// MED-003: the opened video's duration.
+        var durationNanoseconds: Int64?
         var handler: (@MainActor @Sendable (VideoLayerState) -> Void)?
     }
     let lock = OSAllocatedUnfairLock(uncheckedState: State())
@@ -251,7 +299,9 @@ final class VideoStateSlot: Sendable {
             guard s.generation == generation else { return false }
             let new: VideoLayerState
             switch event {
-            case .opened(let info): new = .playing(width: info.uprightWidth, height: info.uprightHeight)
+            case .opened(let info):
+                new = .playing(width: info.uprightWidth, height: info.uprightHeight)
+                s.durationNanoseconds = info.durationNanoseconds
             case .failed(let error):
                 new = .failed(error)
                 s.failed = true

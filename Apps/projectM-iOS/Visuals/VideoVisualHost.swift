@@ -74,6 +74,27 @@ final class VideoVisualHost: PresentationBoundResource {
         video.shownPresentationNanoseconds.map { Int((Double($0) * frameRate / 1e9).rounded(.down)) }
     }
 
+    /// MED-003: the shown picture's index in the file on a `frameRate` timeline (the fixture is 30 fps).
+    func shownMediaFrameIndex(frameRate: Double = 30) -> Int? {
+        video.shownMediaNanoseconds.map { (ns: Int64) -> Int in Int((Double(ns) * frameRate / 1e9).rounded(.down)) }
+    }
+
+    /// MED-003: the loop region (nil: the whole file).
+    var loopRegion: VideoLoopRegion? {
+        get { video.loopRegion }
+        set { video.loopRegion = newValue }
+    }
+
+    /// MED-003 diagnostics: "wraps=<n> gap=<frames> early=<n> recovered=<n>" (gap on a `frameRate` timeline).
+    func loopStatistics(frameRate: Double = 30) -> String {
+        let s = video.statistics
+        let lateness: Double = Double(video.maxWrapLatenessNanoseconds)
+        let gap: Int = Int((lateness * frameRate / 1e9).rounded(.down))
+        let wraps: String = "wraps=" + String(video.wraps)
+        let rest: String = " gap=" + String(gap) + " early=" + String(s.earlyEnds) + " recovered=" + String(s.recoveredErrors)
+        return wraps + rest
+    }
+
     /// What the video layer plays.
     var content: VideoLayerContent {
         get { video.content }

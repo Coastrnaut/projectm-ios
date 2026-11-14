@@ -21,7 +21,16 @@
 // * `take(upTo:)` (render side) never waits: it uses `NSLock.try()` and, when the decoder holds the
 //   lock this instant, returns nil (the caller keeps the picture it holds). It removes every queued
 //   picture with time ≤ t and returns the newest; the older ones were late and count as dropped.
-// * A pass over the file that yields no picture, or a reader error, ends the session as `.failed`.
+// * MED-003 (loop region; research MED-003-D2 to D4): a session plays an effective region [in, out)
+//   (the whole file without one). A picture of pass k with file time pts has playback time
+//   `base + k × L + (pts − in)`, L = out − in, so the timeline still only increases and the whole
+//   file is base 0, in 0, L = duration (MED-002 exactly). Every open starts inside the region and
+//   the reader's end is out; pictures before in are skipped (the latest one is queued only for a
+//   pass that would otherwise be empty) and a picture at or after out ends the pass. Within 0.5 s of
+//   out the reader is asked to `prepare` the pass at in (pre-roll). The end of the file, an early end
+//   or a reader error after the pass queued a picture start the next pass at in and are counted; a
+//   failed open, three passes in a row without a picture, or three passes in a row ending in an
+//   error end the session as `.failed`.
 import Dispatch
 import Foundation
 
@@ -35,15 +44,32 @@ public protocol VideoFrameReading: AnyObject, SendableMetatype {
     func next() throws(VideoImportError) -> (pts: Int64, frame: Frame)?
     /// Releases the reader (before a reopen and at the end of the session).
     func close()
+    /// MED-003: as `open(startNanoseconds:)`, with reading ending before `endNanoseconds` (nil: the
+    /// end of the file). Default: the one-argument open (the session discards pictures past the end).
+    func open(startNanoseconds: Int64, endNanoseconds: Int64?) throws(VideoImportError) -> VideoTrackInfo
+    /// MED-003 pre-roll: the next open will very likely use these arguments; a reader may start
+    /// preparing it now. Never throws; a failed preparation means a normal open. Default: nothing.
+    func prepare(startNanoseconds: Int64, endNanoseconds: Int64?)
+}
+
+extension VideoFrameReading {
+    public func open(startNanoseconds: Int64, endNanoseconds: Int64?) throws(VideoImportError) -> VideoTrackInfo {
+        try open(startNanoseconds: startNanoseconds)
+    }
+
+    public func prepare(startNanoseconds: Int64, endNanoseconds: Int64?) {}
 }
 
 /// A decoded picture on the unwrapped playback timeline.
 public struct TimedFrame<Frame> {
     public let presentationNanoseconds: Int64
+    /// MED-003: the picture's time in the file (its own timeline).
+    public let mediaNanoseconds: Int64
     public let frame: Frame
 
-    public init(presentationNanoseconds: Int64, frame: Frame) {
+    public init(presentationNanoseconds: Int64, mediaNanoseconds: Int64? = nil, frame: Frame) {
         self.presentationNanoseconds = presentationNanoseconds
+        self.mediaNanoseconds = mediaNanoseconds ?? presentationNanoseconds
         self.frame = frame
     }
 }
@@ -62,8 +88,14 @@ public struct VideoPipelineStatistics: Sendable, Equatable {
     public var maxDepth = 0
     /// Reopens to jump to the playback time.
     public var seeks = 0
-    /// Reopens at the end of the file.
+    /// Reopens at the end of the file (MED-003: at the end of each pass over the region).
     public var loops = 0
+    /// MED-003: passes the reader ended before out (out before the file's end).
+    public var earlyEnds = 0
+    /// MED-003: reader errors after the pass had queued a picture; playback continued at in.
+    public var recoveredErrors = 0
+    /// MED-003: passes the reader was asked to prepare ahead of out (pre-roll).
+    public var prepared = 0
 
     public init() {}
 }
@@ -109,9 +141,18 @@ public final class VideoDecodePipeline<Reader: VideoFrameReading>: @unchecked Se
 
     /// Stops any session and starts one whose first picture is the one shown at `playbackNanoseconds`.
     public func start(atNanoseconds playbackNanoseconds: Int64) {
+        start(atNanoseconds: playbackNanoseconds, region: nil, mediaStartNanoseconds: nil)
+    }
+
+    /// MED-003: as `start(atNanoseconds:)`, playing `region` (nil: the whole file). With
+    /// `mediaStartNanoseconds` inside the effective region, the picture at that file time is the one
+    /// shown at `playbackNanoseconds`; outside it, playback starts at in; nil maps the playback time
+    /// onto the region as MED-002 maps it onto the file.
+    public func start(atNanoseconds playbackNanoseconds: Int64, region: VideoLoopRegion?, mediaStartNanoseconds: Int64?) {
         session?.cancel()
         let new = VideoDecodeSession<Reader>(capacity: capacity, seekThreshold: seekThresholdNanoseconds,
-                                             start: max(playbackNanoseconds, 0), onEvent: onEvent, makeReader: makeReader)
+                                             start: max(playbackNanoseconds, 0), region: region, mediaHint: mediaStartNanoseconds,
+                                             onEvent: onEvent, makeReader: makeReader)
         session = new
         new.launch()
     }
@@ -151,6 +192,8 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
     private let capacity: Int
     private let seekThreshold: Int64
     private let startNanoseconds: Int64
+    private let requestedRegion: VideoLoopRegion?
+    private let mediaHint: Int64?
     private let makeReader: @Sendable () -> Reader
     private let onEvent: (@Sendable (VideoPipelineEvent) -> Void)?
     private let lock = NSLock()
@@ -165,9 +208,16 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
     private var info: VideoTrackInfo?
     private var statistics = VideoPipelineStatistics()
 
-    init(capacity: Int, seekThreshold: Int64, start: Int64, onEvent: (@Sendable (VideoPipelineEvent) -> Void)?,
-         makeReader: @escaping @Sendable () -> Reader) {
+    /// MED-003: the pass at in is prepared when the picture read is this close to out.
+    static var prerollNanoseconds: Int64 { 500_000_000 }
+    /// MED-003: this many bad passes in a row end the session.
+    static var badPassLimit: Int { 3 }
+
+    init(capacity: Int, seekThreshold: Int64, start: Int64, region: VideoLoopRegion?, mediaHint: Int64?,
+         onEvent: (@Sendable (VideoPipelineEvent) -> Void)?, makeReader: @escaping @Sendable () -> Reader) {
         self.onEvent = onEvent
+        self.requestedRegion = region
+        self.mediaHint = mediaHint
         self.capacity = capacity
         self.seekThreshold = seekThreshold
         self.startNanoseconds = start
@@ -239,73 +289,156 @@ final class VideoDecodeSession<Reader: VideoFrameReading>: @unchecked Sendable {
         if report { onEvent?(.failed(error)) }
     }
 
+    /// Where a session starts on the effective region (research MED-003-D2).
+    static func mapping(start: Int64, region: VideoLoopRegion, hint: Int64?) -> (base: Int64, media: Int64) {
+        if let hint {
+            guard region.contains(hint) else { return (start, region.inNanoseconds) }
+            return (start - (hint - region.inNanoseconds), hint)
+        }
+        let length: Int64 = max(region.length, 1)
+        let offset: Int64 = start % length
+        return (start - offset, region.inNanoseconds + offset)
+    }
+
+    /// Queues a picture at playback time `time`; false when the session was cancelled.
+    private func enqueue(time: Int64, media: Int64, frame: Reader.Frame) -> Bool {
+        var superseded = 0
+        let kept: Bool = lock.withLock {
+            guard !cancelled else { return false }
+            // Catching up after a hitch: a newer due picture replaces older due ones at once,
+            // so the decoder never waits for the render side to drain pictures it will drop.
+            if time <= target {
+                while let first = queue.first, first.presentationNanoseconds <= time {
+                    queue.removeFirst()
+                    statistics.dropped += 1
+                    superseded += 1
+                }
+            }
+            queue.append(TimedFrame(presentationNanoseconds: time, mediaNanoseconds: media, frame: frame))
+            statistics.decoded += 1
+            statistics.depth = queue.count
+            statistics.maxDepth = max(statistics.maxDepth, queue.count)
+            return true
+        }
+        for _ in 0..<superseded { freeSlots.signal() }
+        return kept
+    }
+
     /// The decode thread.
     private func run() {
         let reader = makeReader()
         defer { reader.close() }
         do throws(VideoImportError) {
-            var opened = try reader.open(startNanoseconds: 0)
+            // The first open is inside the requested region (the duration is not known yet).
+            let requestedIn: Int64 = requestedRegion?.inNanoseconds ?? 0
+            let hintInside: Bool = mediaHint.map { (h: Int64) -> Bool in requestedRegion?.contains(h) ?? true } ?? false
+            let firstStart: Int64 = max(hintInside ? (mediaHint ?? requestedIn) : requestedIn, 0)
+            let firstEnd: Int64? = requestedRegion?.outNanoseconds
+            var opened = try reader.open(startNanoseconds: firstStart, endNanoseconds: firstEnd)
             let duration = opened.durationNanoseconds
             guard duration > 0 else { throw .damaged }
-            var loop = startNanoseconds / duration
-            var offsetInFile = startNanoseconds % duration
-            if offsetInFile > 0 {
+            let region = VideoLoopRegion.effective(requestedRegion, duration: duration)
+            let regionIn: Int64 = region.inNanoseconds
+            let regionOut: Int64 = region.outNanoseconds
+            let length: Int64 = max(region.length, 1)
+            let end: Int64? = regionOut >= duration ? nil : regionOut
+            let (base, mediaStart) = Self.mapping(start: startNanoseconds, region: region, hint: mediaHint)
+            var pass: Int64 = (startNanoseconds - base) / length
+            if mediaStart != firstStart || end != firstEnd {
                 reader.close()
-                opened = try reader.open(startNanoseconds: offsetInFile)
+                opened = try reader.open(startNanoseconds: mediaStart, endNanoseconds: end)
             }
             let opening = opened
+            // An end of the reader more than 1.5 picture intervals before out is early (MED-003-R5).
+            let frameRate: Double = opening.frameRate > 0 ? opening.frameRate : 30
+            let interval: Int64 = Int64(1e9 / frameRate)
+            let earlyMargin: Int64 = interval + interval / 2
+            var lastPts: Int64 = regionIn
             lock.withLock { info = opening }
             if !isCancelled { onEvent?(.opened(opening)) }
             var nextExpected = startNanoseconds
             var producedThisPass = false
+            var preparedThisPass = false
+            var fallback: (pts: Int64, frame: Reader.Frame)?
+            var badPasses = 0
+            var errorPasses = 0
             while true {
                 freeSlots.wait()
                 if isCancelled { return }
                 let wanted = lock.withLock { target }
                 if wanted - nextExpected > seekThreshold {
-                    loop = wanted / duration
-                    offsetInFile = wanted % duration
+                    let elapsed: Int64 = wanted - base
+                    pass = elapsed / length
+                    let offset: Int64 = elapsed % length
                     reader.close()
-                    _ = try reader.open(startNanoseconds: offsetInFile)
+                    _ = try reader.open(startNanoseconds: regionIn + offset, endNanoseconds: end)
                     nextExpected = wanted
                     producedThisPass = false
+                    preparedThisPass = false
+                    fallback = nil
                     lock.withLock { statistics.seeks += 1 }
                 }
-                guard let (pts, frame) = try reader.next() else {
-                    // End of the file: loop from the start, the timeline continuing (R11).
-                    guard producedThisPass else { throw .damaged }
-                    reader.close()
-                    loop += 1
-                    _ = try reader.open(startNanoseconds: 0)
-                    producedThisPass = false
-                    nextExpected = loop * duration
-                    lock.withLock { statistics.loops += 1 }
-                    freeSlots.signal()   // this permit was not used
+                var item: (pts: Int64, frame: Reader.Frame)?
+                var readError: VideoImportError?
+                do throws(VideoImportError) {
+                    item = try reader.next()
+                } catch {
+                    readError = error
+                }
+                if let (pts, frame) = item, pts < regionIn {
+                    fallback = (pts, frame)   // before the region: never shown unless the pass is empty
+                    freeSlots.signal()        // this permit was not used
                     continue
                 }
-                producedThisPass = true
-                let time = loop * duration + min(max(pts, 0), duration - 1)
-                nextExpected = time
-                var superseded = 0
-                let kept: Bool = lock.withLock {
-                    guard !cancelled else { return false }
-                    // Catching up after a hitch: a newer due picture replaces older due ones at once,
-                    // so the decoder never waits for the render side to drain pictures it will drop.
-                    if time <= target {
-                        while let first = queue.first, first.presentationNanoseconds <= time {
-                            queue.removeFirst()
-                            statistics.dropped += 1
-                            superseded += 1
-                        }
+                if let (pts, frame) = item, pts < regionOut {
+                    producedThisPass = true
+                    fallback = nil
+                    lastPts = pts
+                    let time: Int64 = base + pass * length + (pts - regionIn)
+                    nextExpected = time
+                    if !preparedThisPass, regionOut - pts <= Self.prerollNanoseconds {
+                        preparedThisPass = true
+                        reader.prepare(startNanoseconds: regionIn, endNanoseconds: end)
+                        lock.withLock { statistics.prepared += 1 }
                     }
-                    queue.append(TimedFrame(presentationNanoseconds: time, frame: frame))
-                    statistics.decoded += 1
-                    statistics.depth = queue.count
-                    statistics.maxDepth = max(statistics.maxDepth, queue.count)
-                    return true
+                    if !enqueue(time: time, media: pts, frame: frame) { return }
+                    continue
                 }
-                for _ in 0..<superseded { freeSlots.signal() }
-                if !kept { return }
+                // The pass ended: a picture at or after out, the end of the reader, or an error.
+                var usedPermit = false
+                if !producedThisPass, readError == nil, let covering = fallback {
+                    // A region shorter than the clip's frame interval: the picture covering in.
+                    let time: Int64 = base + pass * length
+                    if !enqueue(time: time, media: covering.pts, frame: covering.frame) { return }
+                    producedThisPass = true
+                    usedPermit = true
+                }
+                if let readError {
+                    if producedThisPass {
+                        errorPasses += 1
+                        lock.withLock { statistics.recoveredErrors += 1 }
+                    } else {
+                        badPasses += 1
+                    }
+                    if errorPasses >= Self.badPassLimit || badPasses >= Self.badPassLimit { throw readError }
+                } else if producedThisPass {
+                    badPasses = 0
+                    errorPasses = 0
+                    if item == nil, lastPts + earlyMargin < regionOut { lock.withLock { statistics.earlyEnds += 1 } }
+                } else {
+                    badPasses += 1
+                    if badPasses >= Self.badPassLimit { throw .damaged }
+                }
+                // The next pass starts at in, the timeline continuing (MED-002-R11, MED-003-R4, R5).
+                reader.close()
+                pass += 1
+                _ = try reader.open(startNanoseconds: regionIn, endNanoseconds: end)
+                producedThisPass = false
+                preparedThisPass = false
+                fallback = nil
+                nextExpected = base + pass * length
+                lock.withLock { statistics.loops += 1 }
+                if !usedPermit { freeSlots.signal() }
             }
         } catch {
             fail(error)

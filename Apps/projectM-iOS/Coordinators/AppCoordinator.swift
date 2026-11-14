@@ -352,6 +352,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         } else if let values = sceneAutosave?.restore(assets: stored) {
             SceneAutosaveCapture.apply(values, to: settings)
             if let text = values.text { texts.spec = text }
+            videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
@@ -430,7 +431,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
         photos.onPhotoChange = { [weak self] (stored: StoredPhoto?) in self?.photoVisual?.content = Self.photoContent(stored) }
-        videos.onVideoChange = { [weak self] (stored: StoredVideo?) in self?.videoVisual?.content = Self.videoContent(stored) }
+        videos.onVideoChange = { [weak self] (stored: StoredVideo?) in
+            guard let self, let host = videoVisual else { return }
+            host.content = .none   // MED-003: the new video's region applies from its first picture
+            host.loopRegion = videos.loopRegion
+            host.content = Self.videoContent(stored)
+        }
+        videos.onLoopRegionChange = { [weak self] (region: VideoLoopRegion?) in self?.videoVisual?.loopRegion = region }   // MED-003
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
@@ -978,6 +985,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.faultInjection = armedRenderFaults
             #endif
             host.onVideoStateChange = { [weak self] (state: VideoLayerState) in self?.videoStateChanged(state) }
+            host.loopRegion = videos.loopRegion   // MED-003: before the first start
             host.content = Self.videoContent(videos.video)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             videoVisual = host
@@ -998,7 +1006,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private func videoStateChanged(_ state: VideoLayerState) {
         videoState = state
         switch state {
-        case .playing(let width, let height): videos.playingSize = (width, height)
+        case .playing(let width, let height):
+            videos.playingSize = (width, height)
+            videos.durationNanoseconds = videoVisual?.video.mediaDurationNanoseconds   // MED-003
         case .failed: videos.storedCopyFailed()   // MED-002-R14, R18
         case .empty, .loading: videos.playingSize = nil
         }
@@ -1276,6 +1286,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if let values = sceneAutosave?.reopen(held) {
             SceneAutosaveCapture.apply(values, to: settings)
             if let text = values.text { texts.spec = text }
+            videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
         }
         if let visual { settings.visual = visual }
         sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
@@ -1298,7 +1309,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     bars: settings.circularSpectrumBars, orientation: settings.linearSpectrumOrientation,
                     spacing: settings.linearSpectrumSpacing, glowEnabled: settings.glowEnabled,
                     glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
-                    text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id)
+                    text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
+                    videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion))   // MED-003
     }
 
     // MARK: - Glow (FX-001)

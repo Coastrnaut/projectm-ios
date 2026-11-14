@@ -13,7 +13,7 @@ final class SceneSourceSafetyTests: XCTestCase {
         XCTAssertEqual(names, ["SceneDecoding.swift", "SceneDocument.swift", "SceneEditing.swift", "SceneEncoding.swift", "SceneHistory.swift",
                                "SceneIssue.swift",
                                "SceneJSON.swift", "SceneJSONParser.swift", "SceneJSONWriter.swift", "SceneLiveState.swift", "SceneMigration.swift",
-                               "SceneModulationRestore.swift", "SceneRepair.swift", "SceneValidation.swift"])
+                               "SceneModulationRestore.swift", "SceneRepair.swift", "SceneValidation.swift", "SceneVideoLoop.swift"])   // MED-003
         return try names.map { (name: String) -> (name: String, text: String) in
             (name, try String(contentsOf: directory.appendingPathComponent(name), encoding: .utf8))
         }

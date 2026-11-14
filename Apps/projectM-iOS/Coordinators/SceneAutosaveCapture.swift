@@ -33,6 +33,8 @@ struct SceneInputs: Equatable, Sendable {
     var text: TextOverlaySpec
     var photoID: UUID?
     var videoID: UUID?
+    /// MED-003-R8: the stored video's loop region (nil: the whole file).
+    var videoLoop: SceneVideoLoop? = nil
 }
 
 /// What a restore hands back to the app (contract A5).
@@ -41,6 +43,9 @@ struct SceneRestoredValues: Sendable, Equatable {
     var parameters: [ParameterID: ParameterValue]
     var text: TextOverlaySpec?
     var bindings: [AudioFeatureBinding]
+    /// MED-003-R8: the first video layer's stored-video ID and loop (nil: none).
+    var videoStoreID: String? = nil
+    var videoLoop: SceneVideoLoop? = nil
 }
 
 /// The restored document's content the app does not own (research SCN-002-D6).
@@ -125,7 +130,7 @@ enum SceneAutosaveCapture {
             contents += spectrumOver
         case .video:
             if let id = inputs.videoID {
-                assets[videoKey] = .video(storeID: id.uuidString)
+                assets[videoKey] = SceneVideoLoopBridge.asset(storeID: id, loop: inputs.videoLoop)   // MED-003
                 contents = [.video(asset: videoKey)]
             }
             contents += spectrumOver
@@ -225,7 +230,9 @@ enum SceneAutosaveCapture {
            case let .spec(decoded) = TextOverlaySpec.decodeStored(Data(spec.canonicalBytes)) {
             text = decoded
         }
-        return SceneRestoredValues(parameters: parameters, text: text, bindings: live.bindings)
+        let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
+        return SceneRestoredValues(parameters: parameters, text: text, bindings: live.bindings,
+                                   videoStoreID: video?.storeID, videoLoop: video?.loop)
     }
 
     /// Applies restored parameter values to the settings (each setter keeps its own range rules).

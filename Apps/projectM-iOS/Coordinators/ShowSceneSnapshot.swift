@@ -32,6 +32,8 @@ struct ShowLook: Equatable, Sendable {
     var text: TextOverlaySpec
     var photoID: UUID?
     var videoID: UUID?
+    /// MED-003-R8: the stored video's loop region (nil: the whole file).
+    var videoLoop: SceneVideoLoop? = nil
 }
 
 /// What applying a scene sets (contract S4).
@@ -44,6 +46,9 @@ struct ShowSceneApply: Equatable, Sendable {
     var omittedKinds: [String]
     /// The scene names a photo or video that is no longer the stored one.
     var missingMedia: Bool
+    /// MED-003-R8: the first video layer's stored-video ID and loop (nil: none).
+    var videoStoreID: String? = nil
+    var videoLoop: SceneVideoLoop? = nil
 }
 
 enum ShowSceneSnapshot {
@@ -82,7 +87,7 @@ enum ShowSceneSnapshot {
             contents.append(.circularSpectrum)
         case .video:
             if let id = look.videoID {
-                assets[videoKey] = .video(storeID: id.uuidString)
+                assets[videoKey] = SceneVideoLoopBridge.asset(storeID: id, loop: look.videoLoop)   // MED-003
                 contents.append(.video(asset: videoKey))
             }
             contents.append(.circularSpectrum)
@@ -153,7 +158,9 @@ enum ShowSceneSnapshot {
             text = decoded
         }
         let missingMedia = warnings.contains { (issue: SceneIssue) -> Bool in issue.code == .missingAsset }
-        return ShowSceneApply(visual: visual, parameters: parameters, text: text, omittedKinds: omitted, missingMedia: missingMedia)
+        let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
+        return ShowSceneApply(visual: visual, parameters: parameters, text: text, omittedKinds: omitted, missingMedia: missingMedia,
+                              videoStoreID: video?.storeID, videoLoop: video?.loop)
     }
 
     // MARK: JSON

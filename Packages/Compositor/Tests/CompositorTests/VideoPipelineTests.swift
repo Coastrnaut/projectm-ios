@@ -170,8 +170,16 @@ final class VideoPipelineTests: XCTestCase {
             XCTAssertTrue(failing.waitUntilIdle())
             _ = failing.take(upTo: FakeVideoReader.pts(i))
         }
-        XCTAssertTrue(failing.waitUntilIdle())
+        // MED-003-R5, R6: a reader that fails at the same picture every pass is recovered twice and
+        // fails on the third error (research MED-003-D4); drain until it does.
+        var step = 5
+        while failing.state == .running, step < 300 {   // three 2 s passes
+            XCTAssertTrue(failing.waitUntilIdle())
+            _ = failing.take(upTo: FakeVideoReader.pts(step))
+            step += 1
+        }
         XCTAssertEqual(failing.state, .failed(.damaged))
+        XCTAssertEqual(failing.statistics.recoveredErrors, 3)
 
         let empty = pipeline { FakeVideoReader(empty: true) }
         empty.start(atNanoseconds: 0)
