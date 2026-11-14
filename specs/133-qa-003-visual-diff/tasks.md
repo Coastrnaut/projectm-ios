@@ -28,7 +28,7 @@ All paths are relative to `Packages/RenderGoldens/` unless they start with `spec
 
 **Independent test**: `ImageDiffBoundaryTests`.
 
-- [ ] QA-003-T07 [US2] Boundary tests: difference exactly at the colour tolerance passes, one above exceeds; exactly the allowed count passes, one more fails; `maxExceedingPixels` caps the fraction; cluster limit at and above; `minimumSSIM` gate; all-different image fails every applicable rule with a whole-image box; size mismatch fails with `[.size]`; determinism (same inputs twice → equal reports); `.exact` fails on any change in `Tests/RenderGoldensTests/ImageDiffBoundaryTests.swift`
+- [ ] QA-003-T07 [US2] Boundary tests: difference exactly at the colour tolerance passes, one above exceeds; exactly the allowed count passes, one more fails; `maxExceedingPixels` caps the fraction; cluster limit at and above; `minimumSSIM` gate; all-different image fails every applicable rule with a whole-image box; size mismatch fails with `[.size]`; determinism (same inputs twice → equal reports); `.exact` fails on any change; SSIM is nil for images below 8 × 8 and a `minimumSSIM` then does not fail (spec Edge Cases) in `Tests/RenderGoldensTests/ImageDiffBoundaryTests.swift`
 
 ## Phase 5: User Story 3 — Readable failures (P2)
 
@@ -38,7 +38,7 @@ All paths are relative to `Packages/RenderGoldens/` unless they start with `spec
 
 ## Phase 6: User Story 4 — QA-002 goldens on the comparator (P2)
 
-- [ ] QA-003-T11 [US4] `GoldenTolerance` becomes `typealias GoldenTolerance = ImageDiffTolerance`; `GoldenComparison.compare` delegates to `ImageDiff` (default `.golden`) and `GoldenComparisonResult` carries `report` with a compatible initializer in `Sources/GoldenImages/GoldenComparison.swift`
+- [ ] QA-003-T11 [US4] `GoldenTolerance` becomes `typealias GoldenTolerance = ImageDiffTolerance`; `GoldenComparison.compare` delegates to `ImageDiff` (default `.golden`) and `GoldenComparisonResult` carries `report` with a compatible initializer; its `exceedingPixels` reports the unmatched pixels (equal to QA-002's figure at radius 0; data-model) in `Sources/GoldenImages/GoldenComparison.swift`
 - [ ] QA-003-T12 [US4] Pin QA-002's comparison tests to `.qa002` where they test that rule, and pass `.golden` explicitly in `Tests/RenderGoldensTests/GoldenRenderSuiteTests.swift` and `Tests/RenderGoldensTests/OscilloscopeGoldenTests.swift` (hash-equal still `identical`)
 - [ ] QA-003-T13 [US4] Run every golden on the host and on the QA3 iOS 27.2 simulator; all pass (QA-003-S4)
 
