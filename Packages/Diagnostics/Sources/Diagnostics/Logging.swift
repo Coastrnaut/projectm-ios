@@ -62,6 +62,14 @@ public enum DiagnosticsLog {
         app.info("memory recovery \(summary, privacy: .private)")
     }
 
+    /// PERF-008-R7: one Points of Interest event and one app log line per power profile change, so a device trace
+    /// lines frame time and energy up with the switch. The summary carries the profile and its budget only.
+    public static func powerProfile(_ summary: String) {
+        assertNotRealtime()
+        signposter.emitEvent("Power profile", "\(summary, privacy: .private)")
+        app.info("power profile \(summary, privacy: .private)")
+    }
+
     /// PERF-014-R13: one Points of Interest event and one app log line per counted render fault or
     /// recovery. The summary (`RenderHealth.summary(visual:)`) carries the visual kind, the state, the
     /// reason identifier and counts only; private like every dynamic value.

@@ -53,6 +53,8 @@ enum EraseFixtures {
         let assets = sandbox.folder(LibraryErasePolicy.audioFolderName).appendingPathComponent("assets", isDirectory: true)
         try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
         try Data("AUDIO-ASSET".utf8).write(to: assets.appendingPathComponent("1A2B.m4a"))
+        try write("RECORDING", to: sandbox.folder(LibraryErasePolicy.recordingLibraryFolderName)
+            .appendingPathComponent("Visualizer Recording 2026-11-14 at 10.00.00.mp4"))   // REC-010
         try write("MILKDROP_PRESET_VERSION=201\nbundled\n", to: sandbox.bundle.appendingPathComponent("Presets/Included/Alpha.milk"))
         try write("FULL-LIBRARY-ARCHIVE", to: sandbox.bundle.appendingPathComponent("PresetLibrary/library.archive"))
         try write("{\"presets\":12847}", to: sandbox.bundle.appendingPathComponent("PresetLibrary/index.json"))

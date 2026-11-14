@@ -122,6 +122,7 @@ final class ScenePackCoordinator {
     /// "Import Scene…": the file picker, or in fixture mode the last exported pack.
     func startImport() {
         guard !isBusy else { return }
+        if show.refusedByLock() { return }   // SCN-015-R3: no picker, no media staged while locked
         if keepsExportForImport {
             if let copy = lastExportCopy { picked(copy) }
             return
@@ -151,6 +152,7 @@ final class ScenePackCoordinator {
     func confirmImport() {
         guard let importer, let preview, preview.canImport, let url = pickedURL, let document = preview.document,
               let plan = preview.showPlan else { return }
+        if show.refusedByLock() { return cancelImport() }   // SCN-015: locked after the preview opened
         isImporting = true
         Task {
             let adopted: Result<ScenePackAdoption, SceneArchiveServiceError> = await Task.detached {

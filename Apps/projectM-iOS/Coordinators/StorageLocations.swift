@@ -36,6 +36,7 @@ struct StorageLocations: Sendable, Equatable {
             .presets: [support(UserPresetStore.directoryName), support(PresetCollectionStore.directoryName)],
             .importedAudio: [support(audioLibraryFolderName)],
             .recordings: [temp(recordingsFolderName)],
+            .savedRecordings: [support(RecordingLibraryStore.folderName)],   // REC-010-R7: user data, never cleaned
             .sharesAndExports: [temp(sharingFolderName), temp(SceneArchiveService.exportFolderName), temp(presetExportFolderName)],
             .caches: [caches],
         ], extraProtectedRoots: [

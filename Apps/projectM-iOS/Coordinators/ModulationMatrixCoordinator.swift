@@ -42,6 +42,8 @@ final class ModulationMatrixCoordinator {
     @ObservationIgnored var store: @MainActor (ModulationRouteEdit) -> Bool = { (_: ModulationRouteEdit) -> Bool in false }
     /// Closes the undo step after an edit (SCN-010 `endCoalescing`).
     @ObservationIgnored var didEdit: @MainActor () -> Void = { () -> Void in }
+    /// SCN-015-R3: route edits are refused while the scene is locked (nil: never locked). `restore` is not an edit.
+    @ObservationIgnored var sceneLock: SceneLock?
 
     /// Destinations in first-appearance order, layers in fold order (MOD-012-R1).
     var groups: [ModulationRouteGroup] { ModulationRouteList.groups(routes) }
@@ -86,6 +88,7 @@ final class ModulationMatrixCoordinator {
     }
 
     private func perform(_ edit: ModulationRouteEdit) {
+        if sceneLock?.refusesEdit() == true { return }   // SCN-015: nothing changes
         guard store(edit) else { return refresh() }
         refresh()
         didEdit()
