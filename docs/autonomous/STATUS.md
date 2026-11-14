@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T20:11:08Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T20:14:02Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,25 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 107 |
-| implementing | 3 |
-| built | 4 |
-| unit_passed | 1 |
-| integrated | 210 |
+| implementing | 2 |
+| built | 5 |
+| integrated | 211 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 29 | 2 | 2 | 1 | 117 | 0 |
-| P2 | 67 | 1 | 2 | 0 | 9 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 29 | 1 | 3 | 118 | 0 |
+| P2 | 67 | 1 | 2 | 9 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 115 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 114 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -207,6 +206,7 @@ The physical-device suite may **not** start:
 | REC-007 | Recording countdown | `1847eae2` | `feature/rec-007` |
 | REC-008 | Timed recording stop | `5091bfb8` | `feature/rec-008` |
 | REC-009 | Recording status overlay | `ed68646f` | `feature/rec-009` |
+| REC-010 | Recording library | `864dc0c0` | `feature/rec-010` |
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
@@ -527,6 +527,13 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `71c12fb822f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-014/20261113T224539/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `71c12fb822f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-014/20261113T224539/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 413 + NativeVisual UI tests 4; gate ran 13 package suites incl. downstream`: pass at `c3900199` (log `.autonomous/logs/integration/anl-014/app-tests.log`)
+
+### ANL-015 Section energy change (built)
+- `python3 scripts/check_compliance.py`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/AnalysisFeatures`: pass at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/swift-test_AnalysisFeatures.log`)
+- `swift test --package-path Packages/Compositor`: exit 1 at `9a1653f93379` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-015/20261114T150829/swift-test_Compositor.log`)
 
 ### ANL-016 Analysis event bus (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1e9e7eec69b8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-016/20261113T101323/compliance.log`)
@@ -2132,7 +2139,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `e53fbaff2a00` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-009/20261114T135122/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 882 + UI 3 (status overlay, video recording)`: pass at `ed68646f` (log `.autonomous/logs/integration/batch40/app-tests.log`)
 
-### REC-010 Recording library (unit_passed)
+### REC-010 Recording library (integrated)
 - `python3 scripts/check_compliance.py`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_ImportFuzz.log`)
@@ -2141,6 +2148,7 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_PresetLibrary.log`)
 - `swift test --package-path Packages/SceneArchive`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 934 + UI 2 (recording library, cache cleanup)`: pass at `864dc0c0` (log `.autonomous/logs/integration/batch52/app-tests.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
