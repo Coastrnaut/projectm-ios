@@ -130,8 +130,8 @@ read.
 
 **Acceptance Scenarios**:
 
-1. **Given** a running delay of 0 ms, **When** the target changes to 250 ms, **Then** each read delivers at least 75 % of the frames that arrived, and the delay reaches 250 ms within 1.1 s.
-2. **Given** a running delay of 250 ms, **When** the target changes to 0 ms, **Then** each read delivers at most 125 % of the frames that arrived plus one read's rounding, and the delay reaches 0 within 1.1 s.
+1. **Given** a running delay of 0 ms, **When** the target changes to 250 ms, **Then** the reads after each arrival deliver at least 75 % of the frames that arrived, and the delay reaches 250 ms within 1.1 s.
+2. **Given** a running delay of 250 ms, **When** the target changes to 0 ms, **Then** the reads after each arrival deliver at most 125 % of the frames that arrived plus one frame of rounding, and the delay reaches 0 within 1.1 s.
 
 ---
 
@@ -177,10 +177,10 @@ is not shown as the new source.
 - **AUD-013-R2**: The delay MUST shift when audio reaches every consumer that drives visuals: the analysis tap's consumer chain (native spectra, oscilloscope, MOD-002 bindings, kick, centroid, tempo detection) and projectM's PCM feed. Playback, the PCM sink and the audio-state classifier MUST NOT be delayed.
 - **AUD-013-R3**: The delay is applied to the audio on the sample clock: a frame leaves the delay line `round(delay × 44.1)` frames after it entered (in steady state), so every derived analysis item is shifted by the same amount.
 - **AUD-013-R4**: Negative values (visuals earlier than the audio) are not offered: the analysis cannot see audio before it arrives. The UI says so.
-- **AUD-013-R5**: A change of the target delay MUST move the applied delay at a bounded rate: per read, by at most a quarter of the frames that arrived in that read. No read delivers fewer than 75 % or more than 125 % of the arrived frames because of a change (plus one frame of rounding).
+- **AUD-013-R5**: A change of the target delay MUST move the applied delay at a bounded rate: per read, by at most a quarter of the frames that arrived in that read. Between two arrivals, the reads that drain the line deliver no fewer than 75 % and no more than 125 % of the arrived frames because of a change (plus one frame of rounding).
 - **AUD-013-R6**: With target and applied delay 0 and nothing buffered, the delay reader MUST forward the wrapped reader's read unchanged (bit-identical, no copy).
 - **AUD-013-R7**: The analysis delay line MUST be emptied when the wrapped reader's session generation changes (restart or switch, ANL-016-R9); the new target applies at once. projectM's delay line MUST NOT be emptied (AUD-012's continuity) and MUST skip the oldest frames beyond delay + 2,205 frames (the freshness rule).
-- **AUD-013-R8**: The active source's value applies when a session starts and when a switch begins (the same hook as AUD-012-R12), and at once when the user changes the active source's value.
+- **AUD-013-R8**: The active source's value applies when a session starts and when a switch's new session begins after the old source's fade-out (the same hook as AUD-012-R12), and at once when the user changes the active source's value.
 - **AUD-013-R9**: "Estimate from Output" MUST set the picked source's value (the section's picker starts on the active source) to round((output latency + I/O buffer duration) × 1,000) ms clamped to the range for In-App Playback and System/App Capture, and to 0 for Microphone. Non-finite or negative inputs count as 0. No new permission is used.
 - **AUD-013-R10**: Settings MUST offer a "Visual Delay" section: a source picker (Microphone, In-App Playback, System Audio; it starts on the active source, or In-App Playback with none), one "Visual delay" slider for the picked source (0…250 ms, 5 ms steps) with a readout ("180 ms"), an "Estimate from Output" button and a "Reset" button for the picked source, and a footer saying it delays the visuals only, never earlier than the sound.
 - **AUD-013-R11**: Persisted under `settings.latencyOffset.microphone`, `settings.latencyOffset.inAppPlayback` and `settings.latencyOffset.systemAppCapture` (Double, ms); device-level user settings, not part of scenes, show cues or archives. This amends FR-065 by exactly these three keys; the device privacy check's allowed list gains them; `-uitestResetNotice` clears them.
@@ -201,7 +201,7 @@ is not shown as the new source.
 - **AUD-013-S1**: Pulse train through the analysis pipeline with simulated time: the measured shift of the first reacting display frame equals the configured offset (0, 100, 250 ms) within ±28.3 ms (one 60 Hz frame 16.7 ms + one hop 11.6 ms) for every pulse.
 - **AUD-013-S2**: Clamping: 400 → 250, −50 → 0, NaN → 0.
 - **AUD-013-S3**: Per source: setting one value never changes another; the active source's value is the applied target.
-- **AUD-013-S4**: A mid-run change delivers 75–125 % of arrived frames per read and settles within 1.1 s.
+- **AUD-013-S4**: A mid-run change delivers 75–125 % of the arrived frames per arrival and settles within 1.1 s.
 - **AUD-013-S5**: A generation change empties the analysis delay line; projectM's line keeps content.
 - **AUD-013-S6**: With 0 ms, 100 % of frames are bit-identical to the wrapped reader.
 - **AUD-013-S7**: The Settings section works in one UI test under 30 s; every existing test passes.
