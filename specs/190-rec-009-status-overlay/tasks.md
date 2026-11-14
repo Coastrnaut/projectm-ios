@@ -29,11 +29,11 @@ No setup: no new package, setting, key or dependency.
 **Independent test**: read every recorded frame back.
 
 - [ ] REC-009-T08 [US2] Acceptance test `testOverlayIsNeverInTheRecording` in Apps/projectM-iOS/Tests/RecordingStatusOverlayAppTests.swift: Photo visual with a solid red PNG in a window, a `UIHostingController` on top with a green `#00FF00` probe with text and the real `RecordingStatusLines`; a window snapshot shows the probe; record ≥ 10 frames through the coordinator, finish, decode every frame with AVAssetReader (BGRA): no green-dominant pixel anywhere, and every pixel outside the central spectrum disc within tolerance of red (REC-009-R6, S1; research D6)
-- [ ] REC-009-T09 [US2] Record research REC-009-D1 (encodeOutput, the spectra's drawable blit, the external display path, the flash guard) in the comments of VideoRecordingCoordinator.swift and in the spec's status (REC-009-R6)
+- [ ] REC-009-T09 [US2] Record research REC-009-D1 (encodeOutput, the spectra's drawable blit, the external display path, the flash guard) in the comments of VideoRecordingCoordinator.swift and in the spec's status; the external-display scenario (US2 AS2) is covered by this code audit, since the recording source is the same host whether its view is on the device or the external screen (REC-009-R6)
 
 ## Phase 5: Polish
 
-- [ ] REC-009-T10 Repo checks (check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events, test_scripts), type-check budget build, check_privacy_manifest on the Debug app, check_network_symbols; tick tasks with evidence; spec status
+- [ ] REC-009-T10 Repo checks (check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events, test_scripts), type-check budget build, check_privacy_manifest on the Debug app, check_network_symbols; confirm no new UserDefaults key or file write (REC-009-R7, `git diff` review); tick tasks with evidence; spec status
 - [ ] REC-009-T11 {device} On D1, record the Photo visual, look at the lines (and a low-storage warning on a nearly full device), save the file and confirm the lines are not in it
 
 ## Dependencies

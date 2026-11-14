@@ -121,7 +121,7 @@ window snapshot taken during the recording shows the probe (it really was on scr
 
 ### Measurable Outcomes
 
-- **REC-009-S1**: A recording made through the app's real recording path with the overlay and a probe on screen contains zero probe-coloured pixels in every frame, and every frame is the visual's colour within tolerance.
+- **REC-009-S1**: A recording made through the app's real recording path with the overlay and a probe on screen contains zero probe-coloured pixels in every frame, and every frame is the visual's colour within tolerance outside the visual's own centred spectrum disc.
 - **REC-009-S2**: The dropped-frames line equals the recorder's dropped-slot count; the warning switches exactly at the threshold.
 - **REC-009-S3**: Storage levels switch exactly at 5 and 1 minutes; unknown storage never warns.
 - **REC-009-S4**: A burst of rising and falling readings yields at most one announcement per kind per 30 s of recording.

@@ -20,5 +20,5 @@ the UI test finds the indicator, "Dropped frames: 0" and a "… free, about … 
 
 ## Device `{device}`
 
-On D1, record the Photo visual and look at the lines; fill storage (or use `-uitestStorage dropAfter:2`
-in a Debug build) to see the low warning; save the file and confirm the lines are not in it.
+On D1, record the Photo visual and look at the lines; on a nearly full device see the low warning (the
+Debug `-uitestStorage` values jump straight below the guard's stop threshold, so they show the stop, not the warning); save the file and confirm the lines are not in it.
