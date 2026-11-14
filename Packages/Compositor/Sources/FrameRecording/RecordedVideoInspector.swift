@@ -18,6 +18,10 @@ public struct RecordedVideoInfo: Sendable, Equatable {
     public let audioTrackCount: Int
     /// Metadata items of the asset (common and format-specific).
     public let metadataCount: Int
+    /// REC-004: the first audio track's format ("aac ", 44,100, 2), nil without an audio track.
+    public var audioCodec: String? = nil
+    public var audioSampleRate: Double? = nil
+    public var audioChannelCount: Int? = nil
 
     /// "video hvc1 1178x2556 frames=58 duration=1.93 audio=0" (the DEBUG probe).
     public var summary: String {
@@ -41,10 +45,19 @@ public enum RecordedVideoInspector {
         let metadata = (try? await asset.load(.metadata)) ?? []
         let codec = descriptions.first.map { (d: CMFormatDescription) -> String in fourCC(CMFormatDescriptionGetMediaSubType(d)) } ?? "?"
         guard let ticks = presentationTicks(asset: asset, track: track) else { return nil }
-        return RecordedVideoInfo(codec: codec, width: Int(size.width.rounded()), height: Int(size.height.rounded()),
-                                 frameCount: ticks.count, presentationTicks: ticks, durationSeconds: duration.seconds,
-                                 videoTrackCount: videoTracks.count, audioTrackCount: audioTracks.count,
-                                 metadataCount: metadata.count)
+        var info = RecordedVideoInfo(codec: codec, width: Int(size.width.rounded()), height: Int(size.height.rounded()),
+                                     frameCount: ticks.count, presentationTicks: ticks, durationSeconds: duration.seconds,
+                                     videoTrackCount: videoTracks.count, audioTrackCount: audioTracks.count,
+                                     metadataCount: metadata.count)
+        if let audio = audioTracks.first, let audioDescriptions = try? await audio.load(.formatDescriptions),
+           let description = audioDescriptions.first {
+            info.audioCodec = fourCC(CMFormatDescriptionGetMediaSubType(description))
+            if let asbd = CMAudioFormatDescriptionGetStreamBasicDescription(description)?.pointee {
+                info.audioSampleRate = asbd.mSampleRate
+                info.audioChannelCount = Int(asbd.mChannelsPerFrame)
+            }
+        }
+        return info
     }
 
     private static func presentationTicks(asset: AVAsset, track: AVAssetTrack) -> [Int64]? {

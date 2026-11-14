@@ -38,13 +38,15 @@ final class LibraryEraseAppTests: XCTestCase {
         XCTAssertEqual(LibrarySettingsPolicy.photoKey, PhotoStore.idKey)
         XCTAssertEqual(LibraryErasePolicy.oscEnabledKey, AppSettings.oscEnabledKey)
         XCTAssertEqual(LibraryErasePolicy.midiEnabledKey, AppSettings.midiEnabledKey)
+        XCTAssertEqual(LibraryErasePolicy.recordingMicrophoneKey, RecordingAudioSetting.includeMicrophoneKey)
         XCTAssertEqual(LibraryErasePolicy.folders(.scenes), [StorageLocations.showFolderName, SceneAutosaveStore.folderName])
         XCTAssertEqual(LibraryErasePolicy.folders(.presets), [UserPresetStore.directoryName])
         XCTAssertEqual(LibraryErasePolicy.folders(.collections), [PresetCollectionStore.directoryName])
         XCTAssertEqual(LibraryErasePolicy.folders(.media), [PhotoStore.folderName, VideoStore.folderName])
         let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
-               FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, VideoStore.idKey, VideoStore.loopKey, TextOverlayStore.key])
+               FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, VideoStore.idKey, VideoStore.loopKey, TextOverlayStore.key,
+               RecordingAudioSetting.includeMicrophoneKey])   // REC-004-R3
         let classified: Set<String> = Set(LibraryErasePolicy.erasableKeys + LibraryErasePolicy.neverErasedKeys)
         XCTAssertEqual(appKeys.subtracting(classified), [], "every app setting is erased by a category or deliberately kept")
     }

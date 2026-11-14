@@ -51,6 +51,9 @@ public struct RecordingStatistics: Sendable, Equatable {
     public var droppedNotIncreasing = 0
     /// Skipped by the frame-rate cap (not a drop: the screen ran faster than the recording).
     public var skippedRate = 0
+    /// REC-004: audio frames (44.1 kHz) appended, and dropped because the encoder was not ready.
+    public var audioFramesWritten = 0
+    public var audioFramesDropped = 0
 
     public init() {}
 

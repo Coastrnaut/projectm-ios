@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T12:32:17Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T12:33:17Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -1213,6 +1213,11 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `ebfe4ccae9e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-004/20261114T064913/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `ebfe4ccae9e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-004/20261114T064913/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `ebfe4ccae9e7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-004/20261114T064913/swift-test_VisualGenerators.log`)
+
+### MOD-005 Attack/release envelope (implementing)
+- `python3 scripts/check_compliance.py`: pass at `7d5bc9fe79dd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-005/20261114T073217/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `7d5bc9fe79dd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-005/20261114T073217/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 65 at `7d5bc9fe79dd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-005/20261114T073217/sim-test_ANGLERendering.log`)
 
 ### MOD-013 Modulation serialization (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bbdb65cb39c4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-013/20261113T160144/compliance.log`)

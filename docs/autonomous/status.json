@@ -1725,7 +1725,7 @@
    "state": "integrated"
   },
   "MOD-005": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/mod-005",
    "branch_sha": null,
    "error_category": null,
@@ -4247,5 +4247,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T12:32:17Z"
+ "updated": "2026-11-14T12:33:17Z"
 }

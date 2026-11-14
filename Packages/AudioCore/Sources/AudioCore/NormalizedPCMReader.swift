@@ -35,6 +35,12 @@
 // `resetForHandoff` (a source switch) empties the tap and advances the generation like `reset`,
 // but keeps projectM's ring, whose content then ends at exact 0, and writes 1,024 frames of
 // silence: the one exception to R-06's underrun policy ("no silence is injected").
+//
+// Recording tap (REC-004-D1, D2; specs/134-rec-004-recording-audio contract C2): a third SPSC ring,
+// always allocated, written only while armed (a recording with permitted audio runs). `reset()` and
+// `resetForHandoff()` disarm it before their first new-session write, so another source's audio can
+// never reach a recording; `discardBuffered()` drains it and keeps it armed. Each armed write stores the
+// uptime time of the write and then bumps a counter, so the consumer can date the newest sample it drains.
 import Synchronization
 
 /// Reports capture-session restarts to an analysis consumer (ANL-016-R9).
@@ -74,6 +80,10 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     /// `tapRing.droppedSamples` at the last `reset()`.
     private let tapOverflowBaseline = Atomic<Int>(0)
     private let tapReader: AnalysisTapReader?
+    /// REC-004: the recording tap (0.5 s, preallocated) and its reader.
+    private let recordingRing = SPSCRingBuffer(capacity: NormalizedPCMRing.capacityFrames * NormalizedPCMRing.channelCount)
+    private let recordingState = RecordingTapState()
+    private let recordingReader: RecordingTapReader
     /// Increased by `reset()` after the drains (release); read by the tap's consumer (acquire).
     private let sessionGeneration: SessionGeneration
 
@@ -98,6 +108,7 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
         boundaryScratch.initialize(repeating: 0, count: scratchCount)
         let generation = SessionGeneration()
         sessionGeneration = generation
+        recordingReader = RecordingTapReader(ring: recordingRing, state: recordingState)
         if analysisTapCapacityFrames > 0 {
             let tap = SPSCRingBuffer(capacity: analysisTapCapacityFrames * NormalizedPCMRing.channelCount)
             tapRing = tap
@@ -140,7 +151,30 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     private func writeRings(_ samples: UnsafePointer<Float>, count: Int) {
         ring.write(samples, count: count)
         tapRing?.write(samples, count: count)
+        if recordingState.armed.load(ordering: .acquiring) {   // REC-004-R8: only while a recording takes audio
+            recordingRing.write(samples, count: count)
+            recordingState.noteWrite(atNanoseconds: MonotonicClock.nowNanoseconds())
+        }
     }
+
+    // MARK: - REC-004 recording tap (control side arms and disarms; one consumer reads)
+
+    /// Empties the recording tap and starts writing to it. Control side.
+    public func armRecordingTap() {
+        recordingState.armed.store(false, ordering: .releasing)
+        recordingRing.drain()
+        recordingState.restart(droppedSamples: recordingRing.droppedSamples)
+        recordingState.armed.store(true, ordering: .releasing)
+    }
+
+    /// Stops writing to the recording tap and empties it.
+    public func disarmRecordingTap() {
+        recordingState.armed.store(false, ordering: .releasing)
+        recordingRing.drain()
+    }
+
+    /// The recording tap's reader (one consumer: the recording's audio feed).
+    public var recordingTap: any RecordingTapReading { recordingReader }
 
     // MARK: - AUD-012 handoff (producer side: the analysis queue)
 
@@ -189,6 +223,7 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     /// projectM's ring, advances the generation after the drain, then writes `silenceFrames` zero
     /// frames to both rings. The envelope is left silent; `beginFadeIn()` ramps from 0.
     public func resetForHandoff(silenceFrames: Int = HandoffEnvelope.silenceFrames) {
+        disarmRecordingTap()   // REC-004-R5: the new source never reaches a recording
         overflowBaseline.store(ring.droppedSamples, ordering: .relaxed)
         if let tapRing {
             tapRing.drain()
@@ -260,10 +295,12 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     public func discardBuffered() {
         ring.drain()
         tapRing?.drain()
+        recordingRing.drain()   // REC-004: a seek is not a new session; the tap stays armed
     }
 
     /// Empties the ring and restarts the counters (new session). Safe while the reader runs.
     public func reset() {
+        disarmRecordingTap()   // REC-004-R5: a new session ends a recording's audio
         ring.drain()
         overflowBaseline.store(ring.droppedSamples, ordering: .relaxed)
         if let tapRing {

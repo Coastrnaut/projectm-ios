@@ -1,7 +1,8 @@
 // VideoFileWriter.swift — REC-003 video file writer (REC-003-R6, R8, R17; research REC-003-D1, D2).
 //
-// One `AVAssetWriter` (MP4) with one video input and a pixel-buffer adaptor; nothing else: no audio
-// input (REC-004), no metadata items. The codecs are tried in the settings' order (HEVC, then H.264):
+// One `AVAssetWriter` (MP4) with one video input and a pixel-buffer adaptor, and (REC-004, only when the
+// recording's audio decision is "include") one AAC input fed with LPCM Float32 stereo 44.1 kHz chunks;
+// no metadata items. The codecs are tried in the settings' order (HEVC, then H.264):
 // a codec is used when the writer accepts its settings and starts. Every call after `make` runs on the
 // writer's serial `queue`; real-time appends never wait (a not-ready encoder drops the frame), offline
 // appends wait for the encoder on that queue (never on the caller's thread).
@@ -26,6 +27,65 @@ protocol RecordingSampleSink: AnyObject, Sendable {
     func append(_ buffer: CVPixelBuffer, tick: Int64) -> RecordingAppendResult
     /// Ends the file at `endTick` and keeps it, or (keep false) cancels and deletes it.
     func finish(endTick: Int64, keep: Bool) async -> Result<Void, RecordingFailure>
+    /// REC-004: true when the file has an AAC input.
+    var hasAudio: Bool { get }
+    /// REC-004: appends interleaved stereo Float32 frames at `startSample` (44.1 kHz from the session start). On `queue`.
+    func appendAudio(_ samples: [Float], startSample: Int64) -> RecordingAppendResult
+}
+
+extension RecordingSampleSink {
+    var hasAudio: Bool { false }
+    func appendAudio(_ samples: [Float], startSample: Int64) -> RecordingAppendResult { .failed }
+}
+
+/// REC-004-R7: AAC-LC, 44.1 kHz stereo, 128 kb/s; the input is LPCM Float32 interleaved stereo.
+enum RecordingAudioFormat {
+    static let sampleRate = 44_100
+    static let channels = 2
+    static let bitRate = 128_000
+
+    static var outputSettings: [String: Any] {
+        [
+            AVFormatIDKey: kAudioFormatMPEG4AAC,
+            AVSampleRateKey: sampleRate,
+            AVNumberOfChannelsKey: channels,
+            AVEncoderBitRateKey: bitRate,
+        ]
+    }
+
+    static func makeFormatDescription() -> CMAudioFormatDescription? {
+        var asbd = AudioStreamBasicDescription(mSampleRate: Float64(sampleRate), mFormatID: kAudioFormatLinearPCM,
+                                               mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
+                                               mBytesPerPacket: 8, mFramesPerPacket: 1, mBytesPerFrame: 8,
+                                               mChannelsPerFrame: 2, mBitsPerChannel: 32, mReserved: 0)
+        var description: CMAudioFormatDescription?
+        let status = CMAudioFormatDescriptionCreate(allocator: kCFAllocatorDefault, asbd: &asbd, layoutSize: 0, layout: nil,
+                                                    magicCookieSize: 0, magicCookie: nil, extensions: nil,
+                                                    formatDescriptionOut: &description)
+        return status == noErr ? description : nil
+    }
+
+    /// One LPCM sample buffer of `samples` (interleaved stereo) at `startSample`.
+    static func makeSampleBuffer(_ samples: [Float], startSample: Int64, format: CMAudioFormatDescription) -> CMSampleBuffer? {
+        let frames = samples.count / channels
+        guard frames > 0 else { return nil }
+        let bytes = frames * channels * MemoryLayout<Float>.size
+        var block: CMBlockBuffer?
+        guard CMBlockBufferCreateWithMemoryBlock(allocator: kCFAllocatorDefault, memoryBlock: nil, blockLength: bytes,
+                                                 blockAllocator: kCFAllocatorDefault, customBlockSource: nil, offsetToData: 0,
+                                                 dataLength: bytes, flags: kCMBlockBufferAssureMemoryNowFlag,
+                                                 blockBufferOut: &block) == kCMBlockBufferNoErr, let block else { return nil }
+        let copied = samples.withUnsafeBytes { (raw: UnsafeRawBufferPointer) -> OSStatus in
+            CMBlockBufferReplaceDataBytes(with: raw.baseAddress!, blockBuffer: block, offsetIntoDestination: 0, dataLength: bytes)
+        }
+        guard copied == kCMBlockBufferNoErr else { return nil }
+        var buffer: CMSampleBuffer?
+        let status = CMAudioSampleBufferCreateReadyWithPacketDescriptions(
+            allocator: kCFAllocatorDefault, dataBuffer: block, formatDescription: format, sampleCount: frames,
+            presentationTimeStamp: CMTime(value: startSample, timescale: CMTimeScale(sampleRate)),
+            packetDescriptions: nil, sampleBufferOut: &buffer)
+        return status == noErr ? buffer : nil
+    }
 }
 
 /// IOSurface-backed, Metal-compatible 32BGRA pixel buffers of one size.
@@ -61,9 +121,17 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     private let adaptor: AVAssetWriterInputPixelBufferAdaptor
     private let pool: CVPixelBufferPool
     private let realTime: Bool
+    /// REC-004: the AAC input and the LPCM format of its chunks (nil without audio).
+    private let audioInput: AVAssetWriterInput?
+    private let audioFormat: CMAudioFormatDescription?
+
+    var hasAudio: Bool { audioInput != nil }
 
     private init(codec: RecordingCodec, url: URL, writer: AVAssetWriter, input: AVAssetWriterInput,
-                 adaptor: AVAssetWriterInputPixelBufferAdaptor, pool: CVPixelBufferPool, realTime: Bool) {
+                 adaptor: AVAssetWriterInputPixelBufferAdaptor, pool: CVPixelBufferPool, realTime: Bool,
+                 audioInput: AVAssetWriterInput?, audioFormat: CMAudioFormatDescription?) {
+        self.audioInput = audioInput
+        self.audioFormat = audioFormat
         self.codec = codec
         self.url = url
         self.writer = writer
@@ -74,8 +142,11 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     }
 
     /// A started writer at `url` (an existing file there is replaced), or `encoderUnavailable`.
+    /// `audio` (REC-004): adds the AAC input; without it the file has no audio track.
     static func make(url: URL, geometry: RecordingGeometry, settings: RecordingSettings,
-                     realTime: Bool) throws(RecordingFailure) -> VideoFileWriter {
+                     realTime: Bool, audio: Bool = false) throws(RecordingFailure) -> VideoFileWriter {
+        let audioFormat: CMAudioFormatDescription? = audio ? RecordingAudioFormat.makeFormatDescription() : nil
+        if audio && audioFormat == nil { throw .encoderUnavailable }
         guard let pool = RecordingPixelBuffers.makePool(width: geometry.sourceWidth, height: geometry.sourceHeight,
                                                         minimumCount: settings.framesInFlight) else {
             throw .pixelBufferUnavailable
@@ -90,6 +161,15 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
             input.mediaTimeScale = RecordingSettings.timescale
             guard writer.canAdd(input) else { continue }
             writer.add(input)
+            var audioInput: AVAssetWriterInput?
+            if audio {
+                guard writer.canApply(outputSettings: RecordingAudioFormat.outputSettings, forMediaType: .audio) else { continue }
+                let added = AVAssetWriterInput(mediaType: .audio, outputSettings: RecordingAudioFormat.outputSettings)
+                added.expectsMediaDataInRealTime = realTime
+                guard writer.canAdd(added) else { continue }
+                writer.add(added)
+                audioInput = added
+            }
             let adaptor = AVAssetWriterInputPixelBufferAdaptor(
                 assetWriterInput: input,
                 sourcePixelBufferAttributes: RecordingPixelBuffers.attributes(width: geometry.sourceWidth, height: geometry.sourceHeight))
@@ -101,7 +181,7 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
             }
             writer.startSession(atSourceTime: .zero)
             return VideoFileWriter(codec: codec, url: url, writer: writer, input: input, adaptor: adaptor, pool: pool,
-                                   realTime: realTime)
+                                   realTime: realTime, audioInput: audioInput, audioFormat: audioFormat)
         }
         try? FileManager.default.removeItem(at: url)
         throw .encoderUnavailable
@@ -153,6 +233,24 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
             ? .appended : .failed
     }
 
+    /// REC-004: live, a not-ready input drops the chunk (never waits); offline, waits on this queue.
+    func appendAudio(_ samples: [Float], startSample: Int64) -> RecordingAppendResult {
+        guard let audioInput, let audioFormat, writer.status == .writing else { return .failed }
+        if !audioInput.isReadyForMoreMediaData {
+            if realTime { return .notReady }
+            var waited = 0.0
+            while !audioInput.isReadyForMoreMediaData && writer.status == .writing && waited < 5 {
+                Thread.sleep(forTimeInterval: 0.002)   // offline only, on the writer queue
+                waited += 0.002
+            }
+            guard audioInput.isReadyForMoreMediaData else { return writer.status == .writing ? .notReady : .failed }
+        }
+        guard let buffer = RecordingAudioFormat.makeSampleBuffer(samples, startSample: startSample, format: audioFormat) else {
+            return .notReady
+        }
+        return audioInput.append(buffer) ? .appended : .failed
+    }
+
     func finish(endTick: Int64, keep: Bool) async -> Result<Void, RecordingFailure> {
         await withCheckedContinuation { (continuation: CheckedContinuation<Result<Void, RecordingFailure>, Never>) in
             queue.async {
@@ -174,6 +272,7 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
             return
         }
         input.markAsFinished()
+        audioInput?.markAsFinished()
         writer.endSession(atSourceTime: CMTime(value: endTick, timescale: RecordingSettings.timescale))
         let writer = writer
         nonisolated(unsafe) let finished = writer   // read only in the handler, after writing ended
@@ -205,7 +304,11 @@ final class FaultInjectingSink: RecordingSampleSink, @unchecked Sendable {
 
     var codec: RecordingCodec { inner.codec }
     var queue: DispatchQueue { inner.queue }
+    var hasAudio: Bool { inner.hasAudio }
     func makePixelBuffer() -> CVPixelBuffer? { inner.makePixelBuffer() }
+    func appendAudio(_ samples: [Float], startSample: Int64) -> RecordingAppendResult {
+        failed ? .failed : inner.appendAudio(samples, startSample: startSample)
+    }
 
     func append(_ buffer: CVPixelBuffer, tick: Int64) -> RecordingAppendResult {
         if failed || appended >= fault.afterFrames {

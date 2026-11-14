@@ -33,8 +33,8 @@ final class VideoRecordingUITests: XCTestCase {
 
     private var probe: String { (app.staticTexts["videoRecordingProbe"].value as? String) ?? "" }
 
-    /// REC-003-S5: Record → the indicator → Stop recording → a readable video with frames, a video codec
-    /// and no audio track.
+    /// REC-003-S5: Record → the indicator → Stop recording → a readable video with frames and a video codec;
+    /// REC-004: with In-App Playback the line under the indicator names the app audio and the file has it.
     func testRecordPhotoVisualWritesAVideo() {
         launch(["-settings.visual", "photo", "-uitestSeedPhoto", "solid"])
         XCTAssertTrue(app.descendants(matching: .any)["photoVisual"].firstMatch.appears(within: 10))
@@ -46,20 +46,23 @@ final class VideoRecordingUITests: XCTestCase {
         let indicator = app.descendants(matching: .any)["recordingIndicator"].firstMatch
         XCTAssertTrue(indicator.appears(within: 5), "the recording indicator")
         XCTAssertTrue(indicator.label.hasPrefix("Recording, 0:0"), indicator.label)
+        let audioLine = app.staticTexts["recordingAudioLine"]
+        XCTAssertTrue(audioLine.appears(within: 5), "REC-004-R9: the audio line under the indicator")
+        XCTAssertEqual(audioLine.label, "Recording includes app audio.")
         // About 2 s of recorded video (the indicator shows media time).
         XCTAssertTrue(poll(10) { indicator.label == "Recording, 0:02" || indicator.label == "Recording, 0:03" }, indicator.label)
         showControls()
         XCTAssertEqual(app.buttons["record"].label, "Stop recording")
         app.buttons["record"].tap()
         XCTAssertTrue(poll(10) { self.probe.hasPrefix("video ") }, "probe: \(probe)")
-        // "video <codec> <w>x<h> frames=<n> duration=<s> audio=0"
+        // "video <codec> <w>x<h> frames=<n> duration=<s> audio=1" (REC-004: In-App Playback audio is included)
         print("REC-003 UI probe: \(probe)")   // the codec the simulator wrote, for the test report
         let parts = probe.split(separator: " ").map(String.init)
         XCTAssertEqual(parts.count, 6, probe)
         XCTAssertTrue(["hvc1", "avc1"].contains(parts[1]), probe)
         let frames = Int(parts[3].replacingOccurrences(of: "frames=", with: "")) ?? 0
         XCTAssertGreaterThanOrEqual(frames, 2, probe)
-        XCTAssertEqual(parts.last, "audio=0")
+        XCTAssertEqual(parts.last, "audio=1", "REC-004-R1: the app's own audio is in the file")
         XCTAssertFalse(indicator.exists, "the indicator is gone")
     }
 

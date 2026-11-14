@@ -70,7 +70,7 @@ enum PermissionCatalog {
                         name: "Microphone",
                         infoPlistKey: "NSMicrophoneUsageDescription",
                         usageDescription: "Microphone mode listens to sound in the room through your device's microphone. It does not capture audio directly from other apps.",
-                        features: ["Microphone mode (FR-005)"],
+                        features: ["Microphone mode (FR-005)", "Microphone audio in recordings, only with Include microphone audio on (REC-004)"],
                         askedWhen: "The first time you choose Microphone mode, after an explanation.",
                         settingsCanChange: true,
                         hasDistinctRestrictedState: false),

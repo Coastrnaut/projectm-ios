@@ -32,51 +32,23 @@ struct StatusCaptionView: View {
 struct StatusEventChanges: ViewModifier {
     let coordinator: AppCoordinator
 
-    // Three typed steps in the original order: one chain of seven `onChange`s took 229 ms to type-check
-    // (budget 200 ms, 2026-11-14; CI's Xcode 26 gives up on long chains).
+    // Each change calls a method (REC-004: keeps this body within the type-check budget).
     func body(content: Content) -> some View {
-        captureChanges(recordingResultChanges(recordingChanges(content)))
-    }
-
-    /// Blackout and recording state rows (X9, X10, X21-X23).
-    private func recordingChanges(_ view: some View) -> some View {
-        view
+        content
             // X21-X23 (ACC-004-R5 texts, research D3): by phase, whichever control or key caused it.
-            .onChange(of: coordinator.externalDisplay.blackoutPhase) { (_: OutputBlackout.Phase, phase: OutputBlackout.Phase) in
-                post(StatusEventCatalog.blackout(phase))
-            }
+            .onChange(of: coordinator.externalDisplay.blackoutPhase, blackoutChanged)
             // X9, X10: entering recording or finishing (a direct recording → idle also says "Recording stopped").
-            .onChange(of: coordinator.videoRecording.state) { (old: VideoRecordingCoordinator.State, new: VideoRecordingCoordinator.State) in
-                recordingStateChanged(from: old, to: new)
-            }
+            .onChange(of: coordinator.videoRecording.state, recordingStateChanged)
+            .modifier(RecordingResultChanges(coordinator: coordinator))   // X11-X14a
+            .modifier(CaptureEventChanges(coordinator: coordinator))   // X6-X8
+            .modifier(RecordingAudioEventChanges(coordinator: coordinator))   // REC-004 X9a, X9b
     }
 
-    /// Recording notices and the finished recording's offer (X11-X14a).
-    private func recordingResultChanges(_ view: some View) -> some View {
-        view
-            .onChange(of: coordinator.videoRecording.notice) { _, notice in   // X12-X14a
-                if let notice { post(StatusEventCatalog.recordingNotice(notice)) }
-            }
-            .onChange(of: coordinator.videoRecording.offered != nil) { _, offered in   // X11
-                if offered { post(StatusEventCatalog.recording(.idle)) }
-            }
+    private func blackoutChanged(_: OutputBlackout.Phase, _ phase: OutputBlackout.Phase) {
+        post(StatusEventCatalog.blackout(phase))
     }
 
-    /// Frame capture and sharing rows (X6-X8).
-    private func captureChanges(_ view: some View) -> some View {
-        view
-            .onChange(of: coordinator.frameCapture.notice) { _, notice in   // X6
-                if let notice { post(StatusEventCatalog.frameNotice(notice)) }
-            }
-            .onChange(of: coordinator.frameCapture.offered != nil) { _, offered in   // X7
-                if offered { post(StatusEventCatalog.frameOffered()) }
-            }
-            .onChange(of: coordinator.captureShare.notice) { _, notice in   // X8
-                if let notice { post(StatusEventCatalog.shareNotice(notice)) }
-            }
-    }
-
-    private func recordingStateChanged(from old: VideoRecordingCoordinator.State, to new: VideoRecordingCoordinator.State) {
+    private func recordingStateChanged(_ old: VideoRecordingCoordinator.State, _ new: VideoRecordingCoordinator.State) {
         let state: VideoRecordingCoordinator.State = new == .idle && old == .recording ? .finishing : new
         if state != .idle {
             post(StatusEventCatalog.recording(state, elapsed: coordinator.videoRecording.elapsedText))
@@ -85,5 +57,63 @@ struct StatusEventChanges: ViewModifier {
 
     private func post(_ event: StatusEvent) {
         coordinator.statusEvents.post(event)
+    }
+}
+
+/// REC-004-R9: X9a when a recording starts (its audio status), X9b when its audio ends early. Its own
+/// modifier keeps `StatusEventChanges.body` within the type-check budget.
+struct RecordingAudioEventChanges: ViewModifier {
+    let coordinator: AppCoordinator
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: coordinator.videoRecording.state) { (_: VideoRecordingCoordinator.State, new: VideoRecordingCoordinator.State) in
+                guard new == .recording, let audio = coordinator.videoRecording.recordingAudio else { return }
+                coordinator.statusEvents.post(StatusEventCatalog.recordingAudio(audio))
+            }
+            .onChange(of: coordinator.videoRecording.audioEnded) { (_: Bool, ended: Bool) in
+                if ended { coordinator.statusEvents.post(StatusEventCatalog.recordingAudioEnded()) }
+            }
+    }
+}
+
+/// X6-X8: frame capture and sharing (split from `StatusEventChanges` for the type-check budget, REC-004).
+struct CaptureEventChanges: ViewModifier {
+    let coordinator: AppCoordinator
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: coordinator.frameCapture.notice) { (_: String?, notice: String?) in   // X6
+                if let notice { post(StatusEventCatalog.frameNotice(notice)) }
+            }
+            .onChange(of: coordinator.frameCapture.offered != nil) { (_: Bool, offered: Bool) in   // X7
+                if offered { post(StatusEventCatalog.frameOffered()) }
+            }
+            .onChange(of: coordinator.captureShare.notice) { (_: String?, notice: String?) in   // X8
+                if let notice { post(StatusEventCatalog.shareNotice(notice)) }
+            }
+    }
+
+    private func post(_ event: StatusEvent) {
+        coordinator.statusEvents.post(event)
+    }
+}
+
+/// X11-X14a: the recording's notices and the offered result (split for the type-check budget, REC-004).
+struct RecordingResultChanges: ViewModifier {
+    let coordinator: AppCoordinator
+
+    func body(content: Content) -> some View {
+        content
+            .onChange(of: coordinator.videoRecording.notice, noticeChanged)   // X12-X14a
+            .onChange(of: coordinator.videoRecording.offered != nil, offeredChanged)   // X11
+    }
+
+    private func noticeChanged(_: String?, _ notice: String?) {
+        if let notice { coordinator.statusEvents.post(StatusEventCatalog.recordingNotice(notice)) }
+    }
+
+    private func offeredChanged(_: Bool, _ offered: Bool) {
+        if offered { coordinator.statusEvents.post(StatusEventCatalog.recording(.idle)) }
     }
 }
