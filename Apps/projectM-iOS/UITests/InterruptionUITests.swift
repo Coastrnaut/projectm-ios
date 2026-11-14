@@ -7,6 +7,8 @@
 // lost output route; the test reads the status line and the transport before, during and after.
 // Simulator only (the app reads the test's file from the host), and never device evidence: a
 // synthetic notification does not take the audio away. The real phone call is AUD-014-T29.
+// Shortened 2026-11-13 under owner rule 7: waits poll every 0.1 s (UITestWaits.swift) instead of
+// about once a second. Every assertion is unchanged.
 import XCTest
 
 @MainActor
@@ -63,12 +65,12 @@ final class InterruptionUITests: XCTestCase {
                                "-uitestSessionEvents"] + Self.noStore
         app.launch()
         let acknowledge = app.buttons["acknowledgeNotice"]
-        XCTAssertTrue(acknowledge.waitForExistence(timeout: 10))
+        XCTAssertTrue(acknowledge.appears(within: 10))
         acknowledge.tap()
         let row = app.buttons.matching(identifier: "importedTrack").firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 20), "the imported track is listed")
+        XCTAssertTrue(row.appears(within: 20), "the imported track is listed")
         row.tap()
-        XCTAssertTrue(indicator.waitForExistence(timeout: 10))
+        XCTAssertTrue(indicator.appears(within: 10))
         expectState("Active audio")
         showControls()
         XCTAssertEqual(playPause.label, "Pause playback")
@@ -78,10 +80,10 @@ final class InterruptionUITests: XCTestCase {
     private func showControls(file: StaticString = #filePath, line: UInt = #line) {
         if playPause.exists { return }
         app.otherElements["visualizerTapArea"].firstMatch.tap()
-        if !playPause.waitForExistence(timeout: 3) {
+        if !playPause.appears(within: 1.5) {
             app.otherElements["visualizerTapArea"].firstMatch.tap()      // the first tap hid them
         }
-        XCTAssertTrue(playPause.waitForExistence(timeout: 5), "the transport is shown with the controls", file: file, line: line)
+        XCTAssertTrue(playPause.appears(within: 5), "the transport is shown with the controls", file: file, line: line)
     }
 
     /// Shows the controls with their full 5 s before they hide again: hides them first when they
@@ -90,8 +92,8 @@ final class InterruptionUITests: XCTestCase {
         let area = app.otherElements["visualizerTapArea"].firstMatch
         if playPause.exists { area.tap() }
         area.tap()
-        if !playPause.waitForExistence(timeout: 2) { area.tap() }
-        XCTAssertTrue(playPause.waitForExistence(timeout: 5), "the transport is shown with the controls", file: file, line: line)
+        if !playPause.appears(within: 2) { area.tap() }
+        XCTAssertTrue(playPause.appears(within: 5), "the transport is shown with the controls", file: file, line: line)
     }
 
     /// The elapsed time shown, in seconds ("1:05" → 65).
@@ -119,9 +121,8 @@ final class InterruptionUITests: XCTestCase {
     }
 
     private func expectState(_ state: String, timeout: TimeInterval = 15, file: StaticString = #filePath, line: UInt = #line) {
-        let predicate = NSPredicate(format: "label == %@", "In-App Playback · \(state)")
-        let result = XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: predicate, object: indicator)], timeout: timeout)
-        XCTAssertEqual(result, .completed, "state \"\(state)\"; indicator shows \"\(indicator.label)\"", file: file, line: line)
+        let ok = poll(timeout) { self.indicator.exists && self.indicator.label == "In-App Playback · \(state)" }
+        XCTAssertTrue(ok, "state \"\(state)\"; indicator shows \"\(indicator.label)\"", file: file, line: line)
     }
 
     /// An element whose label contains `text` (the banner may present its lines as one element).
@@ -131,7 +132,7 @@ final class InterruptionUITests: XCTestCase {
 
     private func post(_ id: String, file: StaticString = #filePath, line: UInt = #line) {
         let button = app.buttons[id]
-        XCTAssertTrue(button.waitForExistence(timeout: 5), id, file: file, line: line)
+        XCTAssertTrue(button.appears(within: 5), id, file: file, line: line)
         button.tap()
     }
 
@@ -159,7 +160,7 @@ final class InterruptionUITests: XCTestCase {
         // During: Interrupted, with the explanation; the transport is paused where it was.
         post("session:interruptBegan")
         expectState("Interrupted")
-        XCTAssertTrue(text(containing: Self.interruptedDetail).waitForExistence(timeout: 5), "the explanation is shown")
+        XCTAssertTrue(text(containing: Self.interruptedDetail).appears(within: 5), "the explanation is shown")
         XCTAssertTrue(app.buttons["Restart"].exists, "FR-051: the one-tap restart is still offered")
         let held = assertOnHold()
         XCTAssertGreaterThanOrEqual(held, before, "not behind the position before the interruption")
@@ -222,7 +223,7 @@ final class InterruptionUITests: XCTestCase {
         try startPlaying()
         post("session:routeLost")
         expectState("Paused")
-        XCTAssertTrue(text(containing: "Paused — audio route changed").waitForExistence(timeout: 5))
+        XCTAssertTrue(text(containing: "Paused — audio route changed").appears(within: 5))
         XCTAssertTrue(text(containing: Self.outputDetail).exists, "the explanation is shown")
         let held = assertOnHold()
 
