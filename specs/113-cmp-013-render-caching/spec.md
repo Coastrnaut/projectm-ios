@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-013-T01-T15 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; no device run; report `docs/test-reports/render-caching.md`, ADR-0040)
 
 **Input**: User description: "Implement CMP-013 (Render caching) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Skip recomposition of static layers until dependencies change."

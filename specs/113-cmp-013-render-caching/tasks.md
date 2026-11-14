@@ -46,8 +46,8 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] CMP-013-T14 ADR for the caching contract (next free number at commit time) in docs/adr/ and its row in docs/adr/README.md; Package.swift and Compositor.swift header notes
-- [ ] CMP-013-T15 Regression: Compositor full suite (host and Linux shape), RenderGoldens (goldens unchanged), SceneFormat, ImportFuzz, ShowControl, SceneArchive, VisualGenerators, app unit tests and the photo and text UI tests on a dedicated iOS 27.2 simulator (created and deleted; PosterBoard reports counted); repository checks (compliance, docs, motion policy, permission catalog, status events, script tests); report docs/test-reports/render-caching.md; spec status Implemented
+- [X] CMP-013-T14 ADR for the caching contract (next free number at commit time) in docs/adr/ and its row in docs/adr/README.md; Package.swift and Compositor.swift header notes — Verified 2026-11-14: docs/adr/0040-layer-render-caching.md (0040 = next free above 0039 on autonomous/integration), its README row, Package.swift and Compositor.swift header notes; validate_docs OK
+- [X] CMP-013-T15 Regression: Compositor full suite (host and Linux shape), RenderGoldens (goldens unchanged), SceneFormat, ImportFuzz, ShowControl, SceneArchive, VisualGenerators, app unit tests and the photo and text UI tests on a dedicated iOS 27.2 simulator (created and deleted; PosterBoard reports counted); repository checks (compliance, docs, motion policy, permission catalog, status events, script tests); report docs/test-reports/render-caching.md; spec status Implemented — Verified 2026-11-14: Compositor 359 (6 skipped) host / 189 Linux shape, RenderGoldens 39 (goldens unchanged), SceneFormat 112, ImportFuzz 15, ShowControl 31, SceneArchive 27, VisualGenerators 133, app unit tests 498 and PhotoLayerUITests + TextOverlayUITests 2 on a dedicated iOS 27.2 simulator (deleted after; 0 new PosterBoard reports), all 0 failures; compliance, docs, motion policy, permission catalog, status events OK; script tests 153 OK; docs/test-reports/render-caching.md
 
 ## Dependencies
 
