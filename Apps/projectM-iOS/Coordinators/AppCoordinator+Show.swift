@@ -7,6 +7,8 @@
 //   selects Camera, so a cue never starts the camera (it stops it when it leaves Camera).
 // * Blackout (OUT-010, SHOW-014): the output slot's black cover is above any visual, so a step while
 //   blacked out stays black; Restore fades in the active cue's look.
+// * SHOW-002: `showAutoAdvance` advances a cue with a dwell through `show.next()`; its hold reads pause, blackout,
+//   the repair report and the scene phase.
 // * The buttons in the controls restart the controls' hide delay; the keyboard shortcuts do not show
 //   the controls.
 import Foundation
@@ -46,6 +48,7 @@ extension AppCoordinator {
             return notes
         }
         connectCueTransitions()   // SCN-007
+        _ = showAutoAdvance   // SHOW-002: hooks into the show's step path now
         show.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
@@ -85,6 +88,17 @@ extension AppCoordinator {
             guard let self else { return (reduceMotion: false, reduceFlashing: false) }
             return (reduceMotion: self.settings.systemReduceMotion, reduceFlashing: self.settings.reduceFlashing)
         }
+    }
+
+    /// SHOW-002-R7 (research SHOW-002-D4): pause, blackout (any phase but live), a pending repair report and the app
+    /// leaving the foreground hold the countdown.
+    func makeShowAutoAdvance() -> ShowAutoAdvanceCoordinator {
+        let driver = ShowAutoAdvanceCoordinator(show: show)
+        driver.isHeld = { [weak self] () -> Bool in
+            guard let self else { return true }
+            return self.userPaused || self.externalDisplay.blackoutPhase != .live || self.sceneRepair.pending != nil || !self.appIsActive
+        }
+        return driver
     }
 
     /// XFADE: the compositor-backed visual on screen now (nil for a native visual, projectM or another screen).
