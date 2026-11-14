@@ -44,7 +44,8 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Which keyboard shortcut? → A: ⌘⇧M ("M" for MIDI). The app already uses the arrows, Page Up/Down, B, Escape, ⌘K, ⌘Z and ⌘⇧Z; ⌘. is avoided because UIKit treats it as Escape. ⌘⇧M is not an iPadOS system shortcut.
 - Q: Does the panic button ask for confirmation? → A: No. Panic is safe and idempotent (it only releases and forgets, never changes stored data), and a stuck blackout during a show needs one action.
 - Q: Is the MIDI Panic button disabled when nothing is held or listening is off? → A: No, it is always enabled (a disabled button would hide the command exactly when the user is unsure of the state); while idle it changes nothing and announces "MIDI reset".
-- Q: What does a `midi.panic` trigger key do with the rest of its batch? → A: Commands routed before it in the batch are performed first, then panic runs; the rest of that batch is routed normally after the reset (a later press in the same batch is a fresh press), and the panic key itself is not left down.
+- Q: What does a `midi.panic` trigger key do with the rest of its batch? → A: Trigger commands routed before it in the same batch are performed first, then panic runs; trigger commands after it in that batch are dropped, like the messages still waiting in the queue (a batch spans at most one display tick, about 33 ms), and the panic key itself is not left down.
+- Q: Is the VoiceOver action always offered on the visualizer? → A: Only while "Listen for MIDI devices" is on, so users without MIDI get no extra action; the Settings button is always there.
 - Q: Can `midi.panic` be held? → A: No: trigger mode only (a `;mode=hold` line for it is unreadable and kept verbatim, as for the other trigger-only actions). Threshold triggers (MOD-006) do not offer it.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -100,7 +101,7 @@ restored, learning is cancelled, the stored mapping lines are byte-identical, an
 - **MIDI-013-R4**: Panic MUST cancel any learn session (CC, trigger or scene) with no binding.
 - **MIDI-013-R5**: Panic MUST NOT change the stored mappings, the current scene or cue, live CC parameter values, listening or the connected inputs.
 - **MIDI-013-R6**: Panic MUST announce "MIDI reset" on the `.midi` lane each time it runs.
-- **MIDI-013-R7**: Settings' MIDI section MUST offer a "MIDI Panic" button with an accessibility hint; ⌘⇧M MUST run panic on the visualizer and in Settings; the visualizer MUST offer a VoiceOver custom action "MIDI panic".
+- **MIDI-013-R7**: Settings' MIDI section MUST offer a "MIDI Panic" button with an accessibility hint; ⌘⇧M MUST run panic on the visualizer and in Settings; the visualizer MUST offer a VoiceOver custom action "MIDI panic" while listening is on.
 - **MIDI-013-R8**: A trigger row "MIDI panic" (`midi.panic`, trigger mode only) MUST be learnable in MIDI Mappings and stored in the MIDI-006 line format; pressing its key runs panic.
 - **MIDI-013-R9**: Panic while idle MUST perform no action and store nothing.
 - **MIDI-013-R10**: The press-rule and router reset MUST be pure Swift and pass on Linux.
