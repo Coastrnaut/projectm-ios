@@ -23,7 +23,7 @@ rule 7): unit tests about 1-2 s, package suites under 1 minute, UI tests under 3
 **Independent test**: tag presets, filter by tags (expected ID set), recreate the store from disk, filter again: same IDs.
 
 - [ ] PRE-003-T07 [US1] Package acceptance test `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetTagAcceptanceTests.swift`: tag several presets of a fixture library, filter by one and two tags (expected IDs), recreate the store and index from disk, same IDs; search matches tags; tagged scope members; hidden orphans; bundled index and pack bytes hashed before and after unchanged; operation count of `matching` bounded by the smallest set on a 12,847-preset synthetic library; bench behind `PRE003_BENCH=1`.
-- [ ] PRE-003-T08 [US1] App tag state in `Apps/projectM-iOS/Coordinators/PresetCoordinator.swift` and `Apps/projectM-iOS/Coordinators/PresetCoordinator+Tags.swift`: store, cached index, `selectedTags`, `toggleTag`, `clearTags`, `taggedListing`, `addTag`, `removeTag`, `pruneTags`, announcements (library lane edits, search lane chip counts), row label ", tags …", the tagged scope in `members` and `displayCount` (contract C4).
+- [ ] PRE-003-T08 [US1] App tag state in `Apps/projectM-iOS/Coordinators/PresetCoordinator.swift` and `Apps/projectM-iOS/Coordinators/PresetCoordinator+Tags.swift`: store, cached index, `selectedTags`, `toggleTag`, `clearTags`, `taggedListing`, `addTag`, `removeTag`, `pruneTags`, announcements (library lane edits, search lane chip counts), row label ", tags …", the tagged scope in `members` and `displayCount`; the store's one-time notice (unreadable set aside, entries repaired) shown as `tagsNotice` and the newer-format message (contract C4; spec PRE-003-R6).
 - [ ] PRE-003-T09 [US1] Views: `Apps/projectM-iOS/Views/PresetTagChips.swift` (chip row with Clear; tagged list with empty text) and `Apps/projectM-iOS/Views/PresetBrowserView.swift` (chips in home, favorites, search; tag-filtered search; row caption line). Register the new views in `scripts/check_status_events.py`.
 - [ ] PRE-003-T10 [US1] Wiring in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` (store creation, announcer) and the DEBUG seed `-uitestSeedPresetTags "<tag>:<i>,<j>|…"` in `Apps/projectM-iOS/Debug/UITestPresetTagFixture.swift` (fresh launches only).
 - [ ] PRE-003-T11 [US1] App acceptance tests `Apps/projectM-iOS/Tests/PresetTagAcceptanceTests.swift`: coordinator tags, chips (AND), recreate the coordinator from the same store directory, same IDs; tagged scope walk; announcements; the PresetLibrary and ShowControl folds agree.
@@ -56,3 +56,10 @@ T06 and T07 (different test files); T16-T17 (LibraryBackup) alongside the app ta
 
 MVP = Phases 1-3 (tag, filter, persist across relaunch). US2 adds the editing sheet; US3 the backup
 integration.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+No CRITICAL or HIGH findings; 15/15 requirements and 5/5 success criteria map to tasks. Applied: the
+store's one-time notice (PRE-003-R6) was not surfaced by any app task (added to PRE-003-T08); the
+edge-case messages "Your tags could not be saved." and the newer-format text were not in the contract
+(added to C1).

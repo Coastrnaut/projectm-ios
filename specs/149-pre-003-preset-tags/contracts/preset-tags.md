@@ -6,7 +6,7 @@
   `add(_:to:) throws(PresetTagError) -> String` (returns the stored spelling), `remove(_:from:) throws(PresetTagError)`,
   `prune(_ presetID:)`, `repaired(_:) -> (map, dropped)`.
 - `PresetTagError`: `invalidTag`, `alreadyTagged(String)`, `notTagged(String)`, `tooManyTags(limit:)`,
-  `tooManyDistinctTags(limit:)`, `tooManyTaggedPresets(limit:)`, `newerFormat`, `saveFailed`; each has `message`.
+  `tooManyDistinctTags(limit:)`, `tooManyTaggedPresets(limit:)`, `newerFormat`, `saveFailed`; each has `message` (`saveFailed`: "Your tags could not be saved."; `newerFormat`: "These tags were saved by a newer version of the app. Update the app to use them.").
 
 ## C2 File and store
 
