@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (device task ANL-013-T14 open)
 
 **Input**: Roadmap row ANL-013 (docs/FEATURE_ROADMAP_AUTONOMOUS.md), verbatim: "Estimate channel
 similarity and phase inversion warnings." Acceptance, verbatim: "Identical and inverted stereo
@@ -159,6 +159,46 @@ own a little after the problem is fixed, without flickering.
 - **ANL-013-S5**: Through the real pipeline, identical frames read > 0.99 and inverted frames < −0.99 and raise the flag.
 - **ANL-013-S6**: `audio.correlation` round-trips, binds, compiles to its opcode and drives the glow in the app; the inspector reads "Correlation"; the source status and announcement carry the warning.
 - **ANL-013-S7**: The new package tests add well under a second; every existing test passes.
+
+## Implementation results (2026-11-14)
+
+Acceptance (`StereoCorrelationTests`, 44.1 kHz; identical on the host and in the Linux shape):
+
+| Input | Correlation |
+|---|---|
+| Identical 440 Hz sine / seeded noise (1 s) | 1.0 / 1.0 |
+| Inverted (R = −L) sine / noise | −1.0 / −1.0 (opposite signs) |
+| Independent seeded noise (1 s) | −0.003 |
+| Silence, ±1 LSB dither, one silent channel, all-NaN | 0, no signal |
+| Inverted tone with every 97th sample NaN/±∞ | < −0.9, finite |
+| Identical channels for 3 s (mono, AUD-009 non-Mix) | exactly 1, no warning |
+
+Warning (sample clock): on an inverted fixture it is raised between 1.0 and 1.3 s (44 blocks below
+−0.5); returns to identical of 0.4 s and 0.9 s keep it, 1.3 s clears it; 1.5 s of silence clears it.
+Repeats and 1-, 333- and 2,048-frame chunkings are bit-equal. Through `AnalysisPipeline` (1.5 s
+identical then 1.5 s inverted noise, 258 frames): identical frames ≥ 0.6 s in read 1.0, inverted
+frames ≥ 0.6 s in read at most −0.9945, the last frame carries the flag, and a session restart reads 0.
+
+Implementation finding (recorded in Clarifications): the floor is checked per block and a silent
+block clears the smoothed sums; checking only the smoothed sums kept the last correlation for ~1.5 s
+after the audio stopped, because decaying sums keep their ratio. The reading may lead a frame's
+window end by up to one read chunk (the meter sees each chunk before the stream frames it).
+
+Test cost (owner rule 7): StereoCorrelationTests (6 tests) take 0.59 s on the host and 1.68 s in the
+Linux-shape Debug build (the pipeline test 0.37 s / 1.33 s; every test under 2 s). AnalysisFeatures
+in the Linux shape: 173 → 179 tests, all pass (137 s, dominated by existing tests on a loaded Mac).
+ParameterGraph: 191 tests, 3 new, all pass. App: `AudioFeatureBindingAppTests` 10/10,
+`StereoPhaseWarningTests` 3/3 and `StatusEventsTests` 8/8 on "ANL13 iPhone 17" (iOS 27.2) in 1.3 s.
+Type-check budget (`-warn-long-function-bodies=300`, `-warn-long-expression-type-checking=150`): no
+function body over 300 ms; expressions at 205–245 ms are reported on eight lines across the app,
+including two unchanged lines in files this feature touched (SourceStatusIndicator.swift:16, a
+property read, and VisualizerView.swift:61, the existing ZStack); untouched files show the same
+~200 ms floor, so it is machine load, not this change. One run reported AppCoordinator's init at
+472 ms; a rebuild did not repeat it. PosterBoard reports: 25 before, 25 after.
+
+Audit (ANL-013-R12): the correlation only reaches `AnalysisFrame`, `LiveBandFrameInfo`,
+`AudioFeatureFrame` and the app's status text; no projectM call, setting, UserDefaults key, network
+API or Settings row was added. Status rows X3a/X3b are recorded in ACC-011's contract C1.
 
 ## Assumptions
 
