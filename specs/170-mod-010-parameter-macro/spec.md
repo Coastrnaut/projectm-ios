@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-010-T01-T09 verified on the Mac: host package tests, app unit tests and one UI test on a private iOS 27.2 simulator; no device task)
 
 **Input**: User description: "Implement MOD-010 (Parameter macro) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Control multiple destinations with one normalized macro value." Acceptance,

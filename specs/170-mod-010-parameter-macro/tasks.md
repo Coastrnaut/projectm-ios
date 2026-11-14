@@ -56,11 +56,11 @@ No setup: existing packages and app target.
 
 ## Phase 6: Polish
 
-- [ ] MOD-010-T09 Scene-document contract `macros` section
+- [X] MOD-010-T09 Scene-document contract `macros` section
   (`specs/059-scn-001-versioned-scene-format/contracts/scene-document.md`); repository checks
   (compliance, docs, motion, permissions, status events, script tests, privacy manifest, network symbols);
   type-check budget; Linux shape (`ParameterMacro.swift` and `SceneMacros.swift` import no Foundation
-  or Apple-only API; MOD-010-R11); spec status
+  or Apple-only API; MOD-010-R11); spec status — Verified 2026-11-14: contract section added; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 tests OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; no type-check warnings in touched files; SceneSourceSafetyTests pass (no Foundation in SceneMacros.swift); neighbouring app suites 34 tests pass
 
 ## Dependencies
 
