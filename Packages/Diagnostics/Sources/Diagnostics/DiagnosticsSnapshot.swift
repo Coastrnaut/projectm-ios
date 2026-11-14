@@ -22,6 +22,46 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
     /// PERF-001: per-stage frame timings (the visualizer's automation runs); nil in CaptureLab, which has no
     /// frame loop. Optional and additive: schema version 2 is unchanged and the key is absent when nil.
     public var frameTimings: FrameTimings? = nil
+    /// PERF-007 (specs/192-perf-007-frame-drop-telemetry): presented, late and skipped frames per output, counted on
+    /// the device only. Optional and additive like `frameTimings`: absent when nil.
+    public var frameDrops: FrameDrops? = nil
+
+    /// PERF-007-R11: one entry per output; an unavailable count is an absent key, never 0.
+    public struct FrameDrops: Codable, Sendable, Equatable {
+        public static let outputNames: [String] = ["device", "external", "recording"]
+
+        public var outputs: [Output]
+
+        public struct Output: Codable, Sendable, Equatable {
+            /// One of `outputNames`.
+            public var output: String
+            public var submitted: Int?
+            public var skipped: Int?
+            public var presented: Int?
+            public var late: Int?
+            public var discarded: Int?
+            public var stale: Int
+
+            public init(output: String, submitted: Int? = nil, skipped: Int? = nil, presented: Int? = nil, late: Int? = nil,
+                        discarded: Int? = nil, stale: Int = 0) {
+                self.output = output
+                self.submitted = submitted.map { (v: Int) -> Int in max(0, v) }
+                self.skipped = skipped.map { (v: Int) -> Int in max(0, v) }
+                self.presented = presented.map { (v: Int) -> Int in max(0, v) }
+                self.late = late.map { (v: Int) -> Int in max(0, v) }
+                self.discarded = discarded.map { (v: Int) -> Int in max(0, v) }
+                self.stale = max(0, stale)
+            }
+        }
+
+        /// Keeps known output names, the first entry of each, at most 3.
+        public init(outputs: [Output]) {
+            var seen: Set<String> = []
+            self.outputs = outputs.filter { (entry: Output) -> Bool in
+                Self.outputNames.contains(entry.output) && seen.insert(entry.output).inserted
+            }
+        }
+    }
 
     /// PERF-001-R10 (specs/152-perf-001-stage-timings, data-model.md): medians and nearest-rank 95th
     /// percentiles in milliseconds; an unavailable value is an absent key, never 0.
