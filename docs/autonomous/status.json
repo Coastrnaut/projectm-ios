@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 60,
-   "implementing": 2,
+   "audited": 54,
+   "implementing": 8,
    "integrated": 89
   },
   "P2": {
@@ -24,8 +24,8 @@
   }
  },
  "by_state": {
-  "audited": 144,
-  "implementing": 2,
+  "audited": 138,
+  "implementing": 8,
   "integrated": 179,
   "skipped_existing": 1
  },
@@ -1630,13 +1630,13 @@
   },
   "MIDI-012": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/midi-012",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-013": {
    "attempts": 0,
@@ -1970,13 +1970,13 @@
   },
   "OUT-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/out-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OUT-005": {
    "attempts": 0,
@@ -2100,13 +2100,13 @@
   },
   "PERF-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/perf-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-004": {
    "attempts": 0,
@@ -2340,13 +2340,13 @@
   },
   "PRE-013": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-013",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-014": {
    "attempts": 0,
@@ -2580,13 +2580,13 @@
   },
   "REC-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-008": {
    "attempts": 0,
@@ -3290,13 +3290,13 @@
   },
   "VIS-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-006": {
    "attempts": 0,
@@ -4371,5 +4371,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:57:31Z"
+ "updated": "2026-11-14T15:57:57Z"
 }
