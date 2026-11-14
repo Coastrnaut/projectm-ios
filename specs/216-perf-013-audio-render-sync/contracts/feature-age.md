@@ -6,6 +6,8 @@
 - Age sample = presentation − (busHost + applied correction) of the newest consumed stamp; < 0 → anomaly.
 - Correction step per call ≤ 0.25 ms, toward the target, never past it. Session change → estimate, correction and
   the newest stamp reset (histograms of the counting session are not reset by an analysis session change).
+- `beginCountingSession()` (each overlay attach): the counting figures, the estimate, the correction and the newest
+  stamp reset (another visual feeds another pipeline); the app-session histogram (the report's) is kept.
 
 ## C2 Overlay line
 - `audio age <smoothed> ms p95 <p95> ms` + ` offset <n> ms` when the AUD-013 offset is > 0 + `, drift <±n> ppm

@@ -7,8 +7,8 @@
 // * The applied correction moves toward the estimator's target by at most 0.25 ms per call and never past it, so the
 //   mapping never jumps (R5). Age = presentation − (bus host time + correction); a negative age is an anomaly.
 // * A new analysis session (the stamp's session changed) resets the estimate, the correction and the newest stamp
-//   (R7). `beginCountingSession` (each overlay attach) resets the counting session's figures, not the app session's
-//   histogram (the PERF-012 report's, since launch).
+//   (R7). `beginCountingSession` (each overlay attach) resets the counting session's figures and the estimate, not the
+//   app session's histogram (the PERF-012 report's, since launch).
 // * One `Mutex`, every buffer allocated in `init`: a call allocates nothing. Times are injected (CLOCK_UPTIME_RAW
 //   nanoseconds in the app); nothing here reads a clock. Local and in memory only (R11).
 import Foundation
@@ -86,9 +86,13 @@ public final class FeatureAgeMeter: Sendable {
         state = Mutex(State(estimator: AudioClockDriftEstimator(configuration: configuration)))
     }
 
-    /// Zeroes the counting session's figures (each overlay attach); the estimate and the app session stay.
+    /// Zeroes the counting session's figures and restarts the drift estimate and correction (each overlay attach: the
+    /// visual may feed another analysis pipeline, whose sessions and sequences start over). The app session stays.
     public func beginCountingSession() {
         state.withLock { (s: inout State) -> Void in
+            s.estimator.reset()
+            s.correction = 0
+            s.newest = nil
             s.counting = FrameIntervalHistogram()
             s.countingAnomalies = 0
             s.smoothed = nil

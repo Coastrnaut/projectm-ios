@@ -25,12 +25,15 @@ public struct PerformanceReport: Codable, Sendable, Equatable {
     public var frames: Frames
     public var frameDrops: DiagnosticsSnapshot.FrameDrops?
     public var frameTimings: DiagnosticsSnapshot.FrameTimings?
+    /// PERF-013: feature age at presentation and the drift verdict; absent without measurements.
+    public var audioSync: AudioSync?
     public var states: States
     public var resources: Resources
 
     public init(exportedAt: Date, device: DiagnosticsSnapshot.Device, app: DiagnosticsSnapshot.App, session: Session,
                 frames: Frames, frameDrops: DiagnosticsSnapshot.FrameDrops? = nil,
-                frameTimings: DiagnosticsSnapshot.FrameTimings? = nil, states: States, resources: Resources) {
+                frameTimings: DiagnosticsSnapshot.FrameTimings? = nil, audioSync: AudioSync? = nil, states: States,
+                resources: Resources) {
         self.exportedAt = Self.timestamp(exportedAt)
         self.device = Device(model: Self.systemString(device.model) ?? "unknown",
                              osVersion: device.osVersion.flatMap(Self.systemString),
@@ -40,6 +43,7 @@ public struct PerformanceReport: Codable, Sendable, Equatable {
         self.frames = frames
         self.frameDrops = frameDrops
         self.frameTimings = frameTimings
+        self.audioSync = audioSync
         self.states = states
         self.resources = resources
     }
@@ -105,6 +109,32 @@ public struct PerformanceReport: Codable, Sendable, Equatable {
             self.p99Ms = available ? p99Ms : nil
             self.maxMs = available ? maxMs : nil
             self.longFrames = Array(longFrames.prefix(3))
+        }
+    }
+
+    /// PERF-013-R9 (specs/216-perf-013-audio-render-sync): the age of the analysed audio features at frame
+    /// presentation (ms) over the app session, and the audio clock drift verdict. Numbers only.
+    public struct AudioSync: Codable, Sendable, Equatable {
+        public var sampleCount: Int
+        public var p50Ms: Double?
+        public var p95Ms: Double?
+        public var maxMs: Double?
+        public var driftDetected: Bool
+        /// Only while drift is detected.
+        public var driftPpm: Double?
+        public var detections: Int
+
+        /// Nil when nothing was measured (the section is then absent).
+        public init?(sampleCount: Int, p50Ms: Double?, p95Ms: Double?, maxMs: Double?, driftDetected: Bool, driftPpm: Double?,
+                     detections: Int) {
+            guard sampleCount > 0 else { return nil }
+            self.sampleCount = sampleCount
+            self.p50Ms = p50Ms.map(PerformanceReport.nonNegative)
+            self.p95Ms = p95Ms.map(PerformanceReport.nonNegative)
+            self.maxMs = maxMs.map(PerformanceReport.nonNegative)
+            self.driftDetected = driftDetected
+            self.driftPpm = driftDetected ? driftPpm.flatMap { (v: Double) -> Double? in v.isFinite ? v : nil } : nil
+            self.detections = max(0, detections)
         }
     }
 

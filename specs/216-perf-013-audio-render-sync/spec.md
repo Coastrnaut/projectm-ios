@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Clarified 2026-11-14
+**Status**: Implemented 2026-11-14 (PERF-013-T00-T11 verified: FrameTiming and Diagnostics package tests on the
+host, app unit tests and the overlay UI test on the feature's iOS 27.2 simulator "PERF13 iPhone 17"). Open: T12
+`{device}` (D1). Simulator results are not performance evidence.
 
 **Input**: User description: "Implement PERF-013 (Audio-render synchronization) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Track age of analyzed audio features at frame presentation." Acceptance, verbatim:

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Coastrnaut/projectm-ios/specs/209-perf-012-performance-report/contracts/performance-report.schema.json",
   "title": "projectM-iOS performance report",
-  "description": "PERF-012: a user-initiated, local performance report. Schema version 1. Metadata and counters only: no media, file names, paths, preset, scene, text overlay or recording names, OSC peer addresses, audio, identifiers or user-entered text (PERF-012-R9). An unavailable value is an absent key, never 0.",
+  "description": "PERF-012: a user-initiated, local performance report. Schema version 1. Metadata and counters only: no media, file names, paths, preset, scene, text overlay or recording names, OSC peer addresses, audio, identifiers or user-entered text (PERF-012-R9). An unavailable value is an absent key, never 0. Amended by PERF-013 (2026-11-14, still version 1: PERF-012 had not shipped in any release): the optional audioSync section.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -381,6 +381,44 @@
               }
             }
           }
+        }
+      }
+    },
+    "audioSync": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "PERF-013: age of the analysed audio features at frame presentation (presentation time minus the drift-corrected time the audio entered analysis), over every frame measured since launch while the performance overlay was shown on a visual that consumes analysis frames; and the audio clock drift verdict. Absent without measurements.",
+      "required": [
+        "sampleCount",
+        "driftDetected",
+        "detections"
+      ],
+      "properties": {
+        "sampleCount": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "p50Ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "p95Ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "maxMs": {
+          "type": "number",
+          "minimum": 0
+        },
+        "driftDetected": {
+          "type": "boolean"
+        },
+        "driftPpm": {
+          "type": "number"
+        },
+        "detections": {
+          "type": "integer",
+          "minimum": 0
         }
       }
     },

@@ -3,7 +3,8 @@
 //
 // Gathered: the shown visual's kind; every frame interval measured since launch (`frameDrops.intervals`, fed while
 // the performance overlay is shown); the PERF-007 counts and PERF-001 stage timings of the current overlay session;
-// the state timeline and memory peak (`performanceRecorder`); the PERF-004 pool counters; device and app metadata.
+// the state timeline and memory peak (`performanceRecorder`); the PERF-004 pool counters; device and app metadata;
+// PERF-013's feature age figures since launch (`featureAges`, numbers only).
 // Nothing else of the session is read, so no media, name, path, text or address can reach the file (R9).
 import Compositor
 import Diagnostics
@@ -27,7 +28,7 @@ extension AppCoordinator {
         Self.gatherPerformanceReportInputs(exportedAt: exportedAt, recorder: performanceRecorder, frameDrops: frameDrops,
                                            frameStages: frameStages, recording: videoRecording.frameDropStatistics,
                                            visual: performanceVisualKind, overlayShown: settings.showsPerformanceOverlay,
-                                           pools: SharedTexturePool.allCounters)
+                                           pools: SharedTexturePool.allCounters, featureAges: featureAges)
     }
 
     /// Everything the report reads (the app and PerformanceReportAppTests use this one path).
@@ -35,7 +36,7 @@ extension AppCoordinator {
                                               frameStages: FrameStageAttachment,
                                               recording: (statistics: RecordingStatistics, live: Bool)?,
                                               visual: PerformanceVisualKind, overlayShown: Bool,
-                                              pools: [TexturePoolCounters],
+                                              pools: [TexturePoolCounters], featureAges: FeatureAgeAttachment? = nil,
                                               footprint: Int? = ProcessMemory.footprintBytes(),
                                               available: Int? = ProcessMemory.availableBytes()) -> PerformanceReportInputs {
         recorder.sample()
@@ -50,7 +51,8 @@ extension AppCoordinator {
                                        intervals: frameDrops.intervals.snapshot(),
                                        frameDrops: frameDrops.reportEntries(recording: recording), frameTimings: timings,
                                        current: recorder.currentSample(), timeline: recorder.timeline,
-                                       truncated: recorder.truncated, pools: pools, memory: memory)
+                                       truncated: recorder.truncated, pools: pools, memory: memory,
+                                       audioSync: featureAges?.meter.appSummary())
     }
 
     /// The report as the exported JSON; one signpost event per export (PERF-012-R10).

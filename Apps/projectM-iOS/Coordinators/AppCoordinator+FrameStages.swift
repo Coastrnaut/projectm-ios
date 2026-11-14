@@ -14,7 +14,8 @@
 // PERF-003 (specs/173-perf-003-adaptive-quality): while a native visual is shown, the verdict is its effect ladder's
 // budget signal (any flag → over; the overlay off → unavailable), its frame-rate cap is the deadline's cap, and the
 // lines end with its `effect quality …` line. The automation export carries the level.
-// PERF-007 (specs/192-perf-007-frame-drop-telemetry): the "frames …" lines follow (AppCoordinator+FrameDrops.swift).
+// PERF-007 (specs/192-perf-007-frame-drop-telemetry): the "frames …" lines follow (AppCoordinator+FrameDrops.swift),
+// then PERF-013's "audio age …" line (AppCoordinator+FeatureAge.swift).
 import ANGLERendering
 import Diagnostics
 import FrameTiming
@@ -77,9 +78,10 @@ extension AppCoordinator {
         frameStages.sync(overlayShown: settings.showsPerformanceOverlay, target: activeStageTimedVisual)
         guard let timer = frameStages.timer else {
             frameDrops.stop()
+            featureAges.stop()
             return []
         }
-        let drops: [String] = frameDropLines() + powerProfileLines()   // PERF-007, then PERF-008-R9
+        let drops: [String] = frameDropLines() + featureAgeLines() + powerProfileLines()   // PERF-007, PERF-013, PERF-008-R9
         let report: FrameStageReport = Self.injectingSlowStage(timer.report())
         let native: NativeSpectrumHost? = showsNativeVisual ? nativeVisual : nil
         let cap: Int? = native?.qualitySettings.maxFramesPerSecond
@@ -122,6 +124,7 @@ extension AppCoordinator {
     func stopFrameStageTiming() {
         frameStages.stop()
         frameDrops.stop()   // PERF-007: the next attach begins a new session
+        featureAges.stop()   // PERF-013
         nativeVisual?.effectBudget = .unavailable   // PERF-003-R3: no verdict without the overlay
     }
 
