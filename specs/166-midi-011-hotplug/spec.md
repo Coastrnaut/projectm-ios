@@ -39,6 +39,16 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: Are held keys released on a quick replug? → A: Yes. Any endpoint the input saw disappear (even briefly) releases held keys through MIDI-008's existing release, because its note-off may have been lost.
 - Q: What is announced? → A: When an endpoint that was listed earlier in the same listening session appears again, discovery says "MIDI device reconnected: <name>" instead of "connected", on the `.midi` lane, once per update, following MIDI-001's pattern. Repairs that change no listed endpoint are silent.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How long does the input wait to reconcile after a setup notification? → A: MIDI-001's coalescing delay (100 ms) and the same coalescer: the first notification of a quiet period schedules one reconcile, later ones are absorbed until it starts; tests use the manual scheduler, never wall time.
+- Q: What is "the same listening session" for the reconnect wording? → A: From discovery's start until its stop (toggle off or background). Stopping forgets the endpoints seen, so after a restart a device is "connected" again, as today.
+- Q: When a connect call fails, how is it retried? → A: Only by the next reconcile (the next notification or list change); no timer and no retry loop. The endpoint is not counted as connected.
+- Q: Is a quick replug that never changes discovery's list announced? → A: No: discovery saw no change, so nothing is spoken; the input still repairs the connection and releases held keys (MIDI-011-R5).
+- Q: What does the input expose about its subscriptions? → A: In-memory, read-only counters for tests and the debug fake (active connections by ID, connect and disconnect calls, reconcile count); nothing is logged, stored or shown to the user.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Unplug and replug keeps one listener (Priority: P1) — MVP
@@ -78,7 +88,8 @@ held from a removed endpoint are released.
 - Two endpoints report the same unique number: both use MIDI-001's fallback IDs and are connected separately, each once.
 - An endpoint with no unique number: tracked by its fallback ID; a rename changes that ID (MIDI-001's documented risk), which reads as a removal and a new endpoint.
 - The system keeps the same reference across a replug: the endpoint was seen absent (removed notification or missing from a snapshot), so its old connection is forgotten and it is connected again exactly once.
-- A connect call fails: the endpoint is not counted as connected and the next reconcile tries again.
+- A connect call fails: the endpoint is not counted as connected and the next reconcile (notification or list change) tries again; there is no retry timer.
+- A quick replug inside one coalescing window: no announcement (discovery's list did not change), but the connection is repaired and held keys are released.
 - Offline endpoints are not wanted (MIDI-002 connects online inputs only); going offline disconnects.
 - Listening stops (toggle off, background): every connection is dropped and the registry cleared.
 - A storm of notifications: one reconcile per coalescing window.
@@ -90,9 +101,9 @@ held from a removed endpoint are released.
 - **MIDI-011-R1**: The input MUST keep a subscription registry keyed by MIDI-001's stable endpoint ID, each entry holding the endpoint's current system reference.
 - **MIDI-011-R2**: A reconcile MUST compare the wanted IDs with the system's current sources: connect each wanted, present source without an entry exactly once; when a present source's reference changed, drop the old connection and connect the new reference once; disconnect and forget entries whose source is absent or no longer wanted. No source reference is ever connected twice while its entry is live.
 - **MIDI-011-R3**: A source the system reports removed MUST lose its entry (and be reconnected by the next reconcile if it is present again), even when its reference is reused.
-- **MIDI-011-R4**: System setup notifications (added, removed, setup changed, property changed) MUST trigger a reconcile coalesced to one per burst, off the main thread, never per MIDI message; the real-time receive path is unchanged.
+- **MIDI-011-R4**: System setup notifications (added, removed, setup changed, property changed) MUST trigger a reconcile coalesced to one per burst with MIDI-001's coalescer and delay (100 ms), off the main thread, never per MIDI message; the real-time receive path is unchanged.
 - **MIDI-011-R5**: When the input saw a source disappear, held keys MUST be released through MIDI-008's existing release, even if the source returned before the app observed a list change.
-- **MIDI-011-R6**: Discovery MUST announce a returning endpoint (listed earlier in the same listening session) as "MIDI device reconnected: <name>" on the `.midi` lane; other announcements are unchanged.
+- **MIDI-011-R6**: Discovery MUST announce a returning endpoint (listed earlier in the same listening session: from discovery's start to its stop) as "MIDI device reconnected: <name>" on the `.midi` lane; other announcements are unchanged.
 - **MIDI-011-R7**: The system's endpoint enumeration and connect/disconnect calls MUST sit behind a protocol so tests can add, remove and re-add endpoints with changing references and stable unique numbers, and count active connections.
 - **MIDI-011-R8**: The reconcile logic MUST be pure Swift and pass its tests on Linux; no new stored key, permission, usage string or network API; nothing about an endpoint is logged or stored.
 - **MIDI-011-R9**: The DEBUG fake MIDI input MUST model references and connections, so an app test proves a mapped CC works after a reconnect with no double trigger.
