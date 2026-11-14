@@ -23,7 +23,7 @@ None: the curve type is User Story 2's and User Story 1's shared deliverable and
 **Independent test**: `MappingCurveTests.testMonotonicCurveFixturesRemainBoundedAndDeterministic`.
 
 - [ ] MOD-004-T02 [US2] Write `Packages/ParameterGraph/Tests/ParameterGraphTests/MappingCurveTests.swift`: (a) the roadmap acceptance over ≥ 20 fixtures (linear; easeIn/easeOut/easeInOut with p ∈ {1.5, 2, 3, 8}; logarithmic/exponential with k ∈ {0.01, 1, 9, 1000}; piecewise empty, one point, eight points, flat segments): 1,001 grid inputs plus 200 adjacent representable inputs after 0, around 0.5 and before 1, outputs in 0…1, non-decreasing, `apply(0) == 0`, `apply(1) == 1`, two runs bit-identical (contract K2, K3); (b) edge inputs −1, −0, 2, NaN, −∞, +∞ (K1: non-finite → 0); (c) shape values: easeIn 2 at 0.5 = 0.25, easeOut 2 = 0.75, easeInOut 2 at 0.25 = 0.125, logarithmic 9 at 0.5 = log(5.5)/log(10), exponential is the inverse of logarithmic within 1e-12, piecewise (0.5, 0.8) at 0.25/0.5/0.75 = 0.4/0.8/0.9 (K4).
-- [ ] MOD-004-T03 [US2] Record T02's red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/MappingCurve.swift` (`MappingCurve`, `CurvePoint`) per research MOD-004-D1 and contract K1-K4, maths in typed steps, no allocation in `apply`. Evidence: T02 passes on the host.
+- [ ] MOD-004-T03 [US2] Record T02's red run; implement `Packages/ParameterGraph/Sources/ParameterGraph/MappingCurve.swift` (`MappingCurve`, `CurvePoint`) per research MOD-004-D1 and contract K1-K4, maths in typed steps, no allocation in `apply`, `Sendable` and `Hashable` (MOD-004-R4: usable from any thread). Evidence: T02 passes on the host.
 
 ## Phase 4: User Story 3 - invalid custom curves never reach a parameter (P1)
 
@@ -46,7 +46,7 @@ None: the curve type is User Story 2's and User Story 1's shared deliverable and
 
 - [ ] MOD-004-T09 [US4] Add to `CurvedBindingTests.swift`: over 10,001 signals plus −0, the edge values and several output ranges (opposite-sign, same-sign, inverted, constant), `interpolate(MappingCurve.linear.apply(s))` is bit-identical to `interpolate(s)`, and a default binding resolves bit-identically to one with an explicit `.linear` (MOD-004-R7, research D4).
 - [ ] MOD-004-T10 [US4] Write `Packages/SceneFormat/Tests/SceneFormatTests/SceneCurveTests.swift`: every curve kind survives encode → decode and restore (applied with the same curve); a linear binding writes no `curve` key; an unknown kind (`bezier`), a non-object curve and a missing parameter are rejected with `unsupportedCurve`, kept verbatim and re-encoded unchanged; an invalid piecewise curve is rejected with `invalidBinding`; unknown keys inside a readable curve give `droppedField`.
-- [ ] MOD-004-T11 [US4] Implement scene storage: `SceneBinding.curve` (`SceneDocument.swift`, incl. `audioFeatureBinding` and `init(_ binding:)`), encoding (`SceneEncoding.swift`), decoding into `curve` or verbatim into `extra` (`SceneDecoding.swift`), the `unsupportedCurve` warning (`SceneIssue.swift`, `SceneRepair.swift` mapping group) and the rejection in `SceneModulationRestore.swift`; update contract C5 and the binding fields in `specs/059-scn-001-versioned-scene-format/contracts/scene-document.md`. Evidence: T10 and the whole SceneFormat suite (QA-004 meta-test included) pass.
+- [ ] MOD-004-T11 [US4] Implement scene storage: `SceneBinding.curve` (`SceneDocument.swift`, incl. `audioFeatureBinding` and `init(_ binding:)`), encoding (`SceneEncoding.swift`), decoding into `curve` or verbatim into `extra` (`SceneDecoding.swift`), the `unsupportedCurve` warning (`SceneIssue.swift`, `SceneRepair.swift` mapping group) and the rejection in `SceneModulationRestore.swift`; update contract C5 (new `unsupportedCurve` row, severity warning, as every per-edge code since the MOD-013 amendment) and the binding fields in `specs/059-scn-001-versioned-scene-format/contracts/scene-document.md`. Evidence: T10 and the whole SceneFormat suite (QA-004 meta-test included) pass.
 
 ## Phase 7: Polish
 
@@ -66,3 +66,7 @@ T12, T13 last. US2 is the MVP (the curve type and acceptance).
 
 Curve type and acceptance first (US2), then validation (US3), the binding pipeline (US1), then
 persistence and regression (US4). Commit after each phase.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: MOD-004-R1-R11 and S1-S6 each map to at least one task (R1-R5 → T02-T05; R6-R8 → T06-T07; R7 → T09; R9 → T10-T11; R10 → T04-T05; R11 → T08; S6 → every test task and T12). No constitution conflict. Fixes applied: R4's thread-safety (`Sendable`) named in T03; T11 states the new code's severity. Noted, not changed: contract C5 lists the per-edge binding codes as errors although `SceneIssue` made them warnings in the MOD-013 amendment (pre-existing; outside this row).
