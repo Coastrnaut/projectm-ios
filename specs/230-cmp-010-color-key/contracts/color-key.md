@@ -38,7 +38,7 @@ untouched. A layer with a key and no other mask is drawn through `cmp_over_maske
 
 Section "Color Key" after "Luma Key": `layerControl.colorKey` toggle; when on, a `ColorPicker` with the
 accessible name "Key Color" (`layerControl.colorKeyColor`, no opacity), ACC-005 sliders
-`layerControl.colorTolerance` (0…1, step 0.02) and `layerControl.colorFeather` (0…0.5, step 0.02).
+"Color Tolerance" (`layerControl.colorTolerance`, 0…1, step 0.02) and "Color Feather" (`layerControl.colorFeather`, 0…0.5, step 0.02).
 Turning it on gives `greenKey`. Read-only layers show the values as read-outs (the colour as
 `#RRGGBB`). Undo: one step per toggle, per drag (`layer.<kind>.colorTolerance`,
 `layer.<kind>.colorFeather`) and per colour choice (picker updates coalesce under

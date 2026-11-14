@@ -61,7 +61,7 @@ interaction); each answer is the recommended, conservative option.
 - Q: What does the inspector offer and how does undo group the edits? → A: A "Color Key" section
   after Luma Key: a **Color Key** toggle (`layerControl.colorKey`); when on, a system colour picker
   named **Key Color** (`layerControl.colorKeyColor`, no opacity; a wide-gamut pick is converted to
-  sRGB and clamped), **Tolerance** (0…1, step 0.02) and **Feather** (0…0.5, step 0.02) ACC-005
+  sRGB and clamped), **Color Tolerance** (0…1, step 0.02) and **Color Feather** (0…0.5, step 0.02) ACC-005
   sliders (`layerControl.colorTolerance|colorFeather`). Each toggle, colour choice or drag is one undo
   step; picker updates coalesce under `layer.<kind>.colorKeyColor`, sliders under
   `layer.<kind>.colorTolerance` and `layer.<kind>.colorFeather`. "GPU performance" is an opt-in Mac
