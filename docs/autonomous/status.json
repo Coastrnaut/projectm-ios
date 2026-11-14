@@ -13,8 +13,9 @@
   "P1": {
    "audited": 34,
    "built": 3,
-   "implementing": 5,
-   "integrated": 109
+   "implementing": 4,
+   "integrated": 109,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 70,
@@ -28,9 +29,10 @@
  "by_state": {
   "audited": 115,
   "built": 4,
-  "implementing": 5,
+  "implementing": 4,
   "integrated": 201,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2122,12 +2124,12 @@
   "PERF-007": {
    "attempts": 0,
    "branch": "feature/perf-007",
-   "branch_sha": null,
+   "branch_sha": "ec9d7e48153fadd9d803097fe7f23d8caf407c29",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PERF-008": {
    "attempts": 0,
@@ -4462,5 +4464,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:16:04Z"
+ "updated": "2026-11-14T19:17:18Z"
 }
