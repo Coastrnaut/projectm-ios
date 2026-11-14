@@ -76,10 +76,16 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
     @State private var dragWidth: Double?
 
     var body: some View {
-        GeometryReader { (proxy: GeometryProxy) in
-            hosted(window: Self.windowSize(proxy))
+        // The outer reader keeps the safe area, so it can hand the window's insets to the content: the
+        // inner reader ignores the safe area to measure the whole window, and every view inside it would
+        // otherwise lay out from the screen's very edges (CAM-013's notice and its Retry button sat under
+        // the status bar, out of reach; fix 2026-11-14).
+        GeometryReader { (safe: GeometryProxy) in
+            GeometryReader { (proxy: GeometryProxy) in
+                hosted(window: Self.windowSize(proxy), safeArea: safe.safeAreaInsets)
+            }
+            .ignoresSafeArea()
         }
-        .ignoresSafeArea()
     }
 
     /// The whole window: the reader ignores the safe area, so its size is the window's.
@@ -92,7 +98,7 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
 
     private func available(_ layout: SplitEditorLayout) -> Bool { sizeClass == .regular && layout.fits }
 
-    private func hosted(window: CGSize) -> some View {
+    private func hosted(window: CGSize, safeArea: EdgeInsets) -> some View {
         let layout: SplitEditorLayout = layout(window)
         let available: Bool = available(layout)
         let shown: Bool = available && isOpen
@@ -101,6 +107,7 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
                 .frame(width: window.width, height: window.height)
                 .environment(\.splitOutputPlacement, shown ? Self.placement(layout, window: window) : .identity(window))
             insetContent(layout, shown: shown)
+                .safeAreaPadding(safeArea)   // views that respect the safe area keep clear of the bars
         }
         .onAppear { onAvailabilityChange(available) }
         .onChange(of: available) { (_: Bool, now: Bool) -> Void in onAvailabilityChange(now) }

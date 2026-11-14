@@ -12,10 +12,19 @@ extension AppCoordinator {
         var thumbnailRenderer: any PresetThumbnailRendering = RendererThumbnailRenderer(drawing: drawing)
         #if DEBUG
         if FixtureThumbnailRenderer.isEnabled { thumbnailRenderer = FixtureThumbnailRenderer() }
+        // A UI test that resets starts with empty thumbnail, colour and motion caches, so pictures cached by an
+        // earlier build (without PRE-004 colours or PRE-005 motion scores) are drawn again (post-merge 2026-11-14).
+        if FixtureThumbnailRenderer.isEnabled, ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
+            for folder in [PresetThumbnailModel.defaultDirectory(), PresetThumbnailModel.defaultColorDirectory(),
+                           PresetThumbnailModel.defaultMotionDirectory()] {
+                try? FileManager.default.removeItem(at: folder)
+            }
+        }
         #endif
         let cache = PresetThumbnailCache(directory: PresetThumbnailModel.defaultDirectory(), renderer: thumbnailRenderer)
         let colors = PresetColorStore(directory: PresetThumbnailModel.defaultColorDirectory())   // PRE-004
-        return PresetThumbnailModel(cache: cache, colors: colors) { [weak loader] (preset: IndexedPreset) async throws -> Data in
+        let motion = PresetMotionStore(directory: PresetThumbnailModel.defaultMotionDirectory())   // PRE-005
+        return PresetThumbnailModel(cache: cache, colors: colors, motion: motion) { [weak loader] (preset: IndexedPreset) async throws -> Data in
             guard let loader else { throw PresetThumbnailError.unavailable("No preset loader.") }
             if preset.source == PresetLibrary.userSource {
                 guard let data = await loader.userPresetData?(preset.id) else {

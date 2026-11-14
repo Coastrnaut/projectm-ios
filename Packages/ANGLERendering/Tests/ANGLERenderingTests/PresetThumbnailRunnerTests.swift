@@ -64,4 +64,22 @@ final class PresetThumbnailRunnerTests: XCTestCase {
         XCTAssertEqual(runner.startedCount, 1, "nothing started while suspended")
         XCTAssertFalse(runner.isBusy)
     }
+
+    /// PRE-005-T08 (spec PRE-005-S3): with the clock pinned to the frame number, the same preset (its
+    /// wave colour follows `time`) drawn twice gives byte-identical samples and picture. Small drawings
+    /// (32 × 18, 9 frames) keep it short; the second one reuses the first one's compiled shaders.
+    func testSamplesWithAPinnedClockAreIdenticalOnASecondDrawing() async throws {
+        let renderer = try ANGLERenderer.make()
+        let drawing = try XCTUnwrap(renderer.presetThumbnails)
+        let first = await drawing.drawSamples(preset, width: 32, height: 18, frames: frames(9), sampleFrames: [4, 6],
+                                              timeout: .seconds(120))
+        let second = await drawing.drawSamples(preset, width: 32, height: 18, frames: frames(9), sampleFrames: [4, 6],
+                                               timeout: .seconds(120))
+        guard case .pixels(let picture) = first.picture else { return XCTFail("\(first.picture)") }
+        XCTAssertEqual(first.samples.count, 2)
+        XCTAssertTrue(first.samples.allSatisfy { $0.count == 32 * 18 * 4 })
+        XCTAssertEqual(second.picture, first.picture, "the same picture")
+        XCTAssertEqual(second.samples, first.samples, "the same samples")
+        XCTAssertNotEqual(first.samples[0], picture, "the samples are earlier frames, not the picture")
+    }
 }

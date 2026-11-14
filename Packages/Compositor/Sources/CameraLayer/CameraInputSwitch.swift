@@ -70,10 +70,13 @@ public enum CameraInputSwitch {
 public final class FakeCameraInput {
     public let lens: CameraLens
     public let position: CameraPosition
+    /// CAM-004: the camera's exposure controls (one device per camera, as on iOS).
+    public let device: FakeCameraExposureDevice
 
-    public init(lens: CameraLens, position: CameraPosition = .back) {
+    public init(lens: CameraLens, position: CameraPosition = .back, device: FakeCameraExposureDevice = FakeCameraExposureDevice()) {
         self.lens = lens
         self.position = position
+        self.device = device
     }
 }
 
@@ -90,16 +93,29 @@ public final class FakeCameraCaptureSession: CameraInputConfiguring {
     public private(set) var configurations = 0
     public private(set) var changesOutsideConfiguration = 0
     private var configuring = false
+    /// CAM-004: the cameras that can lock exposure (`nil`: every camera). Read when a camera's device is
+    /// first made, so set it before the first start.
+    public var exposureLockCameras: Set<FakeCameraKey>?
+    private var devices: [FakeCameraKey: FakeCameraExposureDevice] = [:]
 
     public init(failingLenses: Set<CameraLens> = []) {
         self.failingLenses = failingLenses
+    }
+
+    /// CAM-004: the exposure device of a camera (the same object every time, as `AVCaptureDevice`).
+    public func exposureDevice(lens: CameraLens, position: CameraPosition = .back) -> FakeCameraExposureDevice {
+        let key = FakeCameraKey(lens: lens, position: position)
+        if let device = devices[key] { return device }
+        let device = FakeCameraExposureDevice(canLock: exposureLockCameras?.contains(key) ?? true)
+        devices[key] = device
+        return device
     }
 
     /// The input for a lens, or nil when that lens fails (stands in for `AVCaptureDeviceInput(device:)`).
     public func makeInput(lens: CameraLens, position: CameraPosition = .back) -> FakeCameraInput? {
         let effective: CameraLens = position == .back ? lens : .wide
         guard position == .front || !failingLenses.contains(effective) else { return nil }
-        return FakeCameraInput(lens: effective, position: position)
+        return FakeCameraInput(lens: effective, position: position, device: exposureDevice(lens: effective, position: position))
     }
 
     public func beginConfiguration() {
@@ -138,5 +154,31 @@ public final class FakeCameraCaptureSession: CameraInputConfiguring {
     public func reset() {
         isRunning = false
         configuredInputs.removeAll()
+    }
+}
+
+/// CAM-004: a stand-in camera: a back lens, or the front camera (its lens is always wide).
+public struct FakeCameraKey: Hashable, Sendable {
+    public let lens: CameraLens
+    public let position: CameraPosition
+
+    public init(lens: CameraLens, position: CameraPosition = .back) {
+        self.lens = position == .front ? .wide : lens
+        self.position = position
+    }
+
+    /// A comma-separated list of lens raw values and `front` ("wide,front"); `none` or unknown names add
+    /// nothing (DEBUG `-uitestCameraExposureLock`).
+    public static func list(_ text: String) -> Set<FakeCameraKey> {
+        var keys = Set<FakeCameraKey>()
+        for name in text.split(separator: ",") {
+            let trimmed: String = name.trimmingCharacters(in: .whitespaces)
+            if trimmed == "front" {
+                keys.insert(FakeCameraKey(lens: .wide, position: .front))
+            } else if let lens = CameraLens(rawValue: trimmed) {
+                keys.insert(FakeCameraKey(lens: lens))
+            }
+        }
+        return keys
     }
 }

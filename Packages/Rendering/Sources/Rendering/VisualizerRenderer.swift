@@ -98,6 +98,28 @@ public enum PresetThumbnailDrawResult: Sendable, Equatable {
 /// The visible picture is never involved; `draw` returns within `timeout` (plus scheduling slack).
 public protocol PresetThumbnailDrawing: AnyObject, Sendable {
     func draw(_ contents: Data, width: Int, height: Int, frames: [[Float]], timeout: Duration) async -> PresetThumbnailDrawResult
+    /// Roadmap PRE-005 (contract C1): the same drawing, also returning the frames at `sampleFrames`
+    /// (0-based indexes below the last frame) for the motion score. The default draws without samples.
+    func drawSamples(_ contents: Data, width: Int, height: Int, frames: [[Float]], sampleFrames: [Int],
+                     timeout: Duration) async -> PresetThumbnailSampleResult
+}
+
+/// A thumbnail drawing with its earlier frame samples (RGBA8, top row first, in `sampleFrames` order).
+public struct PresetThumbnailSampleResult: Sendable, Equatable {
+    public var picture: PresetThumbnailDrawResult
+    public var samples: [Data]
+
+    public init(picture: PresetThumbnailDrawResult, samples: [Data]) {
+        self.picture = picture
+        self.samples = samples
+    }
+}
+
+public extension PresetThumbnailDrawing {
+    func drawSamples(_ contents: Data, width: Int, height: Int, frames: [[Float]], sampleFrames: [Int],
+                     timeout: Duration) async -> PresetThumbnailSampleResult {
+        PresetThumbnailSampleResult(picture: await draw(contents, width: width, height: height, frames: frames, timeout: timeout), samples: [])
+    }
 }
 
 /// A preset the renderer can load (data-model.md §Preset). PresetRepository (T074) builds these from

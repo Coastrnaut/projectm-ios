@@ -64,7 +64,7 @@ final class ColorBlindControlsUITests: XCTestCase {
         settings.tap()
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
         let row = app.visualRow("Camera")
-        XCTAssertTrue(row.appears(within: 5))
+        XCTAssertTrue(app.reveal(row), "the visual row (below the fold as visuals grow)")
         row.tap()
         app.navigationBars["Settings"].buttons["Done"].tap()
         let status = app.descendants(matching: .any)["cameraIndicatorStatus"].firstMatch
