@@ -26,7 +26,8 @@ final class MIDILearnUITests: XCTestCase {
     func testLearnThenSendCCCreatesTheMappingRow() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestFakeMIDI",
-                               "-settings.midi.enabled", "YES", "-settings.midi.mappings", "()"] + Self.noStore
+                               "-settings.midi.enabled", "YES", "-settings.midi.mappings", "()",
+                               "-uitestSettingsSection", "midi"] + Self.noStore   // Settings opens at MIDI (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()

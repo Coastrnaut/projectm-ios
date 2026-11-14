@@ -45,7 +45,8 @@ final class OSCNetworkAccessUITests: XCTestCase {
     func testBadgeShowsTheListeningPortAndStopTurnsOSCOff() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback",
-                               "-settings.osc.enabled", "NO", "-settings.osc.port", Self.port] + Self.noStore
+                               "-settings.osc.enabled", "NO", "-settings.osc.port", Self.port,
+                               "-uitestSettingsSection", "osc"] + Self.noStore   // Settings opens at OSC (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         let badge = app.descendants(matching: .any)["oscListenerBadge"]

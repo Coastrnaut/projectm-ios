@@ -16,10 +16,11 @@ final class SettingsUITests: XCTestCase {
         continueAfterFailure = false
     }
 
-    private func launch(reset: Bool) {
+    /// `section`: Settings opens scrolled to that section (DEBUG `-uitestSettingsSection`; owner rule 7).
+    private func launch(reset: Bool, section: String? = nil) {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics", "-autostart", "inAppPlayback"]
-            + Self.noStore
+            + (section.map { (id: String) -> [String] in ["-uitestSettingsSection", id] } ?? []) + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
@@ -67,7 +68,7 @@ final class SettingsUITests: XCTestCase {
     }
 
     func testReduceFlashingFollowsReduceMotionAndPersists() {
-        launch(reset: true)
+        launch(reset: true, section: "reduceFlashing")
         openSettings()
         let toggle = app.switches["reduceFlashingToggle"]
         XCTAssertTrue(toggle.appears(within: 2) || scrollTo(toggle), "below the visual rows as Settings grows")
@@ -79,7 +80,7 @@ final class SettingsUITests: XCTestCase {
                       "below the toggle; off screen once MED-009 added the Text row")
 
         app.terminate()
-        launch(reset: false)
+        launch(reset: false, section: "reduceFlashing")
         openSettings()
         XCTAssertTrue(app.switches["reduceFlashingToggle"].appears(within: 2) || scrollTo(app.switches["reduceFlashingToggle"]))
         XCTAssertTrue(isOn(app.switches["reduceFlashingToggle"]), "the choice persists")
@@ -89,7 +90,7 @@ final class SettingsUITests: XCTestCase {
     }
 
     func testLicensesScreen() {
-        launch(reset: true)
+        launch(reset: true, section: "storage")
         openSettings()
         XCTAssertTrue(scrollTo(app.buttons["licensesLink"]), "Licenses is below the OSC section")
         app.buttons["licensesLink"].tap()
@@ -114,7 +115,7 @@ final class SettingsUITests: XCTestCase {
 
     /// Feature 002 T235 (FR-121): each preset pack has an entry with its source, commit and authors.
     func testLicensesListEveryPresetPack() {
-        launch(reset: true)
+        launch(reset: true, section: "storage")
         openSettings()
         XCTAssertTrue(scrollTo(app.buttons["licensesLink"]), "Licenses is below the OSC section")
         app.buttons["licensesLink"].tap()
