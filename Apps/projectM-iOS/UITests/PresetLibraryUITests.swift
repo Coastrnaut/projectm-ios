@@ -28,12 +28,19 @@ final class PresetLibraryUITests: XCTestCase {
     private var scopeLine: XCUIElement { app.staticTexts["scopeLine"] }
     private var current: XCUIElement { app.staticTexts["currentPreset"] }
 
-    /// Shows the controls if they auto-hid, then taps one.
+    /// When the test last used a control (the overlay hides 5 s later).
+    private var controlsUsedAt: Date?
+
+    /// Taps a control: directly when one was used under 3 s ago, otherwise with the controls shown
+    /// afresh, so the auto-hide cannot race the tap (seen 2026-11-13 right after an `-autostart` launch).
     private func tapControl(_ id: String) {
         let button = app.buttons[id]
-        if !button.appears(within: 0.5) { app.otherElements["visualizerTapArea"].firstMatch.tap() }
-        XCTAssertTrue(button.appears(within: 3), id)
-        button.tap()
+        if let used = controlsUsedAt, Date().timeIntervalSince(used) < 3, button.exists {
+            button.tap()
+        } else {
+            app.tapFreshControl(id)
+        }
+        controlsUsedAt = Date()
     }
 
     private func openBrowser() {
