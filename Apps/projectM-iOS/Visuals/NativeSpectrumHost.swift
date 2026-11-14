@@ -146,6 +146,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var meter = FrameRateMeter()
     /// PERF-007: the output's frame drop counter while the performance overlay is shown (nil: no counting work).
     var frameDrops: FrameDropCounter?
+    /// PERF-013: the feature age meter while the performance overlay is shown.
+    var featureAge: FeatureAgeMeter?
     /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
     /// frames' command buffers until their GPU times are known.
     var stageTimer: FrameStageTimer? {
@@ -929,7 +931,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
         defer { timer?.endFrame() }
         if let timer { gpuTimes.drain(into: timer) }
         timer?.begin(.audio)
-        if let info = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum) {
+        let info: LiveBandFrameInfo? = analyzer.output.readLatest(into: bands, capacity: SpectrumBarCount.maximum)
+        featureAge?.frame(info, link: link)   // PERF-013: the newest feature frame's age at this frame's presentation
+        if let info {
             bandCount = info.count
             bandSession = info.session
             kickEnvelope = info.kickEnvelope

@@ -136,7 +136,7 @@ final class AppSettings {
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, midiEnabledKey,
-                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017
+                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017, SHOW-003
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -430,6 +430,8 @@ final class AppSettings {
     let sceneLock: SceneLock
     /// MOD-017: quantized discrete changes (key `settings.modulation.quantize`), shared like the lock.
     let parameterQuantizer: ParameterQuantizer
+    /// SHOW-003: beat- or bar-quantized cue steps (key `settings.show.quantizeCues`).
+    let showCueQuantizer: ShowCueQuantizer
 
     init(defaults: UserDefaults, systemReduceMotion: Bool) {
         self.defaults = defaults
@@ -437,6 +439,7 @@ final class AppSettings {
         sensorySafety = SensorySafetySetting(defaults: defaults)
         sceneLock = SceneLock(defaults: defaults)   // SCN-015
         parameterQuantizer = ParameterQuantizer(defaults: defaults)   // MOD-017
+        showCueQuantizer = ShowCueQuantizer(defaults: defaults)   // SHOW-003
         showsPerformanceOverlay = defaults.bool(forKey: Self.performanceOverlayKey)
         reduceFlashingChoice = defaults.object(forKey: Self.reduceFlashingKey) as? Bool
         let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM

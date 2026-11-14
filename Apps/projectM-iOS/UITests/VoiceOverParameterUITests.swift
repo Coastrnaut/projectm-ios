@@ -62,7 +62,7 @@ final class VoiceOverParameterUITests: XCTestCase {
         launch(reset: true)
         openSettings()
         let row = app.visualRow("Circular Spectrum")
-        XCTAssertTrue(row.appears(within: 5))
+        XCTAssertTrue(app.reveal(row), "the visual row (below the fold as visuals grow)")
         row.tap()
         XCTAssertTrue(glowToggle.appears(within: 2) || app.reveal(glowToggle))
         glowToggle.switches.firstMatch.exists ? glowToggle.switches.firstMatch.tap() : glowToggle.tap()

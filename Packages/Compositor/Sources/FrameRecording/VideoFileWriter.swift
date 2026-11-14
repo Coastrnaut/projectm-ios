@@ -212,7 +212,9 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
                 AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_709_2,
             ],
         ]
-        if geometry.isScaled { output[AVVideoScalingModeKey] = AVVideoScalingModeResizeAspect }
+        if geometry.isScaled {   // REC-014 (ADR-0060): an aspect preset crops the centre to fill; Match screen fits
+            output[AVVideoScalingModeKey] = geometry.cropsToFill ? AVVideoScalingModeResizeAspectFill : AVVideoScalingModeResizeAspect
+        }
         return output
     }
 

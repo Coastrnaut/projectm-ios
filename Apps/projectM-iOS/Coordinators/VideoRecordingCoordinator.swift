@@ -162,6 +162,8 @@ final class VideoRecordingCoordinator {
         var qualityCapabilities: (any RecordingEncoderCapabilities)? = nil
         /// REC-006: the frame-rate choice (Profile default keeps the profile's rate).
         var frameRateChoice: RecordingFrameRateChoice = .defaultChoice
+        /// REC-014: the output aspect (Match screen keeps the screen's), fixed at Record.
+        var aspect: RecordingAspect = .defaultAspect
         /// REC-007: the countdown before a recording starts (Off: at once).
         var countdown: RecordingCountdownLength = .defaultLength
         /// REC-008: the length after which the recording stops by itself (Off: the 10-minute limit only).
@@ -496,7 +498,7 @@ final class VideoRecordingCoordinator {
         let capabilities: any RecordingEncoderCapabilities = c.qualityCapabilities ?? RecordingQualitySetting.encoder
         let resolution = RecordingFrameRateCatalog.resolve(profile: c.qualityProfile, choice: c.frameRateChoice,
                                                            drawableWidth: Int(size.width), drawableHeight: Int(size.height),
-                                                           capabilities: capabilities)
+                                                           aspect: c.aspect, capabilities: capabilities)   // REC-014-R9
         guard let plan = resolution.plan else {
             fail(.encoderUnavailable)
             return
@@ -510,7 +512,7 @@ final class VideoRecordingCoordinator {
             var policy: RecordingStoragePolicy?
             var startAvailable: Int64?
             if let geometry = RecordingGeometry(drawableWidth: Int(size.width), drawableHeight: Int(size.height),
-                                                maxLongSide: settings.maxLongSide) {
+                                                settings: settings) {   // REC-014: the planned aspect and cap
                 let rules = RecordingStoragePolicy(estimate: RecordingStorageEstimate(geometry: geometry, settings: settings))
                 startAvailable = storageProbe.availableBytes(at: directory)
                 guard rules.allowsStart(availableBytes: startAvailable) else {

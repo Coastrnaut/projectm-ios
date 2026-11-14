@@ -1,0 +1,33 @@
+{
+  "audioAgeP95Ms": 38.5,
+  "build": "2",
+  "device": "iPhone15,4",
+  "finishedAt": "2026-11-14T12:05:00Z",
+  "fpsTimerOff": [
+    60.0,
+    52.0,
+    60.0,
+    59.0,
+    60.0
+  ],
+  "fpsTimerOn": [
+    59.9,
+    59.7,
+    60.0,
+    58.8,
+    59.1
+  ],
+  "frameDrops": {
+    "outputs": [
+      {
+        "output": "device",
+        "skipped": 2,
+        "stale": 0,
+        "submitted": 298
+      }
+    ]
+  },
+  "lines": [],
+  "systemVersion": "27.0.1",
+  "visual": "projectM"
+}

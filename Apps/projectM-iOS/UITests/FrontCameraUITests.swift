@@ -43,7 +43,7 @@ final class FrontCameraUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
         XCTAssertFalse(picker.exists, "no camera controls before Camera is chosen")
         let row = app.visualRow("Camera")
-        XCTAssertTrue(row.appears(within: 5))
+        XCTAssertTrue(app.reveal(row), "the visual row (below the fold as visuals grow)")
         row.tap()
         XCTAssertTrue(app.reveal(picker), "the Camera section appears (below the Visual section)")
         XCTAssertTrue(picker.buttons["Back"].isSelected, "Back by default")

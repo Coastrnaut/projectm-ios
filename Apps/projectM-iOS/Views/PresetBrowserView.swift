@@ -12,6 +12,7 @@
 // chips replace the home with the tagged presets; search matches tags; every row offers "Tags…".
 // Roadmap PRE-006: the home leads to Recently Played (RecentPresetsView).
 // Roadmap PRE-004: colour chips under the tag chips; tags and colours together narrow the home and search.
+// Roadmap PRE-005: motion chips (Calm, Moderate, Energetic) under the colour chips, joined with AND.
 // Roadmap PRE-010: every playable row offers "Preview" (menu, leading swipe, VoiceOver action); the
 // audition bar sits under the stack, and closing the browser cancels a preview.
 import PresetLibrary
@@ -32,6 +33,7 @@ struct PresetBrowserView: View {
                 if !query.trimmingCharacters(in: .whitespaces).isEmpty {
                     PresetTagChipRow(presets: presets)
                     PresetColorChipRow(presets: presets)   // PRE-004
+                    PresetEnergyChipRow(presets: presets)   // PRE-005
                     searchResults
                 } else {
                     Picker("Show", selection: $presets.favoritesOnly) {
@@ -43,6 +45,7 @@ struct PresetBrowserView: View {
                     .accessibilityIdentifier("favoritesFilter")
                     PresetTagChipRow(presets: presets)   // PRE-003
                     PresetColorChipRow(presets: presets)   // PRE-004
+                    PresetEnergyChipRow(presets: presets)   // PRE-005
                     if presets.hasActiveFilter {
                         TaggedPresetList(presets: presets, onChoose: onChoose)
                     } else if presets.favoritesOnly {
@@ -110,7 +113,8 @@ struct PresetBrowserView: View {
     private var searchTaskID: String {
         let tags: String = presets.selectedTags.joined(separator: "\u{1F}")
         let colors: String = presets.selectedColors.map(\.rawValue).joined(separator: ",")
-        return "\(query)|\(presets.tagsVersion)|\(tags)|\(presets.colorsVersion)|\(colors)"
+        let energies: String = presets.selectedEnergies.map(\.rawValue).joined(separator: ",")   // PRE-005
+        return "\(query)|\(presets.tagsVersion)|\(tags)|\(presets.colorsVersion)|\(colors)|\(presets.motionVersion)|\(energies)"
     }
 
     @ViewBuilder private var home: some View {

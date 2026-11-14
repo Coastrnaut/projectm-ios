@@ -47,7 +47,7 @@ final class CameraLensUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()
         let row = app.visualRow("Camera")
-        XCTAssertTrue(row.appears(within: 5))
+        XCTAssertTrue(app.reveal(row), "the visual row (below the fold as visuals grow)")
         row.tap()
         XCTAssertTrue(app.reveal(positionPicker), "the Camera section appears")
     }

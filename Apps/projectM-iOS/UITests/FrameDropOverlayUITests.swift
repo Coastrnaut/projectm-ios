@@ -1,7 +1,7 @@
 // FrameDropOverlayUITests.swift — PERF-007-T08 (PERF-007-R7, R10) on the iOS Simulator: with the performance overlay
 // on, the overlay shows the device display's "frames" line, counting submitted frames, and the presented values read
 // "unavailable" (the simulator SDK reports no presented time). Simulator numbers are never evidence (Constitution X);
-// only the labels are checked. Owner rule 7: under 30 s.
+// only the labels are checked. Owner rule 7: under 30 s. PERF-013-T09: the same run checks the "audio age" line.
 import XCTest
 
 @MainActor
@@ -26,6 +26,9 @@ final class FrameDropOverlayUITests: XCTestCase {
         XCTAssertTrue(label.contains("presented unavailable, late unavailable"), "simulator: unavailable, never 0 — \(label)")
         XCTAssertFalse(label.contains("frames external"), "no external display")
         XCTAssertFalse(label.contains("frames recording"), "no recording")
+        // PERF-013-R8: the native visual consumes analysis frames, so the audio age line follows (In-App Playback feeds it).
+        XCTAssertTrue(poll(8) { overlay.label.contains("audio age ") && !overlay.label.contains("audio age unavailable") },
+                      "the overlay shows the feature age: \(overlay.label)")
         print("PERF-007 overlay (simulator, not evidence): \(label)")
     }
 }

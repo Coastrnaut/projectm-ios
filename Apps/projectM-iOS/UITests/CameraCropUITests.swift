@@ -48,7 +48,7 @@ final class CameraCropUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
         XCTAssertFalse(mode.exists, "no crop controls before Camera is chosen")
         let row = app.visualRow("Camera")
-        XCTAssertTrue(row.appears(within: 5))
+        XCTAssertTrue(app.reveal(row), "the visual row (below the fold as visuals grow)")
         row.tap()
 
         XCTAssertTrue(app.reveal(mode), "Crop appears in the Camera section")

@@ -6,6 +6,11 @@
 // encoder, so it is left out of the library backup, erased with the Settings category and removed by
 // `-uitestResetNotice`. The rows' availability comes from the capability source and the rows' size (the
 // shown visual's drawable, else the screen's native pixels); Record re-checks with the real drawable.
+//
+// REC-014 (specs/215-rec-014-export-aspect-presets, contract C5): the aspect (keys `settings.recording.aspect`
+// `screen|portrait|square|landscape|custom`, `settings.recording.customWidth`, `settings.recording.customHeight`;
+// absent or unknown → Match screen and 1080×1350; device-local like the profile) shapes every row and Record's plan;
+// the capability source carries this device class's output cap (`RecordingOutputCap.device`).
 import CoreGraphics
 import Foundation
 import FrameRecording
@@ -19,6 +24,8 @@ struct DisplayBoundCapabilities: RecordingEncoderCapabilities {
     let encoder: any RecordingEncoderCapabilities
     let maxFramesPerSecond: Int
     var renderLimit: RecordingRenderLimit? = nil
+    /// REC-014-R5: this device class's largest encoded frame.
+    var outputCap: RecordingOutputCap = .regular
 
     func canEncode(_ codec: RecordingCodec, width: Int, height: Int) -> Bool {
         encoder.canEncode(codec, width: width, height: height)
@@ -58,17 +65,104 @@ final class RecordingQualitySetting {
         didSet { defaults.set(frameRate.rawValue, forKey: Self.frameRateKey) }
     }
 
+    /// REC-014-R7: the aspect choice and the custom size (device-local, excluded from the backup, erased with Settings).
+    static let aspectKey = "settings.recording.aspect"
+    static let customWidthKey = "settings.recording.customWidth"
+    static let customHeightKey = "settings.recording.customHeight"
+    static let aspectKeys: [String] = [aspectKey, customWidthKey, customHeightKey]
+    static let aspectSectionTitle = "Recording aspect"
+    static let aspectFooter = "Presets crop the centre of the picture to fill the frame; nothing is stretched or upscaled. "
+        + "Custom sizes are even, 128 to 4096 px, and are reduced to fit this screen and device when needed. "
+        + "A change applies to the next recording."
+
+    var aspectKind: RecordingAspect.Kind {
+        didSet { defaults.set(aspectKind.rawValue, forKey: Self.aspectKey) }
+    }
+
+    var customSize: RecordingCustomSize {
+        didSet {
+            defaults.set(customSize.width, forKey: Self.customWidthKey)
+            defaults.set(customSize.height, forKey: Self.customHeightKey)
+        }
+    }
+
+    /// The aspect Record and the rows use.
+    var aspect: RecordingAspect { RecordingAspect(kind: aspectKind, customSize: customSize) }
+
     init(defaults: UserDefaults, capabilities: @escaping @MainActor () -> any RecordingEncoderCapabilities,
          rowSize: @escaping @MainActor () -> CGSize) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
             defaults.removeObject(forKey: Self.profileKey)   // the UI-test reset: Standard (REC-005-R7)
             defaults.removeObject(forKey: Self.frameRateKey)   // and Profile default (REC-006-R8)
+            for key in Self.aspectKeys { defaults.removeObject(forKey: key) }   // and Match screen (REC-014-R7)
         }
         self.defaults = defaults
         capabilitiesProvider = capabilities
         self.rowSize = rowSize
         profile = Self.stored(in: defaults)
         frameRate = Self.storedFrameRate(in: defaults)
+        aspectKind = Self.storedAspectKind(in: defaults)
+        customSize = Self.storedCustomSize(in: defaults)
+    }
+
+    /// The stored aspect, Match screen when absent or unknown.
+    static func storedAspectKind(in defaults: UserDefaults) -> RecordingAspect.Kind {
+        (defaults.string(forKey: aspectKey)).flatMap(RecordingAspect.Kind.init(rawValue:)) ?? .screen
+    }
+
+    /// The stored custom size (validated), 1080×1350 when absent.
+    static func storedCustomSize(in defaults: UserDefaults) -> RecordingCustomSize {
+        let fallback: RecordingCustomSize = .defaultSize
+        let width: Int = (defaults.object(forKey: customWidthKey) as? Int) ?? fallback.width
+        let height: Int = (defaults.object(forKey: customHeightKey) as? Int) ?? fallback.height
+        return RecordingCustomSize(width: width, height: height)
+    }
+
+    // MARK: - REC-014 aspect rows
+
+    /// The selected profile's plan with `kind` on the current size (REC-014-R8).
+    func availability(_ kind: RecordingAspect.Kind) -> RecordingProfileAvailability {
+        let size: CGSize = rowSize()
+        let capabilities: any RecordingEncoderCapabilities = capabilitiesProvider()
+        return RecordingQualityCatalog.availability(of: profile, frameRate: effectiveExplicitRate(capabilities),
+                                                    drawableWidth: Int(size.width), drawableHeight: Int(size.height),
+                                                    aspect: RecordingAspect(kind: kind, customSize: customSize),
+                                                    capabilities: capabilities)
+    }
+
+    /// Picks `kind` when it can record here.
+    @discardableResult
+    func select(_ kind: RecordingAspect.Kind) -> Bool {
+        guard availability(kind).plan != nil else { return false }
+        aspectKind = kind
+        return true
+    }
+
+    /// Stores a custom size, validated (odd rounds down to even, clamped to 128...4096; REC-014-R6).
+    func setCustom(width: Int, height: Int) {
+        customSize = RecordingCustomSize(width: width, height: height)
+    }
+
+    /// "1178×1178 · HEVC · 7.5 Mb/s · 30 fps", "Reduced to 1176×1470 on this screen · …" or the reason.
+    func detail(_ kind: RecordingAspect.Kind) -> String {
+        switch availability(kind) {
+        case .available(let plan):
+            guard plan.geometry.reducedCustomSize != nil else { return plan.summary }
+            let reduced: String = RecordingAspectCatalog.reducedRowText(width: plan.geometry.outputWidth,
+                                                                        height: plan.geometry.outputHeight)
+            let rest: String = plan.summary.split(separator: "·", maxSplits: 1).dropFirst().first.map { (s: Substring) -> String in
+                " ·" + String(s)
+            } ?? ""
+            return reduced + rest
+        case .unavailable(let reason):
+            return reason.text
+        }
+    }
+
+    /// "Square 1:1, 1178×1178 · HEVC · …" (VoiceOver label).
+    func rowLabel(_ kind: RecordingAspect.Kind) -> String {
+        let title: String = kind == .custom ? kind.title + " \(customSize.width)×\(customSize.height)" : kind.title
+        return title + ", " + detail(kind)
     }
 
     /// The stored frame-rate choice, Profile default when absent or unknown.
@@ -90,7 +184,8 @@ final class RecordingQualitySetting {
     func availability(_ choice: RecordingFrameRateChoice) -> RecordingFrameRateAvailability {
         let size: CGSize = rowSize()
         return RecordingFrameRateCatalog.availability(of: choice, profile: profile, drawableWidth: Int(size.width),
-                                                      drawableHeight: Int(size.height), capabilities: capabilitiesProvider())
+                                                      drawableHeight: Int(size.height), aspect: aspect,   // REC-014-R9
+                                                      capabilities: capabilitiesProvider())
     }
 
     /// Picks `choice` when it is available here (a disabled row cannot be picked, REC-006-R6).
@@ -125,6 +220,7 @@ final class RecordingQualitySetting {
         let capabilities: any RecordingEncoderCapabilities = capabilitiesProvider()
         return RecordingQualityCatalog.availability(of: profile, frameRate: effectiveExplicitRate(capabilities),   // REC-006-R9
                                                     drawableWidth: Int(size.width), drawableHeight: Int(size.height),
+                                                    aspect: aspect,   // REC-014-R9
                                                     capabilities: capabilities)
     }
 
@@ -159,7 +255,14 @@ final class RecordingQualitySetting {
         let info = ProcessInfo.processInfo
         return DisplayBoundCapabilities(encoder: encoder, maxFramesPerSecond: screen?.maximumFramesPerSecond ?? 60,
                                         renderLimit: renderLimit(thermal: ThermalLevel(info.thermalState), lowPower: info.isLowPowerModeEnabled,
-                                                                 budget: PowerProfileState.budget(lowPower: info.isLowPowerModeEnabled)))
+                                                                 budget: PowerProfileState.budget(lowPower: info.isLowPowerModeEnabled)),
+                                        outputCap: deviceOutputCap)   // REC-014-R5
+    }
+
+    /// REC-014-R5 (research REC-014-D4): this device's class by physical memory; 16 384 px is the texture side of every
+    /// Apple GPU family iOS 26 runs on (A12 or later).
+    static var deviceOutputCap: RecordingOutputCap {
+        RecordingOutputCap.device(physicalMemory: ProcessInfo.processInfo.physicalMemory, maxTextureSide: 16_384)
     }
 
     /// REC-006-D4: the render loop's cap from QualityGovernor's rules (nil when it runs at full rate).

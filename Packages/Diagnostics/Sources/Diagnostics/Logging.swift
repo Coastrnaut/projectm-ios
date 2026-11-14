@@ -87,6 +87,14 @@ public enum DiagnosticsLog {
         app.info("render fault \(summary, privacy: .private)")
     }
 
+    /// PERF-013-R10: one Points of Interest event and one app log line when the audio-render drift verdict changes
+    /// (seen at the performance overlay's refresh, never on the frame path). The summary carries numbers only.
+    public static func audioSync(_ summary: String) {
+        assertNotRealtime()
+        signposter.emitEvent("Audio sync", "\(summary, privacy: .private)")
+        app.info("audio sync \(summary, privacy: .private)")
+    }
+
     /// Debug-only guard: real-time audio threads run at elevated priority with a
     /// "real-time" thread name in our sources; logging there is a bug (Constitution VII).
     static func assertNotRealtime() {
