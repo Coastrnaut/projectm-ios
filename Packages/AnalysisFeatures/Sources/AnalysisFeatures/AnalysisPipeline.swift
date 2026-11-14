@@ -7,9 +7,9 @@
 // normalization, the ANL-004 onset detector, the ANL-005 beat tracker, the ANL-007 kick detector,
 // the ANL-008 mid transient detector (1–4 kHz, same magnitudes: no second FFT), the ANL-009 high
 // transient detector (6–16 kHz, rate-capped, same magnitudes), the ANL-010 spectral centroid, the
-// ANL-014 loudness envelope and the ANL-011 spectral rolloff (same magnitudes). It publishes, in ID
-// order: the feature frame (with the kick envelope, the mid and high transient envelopes and
-// confidences, the centroid, the loudness and the rolloff), then the
+// ANL-014 loudness envelope, the ANL-011 spectral rolloff and the ANL-012 spectral flatness (same
+// magnitudes). It publishes, in ID order: the feature frame (with the kick envelope, the mid and high
+// transient envelopes and confidences, the centroid, the loudness, the rolloff and the flatness), then the
 // frame's onset (if any), then its beat (if any), then its kick (if any), then its mid transient (if
 // any), then its high transient (if any).
 //
@@ -72,6 +72,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
     private var centroid: SpectralCentroidEstimator
     private var loudness: LoudnessEnvelope
     private var rolloff: SpectralRolloffEstimator
+    private var flatness: SpectralFlatnessEstimator
     private let scratch: UnsafeMutablePointer<Float>
     private let bandScratch: UnsafeMutablePointer<Float>
     private var bandCount: BandCount
@@ -111,6 +112,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         centroid = SpectralCentroidEstimator(configuration: configuration.centroid)
         loudness = LoudnessEnvelope(configuration: configuration.loudness, size: configuration.spectrum.size)
         rolloff = SpectralRolloffEstimator(configuration: configuration.rolloff, backend: backend)
+        flatness = SpectralFlatnessEstimator(configuration: configuration.flatness, backend: backend)
         scratch = .allocate(capacity: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         scratch.initialize(repeating: 0, count: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         bandScratch = .allocate(capacity: AnalysisSubscription.maximumBands)
@@ -273,6 +275,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         centroid.reset()
         loudness.reset()
         rolloff.reset()
+        flatness.reset()
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.clearFrame() }
         }
@@ -338,6 +341,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         let brightness = centroid.process(frame, magnitudes: magnitudes)
         let level = loudness.process(frame, magnitudes: magnitudes)
         let percentile = rolloff.process(frame, magnitudes: magnitudes)   // ANL-011: same magnitudes, no extra FFT
+        let wiener = flatness.process(frame, magnitudes: magnitudes)   // ANL-012: same magnitudes, no extra FFT
         let estimate = tracker.estimate
         let sample = frame.index + Int64(frame.size.rawValue)
         let time = timestamp(sample)
@@ -347,7 +351,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
                                  loudness: level.envelope, loudnessDecibels: level.decibels,
                                  midTransientEnvelope: midTransient.envelope, midTransientConfidence: midTransient.lastConfidence,
                                  highTransientEnvelope: highTransient.envelope, highTransientConfidence: highTransient.lastConfidence,
-                                 rolloffHz: percentile.hz, rolloff: percentile.normalized)
+                                 rolloffHz: percentile.hz, rolloff: percentile.normalized, flatness: wiener.flatness)
         let bands = UnsafeBufferPointer(start: bandScratch, count: count)
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.publish(item, bands: bands) }
