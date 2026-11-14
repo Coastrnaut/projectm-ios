@@ -8,7 +8,8 @@ Input: one linear premultiplied RGBA composite pixel, any float values. Output: 
    alpha is clamped to 0…1.
 2. m = max(r, g, b). m ≤ 1: the sanitised pixel is the output (bit-identical for finite in-range input).
 3. Y = 0.2126 r + 0.7152 g + 0.0722 b. Y ≥ 1: output (1, 1, 1, α).
-4. Otherwise s = (1 − Y) / (m − Y); output rgb = clamp(Y + s·(c − Y), 0, 1), alpha α.
+4. Otherwise s = (1 − Y) / (m − Y); output rgb = clamp(Y + s·(c − Y), 0, 1), alpha α, computed as the equal
+   1 − s·(m − c) so the largest channel is exactly 1 in float (no dip below the m ≤ 1 branch's 1).
 
 Guarantees: monotonic along every colour ray of finite values; output luminance = min(Y, 1); hue kept.
 

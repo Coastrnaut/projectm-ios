@@ -8,6 +8,9 @@ luminance Y = 0.2126 r + 0.7152 g + 0.0722 b:
 1. m ≤ 1 → unchanged;
 2. Y ≥ 1 → white (1, 1, 1);
 3. otherwise s = (1 − Y) / (m − Y) and out = Y + s · (c − Y) per channel, then clamped to 0…1 (rounding only).
+   Both implementations compute the equal form 1 − s · (m − c): the GPU gradient test found that
+   Y + s · (c − Y) gives 0.99999… for the largest channel in float, which rounds to the half 0.99951 just
+   after the identity branch's exact 1 (a one-ulp order violation in the half-float output); 1 − s · 0 is exactly 1.
 
 Step 3 is a straight line from the pixel's grey (Y, Y, Y) toward the pixel; s < 1 is the largest fraction
 that keeps the largest channel at 1. Because the weights sum to 1, the luminance of (c − Y) is 0, so the

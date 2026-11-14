@@ -194,13 +194,41 @@ enum CompositorShaders {
         return o;
     }
 
-    // The composite times the flash guard's gain (RGB only; never brightens). The output's format
-    // does the encoding (sRGB for the screen).
+    \(toneMapSource)
+    // FX-002 (ADR-0047): the tone-mapped composite times the flash guard's gain (RGB only; never brightens). The
+    // guard measured the same `cmp_tone_map` values, so the gain applies to what it judged. The output's format
+    // does the encoding (sRGB for the screen). `nonFinite` counts composite pixels with a NaN or infinite
+    // channel (the screen pass binds the compositor's counter, recording and capture a sink; FX-002-R7).
     fragment float4 cmp_output(FullScreenOut in [[stage_in]], texture2d<float, access::read> composite [[texture(0)]],
-                               device const float *gain [[buffer(0)]]) {
+                               device const float *gain [[buffer(0)]], device atomic_uint *nonFinite [[buffer(1)]]) {
         float4 c = composite.read(uint2(in.position.xy));
+        if (any(isnan(c) || isinf(c))) atomic_fetch_add_explicit(nonFinite, 1u, memory_order_relaxed);
+        float4 t = cmp_tone_map(c);
         float g = clamp(gain[0], 0.0, 1.0);
-        return float4(c.rgb * g, c.a);
+        return float4(t.rgb * g, t.a);
+    }
+    """
+
+    /// FX-002 (contracts/tone-map.md in specs/122, research FX-002-D1; ADR-0047): the output tone map, the same
+    /// steps as `ToneMap.map` (CPU reference). Spliced into `source` and into the composite flash guard's
+    /// source, so the guard measures exactly what the output pass shows. Needs safe math (`isnan`/`isinf`).
+    ///   1. NaN/±Inf/negative colour → 0; alpha NaN/±Inf → 0, clamped to 0…1;
+    ///   2. max channel m ≤ 1: unchanged; 3. luminance Y ≥ 1: white;
+    ///   4. else rgb = clamp(Y + (1 − Y)/(m − Y)·(c − Y), 0, 1), computed as 1 − k·(m − c) with k = (1 − Y)/(m − Y)
+    ///      (luminance and hue kept, desaturated; the largest channel exactly 1).
+    static let toneMapSource = """
+    static float4 cmp_tone_map(float4 c) {
+        float4 s = select(c, float4(0.0), isnan(c) || isinf(c));
+        s = max(s, float4(0.0));
+        s.a = min(s.a, 1.0);
+        float m = max(s.r, max(s.g, s.b));
+        if (m <= 1.0) return s;
+        float y = dot(s.rgb, float3(0.2126, 0.7152, 0.0722));
+        if (y >= 1.0) return float4(1.0, 1.0, 1.0, s.a);
+        float k = (1.0 - y) / (m - y);
+        // y + k·(c − y) written as 1 − k·(m − c): the same value, but exactly 1 for the largest channel, so float
+        // rounding cannot dip it below the identity branch's 1 (the order across the m = 1 boundary).
+        return float4(clamp(1.0 - k * (m - s.rgb), 0.0, 1.0), s.a);
     }
     """
 

@@ -9,7 +9,8 @@
 //   3. Y = 0.2126 r + 0.7152 g + 0.0722 b ≥ 1: white;
 //   4. otherwise s = (1 − Y) / (m − Y) and rgb = clamp(Y + s·(c − Y), 0, 1): the line from the pixel's grey
 //      toward the pixel, cut where the largest channel reaches 1. Luminance (weights sum to 1) and hue are
-//      kept; only saturation drops. m > 1 > Y, so m − Y > 0.
+//      kept; only saturation drops. m > 1 > Y, so m − Y > 0. Computed as the equal 1 − s·(m − c), which is
+//      exactly 1 for the largest channel, so rounding never dips below the identity branch's 1.
 // Monotonic along every ray of finite colours, output luminance = min(Y, 1) (proof: research FX-002-D2).
 // Every expression is split into typed steps (the type checker on Linux and Xcode 26).
 
@@ -58,8 +59,9 @@ public enum ToneMap {
         let k: Double = room / spread
         var out: Pixel = s
         for c in 0..<3 {
-            let offset: Double = s[c] - y
-            let v: Double = y + k * offset
+            // y + k·(c − y) = 1 − k·(m − c): exactly 1 for the largest channel (as the shader computes it).
+            let gap: Double = m - s[c]
+            let v: Double = 1 - k * gap
             out[c] = min(max(v, 0), 1)
         }
         return out

@@ -4,7 +4,7 @@
 // One compute dispatch per frame, one threadgroup of 16 threads, no CPU read-back:
 //   1. Measure: thread k reads 16 × 16 samples of tile k of the 4 × 4 grid (row 0 at the top, as
 //      FlashZones; CFlashLimiter's sample pattern) of the linear premultiplied composite (= over
-//      black) and computes the tile's mean WCAG relative luminance and redness max(R − G − B, 0).
+//      black), each through FX-002's output tone map (what the screen shows), and computes the tile's mean WCAG relative luminance and redness max(R − G − B, 0).
 //   2. Thread 0: the whole frame is the mean of the tiles; it then runs FlashEnvelope's rule on the
 //      34 tracks (17 areas × 2 signals): advance the ages by the clamped frame time, compute each
 //      ceiling, take the closed-form gain min(ceiling / level) (levels scale linearly with the gain),
@@ -49,6 +49,9 @@ final class CompositeFlashGuard {
 
     constant float windowTolerance = 0.002;   // FlashEnvelope.windowTolerance
 
+    // FX-002 (ADR-0047): the output tone map, so the guard measures the colour the output pass shows.
+    \(CompositorShaders.toneMapSource)
+
     kernel void cmp_flash_guard(texture2d<float, access::read> scene [[texture(0)]],
                                 device Track *tracks [[buffer(0)]],
                                 device float *gainOut [[buffer(1)]],
@@ -63,7 +66,7 @@ final class CompositeFlashGuard {
                 for (int i = 0; i < 16; i++) {
                     float2 f = (tile + (float2(float(i), float(j)) + 0.5) / 16.0) / 4.0;
                     uint2 q = min(uint2(f * float2(size)), size - 1);
-                    float3 c = max(scene.read(q).rgb, float3(0.0));
+                    float3 c = cmp_tone_map(scene.read(q)).rgb;   // FX-002: as shown (0…1, never NaN)
                     y += dot(c, float3(0.2126, 0.7152, 0.0722));
                     r += max(c.r - c.g - c.b, 0.0);
                 }
