@@ -133,11 +133,22 @@ final class RecordingQualityFixtureTests: XCTestCase {
     }
 
     func testHighMatchesItsProfile() async throws {
+        try Self.skipLargeProfilesOnTheSimulator()
         try await check(.high, size: [1280, 2560], codec: "hvc1")
     }
 
     func testMaxMatchesItsProfile() async throws {
+        try Self.skipLargeProfilesOnTheSimulator()
         try await check(.max, size: [1440, 2880], codec: "hvc1")
+    }
+
+    /// Owner rule 7 (short tests): the iOS Simulator encodes HEVC at 2560-2880 px in software, so these
+    /// two fixtures took about 16 minutes on CI's iOS 27 simulator (2026-11-14). They run on the macOS
+    /// host (hardware encoder, about 1 s each); the simulator still covers Draft and Standard.
+    private static func skipLargeProfilesOnTheSimulator() throws {
+        #if targetEnvironment(simulator)
+        throw XCTSkip("High and Max run on the macOS host; the simulator's software HEVC encoder is too slow (owner rule 7).")
+        #endif
     }
 }
 #endif
