@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T04:01:37Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T04:04:38Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 217 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 105 |
+| integrated | 106 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 5 | 1 | 0 | 80 | 1 |
-| P1 | 126 | 1 | 1 | 23 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 5 | 1 | 80 | 1 |
+| P1 | 126 | 1 | 24 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 220 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
+- 219 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)
 
 ## Integrated
 
@@ -57,6 +56,7 @@ The physical-device suite may **not** start:
 | AUD-009 | Channel selection | `b0abb4e` | `feature/aud-009` |
 | AUD-011 | Input noise gate | `3214051` | `feature/aud-011` |
 | AUD-012 | Source crossfade | `bf6d440f` | `feature/aud-012` |
+| AUD-013 | Source latency calibration | `5fb13b98` | `feature/aud-013` |
 | AUD-014 | Audio session interruption recovery | `c4f03aa5e3d8` | `feature/aud-014` |
 | AUD-016 | Reference tone suite | `f69525cf0e8d` | `feature/aud-016` |
 | AUTO-001 | Roadmap parser | `419cc2a999ed` | `autonomous/integration` |
@@ -441,7 +441,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `64ff3b55e8c2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-012/20261113T221316/swift-test_VisualGenerators.log`)
 - `post-merge (ANL-010 + AUD-012): projectM-iOSTests 412 + SourceSwitch/Status/NoiseGate/controls accessibility UI tests 11`: pass at `bf6d440f` (log `.autonomous/logs/integration/anl-010-aud-012/app-tests.log`)
 
-### AUD-013 Source latency calibration (unit_passed)
+### AUD-013 Source latency calibration (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2e734ba8fd31` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-013/20261113T225334/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `2e734ba8fd31` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-013/20261113T225334/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `2e734ba8fd31` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-013/20261113T225334/script-tests.log`)
@@ -461,6 +461,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `2e734ba8fd31` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-013/20261113T225334/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `2e734ba8fd31` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-013/20261113T225334/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `2e734ba8fd31` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-013/20261113T225334/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 418 + LatencyOffset/SourceSwitch/NativeVisual/InputTrim UI tests 7; gate ran 19 suites`: pass at `5fb13b98` (log `.autonomous/logs/integration/aud-013/app-tests.log`)
 
 ### AUD-014 Audio session interruption recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8d270f3cbeed` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/AUD-014/20261112T185431/compliance.log`)

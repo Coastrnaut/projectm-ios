@@ -14,8 +14,7 @@
   "P1": {
    "audited": 126,
    "implementing": 1,
-   "integrated": 23,
-   "unit_passed": 1
+   "integrated": 24
   },
   "P2": {
    "audited": 77,
@@ -28,9 +27,8 @@
  "by_state": {
   "audited": 217,
   "implementing": 2,
-  "integrated": 105,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 106,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -54,7 +52,6 @@
    "ANL-013",
    "ANL-015",
    "AUD-010",
-   "AUD-013",
    "AUD-015",
    "CAM-002",
    "CAM-003",
@@ -261,7 +258,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "220 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
+   "219 features are not implemented yet (first: ACC-003, ACC-005, ACC-006, ACC-007, ACC-008)"
   ]
  },
  "features": {
@@ -670,10 +667,10 @@
    "branch": "feature/aud-013",
    "branch_sha": "2e734ba8fd3181da3705922023a81f5a673c8068",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5fb13b98",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "AUD-014": {
    "attempts": 0,
@@ -3648,6 +3645,11 @@
    "sha": "bf6d440f"
   },
   {
+   "branch": "feature/aud-013",
+   "id": "AUD-013",
+   "sha": "5fb13b98"
+  },
+  {
    "branch": "feature/aud-014",
    "id": "AUD-014",
    "sha": "c4f03aa5e3d8d70168c21e2e42f71eb07d86a0df"
@@ -4078,5 +4080,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T04:01:37Z"
+ "updated": "2026-11-14T04:04:38Z"
 }
