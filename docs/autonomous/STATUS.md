@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T09:54:54Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T09:56:09Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,9 +10,9 @@
 | State | Features |
 |---|---|
 | audited | 191 |
-| implementing | 2 |
+| implementing | 1 |
 | unit_passed | 1 |
-| integrated | 131 |
+| integrated | 132 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 103 | 2 | 1 | 45 | 0 |
+| P1 | 103 | 1 | 1 | 46 | 0 |
 | P2 | 77 | 0 | 0 | 2 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 194 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)
+- 193 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ACC-012, ANL-008)
 
 ## Integrated
 
@@ -109,6 +109,7 @@ The physical-device suite may **not** start:
 | FILE-012 | No-telemetry verification | `3a8ad2044000` | `feature/file-012` |
 | FILE-013 | Privacy permission audit | `b5e4bd0` | `feature/file-013` |
 | FX-001 | Bloom | `1192e0d6503e` | `feature/fx-001` |
+| FX-002 | Tone mapping | `78df044a4b78` | `feature/fx-002` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
@@ -864,6 +865,14 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `a71cc74c8b52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-010/20261113T174416/swift-test_SceneArchive.log`)
 - `post-merge: projectM-iOSTests 331 incl. CacheCleanupAcceptanceTests (user data byte-identical, scenes and show load); CacheCleanupUITests 15.6 s, StorageUsage, SceneDuplicate UI tests on iOS 27.2 sim; LocalPortability 93 in the gate`: pass at `f65b410a8d7c` (log `.autonomous/logs/integration/file-010/app-tests.log`)
 
+### FILE-011 Local data erase (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `55d6e2cccb21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-011/20261114T045501/swift-test_LibraryBackup.log`)
+
 ### FILE-012 No-telemetry verification (integrated)
 - `python3 scripts/check_compliance.py`: pass at `51cdfefb92f2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-012/20261113T181114/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `51cdfefb92f2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-012/20261113T181114/docs.log`)
@@ -886,7 +895,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 76 on iOS 27.2 sim (GPU tests ran) and 59 with -DVISUAL_NO_METAL; app: projectM-iOSTests 133 pass, UI 16 pass (Glow, NativeVisual, Settings, Visualizer); 0 PosterBoard reports`: pass at `1192e0d` (log `.autonomous/logs/integration/fx-001/app-tests.log`)
 
-### FX-002 Tone mapping (unit_passed)
+### FX-002 Tone mapping (integrated)
 - `python3 scripts/check_compliance.py`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/sim-test_ANGLERendering.log`)
