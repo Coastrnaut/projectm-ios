@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-016-T01-T12 verified on the Mac: package tests on the host and the REC16 iOS 27.2 simulator, app and UI tests on the simulator; device task T13 `{device}` open)
 
 **Input**: User description: "Implement REC-016 (Recording interruption recovery) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Handle app interruption, thermal warning and writer failure gracefully." P1, effort L,

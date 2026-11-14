@@ -32,6 +32,12 @@ asynchronously (observed within 300 ms). The fault sink does this on the writer 
 and DEBUG only, ≤ 2 s) for the status, so "writer failure" and "finish failure" exercise AVFoundation's
 own failed state, not a double.
 
+Simulator finding (2026-11-14, REC16 iOS 27.2): the iOS Simulator's software writer accepts repeated and earlier
+times without failing. There (`targetEnvironment(simulator)`), and anywhere the writer tolerates the bad times, the
+seam leaves the writer unfinished instead (never finished, never cancelled): releasing such a writer keeps its file,
+which holds exactly the completed fragments a failed writer leaves (checked on the Mac: 30 of 45 frames, 1.0 s, with
+0.5 s fragments). The host (macOS) path reaches AVFoundation's `.failed` state (-11800 / -16364) in about 8 ms.
+
 ## REC-016-D4 Start failure leak
 
 `MetalFrameRecorder.init` creates the writer before the texture cache; a throw after that left a

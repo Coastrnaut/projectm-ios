@@ -151,6 +151,12 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     private let audioFormat: CMAudioFormatDescription?
     /// Used only on `queue`: the last appended video time (REC-016 failure injection).
     private var lastTick: Int64?
+    /// Used only on `queue` (REC-016 failure injection): the writer was left unfinished, as a failed one is; its file
+    /// holds the completed fragments.
+    private var abandoned = false
+
+    /// The writer can take no more samples: AVFoundation failed it, or the fault seam left it unfinished.
+    private var hasFailed: Bool { writer.status == .failed || abandoned }
 
     var hasAudio: Bool { audioInput != nil }
 
@@ -253,7 +259,7 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     }
 
     func append(_ buffer: CVPixelBuffer, tick: Int64) -> RecordingAppendResult {
-        guard writer.status == .writing else { return .failed }
+        guard writer.status == .writing, !abandoned else { return .failed }
         if !input.isReadyForMoreMediaData {
             if realTime { return .notReady }       // REC-003-R7: never wait while live
             var waited = 0.0
@@ -272,7 +278,7 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
 
     /// REC-004: live, a not-ready input drops the chunk (never waits); offline, waits on this queue.
     func appendAudio(_ samples: [Float], startSample: Int64) -> RecordingAppendResult {
-        guard let audioInput, let audioFormat, writer.status == .writing else { return .failed }
+        guard let audioInput, let audioFormat, writer.status == .writing, !abandoned else { return .failed }
         if !audioInput.isReadyForMoreMediaData {
             if realTime { return .notReady }
             var waited = 0.0
@@ -300,9 +306,9 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
 
     private func finishOnQueue(endTick: Int64, keep: Bool, done: @escaping @Sendable (Result<Void, RecordingFailure>) -> Void) {
         let url = url
-        guard keep, writer.status == .writing else {
+        guard keep, writer.status == .writing, !abandoned else {
             // REC-015-R7: an out-of-space error becomes `storageFull`.
-            let failure: RecordingFailure? = writer.status == .failed ? RecordingFailure.fromWriterError(writer.error, fallback: "failed") : nil
+            let failure: RecordingFailure? = hasFailed ? RecordingFailure.fromWriterError(writer.error, fallback: "failed") : nil
             if keep, let failure, failure != .storageFull {   // REC-016-R3: the caller salvages the fragments
                 done(.failure(failure))
                 return
@@ -342,7 +348,7 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
 
     private func salvageOnQueue(endTick: Int64, done: @escaping @Sendable ((RecordingSalvageOutcome, RecordingFailure)) -> Void) {
         let url = url
-        let failure: RecordingFailure = writer.status == .failed
+        let failure: RecordingFailure = hasFailed
             ? RecordingFailure.fromWriterError(writer.error, fallback: "failed") : .writerFailed("append failed")
         let exists = { () -> Bool in FileManager.default.fileExists(atPath: url.path) }
         if failure == .storageFull || (writer.status != .writing && writer.status != .failed) {
@@ -351,8 +357,8 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
             done((.nothing, failure))
             return
         }
-        guard writer.status == .writing, lastTick != nil else {   // failed: never cancel (it deletes the fragments)
-            done((writer.status == .failed && exists() ? .partial : .nothing, failure))
+        guard writer.status == .writing, !abandoned, lastTick != nil else {   // failed: never cancel (it deletes the fragments)
+            done((hasFailed && exists() ? .partial : .nothing, failure))
             return
         }
         input.markAsFinished()   // healthy: finish at the last appended frame
@@ -374,22 +380,28 @@ final class VideoFileWriter: RecordingSampleSink, @unchecked Sendable {
     }
 
     /// REC-016-R2 (research REC-016-D3), tests and DEBUG only, on `queue`: drives the real writer to its failed
-    /// state with a duplicate presentation time and waits (at most 2 s) for AVFoundation to report it.
+    /// state with a repeated and an earlier presentation time and waits (at most 2 s) for AVFoundation to report it.
+    /// Where the writer tolerates that (the iOS Simulator's software writer accepts out-of-order times), the writer is
+    /// left unfinished instead: its file is then exactly what a failed writer leaves (the completed fragments).
     func forceFailureOnQueue() {
+        #if targetEnvironment(simulator)
+        abandoned = true
+        #else
         guard writer.status == .writing, let buffer = makePixelBuffer() else { return }
-        let tick = lastTick ?? 0
-        var waited = 0.0
-        for _ in 0..<(lastTick == nil ? 2 : 1) {
-            while !input.isReadyForMoreMediaData && writer.status == .writing && waited < 2 {
+        let deadline = Date().addingTimeInterval(2)
+        // A repeated, then an earlier, presentation time (an earlier one alone when nothing was appended yet).
+        let ticks: [Int64] = lastTick.map { (t: Int64) -> [Int64] in [t, t - 1] } ?? [1, 0]
+        for tick in ticks where writer.status == .writing {
+            while !input.isReadyForMoreMediaData && writer.status == .writing && Date() < deadline {
                 Thread.sleep(forTimeInterval: 0.002)
-                waited += 0.002
             }
             _ = adaptor.append(buffer, withPresentationTime: CMTime(value: tick, timescale: RecordingSettings.timescale))
         }
-        while writer.status == .writing && waited < 2 {
+        while writer.status == .writing && Date() < deadline {
             Thread.sleep(forTimeInterval: 0.005)
-            waited += 0.005
         }
+        if writer.status == .writing { abandoned = true }
+        #endif
     }
 }
 

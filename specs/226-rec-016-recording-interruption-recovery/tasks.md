@@ -16,25 +16,25 @@
 ## Phase 3: User Story 1 - A writer failure keeps what was recorded (P1) MVP
 
 - [X] REC-016-T05 [US1] Package tests RecordingRecoveryTests.swift: append, writer and finish failures in a 2 s 64×48 fixture → ledger at baseline, nothing in flight, kept file read back within one fragment; early writer failure → nothing kept; an out-of-storage fault still deletes the file (REC-016-R9); normal finish has no `moof` and passes QA-008 (REC-016-S1, S5) — Verified 2026-11-14: RecordingRecoveryTests 7/7 on the host (5.8 s): append keeps 30/30, writer and finish keep the completed fragments within one fragment + 0.5 s of 45, early failure and out of storage keep nothing, normal finish has no moof and passes RecordingValidator
-- [ ] REC-016-T06 [US1] Coordinator: kept part offered with the X13 notice; StatusEvents rows (VideoRecordingCoordinator.swift, StatusEvents.swift) (contract C3.1, C4)
-- [ ] REC-016-T07 [US1] App tests RecordingRecoveryAppTests.swift: append failure mid-recording → idle, tap detached, recorder released (ledger), notice, offered file read back with the frames before the failure
+- [X] REC-016-T06 [US1] Coordinator: kept part offered with the X13 notice; StatusEvents rows (VideoRecordingCoordinator.swift, StatusEvents.swift) (contract C3.1, C4) — Verified 2026-11-14: RecordingRecoveryAppTests (notice, offered, lastStopReason .writerFailed; StatusEventCatalog.recordingNotice → X13); StatusEventsTests 8/8; check_status_events OK
+- [X] REC-016-T07 [US1] App tests RecordingRecoveryAppTests.swift: append failure mid-recording → idle, tap detached, recorder released (ledger), notice, offered file read back with the frames before the failure — Verified 2026-11-14: RecordingRecoveryAppTests.testInjectedWriterFailureReleasesResourcesAndOffersTheKeptPart (REC16 iOS 27.2 simulator): idle, tap detached, holdsRecorder false, ledger back to baseline, offered file reads back 10 frames with strictly increasing times, Record works again
 
 ## Phase 4: User Story 2 - A failed start leaves nothing behind (P1)
 
-- [ ] REC-016-T08 [US2] Package test (start failure → no file, ledger at baseline) and app test (folder empty, idle, notice) (REC-016-S2)
+- [X] REC-016-T08 [US2] Package test (start failure → no file, ledger at baseline) and app test (folder empty, idle, notice) (REC-016-S2) — Verified 2026-11-14: RecordingRecoveryTests.testStartFailureLeavesNothing (host and simulator) and RecordingRecoveryAppTests.testInjectedStartFailureLeavesNothingOnDisk (folder empty, idle, notice)
 
 ## Phase 5: User Story 3 - Leaving the app finishes the file (P1)
 
-- [ ] REC-016-T09 [US3] App test: background stop offers a finished, readable file with the background notice (REC-016-S3)
+- [X] REC-016-T09 [US3] App test: background stop offers a finished, readable file with the background notice (REC-016-S3) — Verified 2026-11-14: RecordingRecoveryAppTests.testBackgroundStopFinishesAndOffersTheFile (offered, background notice, read back = recorded frames); VideoRecordingAppTests 18/18
 
 ## Phase 6: User Story 4 - The device gets hot (P2)
 
-- [ ] REC-016-T10 [US4] Thermal guard in the coordinator (injected level, DEBUG `-uitestThermalState`) and its tests: guard rules (package), Serious warns once, Critical stops and offers, Record at Critical refused (app) (REC-016-S4)
+- [X] REC-016-T10 [US4] Thermal guard in the coordinator (injected level, DEBUG `-uitestThermalState`) and its tests: guard rules (package), Serious warns once, Critical stops and offers, Record at Critical refused (app) (REC-016-S4) — Verified 2026-11-14: RecordingThermalGuardTests (host) and RecordingRecoveryAppTests.testThermalWarningAndStop, testThermalStateMapping (refusal X12, one warning X13, Critical stop .thermal offered)
 
 ## Phase 7: Polish
 
-- [ ] REC-016-T11 DEBUG `-uitestWriterFault` and UI test RecordingRecoveryUITests.swift (append failure → panel offers the part, probe reads video, < 30 s)
-- [ ] REC-016-T12 Linux-shape build of Compositor; existing FrameRecording, REC-003/REC-015/StatusEvents app suites; repo checks; privacy manifest and network symbols; type-check budget flags
+- [X] REC-016-T11 DEBUG `-uitestWriterFault` and UI test RecordingRecoveryUITests.swift (append failure → panel offers the part, probe reads video, < 30 s) — Verified 2026-11-14: RecordingRecoveryUITests.testWriterFailureOffersThePartRecordedBeforeIt passed in 9.8 s and 11.8 s (REC16 iOS 27.2): panel, notice, probe frames=10; RecordingDiskGuardUITests 2/2
+- [X] REC-016-T12 Linux-shape build of Compositor; existing FrameRecording, REC-003/REC-015/StatusEvents app suites; repo checks; privacy manifest and network symbols; type-check budget flags — Verified 2026-11-14: Linux-shape swift build --build-tests of Compositor OK; FrameRecording 150 tests (1 skip) host 16.7 s; RecordingRecoveryTests 7/7 and MetalFrameRecorderTests on the iOS 27.2 simulator; app suites (Recording*, VideoRecording, StatusEvents, PhotosSave, CacheCleanup) 101 tests 0 failures; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 174 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; type-check flags: no warning in touched files
 - [ ] REC-016-T13 {device} On D1 record 30 s (normal finish plays, no `moof`), and a Debug run with `-uitestWriterFault writer:90` keeps a playable part; note CPU against REC-003
 
 ## Dependencies
