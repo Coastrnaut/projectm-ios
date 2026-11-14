@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T08:33:35Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T08:35:59Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 196 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 126 |
+| integrated | 127 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 108 | 2 | 1 | 40 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 108 | 2 | 41 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 199 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
+- 198 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
 
 ## Integrated
 
@@ -93,6 +92,7 @@ The physical-device suite may **not** start:
 | CMP-011 | Layer groups | `e7cc94cc` | `feature/cmp-011` |
 | CMP-012 | Solo and mute | `bc4817f3` | `feature/cmp-012` |
 | CMP-013 | Render caching | `473ebfec` | `feature/cmp-013` |
+| CMP-014 | Compositor transition bus | `90032727` | `feature/cmp-014` |
 | FILE-001 | Portable scene archive | `c3886d1cb0bb` | `feature/file-001` |
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
@@ -743,7 +743,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `c9ba10c0c80d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-013/20261114T030532/swift-test_ShowControl.log`)
 - `post-merge (ACC-003 + CMP-013): projectM-iOSTests 513 + ColorBlindControls/PhotoLayer/TextOverlay/Status UI tests 13; AccessibilityScreens audit regression predates ACC-003 (fails at b4f2abf9), being bisected`: pass at `473ebfec` (log `.autonomous/logs/integration/acc-003-cmp-013/evidence.log`)
 
-### CMP-014 Compositor transition bus (unit_passed)
+### CMP-014 Compositor transition bus (integrated)
 - `python3 scripts/check_compliance.py`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/sim-test_ANGLERendering.log`)
@@ -753,6 +753,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `601485f4c499` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/CMP-014/20261114T033034/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 518 + ReduceMotion/PhotoLayer UI tests 2; gate ran Compositor and downstream suites`: pass at `90032727` (log `.autonomous/logs/integration/cmp-014/app-tests.log`)
 
 ### FILE-001 Portable scene archive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b4e63d16acf1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-001/20261113T154852/compliance.log`)
