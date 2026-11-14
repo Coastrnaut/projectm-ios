@@ -3,6 +3,17 @@
 // need safe math). CMP-001-R9, R10; research CMP-001-D2, D4.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
+import VisualGenerators
+
+/// PERF-009: every shader source the compositor builds render pipelines from through `CompositorShaders.pipeline`
+/// (the warm-start pipeline archive's key hashes them, so editing any of them invalidates the archive). The
+/// composite flash guard's compute pipeline is not archived.
+public enum CompositorShaderSources {
+    public static var archived: [String] {
+        [CompositorShaders.source, CompositorShaders.toneMapSource, CompositorShaders.displaySource, TrailsPass.source,
+         OutputGradePass.source, OutputTransitionPass.source, SceneTransitionBus.mixSource]
+    }
+}
 
 enum CompositorShaders {
     static let source = """
@@ -471,7 +482,7 @@ enum CompositorShaders {
             a.destinationAlphaBlendFactor = .oneMinusSourceAlpha
         }
         do {
-            return try device.makeRenderPipelineState(descriptor: d)
+            return try NativePipelineArchive.makeRenderPipelineState(device: device, descriptor: d)   // PERF-009
         } catch {
             throw .pipelineUnavailable("\(label): \(error.localizedDescription)")
         }

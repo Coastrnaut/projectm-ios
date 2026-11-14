@@ -31,14 +31,16 @@ let package = Package(
         .package(path: "../FlashSafety"),
         // MOD-001: the typed parameter registry (pure Swift; ADR-0012).
         .package(path: "../ParameterGraph"),
+        // PERF-009: the warm-start cache store and key for the native pipeline archive (Foundation only).
+        .package(path: "../LocalPortability"),
     ],
     targets: [
-        .target(name: "VisualGenerators", dependencies: ["FlashSafety"]),
+        .target(name: "VisualGenerators", dependencies: ["FlashSafety", "LocalPortability"]),   // PERF-009: NativePipelineArchive
         .target(name: "VisualBandFeed", dependencies: ["VisualGenerators", "AudioCore", "AnalysisFeatures"]),
         .target(name: "VisualEffects", dependencies: ["VisualGenerators", "FlashSafety"]),   // ACC-012: SafetyClamp
         .target(name: "VisualParameters", dependencies: ["VisualGenerators", "VisualEffects", "ParameterGraph", "FlashSafety"]),   // MOD-011: GlowModulationOrder
         .testTarget(name: "VisualGeneratorsTests",
                     dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters", "AudioCore",
-                                   "AnalysisFeatures", "FlashSafety", "ParameterGraph"]),
+                                   "AnalysisFeatures", "FlashSafety", "ParameterGraph", "LocalPortability"]),
     ]
 )
