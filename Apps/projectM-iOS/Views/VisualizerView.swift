@@ -127,7 +127,9 @@ struct VisualizerView: View {
             if coordinator.show.hasCues && !coordinator.showSettings {   // SHOW-001-R15
                 ShowKeyCommands(coordinator: coordinator)
             }
-            if !coordinator.showSettings { SceneHistoryKeyCommands(coordinator: coordinator) }   // SCN-010-R10
+            // SCN-010-R10; UIX-002: ⌘Z belongs to the scene switcher's field while it is open.
+            if !coordinator.showSettings && !coordinator.sceneSwitcher.isOpen { SceneHistoryKeyCommands(coordinator: coordinator) }
+            SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
             if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
                 VStack { HStack { Spacer(); PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                                                    renderHealth: { coordinator.renderHealthOverlayLine }) }; Spacer() }

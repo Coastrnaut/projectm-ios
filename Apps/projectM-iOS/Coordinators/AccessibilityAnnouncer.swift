@@ -21,6 +21,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     /// ACC-011: capture and status lanes (contract C1 of specs/100-acc-011-captioned-status-events).
     /// `camera` also carries CAM-013-R12's interruption and failure reasons.
     case source, route, background, capture, camera, osc, session
+    /// UIX-002: the scene switcher's result count while the user types.
+    case search
 }
 
 struct AnnouncementGate: Sendable, Equatable {
@@ -158,4 +160,12 @@ final class AccessibilityAnnouncer {
     nonisolated static func favoriteText(_ name: String, added: Bool) -> String {
         added ? "Added to favorites: \(name)" : "Removed from favorites: \(name)"
     }
+    /// UIX-002-R9: "1 scene", "3 scenes" or "No matching scenes".
+    nonisolated static func sceneSwitcherCountText(_ count: Int) -> String {
+        if count == 0 { return "No matching scenes" }
+        let noun: String = count == 1 ? "scene" : "scenes"
+        return "\(count) \(noun)"
+    }
+    /// UIX-002-R9: the scene recalled from the switcher.
+    nonisolated static func sceneChosenText(_ label: String) -> String { "Scene: \(label)" }
 }

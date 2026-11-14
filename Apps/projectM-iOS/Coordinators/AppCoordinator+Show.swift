@@ -32,13 +32,19 @@ extension AppCoordinator {
     /// Wires the show to this coordinator (called once at the end of init).
     func connectShow() {
         show.applyScene = { [weak self] (document: SceneDocument, warnings: [SceneIssue]) -> [String] in
-            self?.applyShowScene(document, warnings: warnings, refresh: true) ?? []
+            guard let self else { return [] }
+            let notes = self.applyShowScene(document, warnings: warnings, refresh: true)
+            self.sceneSwitchReached(.applied)   // UIX-002-R8: the switcher's latency ends at the applied state
+            return notes
         }
         show.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
         // SCN-012: a cue's scene that needs review shows the repair report first.
-        show.requestRepair = { [weak self] (request: SceneRepairRequest) in self?.sceneRepair.present(request) }
+        show.requestRepair = { [weak self] (request: SceneRepairRequest) in
+            self?.sceneSwitchReached(.repairShown)   // UIX-002-R8: or at the repair report's request
+            self?.sceneRepair.present(request)
+        }
         // ACC-004-R7: cue announcements share the rate-limited path (a clicker can step quickly).
         show.announce = { [weak self] (message: String) in self?.announcer.announce(message, kind: .cue) }
         sceneRepair.availability = { [weak self] () -> StoredMediaAvailability in
