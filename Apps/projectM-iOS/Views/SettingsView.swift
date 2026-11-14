@@ -84,6 +84,8 @@ struct SettingsView: View {
     var recordingAudioStatus: (() -> String)?
     /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
     var recordingQuality: RecordingQualitySetting?
+    /// REC-007: the recording countdown (nil hides the section, e.g. in previews).
+    var recordingCountdown: RecordingCountdownSetting?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -432,6 +434,7 @@ struct SettingsView: View {
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
         if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
+        if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 

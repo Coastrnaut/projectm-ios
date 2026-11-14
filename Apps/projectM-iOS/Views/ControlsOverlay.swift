@@ -331,10 +331,20 @@ struct ControlsOverlay: View {
     /// REC-003: Record / Stop recording; for projectM a tap refuses with the reason (REC-003-R12).
     private var recordItem: Item {
         let recording = coordinator.videoRecording
+        if let remaining = recording.state.countdownRemaining { return countdownItem(recording, remaining: remaining) }
         let active = recording.state == .recording
         return Item(id: "record", title: active ? "Stop recording" : "Record", icon: active ? "stop.circle" : "record.circle",
                     value: active ? "Recording, \(recording.elapsedText)" : (recording.isRecordable ? nil : "Unavailable for projectM"),
                     hint: recording.audioStatusText) {   // REC-004-R9: the audio the recording holds
+            coordinator.showControls()
+            recording.toggle()
+        }
+    }
+
+    /// REC-007-R7: while counting down, Record reads "Cancel countdown" (a tap cancels, REC-007-R4).
+    private func countdownItem(_ recording: VideoRecordingCoordinator, remaining: Int) -> Item {
+        Item(id: "record", title: "Cancel countdown", icon: "xmark.circle", value: StatusEventCatalog.countdownText(remaining),
+             hint: "Stops the countdown; nothing is recorded") {
             coordinator.showControls()
             recording.toggle()
         }

@@ -413,6 +413,7 @@ struct VisualizerView: View {
                          recordingAudio: coordinator.recordingAudio,   // REC-004
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                          recordingQuality: coordinator.recordingQuality,   // REC-005
+                         recordingCountdown: coordinator.recordingCountdown,   // REC-007
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
@@ -702,7 +703,8 @@ struct VisualizerView: View {
         CaptureResultPanels(frameCapture: coordinator.frameCapture, videoRecording: coordinator.videoRecording,
                             share: coordinator.captureShare)
         // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
-        if coordinator.videoRecording.state != .idle {
+        RecordingCountdownView(recording: coordinator.videoRecording)   // REC-007-R7: the number and Cancel
+        if coordinator.videoRecording.state.hasRecording {
             let finishing = coordinator.videoRecording.state == .finishing
             // ACC-003-R3: the record symbol, or an hourglass while finishing (was a red or grey dot).
             StatusCueLabel(cue: StatusCueCatalog.recording(finishing: finishing, elapsed: coordinator.videoRecording.elapsedText),
