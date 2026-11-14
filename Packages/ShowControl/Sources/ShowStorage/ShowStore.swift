@@ -155,7 +155,7 @@ public struct ShowStore: Sendable {
 
     /// SCN-013-R8, R9: an older-version file about to be replaced keeps its original bytes once. An
     /// existing backup is never overwritten; any other failure throws (the file is not replaced).
-    private func keepOriginalIfMigrated(_ file: URL) throws {
+    func keepOriginalIfMigrated(_ file: URL) throws {
         guard let data = try? Data(contentsOf: file),
               let root = try? SceneJSON.parse([UInt8](data)),
               let record = try? migrator.migrate(root).record, record.migrated else { return }
