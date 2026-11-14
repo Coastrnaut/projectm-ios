@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (device task AUD-011-T12 open)
 
 **Input**: User description: "Implement AUD-011 (Input noise gate) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md line 98. Observable behavior, verbatim: "Suppress low-level
