@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-003-T01-T14 verified on the Mac: 10 unit tests, 2 UI tests on the iOS 27.2 simulator)
 
 **Input**: User description: "Implement UIX-003 (context parameter inspector) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Show units, range, reset and current
