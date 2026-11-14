@@ -1,6 +1,6 @@
 // ColorGradeSection.swift — FX-003-R9: Settings → Color (specs/123-fx-003-color-grading, contracts/color-grade.md).
 //
-// Five sliders (temperature, lift, gamma, gain, saturation) with readouts, ACC-005's `.accessibleParameter`
+// Six sliders (temperature, lift, gamma, gain, saturation and FX-004's hue) with readouts, ACC-005's `.accessibleParameter`
 // (VoiceOver label, spoken value, one step per swipe), a footer naming the graded visuals, and "Reset to neutral"
 // (disabled at neutral). Each row is its own small view; strings come from `ColorGradeSetting`'s typed readouts.
 import Compositor
@@ -21,7 +21,10 @@ enum ColorGradeParameterSpecs {
     static let saturation = AccessibleParameterSpec(id: "colorSaturationSlider", label: "Saturation",
                                                     range: ColorGrade.saturationRange, step: ColorGrade.saturationStep * 5,
                                                     unit: .percent(decimals: 0))
-    static var all: [AccessibleParameterSpec] { [temperature, lift, gamma, gain, saturation] }
+    /// FX-004-R9: 10 degrees per VoiceOver swipe (36 steps), spoken "plus 30 degrees".
+    static let hue = AccessibleParameterSpec(id: "colorHueSlider", label: "Hue", range: ColorGrade.hueRange,
+                                             step: ColorGrade.hueStep * 10, unit: .signedDegrees)
+    static var all: [AccessibleParameterSpec] { [temperature, lift, gamma, gain, saturation, hue] }
 }
 
 struct ColorGradeSection: View {
@@ -49,6 +52,8 @@ struct ColorGradeSection: View {
                           text: ColorGradeSetting.gainText(setting.gain), target: Self.target(setting, \.gain))
             ColorGradeRow(spec: ColorGradeParameterSpecs.saturation, value: $setting.saturation,
                           text: ColorGradeSetting.saturationText(setting.saturation), target: Self.target(setting, \.saturation))
+            ColorGradeRow(spec: ColorGradeParameterSpecs.hue, value: $setting.hue,
+                          text: ColorGradeSetting.hueText(setting.hue), target: Self.target(setting, \.hue))
             ColorGradeResetButton(setting: setting)
         } header: {
             Text(Self.header)

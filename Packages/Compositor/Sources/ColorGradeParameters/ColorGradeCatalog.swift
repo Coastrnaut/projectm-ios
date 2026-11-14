@@ -1,4 +1,4 @@
-// ColorGradeCatalog.swift — FX-003's five grading controls as MOD-001 parameters (FX-003-R7; research FX-003-D7;
+// ColorGradeCatalog.swift — FX-003's five grading controls and FX-004's hue as MOD-001 parameters (FX-003-R7; research FX-003-D7;
 // specs/123-fx-003-color-grading). Ranges, defaults and step hints are read from `ColorGrade` (single source);
 // only IDs, names, the group, units and modulation policies are new here. `ColorGradeCatalogTests` fails on drift.
 //
@@ -18,6 +18,8 @@ public enum ColorGradeParameterIDs {
     public static let gamma: ParameterID = "effect.colorGrade.gamma"
     public static let gain: ParameterID = "effect.colorGrade.gain"
     public static let saturation: ParameterID = "effect.colorGrade.saturation"
+    /// FX-004: degrees around the grey axis.
+    public static let hue: ParameterID = "effect.colorGrade.hue"
 }
 
 public enum ColorGradeCatalog {
@@ -31,7 +33,7 @@ public enum ColorGradeCatalog {
         try ParameterRegistry(descriptors: descriptors, retiredIDs: retiredIDs)
     }
 
-    /// Every descriptor, in the operators' order (research FX-003-D2).
+    /// Every descriptor, in the operators' order (research FX-003-D2; FX-004-D4: hue last).
     public static var descriptors: [ParameterDescriptor] {
         typealias IDs = ColorGradeParameterIDs
         typealias G = ColorGrade
@@ -42,6 +44,7 @@ public enum ColorGradeCatalog {
             descriptor(IDs.gamma, "Gamma (mid-tones)", G.gammaRange, neutral.gamma, G.gammaStep),
             descriptor(IDs.gain, "Gain", G.gainRange, neutral.gain, G.gainStep),
             descriptor(IDs.saturation, "Saturation", G.saturationRange, neutral.saturation, G.saturationStep),
+            descriptor(IDs.hue, "Hue (degrees)", G.hueRange, neutral.hue, G.hueStep, unit: .degrees),
         ]
     }
 
@@ -53,13 +56,14 @@ public enum ColorGradeCatalog {
         }
         typealias IDs = ColorGradeParameterIDs
         let grade = ColorGrade(temperature: value(IDs.temperature, 0), lift: value(IDs.lift, 0), gamma: value(IDs.gamma, 1),
-                               gain: value(IDs.gain, 1), saturation: value(IDs.saturation, 1))
+                               gain: value(IDs.gain, 1), saturation: value(IDs.saturation, 1), hue: value(IDs.hue, 0))
         return grade.clamped
     }
 
     private static func descriptor(_ id: ParameterID, _ name: String, _ range: ClosedRange<Double>, _ value: Double,
-                                   _ step: Double, fileID: String = #fileID, line: Int = #line) -> ParameterDescriptor {
-        ParameterDescriptor(id: id, displayName: name, group: group, unit: .none,
+                                   _ step: Double, unit: ParameterUnit = .none, fileID: String = #fileID,
+                                   line: Int = #line) -> ParameterDescriptor {
+        ParameterDescriptor(id: id, displayName: name, group: group, unit: unit,
                             kind: .continuous(minimum: range.lowerBound, maximum: range.upperBound, defaultValue: value, step: step),
                             modulation: .continuousDefault, fileID: fileID, line: line)
     }

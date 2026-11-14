@@ -9,12 +9,16 @@
 //   1. temperature T: v × (r/n, 1/n, b/n), r = 2^(0.3·T), b = 2^(−0.3·T), n = 0.2126·r + 0.7152 + 0.0722·b
 //      (greys keep their luminance);
 //   2. lift L: v ← max(v·(1 − L) + L, 0);  3. gamma γ: v ← v^(1/γ);  4. gain G: v ← G·v;
-//   5. saturation S: Y = Rec. 709 luminance of v, v ← max(Y + S·(v − Y), 0).
+//   5. saturation S: Y = Rec. 709 luminance of v, v ← max(Y + S·(v − Y), 0);
+//   6. hue θ (FX-004, specs/126-fx-004-hue-shift, research FX-004-D1 to D3): d = (r − g, b − g),
+//      y = g + wR·d.x + wB·d.y (the luminance, exact for greys), e = T(θ)·d with T = [[c − k, 2k], [−2k, c + k]],
+//      k = sin θ/√3 (a rotation about the grey axis acting on the differences), g' = y − wR·e.x − wB·e.y,
+//      v ← (g' + e.x, g', g' + e.y); a negative channel m pulls v toward y: v ← max(y + y/(y − m)·(v − y), 0).
 // Then FX-002's tone map. Each operator runs only when its control is not neutral, so a neutral control is an
 // exact identity. Every expression is split into typed steps (the type checker on Linux and Xcode 26).
 import Foundation
 
-/// The five grading values (FX-003-R1; data-model.md). Master controls: one value for all three channels.
+/// The grading values (FX-003-R1, FX-004-R1; data-model.md). Master controls: one value for all three channels.
 public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
     /// Cool (−1) to warm (+1); unitless (spec Clarifications: no Kelvin claim).
     public var temperature: Double
@@ -26,12 +30,15 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
     public var gain: Double
     /// 0 grey, 1 unchanged, 2 doubled.
     public var saturation: Double
+    /// FX-004: degrees around the grey axis (+120 turns red's hue into green's); greys and luminance unchanged.
+    public var hue: Double
 
     public static let temperatureRange: ClosedRange<Double> = -1...1
     public static let liftRange: ClosedRange<Double> = -0.1...0.1
     public static let gammaRange: ClosedRange<Double> = 0.5...2
     public static let gainRange: ClosedRange<Double> = 0.5...2
     public static let saturationRange: ClosedRange<Double> = 0...2
+    public static let hueRange: ClosedRange<Double> = -180...180
 
     /// Step hints (MOD-001 descriptors, slider steps).
     public static let temperatureStep: Double = 0.01
@@ -39,19 +46,35 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
     public static let gammaStep: Double = 0.01
     public static let gainStep: Double = 0.01
     public static let saturationStep: Double = 0.01
+    public static let hueStep: Double = 1
 
     /// ±0.3 stop on red and blue at the ends of the temperature range (research D2).
     public static let temperatureStops: Double = 0.3
 
     /// Every control at its neutral value: grading is bypassed.
-    public static let neutral = ColorGrade(temperature: 0, lift: 0, gamma: 1, gain: 1, saturation: 1)
+    public static let neutral = ColorGrade(temperature: 0, lift: 0, gamma: 1, gain: 1, saturation: 1, hue: 0)
 
-    public init(temperature: Double = 0, lift: Double = 0, gamma: Double = 1, gain: Double = 1, saturation: Double = 1) {
+    public init(temperature: Double = 0, lift: Double = 0, gamma: Double = 1, gain: Double = 1, saturation: Double = 1,
+                hue: Double = 0) {
         self.temperature = temperature
         self.lift = lift
         self.gamma = gamma
         self.gain = gain
         self.saturation = saturation
+        self.hue = hue
+    }
+
+    private enum CodingKeys: String, CodingKey { case temperature, lift, gamma, gain, saturation, hue }
+
+    /// A grade encoded before FX-004 has no `hue`: it decodes as 0.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        temperature = try container.decode(Double.self, forKey: .temperature)
+        lift = try container.decode(Double.self, forKey: .lift)
+        gamma = try container.decode(Double.self, forKey: .gamma)
+        gain = try container.decode(Double.self, forKey: .gain)
+        saturation = try container.decode(Double.self, forKey: .saturation)
+        hue = try container.decodeIfPresent(Double.self, forKey: .hue) ?? 0
     }
 
     /// NaN → the neutral value; out of range (including ±Inf) → the nearest bound.
@@ -66,7 +89,8 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
                    lift: Self.clamp(lift, to: Self.liftRange, neutral: 0),
                    gamma: Self.clamp(gamma, to: Self.gammaRange, neutral: 1),
                    gain: Self.clamp(gain, to: Self.gainRange, neutral: 1),
-                   saturation: Self.clamp(saturation, to: Self.saturationRange, neutral: 1))
+                   saturation: Self.clamp(saturation, to: Self.saturationRange, neutral: 1),
+                   hue: Self.clamp(hue, to: Self.hueRange, neutral: 0))
     }
 
     /// Every control neutral after clamping (no operator runs).
@@ -78,7 +102,7 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
     /// Rec. 709 / WCAG luminance weights (as FX-002 and FX-019).
     public static let luminanceWeights: SIMD3<Double> = ToneMap.luminanceWeights
 
-    /// The graded pixel (steps 0-5) of a linear premultiplied RGBA pixel, before the tone map. Reference only.
+    /// The graded pixel (steps 0-6) of a linear premultiplied RGBA pixel, before the tone map. Reference only.
     public func apply(_ input: ToneMap.Pixel) -> ToneMap.Pixel {
         coefficients.apply(input)
     }
@@ -91,6 +115,7 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
     public static let gammaFlag: UInt32 = 4
     public static let gainFlag: UInt32 = 8
     public static let saturationFlag: UInt32 = 16
+    public static let hueFlag: UInt32 = 32
 
     /// Per-channel white-balance gains (1, 1, 1 at neutral temperature).
     public let balance: SIMD3<Double>
@@ -102,6 +127,8 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
     public let exponent: Double
     public let gain: Double
     public let saturation: Double
+    /// FX-004: T(θ) row by row (T00, T01, T10, T11), acting on (r − g, b − g); identity when hue is 0.
+    public let hueMatrix: SIMD4<Double>
     /// One bit per active operator; 0 ⇔ every control neutral.
     public let flags: UInt32
 
@@ -128,10 +155,47 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
         gain = grade.gain
         if grade.saturation != 1 { flags |= Self.saturationFlag }
         saturation = grade.saturation
+        if grade.hue != 0 {
+            flags |= Self.hueFlag
+            hueMatrix = Self.hueMatrix(degrees: grade.hue)
+        } else {
+            hueMatrix = SIMD4<Double>(1, 0, 0, 1)
+        }
         self.flags = flags
     }
 
-    /// The reference grading of one pixel (research D2, steps 0-5).
+    /// FX-004-D1: what a rotation by `degrees` about the grey axis (1, 1, 1)/√3 does to (r − g, b − g).
+    public static func hueMatrix(degrees: Double) -> SIMD4<Double> {
+        let radians: Double = degrees * Double.pi / 180
+        let c: Double = cos(radians)
+        let k: Double = sin(radians) / 3.0.squareRoot()
+        let twoK: Double = 2 * k
+        return SIMD4<Double>(c - k, twoK, -twoK, c + k)
+    }
+
+    /// FX-004 step 6 on a non-negative colour (research FX-004-D1 to D3). Greys come back bit for bit.
+    public static func rotateHue(_ v: SIMD3<Double>, matrix t: SIMD4<Double>) -> SIMD3<Double> {
+        let w: SIMD3<Double> = ColorGrade.luminanceWeights
+        let d1: Double = v.x - v.y
+        let d2: Double = v.z - v.y
+        let y: Double = v.y + w.x * d1 + w.z * d2
+        let e1: Double = t.x * d1 + t.y * d2
+        let e2: Double = t.z * d1 + t.w * d2
+        let g: Double = y - w.x * e1 - w.z * e2
+        let out = SIMD3<Double>(g + e1, g, g + e2)
+        let m: Double = min(out.x, min(out.y, out.z))
+        if m >= 0 { return out }
+        if y <= 0 { return .zero }
+        let q: Double = y / (y - m)
+        var pulled: SIMD3<Double> = .zero
+        for c in 0..<3 {
+            let p: Double = y + q * (out[c] - y)
+            pulled[c] = max(p, 0)
+        }
+        return pulled
+    }
+
+    /// The reference grading of one pixel (research D2, steps 0-5; FX-004 step 6).
     public func apply(_ input: ToneMap.Pixel) -> ToneMap.Pixel {
         if flags == 0 { return input }
         var v: SIMD3<Double> = .zero
@@ -161,6 +225,7 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
                 v[c] = max(s, 0)
             }
         }
+        if flags & Self.hueFlag != 0 { v = Self.rotateHue(v, matrix: hueMatrix) }
         return ToneMap.Pixel(v.x, v.y, v.z, alpha)
     }
 }

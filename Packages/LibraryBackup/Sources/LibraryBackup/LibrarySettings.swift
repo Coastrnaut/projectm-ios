@@ -79,7 +79,7 @@ public enum LibrarySettingsPolicy {
         "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   // ACC-012-R8
         "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",
         "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   // FX-003-R8
-        "settings.colorGrade.gain", "settings.colorGrade.saturation",
+        "settings.colorGrade.gain", "settings.colorGrade.saturation", "settings.colorGrade.hue",   // FX-004-R8
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
