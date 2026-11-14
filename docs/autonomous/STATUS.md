@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:30:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T17:31:56Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 124 |
-| implementing | 9 |
+| implementing | 8 |
+| unit_passed | 1 |
 | integrated | 192 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 42 | 8 | 101 | 0 |
-| P2 | 71 | 1 | 7 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 42 | 7 | 1 | 101 | 0 |
+| P2 | 71 | 1 | 0 | 7 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1576,6 +1577,13 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `e7b40368ae98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-010/20261113T140140/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e7b40368ae98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-010/20261113T140140/sim-test_Rendering.log`)
 - `post-merge: projectM-iOSTests 218 incl. OutputBlackoutCoordinatorTests; OutputBlackoutUITests, ExternalDisplay, Video, NativeVisual 4 UI tests; PresentationLifecycle 41 on iPhone 17 iOS 27.2 sim`: pass at `1def5a80ab64` (log `.autonomous/logs/integration/out-010/app-tests.log`)
+
+### OUT-012 External display rehearsal (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `8a95827d08f8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-012/20261114T123014/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `8a95827d08f8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-012/20261114T123014/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `8a95827d08f8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-012/20261114T123014/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/PresentationLifecycle`: pass at `8a95827d08f8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-012/20261114T123014/swift-test_PresentationLifecycle.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `8a95827d08f8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-012/20261114T123014/sim-test_Rendering.log`)
 
 ### PERF-001 Per-stage frame timings (integrated)
 - `python3 scripts/check_compliance.py`: pass at `9d87d289ba61` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-001/20261114T093307/compliance.log`)
