@@ -312,6 +312,11 @@ network) send control messages to the app. It is off until you turn it on.
 - Nothing it receives is recorded, stored or sent anywhere. The app keeps only counts of received
   messages in memory while it runs, never their contents or who sent them.
 - The app stores two settings for it: whether it is on, and the port.
+- "Approved Devices" (off unless you turn it on) lets you accept messages only from devices you approve.
+  While it is on, the app shows the addresses of the last few devices on your local network whose
+  messages it blocked, in memory only, so you can tap Allow; it forgets them when you turn OSC off. The
+  local network addresses you approve are stored on your device only: they are never sent anywhere, are
+  not included in a library backup, and are removed when you erase Settings.
 - If the app closed unexpectedly (a crash, or it was ended while open on screen), it turns "OSC
   receiver" off when it starts again and does not listen until you turn it on yourself. The camera is
   never turned back on by itself either.
@@ -325,7 +330,8 @@ collections):
 - the last preset you selected;
 - your settings: the performance overlay, Reduce flashing, which preset list Next and Random
   step through (a search is remembered as "All presets", never the search text), whether the
-  OSC receiver is on and its port, and which camera the Camera visual uses with each camera's
+  OSC receiver is on and its port, whether "Approved Devices" is on and the local network
+  addresses you approved for it, and which camera the Camera visual uses with each camera's
   Mirror setting (CAM-002);
 - whether you acknowledged the photosensitivity notice;
 - whether the guided first scene is still to be offered, or was finished or skipped (one value; it

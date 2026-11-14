@@ -58,6 +58,8 @@ public struct OSCReceiverCounters: Sendable, Equatable {
     /// Datagrams rejected by the decoder.
     public var rejected = 0
     public var droppedNonLocal = 0
+    /// OSC-008: datagrams from hosts not on the enabled allowlist (dropped before `received`; not decoded).
+    public var droppedUnapproved = 0
     /// OSC-009: datagrams dropped at the source or global limit (not decoded).
     public var rateLimited = 0
     /// OSC-009: messages held for their target's next slot instead of applied at once.
@@ -199,6 +201,12 @@ public final class OSCDispatcher: Sendable {
 
     public func noteDroppedNonLocal() {
         state.withLock { $0.counters.droppedNonLocal += 1 }
+        notifyActivity()
+    }
+
+    /// OSC-008-R7: a datagram the peer allowlist refused (never decoded, never charged to a rate limit).
+    public func noteDroppedUnapproved() {
+        state.withLock { $0.counters.droppedUnapproved += 1 }
         notifyActivity()
     }
 

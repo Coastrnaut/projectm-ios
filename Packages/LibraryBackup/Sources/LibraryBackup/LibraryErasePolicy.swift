@@ -64,6 +64,9 @@ public enum LibraryErasePolicy {
     public static let externalDisplayKeys: [String] = ["settings.externalDisplay.fit", "settings.externalDisplay.shape",
                                                        "settings.externalDisplay.pixelAspect"]
 
+    /// OSC-008-R10: the peer allowlist switch and approved hosts (this device's network: not backed up, erased with Settings).
+    public static let oscPeerKeys: [String] = ["settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers"]
+
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
         switch category {
@@ -111,7 +114,7 @@ public enum LibraryErasePolicy {
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
-            + externalDisplayKeys + [sceneLockKey]   // SCN-015: erasing Settings unlocks the scene
+            + externalDisplayKeys + [sceneLockKey] + oscPeerKeys   // SCN-015: erasing Settings unlocks the scene; OSC-008
     }()
 
     /// SCN-015: the scene lock (excluded from backups; erased with Settings).

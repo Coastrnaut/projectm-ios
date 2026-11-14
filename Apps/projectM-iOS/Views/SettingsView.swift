@@ -805,6 +805,10 @@ struct SettingsView: View {
                 NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
                     .accessibilityIdentifier("oscRoutesLink")
             }
+            if let peers = osc.peers {   // OSC-008-R9
+                NavigationLink { OSCPeersView(peers: peers) } label: { LabeledContent("Approved Devices", value: peers.summaryText) }
+                    .accessibilityIdentifier("oscPeersLink")
+            }
         } header: {
             Text("OSC")
         } footer: {
