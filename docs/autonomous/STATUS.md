@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T12:24:29Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T12:24:43Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 172 |
 | implementing | 3 |
-| unit_passed | 4 |
-| integrated | 146 |
+| unit_passed | 3 |
+| integrated | 147 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,13 +21,13 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 87 | 2 | 2 | 60 | 0 |
-| P2 | 74 | 1 | 2 | 2 | 0 |
+| P2 | 74 | 1 | 1 | 3 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 179 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 178 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -103,6 +103,7 @@ The physical-device suite may **not** start:
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
 | FILE-004 | Import conflict resolver | `b211a998` | `feature/file-004` |
 | FILE-005 | Local library backup | `31456ffe` | `feature/file-005` |
+| FILE-006 | Incremental backup manifest | `6ac0c21c7510` | `feature/file-006` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
 | FILE-008 | User asset deduplication | `d045d58f` | `feature/file-008` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
@@ -890,7 +891,7 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `b708bb292a84` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-005/20261114T032536/swift-test_LibraryBackup.log`)
 - `post-merge: projectM-iOSTests 517 (after adding ACC-003's palette key to the backup list) + LibraryBackup/StorageUsage UI tests 2; network-symbol scan OK`: pass at `31456ffe` (log `.autonomous/logs/integration/file-005/final.log`)
 
-### FILE-006 Incremental backup manifest (unit_passed)
+### FILE-006 Incremental backup manifest (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/script-tests.log`)

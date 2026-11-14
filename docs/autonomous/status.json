@@ -19,8 +19,8 @@
   "P2": {
    "audited": 74,
    "implementing": 1,
-   "integrated": 2,
-   "unit_passed": 2
+   "integrated": 3,
+   "unit_passed": 1
   },
   "P3": {
    "audited": 9
@@ -29,9 +29,9 @@
  "by_state": {
   "audited": 172,
   "implementing": 3,
-  "integrated": 146,
+  "integrated": 147,
   "skipped_existing": 1,
-  "unit_passed": 4
+  "unit_passed": 3
  },
  "device_gate": {
   "blocked": [],
@@ -60,7 +60,6 @@
    "CMP-008",
    "CMP-009",
    "CMP-010",
-   "FILE-006",
    "FX-005",
    "FX-006",
    "FX-007",
@@ -221,7 +220,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "179 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
+   "178 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
   ]
  },
  "features": {
@@ -1140,10 +1139,10 @@
    "branch": "feature/file-006",
    "branch_sha": "0b4f7072d5098e2c053f1991a340388083774fd1",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6ac0c21c751048ebe9080d0118fed55e20657e6f",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "FILE-007": {
    "attempts": 0,
@@ -3838,6 +3837,11 @@
    "sha": "31456ffe"
   },
   {
+   "branch": "feature/file-006",
+   "id": "FILE-006",
+   "sha": "6ac0c21c751048ebe9080d0118fed55e20657e6f"
+  },
+  {
    "branch": "feature/file-007",
    "id": "FILE-007",
    "sha": "d8e359893ae702d66b050d65ab08bfe646337f7a"
@@ -4243,5 +4247,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T12:24:29Z"
+ "updated": "2026-11-14T12:24:43Z"
 }
