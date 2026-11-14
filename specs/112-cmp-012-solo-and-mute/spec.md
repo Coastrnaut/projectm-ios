@@ -74,6 +74,16 @@ human interaction); each answer is the recommended, conservative option.
   (CPU model and GPU read-back). The layer inspector (CMP-015) will add the buttons. Loading a
   different scene into a compositor clears the overlay (the caller's duty, documented in the
   contract), because a restored scene reuses its saved instance IDs.
+- Q: Does a solo or mute change take effect at once or fade in and out? → A: **At once, from the
+  next frame, with no fade** (like a transform or group on/off change). A running opacity fade of a
+  hidden layer continues underneath. The composite flash guard (FX-019) still limits an abrupt
+  change in brightness, and its history is kept (solo is not a new scene). Rationale: monitoring
+  needs an immediate answer; an opacity-style fade would need a second animator per layer and would
+  make "bit-identical after clearing" depend on timing. Rejected: a fixed 100 ms fade.
+- Q: What can tests and diagnostics read? → A: The compositor reports, per layer index, whether the
+  overlay hides that layer in the next frame, and the number of layers the overlay hid in the last
+  frame; the overlay value itself is readable. Nothing is logged (performance-time state, no
+  telemetry).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -185,6 +195,10 @@ group, and a group mute.
 - **CMP-012-R9**: With no solo and no mute, every frame MUST be drawn exactly as before (existing
   goldens unchanged); a group's isolation decision MUST consider only its layers that are drawn.
 - **CMP-012-R10**: Changing solo or mute MUST allocate nothing at a steady size.
+- **CMP-012-R11**: A solo or mute change MUST show from the next frame without a fade; running
+  opacity fades continue, and the composite flash guard's history is kept.
+- **CMP-012-R12**: The compositor MUST report which layers the overlay hides and how many it hid in
+  the last frame (tests and diagnostics; nothing is logged).
 
 ### Key Entities
 
