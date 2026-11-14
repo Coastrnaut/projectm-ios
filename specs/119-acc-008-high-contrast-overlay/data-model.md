@@ -8,9 +8,11 @@ No stored data. Value types only.
 |---|---|---|
 | `normalTextMinimum` | 4.5 | ACC-008-R1 |
 | `largeTextMinimum` | 3.0 | ACC-008-R1 (large text, symbols) |
-| `scrimOpacity` | measured (research D2) | lightest passing level, 0.01 steps |
+| `scrimOpacity` | 0.84 | lightest passing level 0.83 (research D2) + one 0.01 step |
 | `increasedScrimOpacity` | 1.0 | ACC-008-R6 |
-| `tintHex` | 0x409CFF | accent text and bordered buttons (D4) |
+| `tintHex` | 0xB8DCFF | accent text and bordered buttons (D4) |
+| `criticalFill` | 0xC4161C | the camera badge's prominent Stop (D4) |
+| `criticalText` | 0xFF9A94 | destructive text, e.g. Discard (D4) |
 | `prominentTintHex` | 0x0062CC | prominent button fills (D4) |
 
 `scrim(increasedContrast:)` → `increasedScrimOpacity` or `scrimOpacity`.
@@ -29,4 +31,5 @@ included), black scrim at `scrim(…)`, content in the dark scheme with the over
 | `TextStyleSpecimen` | element name, words, font, foreground (`primary`, `secondary`, `tint`, a palette colour, a button style), target (4.5 or 3.0) |
 | `ContrastMeasurement` | element, style, frame, core pixel count, 5th-percentile ratio, median ratio |
 
-Validation: core pixel count ≥ 20 (the text was drawn); measured ≥ target.
+Validation: core pixel count ≥ 20 (the text was drawn); measured ≥ target. Core pixels differ by ≥ 90% of
+the full-coverage difference.

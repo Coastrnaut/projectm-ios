@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft (clarified 2026-11-14)
+**Status**: Implemented 2026-11-14 (ACC-008-T01-T15 verified on the Mac and an own iOS 27.2 simulator;
+T16 `{device}` open)
 
 **Input**: User description: "Implement ACC-008 (High contrast overlay) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Improve readability of control UI over
@@ -52,6 +53,33 @@ controls' 45% black (ACC-004) is not enough for white text on its own, and the s
 accent fall further below; (4) white text on the system-accent "prominent" buttons is about 3.7:1 even on an
 opaque background; (5) no test measures the text of an overlay over a visual.
 
+### After ACC-008 (measured 2026-11-14, `OverlayContrastTests`)
+
+Lowest 5th-percentile glyph contrast of each element over the four fixture frames (white, black, gradient,
+noise), material counted as transparent; "before" rows come from `testPreviousBackingsMissTheTarget`.
+
+| Element | Backing after | Worst case before → after (style, frame) |
+|---|---|---|
+| Controls overlay | surface (thick material + 84% black) | white 3.17, secondary 1.86 → 4.32 (repeat symbol, target 3; text styles ≥ 4.6) |
+| Source-and-state indicator | surface (ultra-thin + 84%) | 1.00 → 13.11 |
+| Camera badge | surface | 1.00 → 5.62 (prominent Stop) |
+| OSC badge | surface | 1.00 → 9.43 (Stop) |
+| Blackout badge | surface | 1.00 → 5.28 (prominent Restore) |
+| Recording badge | surface | 1.00 → 13.34 |
+| Status caption | surface | 1.00 → 13.58 |
+| Route explanation, show notice | surface | 1.00 → 12.88 |
+| Notices (background, permission, photo, video, frame, recording) | surface | 1.00 → 4.88 (secondary) |
+| Capture result panels | surface | 1.00 → 6.35 (Discard) |
+| Recovery offer | surface | 1.00 → 4.99 (bordered Start fresh) |
+| Status banner | surface | 1.00 → 4.90 (bordered action) |
+| Scene switcher card | surface | 1.00 → 4.76 (secondary detail) |
+| Emergency blackout button | surface | 1.00 → 13.46 (symbol, target 3) |
+| Performance overlay (kept) | 60% black | 5.17 → 5.17 |
+| "Paused" label (kept) | 50% black dim | 3.95 → 3.95 (large text, target 3) |
+| Negative control (0x777777 on the surface) | surface | 3.02 over white: fails, as it must |
+
+With Increase Contrast (opaque) every surface style measures at least 5.28 over white.
+
 ## Clarifications
 
 ### Session 2026-11-14 (speckit-specify)
@@ -75,8 +103,10 @@ interaction); each answer is the conservative option.
 Five questions, each answered by Claude with the recommended option (owner rule 4).
 
 - Q: When does a text style "meet" the target in a fixture, given anti-aliased edges and busy
-  backgrounds? → A: Its glyph core pixels (where the text changes the picture by at least 75% of the
-  style's strong difference) are compared one by one with the same pixel rendered without the text; the
+  backgrounds? → A: Its glyph core pixels (where the text changes the picture by at least 90% of the
+  style's full-coverage difference; first set at 75%, raised on 2026-11-14 because 75% still counted
+  anti-aliased edge pixels: secondary text on an opaque black backing measured 4.2 at the 5th percentile
+  against 6.4 at the median) are compared one by one with the same pixel rendered without the text; the
   5th percentile of those per-pixel ratios must reach the target. Edges and a few unlucky pixels cannot
   pass a weak style or fail a strong one. Applied to ACC-008-R1, R8.
 - Q: Should the app read the visual's brightness and strengthen the backing only over bright frames (an
@@ -85,14 +115,18 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   a difference visible only over dark visuals, where the backing is barely visible anyway. Recorded in
   research ACC-008-D3. Applied to ACC-008-R2, R10.
 - Q: How dark is the shared backing? → A: The lightest black scrim (in steps of 0.01 opacity) at which the
-  weakest text style still meets 4.5:1 over pure white with the material counted as transparent, kept on
-  top of the element's material, so dark visuals look as before. Opaque with Increase Contrast. Applied to
+  weakest text style still meets 4.5:1 over pure white with the material counted as transparent (measured
+  0.83, a small bordered button's title being the weakest), plus one 0.01 step of headroom for rendering
+  differences between OS versions: 0.84; kept on top of the element's material, so dark visuals look as before. Opaque with Increase Contrast. Applied to
   ACC-008-R2, R6, R7.
 - Q: How do accent-coloured text and prominent buttons pass on a dark backing, when no single blue does
-  both? → A: Inside overlays the tint is a lighter blue (ACC-003's increased dark accent, 0x409CFF) for
-  accent text and bordered buttons, and prominent buttons (white text on a filled background) use a darker
-  blue (ACC-003's light accent, 0x0062CC). The camera badge's red bordered Stop uses ACC-003's critical
-  colour. Applied to ACC-008-R5.
+  both? → A: Inside overlays the tint is a light blue (0xB8DCFF) for accent text and bordered buttons (a
+  bordered button's fill is the tint at low opacity, so a darker blue lifted the background under its own
+  title: 0x409CFF measured 3.2:1), and prominent buttons (white text on a filled background) use a darker
+  blue (ACC-003's light accent, 0x0062CC). The camera badge's Stop becomes a prominent button on ACC-003's
+  light critical red (0xC4161C), and the capture panel's Discard uses ACC-003's increased dark critical
+  (0xFF9A94) text; system red measured about 3:1 in both places. (Refined during implementation,
+  2026-11-14.) Applied to ACC-008-R5.
 - Q: Is a UI test needed, given the fixtures run as unit tests? → A: One short UI test: a DEBUG probe
   reports the shared backing's level, and the test checks it is the standard scrim normally and opaque with
   the Increase Contrast override. It proves the running app uses the measured backing; the contrast

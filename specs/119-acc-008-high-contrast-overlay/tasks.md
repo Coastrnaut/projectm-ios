@@ -19,7 +19,7 @@ cannot finish.
 ## Phase 2: Foundational
 
 - [ ] ACC-008-T02 Create `Apps/projectM-iOS/Views/OverlaySurface.swift`: `OverlayContrast` (normal 4.5,
-  large 3.0, `scrimOpacity`, `increasedScrimOpacity` 1.0, tint 0x409CFF, prominent tint 0x0062CC,
+  large 3.0, `scrimOpacity`, `increasedScrimOpacity` 1.0, tint 0xB8DCFF (first 0x409CFF; research D4), prominent tint 0x0062CC,
   `scrim(increasedContrast:)`), the `OverlaySurface` modifier (material if included, black scrim, dark
   scheme, tint; reads `statusAppearance`), `overlaySurface(_:material:includesMaterial:)`,
   `overlayProminentTint()`, and the DEBUG `OverlaySurfaceProbe` (contract C4).

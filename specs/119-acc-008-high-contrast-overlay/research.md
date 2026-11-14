@@ -13,8 +13,9 @@
   3. Every pixel is reduced to WCAG relative luminance (sRGB decoded, Rec. 709 weights), as ACC-003's
      grayscale method does.
   4. Glyph pixels: the luminance difference between the two renderings. The style's "strong difference" is
-     the 95th percentile of the non-zero differences; core pixels are those with at least 75% of it, so
-     anti-aliased edges are left out.
+     the 95th percentile of the differences above 4/255; core pixels are those with at least 90% of it, so
+     anti-aliased edges are left out. (75% was tried first: it still counted edge pixels, and secondary text
+     on an opaque black backing measured 4.2 at the 5th percentile against 6.4 at the median.)
   5. For each core pixel, the ratio `(max(Lt, Lb) + 0.05) / (min(Lt, Lb) + 0.05)` between the pixel with
      text (Lt) and the same pixel without (Lb): the local background exactly, also over the noisy frame.
   6. The style's measured contrast is the 5th percentile of those ratios; it must reach the style's target.
@@ -35,9 +36,11 @@
 - **Decision**: a black scrim over the element's material, at the lightest opacity (0.01 steps) where the
   weakest text style meets 4.5:1 over white with the material counted as transparent. Estimate before
   measuring: SwiftUI's dark `.secondary` (about 0.6 alpha) and the overlay accent need a background of
-  sRGB ≤ about 0.2, so about 0.8 black. The fixture test sweeps the opacity and the chosen constant is the
-  measured minimum rounded up to the next 0.01 (recorded in tasks and the quickstart). Opaque (1.0) with
-  Increase Contrast.
+  sRGB ≤ about 0.2, so about 0.8 black. Measured on the iOS 27.2 simulator (2026-11-14): 0.83 is the lightest
+  passing level (the weakest style is a small bordered button's title: 4.39 at 0.82, 4.55 at 0.83); the
+  constant is 0.84, one step of headroom for rendering differences between OS versions.
+  `testScrimIsTheLightestPassingLevel` asserts that the weakest styles pass at 0.84 and fail at 0.82. Opaque
+  (1.0) with Increase Contrast.
 - **Rationale**: over dark visuals the dark material already looks nearly black, so the change is visible
   only where it is needed (bright visuals). One level for all elements keeps one guarantee.
 - **Alternatives**: fully opaque cards (loses the overlay look for no measured gain); per-element levels
@@ -57,10 +60,13 @@
 
 ## ACC-008-D4: Overlay tints
 
-- **Decision**: inside an overlay surface, `.tint` is ACC-003's increased dark accent 0x409CFF (accent text,
-  bordered buttons); prominent buttons (white text on a fill) use 0x0062CC (ACC-003's light accent: white on
-  it is about 5.8:1); the camera badge's red bordered Stop uses `InterfacePalette.critical` (dynamic: dark
-  0xFF6961) instead of system red.
+- **Decision**: inside an overlay surface, `.tint` is a light blue 0xB8DCFF (accent text, bordered buttons);
+  prominent buttons (white text on a fill) use 0x0062CC (ACC-003's light accent: white on it is about 5.8:1);
+  the camera badge's Stop is a prominent button on 0xC4161C (ACC-003's light critical, about 6:1), and the
+  capture panel's destructive Discard uses 0xFF9A94 (ACC-003's increased dark critical) text.
+- **Measured**: with 0x409CFF the bordered titles measured 2.6-3.2:1 over white (the bordered fill is the
+  tint at low opacity and lifts the background under the title), and 0xA0CFFF still 4.06; 0xB8DCFF passes
+  with the 0.84 scrim. System red on a red bordered fill measured 2.8:1, red Discard text 4.3:1.
 - **Rationale**: white on the default dark accent 0x0A84FF is about 3.6:1 and 0x0A84FF on a near-black
   scrim is about 3.5-5:1, so no single blue serves both button kinds.
 - **Alternatives**: white button titles everywhere (loses the accent cue), borderless buttons only (layout

@@ -5,7 +5,7 @@
 ## Summary
 
 Give every element drawn over the visualization one shared, measurable backing. A new `OverlaySurface`
-modifier draws a black scrim (opacity `OverlayContrast.scrimOpacity`, chosen by research ACC-008-D2;
+modifier draws a black scrim (opacity `OverlayContrast.scrimOpacity` = 0.84, chosen by research ACC-008-D2;
 opaque with Increase Contrast) on top of the element's material, forces the dark appearance and sets an
 overlay tint that passes on that scrim (research D4). The controls' `ControlsBacking` (ACC-004), ACC-003's
 `statusBadgeBackground` (material case) and every `.background(.regularMaterial, …)` of the audit move to
