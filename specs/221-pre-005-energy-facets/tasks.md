@@ -30,9 +30,9 @@ Tests are requested by the roadmap acceptance ("Classification is stable for fix
 
 - [ ] PRE-005-T09 [US1] Filter acceptance (S1 filter part): for each class and for Calm + Energetic, `matching(any:)` returns exactly the fixture presets; counts and chips, in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetEnergyFacetTests.swift
 - [ ] PRE-005-T10 [US1] Scores on the thumbnail path: `RendererThumbnailRenderer` asks for samples, scores and embeds; fixture renderer embeds a byte-derived score; the model learns scores on its decode task (mirror, store, launch load and prune, PRE-002 invalidation), in Apps/projectM-iOS/Coordinators/PresetThumbnailModel.swift, AppCoordinator+Thumbnails.swift and PresetCoordinator.swift
-- [ ] PRE-005-T11 [US1] `PresetCoordinator+Energy` (selection, counts, join into `filterMatches`, announcements, empty text) in Apps/projectM-iOS/Coordinators/PresetCoordinator+Energy.swift and PresetCoordinator+Colors.swift
+- [ ] PRE-005-T11 [US1] `PresetCoordinator+Energy` (selection, counts, join into `filterMatches`, announcements on the search lane, empty text, scope stays tags or All per R12) in Apps/projectM-iOS/Coordinators/PresetCoordinator+Energy.swift and PresetCoordinator+Colors.swift
 - [ ] PRE-005-T12 [US1] `PresetEnergyChipRow` and browser placement in Apps/projectM-iOS/Views/PresetEnergyChips.swift and PresetBrowserView.swift
-- [ ] PRE-005-T13 [US1] App acceptance (S4): a fixture thumbnail records its score once; the energy filter lists it; combined with a colour narrows; invalidation drops it; a chip toggle announces on the search lane, in Apps/projectM-iOS/Tests/PresetEnergyFacetAppTests.swift
+- [ ] PRE-005-T13 [US1] App acceptance (S4): a fixture thumbnail records its score once; the energy filter lists it; combined with a colour narrows; invalidation drops it; a chip toggle announces on the search lane; `filteredScope` stays All with only energy selected (R12), in Apps/projectM-iOS/Tests/PresetEnergyFacetAppTests.swift
 - [ ] PRE-005-T14 [US1] UI test (S5, under 30 s) with `-uitestThumbnailFixture` in Apps/projectM-iOS/UITests/PresetEnergyFacetUITests.swift
 
 ## Phase 5: User Story 3 - A damaged or old index rebuilds itself (P2)
@@ -41,7 +41,7 @@ Tests are requested by the roadmap acceptance ("Classification is stable for fix
 
 ## Phase 6: Polish
 
-- [ ] PRE-005-T16 Type-check budget on touched app files; repo checks (compliance, docs, motion, permission catalog, status events, script tests); privacy manifest and network symbols on the Debug app; `LibraryBackupAppTests`; spec status; delete the simulator and derived data; PosterBoard count after
+- [ ] PRE-005-T16 Record the extra drawing cost honestly (two read-backs; simulator only, not device evidence); type-check budget on touched app files; repo checks (compliance, docs, motion, permission catalog, status events, script tests); privacy manifest and network symbols on the Debug app; `LibraryBackupAppTests`; spec status; delete the simulator and derived data; PosterBoard count after
 - [ ] PRE-005-T17 {device} Tune the provisional thresholds with a device sweep of real thumbnails (score distribution on D1); a threshold change needs no data migration
 
 ## Dependencies
@@ -49,3 +49,12 @@ Tests are requested by the roadmap acceptance ("Classification is stable for fix
 T02-T05 → T07, T09, T15; T06 → T08, T10; T10 → T11 → T12 → T13, T14. US2 and US1 share the foundation; US3 depends only on T04.
 Parallel: T02, T03 and T06 touch different packages.
 MVP: Phases 2-4.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+- Coverage: R1, R2, R3 → T02, T06, T07, T08; R4 → T03, T10; R5-R7 → T04, T15; R8-R10 → T11, T12, T13, T14; R11 → T04,
+  T10, T13 (Clear Caches needs no code: the folder is inside `Library/Caches`, which FILE-010 empties); R12 → T11,
+  T13; R13 → T02-T05 and the Linux-shaped package build. S1 → T07, T09; S2 → T15; S3 → T08; S4 → T13; S5 → T14.
+- Fixes applied: R12 had no test (now asserted in T13); the drawing's added cost had no owner (now T16).
+- Constitution: VIII satisfied by the public `projectm_set_frame_time`; X by pinned fixtures and the provisional
+  thresholds left as `{device}` T17. No ADR needed.
