@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-015-T01-T10 verified on the Mac: ParameterGraph and SceneFormat package tests on the host, app unit tests on a private iOS 27.2 simulator; no ADR, no device task)
 
 **Input**: User description: "Implement MOD-015 (Envelope follower bank) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Expose slow, medium and fast envelopes per frequency band." Acceptance, verbatim:

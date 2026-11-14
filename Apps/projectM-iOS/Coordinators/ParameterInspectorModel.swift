@@ -371,6 +371,7 @@ extension AudioFeatureSource {
         case .rolloff: return "Rolloff"   // ANL-011
         case .flatness: return "Flatness"   // ANL-012
         case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
+        case let .bandEnvelope(index, profile): return "Band \(index + 1) \(profile.rawValue)"   // MOD-015
         }
     }
 }
