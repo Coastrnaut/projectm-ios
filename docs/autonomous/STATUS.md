@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T12:33:17Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T12:44:36Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 172 |
 | implementing | 2 |
-| unit_passed | 4 |
-| integrated | 147 |
+| unit_passed | 3 |
+| integrated | 148 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 87 | 1 | 3 | 60 | 0 |
+| P1 | 87 | 1 | 2 | 61 | 0 |
 | P2 | 74 | 1 | 1 | 3 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 178 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 177 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 
 ## Integrated
 
@@ -103,7 +103,7 @@ The physical-device suite may **not** start:
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
 | FILE-004 | Import conflict resolver | `b211a998` | `feature/file-004` |
 | FILE-005 | Local library backup | `31456ffe` | `feature/file-005` |
-| FILE-006 | Incremental backup manifest | `6ac0c21c7510` | `feature/file-006` |
+| FILE-006 | Incremental backup manifest | `6ac0c21c` | `feature/file-006` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
 | FILE-008 | User asset deduplication | `d045d58f` | `feature/file-008` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
@@ -115,7 +115,7 @@ The physical-device suite may **not** start:
 | FX-002 | Tone mapping | `2e8e134d` | `feature/fx-002` |
 | FX-003 | Color grading | `51dfaa4b` | `feature/fx-003` |
 | FX-004 | Hue shift | `b40a8d8e` | `feature/fx-004` |
-| FX-009 | Motion feedback | `0fcd99a0ffd3` | `feature/fx-009` |
+| FX-009 | Motion feedback | `6ac0c21c` | `feature/fx-009` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
 | MED-002 | Import video layer | `e9e04eeb62a8` | `feature/med-002` |
@@ -123,11 +123,12 @@ The physical-device suite may **not** start:
 | MED-004 | Video playback speed | `c61dedd2` | `feature/med-004` |
 | MED-006 | Image slideshow | `d6ec9dc5e426` | `feature/med-006` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
+| MED-010 | Logo overlay | `6ac0c21c` | `feature/med-010` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
 | MIDI-002 | MIDI input monitor | `c7cd1169` | `feature/midi-002` |
 | MIDI-003 | MIDI learn | `d6ec9dc5e426` | `feature/midi-003` |
-| MIDI-004 | MIDI CC scaling | `5233974c4e8b` | `None` |
+| MIDI-004 | MIDI CC scaling | `6ac0c21c` | `None` |
 | MOD-001 | Typed parameter registry | `304f3bce431a` | `feature/mod-001` |
 | MOD-002 | Audio feature binding | `006678f3d7a5` | `feature/mod-002` |
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
@@ -903,6 +904,7 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `0b4f7072d509` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-006/20261114T071915/swift-test_LibraryBackup.log`)
+- `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
 ### FILE-007 Document schema validator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/compliance.log`)
@@ -1035,6 +1037,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)
@@ -1112,7 +1115,7 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/swift-test_Compositor.log`)
 - `post-merge (Text host on the shared pool): projectM-iOSTests 223; TextOverlayUITests 15.0 s (relaunch identity), Photo, SettingsUITests 4; Compositor scheme incl. TextLayerTests 26 on iPhone 17 iOS 27.2 sim`: pass at `beca43d66718` (log `.autonomous/logs/integration/med-009/app-tests.log`)
 
-### MED-010 Logo overlay (unit_passed)
+### MED-010 Logo overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/script-tests.log`)
@@ -1125,6 +1128,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
 ### MED-014 Safe media decoder (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0f694e45ec38` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-014/20261113T145558/compliance.log`)
@@ -1168,6 +1172,7 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `baadcbe1ee17` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-004/20261114T070939/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `baadcbe1ee17` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-004/20261114T070939/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `baadcbe1ee17` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-004/20261114T070939/swift-test_PerformanceControl.log`)
+- `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
 ### MOD-001 Typed parameter registry (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c62c162f633a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-001/20261113T104902/compliance.log`)

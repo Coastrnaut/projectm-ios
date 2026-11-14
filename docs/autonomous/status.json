@@ -13,8 +13,8 @@
   "P1": {
    "audited": 87,
    "implementing": 1,
-   "integrated": 60,
-   "unit_passed": 3
+   "integrated": 61,
+   "unit_passed": 2
   },
   "P2": {
    "audited": 74,
@@ -29,9 +29,9 @@
  "by_state": {
   "audited": 172,
   "implementing": 2,
-  "integrated": 147,
+  "integrated": 148,
   "skipped_existing": 1,
-  "unit_passed": 4
+  "unit_passed": 3
  },
  "device_gate": {
   "blocked": [],
@@ -77,7 +77,6 @@
    "MED-005",
    "MED-007",
    "MED-008",
-   "MED-010",
    "MED-011",
    "MED-012",
    "MED-013",
@@ -220,7 +219,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "178 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
+   "177 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
   ]
  },
  "features": {
@@ -1139,7 +1138,7 @@
    "branch": "feature/file-006",
    "branch_sha": "0b4f7072d5098e2c053f1991a340388083774fd1",
    "error_category": null,
-   "integrated_sha": "6ac0c21c751048ebe9080d0118fed55e20657e6f",
+   "integrated_sha": "6ac0c21c",
    "priority": "P2",
    "spec_dir": null,
    "state": "integrated"
@@ -1299,7 +1298,7 @@
    "branch": "feature/fx-009",
    "branch_sha": "f58cffa49d37910fd6a04a24925fe7734458b9bc",
    "error_category": null,
-   "integrated_sha": "0fcd99a0ffd3368e57261d33fbe54a2153fbbd1b",
+   "integrated_sha": "6ac0c21c",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -1509,10 +1508,10 @@
    "branch": "feature/med-010",
    "branch_sha": "5e70427cd3e638dfef10e8f588267bc5b8dde0a6",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6ac0c21c",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-011": {
    "attempts": 0,
@@ -1589,7 +1588,7 @@
    "branch": null,
    "branch_sha": "baadcbe1ee175c13ef865bb992e50d0da1a08aaf",
    "error_category": null,
-   "integrated_sha": "5233974c4e8bd8ec1abecec6f66c14a2a30ae5b9",
+   "integrated_sha": "6ac0c21c",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3839,7 +3838,7 @@
   {
    "branch": "feature/file-006",
    "id": "FILE-006",
-   "sha": "6ac0c21c751048ebe9080d0118fed55e20657e6f"
+   "sha": "6ac0c21c"
   },
   {
    "branch": "feature/file-007",
@@ -3899,7 +3898,7 @@
   {
    "branch": "feature/fx-009",
    "id": "FX-009",
-   "sha": "0fcd99a0ffd3368e57261d33fbe54a2153fbbd1b"
+   "sha": "6ac0c21c"
   },
   {
    "branch": "feature/fx-019",
@@ -3937,6 +3936,11 @@
    "sha": "beca43d66718242bb6ba638c09213dfdeeceb612"
   },
   {
+   "branch": "feature/med-010",
+   "id": "MED-010",
+   "sha": "6ac0c21c"
+  },
+  {
    "branch": "feature/med-014",
    "id": "MED-014",
    "sha": "31e16534f057b12cf870f7a854464076a0c39955"
@@ -3959,7 +3963,7 @@
   {
    "branch": null,
    "id": "MIDI-004",
-   "sha": "5233974c4e8bd8ec1abecec6f66c14a2a30ae5b9"
+   "sha": "6ac0c21c"
   },
   {
    "branch": "feature/mod-001",
@@ -4247,5 +4251,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T12:33:17Z"
+ "updated": "2026-11-14T12:44:36Z"
 }
