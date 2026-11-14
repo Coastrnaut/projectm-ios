@@ -11,12 +11,13 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 94,
-   "implementing": 3,
+   "audited": 89,
+   "implementing": 8,
    "integrated": 54
   },
   "P2": {
-   "audited": 77,
+   "audited": 76,
+   "implementing": 1,
    "integrated": 2
   },
   "P3": {
@@ -24,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 182,
-  "implementing": 3,
+  "audited": 176,
+  "implementing": 9,
   "integrated": 140,
   "skipped_existing": 1
  },
@@ -419,13 +420,13 @@
   },
   "ANL-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ANL-009": {
    "attempts": 0,
@@ -2259,13 +2260,13 @@
   },
   "PRE-001": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-001",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-002": {
    "attempts": 0,
@@ -2459,13 +2460,13 @@
   },
   "QA-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/qa-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "QA-004": {
    "attempts": 0,
@@ -2589,13 +2590,13 @@
   },
   "REC-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-005": {
    "attempts": 0,
@@ -2749,13 +2750,13 @@
   },
   "SCN-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/scn-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SCN-005": {
    "attempts": 0,
@@ -3159,13 +3160,13 @@
   },
   "UIX-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/uix-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "UIX-004": {
    "attempts": 0,
@@ -4215,5 +4216,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T11:17:34Z"
+ "updated": "2026-11-14T11:18:13Z"
 }
