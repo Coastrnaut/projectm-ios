@@ -51,6 +51,7 @@ extension AppCoordinator {
         }
         // ACC-004-R7: cue announcements share the rate-limited path (a clicker can step quickly).
         show.announce = { [weak self] (message: String) in self?.announcer.announce(message, kind: .cue) }
+        show.announceLibrary = { [weak self] (message: String) in self?.announcer.announce(message, kind: .library) }   // SCN-004
         sceneRepair.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
@@ -67,6 +68,7 @@ extension AppCoordinator {
         if let restore = apply.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
         if let scene = apply.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
         sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
+        resetTrailsHistory()   // FX-009-R5: a cue's scene (and UIX-002's switcher) starts without trails
         if refresh {
             visualSettingsChanged()
             glowSettingsChanged()

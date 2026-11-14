@@ -60,7 +60,7 @@ public final class GoldenSceneRenderer {
     /// grade (FX-003).
     public static func registry() throws -> ParameterRegistry {
         try ParameterRegistry(descriptors: VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors
-                              + ColorGradeCatalog.descriptors)
+                              + ColorGradeCatalog.descriptors + MotionFeedbackCatalog.descriptors)   // FX-009
     }
 
     /// Decodes scene bytes strictly: no decode warnings, and validation warnings are refused too.

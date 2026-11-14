@@ -111,6 +111,25 @@ enum SceneEncoder {
         o["mix"] = .string(b.mix.rawValue)
         o["envelope"] = .object(["attack": .double(b.envelope.attackSeconds), "release": .double(b.envelope.releaseSeconds)])
         o["expression"] = b.expression.map { (s: String) -> SceneJSON in .string(s) }
+        // MOD-004: only a non-linear curve is written, so linear bindings are stored as before; an
+        // unreadable stored curve in `extra` passes through unchanged.
+        if b.curve != .linear { o["curve"] = curve(b.curve) }
+        return .object(o)
+    }
+
+    /// MOD-004's stored form (contract K8).
+    static func curve(_ c: MappingCurve) -> SceneJSON {
+        var o: [String: SceneJSON] = ["kind": .string(c.kindName)]
+        switch c {
+        case .linear:
+            break
+        case let .easeIn(p), let .easeOut(p), let .easeInOut(p):
+            o["exponent"] = .double(p)
+        case let .logarithmic(k), let .exponential(k):
+            o["strength"] = .double(k)
+        case let .piecewise(points):
+            o["points"] = .array(points.map { (p: CurvePoint) -> SceneJSON in .object(["x": .double(p.x), "y": .double(p.y)]) })
+        }
         return .object(o)
     }
 

@@ -47,6 +47,9 @@ public protocol VisualizerRenderer: AnyObject {
     /// it may ever be loaded with `setPreset`. Nil when this renderer cannot run a second engine;
     /// imported presets then wait unchecked and are not playable.
     var presetTrial: (any PresetTrialing)? { get }
+    /// PRE-001: draws presets off screen into small pictures for the browser's thumbnails. Nil when
+    /// this renderer cannot run a second engine; rows then keep their placeholders.
+    var presetThumbnails: (any PresetThumbnailDrawing)? { get }
     /// PERF-006: what this renderer frees on memory pressure (caches it rebuilds lazily, optional
     /// background work). The app registers them with its MemoryPressureRecovery. Never the visible
     /// engine or its surface. None by default.
@@ -57,6 +60,7 @@ public extension VisualizerRenderer {
     func prewarm(_ presets: [Preset]) {}
     var presentationResources: [any PresentationBoundResource] { [] }
     var presetTrial: (any PresetTrialing)? { nil }
+    var presetThumbnails: (any PresetThumbnailDrawing)? { nil }
     var memoryPressureResponders: [any MemoryPressureResponder] { [] }
 }
 
@@ -77,6 +81,23 @@ public enum PresetTrialOutcome: Sendable, Equatable {
 /// and returns within `timeout` (plus scheduling slack), whatever the preset does.
 public protocol PresetTrialing: AnyObject, Sendable {
     func run(_ contents: Data, timeout: Duration) async -> PresetTrialOutcome
+}
+
+/// How an off-screen thumbnail drawing ended (PRE-001, contract thumbnail-cache.md C4).
+public enum PresetThumbnailDrawResult: Sendable, Equatable {
+    /// RGBA8 pixels, top row first, `width * height * 4` bytes.
+    case pixels(Data)
+    /// The engine refused the preset or could not draw it; its message.
+    case failed(String)
+    /// Nothing can be drawn now (the app cannot present frames, or an abandoned drawing still runs).
+    case unavailable(String)
+}
+
+/// Draws a preset's text on a separate engine and drawing context for `frames.count` frames, feeding
+/// one block of interleaved stereo audio before each, and returns the last frame's pixels (PRE-001).
+/// The visible picture is never involved; `draw` returns within `timeout` (plus scheduling slack).
+public protocol PresetThumbnailDrawing: AnyObject, Sendable {
+    func draw(_ contents: Data, width: Int, height: Int, frames: [[Float]], timeout: Duration) async -> PresetThumbnailDrawResult
 }
 
 /// A preset the renderer can load (data-model.md §Preset). PresetRepository (T074) builds these from

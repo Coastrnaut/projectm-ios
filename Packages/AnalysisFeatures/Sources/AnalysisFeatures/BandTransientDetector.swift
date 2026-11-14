@@ -12,6 +12,13 @@
 // under a loud sustained layer does), and at least the refractory period after the previous event. Any frame above its threshold disarms; a frame at or below re-arms. The envelope decays by
 // exp(−hop/(τ·rate)) per frame and is set to 1 by an event.
 //
+// Confidence (ANL-008-R6, research ANL-008-D2), computed only on event frames: margin =
+// clamp((D − threshold) / confidenceMargin, 0, 1); breadth = clamp(flatness / 0.5, 0, 1), where the
+// flatness is the geometric over the arithmetic mean of the band's bin powers (noise-like attacks
+// ≈ 1, a tone ≈ 0); confidence = √(margin · (1 − w + w · breadth)) with the configuration's breadth
+// weight w (0 for the kick, so its confidence is the margin alone). It never changes which frames
+// fire. The mid transient (ANL-008) is not a snare classifier: nothing here names an instrument.
+//
 // Decibel differences do not change with gain, so the same material at another level (above the
 // floor) gives the same events. The event's sample index is the first sample of the frame's newest
 // hop (`index + size − hop`); with the stream's `.silence` lead-in that is within one hop of the hit.
@@ -56,10 +63,16 @@ public final class BandTransientDetector {
     public private(set) var ignoredFrames = 0
     /// The last sequence number issued (0 before the first event).
     public private(set) var eventCount: UInt64 = 0
+    /// The last event's confidence (0…1), held until the next event; 0 after `reset()`.
+    public private(set) var lastConfidence: Float = 0
 
     static let silentShare: Float = -200
     /// Power below this reads as silence (−120 dB).
     static let minimumPower: Float = 1e-12
+    /// Bin powers are floored here inside the flatness's logarithm.
+    static let minimumBinPower: Float = 1e-20
+    /// The flatness that reads as fully broadband (a Hann-windowed white-noise frame: ≈ 0.5–0.6).
+    static let broadbandFlatness: Float = 0.5
     /// The periodic Hann window's equivalent noise bandwidth, in bins.
     static let equivalentNoiseBandwidth: Float = 1.5
 
@@ -182,6 +195,7 @@ public final class BandTransientDetector {
         armed = true
         hasEvent = false
         envelope = 0
+        lastConfidence = 0
         lastLevel = configuration.floorDecibels
         lastRise = 0
         lastThreshold = 0
@@ -256,9 +270,11 @@ public final class BandTransientDetector {
         lastEventSample = sample
         eventCount += 1
         envelope = 1
+        let confidence = confidence(rise: rise, threshold: threshold, magnitudes: base, size: size)
+        lastConfidence = confidence
         return TransientEvent(band: configuration.band, sequence: eventCount, sampleIndex: sample, frameIndex: frame.index,
                               strength: rise, threshold: threshold, level: level, sampleRate: configuration.sampleRate,
-                              timestampNanoseconds: frame.timestampNanoseconds)
+                              timestampNanoseconds: frame.timestampNanoseconds, confidence: confidence)
     }
 
     /// Convenience over an array (no allocation: it borrows the array's storage).
@@ -266,6 +282,48 @@ public final class BandTransientDetector {
         magnitudes.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> TransientEvent? in
             process(frame, magnitudes: buffer)
         }
+    }
+
+    // MARK: Confidence
+
+    /// √(margin · breadth′), finite, 0…1 (ANL-008-R6).
+    private func confidence(rise: Float, threshold: Float, magnitudes: UnsafePointer<Float>, size: FFTSize) -> Float {
+        let excess: Float = rise - threshold
+        let rawMargin: Float = excess / configuration.confidenceMarginDecibels
+        let margin: Float = rawMargin.isFinite ? min(max(rawMargin, 0), 1) : 0
+        let weight: Float = configuration.breadthWeight
+        var breadthTerm: Float = 1
+        if weight > 0 {
+            let breadth: Float = bandBreadth(magnitudes, size: size)
+            breadthTerm = 1 - weight + weight * breadth
+        }
+        let product: Float = margin * breadthTerm
+        let value: Float = product > 0 ? product.squareRoot() : 0
+        return value.isFinite ? min(max(value, 0), 1) : 0
+    }
+
+    /// clamp(flatness / 0.5, 0, 1) over the band's bins (geometric over arithmetic mean of m²).
+    private func bandBreadth(_ magnitudes: UnsafePointer<Float>, size: FFTSize) -> Float {
+        let slot = size.log2 - FFTSize.n512.log2
+        let first = firstBins[slot]
+        let count = binCounts[slot]
+        guard count > 1 else { return 0 }
+        var logSum: Float = 0
+        var sum: Float = 0
+        for k in first..<(first + count) {
+            let m: Float = magnitudes[k]
+            let raw: Float = m * m
+            let power: Float = raw.isFinite ? max(raw, BandTransientDetector.minimumBinPower) : BandTransientDetector.minimumBinPower
+            logSum += logf(power)
+            sum += power
+        }
+        let n = Float(count)
+        let arithmetic: Float = sum / n
+        guard arithmetic > BandTransientDetector.minimumBinPower, arithmetic.isFinite else { return 0 }
+        let geometric: Float = expf(logSum / n)
+        let flatness: Float = geometric / arithmetic
+        let breadth: Float = flatness / BandTransientDetector.broadbandFlatness
+        return breadth.isFinite ? min(max(breadth, 0), 1) : 0
     }
 
     // MARK: Measurement
