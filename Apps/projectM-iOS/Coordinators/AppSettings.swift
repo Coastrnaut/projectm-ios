@@ -73,6 +73,7 @@ final class AppSettings {
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
     static let oscPortKey = "settings.osc.port"
+    static let midiEnabledKey = "settings.midi.enabled"   // MIDI-001-R8
     static let cameraPositionKey = "settings.camera.position"       // CAM-002
     static let cameraMirrorFrontKey = "settings.camera.mirrorFront"
     static let cameraMirrorBackKey = "settings.camera.mirrorBack"
@@ -90,7 +91,7 @@ final class AppSettings {
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, videoIDKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
-                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey]
+                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey]
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -293,6 +294,11 @@ final class AppSettings {
         didSet { defaults.set(oscEnabled, forKey: Self.oscEnabledKey) }
     }
 
+    /// MIDI-001: "Listen for MIDI devices" (off by default; MIDI-001-R8). The only MIDI value stored.
+    var midiEnabled: Bool {
+        didSet { defaults.set(midiEnabled, forKey: Self.midiEnabledKey) }
+    }
+
     /// OSC-001: the UDP port, 1024-65535 (9000 otherwise).
     var oscPort: Int {
         didSet {
@@ -336,6 +342,7 @@ final class AppSettings {
         spectrumReleaseMilliseconds = Self.spectrumReleaseChoices.contains(release) ? release : 0
         glowEnabled = defaults.bool(forKey: Self.glowKey)
         oscEnabled = defaults.bool(forKey: Self.oscEnabledKey)
+        midiEnabled = defaults.bool(forKey: Self.midiEnabledKey)
         let port = defaults.integer(forKey: Self.oscPortKey)
         oscPort = OSCPort.isValid(port) ? port : Int(OSCPort.defaultPort)
         glowIntensity = Self.clampedGlowValue(defaults.object(forKey: Self.glowIntensityKey) as? Double,

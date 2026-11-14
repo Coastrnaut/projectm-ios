@@ -334,7 +334,8 @@ struct VisualizerView: View {
                          inputTrim: coordinator.inputTrim,       // AUD-008
                          channelSelection: coordinator.channelSelection,   // AUD-009
                          noiseGate: coordinator.noiseGate,   // AUD-011
-                         latencyOffset: coordinator.latencyOffset)   // AUD-013
+                         latencyOffset: coordinator.latencyOffset,   // AUD-013
+                         midi: coordinator.midi)   // MIDI-001
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
         }
         // SCN-012: the repair report before a cue's scene or Reopen opens (over Settings while it is shown).

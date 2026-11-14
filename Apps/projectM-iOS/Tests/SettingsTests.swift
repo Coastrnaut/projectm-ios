@@ -61,6 +61,7 @@ final class SettingsTests: XCTestCase {
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
         settings.oscPort = 8000
+        settings.midiEnabled = true            // MIDI-001-R8
         settings.cameraPosition = .front       // CAM-002-R6
         settings.cameraMirrorFront = false
         settings.cameraMirrorBack = true

@@ -21,6 +21,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     /// ACC-011: capture and status lanes (contract C1 of specs/100-acc-011-captioned-status-events).
     /// `camera` also carries CAM-013-R12's interruption and failure reasons.
     case source, route, background, capture, camera, osc, session
+    /// MIDI-001-R11: MIDI devices connected or disconnected.
+    case midi
 }
 
 struct AnnouncementGate: Sendable, Equatable {
