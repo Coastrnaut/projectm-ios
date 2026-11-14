@@ -10,8 +10,8 @@ CAM-007 generalizes the camera layer's aspect fill into a user-chosen crop, in t
 picture is fitted today. In `Packages/Compositor` (target `CameraLayer` only):
 
 - New `CameraCrop` value (`CameraCrop.swift`): `mode` (`CameraCropMode.fill` / `.fit`), `anchor`
-  (`CameraCropAnchor.centre` / `.top` / `.bottom`, a point on the upright picture's vertical center
-  line) and `zoom` (1, 1.5, 2, 3). `CameraCrop.fill` (Fill, Centre, 1×) is the default.
+  (`CameraCropAnchor.center` / `.top` / `.bottom`, a point on the upright picture's vertical center
+  line) and `zoom` (1, 1.5, 2, 3). `CameraCrop.fill` (Fill, Center, 1×) is the default.
 - `CameraPictureGeometry.init(pictureWidth:pictureHeight:rotation:outputWidth:outputHeight:mirrored:crop:)`
   computes one uniform scale (Fill: cover; Fit: contain; times the zoom) and places the shown part
   so the anchor point of the upright picture lands on the same relative output point (research
@@ -34,7 +34,7 @@ In the app:
   (`settings.camera.cropAnchor`), `cameraZoom` (`settings.camera.zoom`), unknown → defaults, one
   set for both cameras; `cameraCrop` combines them. Keys in `allKeys` and `ALLOWED_KEYS`.
 - `SettingsView`: CAM-002's Camera section gains "Crop" (segmented Fill/Fit,
-  `cameraCropModePicker`), "Anchor" (segmented Centre/Top/Bottom, `cameraCropAnchorPicker`) and
+  `cameraCropModePicker`), "Anchor" (segmented Center/Top/Bottom, `cameraCropAnchorPicker`) and
   "Zoom" (segmented 1×/1.5×/2×/3×, `cameraZoomPicker`, values spelled "1.5 times").
 - `CameraVisualHost.crop` forwards to the layer; `make(…, crop:)`; `AppCoordinator.cameraSettingsChanged()`
   applies it; `VisualizerView` observes the three settings.

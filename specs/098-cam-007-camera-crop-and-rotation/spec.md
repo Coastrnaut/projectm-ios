@@ -35,18 +35,18 @@ The row's gap status is "Gap candidate". The audit confirms a partial gap.
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
-- Q: What is the "chosen crop behavior"? → A: A user choice of three parts (CAM-007-R1): **Fit mode** "Fill" (default; today's behavior: the picture covers the screen, the overflow is cropped) or "Fit" (the whole picture is shown, with bars where it does not reach); **Anchor** "Centre" (default), "Top" or "Bottom": which part of the picture a crop keeps; **Zoom** 1× (default), 1.5×, 2× or 3×. With the defaults the picture is exactly what CAM-001 and CAM-002 show today.
-- Q: What does the anchor mean exactly? → A: The anchor is a point of the upright, possibly mirrored picture: the middle of its top edge (Top), its center (Centre) or the middle of its bottom edge (Bottom). That point is always shown at the same relative place of the screen (top middle, center or bottom middle), whatever the screen's shape, the camera's turn, the mode and the zoom (CAM-007-R3). This is how "preserves the chosen crop behavior" is made measurable.
+- Q: What is the "chosen crop behavior"? → A: A user choice of three parts (CAM-007-R1): **Fit mode** "Fill" (default; today's behavior: the picture covers the screen, the overflow is cropped) or "Fit" (the whole picture is shown, with bars where it does not reach); **Anchor** "Center" (default), "Top" or "Bottom": which part of the picture a crop keeps; **Zoom** 1× (default), 1.5×, 2× or 3×. With the defaults the picture is exactly what CAM-001 and CAM-002 show today.
+- Q: What does the anchor mean exactly? → A: The anchor is a point of the upright, possibly mirrored picture: the middle of its top edge (Top), its center (Center) or the middle of its bottom edge (Bottom). That point is always shown at the same relative place of the screen (top middle, center or bottom middle), whatever the screen's shape, the camera's turn, the mode and the zoom (CAM-007-R3). This is how "preserves the chosen crop behavior" is made measurable.
 - Q: What do the Fit bars look like? → A: Transparent in the camera layer, so what lies under the camera shows through; in the Camera visual that is the black background, so the bars are black on screen, in saved frames and in recordings (CAM-007-R4). Rejected: a colored or blurred fill (an extra design choice and GPU cost with no request for it).
 - Q: Is the choice stored per camera or once for both? → A: Once for both cameras (CAM-007-R6). Framing is about the screen and the show, not about the sensor; the mirror is per camera because of the selfie convention, which does not apply to framing. Switching cameras keeps the framing.
 - Q: Does zoom use the camera's optical or digital zoom? → A: No. Zoom is a crop of the camera picture in the layer (CAM-007-R5); the camera's own settings are untouched, so the capture session never restarts and lens choice stays with CAM-003.
-- Q: Where is the control? → A: In CAM-002's Settings "Camera" section, shown only while Camera is the chosen visual: a "Crop" mode picker (Fill / Fit), an "Anchor" picker (Centre / Top / Bottom) and a "Zoom" picker (1×, 1.5×, 2×, 3×) (CAM-007-R7).
+- Q: Where is the control? → A: In CAM-002's Settings "Camera" section, shown only while Camera is the chosen visual: a "Crop" mode picker (Fill / Fit), an "Anchor" picker (Center / Top / Bottom) and a "Zoom" picker (1×, 1.5×, 2×, 3×) (CAM-007-R7).
 
 ### Session 2026-11-14 (speckit-clarify)
 
 - Q: Do Anchor and Zoom also apply in Fit, or only in Fill? → A: In both modes (CAM-007-R2, R3). In Fit the anchor decides where the whole picture sits (Top: against the top edge, bars below), and a zoom above 1× enlarges it around the anchor. One rule for both modes keeps the controls always meaningful and the acceptance test uniform. Rejected: disabling Anchor and Zoom in Fit (controls that change meaning with the mode).
 - Q: Is a change of framing animated? → A: No. A new choice, and a rotation, take effect from the next frame without an animated transition (CAM-007-R5). An animation adds motion that Reduce Motion would have to suppress and hides nothing the user needs; the system's own rotation animation of the view is unchanged.
-- Q: What does VoiceOver read for the controls? → A: Labels "Crop", "Anchor" and "Zoom"; values "Fill" or "Fit", "Centre", "Top" or "Bottom", and "1 times", "1.5 times", "2 times" or "3 times" (CAM-007-R7). The "×" sign is read inconsistently, so the zoom value is spelled out.
+- Q: What does VoiceOver read for the controls? → A: Labels "Crop", "Anchor" and "Zoom"; values "Fill" or "Fit", "Center", "Top" or "Bottom", and "1 times", "1.5 times", "2 times" or "3 times" (CAM-007-R7). The "×" sign is read inconsistently, so the zoom value is spelled out.
 - Q: Does the external display get its own framing? → A: No. The external display shows the same composite as the screen (OUT-001), so it shows the screen's framing; it is computed for the visual's own picture size (CAM-007-R8). A separate framing per output would break the one-composite rule that CAM-002 relies on.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -90,7 +90,7 @@ value in the controls, the choice is remembered after a relaunch, and the camera
 **Acceptance Scenarios**:
 
 1. **Given** Camera is the chosen visual, **When** the user opens Settings, **Then** the Camera
-   section shows Crop (Fill), Anchor (Centre) and Zoom (1×).
+   section shows Crop (Fill), Anchor (Center) and Zoom (1×).
 2. **Given** the Camera visual runs, **When** the user changes any of them, **Then** the picture
    changes from the next frame without restarting the camera or the audio source.
 3. **Given** a crop choice was made, **When** the app is relaunched, **Then** the choice is kept,
@@ -121,7 +121,7 @@ recorded frame show the anchor at the same place.
 - Fit with Top or Bottom: the whole picture sits against that edge, with the bars on the other
   side.
 - Fill when the picture and the screen have the same shape: nothing is cropped at 1×; Top and
-  Bottom then look like Centre.
+  Bottom then look like Center.
 - Fill where the overflow is horizontal (a landscape picture on a portrait screen): Top and Bottom
   only matter once the zoom crops vertically too.
 - Degenerate sizes (no picture yet, zero-size screen): the whole picture with its rotation, as
@@ -134,7 +134,7 @@ recorded frame show the anchor at the same place.
 ### Functional Requirements
 
 - **CAM-007-R1**: The Camera visual MUST offer a crop choice made of a mode (Fill, default; Fit),
-  an anchor (Centre, default; Top; Bottom) and a zoom (1×, default; 1.5×; 2×; 3×). With the
+  an anchor (Center, default; Top; Bottom) and a zoom (1×, default; 1.5×; 2×; 3×). With the
   defaults the picture MUST be identical to CAM-001's and CAM-002's aspect fill with a centered
   crop.
 - **CAM-007-R2**: The camera picture MUST be made upright by its rotation (0, 90, 180 or 270
@@ -155,7 +155,7 @@ recorded frame show the anchor at the same place.
   the camera, and never be recorded in scenes or show cues. Unknown stored values MUST read as the
   defaults.
 - **CAM-007-R7**: Settings' Camera section (shown only while Camera is the chosen visual) MUST
-  offer "Crop" (Fill / Fit), "Anchor" (Centre / Top / Bottom) and "Zoom" (1× / 1.5× / 2× / 3×),
+  offer "Crop" (Fill / Fit), "Anchor" (Center / Top / Bottom) and "Zoom" (1× / 1.5× / 2× / 3×),
   with VoiceOver labels "Crop", "Anchor" and "Zoom" and values as in Clarifications (zoom spelled
   "1.5 times").
 - **CAM-007-R8**: The crop MUST be applied in one place, the camera layer, so the screen, a saved
@@ -167,7 +167,7 @@ recorded frame show the anchor at the same place.
 
 ### Key Entities
 
-- **Crop choice**: mode (Fill or Fit), anchor (Centre, Top or Bottom) and zoom (1, 1.5, 2 or 3);
+- **Crop choice**: mode (Fill or Fit), anchor (Center, Top or Bottom) and zoom (1, 1.5, 2 or 3);
   stored settings; shared by both cameras.
 - **Camera picture geometry**: the shown part of the upright camera picture (its fraction of the
   picture's width and height and the position of the layer's top-left corner in it), with the

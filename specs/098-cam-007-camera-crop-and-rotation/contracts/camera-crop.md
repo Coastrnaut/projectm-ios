@@ -38,5 +38,5 @@ when `offset + p × visible` lies in [−1e-4, 1 + 1e-4] on both axes.
 | Element | Identifier | Label | Values |
 |---|---|---|---|
 | Crop picker (segmented) | `cameraCropModePicker` | Crop | Fill / Fit |
-| Anchor picker (segmented) | `cameraCropAnchorPicker` | Anchor | Centre / Top / Bottom |
+| Anchor picker (segmented) | `cameraCropAnchorPicker` | Anchor | Center / Top / Bottom |
 | Zoom picker (segmented) | `cameraZoomPicker` | Zoom | 1 times / 1.5 times / 2 times / 3 times (titles 1×, 1.5×, 2×, 3×) |

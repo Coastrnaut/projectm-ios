@@ -22,14 +22,14 @@ user choice of fit and crop that the same recomputation preserves.
 
 - **Decision**: upright size `(uw, uh)`, output `(ow, oh)`. Base scale `s0 = max(ow/uw, oh/uh)` for
   Fill, `min(ow/uw, oh/uh)` for Fit; `s = s0 × zoom`. Shown fraction `visible = (ow/(uw·s),
-  oh/(uh·s))`. Offset `= (1 − visible) × anchor`, anchor `= (0.5, ay)`, `ay` 0 (Top), 0.5 (Centre),
+  oh/(uh·s))`. Offset `= (1 − visible) × anchor`, anchor `= (0.5, ay)`, `ay` 0 (Top), 0.5 (Center),
   1 (Bottom).
 - **Why**: output point `a` shows upright point `offset + a·visible = a` for `a = anchor`, so the
   anchor point always lands on the same relative output point, for every output aspect, rotation,
   mode and zoom: exactly "preserves the chosen crop behavior" in a measurable form. In Fill,
   `visible ≤ 1`, so `offset ∈ [0, 1 − visible]`: the layer is always covered. In Fit at 1×,
   `visible ≥ 1`, `offset ≤ 0` and `offset + visible ≥ 1`: the whole picture is visible. Picture
-  pixels per output pixel are `1/s` in both directions: no stretch. With Centre and 1× the result
+  pixels per output pixel are `1/s` in both directions: no stretch. With Center and 1× the result
   equals CAM-001's formula.
 - **Alternatives**: centring a crop window on the focus and clamping it to the picture (the focus
   then moves on screen whenever the clamp engages, so "same relative position" fails); free pan
@@ -56,7 +56,7 @@ user choice of fit and crop that the same recomputation preserves.
 ## CAM-007-D4: storage
 
 - **Decision**: three UserDefaults keys shared by both cameras: `settings.camera.cropMode`
-  (`fill`/`fit`), `settings.camera.cropAnchor` (`centre`/`top`/`bottom`), `settings.camera.zoom`
+  (`fill`/`fit`), `settings.camera.cropAnchor` (`center`/`top`/`bottom`), `settings.camera.zoom`
   (Double from {1, 1.5, 2, 3}); unknown values read as defaults. Not in scenes or cues.
 
 ## CAM-007-D5: zoom choices

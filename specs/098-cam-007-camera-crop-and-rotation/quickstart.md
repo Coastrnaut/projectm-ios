@@ -26,7 +26,7 @@ landscape sizes for Fill and Fit; the UI test sees the Crop, Anchor and Zoom val
 
 ## Device stage (`{device}`, D1-D3, a person)
 
-1. Choose Camera (Back). Fill, Centre, 1×: rotate portrait → landscape → portrait; the picture
+1. Choose Camera (Back). Fill, Center, 1×: rotate portrait → landscape → portrait; the picture
    fills, is upright and undistorted, centered.
 2. Fill, Top, 2×: point the camera at a doorframe top; rotate; the top of the picture stays at the
    top of the screen, twice the plain fill size.

@@ -11,7 +11,7 @@
 
 | Case | Raw value | Title | Upright point (x, y) |
 |---|---|---|---|
-| `centre` (default) | `"centre"` | Centre | (0.5, 0.5) |
+| `center` (default) | `"center"` | Center | (0.5, 0.5) |
 | `top` | `"top"` | Top | (0.5, 0) |
 | `bottom` | `"bottom"` | Bottom | (0.5, 1) |
 
@@ -20,7 +20,7 @@
 - `mode: CameraCropMode`, `anchor: CameraCropAnchor`, `zoom: Float`.
 - `static let zoomChoices: [Float] = [1, 1.5, 2, 3]`; `init` snaps any other zoom (or a non-finite
   one) to 1.
-- `static let fill = CameraCrop(mode: .fill, anchor: .centre, zoom: 1)` (the default; CAM-001's
+- `static let fill = CameraCrop(mode: .fill, anchor: .center, zoom: 1)` (the default; CAM-001's
   picture).
 - `static func zoomTitle(_:) -> String` ("1×", "1.5×") and `zoomSpokenValue(_:)` ("1 times",
   "1.5 times"), built in typed steps.
@@ -39,7 +39,7 @@
 | Property | Key | Values | Absent / unknown |
 |---|---|---|---|
 | `cameraCropMode` | `settings.camera.cropMode` | `fill`, `fit` | `fill` |
-| `cameraCropAnchor` | `settings.camera.cropAnchor` | `centre`, `top`, `bottom` | `centre` |
+| `cameraCropAnchor` | `settings.camera.cropAnchor` | `center`, `top`, `bottom` | `center` |
 | `cameraZoom` | `settings.camera.zoom` | 1, 1.5, 2, 3 (Double) | 1 |
 
 `cameraCrop: CameraCrop` combines them (read-only). All three keys are in `AppSettings.allKeys`
