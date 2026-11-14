@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Clarified 2026-11-14 (ten answers recorded)
+**Status**: Implemented 2026-11-14 (ACC-007-T01–T12, T14–T16 verified on the Mac: PerformanceControl package tests on the host, app unit and acceptance tests and one UI test on a private iOS 27.2 simulator. Open: ACC-007-T13 `{device}` on D1, since haptics exist only on iPhone hardware. Simulator results are not device evidence.)
 
 **Input**: User description: "Implement ACC-007 (Haptic beat feedback) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Offer optional bounded haptic pulses on selected beat events."
@@ -115,7 +115,7 @@ pulses, and the Settings text says why.
 - **ACC-007-R3**: Beats MUST pulse on ANL-005 beats with confidence ≥ 0.5; Downbeats on every 4th such beat counted from the first beat after a session marker (beats that are throttled or dropped still count); Kicks on ANL-007 kick transients. No other event pulses.
 - **ACC-007-R4**: Pulses MUST be at least 150 ms apart, at most 4 in any 1 s window and at most 180 in any 60 s window, measured on the events' bus times; an event delivered more than 200 ms after its bus time MUST be dropped.
 - **ACC-007-R5**: A pulse's intensity MUST be the effective ACC-012 clamp's intensity limit (1.0 at Standard); at an intensity limit ≤ 0.25 (Strict) no pulse plays.
-- **ACC-007-R6**: Pulses MUST play only while the app is active, Low Power Mode is off and the hardware supports haptics. Without haptics the switch MUST be disabled with an explanation; the stored choice is never changed by these conditions.
+- **ACC-007-R6**: Pulses MUST play only while the app is active, Low Power Mode is off and the hardware supports haptics. Without haptics the switch MUST be disabled with an explanation and nothing is installed even when the stored choice is on (no observer, 250 ms poll); the stored choice is never changed by these conditions.
 - **ACC-007-R7**: Events MUST come from SHOW-011's tempo subscription (no new pipeline or subscription); while the switch is on its poll MUST run every 40 ms; haptic calls MUST run on the main actor, never on the analysis worker or an audio thread.
 - **ACC-007-R8**: The three settings MUST be stored locally only, included in the FILE-005 backup, erased with Settings, allowed by `scripts/run_device_tests.py` and removed by the UI-test reset.
 - **ACC-007-R9**: The settings MUST NOT be recorded in scenes or cues, set by MIDI or OSC, or modulated.

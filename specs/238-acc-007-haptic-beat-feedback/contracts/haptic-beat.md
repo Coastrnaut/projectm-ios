@@ -20,7 +20,7 @@ beat → `.beat(confidence)`; transient band `.kick` → `.kick`; session starte
 
 ## C3 `HapticBeatCoordinator` (app)
 
-- Settings (C5 keys) with `enabled`, `choice`, `strength`; Off → `tempo.analysisEventObserver = nil` and no call on the player.
+- Settings (C5 keys) with `enabled`, `choice`, `strength`; the observer is installed only while on with haptic hardware (`observesAnalysis`); Off → `tempo.analysisEventObserver = nil` and no call on the player. `isAvailable` (the switch) is the hardware or the DEBUG override.
 - `handle(_ event:)`: maps (C2); `playable` = app active ∧ ¬Low Power Mode ∧ hardware haptics ∧ intensity limit > 0.25; gate (C1); on `.pulse` calls `player.play(strength:intensity:)` with intensity = the clamp's intensity limit.
 - Counters `pulses`, `throttled` for tests and diagnostics.
 

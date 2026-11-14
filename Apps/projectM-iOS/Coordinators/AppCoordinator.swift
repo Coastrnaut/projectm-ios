@@ -370,6 +370,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
+    /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
+    @ObservationIgnored private(set) lazy var hapticBeat = HapticBeatCoordinator(
+        defaults: defaults, tempo: tempo, clamp: { [unowned self] () -> SafetyClamp in self.settings.safetyClamp })
     /// OUT-004: the external display's output correction (Settings › External Display).
     @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// REC-008: the recording length (Settings → Stop recording after; Off by default).
@@ -632,6 +635,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
     private func connectAfterInit(defaults: UserDefaults) {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
+        _ = hapticBeat   // ACC-007-R7: a stored "on" installs the tempo observer before any visual starts
         osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006

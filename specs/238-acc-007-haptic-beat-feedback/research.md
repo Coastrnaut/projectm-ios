@@ -26,5 +26,7 @@
   (`ProcessInfo.isLowPowerModeEnabled`, read per event), hardware support (read once). All are injected for
   tests. While a condition blocks, events still reach the gate as `playable: false`, so downbeats keep counting.
 - **ACC-007-D7 UI test on the simulator**: the simulator has no haptics, so the switch would be disabled.
-  DEBUG `-uitestHapticsAvailable` reports haptics as available; the fake does not play anything on the
-  simulator anyway (the system generator is a no-op there).
+  DEBUG `-uitestHapticsAvailable` enables the switch only; the observer and the 40 ms poll need real haptic
+  hardware. Found while testing (2026-11-14): with the 40 ms poll running, XCUITest's "wait for the app to idle"
+  stalled about 23 s after each tap (the main actor never goes quiet), so on hardware without haptics nothing is
+  installed, and device UI tests must run with the switch off.
