@@ -22,7 +22,7 @@ Independent test: select A in "Tagged: Calm", preview B and C, Cancel; A current
 - [ ] PRE-010-T03 [US1] `PresetAudition`, `canPreview`, `preview(_:from:)`, `cancelAudition()`, texts and library-lane announcements (contract A1) in `Apps/projectM-iOS/Coordinators/PresetCoordinator+Audition.swift`.
 - [ ] PRE-010-T04 [US1] `PresetAuditionBar` (name, Keep, Cancel with Escape, notice, OK) in `Apps/projectM-iOS/Views/PresetAuditionBar.swift`; the bar as a bottom inset and cancel on close in `Apps/projectM-iOS/Views/PresetBrowserView.swift`.
 - [ ] PRE-010-T05 [US1] Row "Preview" (menu first item, leading swipe, VoiceOver action) through `previewScope` in `Apps/projectM-iOS/Views/PresetBrowserView.swift`; list scopes passed by `PresetFolderView.swift`, `PresetTagChips.swift`, `PresetCollectionView.swift`, `RecentPresetsView.swift`, `UserPresetsView.swift` and the browser's favorites and search lists.
-- [ ] PRE-010-T06 [US1] Acceptance test (S1) in `Apps/projectM-iOS/Tests/PresetAuditionAcceptanceTests.swift`: fake loader, PRE-006 history on with an injected clock, a `SceneHistoryCoordinator` over the same `AppSettings`, SCN-002 canonical bytes before and after; whole UserDefaults domain byte-identical.
+- [ ] PRE-010-T06 [US1] Acceptance test (S1) in `Apps/projectM-iOS/Tests/PresetAuditionAcceptanceTests.swift`: fake loader, PRE-006 history on with an injected clock, a `SceneHistoryCoordinator` over the same `AppSettings`, SCN-002 canonical bytes before and after; whole UserDefaults domain byte-identical; the library-lane announcements (R9).
 
 ## Phase 4: User Story 2 — keep the one I like (P1)
 

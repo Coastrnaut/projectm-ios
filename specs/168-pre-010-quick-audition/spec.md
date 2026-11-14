@@ -142,3 +142,12 @@ undo step.
 - The browser sheet hides the visualizer on iPhone; on iPad the preview is visible beside or behind the sheet. Either way the audition bar names what is playing.
 - Simulator results are not device evidence; this row needs no device-only check.
 - Auto-revert after a timeout, previewing from the controls (outside the browser) and a split-screen side-by-side comparison are out of scope.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+No critical findings; every requirement and success criterion maps to at least one task (R1 → T05,
+T09; R2 → T03, T06; R3 → T02, T04; R4 → T03, T04, T06, T10; R5 → T07, T08; R6 → T06; R7 → T09;
+R8 → T02, T08; R9 → T03, T04, T06; R10 → T11; S1 → T06; S2 → T08; S3 → T09; S4 → T10). Applied
+fixes: T06 also asserts the library-lane announcements (R9 had no test); Escape (R4) is a keyboard
+shortcut on Cancel and is covered by the same code path as Cancel, which the unit and UI tests drive
+(a hardware Escape key is not simulated).
