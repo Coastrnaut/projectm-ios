@@ -91,6 +91,20 @@ enum StatusEventCatalog {
         }
     }
 
+    // MARK: Stereo phase (X3a, X3b; ANL-013-R8)
+
+    /// X3a: ANL-013's phase-inversion warning was raised (the indicator shows it); X3b: an announced
+    /// warning cleared (a transient caption). System rows on the source lane; the presenter throttles X3a.
+    static func stereoPhase(raised: Bool) -> StatusEvent {
+        if raised {
+            let text: String = StereoPhaseWarningPresenter.warningText
+            return StatusEvent(id: "X3a", kind: .source, visibleText: text, announcement: text, cause: .system)
+        }
+        let text: String = StereoPhaseWarningPresenter.clearedText
+        return StatusEvent(id: "X3b", kind: .source, visibleText: text, announcement: text, cause: .system,
+                           presentation: .caption)
+    }
+
     // MARK: Background, route (X4, X5)
 
     static func background(_ notice: String) -> StatusEvent {
@@ -187,6 +201,28 @@ enum StatusEventCatalog {
     /// ("Recording at Standard: Needs HEVC, which this device cannot encode.").
     static func recordingQualityFallback(_ notice: String) -> StatusEvent {
         StatusEvent(id: "X9c", kind: .recording, visibleText: notice, announcement: notice, cause: .user)
+    }
+
+    /// REC-009-R4 (contract C2): X9f, the recording is dropping frames; X9g, storage is low or almost full.
+    /// System rows on the recording lane; the overlay line stays on screen (persistent).
+    static func recordingWarning(_ warning: RecordingStatusWarning) -> StatusEvent {
+        let text: String = recordingWarningText(warning)
+        let id: String = warning.kind == .droppedFrames ? "X9f" : "X9g"
+        return StatusEvent(id: id, kind: .recording, visibleText: text, announcement: text, cause: .system)
+    }
+
+    static let droppingFramesText = "Recording is dropping frames"
+
+    /// "Storage low: about 3 min of recording left", "Storage almost full: under 1 min of recording left".
+    static func recordingWarningText(_ warning: RecordingStatusWarning) -> String {
+        switch warning.kind {
+        case .droppedFrames:
+            return droppingFramesText
+        case .storage:
+            let seconds: Int64 = warning.secondsLeft ?? 0
+            if warning.storageLevel == .critical || seconds < 60 { return "Storage almost full: under 1 min of recording left" }
+            return "Storage low: about \(seconds / 60) min of recording left"
+        }
     }
 
     static func recordingRefusal(_ refusal: RecordingRefusal) -> StatusEvent {

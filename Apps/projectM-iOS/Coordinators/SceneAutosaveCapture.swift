@@ -55,6 +55,9 @@ struct SceneInputs: Equatable, Sendable {
     /// MOD-010 (research MOD-010-D4): the scene's macros with their current values (nil: the caller does not track
     /// them; the carried list is kept). Undoable, so one macro change is one history step.
     var macros: [SceneMacroEntry]? = nil
+    /// MOD-012 (research MOD-012-D5): the current scene's routes as the modulation matrix shows them (nil: the caller
+    /// does not track them; the live or carried list is written). Undoable: a toggle or a move is one history step.
+    var bindings: [AudioFeatureBinding]? = nil
 }
 
 /// What a restore hands back to the app (contract A5).
@@ -164,8 +167,8 @@ enum SceneAutosaveCapture {
         var contents: [SceneLayerContent] = []
         let spectrumOver: [SceneLayerContent] = [.circularSpectrum]
         switch inputs.visual {
-        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform:
-            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) and the radial waveform (VIS-005-R10) are no compositor layer
+        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala:
+            break   // camera never reaches here (mapped by the caller); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) the radial waveform (VIS-005-R10) beat rings (VIS-006-R10) and the mandala (VIS-007-R10) are no compositor layer
         case .circularSpectrum:
             contents = spectrumOver
         case .linearSpectrum:
@@ -238,7 +241,7 @@ enum SceneAutosaveCapture {
         var parameters = carry.parameters
         for (id, value) in parameterValues(inputs) { parameters[id] = value }
 
-        let bindings = liveBindings ?? carry.bindings
+        let bindings = inputs.bindings ?? liveBindings ?? carry.bindings   // MOD-012: the matrix mirror wins
         let sceneBindings = SceneBinding.list(bindings, expressions: carry.expressions) + carry.preserved.bindings   // MOD-011-R7
         let connections = carry.modulation.edges.map { (e: ModulationEdge) -> SceneConnection in SceneConnection(e) }
             + carry.preserved.connections

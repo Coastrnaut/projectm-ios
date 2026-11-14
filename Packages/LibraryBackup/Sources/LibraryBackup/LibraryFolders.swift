@@ -12,7 +12,7 @@ public struct LibraryFolders: Sendable, Equatable {
         case currentScene = "Scenes"
         /// `UserPresets/`: index.json, files/ (PRE-012).
         case presets = "UserPresets"
-        /// `PresetCollections/`: collections.json (PRE-007) and tags.json (PRE-003).
+        /// `PresetCollections/`: collections.json (PRE-007), tags.json (PRE-003) and overrides.json (PRE-016).
         case collections = "PresetCollections"
         /// `Photos/`: <UUID>.png|jpg (MED-001).
         case photos = "Photos"
@@ -26,6 +26,8 @@ public struct LibraryFolders: Sendable, Equatable {
     public static let collectionsFileName = "collections.json"
     /// PRE-003: preset tags, beside the collections (`PresetTagStore.fileName`).
     public static let tagsFileName = "tags.json"
+    /// PRE-016: preset parameter overrides, beside the collections (`PresetOverrideStore.fileName`).
+    public static let overridesFileName = "overrides.json"
 
     public let root: URL
 
@@ -42,6 +44,7 @@ public struct LibraryFolders: Sendable, Equatable {
     public var presetTextsFolder: URL { url(.presets).appendingPathComponent(Self.presetTextsFolderName, isDirectory: true) }
     public var collectionsFile: URL { url(.collections).appendingPathComponent(Self.collectionsFileName, isDirectory: false) }
     public var tagsFile: URL { url(.collections).appendingPathComponent(Self.tagsFileName, isDirectory: false) }
+    public var overridesFile: URL { url(.collections).appendingPathComponent(Self.overridesFileName, isDirectory: false) }
 
     /// Every folder the backup reads or the restore may replace (FILE-003 snapshots use these).
     public var libraryRoots: [URL] { Folder.allCases.map { (folder: Folder) -> URL in url(folder) } }

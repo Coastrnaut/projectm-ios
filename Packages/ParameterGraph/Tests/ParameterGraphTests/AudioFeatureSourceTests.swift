@@ -65,6 +65,39 @@ final class AudioFeatureSourceTests: XCTestCase {
         XCTAssertEqual(AudioFeatureSource.loudness.value(in: .silent), 0)
     }
 
+    /// ANL-013-T09: the correlation source maps r to (r + 1)/2 (ANL-013-R6).
+    func testCorrelationSourceRoundTripsAndMapsTheValue() {
+        XCTAssertEqual(AudioFeatureSource.correlation.id, "audio.correlation")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.correlation"), .correlation)
+        XCTAssertNil(AudioFeatureSource(id: "audio.Correlation"))
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            func value(_ r: Float?) -> Double { AudioFeatureSource.correlation.value(in: AudioFeatureFrame(bands: buffer, correlation: r)) }
+            XCTAssertEqual(value(1), 1)
+            XCTAssertEqual(value(-1), 0)
+            XCTAssertEqual(value(0), 0.5, "silence or unrelated channels sit mid-range")
+            XCTAssertEqual(value(0.5), 0.75)
+            XCTAssertEqual(value(3), 1, "clamped")
+            XCTAssertEqual(value(.nan), 0)
+            XCTAssertEqual(value(nil), 0, "no feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.correlation.value(in: .silent), 0)
+    }
+
+    /// ANL-012-T08: the flatness source (ANL-012-R7).
+    func testFlatnessSourceRoundTripsAndReadsTheValue() {
+        XCTAssertEqual(AudioFeatureSource.flatness.id, "audio.flatness")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.flatness"), .flatness)
+        XCTAssertNil(AudioFeatureSource(id: "audio.Flatness"))
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            XCTAssertEqual(AudioFeatureSource.flatness.value(in: AudioFeatureFrame(bands: buffer, flatness: 0.5625)), 0.5625)
+            XCTAssertEqual(AudioFeatureSource.flatness.value(in: AudioFeatureFrame(bands: buffer, flatness: .nan)), 0)
+            XCTAssertEqual(AudioFeatureSource.flatness.value(in: AudioFeatureFrame(bands: buffer, rolloff: 1)), 0, "no feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.flatness.value(in: .silent), 0)
+    }
+
     /// ANL-011-T09: the rolloff source (ANL-011-R8).
     func testRolloffSourceRoundTripsAndReadsTheValue() {
         XCTAssertEqual(AudioFeatureSource.rolloff.id, "audio.rolloff")

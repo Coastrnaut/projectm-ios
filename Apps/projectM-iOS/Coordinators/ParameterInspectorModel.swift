@@ -307,6 +307,8 @@ struct ParameterModulationReading: Equatable {
 
 enum ParameterModulationReader {
     static let midiSource = "MIDI control"
+    /// MOD-012-R7: a layer turned off in Settings › Modulation (kept, not applied).
+    static let offSuffix = " (off)"
     /// MOD-011-R8 (contract mix-order O1), shown when a parameter has more than one binding.
     static let orderNote = "Order: the base value (MIDI control, else yours), then bindings 1, 2, … in turn, each kept in range, then the sensory safety limit."
 
@@ -316,7 +318,9 @@ enum ParameterModulationReader {
                         external: Double?, modulated: Double?, rendered: Double?) -> ParameterModulationReading? {
         let own: [AudioFeatureBinding] = bindings.filter { (b: AudioFeatureBinding) -> Bool in b.target == descriptor.id }
         guard !own.isEmpty || external != nil else { return nil }
-        var sources: [String] = own.map { (b: AudioFeatureBinding) -> String in describe(b, descriptor: descriptor) }
+        var sources: [String] = own.map { (b: AudioFeatureBinding) -> String in
+            b.isEnabled ? describe(b, descriptor: descriptor) : describe(b, descriptor: descriptor) + offSuffix   // MOD-012-R7
+        }
         let layered: Bool = own.count > 1
         if layered {   // MOD-011-R8: numbered in application order
             sources = sources.enumerated().map { (entry: (offset: Int, element: String)) -> String in "\(entry.offset + 1). " + entry.element }
@@ -365,6 +369,8 @@ extension AudioFeatureSource {
         case .midTransient: return "Mid transient"   // ANL-008: not a snare classifier
         case .highTransient: return "High transient"   // ANL-009: not a hi-hat classifier
         case .rolloff: return "Rolloff"   // ANL-011
+        case .flatness: return "Flatness"   // ANL-012
+        case .correlation: return "Correlation"   // ANL-013
         case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
         }
     }

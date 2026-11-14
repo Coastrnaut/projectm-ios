@@ -202,7 +202,8 @@ struct VisualizerView: View {
     private var performanceOverlay: some View {
         let overlay = PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                          renderHealth: { coordinator.renderHealthOverlayLine },
-                                         stageLines: { () -> [String] in coordinator.frameStageLines() })
+                                         stageLines: { () -> [String] in coordinator.frameStageLines() },
+                                         stereoLine: { () -> String? in coordinator.stereoOverlayLine })   // ANL-013
         return VStack { HStack { Spacer(); overlay }; Spacer() }
             .padding(.top, 2)
             .padding(.trailing, 8)
@@ -527,6 +528,10 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
         .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.beatRingsLife) { coordinator.visualSettingsChanged() }   // VIS-006
+        .onChange(of: coordinator.settings.mandalaSymmetry) { coordinator.visualSettingsChanged() }   // VIS-007
+        .onChange(of: coordinator.settings.mandalaMirror) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
@@ -740,6 +745,7 @@ struct VisualizerView: View {
             .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.indicatorAccessibilityText)")
             .accessibilityIdentifier("recordingIndicator")
             RecordingAudioLine(recording: coordinator.videoRecording)   // REC-004-R9
+            RecordingStatusLines(recording: coordinator.videoRecording)   // REC-009: dropped frames, storage
         }
         // REC-003: refusals, stop reasons, failures and "Recording saved." (FR-070: a labeled element).
         if let notice = coordinator.videoRecording.notice {

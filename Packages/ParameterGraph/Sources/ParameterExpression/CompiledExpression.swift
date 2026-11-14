@@ -47,12 +47,16 @@ public enum ExpressionOpcode: UInt8, Sendable, Hashable, CaseIterable {
     case step = 30
     case sqrt = 31
     case pow = 32
+    /// `audio.flatness` (ANL-012). 33, not next to the other audio sources: 19 was the last free value below.
+    case flatness = 33
+    /// `audio.correlation` (ANL-013), (r + 1)/2.
+    case correlation = 34
 
     /// The change in stack depth.
     var stackEffect: Int {
         switch self {
         case .constant, .time, .band, .bandMean, .onset, .beatConfidence, .kick, .centroid, .loudness, .midTransient, .highTransient,
-             .rolloff, .load: 1
+             .rolloff, .flatness, .correlation, .load: 1
         case .store: -1
         case .add, .subtract, .multiply, .divide, .min, .max, .step, .pow: -1
         case .negate, .abs, .sin, .cos, .floor, .fract, .sqrt: 0
@@ -228,6 +232,12 @@ public struct CompiledExpression: Sendable, Hashable {
                     top += 1
                 case .rolloff:
                     memory[top] = AudioFeatureSource.rolloff.value(in: frame)
+                    top += 1
+                case .flatness:
+                    memory[top] = AudioFeatureSource.flatness.value(in: frame)
+                    top += 1
+                case .correlation:
+                    memory[top] = AudioFeatureSource.correlation.value(in: frame)
                     top += 1
                 case .load:
                     memory[top] = memory[Int(instruction.index)]

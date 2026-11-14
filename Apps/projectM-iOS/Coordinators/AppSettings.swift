@@ -26,6 +26,11 @@
 //   `settings.radialWaveform.ring` (`small`/`medium`/`large`; anything else → medium), and amplitude, key
 //   `settings.radialWaveform.amplitude` (`low`/`medium`/`high`; anything else → medium). Glow is shared; Bars
 //   does not apply.
+// * Beat rings (VIS-006-R9): `settings.visual` may also be `beatRings`; its ring life, key `settings.beatRings.life`
+//   (`short`/`medium`/`long`; anything else → medium). Glow is shared; Bars does not apply.
+// * Mandala (VIS-007-R9): `settings.visual` may also be `mandala`; its symmetry, key `settings.mandala.symmetry` (Int:
+//   3, 4, 5, 6, 8 or 12; anything else → 6), mirror, key `settings.mandala.mirror` (Bool, off), and petal style, key
+//   `settings.mandala.petal` (`petal`/`round`/`spike`; anything else → petal). Glow is shared; Bars does not apply.
 // * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
 //   `settings.spectrum.attack` (0, 25, 50 or 100) and `settings.spectrum.release` (0, 100, 250 or
 //   500), Int milliseconds; anything else → 0 (Instant, today's look).
@@ -51,7 +56,7 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
+// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
 // `settings.visual.colorBlindSafePalette`).
 // * Sensory safety (ACC-012-R8): the profile and its custom limits, four `settings.sensorySafety.*` keys owned by
 //   `SensorySafetySetting`; `safetyClamp` combines them with Reduce flashing (stricter wins, ADR-0049).
@@ -84,6 +89,10 @@ final class AppSettings {
     static let lissajousPersistenceKey = "settings.lissajous.persistence"
     static let radialWaveformRingKey = "settings.radialWaveform.ring"       // VIS-005
     static let radialWaveformAmplitudeKey = "settings.radialWaveform.amplitude"
+    static let beatRingsLifeKey = "settings.beatRings.life"                 // VIS-006
+    static let mandalaSymmetryKey = "settings.mandala.symmetry"             // VIS-007
+    static let mandalaMirrorKey = "settings.mandala.mirror"
+    static let mandalaPetalKey = "settings.mandala.petal"
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
@@ -114,7 +123,7 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, videoIDKey, videoLoopKey, videoSpeedKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010
@@ -264,6 +273,29 @@ final class AppSettings {
         didSet { defaults.set(radialWaveformAmplitude.rawValue, forKey: Self.radialWaveformAmplitudeKey) }
     }
 
+    /// VIS-006: how long a beat ring lasts (Medium by default).
+    var beatRingsLife: BeatRingLife {
+        didSet { defaults.set(beatRingsLife.rawValue, forKey: Self.beatRingsLifeKey) }
+    }
+
+    /// VIS-007: the mandala's rotational symmetry N (6 by default; only `MandalaConfiguration.supportedSymmetries`).
+    var mandalaSymmetry: Int {
+        didSet {
+            if !MandalaConfiguration.supportedSymmetries.contains(mandalaSymmetry) { mandalaSymmetry = MandalaConfiguration.defaultSymmetry }
+            defaults.set(mandalaSymmetry, forKey: Self.mandalaSymmetryKey)
+        }
+    }
+
+    /// VIS-007: mirror within each sector (off by default).
+    var mandalaMirror: Bool {
+        didSet { defaults.set(mandalaMirror, forKey: Self.mandalaMirrorKey) }
+    }
+
+    /// VIS-007: the petal style (Petal by default).
+    var mandalaPetal: MandalaPetalStyle {
+        didSet { defaults.set(mandalaPetal.rawValue, forKey: Self.mandalaPetalKey) }
+    }
+
     /// ANL-003: the spectra's attack, one of `spectrumAttackChoices` (0 otherwise).
     var spectrumAttackMilliseconds: Int {
         didSet {
@@ -398,6 +430,11 @@ final class AppSettings {
         lissajousPersistence = defaults.bool(forKey: Self.lissajousPersistenceKey)
         radialWaveformRing = defaults.string(forKey: Self.radialWaveformRingKey).flatMap(RadialWaveformRing.init(rawValue:)) ?? .medium   // VIS-005
         radialWaveformAmplitude = defaults.string(forKey: Self.radialWaveformAmplitudeKey).flatMap(RadialWaveformAmplitude.init(rawValue:)) ?? .medium
+        beatRingsLife = defaults.string(forKey: Self.beatRingsLifeKey).flatMap(BeatRingLife.init(rawValue:)) ?? .medium   // VIS-006
+        let symmetry: Int = (defaults.object(forKey: Self.mandalaSymmetryKey) as? Int) ?? MandalaConfiguration.defaultSymmetry   // VIS-007
+        mandalaSymmetry = MandalaConfiguration.supportedSymmetries.contains(symmetry) ? symmetry : MandalaConfiguration.defaultSymmetry
+        mandalaMirror = defaults.bool(forKey: Self.mandalaMirrorKey)
+        mandalaPetal = defaults.string(forKey: Self.mandalaPetalKey).flatMap(MandalaPetalStyle.init(rawValue:)) ?? .petal
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
@@ -458,6 +495,10 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case lissajous
     /// The native radial waveform (VIS-005).
     case radialWaveform
+    /// The native beat pulse rings (VIS-006).
+    case beatRings
+    /// The native mandala (VIS-007).
+    case mandala
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -475,6 +516,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .oscilloscope: "Oscilloscope"
         case .lissajous: "Lissajous"
         case .radialWaveform: "Radial Waveform"
+        case .beatRings: "Beat Rings"
+        case .mandala: "Mandala"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -484,7 +527,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
 
     /// Drawn by the native spectrum host instead of projectM.
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
-        || self == .radialWaveform }
+        || self == .radialWaveform || self == .beatRings || self == .mandala }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum }
@@ -575,6 +618,38 @@ enum RadialWaveformAmplitude: String, CaseIterable, Sendable {
         case .low: 0.10
         case .medium: 0.18
         case .high: 0.25
+        }
+    }
+}
+
+/// VIS-006-R9: how long a beat ring lasts; `seconds` is its life L.
+enum BeatRingLife: String, CaseIterable, Sendable {
+    case short, medium, long
+
+    var title: String {
+        switch self {
+        case .short: "Short"
+        case .medium: "Medium"
+        case .long: "Long"
+        }
+    }
+
+    var seconds: Double {
+        switch self {
+        case .short: 1.0
+        case .medium: 1.5
+        case .long: 2.5
+        }
+    }
+}
+
+/// VIS-007-R9: the petal style's Settings and VoiceOver title.
+extension MandalaPetalStyle {
+    var title: String {
+        switch self {
+        case .petal: "Petal"
+        case .round: "Round"
+        case .spike: "Spike"
         }
     }
 }

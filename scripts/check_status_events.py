@@ -26,6 +26,7 @@ CHECKED = [
     "Coordinators/SceneRepairCoordinator.swift",
     "Views/VisualizerView.swift",
     "Views/SourceStatusIndicator.swift",
+    "Coordinators/StereoPhaseWarning.swift",   # ANL-013-R8: X3a, X3b through the router
     "Views/BackgroundNoticeView.swift",
     "Views/OSCListenerBadge.swift",
     "Views/SessionRecoveryOfferCard.swift",
@@ -58,6 +59,8 @@ CHECKED = [
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
     "Views/LayerInspectorView.swift",  # CMP-015-R10: solo and mute announce through the announcer
+    "Coordinators/LibraryIntegrityCoordinator.swift",  # PRE-018-R12: check results announce on the library lane
+    "Views/LibraryCheckView.swift",                    # PRE-018-R12
     "Coordinators/LayerInspectorCoordinator.swift",
     "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
     "Coordinators/LibraryEraseCoordinator.swift",   # FILE-011-R3: the erase announces on the library lane
@@ -70,6 +73,7 @@ CHECKED = [
     "Views/LogoSection.swift",
     "Views/RecordingAudioSection.swift",  # REC-004-R9: recording audio announces through the router (X9a, X9b)
     "Coordinators/RecordingAudioSetting.swift",
+    "Views/RecordingStatusLines.swift",  # REC-009-R4: recording warnings announce through the router (X9f, X9g)
     "Views/RecordingQualitySection.swift",  # REC-005-R6: the fallback announces through the router (X9c)
     "Coordinators/RecordingQualitySetting.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane

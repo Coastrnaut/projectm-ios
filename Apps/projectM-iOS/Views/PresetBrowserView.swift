@@ -64,6 +64,8 @@ struct PresetBrowserView: View {
                 switch route {
                 case .list: UserPresetsView(presets: presets, userPresets: userPresets, onChoose: onChoose) { dismiss() }
                 case .quarantine: PresetQuarantineView(userPresets: userPresets) { dismiss() }
+                case .check:   // PRE-018
+                    if let integrity = userPresets.integrity { LibraryCheckView(model: integrity) { dismiss() } }
                 }
             }
             .navigationDestination(for: RecentRoute.self) { (_: RecentRoute) in
@@ -250,6 +252,8 @@ struct PresetRow: View {
     @State private var addingToCollection = false
     /// PRE-003: the Tags sheet.
     @State private var tagging = false
+    /// PRE-016: the Adjust Parameters sheet.
+    @State private var adjusting = false
     /// PRE-015: duplicating and editing; absent outside the browser.
     @Environment(UserPresetsCoordinator.self) private var userPresets: UserPresetsCoordinator?
     @State private var editing: UserPreset?
@@ -352,6 +356,7 @@ struct PresetRow: View {
         .contextMenu { menuItems(editable: editable) }
         .sheet(isPresented: $addingToCollection) { AddToCollectionSheet(presets: presets, preset: preset) }
         .sheet(isPresented: $tagging) { PresetTagsView(presets: presets, preset: preset) }
+        .modifier(PresetOverridesSheet(isPresented: $adjusting, presets: presets, preset: preset))   // PRE-016
         .sheet(item: $editing) { record in
             if let userPresets { UserPresetEditorView(preset: record, userPresets: userPresets) }
         }
@@ -395,6 +400,10 @@ struct PresetRow: View {
         Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
         Button { tagging = true } label: { Label("Tags…", systemImage: "tag") }
             .accessibilityIdentifier("presetTagsAction")
+        if PresetOverridesSheet.canAdjust(preset, presets: presets) {   // PRE-016-R12
+            Button { adjusting = true } label: { Label("Adjust Parameters…", systemImage: "slider.horizontal.3") }
+                .accessibilityIdentifier("adjustPresetParameters")
+        }
         if isBundled && userPresets != nil {
             Button(action: duplicate) { Label("Duplicate to My Presets", systemImage: "plus.square.on.square") }
                 .accessibilityIdentifier("duplicatePreset")
