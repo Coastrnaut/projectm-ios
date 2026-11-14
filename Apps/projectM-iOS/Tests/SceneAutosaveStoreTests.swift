@@ -60,7 +60,8 @@ final class SceneAutosaveStoreTests: XCTestCase {
     /// S2: a failure (or a kill) at any step before the rename leaves the previous scene readable, and
     /// at least one complete committed scene exists after a failure at every step.
     func testInjectedFailureAtEveryStepKeepsACommittedScene() throws {
-        for failing in SceneAutosaveStep.allCases {
+        // `keepOriginal` runs only when a migrated original is pending (SceneAutosaveMigrationTests, SCN-013).
+        for failing in SceneAutosaveStep.allCases where failing != .keepOriginal {
             try withStore { (store: SceneAutosaveStore, registry: ParameterRegistry) in
                 try store.save(F.document(bars: 16).encoded())
                 try store.save(F.document(bars: 32).encoded())   // backup 16, main 32

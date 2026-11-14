@@ -75,6 +75,12 @@ struct ShowEditorView: View {
         let active = show.list.activeCue?.id == cue.id
         let missing = show.isSceneMissing(cue)
         let sceneName = show.sceneName(of: cue).flatMap { (name: String) -> String? in name == cue.label ? nil : name }
+        // Built in typed steps: as one `+` chain of literals and ternaries, Xcode 26 gave up type-checking it (CI, 607c2c2).
+        var value: String = "Cue \(number) of \(show.list.cues.count)"
+        if active { value += ", active" }
+        if missing { value += ", scene missing" }
+        if let sceneName { value += ", scene \(sceneName)" }
+        let selectedTraits: AccessibilityTraits = active ? .isSelected : []
         return HStack {
             Text("\(number)").monospacedDigit().frame(minWidth: 28, alignment: .trailing)
             VStack(alignment: .leading, spacing: 2) {
@@ -92,9 +98,8 @@ struct ShowEditorView: View {
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(cue.label)
-        .accessibilityValue("Cue \(number) of \(show.list.cues.count)" + (active ? ", active" : "") + (missing ? ", scene missing" : "")
-                            + (sceneName.map { (name: String) -> String in ", scene \(name)" } ?? ""))
-        .accessibilityAddTraits(active ? .isSelected : [])   // ACC-004-R2
+        .accessibilityValue(value)
+        .accessibilityAddTraits(selectedTraits)   // ACC-004-R2
         .accessibilityIdentifier("showCue\(number)")
         .contextMenu {
             Button("Go to Cue") { show.go(to: cue.id) }

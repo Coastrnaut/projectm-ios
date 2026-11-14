@@ -12,6 +12,8 @@ public enum SceneDecodeError: Error, Sendable, Hashable, CustomStringConvertible
     case invalidVersion(String)
     case tooMany(what: String, count: Int, limit: Int)
     case malformed(path: String, reason: String)
+    /// SCN-013: an older version the migration chain cannot bring to the current version.
+    case migrationFailed(fromVersion: Int64, step: String?, path: String, reason: String)
 
     public var message: String {
         switch self {
@@ -35,6 +37,9 @@ public enum SceneDecodeError: Error, Sendable, Hashable, CustomStringConvertible
             "The scene has \(count) \(what); at most \(limit) are allowed."
         case let .malformed(path, reason):
             "\(path): \(reason)."
+        case let .migrationFailed(version, step, path, reason):
+            "The scene's format version \(version) cannot be updated to version \(SceneDocument.currentVersion)"
+                + (step.map { (s: String) -> String in " (step \(s))" } ?? "") + ": \(path): \(reason)."
         }
     }
 

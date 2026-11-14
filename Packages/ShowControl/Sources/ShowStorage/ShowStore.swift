@@ -10,6 +10,10 @@
 // per scene, never fatal for the show. No networking; nothing read is executed.
 // SCN-003: Duplicate writes a copy under a new ID (never over another file) and Rename rewrites a scene
 // under its own ID; scenes share stored photos and videos by store ID (`referencedMediaIDs`).
+// SCN-013: scenes are migrated in memory when read (`migrator`); before `saveScene` replaces a file whose
+// content is an older format version, its original bytes are kept once as
+// `<SCENE-ID>.scene.json.v<N>.backup` (never overwritten; a failed backup refuses the save). Backups are
+// removed only with their scene.
 import Foundation
 import SceneFormat
 import ShowControl
@@ -81,9 +85,16 @@ public struct ShowStore: Sendable {
     public static let sceneFileSuffix = ".scene.json"
 
     public let directory: URL
+    /// The scene migration chain (the app's; tests pass synthetic chains, SCN-013).
+    public let migrator: SceneMigrator
 
     public init(directory: URL) {
+        self.init(directory: directory, migrator: .standard)
+    }
+
+    public init(directory: URL, migrator: SceneMigrator) {
         self.directory = directory
+        self.migrator = migrator
     }
 
     /// `Application Support/Show`.
@@ -135,10 +146,31 @@ public struct ShowStore: Sendable {
         guard ShowCueList.isSceneID(document.id) else { throw .writeFailed }
         do {
             try FileManager.default.createDirectory(at: scenesFolder, withIntermediateDirectories: true)
+            try keepOriginalIfMigrated(sceneFile(document.id))
             try Data(document.encoded()).write(to: sceneFile(document.id), options: .atomic)
         } catch {
             throw .writeFailed
         }
+    }
+
+    /// SCN-013-R8, R9: an older-version file about to be replaced keeps its original bytes once. An
+    /// existing backup is never overwritten; any other failure throws (the file is not replaced).
+    private func keepOriginalIfMigrated(_ file: URL) throws {
+        guard let data = try? Data(contentsOf: file),
+              let root = try? SceneJSON.parse([UInt8](data)),
+              let record = try? migrator.migrate(root).record, record.migrated else { return }
+        let backup = file.deletingLastPathComponent().appendingPathComponent(record.backupName(for: file.lastPathComponent), isDirectory: false)
+        var isFolder: ObjCBool = false
+        if FileManager.default.fileExists(atPath: backup.path, isDirectory: &isFolder), !isFolder.boolValue { return }   // kept, never overwritten
+        try data.write(to: backup, options: .withoutOverwriting)
+    }
+
+    /// The original backups of a scene file (SCN-013).
+    public func backups(of sceneID: String) -> [URL] {
+        let fileName = sceneID + Self.sceneFileSuffix
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: scenesFolder.path)) ?? []
+        return names.filter { (name: String) -> Bool in SceneMigrationRecord.isBackup(name, of: fileName) }.sorted()
+            .map { (name: String) -> URL in scenesFolder.appendingPathComponent(name, isDirectory: false) }
     }
 
     /// Reads and decodes a stored scene (SCN-001 decode; validation against a registry is the caller's).
@@ -146,7 +178,7 @@ public struct ShowStore: Sendable {
         guard ShowCueList.isSceneID(sceneID), let data = try? Data(contentsOf: sceneFile(sceneID)) else { throw .missing }
         let result: SceneDecodeResult
         do {
-            result = try SceneDocument.decode([UInt8](data))
+            result = try SceneDocument.decode([UInt8](data), migrator: migrator)
         } catch {
             throw .unreadable(error)
         }
@@ -243,6 +275,7 @@ public struct ShowStore: Sendable {
     private func removeUnreferencedScenes(keeping referenced: Set<String>) {
         for id in storedSceneIDs().subtracting(referenced) {
             try? FileManager.default.removeItem(at: sceneFile(id))
+            for backup in backups(of: id) { try? FileManager.default.removeItem(at: backup) }   // SCN-013-R15
         }
     }
 

@@ -6,8 +6,9 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 10,
-   "integrated": 76,
+   "audited": 6,
+   "implementing": 3,
+   "integrated": 77,
    "skipped_existing": 1
   },
   "P1": {
@@ -23,8 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 233,
-  "integrated": 92,
+  "audited": 229,
+  "implementing": 3,
+  "integrated": 93,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -212,7 +214,6 @@
    "SCN-008",
    "SCN-009",
    "SCN-011",
-   "SCN-013",
    "SCN-014",
    "SCN-015",
    "SHD-003",
@@ -269,7 +270,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "233 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)"
+   "232 features are not implemented yet (first: ACC-003, ACC-004, ACC-005, ACC-006, ACC-007)"
   ]
  },
  "features": {
@@ -305,13 +306,13 @@
   },
   "ACC-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-005": {
    "attempts": 0,
@@ -2515,13 +2516,13 @@
   },
   "QA-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/qa-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "QA-005": {
    "attempts": 0,
@@ -2885,13 +2886,13 @@
   },
   "SCN-013": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/scn-013",
+   "branch_sha": "a1ec5717335d0fcd612f1e83e486862dc5127158",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "7f597d2",
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "SCN-014": {
    "attempts": 0,
@@ -3355,13 +3356,13 @@
   },
   "VIS-003": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-003",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-004": {
    "attempts": 0,
@@ -3941,6 +3942,11 @@
    "sha": "2a86515"
   },
   {
+   "branch": "feature/scn-013",
+   "id": "SCN-013",
+   "sha": "7f597d2"
+  },
+  {
    "branch": "feature/shd-001",
    "id": "SHD-001",
    "sha": "ade4dfec39a538b841b105a67ff5545b1a6675e6"
@@ -4021,5 +4027,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-13T23:41:50Z"
+ "updated": "2026-11-14T00:07:21Z"
 }

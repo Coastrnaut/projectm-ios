@@ -244,6 +244,9 @@ struct PresetRow: View {
         let locked = presets.isLocked(preset)
         let editable = userPresets?.editableRecord(for: preset) != nil
         let favorite = presets.isFavorite(preset)
+        let selectedTraits: AccessibilityTraits = preset == presets.current ? .isSelected : []   // typed (Xcode 26)
+        let hint: String = locked ? "Opens the unlock sheet" : "Plays this preset"
+        let favoriteAction: String = favorite ? "Remove from Favorites" : "Add to Favorites"
         HStack {
             Button(action: onChoose) {
                 HStack {
@@ -269,12 +272,12 @@ struct PresetRow: View {
             }
             .accessibilityLabel(presets.rowLabel(preset, locked: locked))
             // ACC-004-R2, R4: the playing preset is selected; the hint says what activating does.
-            .accessibilityAddTraits(preset == presets.current ? .isSelected : [])
-            .accessibilityHint(locked ? "Opens the unlock sheet" : "Plays this preset")
+            .accessibilityAddTraits(selectedTraits)
+            .accessibilityHint(hint)
             .accessibilityIdentifier("preset:\(preset.name)")
             .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
             // ACC-004-R3: favoriting without finding the separate star.
-            .accessibilityAction(named: favorite ? "Remove from Favorites" : "Add to Favorites") {
+            .accessibilityAction(named: favoriteAction) {
                 presets.toggleFavoriteAnnounced(preset)
             }
             .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))

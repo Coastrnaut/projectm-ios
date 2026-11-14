@@ -243,6 +243,7 @@ final class SceneAutosaveCoordinator {
             } catch {
                 written.failed(error.step)
             }
+            written.kept(store.takeKeptOriginals())   // SCN-013 backups of migrated originals
         }
         if synchronously {
             queue.sync(execute: work)
@@ -261,7 +262,8 @@ final class SceneAutosaveCoordinator {
 
     /// Publishes what the write queue finished: the committed revision and failed steps.
     private func collect() {
-        let (revision, failures) = written.take()
+        let (revision, failures, kept) = written.take()
+        record(kept.map { (name: String) -> SceneAutosaveEvent in .keptOriginal(name) })
         record(failures.map { (step: SceneAutosaveStep) -> SceneAutosaveEvent in .writeFailed(step.rawValue) })
         committedRevision = max(committedRevision, revision)
     }
@@ -292,16 +294,21 @@ private final class WrittenRevision: @unchecked Sendable {
     private let lock = NSLock()
     private var revision = 0
     private var failures: [SceneAutosaveStep] = []
+    private var keptNames: [String] = []
 
     func update(_ new: Int) { lock.withLock { revision = max(revision, new) } }
 
     func failed(_ step: SceneAutosaveStep) { lock.withLock { failures.append(step) } }
 
-    func take() -> (revision: Int, failures: [SceneAutosaveStep]) {
+    func kept(_ names: [String]) { lock.withLock { keptNames += names } }
+
+    func take() -> (revision: Int, failures: [SceneAutosaveStep], kept: [String]) {
         lock.withLock {
             let taken = failures
+            let names = keptNames
             failures = []
-            return (revision, taken)
+            keptNames = []
+            return (revision, taken, names)
         }
     }
 }

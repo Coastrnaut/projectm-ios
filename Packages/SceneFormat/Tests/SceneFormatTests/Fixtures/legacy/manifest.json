@@ -1,0 +1,147 @@
+{
+  "format": "projectm-ios.scene-legacy-fixtures",
+  "note": "SCN-013 golden legacy fixtures. Version 1 is the only scene format version ever written (audit 2026-11-13); every row is a real version-1 shape. QA-004 adds a version by adding v<N>/ inputs and rows. expected/ holds the current-schema canonical document each input must decode to, byte for byte.",
+  "fixtures": [
+    {
+      "file": "v1/all-kinds.scene.json",
+      "version": 1,
+      "source": "SCN-001 canonical writer, test fixture SceneFixtures.allKinds (round-trip fixture since 2af2c0b; writer shape unchanged since 7b620b7)",
+      "expected": "expected/all-kinds.scene.json",
+      "covers": [
+        "layer:camera",
+        "layer:spectrum.circular",
+        "layer:photo",
+        "layer:video",
+        "layer:text",
+        "layer:material",
+        "layer:generator.graph",
+        "layer:unknown",
+        "asset:photo",
+        "asset:video",
+        "asset:text",
+        "asset:generatorGraph",
+        "parameters",
+        "binding:mix.replace",
+        "binding:mix.multiply",
+        "binding:envelope",
+        "binding:expression",
+        "modulation:generator",
+        "modulation:connection",
+        "unknown:field",
+        "media:photo",
+        "media:video"
+      ]
+    },
+    {
+      "file": "v1/unknown-audio-feature.scene.json",
+      "version": 1,
+      "source": "SCN-001 canonical writer with MOD-013 tolerance (4a3ad0f): a binding and a connection from an audio feature this version does not know are kept",
+      "expected": "expected/unknown-audio-feature.scene.json",
+      "covers": [
+        "layer:camera",
+        "layer:spectrum.circular",
+        "binding:mix.add",
+        "unknown:audioFeature",
+        "modulation:connection",
+        "modulation:generator"
+      ]
+    },
+    {
+      "file": "v1/empty.scene.json",
+      "version": 1,
+      "source": "SCN-001 canonical writer, the empty scene (SceneFixtures.minimalText)",
+      "expected": "expected/empty.scene.json",
+      "covers": [
+        "empty"
+      ]
+    },
+    {
+      "file": "v1/hand-written.scene.json",
+      "version": 1,
+      "source": "hand-written input accepted by contract C4 of SCN-001 (key order, whitespace, omitted defaults, integer number forms)",
+      "expected": "expected/hand-written.scene.json",
+      "covers": [
+        "layer:spectrum.linear",
+        "layer:photo",
+        "asset:photo",
+        "media:photo",
+        "parameters",
+        "binding:mix.replace",
+        "hand-written"
+      ]
+    },
+    {
+      "file": "v1/graph-hue-rings.scene.json",
+      "version": 1,
+      "source": "QA-002 committed golden render scene, Packages/RenderGoldens/Scenes/graph-hue-rings.scene.json (commit 0183d67), written by the SCN-001 canonical writer",
+      "expected": "expected/graph-hue-rings.scene.json",
+      "covers": [
+        "layer:generator.graph",
+        "asset:generatorGraph"
+      ]
+    },
+    {
+      "file": "v1/material-plasma.scene.json",
+      "version": 1,
+      "source": "QA-002 committed golden render scene, Packages/RenderGoldens/Scenes/material-plasma.scene.json (commit 0183d67), written by the SCN-001 canonical writer",
+      "expected": "expected/material-plasma.scene.json",
+      "covers": [
+        "layer:material",
+        "parameters"
+      ]
+    },
+    {
+      "file": "v1/photo-gradient.scene.json",
+      "version": 1,
+      "source": "QA-002 committed golden render scene, Packages/RenderGoldens/Scenes/photo-gradient.scene.json (commit 0183d67), written by the SCN-001 canonical writer",
+      "expected": "expected/photo-gradient.scene.json",
+      "covers": [
+        "layer:photo",
+        "asset:photo",
+        "media:photo"
+      ]
+    },
+    {
+      "file": "v1/spectrum-circular.scene.json",
+      "version": 1,
+      "source": "QA-002 committed golden render scene, Packages/RenderGoldens/Scenes/spectrum-circular.scene.json (commit 0183d67), written by the SCN-001 canonical writer",
+      "expected": "expected/spectrum-circular.scene.json",
+      "covers": [
+        "layer:spectrum.circular"
+      ]
+    },
+    {
+      "file": "v1/stack-composite.scene.json",
+      "version": 1,
+      "source": "QA-002 committed golden render scene, Packages/RenderGoldens/Scenes/stack-composite.scene.json (commit 0183d67), written by the SCN-001 canonical writer",
+      "expected": "expected/stack-composite.scene.json",
+      "covers": [
+        "layer:photo",
+        "layer:material",
+        "layer:spectrum.linear",
+        "asset:photo",
+        "media:photo"
+      ]
+    },
+    {
+      "file": "v1/strobe-guarded.scene.json",
+      "version": 1,
+      "source": "QA-002 committed golden render scene, Packages/RenderGoldens/Scenes/strobe-guarded.scene.json (commit 0183d67), written by the SCN-001 canonical writer",
+      "expected": "expected/strobe-guarded.scene.json",
+      "covers": [
+        "layer:spectrum.linear"
+      ]
+    },
+    {
+      "file": "v1/text-caption.scene.json",
+      "version": 1,
+      "source": "QA-002 committed golden render scene, Packages/RenderGoldens/Scenes/text-caption.scene.json (commit 0183d67), written by the SCN-001 canonical writer",
+      "expected": "expected/text-caption.scene.json",
+      "covers": [
+        "layer:text",
+        "layer:material",
+        "asset:text"
+      ]
+    }
+  ]
+}
