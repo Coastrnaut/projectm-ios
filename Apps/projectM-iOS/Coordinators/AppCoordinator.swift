@@ -225,6 +225,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let sceneRepair: SceneRepairCoordinator
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
+    /// FILE-005: Settings › Storage › Backup (announces on the `library` lane, set in init).
+    @ObservationIgnored let libraryBackup = LibraryBackupCoordinator()
     /// ACC-004: user-caused state changes are announced through one rate-limited path.
     var announcer: AccessibilityAnnouncer { statusEvents.announcer }
     /// The Text visual (MED-009), created when Text is chosen and released when another visual is.
@@ -320,6 +322,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             PermissionExplainerCoordinator.reset(defaults)   // UIX-015: nothing explained
             if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
+        // FILE-005-R6, R7: a pending restore (or an interrupted one) finishes before any store reads the library.
+        LibraryBackupCoordinator.finishPendingRestore(defaults: defaults)
         settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
         inputTrim = InputTrimSetting(defaults: defaults)
         channelSelection = ChannelSelectionSetting(defaults: defaults)
@@ -477,6 +481,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
         connectStatusEvents()   // ACC-011
+        libraryBackup.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-005-R12
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION

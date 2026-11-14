@@ -46,7 +46,7 @@ public struct LibraryRestoreSummary: Sendable, Equatable {
         return text + "."
     }
 
-    static func phrase(_ count: Int, _ one: String, _ many: String) -> String { String(count) + " " + (count == 1 ? one : many) }
+    public static func phrase(_ count: Int, _ one: String, _ many: String) -> String { String(count) + " " + (count == 1 ? one : many) }
 }
 
 public enum LibraryRestoreOutcome: Sendable, Equatable {

@@ -332,6 +332,7 @@ struct VisualizerView: View {
                          glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
                          videos: coordinator.videos, texts: coordinator.texts,
                          show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
+                         libraryBackup: coordinator.libraryBackup,   // FILE-005
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
                          openGuide: { coordinator.openGuidedFirstScene() },
                          history: coordinator.sceneHistory,      // UIX-001, SCN-010
