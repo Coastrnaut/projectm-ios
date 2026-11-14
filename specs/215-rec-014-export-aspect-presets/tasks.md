@@ -5,7 +5,7 @@
 
 ## Phase 1: Setup
 
-- [ ] REC-014-T01 Write ADR-0060 (crop to fill in the writer's scaler, exact even preset multiples without upscale, per-device-class output cap; amends ADR-0027's geometry, research REC-014-D1 to D4) in docs/adr/0060-recording-aspect-and-output-cap.md and list it in docs/adr/README.md (next free number at commit time)
+- [X] REC-014-T01 Write ADR-0060 (crop to fill in the writer's scaler, exact even preset multiples without upscale, per-device-class output cap; amends ADR-0027's geometry, research REC-014-D1 to D4) in docs/adr/0060-recording-aspect-and-output-cap.md and list it in docs/adr/README.md (next free number at commit time) — Verified 2026-11-14: docs/adr/0060-recording-aspect-and-output-cap.md written and listed in docs/adr/README.md (0059 is the highest in the main checkout); validate_docs OK
 
 ## Phase 2: Foundational
 
