@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-002-T01-T11 verified on the Mac, simulator "REC2 iPhone 17", iOS 27.2; no
+device claim). SnapshotBatchExportAcceptanceTests 4 and SnapshotBatchNamingTests 2 (2.6 s), SnapshotBatchExportUITests 1
+(22-29 s).
 
 **Input**: Roadmap row REC-002 (P2, depends on REC-001 and SCN-001, both integrated). Observable behavior, verbatim:
 "Render selected scene snapshots to separate local files." Acceptance, verbatim: "Batch of five scenes produces five
