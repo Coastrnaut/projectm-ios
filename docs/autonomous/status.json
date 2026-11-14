@@ -12,8 +12,8 @@
   },
   "P1": {
    "audited": 68,
-   "implementing": 2,
-   "integrated": 77,
+   "implementing": 1,
+   "integrated": 78,
    "unit_passed": 4
   },
   "P2": {
@@ -26,8 +26,8 @@
  },
  "by_state": {
   "audited": 153,
-  "implementing": 2,
-  "integrated": 166,
+  "implementing": 1,
+  "integrated": 167,
   "skipped_existing": 1,
   "unit_passed": 4
  },
@@ -109,7 +109,6 @@
    "OUT-013",
    "OUT-014",
    "PERF-001",
-   "PERF-002",
    "PERF-003",
    "PERF-005",
    "PERF-007",
@@ -199,7 +198,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "159 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "158 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -2108,10 +2107,10 @@
    "branch": null,
    "branch_sha": "fbf29467f5cfcf8f1c179d9710ea0df4e49bf0c0",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "0c570bb94ccc15132bb9344140a09dc053149026",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PERF-003": {
    "attempts": 0,
@@ -2756,12 +2755,12 @@
   "SCN-007": {
    "attempts": 0,
    "branch": "feature/scn-007",
-   "branch_sha": null,
+   "branch_sha": "d705f8ab416c46080a5a16c6b34cd4ae832a7125",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "SCN-008": {
    "attempts": 0,
@@ -4056,6 +4055,11 @@
    "sha": "1def5a80ab64db55c0f41a52b830700ae9c2c9b3"
   },
   {
+   "branch": null,
+   "id": "PERF-002",
+   "sha": "0c570bb94ccc15132bb9344140a09dc053149026"
+  },
+  {
    "branch": "feature/perf-004",
    "id": "PERF-004",
    "sha": "ea0ee43e0f04f2b66596b10b89bd93be24387842"
@@ -4321,5 +4325,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:10:18Z"
+ "updated": "2026-11-14T15:15:51Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:10:18Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T15:15:51Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,9 +10,9 @@
 | State | Features |
 |---|---|
 | audited | 153 |
-| implementing | 2 |
+| implementing | 1 |
 | unit_passed | 4 |
-| integrated | 166 |
+| integrated | 167 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 68 | 2 | 4 | 77 | 0 |
+| P1 | 68 | 1 | 4 | 78 | 0 |
 | P2 | 74 | 0 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 159 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 158 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -151,6 +151,7 @@ The physical-device suite may **not** start:
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
 | OUT-001 | External display scene | `dfd5757fccd4` | `feature/out-001` |
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
+| PERF-002 | GPU budget meter | `0c570bb94ccc` | `None` |
 | PERF-004 | Texture pool | `ea0ee43e0f04` | `feature/perf-004` |
 | PERF-006 | Memory warning recovery | `b4281645619e` | `feature/perf-006` |
 | PERF-010 | Crash-safe session recovery | `7d64b6b027da` | `feature/perf-010` |
@@ -1437,7 +1438,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `9d87d289ba61` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-001/20261114T093307/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `9d87d289ba61` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-001/20261114T093307/swift-test_ShowControl.log`)
 
-### PERF-002 GPU budget meter (unit_passed)
+### PERF-002 GPU budget meter (integrated)
 - `python3 scripts/check_compliance.py`: pass at `fbf29467f5cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-002/20261114T100519/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `fbf29467f5cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-002/20261114T100519/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `fbf29467f5cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-002/20261114T100519/sim-test_ANGLERendering.log`)
@@ -1747,6 +1748,18 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `a56c9083faa8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-006/20261114T092504/swift-test_PresetLibrary.log`)
+
+### SCN-007 Scene transition presets (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_ShowControl.log`)
 
 ### SCN-010 Scene undo/redo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/compliance.log`)
