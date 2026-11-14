@@ -364,6 +364,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         })
     /// REC-007: the recording countdown (Settings → Recording countdown; Off by default).
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
+    /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
+    @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// OUT-004: the external display's output correction (Settings › External Display).
