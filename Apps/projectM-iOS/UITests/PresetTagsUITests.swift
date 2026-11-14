@@ -59,30 +59,33 @@ final class PresetTagsUITests: XCTestCase {
         app.terminate()
         start(reset: false)
         openBrowser()
-        XCTAssertFalse(app.buttons["presetTagClear"].exists, "chips are not stored")
+        XCTAssertTrue(chip("Calm").appears(within: 10))
+        XCTAssertFalse(chip("Calm").isSelected, "chips are not stored")
         XCTAssertEqual(rows(after: ["Calm"]), calm)
         XCTAssertEqual(rows(after: ["Slow"]), both)
     }
 
+    /// Tags a preset through its row's Tags… sheet: the seed tags one Included preset "Calm" so the row
+    /// is one chip tap away; the sheet adds "Slow", the row's VoiceOver label carries both tags, and
+    /// the new "Slow" chip lists exactly that preset.
     func testTaggingThroughTheSheetAddsAChip() {
-        start(reset: true)
+        start(reset: true, extraArguments: ["-uitestSeedPresetTags", "Calm:3"])
         openBrowser()
-        app.buttons["node:included"].tap()
-        let first = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'preset:'")).firstMatch
-        XCTAssertTrue(first.appears(within: 5))
-        let name = String(first.identifier.dropFirst("preset:".count))
-        first.press(forDuration: 0.7)
+        let seeded = rows(after: ["Calm"])
+        XCTAssertEqual(seeded.count, 1)
+        let name = seeded[0]
+        let row = app.buttons["preset:\(name)"]
+        row.press(forDuration: 0.7)
         XCTAssertTrue(app.buttons["Tags…"].appears(within: 5))
         app.buttons["Tags…"].tap()
         let field = app.textFields["presetTagField"]
         XCTAssertTrue(field.appears(within: 5))
         field.tap()
-        field.typeText("Calm\n")
-        XCTAssertTrue(app.descendants(matching: .any)["presetTag.Calm"].appears(within: 5))
+        field.typeText("Slow\n")
+        XCTAssertTrue(app.descendants(matching: .any)["presetTag.Slow"].appears(within: 5))
         app.buttons["presetTagsDone"].tap()
-        let row = app.buttons["preset:\(name)"]
-        XCTAssertTrue(poll(5) { row.exists && row.label.hasSuffix(", tags Calm") }, "the row carries its tag: \(row.label)")
-        app.navigationBars.buttons.element(boundBy: 0).tap()   // back to the home
-        XCTAssertEqual(rows(after: ["Calm"]), [name])
+        XCTAssertTrue(poll(5) { row.exists && row.label.hasSuffix(", tags Calm, Slow") }, "the row carries its tags: \(row.label)")
+        chip("Calm").tap()   // deselect: only Slow is selected next
+        XCTAssertEqual(rows(after: ["Slow"]), [name])
     }
 }
