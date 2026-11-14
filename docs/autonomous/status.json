@@ -12,23 +12,26 @@
   },
   "P1": {
    "audited": 89,
-   "implementing": 8,
-   "integrated": 54
+   "implementing": 7,
+   "integrated": 54,
+   "unit_passed": 1
   },
   "P2": {
-   "audited": 76,
-   "implementing": 1,
-   "integrated": 2
+   "audited": 74,
+   "implementing": 2,
+   "integrated": 2,
+   "unit_passed": 1
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 176,
+  "audited": 174,
   "implementing": 9,
   "integrated": 140,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 2
  },
  "device_gate": {
   "blocked": [],
@@ -419,14 +422,14 @@
    "state": "integrated"
   },
   "ANL-008": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/anl-008",
-   "branch_sha": null,
+   "branch_sha": "981d361c0c2278aa12f3ac5d7d9b65fcd8a2f7fa",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "ANL-009": {
    "attempts": 0,
@@ -600,13 +603,13 @@
   },
   "AUD-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "AUD-011": {
    "attempts": 0,
@@ -1140,13 +1143,13 @@
   },
   "FILE-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/file-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FILE-007": {
    "attempts": 0,
@@ -2461,12 +2464,12 @@
   "QA-003": {
    "attempts": 0,
    "branch": "feature/qa-003",
-   "branch_sha": null,
+   "branch_sha": "2861690c863cb7863aa8e8ba534f11557bf2e57f",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "QA-004": {
    "attempts": 0,
@@ -4216,5 +4219,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T11:18:13Z"
+ "updated": "2026-11-14T11:49:12Z"
 }
