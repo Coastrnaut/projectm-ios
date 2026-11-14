@@ -51,6 +51,11 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Does Fix All Safe remove dangling notes? → A: Yes, like dangling tags and adjustments: the preset the note names no longer exists in the library, and the user sees the issue listed first. A user who re-imports a preset gets a new ID, so the old note could not reattach anyway.
 - Q: How does the FILE-011 erase count notes? → A: One per preset with a note, added to the "Collections, tags, favorites and history" count.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- A1: 2,000 characters can exceed 16 KiB of UTF-8 (emoji sequences), so the notes file's string limit is 64 KiB (research PRE-011-D3).
+- A3: a repaired or set-aside notes file is reported once in the browser (PRE-011-R2), as tags do (PRE-003-R6).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Write a note about a preset (Priority: P1) — MVP
@@ -106,7 +111,7 @@ changes nothing); a library backup round trip restores the notes; erase removes 
 ### Functional Requirements
 
 - **PRE-011-R1**: A note MUST be linked to a stable preset ID (the IDs used by favorites, tags and collections), hold trimmed text of 1 to 2,000 characters, and at most one note per preset; saving empty text MUST remove the note.
-- **PRE-011-R2**: Notes MUST be saved in `PresetCollections/notes.json`: schema version 1, a migration table keyed by version, a FILE-007 schema check before reading, a newer version leaving notes unavailable and the file untouched, an unreadable file renamed aside, every change saved atomically before it is shown (a failed save changes nothing and reports why). Invalid entries in a readable file are dropped and counted.
+- **PRE-011-R2**: Notes MUST be saved in `PresetCollections/notes.json`: schema version 1, a migration table keyed by version, a FILE-007 schema check before reading, a newer version leaving notes unavailable and the file untouched, an unreadable file renamed aside, every change saved atomically before it is shown (a failed save changes nothing and reports why). Invalid entries in a readable file are dropped and counted, and the browser says once "Some notes could not be read and were removed." (an unreadable file: "Your notes could not be read and were set aside.").
 - **PRE-011-R3**: The browser row MUST offer "Note…" (touch-and-hold menu) and a "Note" VoiceOver action, opening an editor with an accessible multi-line text field limited to 2,000 characters, a live character count "n of 2,000", Save, Cancel and (when a note exists) Delete Note; swipe-to-dismiss is disabled while the text is unsaved. Saving and removing announce on the library lane without the note text.
 - **PRE-011-R4**: A row whose preset has a note MUST show a note symbol, and its VoiceOver label MUST end with ", has note" (the note text itself is not read in the row label).
 - **PRE-011-R5**: Browser search MUST also match presets whose note contains the search text (case and accent folded).

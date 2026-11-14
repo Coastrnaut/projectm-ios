@@ -5,7 +5,7 @@
 ```
 
 - Location: `Application Support/PresetCollections/notes.json`; written atomically; sorted keys, unescaped slashes.
-- FILE-007 schema `org.projectmios.preset-notes`: versions 0 (migration only) to 1, at most 8 MiB, depth 3, strings up to 16 KiB, 20,000 elements per object, no duplicate keys, strict UTF-8.
+- FILE-007 schema `org.projectmios.preset-notes`: versions 0 (migration only) to 1, at most 8 MiB, depth 3, strings up to 64 KiB, 20,000 elements per object, no duplicate keys, strict UTF-8.
 - Version newer than 1: the store is unavailable (nothing shown, nothing written, file untouched).
 - Unreadable: renamed to `notes.unreadable.json` (one copy kept); notes start empty.
 - Lenient body: entries that are not strings, are empty after trimming, exceed 2,000 characters, or have an empty or over-512-byte ID are dropped and counted.
