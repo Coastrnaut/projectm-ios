@@ -23,6 +23,8 @@ public enum SceneRepairAction: String, Sendable, Hashable, CaseIterable, Compara
     case dropInvalidValues
     case dropInvalidModulation
     case dropMissingMedia
+    /// CMP-011: drop bad group references, then groups still invalid.
+    case repairGroups
     case dropInvalidMappings
     /// Changes nothing: unknown content is kept by default (SCN-012-R15).
     case keepUnknownContent
@@ -36,6 +38,7 @@ public enum SceneRepairAction: String, Sendable, Hashable, CaseIterable, Compara
         case .dropInvalidValues: "Drop invalid values"
         case .dropInvalidModulation: "Remove invalid modulation generators"
         case .dropMissingMedia: "Open without the missing media"
+        case .repairGroups: "Fix layer groups"
         case .dropInvalidMappings: "Drop invalid mappings"
         case .keepUnknownContent: "Keep unknown content"
         }
@@ -246,7 +249,7 @@ extension SceneRepairReport {
     static let mappingCodes: Set<SceneIssue.Code> = [.invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding,
                                                      .orphanedConnection, .rejectedConnection, .retiredReference]
     /// Warnings the user should see before opening (Clarifications Q1).
-    static let userRelevantWarnings: Set<SceneIssue.Code> = mappingCodes.union([.missingAsset, .unknownLayerKind])
+    static let userRelevantWarnings: Set<SceneIssue.Code> = mappingCodes.union([.missingAsset, .unknownLayerKind, .invalidGroup])
 
     /// The group and the action that repairs an issue code (data model table).
     static func classify(_ code: SceneIssue.Code) -> (group: Group, action: SceneRepairAction?) {
@@ -260,6 +263,7 @@ extension SceneRepairReport {
             (.damagedFile, .removeBrokenLayers)
         case .danglingAsset: (.missingMedia, .removeBrokenLayers)
         case .missingAsset: (.missingMedia, .dropMissingMedia)
+        case .invalidGroup: (.damagedFile, .repairGroups)   // CMP-011: a warning; the scene opens
         case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection,
              .retiredReference:
             (.invalidMappings, .dropInvalidMappings)
@@ -292,6 +296,7 @@ extension SceneRepairReport {
         }
         switch code {
         case .missingAsset: return "Its layer draws nothing until the media is stored again."
+        case .invalidGroup: return "The group's layers are drawn ungrouped; the group is kept in the scene."
         case .retiredReference: return "It is dropped and not saved again."
         case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection:
             return "It is kept in the scene but has no effect."
@@ -347,6 +352,10 @@ enum ScenePathItem {
         }
         if let key = assetKey(path, in: document), let asset = document.assets[key] {
             return "\(assetTitle(asset.kind)) \"\(key)\""
+        }
+        if let g = index(path, after: "$.groups[") {   // CMP-011
+            let groups = document.groups
+            return g < groups.count && !groups[g].name.isEmpty ? "Group \(g + 1) (\"\(groups[g].name)\")" : "Group \(g + 1)"
         }
         if let i = index(path, after: "$.bindings[") {
             return i < document.bindings.count ? "Mapping \(i + 1) (\(document.bindings[i].edgeText))" : "Mapping \(i + 1)"
@@ -432,6 +441,8 @@ extension SceneDocument {
             }
         case .dropInvalidModulation:
             d.dropInvalidGenerators(cache)
+        case .repairGroups:
+            d.repairGroups()
         case .dropMissingMedia:
             let keys = Set(issuePaths([.missingAsset], cache).compactMap { (p: String) -> String? in
                 ScenePathItem.assetKey(p, in: d)
@@ -487,7 +498,9 @@ extension SceneDocument {
                 kept.append(layer)
             }
         }
+        let removedInstances = Set(layers.map(\.instance)).subtracting(kept.map(\.instance))
         layers = kept
+        dropGroupReferences(toRemoved: removedInstances)   // CMP-011: no dangling group reference
         let stillUsed = Set(kept.compactMap { (l: SceneLayer) -> String? in l.content.assetKey })
         for key in keys.union(removedKeys) where !stillUsed.contains(key) {
             assets[key] = nil

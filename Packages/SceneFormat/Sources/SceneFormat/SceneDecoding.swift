@@ -102,9 +102,17 @@ struct SceneDecoder {
             }
         }
 
-        let known: Set<String> = ["format", "version", "id", "name", "layers", "parameters", "bindings", "modulation", "assets"]
+        var groups: [SceneGroup] = []   // CMP-011
+        if let value = o["groups"] {
+            let base = ScenePath.key(root, "groups")
+            for (i, item) in try array(value, base).enumerated() {
+                groups.append(try group(item, ScenePath.index(base, i)))
+            }
+        }
+
+        let known: Set<String> = ["format", "version", "id", "name", "layers", "parameters", "bindings", "modulation", "assets", "groups"]
         return SceneDocument(id: id, name: name, layers: layers, parameters: parameters, bindings: bindings,
-                             modulation: modulation, assets: assets, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
+                             modulation: modulation, assets: assets, groups: groups, extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
     }
 
     /// Count limits, before any typed decoding (SCN-001-R8). Wrong types are left to typed decoding.
@@ -123,6 +131,11 @@ struct SceneDecoder {
         let modulation = o["modulation"]?.objectValue
         try check("modulation generators", modulation?["generators"]?.arrayValue?.count, SceneLimits.maximumGenerators)
         try check("modulation connections", modulation?["connections"]?.arrayValue?.count, SceneLimits.maximumConnections)
+        let groups = o["groups"]?.arrayValue   // CMP-011
+        try check("groups", groups?.count, SceneLimits.maximumGroups)
+        for (i, group) in (groups ?? []).enumerated() {
+            try check("children in group \(i)", group.objectValue?["children"]?.arrayValue?.count, SceneLimits.maximumGroupChildren)
+        }
     }
 
     // MARK: Layers
@@ -358,6 +371,45 @@ struct SceneDecoder {
         let x = try o["x"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in try double(v, ScenePath.key(path, "x")) } ?? fallback.x
         let y = try o["y"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in try double(v, ScenePath.key(path, "y")) } ?? fallback.y
         return LayerPoint(x: x, y: y)
+    }
+
+    // MARK: Groups (CMP-011)
+
+    /// `id` required (a whole number; its range is checked by validation); `name`, `enabled`, `opacity`
+    /// (clamped with `valueClamped`), `transform` (CMP-005 form) and `children` optional; a child that is
+    /// not a whole number is kept verbatim; unknown fields are kept.
+    private mutating func group(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneGroup {
+        let o = try object(value, path)
+        guard let idValue = o["id"] else { throw .malformed(path: path, reason: "\"id\" is required") }
+        guard let id = idValue.numberValue?.uint64Value else {
+            throw .malformed(path: ScenePath.key(path, "id"), reason: "the group ID must be a non-negative whole number")
+        }
+        let name = try o["name"].map { (n: SceneJSON) throws(SceneDecodeError) -> String in try string(n, ScenePath.key(path, "name")) } ?? ""
+        var enabled = true
+        if let e = o["enabled"] {
+            guard let b = e.boolValue else {
+                throw .malformed(path: ScenePath.key(path, "enabled"), reason: "expected a boolean, found \(e.typeName)")
+            }
+            enabled = b
+        }
+        var opacity = 1.0
+        if let v = o["opacity"] {
+            let raw = try double(v, ScenePath.key(path, "opacity"))
+            opacity = min(max(raw, 0), 1)
+            if opacity != raw { clamped(ScenePath.key(path, "opacity"), raw, "0.0…1.0", opacity) }
+        }
+        let transform = try o["transform"].map { (t: SceneJSON) throws(SceneDecodeError) -> LayerTransform in
+            try self.transform(t, ScenePath.key(path, "transform"))
+        } ?? .identity
+        var children: [SceneGroupChild] = []
+        if let list = o["children"] {
+            for item in try array(list, ScenePath.key(path, "children")) {
+                if let instance = item.numberValue?.uint64Value { children.append(.layer(instance)) } else { children.append(.other(item)) }
+            }
+        }
+        let known: Set<String> = ["id", "name", "enabled", "opacity", "transform", "children"]
+        return SceneGroup(id: id, name: name, enabled: enabled, opacity: opacity, transform: transform, children: children,
+                          extra: o.filter { (key: String, _: SceneJSON) -> Bool in !known.contains(key) })
     }
 
     // MARK: Parameters

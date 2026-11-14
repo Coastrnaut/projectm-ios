@@ -53,8 +53,8 @@
 
 ## CMP-011-D5: Degenerate structures
 
-- **Decision**: one warning code `invalidGroup` per problem, path at the group or the child; first
-  valid claim wins in document order; invalid groups are drawn ungrouped and preserved for re-save;
+- **Decision**: one warning code `invalidGroup` per problem, path at the group or the child; a layer
+  belongs to the first group that lists it (document order); invalid groups are drawn ungrouped and preserved for re-save;
   repair `repairGroups` drops bad child references (missing, repeated, claimed earlier, not a layer
   number), then removes groups that are still invalid (empty, gap, bad ID). Counts over 8 are the
   existing `tooMany` refusal (checked before typed decoding like layers).

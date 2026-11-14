@@ -40,7 +40,7 @@
 
 - Written only when the scene has groups; every field written; groups in stack order of their first
   child, children in stack order. Unknown group fields are kept.
-- Validation warnings `invalidGroup` (first valid claim wins, document order):
+- Validation warnings `invalidGroup` (a layer belongs to the first group that lists it, document order):
   `$.groups[g].id` repeated or out of range; `$.groups[g].children[c]` not a layer instance of the
   scene, repeated, or claimed by an earlier group; `$.groups[g].children` empty or not one unbroken
   run of `$.layers`.

@@ -5,8 +5,8 @@
 // (CMP-002), materials the SHD-001 catalog, text the MED-009 decoder, graphs the SHD-011 importer,
 // parameter values a scratch MOD-001 `ParameterStore`, bindings a scratch MOD-002
 // `AudioFeatureModulator`, expressions the SHD-009 compiler (compiled, never evaluated) and the
-// modulation graph MOD-014's validator. Order: scene ID, name, layers, assets, parameters,
-// bindings, modulation.
+// modulation graph MOD-014's validator. Order: scene ID, name, layers, groups (CMP-011), assets,
+// parameters, bindings, modulation.
 import CameraLayer
 import Compositor
 import Foundation
@@ -65,6 +65,7 @@ extension SceneDocument {
         var issues: [SceneIssue] = []
         validateHeader(into: &issues)
         validateLayers(into: &issues)
+        issues += analyzeGroups().issues   // CMP-011
         validateAssets(availability, into: &issues)
         validateParameters(registry, into: &issues)
         validateModulation(registry, into: &issues)

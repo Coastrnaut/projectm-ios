@@ -79,8 +79,8 @@ interaction); each answer is the recommended, conservative option.
 - Q: What happens with degenerate group structures, and is there a UI? → A: **Warnings, never
   refusals**: validation reports a new warning `invalidGroup` (a repeated or out-of-range group ID,
   a child that is not a layer instance of the scene, a layer repeated or claimed by an earlier
-  group, an empty group, children that are not one unbroken run). The first valid claim wins, in
-  document order. A damaged group is **drawn ungrouped** and kept verbatim for re-save; SCN-012
+  group, an empty group, children that are not one unbroken run). A layer belongs to the first group
+  that lists it, in document order; later listings are bad references. A damaged group is **drawn ungrouped** and kept verbatim for re-save; SCN-012
   lists it under "Damaged file" as a problem with the new repair **"Fix layer groups"**
   (`repairGroups`), which drops the bad child references and then removes groups still invalid.
   More than 8 groups, or more than 8 children in one group, are a `tooMany` refusal (the existing

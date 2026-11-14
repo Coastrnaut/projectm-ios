@@ -35,5 +35,6 @@
 | [0036](0036-background-playback-policy.md) | Background playback policy: microphone always stops, In-App Playback pauses, System/App Capture follows the system | Accepted 2026-11-14 (AUD-015; owner rule 4) |
 | [0037](0037-blend-mode-colour-space.md) | Blend modes: W3C functions on sRGB-encoded colours, coverage in linear light, add clamped | Accepted 2026-11-14 (CMP-004; owner rule 4) |
 | [0038](0038-midi-local-endpoint-scope.md) | MIDI is local only: USB, virtual and system-connected endpoints, no network MIDI | Accepted 2026-11-14 (MIDI-001; owner rule 4) |
+| [0039](0039-layer-group-isolation.md) | Layer groups are isolated groups, flattened only when exact | Accepted 2026-11-14 (CMP-011; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
