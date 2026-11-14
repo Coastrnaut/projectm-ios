@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T15:48:31Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T15:48:53Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 145 |
 | implementing | 3 |
-| unit_passed | 7 |
-| integrated | 170 |
+| unit_passed | 6 |
+| integrated | 171 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 61 | 3 | 6 | 81 | 0 |
+| P1 | 61 | 3 | 5 | 82 | 0 |
 | P2 | 73 | 0 | 1 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 155 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 154 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -172,6 +172,7 @@ The physical-device suite may **not** start:
 | QA-005 | Import fuzz suite | `d7faef231370` | `feature/qa-005` |
 | QA-006 | Render soak test | `dc341318c32b` | `None` |
 | QA-007 | Audio source contract suite | `32172fdd5795` | `feature/qa-007` |
+| QA-008 | Recording validation suite | `ffad6e195657` | `None` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
 | REC-004 | Recording audio mux | `787bb98e2086` | `feature/rec-004` |
@@ -1671,7 +1672,7 @@ None.
 - `swift test --package-path Packages/CaptureUI`: pass at `1985f0c1e666` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-007/20261112T210720/swift-test_CaptureUI.log`)
 - `integration checkout: CaptureKit 309 on iOS 27.2 sim; xcodebuild projectM-iOS test on iPhone 17 iOS 27.2: projectM-iOSTests 119 pass; UI 22 pass (Interruption, Status, Transport, ImportedAudio, TestSignals)`: pass at `df432e31de46` (log `.autonomous/logs/integration/qa-007/app-tests.log`)
 
-### QA-008 Recording validation suite (unit_passed)
+### QA-008 Recording validation suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bd661ef22a94` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-008/20261114T104021/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `bd661ef22a94` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-008/20261114T104021/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bd661ef22a94` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-008/20261114T104021/sim-test_ANGLERendering.log`)
