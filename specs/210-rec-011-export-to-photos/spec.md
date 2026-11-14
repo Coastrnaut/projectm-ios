@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-011-T01-T15 verified on the Mac: app unit and UI tests on the REC11 iOS 27.2 simulator, live add-only path on the simulator, script checks; device task T16 `{device}` open).
 
 **Input**: User description: "Implement REC-011 (Export to Photos) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Save completed image or video only after explicit user action." Acceptance,

@@ -323,6 +323,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-012: Share… for an offered frame or recording; created with the app so its sweep of
     /// leftover share copies runs at launch (REC-012-R6).
     @ObservationIgnored let captureShare = CaptureShareCoordinator()
+    /// REC-011: Save to Photos (add-only access, asked only on the user's tap; ADR-0059).
+    @ObservationIgnored let photosSave = PhotosSaveCoordinator.forCurrentLaunch()
     /// REC-003: Record (the shown visual's frames into a video file, handed to the file mover).
     @ObservationIgnored private(set) lazy var videoRecording: VideoRecordingCoordinator = makeVideoRecording()
     /// REC-004: "Include microphone audio" for recordings (Settings → Recording; off by default).
@@ -1475,6 +1477,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private func makeRecordingLibrary() -> RecordingLibraryModel {
         let library = RecordingLibraryModel()
         library.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }
+        library.photos = photosSave   // REC-011: Save to Photos on a row
         return library
     }
 
