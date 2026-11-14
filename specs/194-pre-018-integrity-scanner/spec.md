@@ -65,6 +65,28 @@ conservative, local-first option.
   each issue, and "Fix All Safe". Results and each fix are announced on the announcer's library lane
   (ACC-004). Applied in R11, R12.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does the check run by itself? → A: No. It runs only when the user taps Check Library (and again
+  after each fix, R13); opening the screen shows "Not checked yet." Nothing runs at launch or in the
+  background. Applied in R11.
+- Q: How is a damaged stored file told apart from a missing one? → A: It is not a separate kind. The
+  missing-file check compares the stored file's size and SHA-256 with the record; absent, unreadable or
+  different is one "missing or damaged file" issue with the same fixes. Applied in R3, R7.
+- Q: What reason does a preset moved to Quarantine by this screen carry? → A: A new quarantine reason
+  "movedByUser" ("You moved this preset to Quarantine.") whose detail is the issue (the unparsable
+  reason, or "uses missing texture X"). A record with this code read by an older app version shows the
+  generic "This preset could not be used." Applied in R6, R8.
+- Q: Does Move to Quarantine also prune the preset's references? → A: No. The record still exists, so
+  its favorites, tags, overrides and collection entries are not dangling, and Remove Preset in
+  Quarantine later prunes tags and overrides as today. Remove Preset from this screen prunes tags and
+  overrides like My Presets' Remove (PRE-003-R7, PRE-016-R16). Applied in R8, R10.
+- Q: How do issues read for VoiceOver? → A: Each issue is one accessibility element ("<kind>: <preset or
+  ID>. <suggestion>") whose fixes are also named accessibility actions; the screen's result line is
+  announced on the library lane. Applied in R11, R12.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I find out what is broken in my library and how to fix it (Priority: P1) — MVP
@@ -154,16 +176,19 @@ without a picker.
   SHA-256 and size equal the record's; the stored copy is then written back and nothing else changes),
   Restore from Library when the preset is an unedited copy of a bundled preset that still exists, and
   Remove Preset; it stays reported until one succeeds.
-- **PRE-018-R8**: An unparsable issue MUST offer Move to Quarantine (with the checks' reason recorded)
-  and Remove Preset.
+- **PRE-018-R8**: An unparsable issue MUST offer Move to Quarantine and Remove Preset. Move to Quarantine
+  records the reason "movedByUser" with the issue as its detail and prunes no reference; Remove Preset
+  prunes the preset's tags and overrides as My Presets' Remove does.
 - **PRE-018-R9**: A dangling reference issue MUST offer the removal from its store ("Remove from
   Favorites", "Remove Tag Entries", "Remove Adjustments", "Remove from Collection", "Remove from Recently
   Played"). "Fix All Safe" MUST apply exactly these removals and nothing else.
 - **PRE-018-R10**: Remove Preset and Move to Quarantine MUST ask for confirmation first; no user preset
   file is ever deleted without it.
-- **PRE-018-R11**: My Presets MUST offer "Check Library", opening a screen with a Check Library button,
+- **PRE-018-R11**: My Presets MUST offer "Check Library", opening a screen ("Not checked yet." until the
+  first scan; no scan runs by itself) with a Check Library button,
   the issues grouped by kind with a fix button on each, Fix All Safe (shown when a dangling reference is
-  listed), and the result of the last scan or fix.
+  listed), and the result of the last scan or fix. Each issue is one accessibility element whose fixes
+  are also named accessibility actions.
 - **PRE-018-R12**: The result of every scan and fix MUST be announced on the announcer's library lane.
 - **PRE-018-R13**: After a fix the app MUST rescan, so the list shows what remains.
 - **PRE-018-R14**: The scan MUST be bounded: at most 1,200 user preset records and 128 MiB of preset text
