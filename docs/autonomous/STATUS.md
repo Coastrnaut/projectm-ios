@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:58:56Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:59:02Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 155 |
 | implementing | 3 |
-| unit_passed | 4 |
-| integrated | 163 |
+| unit_passed | 3 |
+| integrated | 164 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 70 | 3 | 4 | 74 | 0 |
+| P1 | 70 | 3 | 3 | 75 | 0 |
 | P2 | 74 | 0 | 0 | 5 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 162 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 161 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -170,6 +170,7 @@ The physical-device suite may **not** start:
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
 | REC-004 | Recording audio mux | `787bb98e2086` | `feature/rec-004` |
+| REC-005 | Record quality profiles | `6a8bdbbdffdf` | `feature/rec-005` |
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
@@ -1628,7 +1629,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `d6750ce74405` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-004/20261114T072617/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 667 + Recording UI 5`: pass at `787bb98e2086` (log `.autonomous/logs/integration/rec004/app-tests.log`)
 
-### REC-005 Record quality profiles (unit_passed)
+### REC-005 Record quality profiles (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `5259b1613341` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-005/20261114T095419/script-tests.log`)
