@@ -40,8 +40,8 @@ Linux shape). Budgets (owner rule 7): unit test ≤ 10 s, package suite < 1 min.
 
 ## Phase 4: Polish
 
-- [ ] MOD-011-T10 ADR (order contract) in `docs/adr/`, scene contract note (SCN-001 `duplicateBindingTarget`
-  message), spec status; repository checks; Linux shape (no Apple-only API in the changed package code)
+- [X] MOD-011-T10 ADR (order contract) in `docs/adr/`, scene contract note (SCN-001 `duplicateBindingTarget`
+  message), spec status; repository checks; Linux shape (no Apple-only API in the changed package code) — Verified 2026-11-14: ADR-0057 written and indexed; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK (1 skipped); check_privacy_manifest and check_network_symbols OK on the Debug app; new package code imports only ParameterGraph, FlashSafety and VisualEffects (no Foundation, no stdio), and VisualParameters' new FlashSafety dependency is a package already built on Linux — Linux CI run itself pending
 
 ## Analysis (speckit-analyze, 2026-11-14)
 

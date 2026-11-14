@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-011-T01-T10 verified on the Mac: ParameterGraph, VisualGenerators and SceneFormat package tests on the host, app unit tests on a private iOS 27.2 simulator; ADR-0057; no device task)
 
 **Input**: User description: "Implement MOD-011 (Modulation mix modes) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Combine manual, audio and LFO sources via replace, add and multiply."

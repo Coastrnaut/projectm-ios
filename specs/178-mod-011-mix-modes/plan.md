@@ -23,7 +23,7 @@ clamp after every step; the order is one documented contract (ADR, code, inspect
   writes a parameter's expression on its first binding only, used by both capture paths (research MOD-011-D6).
 - **App**: `NativeSpectrumHost` uses `GlowModulationOrder`, adds `addLayer`; scene restore adds layers in
   order; the inspector numbers layered bindings and shows the order line (research MOD-011-D7).
-- **ADR** (next free number): the order contract, since it changes the one-binding-per-parameter default.
+- **ADR-0057**: the order contract, since it changes the one-binding-per-parameter default.
 
 ## Technical Context
 
@@ -67,7 +67,7 @@ Packages/SceneFormat/Tests/SceneFormatTests/ (restore and validation updates, la
 Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift, Coordinators/AppCoordinator.swift,
 Apps/projectM-iOS/Coordinators/SceneAutosaveCapture.swift, ParameterInspectorModel.swift
 Apps/projectM-iOS/Tests/ModulationMixOrderAppTests.swift (new)
-docs/adr/00NN-modulation-mix-order.md (new)
+docs/adr/0057-modulation-mix-order.md (new)
 ```
 
 ## Complexity Tracking

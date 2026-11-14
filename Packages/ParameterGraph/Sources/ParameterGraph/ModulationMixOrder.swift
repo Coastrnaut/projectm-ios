@@ -1,6 +1,5 @@
 // ModulationMixOrder.swift — the order and clamping of the mix modes when several sources act on one
-// parameter (MOD-011-R2 to R4; contract specs/178-mod-011-mix-modes/contracts/mix-order.md O1; ADR
-// "modulation mix order").
+// parameter (MOD-011-R2 to R4; contract specs/178-mod-011-mix-modes/contracts/mix-order.md O1; ADR-0057).
 //
 // The order, for one parameter each frame:
 //   1. Base b: the MIDI-003 live value while one exists, else the manual value (Settings, MOD-010 macro,
