@@ -45,8 +45,8 @@ Goal: the clamp reaches every renderer input. Independent test: renderer inputs 
 
 - [X] ACC-012-T19 ADR (next free number) for the clamp point and precedence in docs/adr/; ADR index row in docs/adr/README.md — Verified 2026-11-14: docs/adr/0049-sensory-safety-clamp.md and its README row; validate_docs OK
 - [X] ACC-012-T20 Run the script checks (compliance, docs, motion policy, permission catalog, status events, script tests) and the long-body type-check flags on the app build — Verified 2026-11-14: check_compliance, validate_docs (1075 files), check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts.py 153 OK
-- [ ] ACC-012-T21 Run targeted app tests (projectM-iOSTests, SettingsUITests, GlowUITests, ReduceMotionUITests, SensorySafetyUITests) on the own simulator; delete it; recount PosterBoard reports
-- [ ] ACC-012-T22 `{device}` ACC-012-S6 on D1 (quickstart "Device")
+- [X] ACC-012-T21 Run targeted app tests (projectM-iOSTests, SettingsUITests, GlowUITests, ReduceMotionUITests, SensorySafetyUITests) on the own simulator; delete it; recount PosterBoard reports — Verified 2026-11-14: projectM-iOSTests 565 tests plus SettingsUITests 4, GlowUITests 2, ReduceMotionUITests 1, SensorySafetyUITests 1 pass on the own simulator AEA9CA61 (UI batch 2 min 49 s; SettingsUITests.testLicensesScreen took 30.3 s, over the 30 s budget, pre-existing test); final rerun 18 tests pass; simulator deleted; PosterBoard reports 25 before and after
+- [ ] ACC-012-T22 `{device}` (open: needs D1 and a person) ACC-012-S6 on D1 (quickstart "Device")
 
 ## Dependencies
 
