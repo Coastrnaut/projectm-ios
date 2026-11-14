@@ -5,9 +5,9 @@
 
 ## Phase 1: Foundational (pack format)
 
-- [ ] SCN-014-T01 Slide records, paths and scene helpers (`slideStoreIDs`, `remappingSlideIDs`), optional manifest `slides`, file limit 24, new errors, in Packages/SceneArchive/Sources/SceneArchive/ (SceneArchiveSlides.swift, SceneArchiveManifest.swift, SceneArchiveFormat.swift, SceneArchiveError.swift)
-- [ ] SCN-014-T02 Path audit (contract P3) in Packages/SceneArchive/Sources/SceneArchive/SceneArchivePathAudit.swift; writer runs it and packs slides (P1); reader reads and checks slides (P2)
-- [ ] SCN-014-T03 [P] Package tests: slides round trip; a pack without slides is byte-identical to before (no `slides` key); audit flags container paths and `file:` but not "1/2"; writer refuses a leaked path; crafted slide records (wrong path, repeated index, count mismatch, missing file) and `../`, `/` entry names refused, in Packages/SceneArchive/Tests/SceneArchiveTests/SceneArchiveSlideTests.swift
+- [X] SCN-014-T01 Slide records, paths and scene helpers (`slideStoreIDs`, `remappingSlideIDs`), optional manifest `slides`, file limit 24, new errors, in Packages/SceneArchive/Sources/SceneArchive/ (SceneArchiveSlides.swift, SceneArchiveManifest.swift, SceneArchiveFormat.swift, SceneArchiveError.swift) — Verified 2026-11-14: `swift test --package-path Packages/SceneArchive` 36 pass (0.23 s)
+- [X] SCN-014-T02 Path audit (contract P3) in Packages/SceneArchive/Sources/SceneArchive/SceneArchivePathAudit.swift; writer runs it and packs slides (P1); reader reads and checks slides (P2) — Verified 2026-11-14: `SceneArchiveSlideTests` round trip, audit and crafted-pack tests pass; Linux-shape build (`-D*_NO_*`) OK
+- [X] SCN-014-T03 [P] Package tests: slides round trip; a pack without slides is byte-identical to before (no `slides` key); audit flags container paths and `file:` but not "1/2"; writer refuses a leaked path; crafted slide records (wrong path, repeated index, count mismatch, missing file) and `../`, `/` entry names refused, in Packages/SceneArchive/Tests/SceneArchiveTests/SceneArchiveSlideTests.swift — Verified 2026-11-14: 7 new tests pass (0.04 s)
 
 ## Phase 2: User Story 1 — Export (P1)
 
