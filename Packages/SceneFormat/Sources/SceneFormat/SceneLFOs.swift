@@ -10,6 +10,10 @@
 // MOD-009 (specs/165-mod-009-tempo-lfo, research MOD-009-D4, contract T5): an optional `"sync": {"beats": n}` makes the
 // oscillator tempo-synced (`rate` stays required: the fallback without a tempo, and what an older app runs). A bad or
 // unknown sync is a warning at its path; the oscillator stays live, unsynced.
+// MOD-008 (specs/212-mod-008-stepped-lfo, research MOD-008-D5, contract S8): the shapes `square` and `sampleHold` and
+// optional `duty` (written for square), `seed` (a whole number 0…4294967295, written when set) and `glide` (written for
+// sample-and-hold when not 0). Out of range or ill-typed: `invalidLFO`, entry kept. Sine and triangle entries write
+// nothing new, so their scenes encode byte-identically.
 import ParameterGraph
 
 /// One stored oscillator, as written.
@@ -31,6 +35,9 @@ public struct SceneLFOEntry: Sendable, Hashable {
             "center": .double(lfo.center),
         ]
         if let sync = lfo.sync { fields["sync"] = .object(["beats": .double(sync.beatsPerCycle)]) }   // MOD-009
+        if lfo.shape == .square { fields["duty"] = .double(lfo.dutyCycle) }                              // MOD-008
+        if let seed = lfo.seed { fields["seed"] = .integer(Int64(seed)) }
+        if lfo.shape == .sampleHold, lfo.glide != 0 { fields["glide"] = .double(lfo.glide) }
     }
 
     var json: SceneJSON { .object(fields) }
@@ -73,7 +80,8 @@ public struct SceneLFOEntry: Sendable, Hashable {
         guard let shapeName = fields["shape"]?.stringValue else { return invalid("shape", "must be a shape name") }
         var numbers: [Double] = []
         let keys: [(key: String, fallback: Double?)] = [("rate", nil), ("phase", LFO.defaultPhaseOffset),
-                                                         ("amplitude", LFO.defaultAmplitude), ("center", LFO.defaultCenter)]
+                                                         ("amplitude", LFO.defaultAmplitude), ("center", LFO.defaultCenter),
+                                                         ("duty", LFO.defaultDutyCycle), ("glide", LFO.defaultGlide)]   // MOD-008
         for entry in keys {
             guard let value = fields[entry.key] else {
                 guard let fallback = entry.fallback else { return invalid(entry.key, "is required") }
@@ -83,12 +91,20 @@ public struct SceneLFOEntry: Sendable, Hashable {
             guard let d = value.numberValue?.doubleValue, d.isFinite else { return invalid(entry.key, "must be a finite number") }
             numbers.append(d)
         }
+        var seed: UInt32?
+        if let value = fields["seed"] {   // MOD-008
+            guard let n = value.numberValue?.uint64Value, n <= UInt64(UInt32.max) else {
+                return invalid("seed", "must be a whole number 0…4294967295")
+            }
+            seed = UInt32(n)
+        }
         guard let shape = LFOShape(rawValue: shapeName) else {
             return (nil, SceneIssue(.unknownLFO, path: ScenePath.key(path, "shape"),
                                     "Oscillator \(number) uses the shape \"\(shapeName)\", unknown to this version; it is kept but not used."))
         }
         do {
-            let lfo = try LFO(shape: shape, rateHz: numbers[0], phaseOffset: numbers[1], amplitude: numbers[2], center: numbers[3])
+            let lfo = try LFO(shape: shape, rateHz: numbers[0], phaseOffset: numbers[1], amplitude: numbers[2], center: numbers[3],
+                              dutyCycle: numbers[4], seed: seed, glide: numbers[5])
             return (lfo, nil)
         } catch {
             let reason: String = switch error {
