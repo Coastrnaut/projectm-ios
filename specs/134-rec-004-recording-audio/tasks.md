@@ -11,7 +11,7 @@
 
 - [ ] REC-004-T02 [P] Add `RecordingAudioSourceKind`, `RecordingAudioDecision` (reasons and status texts verbatim from data-model.md) and `RecordingAudioPolicy.decide(source:includeMicrophone:microphoneGranted:)` per contract C1 in Packages/Compositor/Sources/FrameRecording/RecordingAudioPolicy.swift, with tests in Packages/Compositor/Tests/FrameRecordingTests/RecordingAudioPolicyTests.swift
 - [ ] REC-004-T03 [P] Add `RecordingAudioTimeline` (44,100 Hz, "contiguityWindowSamples 4,410 (100 ms)", origin, trim before origin, overlap trim, gap re-anchor, `end()`) in Packages/Compositor/Sources/FrameRecording/RecordingAudioTimeline.swift, with tests in Packages/Compositor/Tests/FrameRecordingTests/RecordingAudioTimelineTests.swift
-- [ ] REC-004-T04 [P] Add the recording tap to `NormalizedPCMRing` (22,050-frame SPSC ring, armed flag, `Atomic<WordPair>` stamp, disarm in `reset()`/`resetForHandoff()`, drain in `discardBuffered()`) and `RecordingTapReading`/`RecordingTapChunk` in Packages/AudioCore/Sources/AudioCore/NormalizedPCMReader.swift and Packages/AudioCore/Sources/AudioCore/RecordingTap.swift; expose `CaptureManager.recordingTap` in Packages/CaptureKit/Sources/CaptureKit/CaptureManager.swift; tests in Packages/AudioCore/Tests/AudioCoreTests/RecordingTapTests.swift
+- [ ] REC-004-T04 [P] Add the recording tap to `NormalizedPCMRing` (22,050-frame SPSC ring, armed flag, `Atomic<WordPair>` stamp, disarm in `reset()`/`resetForHandoff()`, drain in `discardBuffered()`) and `RecordingTapReading`/`RecordingTapChunk` in Packages/AudioCore/Sources/AudioCore/NormalizedPCMReader.swift and Packages/AudioCore/Sources/AudioCore/RecordingTap.swift; expose `CaptureManager.recordingTap` in Packages/CaptureKit/Sources/CaptureKit/CaptureManager.swift; tests in Packages/AudioCore/Tests/AudioCoreTests/RecordingTapTests.swift (disarmed writes nothing; stamp gives the first sample's time; reset/handoff disarm before new-session audio; overflow drops oldest and counts, REC-004-R8; the tap holds the samples written to the main ring, i.e. before trim and gate, REC-004-R12)
 
 ## Phase 3: User Story 1 - Owned audio in sync (P1) MVP
 
@@ -19,7 +19,7 @@
 **Independent test**: the owned-audio fixture: click and flash ≤ 20 ms apart.
 
 - [ ] REC-004-T05 [US1] Add the optional AAC input (AAC-LC, 44.1 kHz, stereo, 128 kb/s) and LPCM sample-buffer appends to `VideoFileWriter` and `RecordingSampleSink` in Packages/Compositor/Sources/FrameRecording/VideoFileWriter.swift
-- [ ] REC-004-T06 [US1] Add `audio:` to `MetalFrameRecorder.init`, `appendAudio(_:frames:firstSampleNanoseconds:)`, `endAudio()`, audio statistics and the video origin hand-off in Packages/Compositor/Sources/FrameRecording/MetalFrameRecorder.swift and RecordingFrameGate.swift
+- [ ] REC-004-T06 [US1] (also guarantees contract C3: a recorder made with `audio: true` that never receives audio writes no audio track; tested in T09) Add `audio:` to `MetalFrameRecorder.init`, `appendAudio(_:frames:firstSampleNanoseconds:)`, `endAudio()`, audio statistics and the video origin hand-off in Packages/Compositor/Sources/FrameRecording/MetalFrameRecorder.swift and RecordingFrameGate.swift
 - [ ] REC-004-T07 [US1] Report audio codec, sample rate and channel count in `RecordedVideoInfo` in Packages/Compositor/Sources/FrameRecording/RecordedVideoInspector.swift
 - [ ] REC-004-T08 [US1] Acceptance fixture `testOwnedAudioClickAlignsWithFlash` (research D7) plus "audio before the first frame is trimmed" in Packages/Compositor/Tests/FrameRecordingTests/RecordingAudioMuxTests.swift
 
@@ -28,7 +28,7 @@
 **Goal**: microphone audio only with the permission and the setting.
 **Independent test**: consent off or permission denied → no audio track; both on → track with the samples.
 
-- [ ] REC-004-T09 [US2] Consent fixture tests (policy decision drives `audio:`; samples offered in every case) in Packages/Compositor/Tests/FrameRecordingTests/RecordingAudioMuxTests.swift
+- [ ] REC-004-T09 [US2] Consent fixture tests (policy decision drives `audio:`; samples offered in every case; `audio: true` with no chunk → no audio track) in Packages/Compositor/Tests/FrameRecordingTests/RecordingAudioMuxTests.swift
 - [ ] REC-004-T10 [US2] Add `RecordingAudioSetting` (key `settings.recording.includeMicrophone`, "Bool, default false (absent or not a Bool → false)") in Apps/projectM-iOS/Coordinators/RecordingAudioSetting.swift; add the key to `ALLOWED_KEYS` in scripts/run_device_tests.py, `LibrarySettingsPolicy.excludedKeys` and the erase's device switches in Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift and LibraryErasePolicy.swift, the `-uitestResetNotice` reset in Apps/projectM-iOS/Coordinators/AppCoordinator.swift, and the app key-list tests
 - [ ] REC-004-T11 [US2] Update the microphone usage description (project.yml and Apps/projectM-iOS/Coordinators/PermissionCatalog.swift) and docs/privacy-policy.md (REC-004-R11)
 
@@ -52,7 +52,7 @@
 
 ## Phase 7: Polish
 
-- [ ] REC-004-T18 Repo checks (compliance, docs, motion, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, package note in Packages/Compositor/Package.swift, spec status
+- [ ] REC-004-T18 Privacy review in ADR-0051 (what reaches disk, when, for how long; REC-004-R10 evidence: no `AVPlayer`/`MPMusicPlayerController` playback path in Packages/CaptureKit or the app, by grep); repo checks (compliance, docs, motion, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, package note in Packages/Compositor/Package.swift, spec status
 - [ ] REC-004-T19 {device} Device stage: quickstart "Device" steps 1-4 on D1 (In-App Playback alignment within 40 ms, REC-004-S5; microphone consent; System/App Capture video only)
 
 ## Dependencies
