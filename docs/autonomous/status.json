@@ -11,26 +11,28 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 11,
+   "audited": 10,
    "built": 1,
+   "implementing": 1,
    "integrated": 139
   },
   "P2": {
-   "audited": 51,
-   "built": 1,
-   "implementing": 2,
-   "integrated": 25
+   "audited": 50,
+   "implementing": 3,
+   "integrated": 25,
+   "unit_passed": 1
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 73,
-  "built": 2,
-  "implementing": 2,
+  "audited": 71,
+  "built": 1,
+  "implementing": 4,
   "integrated": 248,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -185,12 +187,12 @@
   "ACC-007": {
    "attempts": 0,
    "branch": "feature/acc-007",
-   "branch_sha": "48333d58",
+   "branch_sha": "8eff9d44d8f47f9eb445b457f5de582d4951359a",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "ACC-008": {
    "attempts": 0,
@@ -2254,13 +2256,13 @@
   },
   "PRE-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-012": {
    "attempts": 0,
@@ -2944,13 +2946,13 @@
   },
   "SHOW-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/show-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHOW-008": {
    "attempts": 0,
@@ -4650,5 +4652,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T23:42:59Z"
+ "updated": "2026-11-14T23:43:48Z"
 }
