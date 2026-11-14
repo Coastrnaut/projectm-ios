@@ -176,6 +176,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private let triggerBank = ThresholdTriggerBank()
     /// MOD-006: performs a fired trigger's action (the app connects MIDI-006's performer).
     var onTrigger: (@MainActor (ThresholdTriggerAction) -> Void)?
+    /// MOD-007: the current scene's oscillators and the per-frame values the bindings read (`audio.lfo.<index>`).
+    private let lfoBank = LFOBank()
+    private let lfoValues = UnsafeMutableBufferPointer<Double>.allocate(capacity: LFOBank.maximumOscillators)
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
@@ -365,6 +368,14 @@ final class NativeSpectrumHost: PresentationBoundResource {
         try triggerBank.set(bindings)
     }
 
+    /// MOD-007: replaces the scene's oscillators by position (validated); their shared origin restarts at the next frame.
+    func setLFOs(_ oscillators: [LFO?]) throws(LFOError) {
+        try lfoBank.set(oscillators)
+    }
+
+    /// MOD-007: the live oscillators by position.
+    var lfos: [LFO?] { lfoBank.oscillators }
+
     /// MOD-006: the live threshold triggers in order.
     var triggers: [ThresholdTriggerBinding] { triggerBank.bindings }
 
@@ -374,7 +385,14 @@ final class NativeSpectrumHost: PresentationBoundResource {
                          loudness: Float? = nil, midTransient: Float? = nil, timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
-        let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient)
+        var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
+        if lfoBank.hasOscillators {   // MOD-007: at most 8 values, no allocation; ≤ 3 Hz under Reduce flashing (ACC-012)
+            let cap: Double = reduceFlashing ? LFOBank.reduceFlashingMaximumRateHz : .infinity
+            lfoBank.values(atNanoseconds: timeNanoseconds, maximumRateHz: cap, into: lfoValues)
+            lfos = UnsafeBufferPointer(lfoValues)
+        }
+        let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
+                                      lfos: lfos)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -430,6 +448,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         bands.deallocate()
         samples.deinitialize(count: WaveformFrameBuffer.capacity)
         samples.deallocate()
+        lfoValues.deallocate()   // MOD-007
     }
 
     /// SHOW-011 (research SHOW-011-D3): while this visual is shown its analyzer is the analysis tap's
