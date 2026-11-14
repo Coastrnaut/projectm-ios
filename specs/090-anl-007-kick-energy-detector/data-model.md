@@ -13,7 +13,7 @@
 | `lowerFrequency` / `upperFrequency` | 40 / 150 Hz | 20 ≤ lower < upper ≤ rate/2 |
 | `floorDecibels` | −70 | −120…−20 |
 | `dominanceDecibels` | −20 | −60…0 |
-| `baselineSeconds` | 1.0 | > 0, ≤ 2 (window clamped to 1…128 frames) |
+| `baselineSeconds` | 1.0 (window of detection values for median/MAD) | > 0, ≤ 2 (window clamped to 1…128 frames) |
 | `minimumRiseDecibels` | 6 | > 0, ≤ 40 |
 | `deviationMultiplier` | 4 | 0…20 |
 | `refractorySeconds` | 0.1 | 0…2 |
@@ -31,13 +31,13 @@ exp(−hop / (envelopeSeconds · rate)).
 
 ## BandTransientDetector state (class, not Sendable; worker-confined)
 
-Weight tables per FFT size (first bin, weights), level ring (128) + sorted window (128) + deviation
-scratch (128), count/next, armed, hasEvent, lastEventSample, envelope, contiguity (previous index,
+Weight tables per FFT size (first bin, weights), level history (8), detection-value ring (128) +
+sorted window (128) + deviation scratch (128), count/next, armed, hasEvent, lastEventSample, envelope, contiguity (previous index,
 hop, size), needsBaseline, counters (processed, ignored, eventCount), last values (level, rise,
 threshold, share).
 
-Transitions per accepted frame: compute L, share → (baseline frame?) push L, no event →
-compute baseline, MAD, rise, threshold → push L → decay envelope → armed logic → event (envelope =
+Transitions per accepted frame: compute L, share → (baseline frame?) restart the level history with L, no event →
+D = L − min(recent levels), median and MAD of the D window, threshold → push D and L → decay envelope → armed logic → event (envelope =
 1). `reset()`: empty window, armed, no previous event, envelope 0, last values 0; keeps sequence
 and counters.
 

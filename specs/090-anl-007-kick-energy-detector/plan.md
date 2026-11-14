@@ -8,8 +8,9 @@
 
 A reusable `BandTransientDetector` in `Packages/AnalysisFeatures`, configured by a
 `TransientDetectorConfiguration` (`.kick` = 40–150 Hz), reads ANL-001 magnitudes per frame, sums
-the band's power with ANL-002's fractional bin weights, and fires when the band level rises
-max(6 dB, 4·MAD) above the median of the preceding 1 s, above a −70 dB floor, holding at least
+the band's power with ANL-002's fractional bin weights, and fires when the band level's rise over
+its minimum of the preceding window-length frames (a log-energy flux) exceeds max(6 dB, median +
+4·MAD of the flux over the preceding 1 s), above a −70 dB floor, holding at least
 −20 dB of the frame's power, armed and outside a 100 ms refractory period. It keeps a 0…1
 envelope (1 on an event, 100 ms time constant). The ANL-016 pipeline runs it after the onset
 detector, publishes `AnalysisEventKind.transient(band: .kick, …)` and carries `kickEnvelope` in
@@ -62,8 +63,8 @@ iOS 27.2 simulator "ANL7 iPhone 17", created and deleted for this row.
 **Target Platform**: iOS/iPadOS 26.0+; packages also macOS 15 and Linux.
 
 **Performance Goals**: per frame (86 Hz): one weighted sum over ≤ 8 bins at N=2048 (≤ 26 at
-8,192), one sum of squares over the frame's bins (1,025 at N=2048), an insertion into an 86-entry
-sorted window and one 86-entry deviation selection: on the order of 10 µs, on the analysis
+8,192), one sum of squares over the frame's bins (1,025 at N=2048), a 4-entry minimum, an insertion into an
+86-entry sorted window and one 86-entry deviation sort: on the order of 10 µs, on the analysis
 worker, never the audio callback.
 
 **Constraints**: owner rule 7 (the AnalysisFeatures Linux-shape suite already takes about 81 s,

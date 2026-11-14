@@ -33,7 +33,7 @@ public final class BandTransientDetector {
     public func process(_ frame: SpectrumFrame, magnitudes: [Float]) -> TransientEvent?
     public func reset()
     public private(set) var envelope: Float          // 0…1
-    public private(set) var lastLevel, lastRise, lastThreshold, lastShare: Float   // dB
+    public private(set) var lastLevel, lastRise /*D*/, lastThreshold, lastShare: Float   // dB
     public private(set) var processedFrames, ignoredFrames: Int
     public private(set) var eventCount: UInt64
     public static func recommendedLeadIn() -> SpectrumLeadIn   // .silence
@@ -46,9 +46,12 @@ Per accepted frame (rate matches, `magnitudes.count == size.binCount`, 1 ≤ hop
    Non-finite sums read 0. L = max(floor, 10·log10(max(P_band, 1e−12))); share = 10·log10(P_band / P_total)
    (−∞ → −200 when P_total = 0).
 2. If the frame is the first after `reset()`/an ignored frame, not contiguous (index ≠ previous
-   index + previous hop) or has another size: push L into the window, decay the envelope, no event.
-3. Else baseline = median(window) (floor if empty), MAD = median(|x − baseline|), rise = L − baseline,
-   threshold = max(minimumRise, k·MAD); push L (oldest dropped beyond `baselineFrames(hop:)`).
+   index + previous hop) or has another size: clear the level history (keep the D window), push L
+   into the level history, decay the envelope, no event.
+3. Else reference = min of the last r = clamp(size/hop, 1, 8) levels (fewer if fewer exist),
+   D = L − reference; median and MAD of the D window (0 and 0 if empty), threshold =
+   max(minimumRise, median + k·MAD); push D into its window (oldest dropped beyond
+   `baselineFrames(hop:)`) and L into the level history.
 4. envelope ← envelope · decay.
 5. If rise ≤ threshold: armed = true, no event. Else (armed' = armed; armed = false) an event iff
    armed', L > floor, share ≥ dominance, and (no previous event or sample − last ≥ refractorySamples).

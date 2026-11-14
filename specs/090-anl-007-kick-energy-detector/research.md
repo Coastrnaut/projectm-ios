@@ -16,21 +16,24 @@
 
 ## ANL-007-D2: Level-independent decision
 
-- **Decision**: L = 10·log10(max(P, 10^−12)) clamped to ≥ floor (−70 dB). Baseline = median of the
-  preceding W = round(1.0 s · R / hop) clamped levels (86 at hop 512), kept in a ring plus a sorted
-  copy (insert/remove by shifting: O(W)). MAD = median of |x − baseline| over the window, computed
-  per frame into a scratch array with insertion sort (W ≤ 128). Rise = L − baseline. Threshold =
-  max(6 dB, 4·MAD). Fewer than W frames after a reset: the window is what exists; an empty
-  window's baseline is the floor (a reset is preceded by the stream's silence lead-in).
-- **Rationale**: a constant gain adds the same dB to L and the baseline, so the rise is unchanged
-  whenever both are above the floor; kicks rising from silence or near-silence clear the threshold
-  on the same frame at −30 and −6 dBFS when starts are hop-aligned (the first frame of a 55 Hz burst
-  at −30 dBFS already reads ≈ −45 dB, 25 dB above the floor). Median and MAD are robust to the
-  kicks inside the window (a kick's above-baseline frames cover < 50 % of 1 s at any tempo ≤ 200 BPM
-  with bodies ≤ 150 ms).
-- **Alternatives**: mean + k·σ (inflated by the kicks); a slow exponential envelope ratio (masks
-  the next kick after a loud one); ANL-004's δ + κ·mean of 100 ms (too short a memory for a
-  sustained bass, and linear-flux based).
+- **Decision**: L = 10·log10(max(P, 10^−12)) clamped to ≥ floor (−70 dB). Reference = the minimum L
+  of the preceding r = size/hop frames (clamped 1…8; 4 at 2,048/512). Detection value D = L −
+  reference. Threshold = max(6 dB, median(D) + 4·MAD(D)) over the preceding W = round(1.0 s · R /
+  hop) values of D (86 at hop 512, clamped 1…128), kept in a ring plus a sorted copy (insert and
+  remove by shifting: O(W)); MAD computed per frame into a scratch array with insertion sort. An
+  empty window gives median 0, MAD 0 (threshold 6 dB).
+- **Rationale**: a constant gain adds the same dB to L and its reference, so D is unchanged
+  whenever both are above the floor; kicks rising from silence clear the threshold on the same
+  frame at −30 and −6 dBFS when starts are hop-aligned (the first frame of a 55 Hz burst at
+  −30 dBFS reads about −45 dB, 25 dB above the floor). The reference spans one window so it lies
+  outside the 75 % overlap of the frames that already contain the hit. A kick train's D is about
+  −1.3 dB per frame (its decay) except for a few spike frames per beat, so median and MAD stay
+  small; noise gives D a wide distribution and lifts the threshold.
+- **Rejected after a design review (before coding)**: median and MAD of the level itself. A
+  decaying kick spans ~40 dB of level within each beat, so the level MAD is ~10 dB and a 4·MAD
+  threshold (~40 dB) would suppress every kick. Also rejected: mean + k·σ (spikes inflate it); a
+  slow exponential envelope ratio (masks the next kick after a loud one); ANL-004's linear flux of
+  decibel-normalized bands (depends on the −70 dB normalization floor, so not level-independent).
 
 ## ANL-007-D3: Floor and dominance
 
