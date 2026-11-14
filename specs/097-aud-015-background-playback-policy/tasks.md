@@ -57,8 +57,9 @@ person.
 - [ ] AUD-015-T07 [P] [US2] Add tests to `BackgroundPolicyTests.swift` with `FakePlaybackBackend`
   behind the real `InAppPlaybackSource`: shipped configuration pauses on background and resumes on
   foreground with notice `playbackPausedInBackground`; configuration (audio mode, keep) continues,
-  no pause, no notice; a user pause stays paused on return; an open interruption stays on hold on
-  return (S3, R10).
+  no pause, no notice; a user pause stays paused on return and sets no notice; an open
+  interruption stays on hold on return; the notice is cleared by a user pause and by `resume()`
+  (S3, R7, R10).
 - [ ] AUD-015-T08 [US2] Wire the app: `Apps/projectM-iOS/Coordinators/AppCoordinator.swift` sets
   `manager.backgroundConfiguration` from `Bundle.main` `UIBackgroundModes` and keep = false
   (R3); exposes `visibleBackgroundNotice` (nil while away or while a stop/pause reason shows).
@@ -89,7 +90,8 @@ person.
   returns to "In-App Playback · Active audio" and `backgroundNoticeText` reads "Playback paused
   while projectM-iOS was in the background." (S4). Under 30 s.
 - [ ] AUD-015-T12 Documentation: `docs/privacy-policy.md` section "When the app is in the
-  background"; `docs/adr/0036-background-playback-policy.md`; data-model lifecycle matrix note in
+  background"; `docs/adr/<next free number>-background-playback-policy.md` (0036 if still free at
+  commit time; never 0015, 0016, 0025, 0026, 0031); data-model lifecycle matrix note in
   `specs/001-ios-projectm-visualizer/data-model.md`; keep `check_permission_catalog.py` passing
   (R9).
 - [ ] AUD-015-T13 {device} On D1, per source (Microphone, In-App Playback, System/App Capture): Home
