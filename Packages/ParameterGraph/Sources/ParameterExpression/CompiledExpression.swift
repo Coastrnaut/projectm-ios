@@ -32,6 +32,8 @@ public enum ExpressionOpcode: UInt8, Sendable, Hashable, CaseIterable {
     case midTransient = 17
     /// `audio.highTransient` (ANL-009).
     case highTransient = 18
+    /// `audio.rolloff` (ANL-011).
+    case rolloff = 19
     case min = 20
     case max = 21
     case clamp = 22
@@ -50,7 +52,7 @@ public enum ExpressionOpcode: UInt8, Sendable, Hashable, CaseIterable {
     var stackEffect: Int {
         switch self {
         case .constant, .time, .band, .bandMean, .onset, .beatConfidence, .kick, .centroid, .loudness, .midTransient, .highTransient,
-             .load: 1
+             .rolloff, .load: 1
         case .store: -1
         case .add, .subtract, .multiply, .divide, .min, .max, .step, .pow: -1
         case .negate, .abs, .sin, .cos, .floor, .fract, .sqrt: 0
@@ -223,6 +225,9 @@ public struct CompiledExpression: Sendable, Hashable {
                     top += 1
                 case .highTransient:
                     memory[top] = AudioFeatureSource.highTransient.value(in: frame)
+                    top += 1
+                case .rolloff:
+                    memory[top] = AudioFeatureSource.rolloff.value(in: frame)
                     top += 1
                 case .load:
                     memory[top] = memory[Int(instruction.index)]

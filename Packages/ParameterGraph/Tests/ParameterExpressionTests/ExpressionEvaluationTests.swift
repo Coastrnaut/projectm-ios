@@ -101,6 +101,22 @@ final class ExpressionEvaluationTests: XCTestCase {
         XCTAssertEqual(compiled.evaluate(.silent), 0)
     }
 
+    /// ANL-011-T09: `audio.rolloff` compiles to opcode 19 and reads the frame's normalized rolloff.
+    func testRolloffSourceInAFormula() throws {
+        let compiled = try CompiledExpression(source: "audio.rolloff * 2 - audio.centroid")
+        XCTAssertEqual(compiled.audioSources, [.rolloff, .centroid])
+        XCTAssertTrue(compiled.instructions.contains { (instruction: ExpressionInstruction) -> Bool in
+            instruction.opcode == .rolloff && instruction.opcode.rawValue == 19
+        })
+        let bands: [Float] = [0.5]
+        let value = bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Double in
+            let frame = AudioFeatureFrame(bands: buffer, centroid: 0.25, rolloff: 0.375)
+            return compiled.evaluate(ExpressionInputs(frame: frame, timeSeconds: 0))
+        }
+        XCTAssertEqual(value, 0.5)
+        XCTAssertEqual(compiled.evaluate(.silent), 0)
+    }
+
     /// ANL-009-T07: `audio.highTransient` compiles to opcode 18 and reads the frame's high transient value.
     func testHighTransientSourceInAFormula() throws {
         let compiled = try CompiledExpression(source: "audio.highTransient * 2 + audio.midTransient")
