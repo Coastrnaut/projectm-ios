@@ -15,7 +15,7 @@ Budgets (owner rule 7): unit ≤ 10 s, package suite < 1 min, UI test < 30 s.
 - [ ] PRE-018-T04 Pure `PresetIntegrityScanner.scan` (R3-R5, R14; research D5, D7) in `Packages/PresetLibrary/Sources/PresetLibrary/Integrity/PresetIntegrityScanner.swift`
 - [ ] PRE-018-T05 `movedByUser` quarantine reason in `Packages/PresetLibrary/Sources/PresetLibrary/UserPresets/UserPresetModel.swift`; `UserPresetStore.restoreContents` in `UserPresetStore.swift`; `RecentPresetHistory.removing` in `RecentPresetHistory.swift`
 - [ ] PRE-018-T06 `UserPresetLibrary` integrity: `integrityInventory(limits:)` (size + SHA-256 + validator re-check with the context's texture names; read-only), `relink(_:with:)` (checksum match only), `quarantineByUser(_:detail:)` in `Packages/PresetLibrary/Sources/PresetLibrary/Integrity/UserPresetLibrary+Integrity.swift`
-- [ ] PRE-018-T07 Package tests: broken fixture → each kind once with the right suggestion; clean library → 0; bounds (records, bytes, references, issues, textures → incomplete); relink restores byte for byte, mismatch writes nothing; quarantineByUser; inventory changes no byte, in `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetIntegrityTests.swift`
+- [ ] PRE-018-T07 Package tests: broken fixture → each kind once with the right suggestion; clean library → 0; bounds (records, bytes, references, issues, textures → incomplete); relink restores byte for byte, mismatch writes nothing; quarantineByUser; inventory changes no byte; user presets unavailable (newer format) → no user-prefixed ID judged dangling and the report says so (Edge Cases), in `Packages/PresetLibrary/Tests/PresetLibraryTests/PresetIntegrityTests.swift`
 
 ## Phase 3: User Story 1 — Find what is broken (P1) 🎯 MVP
 
@@ -23,7 +23,7 @@ Budgets (owner rule 7): unit ≤ 10 s, package suite < 1 min, UI test < 30 s.
 
 - [ ] PRE-018-T08 [US1] Make `UserPresetsCoordinator.library` and `PresetCoordinator`'s favorites and collections stores module-internal; `PresetCoordinator+Integrity.swift` (reference snapshot, `isKnownPreset`, reference removal per store) in `Apps/projectM-iOS/Coordinators/`
 - [ ] PRE-018-T09 [US1] `LibraryIntegrityCoordinator` (scan off main, no overlap, report, result text, library-lane announcements, fixes, rescan after each fix) in `Apps/projectM-iOS/Coordinators/LibraryIntegrityCoordinator.swift`; construction and lane wiring in `AppCoordinator.swift`
-- [ ] PRE-018-T10 [US1] `LibraryCheckView` (Check Library, "Not checked yet.", issues by kind, fix buttons + accessibility actions, confirmations, Re-import… picker) in `Apps/projectM-iOS/Views/LibraryCheckView.swift`; row in `UserPresetsView.swift`; route in `PresetBrowserView.swift`
+- [ ] PRE-018-T10 [US1] `LibraryCheckView` (Check Library, "Not checked yet.", issues by kind, fix buttons + accessibility actions, confirmations, Re-import… picker; Check Library disabled until the library is loaded and while a scan or fix runs (Edge Cases)) in `Apps/projectM-iOS/Views/LibraryCheckView.swift`; row in `UserPresetsView.swift`; route in `PresetBrowserView.swift`
 - [ ] PRE-018-T11 [US1] DEBUG `-uitestBrokenLibrary` seed in `Apps/projectM-iOS/Debug/UITestBrokenLibraryFixture.swift`
 - [ ] PRE-018-T12 [US1] Acceptance test (broken fixture through real stores: 8 issues once each; clean → 0) in `Apps/projectM-iOS/Tests/LibraryIntegrityAcceptanceTests.swift`
 

@@ -87,7 +87,13 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
   ID>. <suggestion>") whose fixes are also named accessibility actions; the screen's result line is
   announced on the library lane. Applied in R11, R12.
 
-## User Scenarios & Testing *(mandatory)*
+### Session 2026-11-14 (speckit-analyze)
+
+- Finding (coverage, Edge Cases): the newer-format user preset list had no test; added to PRE-018-T07.
+- Finding (coverage, Edge Cases): "button disabled until loaded / while running" had no task; added to
+  PRE-018-T10.
+- No constitution conflict, no duplicate requirement; every R and S maps to at least one task.
+ *(mandatory)*
 
 ### User Story 1 - I find out what is broken in my library and how to fix it (Priority: P1) — MVP
 
