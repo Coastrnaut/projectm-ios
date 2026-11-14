@@ -8,13 +8,13 @@ lock refusal, one short UI test). Budgets (owner rule 7): unit tests ~1-2 s, pac
 
 ## Phase 1: Setup
 
-- [ ] SHOW-005-T01 Create simulator "SHOW5 iPhone 17" (iOS 27.2), fetch the presets, run `xcodegen generate` in the worktree, and count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` before any simulator run
+- [X] SHOW-005-T01 Create simulator "SHOW5 iPhone 17" (iOS 27.2), fetch the presets, run `xcodegen generate` in the worktree, and count `~/Library/Logs/DiagnosticReports/PosterBoard-*.ips` before any simulator run — Verified 2026-11-14: simulator "SHOW5 iPhone 17" created, presets fetched, `xcodegen generate`; PosterBoard reports 26 before
 
 ## Phase 2: Foundational (model and file; blocks every story)
 
-- [ ] SHOW-005-T02 In `Packages/ShowControl/Sources/ShowControl/ShowCueList.swift`: `ShowCue.skipped: Bool` ("default false"), `ShowStepOutcome.allSkipped`, skip-aware `next()`, `previous()`, `canGoNext`, `canGoPrevious` (nearest cue not skipped; `.allSkipped` when every cue is skipped), `go(to:)` unchanged, `setSkipped(_:_:)` (never moves the position), `insert(…, skipped:)`
-- [ ] SHOW-005-T03 In `Packages/ShowControl/Sources/ShowControl/ShowDocument.swift`: optional per-cue `skip` ("`true` written only when skipped; absent/null/false = not skipped; any other JSON type dropped") via a lenient `StoredSkip`, warning `droppedSkipFlags(Int)`, no version bump (contract K1-K2)
-- [ ] SHOW-005-T04 In `Packages/ShowControl/Sources/ShowControl/ShowAdvanceTimeline.swift`: `rearm(cueID:remaining:at:)` (held when the timeline is held, else running at now + remaining)
+- [X] SHOW-005-T02 In `Packages/ShowControl/Sources/ShowControl/ShowCueList.swift`: `ShowCue.skipped: Bool` ("default false"), `ShowStepOutcome.allSkipped`, skip-aware `next()`, `previous()`, `canGoNext`, `canGoPrevious` (nearest cue not skipped; `.allSkipped` when every cue is skipped), `go(to:)` unchanged, `setSkipped(_:_:)` (never moves the position), `insert(…, skipped:)` — Verified 2026-11-14: ShowSkipTests (6) in `swift test --package-path Packages/ShowControl`, 120 tests, 0 failures, 1.8 s
+- [X] SHOW-005-T03 In `Packages/ShowControl/Sources/ShowControl/ShowDocument.swift`: optional per-cue `skip` ("`true` written only when skipped; absent/null/false = not skipped; any other JSON type dropped") via a lenient `StoredSkip`, warning `droppedSkipFlags(Int)`, no version bump (contract K1-K2) — Verified 2026-11-14: ShowSkipTests testSkipFlagRoundTripsAndOnlySkippedCuesWriteIt and testInvalidSkipValuesAreDroppedAndCounted
+- [X] SHOW-005-T04 In `Packages/ShowControl/Sources/ShowControl/ShowAdvanceTimeline.swift`: `rearm(cueID:remaining:at:)` (held when the timeline is held, else running at now + remaining) — Verified 2026-11-14: ShowControl suite (120 tests) builds and passes; behavior covered by CueHoldSkipAcceptanceTests (T09)
 
 ## Phase 3: User Story 1 — Hold the timed show (P1, MVP)
 
@@ -31,7 +31,7 @@ lock refusal, one short UI test). Budgets (owner rule 7): unit tests ~1-2 s, pac
 **Independent test**: next/previous/timed over one and several skipped cues, Go to a skipped cue, all skipped, round trip, lock refusal.
 
 - [ ] SHOW-005-T10 [US2] `Apps/projectM-iOS/Coordinators/ShowCoordinator.swift`: `setSkipped` (refused while locked, saves, applies nothing), "All cues are skipped." notice on `.allSkipped`, Duplicate Scene copies the flag, `statusText` "… · all skipped"
-- [ ] SHOW-005-T11 [P] [US2] Package tests `Packages/ShowControl/Tests/ShowControlTests/ShowSkipTests.swift`: stepping over one and several skipped cues, Go to a skipped cue, skipping the active cue keeps the position, all skipped, `canGo*`, round trip (byte-identical; no `skip` key without skipped cues), lenient read, timeline over skipped cues via `ShowTimedAdvance.tick`
+- [X] SHOW-005-T11 [P] [US2] Package tests `Packages/ShowControl/Tests/ShowControlTests/ShowSkipTests.swift`: stepping over one and several skipped cues, Go to a skipped cue, skipping the active cue keeps the position, all skipped, `canGo*`, round trip (byte-identical; no `skip` key without skipped cues), lenient read, timeline over skipped cues via `ShowTimedAdvance.tick` — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` (120 tests, 0 failures, 1.8 s)
 - [ ] SHOW-005-T12 [US2] App tests in `Apps/projectM-iOS/Tests/CueHoldSkipAcceptanceTests.swift`: timed advance over skipped cues, Skip edit refused while locked (Hold still allowed), countdown cancelled when the last next cue is skipped, all-skipped notice, Duplicate Scene copies the flag (R9)
 - [ ] SHOW-005-T13 [US2] `Apps/projectM-iOS/Views/ShowEditorView.swift`: dimmed row with "Skipped" (VoiceOver ", skipped"), context menu "Skip Cue"/"Don't Skip Cue", leading swipe "Skip"/"Unskip" (identifier `showCueSkip`), VoiceOver action; hidden while locked
 - [ ] SHOW-005-T14 [US2] UI test `Apps/projectM-iOS/UITests/CueHoldSkipUITests.swift` (< 30 s): the Hold button's value toggles; the Skip swipe makes cue 2 read ", skipped"
