@@ -2,7 +2,7 @@
 
 - **Status**: Accepted 2026-11-13 (decided by Claude under the owner's best-judgement rule, owner
   rule 4)
-- **Feature**: CAM-001 (`specs/033-cam-001-rear-camera-layer`)
+- **Feature**: CAM-001 (`specs/033-cam-001-rear-camera-layer`); amended by CAM-002 (`specs/096-cam-002-front-camera-layer`)
 - **Constitution**: I, VI, X; Privacy
 
 ## Context
@@ -37,3 +37,27 @@ the compositor yet.
   in the device stage.
 - Later CAM rows (front camera, lenses, exposure, focus, white balance) extend the provider; any
   image analysis needs its own specification and privacy review.
+
+## Amendment 2026-11-14: front camera and mirror (CAM-002)
+
+Decided by Claude under owner rule 4; `specs/096-cam-002-front-camera-layer`. No default is
+overridden, so this amends ADR-0017 instead of opening a new ADR.
+
+5. **One camera visual, two positions.** The Camera visual gains a stored setting "Camera: Back /
+   Front" (`settings.camera.position`, default back) in a Settings "Camera" section. The camera
+   layer kind still allows one instance, so one capture session, one badge and one Stop camera.
+   The Camera choice itself stays session only; the position never starts the camera.
+6. **The mirror lives in the camera layer only.** `CameraPictureGeometry.mirrored` (and the same
+   arithmetic in the shader) flips the upright picture left to right with the crop centered. The
+   screen, Save Frame (REC-001), Record (REC-003) and the external display (OUT-001) all read the
+   one composite, so they always agree; layers drawn above (the spectrum) are not flipped.
+   Defaults: on for the front camera, off for the rear, each stored
+   (`settings.camera.mirrorFront`, `settings.camera.mirrorBack`). `AVCaptureConnection` mirroring
+   is not used.
+7. **Switching never shows the previous camera.** Every picture carries the position it came
+   from and the layer draws only pictures of the chosen camera; the AV provider swaps the running
+   session's input inside begin/commitConfiguration and reopens its picture slot only after the
+   video queue has drained. The audio source is untouched.
+8. **Privacy text.** The badge reads "Front camera on" for the front camera; the usage
+   description now names both cameras and says a picture is saved only when the user saves a
+   frame or records. App Store answers stay "Data Not Collected".
