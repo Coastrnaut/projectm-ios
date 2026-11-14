@@ -47,6 +47,10 @@ first.
 - Q: What are the defaults, and do they change today's look? → A: Attack and release both default to 0 ms (instant): the drawn bands are bit-identical to today's. Users opt in (ANL-003-R6).
 - Q: Is it exposed to the user, and how? → A: Yes, minimally: two segmented rows under Settings → Visual, shown with Bars (circular and linear spectrum only): Attack (Instant, 25 ms, 50 ms, 100 ms) and Release (Instant, 100 ms, 250 ms, 500 ms), stored as Int milliseconds under `settings.spectrum.attack` and `settings.spectrum.release` (anything else → 0). This amends FR-065: exactly these two user-setting keys are added, and the device privacy check's allowed list gains them. Not in the parameter catalog, scenes or show cues in this row (ANL-003-R6, R7).
 
+- Q (clarify pass): Which frame interval drives the coefficients, and is it clamped? → A: The real interval between consecutive display-link timestamps (`timestamp` now minus `timestamp` of the previous frame); on the first frame after a start or resume the state is reset anyway, so no interval is needed. Not clamped: the exponential rule is exact for any positive interval, so a long hitch simply lets the value move further, as time did. Tests inject intervals; nothing reads a wall clock (ANL-003-R3, R5).
+- Q (clarify pass): Do MOD-002 bindings read raw or smoothed bands? → A: Raw, unchanged. Modulation has its own envelope rows (MOD-015); smoothing the drawn bars must not change what a scene's bindings do (ANL-003-R2).
+- Q (clarify pass): Does changing Attack or Release mid-run reset the bars? → A: No. New times apply from the next frame from the current state, so the picture never jumps; only a session, band-count, pause/resume or explicit reset snaps the state (ANL-003-R5, R6).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bars rise and fall at the speed I choose (Priority: P1)
@@ -95,7 +99,7 @@ interval; drive the real band pipeline with a synthetic tone switched on and off
 - NaN or ±∞ input for a band: that band holds its previous value (0 on a first frame); outputs are always finite.
 - Frame interval zero, negative or non-finite: no progress this frame (except instant times, which still follow the input).
 - Times outside 0…2 s or NaN in the library: clamped (NaN → 0).
-- Settings changed while running: effective from the next frame, no allocation.
+- Settings changed while running: effective from the next frame from the current state (no snap), no allocation.
 
 ## Requirements *(mandatory)*
 
