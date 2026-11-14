@@ -90,7 +90,14 @@ final class PresetCoordinator {
     /// unlock): their favorites are kept (PRE-015-R8).
     @ObservationIgnored var retainedUserPresetIDs: Set<String> = []
     /// PRE-001: the rows' thumbnails (set by the app; nil in tests that do not need them).
-    @ObservationIgnored var thumbnails: PresetThumbnailModel?
+    @ObservationIgnored var thumbnails: PresetThumbnailModel? {
+        didSet { thumbnails?.onColorsChanged = { [weak self] () -> Void in self?.colorsVersion += 1 } }   // PRE-004
+    }
+    /// PRE-004: bumped whenever learned colours change, so the colour chips and lists refresh.
+    var colorsVersion = 0
+    /// PRE-004-R8: the browser's selected colour chips (AND), in memory only.
+    var selectedColors: [PresetColorFamily] = []
+    @ObservationIgnored var cachedColorFilter: (version: Int, library: ObjectIdentifier, filter: PresetColorFilter)?
     /// PRE-002: the launch collection runs once; tests await `thumbnailCollection`.
     @ObservationIgnored private var thumbnailsCollected = false
     @ObservationIgnored private(set) var thumbnailCollection: Task<Void, Never>?
@@ -181,8 +188,13 @@ final class PresetCoordinator {
         guard let thumbnails, !thumbnailsCollected else { return }
         thumbnailsCollected = true
         let cache: PresetThumbnailCache = thumbnails.cache
-        thumbnailCollection = Task.detached(priority: .utility) {
+        let colors: PresetColorStore? = thumbnails.colors
+        let spec: PresetThumbnailSpec = cache.spec
+        thumbnailCollection = Task.detached(priority: .utility) { [weak thumbnails] in
             await cache.retainOnly(PresetThumbnailModel.listing(library))
+            guard let colors else { return }   // PRE-004-R10: the colour index follows the same listing
+            let loaded = await PresetThumbnailModel.loadColors(colors, listing: PresetThumbnailModel.colorListing(library, spec: spec))
+            await MainActor.run { thumbnails?.mergeLoadedColors(loaded) }
         }
     }
 
