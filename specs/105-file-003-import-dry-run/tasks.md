@@ -25,7 +25,7 @@
 - [ ] FILE-003-T05 [US1] Fixture table of exact plans: clean, conflicting names, identical content, missing licence, malformed entry, newer format version, oversize (plus ID conflict, quarantined text, built-in, blocked, fails checks, library full, skip policy) in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetArchiveImportPlanTests.swift
 - [ ] FILE-003-T06 [US1] `UserPresetLibrary.planArchiveImport` and `installArchive` (C2) in Packages/PresetLibrary/Sources/PresetLibrary/UserPresets/UserPresetLibrary.swift; test that Install executes exactly the plan (ids, names, pending, texts) in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetArchiveInstallTests.swift
 - [ ] FILE-003-T07 [US1] Coordinator: `.zip` routing, `previewArchive`, `setArchivePolicy`, `installArchive`, `cancelArchive`, announcements on the `library` lane (add the lane in Apps/projectM-iOS/Coordinators/AccessibilityAnnouncer.swift) in Apps/projectM-iOS/Coordinators/UserPresetsCoordinator.swift; wiring in Apps/projectM-iOS/Coordinators/AppCoordinator.swift
-- [ ] FILE-003-T08 [US1] Preview sheet in Apps/projectM-iOS/Views/PresetArchiveImportView.swift and its presentation plus `.zip` picker type in Apps/projectM-iOS/Views/UserPresetsView.swift (C4 identifiers; small bodies; accessibility sizes)
+- [ ] FILE-003-T08 [US1] Preview sheet in Apps/projectM-iOS/Views/PresetArchiveImportView.swift and its presentation plus `.zip` picker type in Apps/projectM-iOS/Views/UserPresetsView.swift (C4 identifiers; small bodies; accessibility sizes; no animation, so `check_motion_policy.py` has nothing to route)
 - [ ] FILE-003-T09 [US1] App unit tests (preview, install, announcements, words) in Apps/projectM-iOS/Tests/PresetArchiveImportAppTests.swift
 
 ## Phase 4: User Story 2 - Cancel changes nothing (P1)
@@ -33,8 +33,8 @@
 **Independent Test**: snapshots before and after.
 
 - [ ] FILE-003-T10 [US2] Byte-for-byte tests: for each fixture, dry run then cancel leaves `LibraryTreeSnapshot` of `UserPresets` and `PresetCollections` identical; an install failing at every fault point leaves it identical, in Packages/PresetLibrary/Tests/PresetLibraryTests/PresetArchiveInstallTests.swift
-- [ ] FILE-003-T11 [US2] DEBUG probes (`libraryDigest`, `archiveDigestAtPreview`) and the `-uitestPresetArchiveFixture` hook in Apps/projectM-iOS/Coordinators/UserPresetsCoordinator.swift and Apps/projectM-iOS/Coordinators/AppCoordinator.swift; UI test (preview, Cancel, same digest, fixture preset not listed) in Apps/projectM-iOS/UITests/PresetArchiveImportUITests.swift
-- [ ] FILE-003-T12 [US2] App test: coordinator preview then cancel leaves the library folder snapshot identical and owned defaults unchanged, in Apps/projectM-iOS/Tests/PresetArchiveImportAppTests.swift
+- [ ] FILE-003-T11 [US2] DEBUG probes (`libraryDigest`, `archiveDigestAtPreview`) and the `-uitestPresetArchiveFixture` hook in Apps/projectM-iOS/Coordinators/UserPresetsCoordinator.swift and Apps/projectM-iOS/Coordinators/AppCoordinator.swift; UI test at the largest accessibility text size (preview, Install and Cancel hittable, Cancel, same digest, fixture preset not listed; under 30 s) in Apps/projectM-iOS/UITests/PresetArchiveImportUITests.swift
+- [ ] FILE-003-T12 [US2] App test: coordinator preview then cancel leaves the library folder snapshot identical and every UserDefaults key whose name contains "preset" or "collection" unchanged (the preset screens own no key today; analyze finding C2), in Apps/projectM-iOS/Tests/PresetArchiveImportAppTests.swift
 
 ## Phase 5: User Story 3 - Conflict policy (P2)
 
@@ -52,7 +52,6 @@
 ## Phase 8: Polish
 
 - [ ] FILE-003-T17 Run the checks (compliance, docs, motion policy, permission catalog, status events, script tests, privacy manifest on the Debug app), the PresetLibrary suite on the host and in Linux shape, and the app tests and UI tests listed in quickstart.md; record results in spec.md's status
-- [ ] FILE-003-T18 Update the roadmap row's status in docs/FEATURE_ROADMAP_AUTONOMOUS.md only if other integrated rows do so (otherwise leave it to the integrator)
 
 ## Dependencies
 

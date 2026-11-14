@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+**speckit-analyze (2026-11-14)**: 0 critical, 0 high; fixes applied: the UI test runs at the largest accessibility size (R13, S6); "owned UserDefaults keys" for presets is defined as none today and tested by name (R2, C2); the motion-policy check is part of T08/T17; the roadmap-status task was dropped (integrator's job).
+
 **Input**: User description: "Implement FILE-003 (Import dry run) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Preview counts, conflicts and
 missing licenses before installing archive." Acceptance, verbatim: "Cancel leaves library
