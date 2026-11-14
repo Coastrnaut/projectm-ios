@@ -49,6 +49,8 @@ struct SettingsView: View {
     var inputTrim: InputTrimSetting?
     /// AUD-009: the analysis-only channel selection (nil hides its section, e.g. in previews).
     var channelSelection: ChannelSelectionSetting?
+    /// AUD-011: the analysis-only noise gate (nil hides its section, e.g. in previews).
+    var noiseGate: NoiseGateSetting?
     @Environment(\.dismiss) private var dismiss
     @State private var pickedPhoto: PhotosPickerItem?
     @State private var showPhotoFileImporter = false
@@ -231,6 +233,7 @@ struct SettingsView: View {
                 }
                 if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
                 if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
+                if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
                 oscSection
                 if let show {   // SHOW-001-R14
                     Section {

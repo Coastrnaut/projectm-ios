@@ -71,6 +71,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
+                "settings.noiseGate.enabled",   # AUD-011-R8 (analysis-only noise gate, microphone)
+                "settings.noiseGate.thresholdDecibels",   # AUD-011-R8
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "guide.firstScene",   # UIX-001
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",

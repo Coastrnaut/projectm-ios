@@ -177,6 +177,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let inputTrim: InputTrimSetting
     /// AUD-009: the analysis-only channel selection (Settings → Analysis Channel).
     let channelSelection: ChannelSelectionSetting
+    /// AUD-011: the analysis-only noise gate (Settings → Audio Analysis; microphone source only).
+    let noiseGate: NoiseGateSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -228,7 +230,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// the oscilloscope, MOD-002 bindings and tempo detection follow the trim. projectM reads
     /// `manager.normalizedOutput`, which the trim never touches.
     /// AUD-009-R5 (contract C4): the channel selection sits inside the trim (tap → selection → trim).
-    var trimmedAnalysisTap: (any NormalizedPCMReader)? { inputTrim.trimmed(channelSelection.selected(manager.analysisTap)) }
+    /// AUD-011-R1 (contract C5): the noise gate sits after the trim (tap → selection → trim → gate).
+    var trimmedAnalysisTap: (any NormalizedPCMReader)? { noiseGate.gated(inputTrim.trimmed(channelSelection.selected(manager.analysisTap))) }
 
     /// Tap tempo and the tempo estimate (SHOW-011).
     let tempo: TempoCoordinator
@@ -275,6 +278,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
             defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
             defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
+            defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
+            defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -287,6 +292,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
         inputTrim = InputTrimSetting(defaults: defaults)
         channelSelection = ChannelSelectionSetting(defaults: defaults)
+        noiseGate = NoiseGateSetting(defaults: defaults)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -579,6 +585,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
 
     private func start(_ mode: AudioSourceMode) {
+        noiseGate.control.isMicrophoneSource = mode == .microphone   // AUD-011-R3
         prepareRenderer()
         sourceStarts += 1
         screen = .visualizer
@@ -592,6 +599,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// Stop (FR-007): stops the source and returns to the chooser.
     func stop() {
+        noiseGate.control.isMicrophoneSource = false   // AUD-011-R3
         hideTask?.cancel()
         pauseActiveVisual()
         screen = .chooser
