@@ -239,9 +239,11 @@ enum CompositorShaders {
     /// composite flash guard's source, so the guard measures exactly what the output pass shows.
     ///   flags 0 (every control neutral): the pixel is returned untouched, so `cmp_tone_map` sees the ungraded input
     ///   (bypass, bit for bit); else sanitise (NaN/±Inf → 0, colour ≥ 0, alpha 0…1), then temperature (× balance),
-    ///   lift (max(v·scale + offset, 0)), gamma (v^exponent), gain (× gain), saturation (around Rec. 709 luminance).
+    ///   lift (max(v·scale + offset, 0)), gamma (v^exponent), gain (× gain), saturation (around Rec. 709 luminance),
+    ///   FX-004 hue (`ColorGradeCoefficients.rotateHue`: the differences (r − g, b − g) times `hue` as a 2 × 2 matrix,
+    ///   rebuilt around the luminance g + wR·d1 + wB·d2, which is exact for greys; negative results pulled to grey).
     static let displaySource = """
-    struct CMPGrade { float4 balance; float4 tone; float saturation; uint flags; uint pad0; uint pad1; };
+    struct CMPGrade { float4 balance; float4 tone; float4 hue; float saturation; uint flags; uint pad0; uint pad1; };
 
     \(toneMapSource)
     static float4 cmp_grade(float4 c, constant CMPGrade &g) {
@@ -257,17 +259,31 @@ enum CompositorShaders {
             float y = dot(v, float3(0.2126, 0.7152, 0.0722));
             v = max(y + g.saturation * (v - y), float3(0.0));
         }
+        if ((g.flags & 32u) != 0u) {
+            float d1 = v.r - v.g;
+            float d2 = v.b - v.g;
+            float y = v.g + 0.2126 * d1 + 0.0722 * d2;
+            float e1 = g.hue.x * d1 + g.hue.y * d2;
+            float e2 = g.hue.z * d1 + g.hue.w * d2;
+            float gg = y - 0.2126 * e1 - 0.0722 * e2;
+            v = float3(gg + e1, gg, gg + e2);
+            float m = min(v.r, min(v.g, v.b));
+            if (m < 0.0) v = y > 0.0 ? max(y + (y / (y - m)) * (v - y), float3(0.0)) : float3(0.0);
+        }
         return float4(v, a);
     }
 
     static float4 cmp_display(float4 c, constant CMPGrade &g) { return cmp_tone_map(cmp_grade(c, g)); }
     """
 
-    /// FX-003: `CMPGrade` in the shader (48 bytes, copied by `setFragmentBytes` / `setBytes`; research FX-003-D4).
+    /// FX-003: `CMPGrade` in the shader (64 bytes since FX-004's `hue`, copied by `setFragmentBytes` / `setBytes`;
+    /// research FX-003-D4, FX-004-D5).
     struct GradeBlock: Equatable {
         var balance: SIMD4<Float>
         /// (lift scale, lift offset, exponent, gain).
         var tone: SIMD4<Float>
+        /// FX-004: T(θ) (T00, T01, T10, T11).
+        var hue: SIMD4<Float>
         var saturation: Float
         var flags: UInt32
         var pad0: UInt32 = 0
@@ -280,6 +296,7 @@ enum CompositorShaders {
         init(_ k: ColorGradeCoefficients) {
             balance = SIMD4<Float>(Float(k.balance.x), Float(k.balance.y), Float(k.balance.z), 0)
             tone = SIMD4<Float>(Float(k.liftScale), Float(k.liftOffset), Float(k.exponent), Float(k.gain))
+            hue = SIMD4<Float>(Float(k.hueMatrix.x), Float(k.hueMatrix.y), Float(k.hueMatrix.z), Float(k.hueMatrix.w))
             saturation = Float(k.saturation)
             flags = k.flags
         }
