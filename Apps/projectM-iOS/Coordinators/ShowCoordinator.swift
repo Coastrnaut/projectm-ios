@@ -36,6 +36,9 @@
 // * SHOW-003: with `cueQuantizer` in Beat or Bar mode, `next`, `previous` and `go(to:)` (every caller: controls, keys,
 //   pad, MIDI, scene switcher, editor) hand a step that would move to the quantizer and return `.queued`; at the beat
 //   or bar it runs `stepNow`, the unchanged step path. `timedNext` is SHOW-002's advance (never cancels a waiting step).
+// * SHOW-004: a cue may carry a transition override for the edge into it; `show` drives `cue.effectiveTransition` (the
+//   override, else the SCN-007 scene default) on every step. `setTransitionOverride` is an edit (refused while locked),
+//   saves at once and applies nothing; it never writes a scene file or a cue's `transition`. A duplicate keeps it.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -236,13 +239,13 @@ final class ShowCoordinator {
                                        assets: availability())
         guard report.needsReview, let requestRepair else {
             return apply(decoded.document, decodeWarnings: decoded.warnings, sceneID: cue.sceneID, number: number,
-                         transition: cue.transition)
+                         transition: cue.effectiveTransition)   // SHOW-004-R3
         }
         if !report.canOpenAsIs { unreadableScenes.insert(cue.sceneID) }
         clearNotice()
         let sceneID = cue.sceneID
         let warnings = decoded.warnings
-        let transition = cue.transition
+        let transition = cue.effectiveTransition   // SHOW-004-R3
         requestRepair(SceneRepairRequest(title: title, report: report, document: decoded.document,
                                          open: { [weak self] (document: SceneDocument) in
                                              self?.apply(document, decodeWarnings: warnings, sceneID: sceneID, number: number,
@@ -418,7 +421,8 @@ final class ShowCoordinator {
         let inserted: ShowCue
         do throws(ShowEditError) {
             inserted = try list.insert(sceneID: copy.id, label: ShowCueList.copyLabel(cue.label), after: cue.id,
-                                       transition: cue.transition, dwell: cue.dwell)   // SCN-007-R8, SHOW-002-R14
+                                       transition: cue.transition, dwell: cue.dwell,   // SCN-007-R8, SHOW-002-R14
+                                       transitionOverride: cue.transitionOverride)   // SHOW-004-R7
         } catch {
             editorMessage = error.description   // the copy's file is removed by the next save (unreferenced)
             return nil
@@ -495,6 +499,16 @@ final class ShowCoordinator {
     func setTransition(_ cueID: UUID, to transition: ShowCueTransition?) -> Bool {
         if refusedByLock() { return false }
         guard (try? list.setTransition(cueID, to: transition)) != nil else { return false }
+        save()
+        return true
+    }
+
+    /// SHOW-004-R6: sets or (nil, "Use Scene Default") removes the override for the edge into a cue and saves; never
+    /// applies anything, writes a scene file or changes a cue's scene default.
+    @discardableResult
+    func setTransitionOverride(_ cueID: UUID, to transition: ShowCueTransition?) -> Bool {
+        if refusedByLock() { return false }
+        guard (try? list.setTransitionOverride(cueID, to: transition)) != nil else { return false }
         save()
         return true
     }
