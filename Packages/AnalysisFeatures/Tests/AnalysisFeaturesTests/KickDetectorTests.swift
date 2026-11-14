@@ -160,4 +160,53 @@ final class KickDetectorTests: XCTestCase {
         XCTAssertNil(detector.process(frame, magnitudes: Array(magnitudes.prefix(100))))
         XCTAssertEqual(detector.ignoredFrames, 2)
     }
+
+    // MARK: Bus (T07)
+
+    private func busRun(_ mono: [Float]) throws -> BusRecording {
+        let ring = NormalizedPCMRing(analysisTapCapacityFrames: NormalizedPCMRing.analysisTapDefaultCapacityFrames)
+        let pipeline = AnalysisPipeline(clock: StepClock().function)
+        let recorder = BusRecorder(try pipeline.subscribe(eventCapacity: 256))
+        pipeline.attach(try XCTUnwrap(ring.analysisTap))
+        var stereo = [Float](repeating: 0, count: mono.count * 2)
+        for (n, value) in mono.enumerated() { stereo[2 * n] = value; stereo[2 * n + 1] = value }
+        // One hop per chunk, so the recorder sees every frame (frames are latest-wins).
+        BusFixture.feed(stereo, into: ring, chunkFrames: TransientFixture.hop) {
+            pipeline.step()
+            recorder.poll()
+        }
+        return recorder.recording
+    }
+
+    func testThePipelinePublishesKickEventsAndAnEnvelope() throws {
+        let kick = TransientFixture.kickTrain(count: 3, dBFS: -12)
+        let r = try busRun(kick.samples)
+        assertOrdered(r)
+        let kicks = r.events.filter { (e: AnalysisEvent) -> Bool in
+            if case .transient(band: .kick, _, _, _) = e.kind { return true } else { return false }
+        }
+        print("ANL-007 bus: \(r.frames.count) frames, \(kicks.count) kick events at \(kicks.map(\.eventSample)), starts \(kick.starts)")
+        XCTAssertEqual(kicks.count, 3)
+        for (event, start) in zip(kicks, kick.starts) {
+            XCTAssertLessThanOrEqual(abs(event.eventSample - Int64(start)), Int64(TransientFixture.hop))
+            guard case let .transient(_, strength, threshold, level) = event.kind else { continue }
+            XCTAssertGreaterThan(strength, threshold)
+            XCTAssertGreaterThan(level, TransientDetectorConfiguration.kick.floorDecibels)
+            // Its frame (same window end, the item just before it) carries envelope 1; the next decays.
+            let index = try XCTUnwrap(r.frames.firstIndex { (f: AnalysisFrame) -> Bool in f.time == event.time })
+            XCTAssertLessThan(r.frames[index].id, event.id, "the event follows its frame")
+            XCTAssertEqual(r.frames[index].kickEnvelope, 1)
+            XCTAssertLessThan(r.frames[index + 1].kickEnvelope, 1)
+            XCTAssertGreaterThan(r.frames[index + 1].kickEnvelope, 0.8)
+        }
+        XCTAssertEqual(r.frames.first?.kickEnvelope, 0)
+
+        var high = [Float](repeating: 0, count: kick.samples.count)
+        TransientFixture.addBursts(into: &high, frequency: 5_000, amplitude: TransientFixture.amplitude(dBFS: -6), starts: kick.starts)
+        let h = try busRun(high)
+        XCTAssertFalse(h.events.contains { (e: AnalysisEvent) -> Bool in
+            if case .transient = e.kind { return true } else { return false }
+        }, "a high pulse train publishes no kick")
+        XCTAssertFalse(h.onsets.isEmpty, "the onset detector still sees the high pulses")
+    }
 }
