@@ -493,6 +493,7 @@ struct VisualizerView: View {
                      cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                      cameraLens: coordinator.cameraLensChoice,   // CAM-003
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
+                     cameraWhiteBalance: coordinator.cameraWhiteBalanceChoice,   // CAM-006
                      cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
