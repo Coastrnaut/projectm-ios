@@ -119,7 +119,7 @@ final class NoTelemetryUITests: XCTestCase {
 
     /// The seeded show: step through its cues; then Settings › Storage › Clear Caches.
     func testShowCuesAndStorageCleanup() {
-        launch(["-uitestShowSeed"])
+        launch(["-uitestShowSeed", "-uitestSettingsSection", "storage"])   // Settings opens at Storage (owner rule 7)
         let status = app.staticTexts["showCueStatus"]
         let next = app.buttons["showNextCue"]
         for n in 2...4 {
@@ -150,7 +150,7 @@ final class NoTelemetryUITests: XCTestCase {
     /// FILE-012-T08 (run under `--expect osc:47131 --probe`): the user turns the OSC receiver on, the app
     /// listens on the chosen port while the observer sends its probe, then the user turns it off.
     func testUserEnabledOSCListensOnly() {
-        launch([])
+        launch(["-uitestSettingsSection", "osc"])   // Settings opens at OSC (owner rule 7)
         openSettings()
         let toggle = app.switches["oscReceiverToggle"]
         XCTAssertTrue(app.reveal(toggle), "the OSC section")

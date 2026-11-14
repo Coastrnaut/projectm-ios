@@ -399,7 +399,7 @@ struct SettingsView: View {
             }
         }
         if settings.visual.usesVideo, let videos {
-            videoSection(videos)
+            videoSection(videos).id("video")   // IDs: UITestSettingsSection
         }
         if let logo { LogoSection(logo: logo) }   // MED-010: every visual (the help names those that show it)
         if settings.visual.usesText, let texts {
@@ -407,9 +407,9 @@ struct SettingsView: View {
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
-        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
-        if let layerInspector { EffectChainSection(coordinator: layerInspector) }   // FX-020-R9 (the app coordinator)
-        SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
+        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
+        if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
+        SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }
 
@@ -420,18 +420,19 @@ struct SettingsView: View {
         } footer: {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
+        .id("performance")
     }
 
     @ViewBuilder private var audioSections: some View {
-        if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
-        if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
-        if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
-        if let playbackBalance { PlaybackBalanceSection(balance: playbackBalance, available: playbackBalanceAvailable) }   // AUD-010-R6
-        if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
+        if let inputTrim { InputTrimSection(inputTrim: inputTrim).id("trim") }   // AUD-008-R8
+        if let channelSelection { ChannelSelectionSection(selection: channelSelection).id("channel") }   // AUD-009-R7
+        if let noiseGate { NoiseGateSection(noiseGate: noiseGate).id("gate") }   // AUD-011-R7
+        if let playbackBalance { PlaybackBalanceSection(balance: playbackBalance, available: playbackBalanceAvailable).id("balance") }   // AUD-010-R6
+        if let latencyOffset { LatencyOffsetSection(setting: latencyOffset).id("latency") }   // AUD-013-R10
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
-        if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
-        if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
+        if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
+        if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13
     }
 
     @ViewBuilder private var tailSections: some View {
@@ -453,6 +454,7 @@ struct SettingsView: View {
             } footer: {
                 Text("A short guide to making a scene. Everything stays on this device.")
             }
+            .id("guide")
         }
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         Section {

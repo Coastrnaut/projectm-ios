@@ -13,7 +13,8 @@ final class SensorySafetyUITests: XCTestCase {
 
     func testChoosingStrictClampsWhatTheVisualReceives() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"] + Self.noStore
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "safety"] + Self.noStore   // Settings opens at Sensory safety (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
@@ -25,9 +26,9 @@ final class SensorySafetyUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
 
         let picker = app.segmentedControls["sensorySafetyProfilePicker"]
-        XCTAssertTrue(picker.appears(within: 2) || app.reveal(picker, long: true), "the Sensory safety section")
+        XCTAssertTrue(picker.appears(within: 2) || app.reveal(picker), "the Sensory safety section")
         let probe = app.staticTexts["sensorySafetyProbe"]
-        XCTAssertTrue(probe.exists || app.reveal(probe, long: true))
+        XCTAssertTrue(probe.exists || app.reveal(probe))
         XCTAssertEqual(probe.label, "glow 0.50 flashes 3/s rise none intensity 1.00", "Standard: today's values")
 
         picker.buttons["Strict"].tap()

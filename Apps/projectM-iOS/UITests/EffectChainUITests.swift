@@ -14,7 +14,8 @@ final class EffectChainUITests: XCTestCase {
 
     private func launch() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"] + Self.noStore
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "effects"] + Self.noStore   // Settings opens at Effect order (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
@@ -30,7 +31,7 @@ final class EffectChainUITests: XCTestCase {
         launch()
         app.tapFreshControl("settings")
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
-        XCTAssertTrue(app.reveal(row, long: true), "Effect order is in Settings")
+        XCTAssertTrue(app.reveal(row), "Effect order is in Settings")
         XCTAssertTrue(rowValue().contains("Trails \u{2192} Color"), "standard order: \(rowValue())")
         row.tap()
         XCTAssertTrue(app.navigationBars["Effect order"].appears(within: 5))
