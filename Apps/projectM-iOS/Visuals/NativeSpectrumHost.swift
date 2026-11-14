@@ -217,6 +217,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// MOD-007: the current scene's oscillators and the per-frame values the bindings read (`audio.lfo.<index>`).
     private let lfoBank = LFOBank()
     private let lfoValues = UnsafeMutableBufferPointer<Double>.allocate(capacity: LFOBank.maximumOscillators)
+    /// MOD-009: the BPM tempo-synced oscillators follow (nil: their stored rate); read once per frame while one exists.
+    var lfoTempoBPM: (@MainActor () -> Double?)?
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
@@ -439,7 +441,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         var lfos = UnsafeBufferPointer<Double>(start: nil, count: 0)
         if lfoBank.hasOscillators {   // MOD-007: at most 8 values, no allocation; ≤ 3 Hz under Reduce flashing (ACC-012)
             let cap: Double = reduceFlashing ? LFOBank.reduceFlashingMaximumRateHz : .infinity
-            lfoBank.values(atNanoseconds: timeNanoseconds, maximumRateHz: cap, into: lfoValues)
+            let tempo: Double? = lfoBank.hasSyncedOscillators ? lfoTempoBPM?() : nil   // MOD-009
+            lfoBank.values(atNanoseconds: timeNanoseconds, tempoBPM: tempo, maximumRateHz: cap, into: lfoValues)
             lfos = UnsafeBufferPointer(lfoValues)
         }
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
