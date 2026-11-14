@@ -49,7 +49,7 @@ evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `
 
 ## Phase 8: Polish
 
-- [ ] ANL-007-T12 Record the fixture table and the Linux-shape growth in `spec.md` (Implementation findings), run the five scripts (check_compliance covers ANL-007-R15: nothing new reaches projectM), count PosterBoard reports, delete the row's simulator, mark the spec Implemented.
+- [X] ANL-007-T12 Record the fixture table and the Linux-shape growth in `spec.md` (Implementation findings), run the five scripts (check_compliance covers ANL-007-R15: nothing new reaches projectM), count PosterBoard reports, delete the row's simulator, mark the spec Implemented. — Verified 2026-11-13: spec Implementation results hold the fixture table and the test cost; check_compliance, validate_docs, check_motion_policy, check_permission_catalog OK; test_scripts.py 147 OK (1 skipped); PosterBoard reports 25 before and after the simulator run; simulator "ANL7 iPhone 17" deleted; spec marked Implemented.
 
 ## Dependencies
 

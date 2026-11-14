@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Clarified 2026-11-13
+**Status**: Implemented 2026-11-13
 
 **Input**: User description: "Implement ANL-007 (Kick energy detector) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Identify low-frequency
@@ -61,7 +61,7 @@ seeds) through the detector and through the real analysis pipeline.
 
 **Acceptance Scenarios**:
 
-1. **Given** a train of low-frequency pulses (a 55 Hz decaying sine burst every 500 ms), **When** analysed, **Then** exactly one kick event is reported per pulse, within one analysis hop of the pulse start.
+1. **Given** a train of low-frequency pulses (a 55 Hz decaying sine burst every 255 ms; tests use 3-4 pulses to stay within owner rule 7), **When** analysed, **Then** exactly one kick event is reported per pulse, within one analysis hop of the pulse start.
 2. **Given** a train of high-frequency pulses (a 5 kHz decaying burst) or mid-range pulses (a 1 kHz burst), **When** analysed, **Then** no kick event is reported.
 3. **Given** the low pulse train mixed under a loud sustained high-frequency layer (a pad or hi-hat-like noise louder than the kicks), **When** analysed, **Then** every pulse is still reported and nothing else.
 
@@ -180,6 +180,22 @@ same on the host and in the Linux shape):
 | 60 Hz sustained, −12 dBFS, 1.2 s | 1 onset | 1 (at the onset) | 1 | 0 | 0 |
 | Digital silence / ±1 LSB dither / white noise −6 dBFS | 0 | 0 / 0 / 0 | — | — | 0 |
 | Two pulses 60 ms apart / 150 ms apart | 2 / 2 | 1 / 2 | — | — | 0 |
+| Through `AnalysisPipeline`: 55 Hz bursts, −12 dBFS | 3 | 3 `.transient(band: .kick)` | 3 | 0 | 0 |
+| Through `AnalysisPipeline`: 5 kHz bursts, −6 dBFS | 3 | 0 (onsets still reported) | — | — | 0 |
+
+Pulses after the first are reported one hop after their start (pipeline and offline alike): at the
+fixtures' 255 ms spacing the previous burst's tail is still inside the one-window reference, so the
+first frame of the next hit rises only ≈ 4 dB and the second frame fires. Debug runs gave identical
+positions at −6, −12, −18, −24, −30 and −40 dBFS.
+
+Test cost (owner rule 7): KickDetectorTests (8 tests) take 0.44 s on the host and 0.95 s in the
+Linux shape run alone; the whole AnalysisFeatures suite went from 116 to 124 tests, 67.7 s → 67.4 s
+in the Linux shape (inside run-to-run noise). The new tests stay under 1 s in the Linux shape, not the "few hundred ms" first
+aimed for: the portable FFT costs ≈ 70 ms per second of audio there, and the eight tests need
+≈ 13 s of audio after trimming.
+
+No UI was added (Clarifications). The onset and beat-confidence sources stay unfed in the app as
+before; only Kick is fed.
 
 ## Assumptions
 
