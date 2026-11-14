@@ -41,6 +41,16 @@ conservative, local-first option.
 - Q: What is the threshold? → A: A share of the deadline, 80% by default (13.33 ms at 60 fps), configurable in code; not a user setting (no new stored key).
 - Q: Does a flag change anything? → A: No. The meter only reads the report the overlay already asks for once a second; it never skips a frame, lowers quality or touches the render path.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: How many samples must a pass have before it can be flagged? → A: At least 30 in the window (half a second at 60 fps). Fewer samples (a window just restarted) show the figure but never flag, so a fresh window cannot flag on one or two frames.
+- Q: Should a flag be spoken by VoiceOver when it appears? → A: No spoken announcement. The overlay is a diagnostic that refreshes every second; announcing would interrupt the performer. The budget and flag lines are part of the overlay's combined accessibility label, so VoiceOver reads them when the overlay is focused.
+- Q: Should per-pass GPU timing be added now (counter sampling at encoder boundaries, or one command buffer per pass)? → A: No. Counter sampling needs per-encoder sample attachments inside the compositor and every visual and is unsupported on some devices; splitting command buffers costs submission time on every frame. GPU passes are judged from what PERF-001 reports (today the whole frame's GPU time); a stage's GPU figure is flagged as soon as it is measured.
+- Q: When is the verdict recomputed and when is its flag state forgotten? → A: Once per overlay refresh (1 s), from the same report as the stage lines. The flags are forgotten when the shown visual changes (the window restarts) or the overlay is turned off.
+- Q: What exactly does the overlay say? → A: A budget line `budget 16.67 ms @60 fps, limit 13.33 ms (80%)`, an estimate line `estimate cpu 4.10 ms, gpu 3.20 ms` (or `gpu unavailable`), and per flagged pass `over budget: composite cpu 14.20 ms > 13.33 ms`. Flag lines use a highlight colour and keep the text, so the meaning does not depend on colour.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See which pass blows the frame budget (Priority: P1)
@@ -74,6 +84,7 @@ flagged passes) in the JSON report next to the frame timings.
 ### Edge Cases
 
 - No frames measured yet: every pass is unavailable; nothing is flagged; the estimate is unavailable.
+- Fewer than 30 samples for a pass: its figure is shown, it is never flagged, and an existing flag on it is kept until enough samples decide.
 - The deadline changes (Low Power Mode drops the cap to 30 fps): the next verdict uses the new deadline.
 - The shown visual changes: PERF-001 clears the window; flags from the old visual are dropped.
 - The overlay is turned off: the meter forgets its flags.
@@ -91,9 +102,10 @@ flagged passes) in the JSON report next to the frame timings.
 - **PERF-002-R5**: The meter MUST show a bounded render-time estimate: the sum of the stages' CPU p95 (an upper-bound style estimate of the frame thread's work, labelled cpu) and, separately, the whole frame's GPU p95 (labelled gpu), each against the deadline; unavailable when nothing was measured.
 - **PERF-002-R6**: The meter MUST be purely observational: it reads only the report, and never skips, delays or alters a frame, its quality or its rendering calls.
 - **PERF-002-R7**: The meter MUST be bounded: its state is a fixed set of at most 13 pass flags (6 stages × 2 domains + the frame GPU), it runs off the frame path (once a second with the overlay), and the frame path gains no work.
-- **PERF-002-R8**: The overlay MUST show a budget line (deadline, threshold, estimates) and one highlighted line per flagged pass with its figure and the threshold, while it is on; the text is part of the overlay's accessibility label, so VoiceOver reads it. No spoken announcement is made.
+- **PERF-002-R8**: The overlay MUST show a budget line (deadline, frame rate, threshold), an estimate line and one highlighted line per flagged pass with its figure and the threshold, while it is on; the text is part of the overlay's accessibility label, so VoiceOver reads it. No spoken announcement is made.
 - **PERF-002-R9**: The diagnostics frame timings MUST gain an optional budget verdict (deadline, threshold and clear shares, estimates, flagged pass names); exports without it are unchanged and stay schema-valid.
 - **PERF-002-R10**: In DEBUG builds a launch argument MUST be able to inject a slow stage into the reported figures (never into rendering) so the flag can be tested in the simulator.
+- **PERF-002-R11**: A pass MUST have at least 30 samples in the window before it can be flagged; the verdict is recomputed once per overlay refresh, and the flag state is forgotten on a visual change or when the overlay is turned off.
 
 ### Key Entities
 
