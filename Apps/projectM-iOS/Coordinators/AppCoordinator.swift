@@ -239,7 +239,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// SCN-012: the repair report before a show cue's scene or Reopen opens.
     let sceneRepair: SceneRepairCoordinator
     /// MED-013: missing imported media (Settings › Storage › Missing Media) and the visualizer's placeholder.
-    let missingMedia: MissingMediaCoordinator
+    let missingMedia = MissingMediaCoordinator()
     /// ACC-011: capture and recording status events (announcements and captions); owns ACC-004's announcer.
     let statusEvents = StatusEventRouter()
     /// FILE-005: Settings › Storage › Backup (announces on the `library` lane, set in init).
@@ -431,7 +431,6 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
         sceneRepair = SceneRepairCoordinator(registry: try? SceneArchiveService.appRegistry())   // SCN-012
-        missingMedia = MissingMediaCoordinator(service: MediaRelinkService.makeDefault(defaults: defaults))   // MED-013
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos, slideshow: slideshow)   // MED-001, MED-006 (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
@@ -545,7 +544,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
-        connectMissingMedia()   // MED-013
+        connectMissingMedia(defaults: defaults)   // MED-013 (and its DEBUG seed)
         connectLayerInspector()   // CMP-015
         #if DEBUG
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
@@ -554,7 +553,6 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
-        UITestMissingMediaFixture.seedIfRequested(self)   // MED-013: MissingMediaUITests
         #endif
         connectStatusEvents()   // ACC-011
         libraryBackup.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-005-R12

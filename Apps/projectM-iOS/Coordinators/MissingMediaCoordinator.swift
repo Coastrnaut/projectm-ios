@@ -38,7 +38,8 @@ final class MissingMediaCoordinator {
     /// The placeholder tile's Relink… opened the screen.
     var showsScreenFromPlaceholder = false
 
-    @ObservationIgnored let service: MediaRelinkService?
+    /// Set once by AppCoordinator (tests pass their own); nil leaves the list empty.
+    @ObservationIgnored var service: MediaRelinkService?
     /// The show's cues (cue counts; set by AppCoordinator).
     @ObservationIgnored var cues: () -> ShowCueList = { () -> ShowCueList in ShowCueList() }
     /// ACC-004 library lane (set by AppCoordinator).
@@ -48,7 +49,7 @@ final class MissingMediaCoordinator {
     @ObservationIgnored var fixtureFolder: URL?
     #endif
 
-    init(service: MediaRelinkService?) {
+    init(service: MediaRelinkService? = nil) {
         self.service = service
     }
 

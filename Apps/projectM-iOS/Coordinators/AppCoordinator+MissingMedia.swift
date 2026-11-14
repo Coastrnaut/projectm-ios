@@ -7,8 +7,9 @@ import SceneFormat
 import ShowControl
 
 extension AppCoordinator {
-    /// Called once at the end of init, after the photo and video callbacks are set.
-    func connectMissingMedia() {
+    /// Called once at the end of init, after the photo and video callbacks are set and the show exists.
+    func connectMissingMedia(defaults: UserDefaults) {
+        missingMedia.service = MediaRelinkService.makeDefault(defaults: defaults)
         missingMedia.cues = { [weak self] () -> ShowCueList in self?.show.list ?? ShowCueList() }
         missingMedia.announce = { [weak self] (text: String) -> Void in self?.announcer.announce(text, kind: .library) }
         let photoChange = photos.onPhotoChange
@@ -21,6 +22,9 @@ extension AppCoordinator {
             videoChange?(stored)
             if stored != nil { self?.missingMedia.mediaImported() }
         }
+        #if DEBUG
+        UITestMissingMediaFixture.seedIfRequested(self)   // MED-013: MissingMediaUITests
+        #endif
     }
 
     /// MED-013-R2: the placeholder for a scene a show cue applied.

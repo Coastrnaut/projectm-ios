@@ -7,6 +7,7 @@
 import Foundation
 import SceneFormat
 import ShowControl
+import ShowStorage
 
 @MainActor
 enum UITestMissingMediaFixture {
@@ -21,8 +22,9 @@ enum UITestMissingMediaFixture {
     }
 
     static func seedIfRequested(_ coordinator: AppCoordinator) {
-        guard ProcessInfo.processInfo.arguments.contains(argument), let service = coordinator.missingMedia.service,
-              let store = coordinator.show.store else { return }
+        guard ProcessInfo.processInfo.arguments.contains(argument) else { return }
+        guard let service: MediaRelinkService = coordinator.missingMedia.service else { return }
+        guard let store: ShowStore = coordinator.show.store else { return }
         let scratch = FileManager.default.temporaryDirectory.appendingPathComponent("MissingMediaFixture", isDirectory: true)
         try? FileManager.default.removeItem(at: scratch)
         try? FileManager.default.createDirectory(at: backupFolder, withIntermediateDirectories: true)
