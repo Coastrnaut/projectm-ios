@@ -55,6 +55,8 @@ final class SettingsTests: XCTestCase {
         settings.glowThreshold = 0.5
         settings.linearSpectrumOrientation = .horizontal   // VIS-002-R11
         settings.linearSpectrumSpacing = 0.5
+        settings.oscilloscopeLine = .thick     // VIS-003-R10
+        settings.oscilloscopeWindowMilliseconds = 40
         settings.oscEnabled = true             // OSC-001-R15
         settings.oscPort = 8000
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
@@ -113,7 +115,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum])
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope])   // VIS-003
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

@@ -103,12 +103,28 @@ struct SettingsView: View {
                 }
                 Section {
                     if settings.visual.isNative {
-                        Picker("Bars", selection: $settings.circularSpectrumBars) {
-                            ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
+                        if settings.visual != .oscilloscope {   // VIS-003: no bars on a waveform
+                            Picker("Bars", selection: $settings.circularSpectrumBars) {
+                                ForEach(AppSettings.circularSpectrumBarChoices, id: \.self) { Text("\($0)").tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .accessibilityLabel("Bars")
+                            .accessibilityIdentifier("barsPicker")
                         }
-                        .pickerStyle(.segmented)
-                        .accessibilityLabel("Bars")
-                        .accessibilityIdentifier("barsPicker")
+                        if settings.visual == .oscilloscope {   // VIS-003-R10
+                            Picker("Line", selection: $settings.oscilloscopeLine) {
+                                ForEach(OscilloscopeLine.allCases, id: \.self) { Text($0.title).tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .accessibilityLabel("Line")
+                            .accessibilityIdentifier("oscilloscopeLinePicker")
+                            Picker("Window", selection: $settings.oscilloscopeWindowMilliseconds) {
+                                ForEach(AppSettings.oscilloscopeWindowChoices, id: \.self) { Text("\($0) ms").tag($0) }
+                            }
+                            .pickerStyle(.segmented)
+                            .accessibilityLabel("Window")
+                            .accessibilityIdentifier("oscilloscopeWindowPicker")
+                        }
                         if settings.visual == .linearSpectrum {
                             Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                                 ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -142,7 +158,7 @@ struct SettingsView: View {
                             .accessibilityIdentifier("nativeVisualUnavailableFooter")
                     } else {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                            Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Camera shows your rear camera behind a circular spectrum, only while it is on screen; the picture is never recorded or sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                             if settings.visual.isNative {
                                 if glowUnavailable {
                                     Text(AppCoordinator.glowUnavailableMessage)
