@@ -5,17 +5,17 @@
 
 ## Phase 1: Setup
 
-- [ ] SHD-004-T01 Create simulator "SHD4 iPhone 17" (iOS 27.2), run `xcodegen generate`, confirm `Build` symlink and preset submodules in the worktree
+- [X] SHD-004-T01 Create simulator "SHD4 iPhone 17" (iOS 27.2), run `xcodegen generate`, confirm `Build` symlink and preset submodules in the worktree — Verified 2026-11-14: simulator SHD4 iPhone 17 created, xcodegen generate, Build symlink and preset submodules present
 
 ## Phase 2: Foundational (blocks all stories)
 
-- [ ] SHD-004-T02 Add `ShaderGPUFamily` (`apple7`, `apple8`, `apple9`) and `ShaderVariantSpec` in `Packages/Compositor/Sources/ShaderParameterMetadata/ShaderVariantMetadata.swift`; read the optional `variants` key ("2–4 entries", "starts with the document's `variant`", "`variants[0].id` = `variant`", "label 1–64 characters", "`requires` not allowed on `variants[0]`") in `ShaderMetadataValidator.swift`; new errors in `ShaderMetadataError.swift`
+- [X] SHD-004-T02 Add `ShaderGPUFamily` (`apple7`, `apple8`, `apple9`) and `ShaderVariantSpec` in `Packages/Compositor/Sources/ShaderParameterMetadata/ShaderVariantMetadata.swift`; read the optional `variants` key ("2–4 entries", "starts with the document's `variant`", "`variants[0].id` = `variant`", "label 1–64 characters", "`requires` not allowed on `variants[0]`") in `ShaderMetadataValidator.swift`; new errors in `ShaderMetadataError.swift` — Verified 2026-11-14: `swift test --filter ShaderVariantMetadataTests|ShaderMetadataValidatorTests` (9 tests pass)
 
 ## Phase 3: User Story 1 - Alternative precompiled implementations (P1) 🎯 MVP
 
 **Goal**: materials declare variants; checks reject bad lists. **Independent test**: validator and catalog tests.
 
-- [ ] SHD-004-T03 [P] [US1] Validator tests, one per invalid class (count, duplicate, default mismatch, prefix, unknown family, default requirement, unknown key) in `Packages/Compositor/Tests/ShaderParameterMetadataTests/ShaderVariantMetadataTests.swift`
+- [X] SHD-004-T03 [P] [US1] Validator tests, one per invalid class (count, duplicate, default mismatch, prefix, unknown family, default requirement, unknown key) in `Packages/Compositor/Tests/ShaderParameterMetadataTests/ShaderVariantMetadataTests.swift` — Verified 2026-11-14: `ShaderVariantMetadataTests` 3 tests pass, 9 invalid classes each with its own error
 - [ ] SHD-004-T04 [US1] Variant lists for Plasma (`plasmaDetailed` "Detailed", requires `apple9`) and Noise Flow (`noiseFlowLite` "Low cost") in `MaterialParameterMetadata.swift`; `MaterialDefinition.variants`, `defaultVariant`, `variant(_:)`, `fragmentFunction(for:)` in `MaterialDefinition.swift`
 - [ ] SHD-004-T05 [US1] Fragment functions `mat_plasmaDetailed` and `mat_noiseFlowLite` in `ProceduralMaterialShaders.swift` (SHD-001 safety rules, `mat_finish`)
 - [ ] SHD-004-T06 [US1] Catalog tests: expected variants per material; every variant's `mat_<id>` passes SHD-003's slot check against `ProceduralMaterialShaders.source` (runs where Metal is available, as `MaterialMetadataTests` does) in `Packages/Compositor/Tests/ProceduralMaterialsTests/MaterialVariantCatalogTests.swift`
