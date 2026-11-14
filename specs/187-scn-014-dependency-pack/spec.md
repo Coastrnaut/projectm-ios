@@ -46,6 +46,14 @@ conservative, local-first option.
 - Q: What is deduplicated on re-import? → A: Media: the stored copies get identifiers derived from the pack's media bytes, so importing the same pack again reuses the same identifiers and payloads (no second copy). Scenes: the re-imported scene is then byte-identical to the stored one, so FILE-004 reports it identical and nothing is added.
 - Q: Network? → A: None, ever. The pack is self-contained.
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Does the preview offer Replace or Skip when the pack's scene ID is already in the show? → A: No: a pack is always added as a copy (FILE-004 Keep both) or reported identical. Replacing a stored scene from a file is destructive and stays out of this row; the user can delete the old cue afterwards.
+- Q: Which folder does an imported scene go into? → A: The top level (SCN-004), as SCN-011 templates do; the user can move it.
+- Q: Does Import move the show to the new cue or apply it? → A: No: the cue is appended, the position and output stay (SHOW-001-R6); the result is announced ("Imported <name> as cue <n>.") on the library lane.
+- Q: Are archives exported before SCN-014 (FILE-001 packs without slides) accepted? → A: Yes: they are the same format; only the `slides` field is new and optional.
+- Q: How is long work shown? → A: Export and import run off the main actor; the row shows a progress indicator and is disabled until done. No time limit is promised (videos may be large).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Export a scene with its media (Priority: P1)
@@ -96,7 +104,8 @@ On a fresh install (or the same device after erasing media and show), the perfor
 - **SCN-014-R6**: Import stages every media file through its store's import path, adopts it with an identifier derived from its bytes (FILE-008 dedup), installs the scene with FILE-004 Keep both and appends one cue; it never makes media current, never applies a scene and never moves the position.
 - **SCN-014-R7**: Import is all or nothing: a refusal or failure leaves the show unchanged and releases only media this import added.
 - **SCN-014-R8**: Import and export use no network API; the picked file is read once under its security scope.
-- **SCN-014-R9**: Export and Import are reachable in Scene Folders by touch, context menu and VoiceOver actions; results and refusals are announced on the library lane (ACC-004).
+- **SCN-014-R9**: Export and Import are reachable in Scene Folders by touch, context menu and VoiceOver actions; results and refusals are announced on the library lane (ACC-004); while one runs, its control shows progress and is disabled.
+- **SCN-014-R10**: An imported scene is never written over a stored scene: a taken scene ID gives a copy under a new ID (no Replace), and the scene goes to the top level.
 
 ### Key Entities
 
