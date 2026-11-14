@@ -89,10 +89,9 @@ final class AccessibilityScreensUITests: XCTestCase {
                        reason: "the system Toggle at the bottom of the screen is pushed off screen at the audit's larger "
                            + "sizes, as the browser's bottom rows are (their scaling is proven by "
                            + "testBrowserRowsScaleWithAccessibilityTextSizes); a system control's label scales")]
-        + [AuditFilter(screen: "showEditor", type: .contrast, element: "Add Current Scene",
-                       reason: "a standard List button in the system accent (systemBlue, about 4:1 on white, \"nearly "
-                           + "passed\"); iOS's Increase Contrast darkens it. An app-wide accent change is left to ACC-003/ACC-008"),
-           AuditFilter(screen: "showEditor", type: .contrast, element: "Adds a cue that keeps the visual", labelPrefix: true,
+        // ACC-003-R11: the "Add Current Scene" filter is gone; the app's AccentColor (0062CC, 5.8:1 on white)
+        // replaced systemBlue (about 4:1).
+        + [AuditFilter(screen: "showEditor", type: .contrast, element: "Adds a cue that keeps the visual", labelPrefix: true,
                        reason: "the system section footer style (Apple's secondary grey)"),
            AuditFilter(screen: "showEditor", type: .dynamicType, element: "Cues",
                        reason: "the system section header is pushed below the visible list at the audit's larger sizes "
