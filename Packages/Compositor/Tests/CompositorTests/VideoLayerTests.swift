@@ -185,6 +185,44 @@ final class VideoLayerTests: XCTestCase {
         XCTAssertLessThanOrEqual(layer.statistics.maxDepth, 3)
     }
 
+    /// MED-003-T07 (S1, S2): a loop region on a real file: every shown picture (read from pixels) is
+    /// inside [0.5 s, 1.0 s) = pictures 15-29 across three boundaries, the wrap goes from 29 to 15 with
+    /// no held picture when the decoder keeps up, and a region edit mid-play continues inside.
+    func testLoopRegionOnARealFileStaysInsideAcrossBoundaries() async throws {
+        let rig = try GPURig()
+        let layer = VideoLayerSource(device: rig.device)
+        let compositor = try Compositor(device: rig.device, layers: [layer])
+        layer.loopRegion = VideoLoopRegion(inMilliseconds: 500, outMilliseconds: 1000)
+        layer.content = .file(try await fixture("counter.mov"))
+        let output = try rig.output()
+        for i in 0..<50 {
+            let t: Int64 = i == 0 ? 0 : Int64(i) * 1_000_000_000 / 30 + 5_000_000
+            XCTAssertTrue(layer.waitUntilBuffered())
+            try rig.frame(compositor, into: output, time: presentation(t))
+            XCTAssertEqual(try shownIndex(rig, output), 15 + i % 15, "step \(i)")
+            let media = try XCTUnwrap(layer.shownMediaNanoseconds)
+            XCTAssertTrue(media >= 500_000_000 && media < 1_000_000_000, "step \(i): \(media) inside")
+        }
+        XCTAssertEqual(layer.wraps, 3)
+        XCTAssertLessThan(layer.maxWrapLatenessNanoseconds, 1_000_000_000 / 30, "gap 0 frames at the joint")
+        XCTAssertEqual(layer.mediaDurationNanoseconds, 2_000_000_000)
+        XCTAssertGreaterThanOrEqual(layer.statistics.prepared, 1, "the pass at in was prepared ahead of out")
+        XCTAssertEqual(layer.statistics.dropped, 0)
+
+        // Edit: out moves to 0.8 s (picture 24) while picture 19 (step 49 → 15 + 4) is shown: continue inside.
+        layer.loopRegion = VideoLoopRegion(inMilliseconds: 500, outMilliseconds: 800)
+        var shown: [Int] = []
+        for i in 50..<70 {
+            let t: Int64 = Int64(i) * 1_000_000_000 / 30 + 5_000_000
+            XCTAssertTrue(layer.waitUntilBuffered())
+            try rig.frame(compositor, into: output, time: presentation(t))
+            if let index = try shownIndex(rig, output) { shown.append(index) }
+        }
+        XCTAssertFalse(shown.isEmpty)
+        XCTAssertTrue(shown.allSatisfy { (k: Int) -> Bool in (15...23).contains(k) }, "inside the edited region: \(shown)")
+        XCTAssertEqual(layer.state, .playing(width: 64, height: 48))
+    }
+
     /// New content restarts at 0; a rotated (portrait) video reports its upright size.
     func testNewContentRestartsAndRotationIsUpright() async throws {
         let rig = try GPURig()
