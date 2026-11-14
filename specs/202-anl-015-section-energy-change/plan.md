@@ -44,7 +44,7 @@ and `NativeSpectrumHost` feed it to the bindings; the inspector names it "Sectio
 
 - I (public APIs, compliance): pure Swift; no networking. PASS.
 - VI (module boundaries): ParameterGraph stays independent of AnalysisFeatures (a Float in the frame). PASS.
-- VII (real-time): value type with a fixed 35-entry inline history (a tuple-backed buffer, no heap); runs on the pipeline worker, never on the audio callback. PASS.
+- VII (real-time): value type whose 35-entry history is allocated once at creation and written in place (one owner, never copied); runs on the pipeline worker, never on the audio callback. PASS.
 - VIII (engine boundary): values never reach projectM. PASS.
 - X (evidence): synthetic PCM; the simulator only hosts app unit tests; real-music behaviour is a device observation. PASS.
 - Accessibility (ACC-011): no status text added (a musical event, not status; spec Clarifications). PASS.

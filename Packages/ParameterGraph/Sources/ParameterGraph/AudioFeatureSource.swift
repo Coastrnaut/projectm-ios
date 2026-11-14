@@ -8,7 +8,8 @@
 // normalized `centroid` (ANL-010-R8), the `loudness` envelope (ANL-014-R8), the mid transient
 // value `AnalysisFrame.midTransient` (ANL-008-R8), the high transient value
 // `AnalysisFrame.highTransient` (ANL-009-R8), the normalized `rolloff` (ANL-011-R8) and the
-// `flatness` (ANL-012-R7) and the stereo `correlation` mapped to 0…1 (ANL-013-R6).
+// `flatness` (ANL-012-R7), the stereo `correlation` mapped to 0…1 (ANL-013-R6) and the
+// `sectionChange` envelope (ANL-015-R9).
 
 /// A normalized (0…1) audio feature a binding can follow.
 public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
@@ -44,6 +45,9 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// "Correlation" (ANL-013): stereo correlation r (−1 inverted … 1 identical) mapped to (r + 1)/2:
     /// identical channels (and mono) read 1, unrelated or silent 0.5, inverted 0.
     case correlation
+    /// "Section change" (ANL-015): 1 on the frame a sustained quiet→loud or loud→quiet change is
+    /// confirmed (after a 2 s dwell), decaying with a 1 s time constant; 0 otherwise.
+    case sectionChange
     /// MOD-007: the scene's oscillator at this 0-based position (0…7), read from `AudioFeatureFrame.lfos`.
     /// Its ID keeps the `audio.` binding-source prefix so every stored-binding path (MOD-013 restore,
     /// migrations) reads it, and an older version orphans it instead of dropping it (research MOD-007-D4).
@@ -54,7 +58,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
 
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
     /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`,
-    /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.correlation`, `audio.lfo.<index>` (MOD-007).
+    /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.correlation`, `audio.sectionChange`, `audio.lfo.<index>` (MOD-007).
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -69,6 +73,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case .rolloff: "audio.rolloff"
         case .flatness: "audio.flatness"
         case .correlation: "audio.correlation"
+        case .sectionChange: "audio.sectionChange"
         case let .lfo(index): "audio.lfo.\(index)"
         }
     }
@@ -90,6 +95,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case "audio.rolloff": self = .rolloff
         case "audio.flatness": self = .flatness
         case "audio.correlation": self = .correlation
+        case "audio.sectionChange": self = .sectionChange
         default:
             if let index = Self.index(in: id, prefix: "audio.band.", maximum: Self.maximumBandIndex) {
                 self = .band(index)
@@ -147,6 +153,9 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             guard let r = frame.correlation, r.isFinite else { return 0 }
             let mapped: Double = (Double(r) + 1) / 2
             return min(max(mapped, 0), 1)
+        case .sectionChange:
+            guard let value = frame.sectionChange, value.isFinite else { return 0 }
+            return min(max(Double(value), 0), 1)
         case let .lfo(index):
             guard index >= 0, index < frame.lfos.count else { return 0 }
             return min(max(Self.finite(frame.lfos[index]), 0), 1)
@@ -178,6 +187,8 @@ public struct AudioFeatureFrame {
     public var flatness: Float?
     /// ANL-013's raw stereo correlation (−1…1); the source maps it to 0…1. nil when not fed.
     public var correlation: Float?
+    /// ANL-015's section-change envelope (0…1); nil when the producer does not feed it.
+    public var sectionChange: Float?
     /// MOD-007: the scene's oscillator values (0…1) by position, borrowed like `bands`; empty when the producer
     /// has no oscillators (every `.lfo` source then reads 0).
     public var lfos: UnsafeBufferPointer<Double>
@@ -185,6 +196,7 @@ public struct AudioFeatureFrame {
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
                 centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil,
                 highTransient: Float? = nil, rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
+                sectionChange: Float? = nil,
                 lfos: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0)) {
         self.bands = bands
         self.onset = onset
@@ -197,6 +209,7 @@ public struct AudioFeatureFrame {
         self.rolloff = rolloff
         self.flatness = flatness
         self.correlation = correlation
+        self.sectionChange = sectionChange
         self.lfos = lfos
     }
 

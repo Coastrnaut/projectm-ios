@@ -219,6 +219,7 @@ struct ExpressionCompiler {
             case .rolloff: ExpressionInstruction(opcode: .rolloff)
             case .flatness: ExpressionInstruction(opcode: .flatness)
             case .correlation: ExpressionInstruction(opcode: .correlation)
+            case .sectionChange: ExpressionInstruction(opcode: .sectionChange)
             case .lfo: ExpressionInstruction(opcode: .constant, literal: 0)   // unreachable: the catalog refuses LFO names
             }
             try append(instruction, at: position)

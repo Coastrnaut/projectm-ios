@@ -11,7 +11,7 @@
 ## Phase 2: Foundational
 
 - [ ] ANL-015-T02 Add `SectionChangeConfiguration` (data-model defaults: sampleRate 44,100, hop 512, windowFrames 35 in 1…64, floor −70 "finite, < 0", settle 2.0 s, reference τ 8.0 s, enter 6 dB "> holdDecibels", hold 3 dB "≥ 0", dwell 2.0 s, refractory 4.0 s, envelope τ 1.0 s; refusals as typed errors; derived sample counts and per-frame coefficients), `SectionChangeDirection`, `SectionChange` in Packages/AnalysisFeatures/Sources/AnalysisFeatures/SectionEnergyChange.swift
-- [ ] ANL-015-T03 Add `SectionChangeDetector` (contract C1-C3: floor clamp, 35-entry inline power ring with a recomputed mean, settle, reference follower, pending with hysteresis, sample-counted dwell, refractory, envelope; `reset`; no heap, lock, log or clock) in Packages/AnalysisFeatures/Sources/AnalysisFeatures/SectionEnergyChange.swift
+- [ ] ANL-015-T03 Add `SectionChangeDetector` (contract C1-C3: floor clamp, 35-entry power ring allocated once at init, with a recomputed mean, settle, reference follower, pending with hysteresis, sample-counted dwell, refractory, envelope; `reset`; no heap, lock, log or clock) in Packages/AnalysisFeatures/Sources/AnalysisFeatures/SectionEnergyChange.swift
 
 ## Phase 3: User Story 1 - Quiet-to-loud fires once after the dwell (P1) 🎯 MVP
 
@@ -21,7 +21,7 @@
 
 ## Phase 4: User Story 2 - Bursts and steady music fire nothing (P1)
 
-- [ ] ANL-015-T05 [US2] Tests: 1.0 s and 1.5 s loud bursts in a quiet tone, steady tone, steady seeded noise, silence → no change; a 10 s linear fade-in in dB → at most one change; a step during the 2 s settling period → no change (spec Edge Cases), in SectionEnergyChangeTests.swift
+- [ ] ANL-015-T05 [US2] Tests: 1.0 s and 1.5 s loud bursts in a quiet tone, steady tone, a jittering level (±2 dB, seeded), silence, a 0.5 dB/s drift → no change; a 4 dB/s fade → only rising changes at least dwell + refractory apart; a step during the 2 s settling period → no change (spec Edge Cases), in SectionEnergyChangeTests.swift
 
 ## Phase 5: User Story 3 - Loud-to-quiet and bad input (P2)
 

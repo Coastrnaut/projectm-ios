@@ -44,6 +44,8 @@ public struct LiveBandFrameInfo: Sendable, Equatable {
     public var correlation: Float = 0
     /// ANL-013's phase-inversion warning, reported to the app's source status.
     public var phaseInverted: Bool = false
+    /// ANL-015's section-change envelope (0…1), for MOD-002's Section change source.
+    public var sectionChange: Float = 0
 }
 
 /// The frame loop's view of the analyzer's bus subscription.
@@ -61,7 +63,7 @@ public final class LiveBandOutput: Sendable {
                                  centroid: frame.centroid, loudness: frame.loudness, midTransient: frame.midTransient,
                                  highTransient: frame.highTransient, rolloff: frame.rolloff,
                                  flatness: frame.flatness, correlation: frame.correlation,
-                                 phaseInverted: frame.phaseInverted)
+                                 phaseInverted: frame.phaseInverted, sectionChange: frame.sectionChangeEnvelope)
     }
 }
 
