@@ -303,6 +303,45 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     """
 }
 
+extension ImageLayerSource {
+    /// MED-010: the logo layer's library (`LogoLayerSource`), compiled from the module constant below; kept in
+    /// this reviewed file so the Metal source stays inside METAL_SOURCE_ALLOWED (SHD-011).
+    static func logoLibrary(device: MTLDevice) throws -> MTLLibrary {
+        try device.makeLibrary(source: logoShaderSource, options: nil)
+    }
+
+    static let logoShaderSource = """
+    #include <metal_stdlib>
+    using namespace metal;
+
+    struct LogoOut { float4 position [[position]]; };
+
+    vertex LogoOut logo_fullscreen(uint vid [[vertex_id]]) {
+        float2 p = float2(float((vid << 1) & 2), float(vid & 2));
+        LogoOut o;
+        o.position = float4(p * 2.0 - 1.0, 0.0, 1.0);
+        return o;
+    }
+
+    struct LogoUniforms {
+        float4 rect;     // x, y, width, height in output pixels (top-left origin)
+        float4 params;   // opacity, unused × 3
+    };
+
+    // The texels are premultiplied linear light, so the sample is already "over"-ready; only the
+    // opacity scales it. Outside the logo's rectangle nothing is drawn.
+    fragment float4 logo_picture(LogoOut in [[stage_in]], texture2d<float> logo [[texture(0)]],
+                                 sampler s [[sampler(0)]], constant LogoUniforms &u [[buffer(0)]]) {
+        float2 t = (in.position.xy - u.rect.xy) / u.rect.zw;
+        if (any(t < 0.0) || any(t > 1.0)) { return float4(0.0); }
+        float4 c = logo.sample(s, t);
+        float a = clamp(c.a, 0.0, 1.0);
+        float3 rgb = clamp(c.rgb, float3(0.0), float3(a));
+        return float4(rgb, a) * u.params.x;
+    }
+    """
+}
+
 /// The load result shared between the background queue and the render thread.
 final class ImageLoadSlot: Sendable {
     struct State {

@@ -38,6 +38,8 @@ struct ShowLook: Equatable, Sendable {
     var videoSpeedPercent: Int? = nil
     /// MED-006-R12: the image slideshow (nil: off and empty).
     var slideshow: SceneSlideshow? = nil
+    /// MED-010-R10: the logo and its placement (nil: none).
+    var logo: SceneLogo? = nil
 }
 
 /// What applying a scene sets (contract S4).
@@ -57,6 +59,8 @@ struct ShowSceneApply: Equatable, Sendable {
     var videoSpeedPercent: Int? = nil
     /// MED-006-R12: the photo layer's slideshow (nil: no photo layer).
     var slideshow: SceneSlideshowRestore? = nil
+    /// MED-010-R10: the scene's logo (nil: the scene records none; the current logo stays).
+    var logo: SceneLogo? = nil
 }
 
 enum ShowSceneSnapshot {
@@ -105,6 +109,9 @@ enum ShowSceneSnapshot {
                 assets[textKey] = SceneAsset(.text(spec: spec))
                 contents.append(.text(asset: textKey))
             }
+        }
+        if let logo = look.logo {   // MED-010-R10
+            assets[SceneLogo.assetKey] = .logo(storeID: logo.storeID, placement: logo.placement)
         }
         var instance: UInt64 = 0
         let layers = contents.map { (content: SceneLayerContent) -> SceneLayer in
@@ -169,7 +176,8 @@ enum ShowSceneSnapshot {
         let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
         return ShowSceneApply(visual: visual, parameters: parameters, text: text, omittedKinds: omitted, missingMedia: missingMedia,
                               videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
-                              slideshow: SceneSlideshowBridge.restore(in: document))   // MED-006
+                              slideshow: SceneSlideshowBridge.restore(in: document),   // MED-006
+                              logo: document.logo)   // MED-010
     }
 
     // MARK: JSON

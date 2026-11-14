@@ -267,6 +267,7 @@ struct VisualizerView: View {
             }
             #if DEBUG
             if coordinator.photoVisual != nil { SlideshowProbe(slideshow: coordinator.slideshow) }   // MED-006-R15
+            LogoProbe(logo: coordinator.logo)   // MED-010-R14
             #endif
             if let video = coordinator.videoVisual {   // MED-002: frames shown and the shown picture's index
                 TimelineView(.periodic(from: .now, by: 0.25)) { _ in
@@ -346,6 +347,7 @@ struct VisualizerView: View {
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                          glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
                          slideshow: coordinator.slideshow,   // MED-006
+                         logo: coordinator.logo,   // MED-010
                          videos: coordinator.videos, texts: coordinator.texts,
                          show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
                          libraryBackup: coordinator.libraryBackup,   // FILE-005

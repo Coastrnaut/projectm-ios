@@ -37,6 +37,8 @@ struct SettingsView: View {
     var photos: PhotoCoordinator?
     /// MED-006: the image slideshow (nil hides its section).
     var slideshow: SlideshowCoordinator?
+    /// MED-010: the logo overlay (nil hides its section).
+    var logo: LogoCoordinator?
     /// MED-002: the imported video (nil hides the Video section).
     var videos: VideoCoordinator?
     /// MED-009: the Text visual's message and style (nil hides the Text section).
@@ -346,6 +348,7 @@ struct SettingsView: View {
         if settings.visual.usesVideo, let videos {
             videoSection(videos)
         }
+        if let logo { LogoSection(logo: logo) }   // MED-010: every visual (the help names those that show it)
         if settings.visual.usesText, let texts {
             textSection(texts)
         }

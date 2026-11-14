@@ -25,6 +25,7 @@
 //   migrated at launch (`prepareFolder`, `reconcileFolder`).
 // * MED-006-R11: the image slideshow's pictures are references in this folder too; making a photo current,
 //   trimming and Remove keep them (`SlideshowStore.protectedIDs`), even when they share the photo's picture.
+// * MED-010-R2: so is the logo (`LogoStore.protectedIDs`), staged with the logo's limits and always as PNG.
 // Synchronous and Sendable: imports run off the main actor (PhotoCoordinator).
 import Foundation
 import ImageLayer
@@ -95,10 +96,12 @@ struct PhotoStore: @unchecked Sendable {
 
     /// FILE-001: the sanitized copy of `source` written into this store's folder under a new
     /// identifier, without making it current (the identifier key is not touched). A failure leaves
-    /// no file.
-    func stage(at source: URL) throws(ImageImportError) -> StoredPhoto {
+    /// no file. MED-010: the logo passes its own limits and `.png`.
+    func stage(at source: URL, limits override: ImageImportLimits? = nil,
+               format: ImageOutputFormat = .automatic) throws(ImageImportError) -> StoredPhoto {
+        let limits: ImageImportLimits = override ?? self.limits
         let data = try Self.readPicked(source, limits: limits)
-        let copy = try ImageSanitizer.sanitize(data, limits: limits)
+        let copy = try ImageSanitizer.sanitize(data, limits: limits, format: format)
         let id = UUID()
         let temp = folder.incomingURL(for: id, extension: copy.fileExtension)
         do {
@@ -129,7 +132,7 @@ struct PhotoStore: @unchecked Sendable {
     func makeCurrent(_ photo: StoredPhoto) {
         let previous = current()
         defaults.set(photo.id.uuidString, forKey: Self.idKey)
-        let slides: Set<UUID> = SlideshowStore.protectedIDs(defaults)   // MED-006-R11
+        let slides: Set<UUID> = Self.protectedIDs(defaults)   // MED-006-R11, MED-010-R2
         if let previous, previous.id != photo.id, !folder.sharesPayload(previous.id, photo.id) {
             try? folder.releaseSharing(payloadOf: previous.id, keeping: slides.union([photo.id]))
         }
@@ -147,9 +150,14 @@ struct PhotoStore: @unchecked Sendable {
     /// picture is released, so its payload is deleted.
     func remove() {
         if let raw = defaults.string(forKey: Self.idKey), let id = UUID(uuidString: raw), id.uuidString == raw {
-            try? folder.releaseSharing(payloadOf: id, keeping: SlideshowStore.protectedIDs(defaults))   // MED-006-R11
+            try? folder.releaseSharing(payloadOf: id, keeping: Self.protectedIDs(defaults))   // MED-006-R11, MED-010-R2
         }
         defaults.removeObject(forKey: Self.idKey)
+    }
+
+    /// References other features keep in this folder: the slides (MED-006) and the logo (MED-010).
+    static func protectedIDs(_ defaults: UserDefaults) -> Set<UUID> {
+        SlideshowStore.protectedIDs(defaults).union(LogoStore.protectedIDs(defaults))
     }
 
     // MARK: FILE-008 launch (research FILE-008-D5)

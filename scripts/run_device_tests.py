@@ -62,6 +62,8 @@ TARGETS = {
 # spectrum's glow): everything the app may store in its UserDefaults.
 ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "settings.reduceFlashing",
                 "settings.photo.slideshow",   # MED-006
+                "settings.logo.id",   # MED-010
+                "settings.logo.placement",   # MED-010
                 "settings.presetScope", "notice.photosensitivityAcknowledged",
                 "settings.visual", "settings.circularSpectrum.bars",
                 "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",

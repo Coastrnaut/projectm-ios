@@ -14,6 +14,8 @@
 // * CMP-013: the layer is still: content = the held image's load generation, parameters = a
 //   placement generation, so it is drawn again only when the image, the placement or the picture
 //   size changes.
+// The shader is a module constant in ImageLayerSource.swift, one of the reviewed Metal source files (SHD-011,
+// `check_compliance.py`'s METAL_SOURCE_ALLOWED), so no new file compiles Metal source.
 // Not Sendable: the compositor's thread (the main thread in the app) sets `content`/`placement` and renders.
 import Foundation
 
@@ -136,7 +138,7 @@ public final class LogoLayerSource: LayerSource, LayerRenderCaching {
     public func prepare(picture: LayerPictureDescriptor, device: MTLDevice) throws(LayerSourceError) {
         if pipeline != nil { return }
         do {
-            let library = try device.makeLibrary(source: Self.shaderSource, options: nil)
+            let library = try ImageLayerSource.logoLibrary(device: device)   // the reviewed shader file (SHD-011)
             guard let vertex = library.makeFunction(name: "logo_fullscreen"),
                   let fragment = library.makeFunction(name: "logo_picture") else {
                 throw LayerSourceError.resourceUnavailable("logo shader functions")
@@ -205,37 +207,6 @@ public final class LogoLayerSource: LayerSource, LayerRenderCaching {
     }
 
     public func renderReused(frame: LayerFrameContext) { framesShown += 1 }
-
-    static let shaderSource = """
-    #include <metal_stdlib>
-    using namespace metal;
-
-    struct LogoOut { float4 position [[position]]; };
-
-    vertex LogoOut logo_fullscreen(uint vid [[vertex_id]]) {
-        float2 p = float2(float((vid << 1) & 2), float(vid & 2));
-        LogoOut o;
-        o.position = float4(p * 2.0 - 1.0, 0.0, 1.0);
-        return o;
-    }
-
-    struct LogoUniforms {
-        float4 rect;     // x, y, width, height in output pixels (top-left origin)
-        float4 params;   // opacity, unused × 3
-    };
-
-    // The texels are premultiplied linear light, so the sample is already "over"-ready; only the
-    // opacity scales it. Outside the logo's rectangle nothing is drawn.
-    fragment float4 logo_picture(LogoOut in [[stage_in]], texture2d<float> logo [[texture(0)]],
-                                 sampler s [[sampler(0)]], constant LogoUniforms &u [[buffer(0)]]) {
-        float2 t = (in.position.xy - u.rect.xy) / u.rect.zw;
-        if (any(t < 0.0) || any(t > 1.0)) { return float4(0.0); }
-        float4 c = logo.sample(s, t);
-        float a = clamp(c.a, 0.0, 1.0);
-        float3 rgb = clamp(c.rgb, float3(0.0), float3(a));
-        return float4(rgb, a) * u.params.x;
-    }
-    """
 }
 
 /// Matches `LogoUniforms` in the shader (32 bytes).
