@@ -24,7 +24,13 @@ extension AppCoordinator {
         let cache = PresetThumbnailCache(directory: PresetThumbnailModel.defaultDirectory(), renderer: thumbnailRenderer)
         let colors = PresetColorStore(directory: PresetThumbnailModel.defaultColorDirectory())   // PRE-004
         let motion = PresetMotionStore(directory: PresetThumbnailModel.defaultMotionDirectory())   // PRE-005
-        return PresetThumbnailModel(cache: cache, colors: colors, motion: motion) { [weak loader] (preset: IndexedPreset) async throws -> Data in
+        return PresetThumbnailModel(cache: cache, colors: colors, motion: motion, contents: presetContents(loader: loader))
+    }
+
+    /// A preset's bytes for off-screen drawing: built-in from the bundle or archive, imported only from the user
+    /// library's playable copy (PRE-012). Shared by the thumbnails (PRE-001) and the comparison (PRE-009).
+    static func presetContents(loader: RendererPresetLoader) -> PresetThumbnailModel.ContentsProvider {
+        { [weak loader] (preset: IndexedPreset) async throws -> Data in
             guard let loader else { throw PresetThumbnailError.unavailable("No preset loader.") }
             if preset.source == PresetLibrary.userSource {
                 guard let data = await loader.userPresetData?(preset.id) else {

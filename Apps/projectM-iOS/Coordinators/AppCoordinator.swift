@@ -661,6 +661,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         self.memoryPressure.register(presetLoader)   // PERF-006-R11: the archive's decompressed chunk
         presets.thumbnails = Self.makeThumbnails(loader: presetLoader, renderer: { [weak self] in self?.renderer })   // PRE-001
+        presets.comparison = makeComparison(loader: presetLoader)   // PRE-009
         self.memoryPressure.register(self)           // PERF-006-R12: an idle native spectrum
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains(UITestMemoryPanel.argument) {
@@ -1457,6 +1458,19 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
         host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
+
+    /// PRE-009-R10: the shown visual pauses while the Compare sheet's previews run.
+    func pauseVisualsForComparison() {
+        renderer?.pause()
+        nativeVisual?.pause()
+        cameraVisual?.pause()
+        photoVisual?.pause()
+        videoVisual?.pause()
+        textVisual?.pause()
+    }
+
+    /// PRE-009-R10: the normal visual switch restores whichever visual is shown.
+    func resumeVisualsAfterComparison() { resumeActiveVisual() }
 
     /// Runs whichever visual is shown and keeps the others paused.
     private func resumeActiveVisual() {

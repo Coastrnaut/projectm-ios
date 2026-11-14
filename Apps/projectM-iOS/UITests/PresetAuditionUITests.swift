@@ -29,7 +29,7 @@ final class PresetAuditionUITests: XCTestCase {
     }
 
     private func preview(_ name: String) {
-        app.buttons["preset:\(name)"].press(forDuration: 0.7)
+        app.pressRow(app.buttons["preset:\(name)"], clearOf: app.otherElements["auditionBar"])   // PRE-009 fix: the row can sit under the bar
         let item = app.buttons["Preview"]   // menu items are found by title (as PresetTagsUITests does)
         XCTAssertTrue(item.appears(within: 5), "Preview in the row's menu")
         item.tap()

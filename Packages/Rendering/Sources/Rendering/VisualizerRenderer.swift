@@ -50,6 +50,12 @@ public protocol VisualizerRenderer: AnyObject {
     /// PRE-001: draws presets off screen into small pictures for the browser's thumbnails. Nil when
     /// this renderer cannot run a second engine; rows then keep their placeholders.
     var presetThumbnails: (any PresetThumbnailDrawing)? { get }
+    /// PRE-009: draws two presets in lockstep off screen for the Compare sheet. Nil when this renderer cannot
+    /// run second engines; the browser then offers no Compare.
+    var presetComparison: (any PresetComparing)? { get }
+    /// PRE-009-D1: the attached audio reader, read on the main thread (its only consumer) by the comparison's
+    /// tick driver while the visible picture is paused. Nil by default.
+    var sharedPCMReader: (any NormalizedPCMReader)? { get }
     /// PERF-006: what this renderer frees on memory pressure (caches it rebuilds lazily, optional
     /// background work). The app registers them with its MemoryPressureRecovery. Never the visible
     /// engine or its surface. None by default.
@@ -61,6 +67,8 @@ public extension VisualizerRenderer {
     var presentationResources: [any PresentationBoundResource] { [] }
     var presetTrial: (any PresetTrialing)? { nil }
     var presetThumbnails: (any PresetThumbnailDrawing)? { nil }
+    var presetComparison: (any PresetComparing)? { nil }
+    var sharedPCMReader: (any NormalizedPCMReader)? { nil }
     var memoryPressureResponders: [any MemoryPressureResponder] { [] }
 }
 
