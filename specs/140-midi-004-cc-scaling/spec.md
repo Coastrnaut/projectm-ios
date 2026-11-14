@@ -47,6 +47,15 @@ interaction); each answer is the conservative, local-first option.
 - Q: Which curves can be chosen? → A: Four presets: Linear, Ease in (`easeIn:2`), Ease out (`easeOut:2`), Logarithmic (`log:9`). Any other stored curve (for example `exp:4` or a piecewise curve from a later editor) is shown as "Custom" and kept until another preset is chosen.
 - Q: 14-bit controls? → A: Out of scope (MIDI-005). Only 7-bit control changes are scaled here.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Where does the user open a mapping's options? → A: From a second row, "Curve", shown under each mapped parameter in MIDI Mappings (value: the curve summary, for example "Ease in, inverted"); it opens the options screen. Rejected: a third button in the parameter row (too cramped with Learn and Delete at large text sizes) and making the parameter row itself a link (it would change the row's accessibility element that MIDI-003's tests and VoiceOver users rely on).
+- Q: Are curve and Invert changes part of MIDI-003's one-step Undo? → A: No. They are changed in place on the options screen and can be reverted there with one tap; Undo stays for learn, move, replace and delete. Leaving MIDI Mappings for the options screen ends learn mode and clears Undo, as leaving the screen does in MIDI-003.
+- Q: Does changing a curve or Invert move the parameter at once? → A: No. The new mapping applies from the control's next message; the parameter never jumps when nobody is touching the controller (consistent with MIDI-003's "live values only from messages").
+- Q: What does the preview show, and how is it described to VoiceOver? → A: A small static plot of parameter value (up) against control position (right) for the chosen curve and inversion, drawn from 33 samples of the same mapping function used for values. Its accessibility label names the curve and direction in words, for example "Curve preview: Ease in, inverted. Turning the control up lowers the value from maximum to minimum." No animation.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A mapped knob reaches both ends of the parameter, either way round (Priority: P1) — MVP
