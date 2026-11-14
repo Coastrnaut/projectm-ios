@@ -28,13 +28,7 @@ final class OSCRateLimiterUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
 
         let row = app.descendants(matching: .any)["oscRateLimited"]
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 {
-            if row.exists && row.isHittable { break }
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
+        app.reveal(row, long: true)
         XCTAssertTrue(row.exists, "the Rate-limited row is shown while OSC is on")
         // LabeledContent reads as one element, "Rate-limited, 0".
         XCTAssertEqual(row.label, "Rate-limited, 0", "no traffic: the row shows 0")

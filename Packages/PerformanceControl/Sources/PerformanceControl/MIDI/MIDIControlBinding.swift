@@ -7,18 +7,21 @@
 // user's equipment (ADR-0038 Decision 8). The list keeps one binding per control and one per parameter
 // (rebinding replaces) and at most 64 bindings.
 //
-// Stored form, one line per binding: `cc:<channel 0-15>:<number 0-119>=<parameter ID>`. MIDI-004 onward may
-// append `;`-separated options after the parameter ID; this row writes none and ignores them on read.
+// Stored form, one line per binding: `cc:<channel 0-15>:<number 0-119>=<parameter ID>`, then MIDI-004's
+// `;`-separated options (`curve=`, `invert=1`, unknown segments kept; `MIDIMappingOptions`). A binding with
+// default options writes exactly the MIDI-003 line (MIDI-004-R4, R5).
 import ParameterGraph
 
-/// One control bound to one parameter (data-model "Binding").
+/// One control bound to one parameter (data-model "Binding"), with its curve and inversion (MIDI-004).
 public struct MIDIControlBinding: Sendable, Hashable {
     public let key: MIDIControlKey
     public let target: ParameterID
+    public var options: MIDIMappingOptions
 
-    public init(key: MIDIControlKey, target: ParameterID) {
+    public init(key: MIDIControlKey, target: ParameterID, options: MIDIMappingOptions = .default) {
         self.key = key
         self.target = target
+        self.options = options
     }
 
     static let controlChangeTag: String = "cc"
@@ -28,16 +31,20 @@ public struct MIDIControlBinding: Sendable, Hashable {
         let channel: String = String(key.channel)
         let number: String = String(key.number)
         let control: String = Self.controlChangeTag + ":" + channel + ":" + number
-        return control + "=" + target.rawValue
+        let base: String = control + "=" + target.rawValue
+        let segments: [String] = options.segments
+        guard !segments.isEmpty else { return base }
+        return base + ";" + segments.joined(separator: ";")
     }
 
     /// Reads a stored line; nil for anything but a control change on channel 0–15, controller 0–119 and a
-    /// non-empty parameter ID. Options after `;` are ignored (MIDI-003-R16).
+    /// non-empty parameter ID. Segments after `;` are MIDI-004's options (MIDI-003-R16, MIDI-004-R5).
     public init?(storageLine line: String) {
         guard let equals = line.firstIndex(of: "=") else { return nil }
         let control: Substring = line[line.startIndex..<equals]
         let rest: Substring = line[line.index(after: equals)...]
-        let targetText: Substring = rest.split(separator: ";", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
+        let pieces: [Substring] = rest.split(separator: ";", omittingEmptySubsequences: false)
+        let targetText: Substring = pieces.first ?? ""
         let parts: [Substring] = control.split(separator: ":", omittingEmptySubsequences: false)
         guard parts.count == 3, parts[0] == Substring(Self.controlChangeTag),
               let channel = UInt8(parts[1]), channel <= 15,
@@ -45,6 +52,7 @@ public struct MIDIControlBinding: Sendable, Hashable {
               !targetText.isEmpty else { return nil }
         self.key = MIDIControlKey(kind: .controlChange, channel: channel, number: number)
         self.target = ParameterID(String(targetText))
+        self.options = MIDIMappingOptions(segments: pieces.dropFirst())
     }
 }
 
@@ -98,8 +106,24 @@ public struct MIDIBindingList: Sendable, Hashable {
         bindings.first { (binding: MIDIControlBinding) -> Bool in binding.target == target }
     }
 
+    /// The binding of `key`, if any.
+    public func binding(forKey key: MIDIControlKey) -> MIDIControlBinding? {
+        bindings.first { (binding: MIDIControlBinding) -> Bool in binding.key == key }
+    }
+
+    /// Replaces the options of `target`'s binding; false when `target` is not bound (MIDI-004 contract C3.2).
+    @discardableResult
+    public mutating func setOptions(_ options: MIDIMappingOptions, for target: ParameterID) -> Bool {
+        guard let index = bindings.firstIndex(where: { (binding: MIDIControlBinding) -> Bool in binding.target == target }) else {
+            return false
+        }
+        bindings[index].options = options
+        return true
+    }
+
     /// Binds `key` to `target`, replacing the control's and the parameter's previous bindings (research
-    /// MIDI-003-D2). Binding a pair that already exists is `.added` with no change.
+    /// MIDI-003-D2). Binding a pair that already exists is `.added` with no change. The new binding keeps the
+    /// target's previous options, or the defaults (options follow the parameter, MIDI-004-R6).
     @discardableResult
     public mutating func bind(_ key: MIDIControlKey, to target: ParameterID) -> MIDIBindOutcome {
         let movedFrom: ParameterID? = self.target(for: key).flatMap { (old: ParameterID) -> ParameterID? in
@@ -111,8 +135,9 @@ public struct MIDIBindingList: Sendable, Hashable {
         if self.target(for: key) == target { return .added }
         let freed: Int = (movedFrom == nil ? 0 : 1) + (previousKey == nil ? 0 : 1)
         guard bindings.count - freed < Self.capacity else { return .full }
+        let kept: MIDIMappingOptions = binding(for: target)?.options ?? .default
         bindings.removeAll { (binding: MIDIControlBinding) -> Bool in binding.key == key || binding.target == target }
-        bindings.append(MIDIControlBinding(key: key, target: target))
+        bindings.append(MIDIControlBinding(key: key, target: target, options: kept))
         switch (movedFrom, previousKey) {
         case let (from?, previous?): return .movedAndReplaced(from: from, previous: previous)
         case let (from?, nil): return .moved(from: from)

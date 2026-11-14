@@ -11,10 +11,10 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 89,
-   "implementing": 3,
-   "integrated": 57,
-   "unit_passed": 2
+   "audited": 84,
+   "implementing": 6,
+   "integrated": 60,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 74,
@@ -27,11 +27,11 @@
   }
  },
  "by_state": {
-  "audited": 174,
-  "implementing": 5,
-  "integrated": 143,
+  "audited": 169,
+  "implementing": 8,
+  "integrated": 146,
   "skipped_existing": 1,
-  "unit_passed": 3
+  "unit_passed": 2
  },
  "device_gate": {
   "blocked": [],
@@ -65,7 +65,6 @@
    "FX-006",
    "FX-007",
    "FX-008",
-   "FX-009",
    "FX-010",
    "FX-011",
    "FX-012",
@@ -83,7 +82,6 @@
    "MED-011",
    "MED-012",
    "MED-013",
-   "MIDI-004",
    "MIDI-005",
    "MIDI-006",
    "MIDI-007",
@@ -192,7 +190,6 @@
    "SHOW-012",
    "SHOW-013",
    "SHOW-015",
-   "UIX-003",
    "UIX-004",
    "UIX-005",
    "UIX-006",
@@ -224,7 +221,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "182 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
+   "179 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)"
   ]
  },
  "features": {
@@ -1301,12 +1298,12 @@
   "FX-009": {
    "attempts": 0,
    "branch": "feature/fx-009",
-   "branch_sha": null,
+   "branch_sha": "f58cffa49d37910fd6a04a24925fe7734458b9bc",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "0fcd99a0ffd3368e57261d33fbe54a2153fbbd1b",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "FX-010": {
    "attempts": 0,
@@ -1410,13 +1407,13 @@
   },
   "FX-020": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-020",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MED-001": {
    "attempts": 0,
@@ -1591,12 +1588,12 @@
   "MIDI-004": {
    "attempts": 0,
    "branch": null,
-   "branch_sha": null,
+   "branch_sha": "baadcbe1ee175c13ef865bb992e50d0da1a08aaf",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5233974c4e8bd8ec1abecec6f66c14a2a30ae5b9",
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "MIDI-005": {
    "attempts": 0,
@@ -1610,13 +1607,13 @@
   },
   "MIDI-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/midi-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-007": {
    "attempts": 0,
@@ -1730,13 +1727,13 @@
   },
   "MOD-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-006": {
    "attempts": 0,
@@ -2263,20 +2260,20 @@
    "branch": "feature/pre-001",
    "branch_sha": "66ed38a3757df8473766c08c5822796c56988ddd",
    "error_category": null,
-   "integrated_sha": "5445bfb5211ca7147020f3322890829b628e6b10",
+   "integrated_sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
   },
   "PRE-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-003": {
    "attempts": 0,
@@ -2753,7 +2750,7 @@
    "branch": "feature/scn-004",
    "branch_sha": "5bdd7e541ced1c7469e46a90461c7c5f6a335229",
    "error_category": null,
-   "integrated_sha": "db2b17b1858954dda1f7f8ad9ab076e471ae517e",
+   "integrated_sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3163,10 +3160,10 @@
    "branch": "feature/uix-003",
    "branch_sha": "598dfc2a58d6dc2dc7f83887a22dc04557342f92",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "UIX-004": {
    "attempts": 0,
@@ -3896,6 +3893,11 @@
    "sha": "b40a8d8e"
   },
   {
+   "branch": "feature/fx-009",
+   "id": "FX-009",
+   "sha": "0fcd99a0ffd3368e57261d33fbe54a2153fbbd1b"
+  },
+  {
    "branch": "feature/fx-019",
    "id": "FX-019",
    "sha": "6cfcbaabc8d039e71290067a1a0cf0069c7e67de"
@@ -3949,6 +3951,11 @@
    "branch": "feature/midi-003",
    "id": "MIDI-003",
    "sha": "d6ec9dc5e426223ea4d7bc64c1f730c372dc9a53"
+  },
+  {
+   "branch": null,
+   "id": "MIDI-004",
+   "sha": "5233974c4e8bd8ec1abecec6f66c14a2a30ae5b9"
   },
   {
    "branch": "feature/mod-001",
@@ -4038,7 +4045,7 @@
   {
    "branch": "feature/pre-001",
    "id": "PRE-001",
-   "sha": "5445bfb5211ca7147020f3322890829b628e6b10"
+   "sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47"
   },
   {
    "branch": "feature/pre-007",
@@ -4118,7 +4125,7 @@
   {
    "branch": "feature/scn-004",
    "id": "SCN-004",
-   "sha": "db2b17b1858954dda1f7f8ad9ab076e471ae517e"
+   "sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47"
   },
   {
    "branch": "feature/scn-010",
@@ -4186,6 +4193,11 @@
    "sha": "20b9cc8a"
   },
   {
+   "branch": "feature/uix-003",
+   "id": "UIX-003",
+   "sha": "7b7a78050adac4aee7896f350d10b628bb8d4a47"
+  },
+  {
    "branch": "feature/uix-015",
    "id": "UIX-015",
    "sha": "ae498579"
@@ -4231,5 +4243,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T12:05:34Z"
+ "updated": "2026-11-14T12:12:59Z"
 }

@@ -43,18 +43,6 @@ final class VideoLoopUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 5))
     }
 
-    /// Held drags, not swipes (see SettingsUITests.scrollTo).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 where !(element.exists && element.isHittable) {
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists
-    }
-
     /// "500-1000" → the picture indices a 30 fps file shows inside [500 ms, 1000 ms).
     private func indices(ofRegion text: String) -> ClosedRange<Int>? {
         let parts = text.split(separator: "-").compactMap { (s: Substring) -> Int? in Int(s) }
@@ -72,7 +60,7 @@ final class VideoLoopUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         openSettings()
         let row = app.visualRow("Video")
-        XCTAssertTrue(scrollTo(row))
+        XCTAssertTrue(app.reveal(row))
         row.tap()
         closeSettings()
         XCTAssertTrue(videoVisual.appears(within: 10))
@@ -81,7 +69,7 @@ final class VideoLoopUITests: XCTestCase {
 
         openSettings()
         let loopIn = app.slider("videoLoopIn"), loopOut = app.slider("videoLoopOut")
-        XCTAssertTrue(scrollTo(loopOut), "the loop sliders are offered once the video plays")
+        XCTAssertTrue(app.reveal(loopOut), "the loop sliders are offered once the video plays")
         loopIn.dragSlider(from: 0, to: 0.25)    // ≈ 0.5 s (ACC-005: dragged by touch)
         loopOut.dragSlider(from: 1, to: 0.55)   // ≈ 1.1 s
         XCTAssertTrue((loopIn.value as? String ?? "").hasSuffix("seconds"), "VoiceOver value: \(String(describing: loopIn.value))")

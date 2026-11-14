@@ -32,19 +32,6 @@ final class OSCNetworkAccessUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
 
-    /// Held drags, not swipes (see SettingsUITests.scrollTo).
-    @discardableResult
-    private func scrollTo(_ element: XCUIElement) -> Bool {
-        let window = app.windows.firstMatch
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-        for _ in 0..<8 {
-            if element.exists && element.isHittable { break }
-            bottom.press(forDuration: 0.05, thenDragTo: top, withVelocity: .default, thenHoldForDuration: 0.1)
-        }
-        return element.exists
-    }
-
     private func status() -> String {
         let element = app.staticTexts["oscStatus"]
         app.reveal(element)   // below the fold as Settings grows (UI sweep 2026-11-13)
@@ -67,7 +54,7 @@ final class OSCNetworkAccessUITests: XCTestCase {
         // Enable in Settings.
         openSettings()
         let toggle = app.switches["oscReceiverToggle"]
-        XCTAssertTrue(scrollTo(toggle), "the OSC section is in Settings")
+        XCTAssertTrue(app.reveal(toggle, long: true), "the OSC section is in Settings")
         tapSwitch(toggle)
         XCTAssertTrue(poll(10) { self.status() == "Listening on port \(Self.port)" }, "status: \(status())")
         app.navigationBars["Settings"].buttons["Done"].tap()
@@ -91,7 +78,7 @@ final class OSCNetworkAccessUITests: XCTestCase {
 
         // Settings shows the toggle off.
         openSettings()
-        XCTAssertTrue(scrollTo(toggle))
+        XCTAssertTrue(app.reveal(toggle, long: true))
         XCTAssertEqual(toggle.value as? String, "0", "the toggle is off after Stop")
         XCTAssertTrue(poll(5) { self.status() == "Off" }, "status: \(status())")
     }

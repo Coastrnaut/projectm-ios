@@ -240,6 +240,10 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             let cell = app.cells.firstMatch
             return cell.exists ? "\(cell.label)@\(Int(cell.frame.minY))" : ""
         }
+        // Right-hand margin (2026-11-14, as `XCUIApplication.reveal`): a drag from mid-screen lands on a
+        // slider's thumb (Settings' Color sliders, FX-003) and moves the slider instead of the list; the
+        // left edge is the navigation back gesture.
+        let lane: CGFloat = 0.96
         var last = position()
         for _ in 0..<32 {
             if visible() { break }
@@ -250,8 +254,8 @@ final class DynamicTypeInspectorUITests: XCTestCase {
                 if flinging {
                     // Towards the end with momentum; once the list no longer moves (or after eight), it
                     // is at its end and the element is above: held drags back (owner rule 7, 2026-11-14).
-                    window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-                        .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)),
+                    window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.8))
+                        .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.2)),
                                withVelocity: XCUIGestureVelocity(rawValue: 10000), thenHoldForDuration: 0)
                     blind += 1
                     let now = position()
@@ -271,8 +275,8 @@ final class DynamicTypeInspectorUITests: XCTestCase {
                 if blind == 16 { dragDown.toggle() }
                 blind += 1
                 // Up: from 0.8 (lower starts land on sheets' bottom bars and do not scroll).
-                let high = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dragDown ? (backFromEnd ? 0.2 : 0.4) : 0.2))
-                let low = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dragDown ? (backFromEnd ? 0.9 : 0.75) : 0.8))
+                let high = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: dragDown ? (backFromEnd ? 0.2 : 0.4) : 0.2))
+                let low = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: dragDown ? (backFromEnd ? 0.9 : 0.75) : 0.8))
                 let (from, to) = dragDown ? (high, low) : (low, high)
                 from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .fast, thenHoldForDuration: 0.1)
                 continue
@@ -292,7 +296,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
                 needed = towardsTop ? upper - frame.minY + 24 : frame.maxY - lower + 24
             }
             let fraction: CGFloat = min(max(needed / span, minimum), 0.6)
-            let middle = area.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: towardsTop ? 0.2 : 0.8))
+            let middle = area.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: towardsTop ? 0.2 : 0.8))
             let to = middle.withOffset(CGVector(dx: 0, dy: (towardsTop ? 1 : -1) * fraction * span))
             middle.press(forDuration: 0.05, thenDragTo: to, withVelocity: .slow, thenHoldForDuration: 0.15)
         }

@@ -346,6 +346,7 @@ extension AudioFeatureSource {
         case .kick: return "Kick"
         case .centroid: return "Brightness"
         case .loudness: return "Loudness"
+        case .midTransient: return "Mid transient"   // ANL-008: not a snare classifier
         }
     }
 }

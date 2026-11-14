@@ -52,3 +52,39 @@ final class ColorGradeCatalogTests: XCTestCase {
         XCTAssertEqual(ColorGradeCatalog.grade(from: values), ColorGrade(temperature: -0.25, gain: 2, hue: -180))
     }
 }
+
+/// FX-009-T08: the Trails descriptors (FX-009-R10). CPU only.
+final class MotionFeedbackCatalogTests: XCTestCase {
+    func testTheCatalogValidatesAndMatchesMotionFeedback() throws {
+        let registry: ParameterRegistry = try MotionFeedbackCatalog.makeRegistry()
+        XCTAssertEqual(registry.descriptors.count, 2)
+        let enabled: ParameterDescriptor = MotionFeedbackCatalog.descriptors[0]
+        XCTAssertEqual(enabled.id, "effect.feedback.enabled")
+        XCTAssertEqual(enabled.kind, .boolean(defaultValue: false), "off by default")
+        XCTAssertEqual(enabled.modulation, .discreteManual)
+        let halfLife: ParameterDescriptor = MotionFeedbackCatalog.descriptors[1]
+        XCTAssertEqual(halfLife.id, "effect.feedback.halfLife")
+        XCTAssertEqual(halfLife.unit, .seconds)
+        XCTAssertEqual(halfLife.group.id, "effect.feedback")
+        guard case let .continuous(minimum, maximum, value, step, _) = halfLife.kind else { return XCTFail("continuous") }
+        XCTAssertEqual(minimum, MotionFeedback.halfLifeRange.lowerBound)
+        XCTAssertEqual(maximum, MotionFeedback.halfLifeRange.upperBound)
+        XCTAssertEqual(value, MotionFeedback.defaultHalfLife)
+        XCTAssertEqual(step, MotionFeedback.halfLifeStep)
+    }
+
+    func testIDsAreUniqueInTheAppRegistry() throws {
+        let all: [ParameterDescriptor] = VisualParameterCatalog.descriptors + ProceduralMaterialCatalog.descriptors
+            + ColorGradeCatalog.descriptors + MotionFeedbackCatalog.descriptors
+        XCTAssertEqual(try ParameterRegistry(descriptors: all).descriptors.count, all.count)
+    }
+
+    func testFeedbackFromValuesClampsAndDefaultsToOff() {
+        XCTAssertEqual(MotionFeedbackCatalog.feedback(from: [:]), .off)
+        let values: [ParameterID: ParameterValue] = [MotionFeedbackParameterIDs.enabled: .boolean(true),
+                                                     MotionFeedbackParameterIDs.halfLife: .continuous(9)]
+        XCTAssertEqual(MotionFeedbackCatalog.feedback(from: values), MotionFeedback(isEnabled: true, halfLifeSeconds: 0.5))
+        let mistyped: [ParameterID: ParameterValue] = [MotionFeedbackParameterIDs.enabled: .continuous(1)]
+        XCTAssertEqual(MotionFeedbackCatalog.feedback(from: mistyped), .off)
+    }
+}
