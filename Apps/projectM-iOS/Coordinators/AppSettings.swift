@@ -126,7 +126,7 @@ final class AppSettings {
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
-                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015
+                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -403,12 +403,15 @@ final class AppSettings {
     let sensorySafety: SensorySafetySetting
     /// SCN-015: the scene lock (key `settings.scene.locked`), shared by every holder of the settings.
     let sceneLock: SceneLock
+    /// MOD-017: quantized discrete changes (key `settings.modulation.quantize`), shared like the lock.
+    let parameterQuantizer: ParameterQuantizer
 
     init(defaults: UserDefaults, systemReduceMotion: Bool) {
         self.defaults = defaults
         self.systemReduceMotion = systemReduceMotion
         sensorySafety = SensorySafetySetting(defaults: defaults)
         sceneLock = SceneLock(defaults: defaults)   // SCN-015
+        parameterQuantizer = ParameterQuantizer(defaults: defaults)   // MOD-017
         showsPerformanceOverlay = defaults.bool(forKey: Self.performanceOverlayKey)
         reduceFlashingChoice = defaults.object(forKey: Self.reduceFlashingKey) as? Bool
         let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM

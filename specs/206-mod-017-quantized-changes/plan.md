@@ -66,7 +66,8 @@ Apps/projectM-iOS/Views/QuantizeChangesSection.swift                            
 Apps/projectM-iOS/Views/ParameterInspectorView.swift, ParameterShelfView.swift, SettingsView.swift  (small)
 Apps/projectM-iOS/Tests/ParameterQuantizerAcceptanceTests.swift                                    (new)
 Apps/projectM-iOS/UITests/QuantizedChangesUITests.swift                                            (new)
-scripts/run_device_tests.py, Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift, UI-test reset
+scripts/run_device_tests.py, Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift and LibraryErasePolicy.swift,
+  AppSettings.allKeys (the UI-test reset), Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift
 ```
 
 **Structure Decision**: the queue is generic over key and value so the package stays independent of the app's

@@ -445,6 +445,7 @@ struct SettingsView: View {
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
         if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
+        QuantizeChangesSection(quantizer: settings.parameterQuantizer).id("quantize")   // MOD-017-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
