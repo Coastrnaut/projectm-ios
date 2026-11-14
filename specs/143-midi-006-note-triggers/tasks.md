@@ -34,7 +34,7 @@ Tests are required by the spec (MIDI-006-S1 to S6). Budgets (owner rule 7): unit
 ## Phase 5: User Story 3 - Learn a note (P2)
 
 - [ ] MIDI-006-T12 [US3] `MIDILearnSession.handle(_:now:isEligible:)` and `MIDILearnEligibility.isNoteEligible(_:)` in `Packages/PerformanceControl/Sources/PerformanceControl/MIDI/MIDILearnSession.swift`; package test that CC learn ignores notes and note learn ignores CCs and velocity-0
-- [ ] MIDI-006-T13 [US3] Note learn in the coordinator (one session at a time, Cancel, timeout, Undo for both lists, `.midi` announcements, `noteRows`) and the "Note triggers" section in `Apps/projectM-iOS/Views/MIDIMappingsView.swift` (identifiers `midiNote.<id>`, `midiNoteLearn.<id>`, `midiNoteDelete.<id>`); app tests for learn (the learning press fires nothing), announcement and Undo
+- [ ] MIDI-006-T13 [US3] Note learn in the coordinator (one session at a time, Cancel, timeout, Undo for both lists, `.midi` announcements, `noteRows`) and the "Note triggers" section in `Apps/projectM-iOS/Views/MIDIMappingsView.swift` (identifiers `midiNote.<id>`, `midiNoteLearn.<id>`, `midiNoteDelete.<id>`); app tests for learn (the learning press fires nothing; a note already used moves, research MIDI-006-D2), announcement and Undo
 - [ ] MIDI-006-T14 [US3] UI test `Apps/projectM-iOS/UITests/MIDINoteTriggersUITests.swift`: learn note C4 to Next cue with the stand-in input in under 30 s (S5)
 
 ## Phase 6: Polish

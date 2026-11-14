@@ -48,3 +48,8 @@
   only if it did the black out and the output is still blacked out.
 - **Rationale**: existing, announced, safe calls (restore keeps OUT-010's fade and spacing). Trails and Pause
   have no one-call path without UI side effects; Go to scene is MIDI-007.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R11 and S1-S6 each map to at least one task; no constitution conflict. Fixed: contract N4's learn
+announcement text was ambiguous (now exact strings); T13 now names the "note already used moves" edge case.

@@ -33,7 +33,8 @@ velocity 0, running status included.
 - `MIDINoteActionPerformer.perform(_:)`: fire `cue.next` → show next; fire `cue.previous` → show previous; fire
   `blackout` → toggle; engage → black out if not already, remembering it; release → restore only if remembered
   and still blacked out.
-- Announcements: "Move… / Press a key or pad on your MIDI device to map Next cue…", "Next cue mapped to note C4
-  on channel 1." on `.midi`.
+- Announcements on `.midi`: "Press a key or pad on your MIDI device to map Next cue." (status line ends with "…"),
+  "Next cue mapped to note C4 on channel 1." (with " (moved from Previous cue)" when the note moved), and MIDI-003's
+  timeout text. The status line while learning a note: "Press a key or pad on your MIDI device to map Next cue…".
 - Identifiers: `midiNote.<id>` (label "Next cue, note C4, channel 1" / "Next cue, not mapped"),
   `midiNoteLearn.<id>`, `midiNoteDelete.<id>`.
