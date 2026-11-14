@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14
 
 **Input**: User description: "Implement roadmap feature ANL-009, 'High-frequency transient detector'.
 Observable behavior, verbatim: 'Track high-band bursts for sparkle and particle triggers.'
@@ -137,6 +137,34 @@ triggers.
 - **ANL-009-S5**: Through the pipeline, clicks yield one `.highTransient` event each and frames whose high transient value jumps and decays; every existing kick and mid transient test passes unchanged.
 - **ANL-009-S6**: `audio.highTransient` round-trips, binds, compiles to opcode 18, drives the glow in the app and is named "High transient" in the inspector.
 - **ANL-009-S7**: The new package tests take under 5 s in the Linux shape; existing suites pass.
+
+## Implementation results (2026-11-14)
+
+Fixture table (`HighTransientDetectorTests`, `.highTransient` defaults, 44.1 kHz; identical on the
+host and in the Linux shape):
+
+| Input | Geometry (N / hop) | Clicks | Events | Max in any 1 s | Confidences |
+|---|---|---|---|---|---|
+| High-pass noise clicks, −12 dBFS | 2,048 / 512 | 4 | 4 (4 hits ±1 hop, 0 extras) | 4 | 1.00, 1.00, 1.00, 0.94 |
+| Same, −6 / −30 dBFS (same positions) | 2,048 / 512 | 4 | 4 / 4 | 4 | as −12 / 0.77–0.88 |
+| Clicks at 50/s, 3 s | 2,048 / 512 | 150 | 1 | 1 | 1.00 |
+| Clicks at 50/s, 3 s | 512 / 128 | 150 | 4 | 4 | 0.45–1.00 |
+| Clicks at 20/s, 2 s, uncapped | 512 / 128 | 40 | 40 | 21 | — |
+| Same, capped (12/s) | 512 / 128 | 40 | 24 (16 suppressed) | 12 | — |
+| Continuous high noise, 10 s | both | — | 1 | 1 | 1.00 |
+| 60 Hz kick / ANL-008 mid bursts, −6 dBFS | 2,048 / 512 | 4 / 4 | 0 / 0 | — | — |
+| Silence / ±1 LSB dither | 2,048 / 512 | — | 0 / 0 | — | — |
+| Through `AnalysisPipeline`, −12 dBFS | 2,048 / 512 | 3 | 3 `.highTransient` (exact starts) | — | ≥ 0.5 |
+
+The roadmap's "bounded event counts" holds twice over: the cap guarantees at most 12 events in any
+second, and at the bus's geometry the adaptive threshold and the four-frame level reference already
+keep dense clicks and continuous noise to a single onset event. Kick and mid transient behaviour is
+unchanged (their configurations are uncapped; every ANL-007 and ANL-008 test passes).
+
+Test cost (owner rule 7): HighTransientDetectorTests (8 tests) take 1.4 s on the host and 3.9 s in
+the Linux shape. The whole AnalysisFeatures host suite (158 tests) took 61.4 s, already about
+42 s before this row (ANL-008's measurement) plus machine load; this row adds about 2 s. App: the
+new binding test takes 0.02 s on the simulator.
 
 ## Assumptions
 
