@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13 (device task AUD-012-T20 open)
 
 **Input**: User description: "Implement AUD-012 (Source crossfade) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md line 99. Observable behavior, verbatim: "Switch between permitted
