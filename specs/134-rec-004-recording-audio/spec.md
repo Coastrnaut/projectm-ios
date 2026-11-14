@@ -41,6 +41,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: How is the audio encoded? → A: AAC-LC, 44.1 kHz stereo, 128 kb/s, in the same MP4 as the video, no metadata.
 - Q: How does the user know what audio a recording holds? → A: A status line beside the Record control says what the next or current recording contains ("Recording includes app audio.", "Recording includes microphone audio.", "Recording has no audio: other apps' audio is never recorded.", "Recording has no audio."), and VoiceOver announces the audio status when a recording starts and when its audio ends early.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Which version of the audio goes into the file: as captured, or after the user's input trim, noise gate and latency offset? → A: As captured: the normalized source audio (44.1 kHz stereo) before input trim, noise gate and the renderer's latency offset. Those settings shape what drives the visuals; a recording should sound like the music, and the latency offset compensates for the screen, which a file does not need. The AUD-012 switch fade is part of the normalized audio and stays.
+- Q: Where does the user find "Include microphone audio"? → A: In Settings, in a new "Recording" section (the toggle plus one line of explanation), not in the visualizer controls, which keep only the status line. A second place would need its own VoiceOver review.
+- Q: When is the status line shown? → A: Whenever the Record control is shown: before a recording it says what the next recording would contain (from the current source and setting), during a recording what this one contains (the decision made at Record, or "audio ended" after an early end).
+- Q: Can the setting change during a recording? → A: Yes. Turning it off while the microphone is being recorded ends the audio at once (REC-004-R5). Turning it on during a recording does not add audio to that recording (its tracks are fixed at Record); the next recording includes it.
+- Q: What if the microphone permission is undetermined when the user turns the setting on? → A: The setting does not ask for permission; the permission is asked only by Microphone mode at its point of use (FILE-013). The setting's footer says microphone audio needs the permission, and the status line says "Recording has no audio: microphone permission is off." when it is missing.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Recordings of the app's own music have sound in sync (Priority: P1)
@@ -135,6 +145,8 @@ setting's value; app unit tests check the status texts and the announcement for 
 - **REC-004-R8**: Audio for the recording MUST be taken without blocking the audio path or the frame loop (bounded buffers, drop-and-count on overflow), and only while a recording with audio runs.
 - **REC-004-R9**: The controls MUST show a status line naming the audio the recording contains; VoiceOver MUST announce it when recording starts and when its audio ends early, through the app's announcement lanes.
 - **REC-004-R10**: Only files that passed the import check (which refuses protected content) MUST be the In-App Playback source of recorded audio; the app MUST NOT add any decryption or protected-stream path.
+- **REC-004-R12**: The recorded audio MUST be the normalized source audio, before input trim, noise gate and latency offset.
+- **REC-004-R13**: "Include microphone audio" MUST be in a "Recording" section of Settings; it MUST NOT request the microphone permission itself.
 - **REC-004-R11**: The microphone usage description and the privacy policy MUST say that microphone audio is in recordings only when the user turns it on.
 
 ### Key Entities
