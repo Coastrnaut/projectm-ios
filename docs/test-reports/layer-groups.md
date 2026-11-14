@@ -100,7 +100,7 @@ layers untouched) by `repairGroups`. Repair keeps a group's good references; a l
 | `swift test --package-path Packages/ImportFuzz` | 15 tests, 0 failures |
 | `swift test --package-path Packages/ShowControl` | 31 tests, 0 failures |
 | `swift test --package-path Packages/SceneArchive` | 27 tests, 0 failures |
-| App unit tests (`-only-testing:projectM-iOSTests`, dedicated iOS 27.2 simulator) | see below |
+| App unit tests (`-only-testing:projectM-iOSTests`, dedicated iOS 27.2 simulator "CMP11 iPhone 17", deleted afterwards) | 487 tests, 0 failures (19.3 s in XCTest, 109 s with the build); no new PosterBoard reports (25 before and after) |
 | `check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events` | OK |
 | `python3 scripts/test_scripts.py` | 153 tests, 1 skipped, OK |
 

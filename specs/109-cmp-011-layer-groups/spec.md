@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CMP-011-T01-T16 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; no device run; report `docs/test-reports/layer-groups.md`)
 
 **Input**: User description: "Implement CMP-011 (Layer groups) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Group multiple layers for shared transform, opacity and enable

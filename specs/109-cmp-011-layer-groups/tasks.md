@@ -47,7 +47,7 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 ## Phase 7: Polish & Cross-Cutting
 
 - [X] CMP-011-T15 [P] ADR-0039 (isolated groups, flattened when exact); amend ADR-0028 and specs/059-scn-001-versioned-scene-format/contracts/scene-document.md (top-level `groups`, `invalidGroup`) and the SCN-012 repair table (`repairGroups`) in docs/adr/ and specs/ — Verified 2026-11-14: validate_docs OK (968 files); docs/adr/0039-layer-group-isolation.md, ADR-0028, SCN-001 contract and SCN-012 data model amended
-- [ ] CMP-011-T16 Regression: Compositor and SceneFormat full suites (host and Linux shape), RenderGoldens, ImportFuzz, ShowControl, SceneArchive, app unit tests on a dedicated iOS 27.2 simulator; repository checks (compliance, docs, motion policy, permission catalog, status events, script tests); report docs/test-reports/layer-groups.md
+- [X] CMP-011-T16 Regression: Compositor and SceneFormat full suites (host and Linux shape), RenderGoldens, ImportFuzz, ShowControl, SceneArchive, app unit tests on a dedicated iOS 27.2 simulator; repository checks (compliance, docs, motion policy, permission catalog, status events, script tests); report docs/test-reports/layer-groups.md — Verified 2026-11-14: Compositor 318 (host) and 176 (Linux shape), SceneFormat 110 (host and Linux shape), RenderGoldens 39, ImportFuzz 15, ShowControl 31, SceneArchive 27, app unit tests 487 on iOS 27.2, all 0 failures; repository checks OK, script tests 153 OK
 
 ## Dependencies
 
