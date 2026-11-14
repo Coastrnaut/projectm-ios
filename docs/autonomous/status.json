@@ -11,10 +11,11 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 31,
-   "built": 5,
-   "implementing": 2,
-   "integrated": 113
+   "audited": 30,
+   "built": 4,
+   "implementing": 3,
+   "integrated": 113,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 68,
@@ -26,11 +27,12 @@
   }
  },
  "by_state": {
-  "audited": 110,
-  "built": 5,
-  "implementing": 4,
+  "audited": 109,
+  "built": 4,
+  "implementing": 5,
   "integrated": 206,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1767,12 +1769,12 @@
   "MOD-015": {
    "attempts": 0,
    "branch": "feature/mod-015",
-   "branch_sha": "c05f569b",
+   "branch_sha": "c05f569b6078d8671726ef6f8d4c73c26c450a15",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "MOD-016": {
    "attempts": 0,
@@ -3136,13 +3138,13 @@
   },
   "UIX-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/uix-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "UIX-008": {
    "attempts": 0,
@@ -4482,5 +4484,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:45:11Z"
+ "updated": "2026-11-14T19:48:33Z"
 }
