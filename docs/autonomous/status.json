@@ -2580,7 +2580,7 @@
    "branch": "feature/rec-007",
    "branch_sha": "bc6b335a76bc29306ff9d8928d518c5adaef145e",
    "error_category": null,
-   "integrated_sha": "1847eae27ee8115d1652331ee1103d90d5fcc486",
+   "integrated_sha": "1847eae2",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -2750,7 +2750,7 @@
    "branch": "feature/scn-008",
    "branch_sha": "5690755d721776b1afcee92875a0735d03200231",
    "error_category": null,
-   "integrated_sha": "871e7fadfeaad5cded8b2ce4749ab51ecd203a53",
+   "integrated_sha": "871e7fad",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -4210,7 +4210,7 @@
   {
    "branch": "feature/rec-007",
    "id": "REC-007",
-   "sha": "1847eae27ee8115d1652331ee1103d90d5fcc486"
+   "sha": "1847eae2"
   },
   {
    "branch": "feature/rec-012",
@@ -4260,7 +4260,7 @@
   {
    "branch": "feature/scn-008",
    "id": "SCN-008",
-   "sha": "871e7fadfeaad5cded8b2ce4749ab51ecd203a53"
+   "sha": "871e7fad"
   },
   {
    "branch": "feature/scn-010",
@@ -4388,5 +4388,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T16:42:07Z"
+ "updated": "2026-11-14T16:43:49Z"
 }

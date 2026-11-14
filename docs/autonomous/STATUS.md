@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:42:07Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:43:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -184,7 +184,7 @@ The physical-device suite may **not** start:
 | REC-004 | Recording audio mux | `787bb98e2086` | `feature/rec-004` |
 | REC-005 | Record quality profiles | `6a8bdbbdffdf` | `feature/rec-005` |
 | REC-006 | Record frame rate | `302a8e6c` | `None` |
-| REC-007 | Recording countdown | `1847eae27ee8` | `feature/rec-007` |
+| REC-007 | Recording countdown | `1847eae2` | `feature/rec-007` |
 | REC-012 | Share via Files | `c3886d1cb0bb` | `feature/rec-012` |
 | REC-015 | Recording disk guard | `d1a76394fab1` | `feature/rec-015` |
 | SCN-001 | Versioned scene format | `c3886d1cb0bb` | `feature/scn-001` |
@@ -194,7 +194,7 @@ The physical-device suite may **not** start:
 | SCN-005 | Scene tags | `4bad23aa` | `None` |
 | SCN-006 | Scene preview image | `546e69643d04` | `feature/scn-006` |
 | SCN-007 | Scene transition presets | `6024f5271d61` | `feature/scn-007` |
-| SCN-008 | Scene snapshots | `871e7fadfeaa` | `feature/scn-008` |
+| SCN-008 | Scene snapshots | `871e7fad` | `feature/scn-008` |
 | SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SCN-013 | Scene migration | `7f597d2` | `feature/scn-013` |
@@ -1823,6 +1823,7 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/swift-test_LibraryBackup.log`)
+- `post-merge: projectM-iOSTests 814 + UI 6 (countdown, snapshots, scene undo, macros, glow)`: pass at `1847eae2` (log `.autonomous/logs/integration/batch26/app-tests.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
@@ -1916,6 +1917,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 814 + UI 6 (countdown, snapshots, scene undo, macros, glow)`: pass at `871e7fad` (log `.autonomous/logs/integration/batch26/app-tests.log`)
 
 ### SCN-010 Scene undo/redo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/compliance.log`)
