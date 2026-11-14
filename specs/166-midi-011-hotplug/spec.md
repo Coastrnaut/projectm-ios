@@ -110,7 +110,7 @@ held from a removed endpoint are released.
 
 ### Key Entities
 
-- **Source snapshot**: the system's current sources: reference, record (unique number, names, direction, offline, transport).
+- **Source snapshot**: the system's current sources: reference (called the *handle* in the plan and contract), record (unique number, names, direction, offline, transport).
 - **Subscription**: stable endpoint ID → current reference (live connection).
 - **Reconcile plan**: disconnects and connects that take the registry from its state to the wanted state.
 
