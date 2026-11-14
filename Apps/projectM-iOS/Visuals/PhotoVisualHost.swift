@@ -84,12 +84,18 @@ final class PhotoVisualHost: PresentationBoundResource {
     var beforeFrame: (() -> Void)?
 
     /// MED-006-R9: decodes a picture ahead so that setting it as `content` later is a one-render cut.
-    func preload(_ url: URL) { photo.preload(url) }
+    func preload(_ url: URL) {
+        MediaLoadSpy.shared.note(.photo)   // SCN-008: a decode
+        photo.preload(url)
+    }
 
     /// What the photo layer shows.
     var content: ImageLayerContent {
         get { photo.content }
-        set { photo.content = newValue }
+        set {
+            MediaLoadSpy.shared.note(.photo)   // SCN-008: a decode
+            photo.content = newValue
+        }
     }
 
     var barCount: SpectrumBarCount {
@@ -134,6 +140,7 @@ final class PhotoVisualHost: PresentationBoundResource {
             }
         }
         let analyzer = try LiveBandAnalyzer(barCount: barCount)
+        MediaLoadSpy.shared.note(.host)   // SCN-008: a new visual instance
         return PhotoVisualHost(device: device, queue: queue, photo: photo, spectrum: spectrum, compositor: compositor,
                                analyzer: analyzer, reader: reader)
     }

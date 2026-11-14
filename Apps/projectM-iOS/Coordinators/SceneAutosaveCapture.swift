@@ -93,6 +93,9 @@ struct SceneAutosaveCarry: Sendable {
     var triggers: [SceneTriggerEntry]?
     /// MOD-007: the opened scene's oscillators as stored (nil: none); written back unchanged.
     var lfos: [SceneLFOEntry]?
+    /// SCN-008: the current scene's snapshots as stored (nil: none); written back unchanged, edited by
+    /// `SceneAutosaveCoordinator.replaceSnapshots`.
+    var snapshots: [SceneSnapshotEntry]?
 
     static let defaultName = "Current Scene"
 
@@ -120,6 +123,7 @@ struct SceneAutosaveCarry: Sendable {
         effects = document.effects   // FX-020
         triggers = document.triggers   // MOD-006
         lfos = document.lfos   // MOD-007
+        snapshots = document.snapshots   // SCN-008
     }
 }
 
@@ -236,7 +240,8 @@ enum SceneAutosaveCapture {
                                      bindings: sceneBindings,
                                      modulation: SceneModulation(generators: carry.modulation.generators, connections: connections),
                                      assets: assets, effects: effects(inputs.effects, carry: carry.effects),
-                                     triggers: carry.triggers, lfos: carry.lfos, extra: carry.extra)   // MOD-006, MOD-007: as stored
+                                     triggers: carry.triggers, lfos: carry.lfos, snapshots: carry.snapshots,
+                                     extra: carry.extra)   // MOD-006, MOD-007, SCN-008: as stored
         return (document, events)
     }
 

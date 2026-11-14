@@ -239,11 +239,21 @@ public struct SceneSnapshotRecallPlan: Sendable, Equatable {
     public struct Write: Sendable, Equatable {
         public let id: ParameterID
         public let value: ParameterValue
+
+        public init(id: ParameterID, value: ParameterValue) {
+            self.id = id
+            self.value = value
+        }
     }
 
     public struct Skip: Sendable, Equatable {
         public let id: ParameterID
         public let reason: SceneSnapshotSkipReason
+
+        public init(id: ParameterID, reason: SceneSnapshotSkipReason) {
+            self.id = id
+            self.reason = reason
+        }
     }
 
     public let writes: [Write]
