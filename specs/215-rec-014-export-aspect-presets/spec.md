@@ -40,6 +40,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: What is the "device memory cap"? → A: A documented per-device-class limit on the encoded frame size, applied to every recording (also Match screen): devices with less than 4 GiB of memory at most 2560 px per side and 3 686 400 pixels (2560×1440); others at most 4096 px per side and 8 294 400 pixels (3840×2160); never above the GPU's maximum texture side. Every current screen fits under its class's cap, so Match screen recordings are unchanged on real devices.
 - Q: Which custom sizes are valid? → A: Width and height each even and between 128 and 4096 px; an odd value is rounded down to even and an out-of-range value is clamped, both when typed. A valid custom size that exceeds the crop, the profile size or the memory cap is reduced (same aspect, even sides) and the user is told, in Settings and at Record.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does the aspect also change still frame captures (REC-001)? → A: No. It applies to video recordings only; a still keeps the shown frame's size. Stills already match the screen, and a hidden crop of a capture would surprise users.
+- Q: When Record falls back to a lower profile (REC-005-R6), does the aspect stay? → A: Yes. The aspect is applied to every profile the fallback tries; only the size cap changes. A profile that cannot fit even the smallest even size of the aspect is unavailable with "No picture to record."
+- Q: Are the presets relative to the device's orientation (does Portrait become landscape when the iPad is turned)? → A: No. Portrait is always taller than wide, Landscape always wider, Custom always exactly W wide and H tall; only the crop of the screen picture moves with the screen. Social formats are absolute.
+- Q: How does Settings show a reduced custom size? → A: The Custom row's detail reads "Reduced to W×H on this screen" (plus codec, bit rate, fps) when the custom size does not fit; otherwise "W×H · …" like the other rows. VoiceOver reads the same text.
+- Q: Is the aspect stored in scenes or the library backup? → A: No. It is a device-local recording setting like the profile and frame rate (excluded from backup, erased with Settings).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Record in a social format (Priority: P1)
@@ -95,7 +105,9 @@ the profile rows show sizes for the selected aspect.
 - A drawable smaller than the aspect's smallest even size (for example 16:9 needs 32×18): no picture to record (the profile is unavailable with "No picture to record.").
 - The drawable changes size during a recording: the recording stops as before (REC-003 size check on the drawable).
 - A custom size whose reduced aspect has no exact even multiple below the limits (for example 1918×1080 reduced): both sides are scaled by the same factor and rounded down to even; the aspect differs by at most one rounding step (2 px per side).
-- The encoder refuses the planned size: REC-005's fallback to a lower profile applies (with the same aspect).
+- The encoder refuses the planned size: REC-005's fallback to a lower profile applies, with the same aspect.
+- Device rotation does not swap a preset: Portrait stays taller than wide; only the crop of the screen picture changes.
+- Still captures (REC-001) are not affected.
 - External display or rotation: the drawable's current size is used at Record; the crop is centred on it.
 
 ## Requirements *(mandatory)*
@@ -113,6 +125,7 @@ the profile rows show sizes for the selected aspect.
 - **REC-014-R9**: The quality profile and frame-rate rows and Record's plan MUST use the selected aspect; codec, bit-rate rule and frame rate stay the profile's (the bit rate of Standard follows the output's pixels).
 - **REC-014-R10**: A running recording MUST keep the aspect it started with.
 - **REC-014-R11**: The crop MUST add no work to the frame loop beyond today's copy (the encoder's own scaler crops).
+- **REC-014-R12**: The aspect MUST apply to video recordings only (not to REC-001 stills), MUST be kept across a profile fallback, and MUST NOT be stored in scenes or the library backup; a reduced custom row MUST read "Reduced to W×H on this screen".
 
 ### Key Entities
 
