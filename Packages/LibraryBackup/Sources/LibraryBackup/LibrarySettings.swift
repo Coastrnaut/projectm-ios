@@ -95,10 +95,12 @@ public enum LibrarySettingsPolicy {
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9
+        "settings.beatRings.life",   // VIS-006-R9
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",
         "settings.osc.port",
+        "settings.osc.disabledRoutes", "settings.osc.aliases",   // OSC-003-R9: route addresses and parameter IDs only
         "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings
         "settings.parameterShelf.pins",   // UIX-004-R10: ordered pinned parameter IDs; erased with Settings
         "settings.inputTrim.decibels", "settings.analysisChannel.mode",

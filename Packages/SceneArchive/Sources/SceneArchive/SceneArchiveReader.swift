@@ -9,6 +9,8 @@
 // records against the scene's photo/video assets → each asset's content check. The scene is migrated in
 // memory by SCN-013's chain (`migrator`); the archive is never rewritten. Nothing is
 // written; the caller stages the media through its stores.
+// SCN-014: optional `slides` records (the photo asset's slideshow pictures) are checked for exact paths,
+// one picture per slideshow position, and the photo content check.
 import Foundation
 import LocalPortability
 import ParameterGraph
@@ -18,6 +20,8 @@ public struct SceneArchiveContents: Sendable {
     public let document: SceneDocument
     /// In key order.
     public let media: [SceneArchiveMedia]
+    /// SCN-014: the photo asset's slideshow pictures, in key then index order (empty without slides).
+    public var slides: [SceneArchiveSlide] = []
     /// SCN-001 decode and validation warnings (missing-asset warnings are not checked here).
     public let warnings: [SceneIssue]
 }
@@ -58,15 +62,19 @@ public enum SceneArchiveReader {
             records[record.key] = (type, ext, record.path)
         }
 
-        // Files: the scene, the asset files, nothing else.
+        // SCN-014: slide records (key, 1-based index, exact path); checked against the scene below.
+        let slideRecords = try slideRecords(manifest.slides ?? [])
+
+        // Files: the scene, the asset files, the slides, nothing else.
         guard let sceneData = contents.files[SceneArchiveFormat.scenePath] else { throw .missingScene }
-        let assetPaths = Set(records.values.map(\.path))
+        let assetPaths = Set(records.values.map(\.path)).union(slideRecords.map(\.path))
         for record in contents.records where record.path != SceneArchiveFormat.scenePath && !assetPaths.contains(record.path) {
             throw .unexpectedFile(record.path)
         }
         for key in records.keys.sorted() where contents.files[records[key]!.path] == nil {
             throw .missingAssetFile(records[key]!.path)
         }
+        for record in slideRecords where contents.files[record.path] == nil { throw .missingAssetFile(record.path) }
 
         // Scene (SCN-001).
         let decoded: SceneDecodeResult
@@ -96,6 +104,42 @@ public enum SceneArchiveReader {
             try SceneArchiveContentCheck.check(bytes, path: record.path, type: record.type, fileExtension: record.ext, limits: limits)
             media.append(SceneArchiveMedia(key: asset.key, type: record.type, fileExtension: record.ext, data: bytes))
         }
-        return SceneArchiveContents(document: document, media: media, warnings: decoded.warnings + issues)
+        // SCN-014: every slideshow position of the scene has exactly one picture, and nothing else.
+        var expected: [String: Int] = [:]
+        for entry in document.slideStoreIDs { expected[entry.key] = entry.storeIDs.count }
+        var found: [String: Int] = [:]
+        for record in slideRecords { found[record.key, default: 0] += 1 }
+        for key in Set(expected.keys).union(found.keys).sorted() where expected[key] != found[key] {
+            throw .slideMismatch(key: key)
+        }
+        var slides: [SceneArchiveSlide] = []
+        for record in slideRecords {
+            guard let bytes = contents.files[record.path] else { throw .missingAssetFile(record.path) }
+            guard record.index <= (expected[record.key] ?? 0) else { throw .slideMismatch(key: record.key) }
+            try SceneArchiveContentCheck.check(bytes, path: record.path, type: .photo, fileExtension: record.ext, limits: limits)
+            slides.append(SceneArchiveSlide(key: record.key, index: record.index, fileExtension: record.ext, data: bytes))
+        }
+        var result = SceneArchiveContents(document: document, media: media, warnings: decoded.warnings + issues)
+        result.slides = slides
+        return result
+    }
+
+    /// SCN-014-R4: valid keys, indexes 1…20 once per key, the exact path for PNG or JPEG; key then index order.
+    static func slideRecords(_ list: [SceneArchiveSlideRecord]) throws(SceneArchiveError) -> [(key: String, index: Int, ext: String, path: String)] {
+        guard list.count <= SceneArchiveFormat.maximumSlides else { throw .malformedManifest("more than \(SceneArchiveFormat.maximumSlides) slides") }
+        var result: [(key: String, index: Int, ext: String, path: String)] = []
+        var seen: Set<String> = []
+        for record in list {
+            guard SceneDocument.isValidAssetKey(record.key) else { throw .malformedManifest("invalid slide key") }
+            guard record.index >= 1, record.index <= SceneArchiveFormat.maximumSlides,
+                  seen.insert(record.key + "#" + String(record.index)).inserted else { throw .malformedManifest("slide \(record.index) of \"\(record.key)\"") }
+            guard let ext = SceneArchiveFormat.allowedExtensions(for: .photo).first(where: { (e: String) -> Bool in
+                record.path == SceneArchiveFormat.slidePath(key: record.key, index: record.index, fileExtension: e)
+            }) else { throw .malformedManifest("slide \(record.index) of \"\(record.key)\" has the path \(record.path)") }
+            result.append((record.key, record.index, ext, record.path))
+        }
+        return result.sorted { (a: (key: String, index: Int, ext: String, path: String), b: (key: String, index: Int, ext: String, path: String)) -> Bool in
+            a.key == b.key ? a.index < b.index : a.key < b.key
+        }
     }
 }

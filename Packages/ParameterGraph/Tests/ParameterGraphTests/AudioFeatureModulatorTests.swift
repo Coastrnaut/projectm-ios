@@ -88,6 +88,23 @@ final class AudioFeatureModulatorTests: XCTestCase {
         }
     }
 
+    // ANL-012-T08: a Flatness binding follows the frame's flatness (ANL-012-R7).
+    func testFlatnessBindingFollowsTheValue() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .flatness, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for value: Float in [0.5625, 0.25, 0.0625] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, rolloff: 1, flatness: value), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(value)))
+        }
+    }
+
     // ANL-011-T09: a Rolloff binding follows the frame's normalized rolloff (ANL-011-R8).
     func testRolloffBindingFollowsTheValue() throws {
         let registry = try Self.registry()

@@ -14,6 +14,7 @@
 // PRE-007 collections), so an older record inside a version-1 backup restores as the current format.
 // PRE-003 (2026-11-14) added the optional record `collections/tags.json` without a version change: no
 // release has shipped FILE-005, so no reader exists that would refuse it (research PRE-003-D6).
+// PRE-016 (2026-11-14) added `collections/overrides.json` the same way (research PRE-016-D5).
 import Foundation
 import LocalPortability
 
@@ -50,6 +51,8 @@ public enum LibraryBackupFormat {
     public static let collectionsPath = "collections/collections.json"
     /// PRE-003: the preset tags document (`PresetTagsFile`).
     public static let tagsPath = "collections/tags.json"
+    /// PRE-016: the preset overrides document (`PresetOverridesFile`).
+    public static let overridesPath = "collections/overrides.json"
     public static let settingsPath = "settings.json"
     public static let photosPrefix = "photos/"
 

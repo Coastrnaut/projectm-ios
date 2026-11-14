@@ -99,6 +99,7 @@ import Metal
 import UIKit
 import VisualGenerators
 import ParameterGraph
+import PerformanceControl   // OSC-003: the receiver, its routes and the shared live values
 #if DEBUG
 import VisualParameters
 #endif
@@ -207,6 +208,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let effectChain: EffectChainSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
+    /// MIDI-003 and OSC-003 live values, merged (newest change wins per parameter; OSC-003-R5).
+    @ObservationIgnored private(set) var externalLiveValues = ExternalLiveValues()
     /// PERF-001: the stage timer while the performance overlay is shown (AppCoordinator+FrameStages.swift).
     @ObservationIgnored let frameStages = FrameStageAttachment()
     @ObservationIgnored let frameDrops = FrameDropAttachment()   // PERF-007
@@ -228,6 +231,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let logo: LogoCoordinator
     /// MOD-010: the current scene's parameter macros (Settings › Macros).
     let macros: MacroCoordinator
+    /// MOD-012: the current scene's routes (Settings › Modulation; AppCoordinator+ModulationMatrix.swift).
+    let modulationMatrix = ModulationMatrixCoordinator()
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
     private(set) var photoVisual: PhotoVisualHost?
     /// The photo layer's state while the Photo visual exists (`empty` otherwise).
@@ -381,11 +386,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         self.recovery = recovery
         let guide = GuidedFirstSceneCoordinator(defaults: defaults, suppressed: GuidedFirstScenePolicy.harnessSuppresses())
         self.guide = guide
+        let oscRoutable: [ParameterDescriptor] = OSCRoutesCoordinator.routable()   // OSC-003: the allowlist's targets
+        let oscReceiver: OSCReceiver = .system(store: OSCRoutesCoordinator.makeStore(routable: oscRoutable),
+                                               routes: OSCRoutesCoordinator.initialRoutes(routable: oscRoutable, defaults: defaults))
         #if DEBUG
-        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? .system())
+        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? oscReceiver)
         #else
-        osc = OSCReceiverCoordinator(settings: settings)
+        osc = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
         #endif
+        let oscCoordinator: OSCReceiverCoordinator = osc
+        osc.routes = OSCRoutesCoordinator(routable: oscRoutable, defaults: defaults) { [weak oscCoordinator] (routes: [OSCRoute]) -> Void in
+            oscCoordinator?.setRoutes(routes)
+        }
         // UIX-015-R2: OSC already on means iOS has already asked for local network access, and so
         // does a listener seen listening or denied.
         let explainers = PermissionExplainerCoordinator(defaults: defaults)
@@ -497,6 +509,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
+        presets.overrides = Self.makeOverrides(presets: presets, loader: presetLoader)   // PRE-016
         #if DEBUG || PROJECTM_AUTOMATION
         entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
@@ -524,7 +537,24 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     // type-check budget that Xcode 26 on CI enforces: the UI-test reset and the wiring that runs
     // once every stored property is set moved out unchanged, called at the same points.
 
+    /// PRE-016: the overrides store (beside the tags, so `-uitestResetNotice` removes it), handed to the
+    /// loader (applied on load) and to the coordinator (the Adjust Parameters sheet).
+    private static func makeOverrides(presets: PresetCoordinator, loader: RendererPresetLoader) -> PresetOverridesCoordinator {
+        let store = PresetOverrideStore(directory: PresetOverrideStore.defaultDirectory())
+        loader.overrides = store
+        return PresetOverridesCoordinator(store: store, presets: presets) { [weak loader] (preset: IndexedPreset) async throws -> Data in
+            guard let loader else { throw CocoaError(.featureUnsupported) }
+            return try await loader.originalData(for: preset)
+        }
+    }
+
     /// `-uitestResetNotice`: UI tests start from a clean library and settings.
+    /// OSC-003-R5: one live-value path for MIDI and OSC into the native host (then MOD-002 and ACC-012's clamp).
+    func pushLiveValues(_ source: ExternalLiveValues.Source, _ values: [ParameterID: Double]) {
+        externalLiveValues.update(source, values)
+        nativeVisual?.externalValues = externalLiveValues.merged
+    }
+
     private static func resetForUITests(_ defaults: UserDefaults) {
         defaults.removeObject(forKey: Self.noticeKey)
         defaults.removeObject(forKey: FavoritesStore.favoritesKey)
@@ -543,6 +573,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -598,14 +629,17 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectShow()   // SHOW-001
         presetLoader.prewarmScheduler = mediaPrewarm.scheduler   // PERF-005-R8: preset picks pass through unchanged
         connectMediaPrewarm()   // PERF-005
+        connectScenePacks(defaults: defaults)   // SCN-014
         connectMissingMedia(defaults: defaults)   // MED-013 (and its DEBUG seed)
         connectLayerInspector()   // CMP-015
         #if DEBUG
         UITestLayerInspectorFixture.seedIfRequested(self)   // CMP-015: LayerInspectorUITests (before the history starts)
         #endif
+        connectModulationMatrix()   // MOD-012 (and its DEBUG seed; before the history starts)
         connectSceneHistory()   // SCN-010: starts from the restored (or fresh) scene
         connectSceneSnapshots()   // SCN-008
-        midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.nativeVisual?.externalValues = values }   // MIDI-003-R8
+        midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
+        osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif
@@ -1048,6 +1082,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .oscilloscope: .oscilloscope(line: settings.oscilloscopeLine, windowMilliseconds: settings.oscilloscopeWindowMilliseconds)
         case .lissajous: .lissajous(mode: settings.lissajousMode, persistence: settings.lissajousPersistence)   // VIS-004
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
+        case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         default: .circular
         }
     }
@@ -1079,7 +1114,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
-            host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
+            host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
@@ -1088,6 +1123,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #endif
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             nativeVisual = host
+            modulationMatrix.refresh()   // MOD-012: the host's list is now the live one
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1558,6 +1594,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         if let visual { settings.visual = visual }
         resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
+        modulationMatrix.refresh()   // MOD-012
         sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
         statusEvents.post(StatusEventCatalog.lastSceneReopened())   // ACC-011 X25
     }
@@ -1567,6 +1604,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         guard recovery.offer == .pending else { return }
         recovery.markStartedFresh()
         sceneAutosave?.commitFreshScene()
+        modulationMatrix.refresh()   // MOD-012
     }
 
     // MARK: - Scene autosave (SCN-002)
@@ -1585,7 +1623,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     layerComposites: layers.composites,   // CMP-015
                     logo: logo.sceneLogo,   // MED-010
                     effects: liveEffectSettings,   // FX-020
-                    macros: macros.entries)   // MOD-010
+                    macros: macros.entries,   // MOD-010
+                    bindings: modulationMatrix.routes)   // MOD-012
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.
@@ -1624,7 +1663,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// "bound, manual 0.50, effective 0.73", or a note when no native visual exists.
     var glowModulationReadout: String { nativeVisual?.glowModulationReadout ?? "no native visual" }
 
-    func unbindGlowTest() { nativeVisual?.unbind(VisualParameterIDs.bloomIntensity) }
+    func unbindGlowTest() {
+        nativeVisual?.unbind(VisualParameterIDs.bloomIntensity)
+        modulationMatrix.refresh()   // MOD-012
+    }
     #endif
 
     /// The system Reduce Motion setting changed.
@@ -1854,6 +1896,8 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
     var userPresetData: ((String) async -> Data?)?
     /// PERF-005-R8: the app's prewarm scheduler; preset picks are forwarded through it at once (nil: direct).
     var prewarmScheduler: PrewarmScheduler?
+    /// PRE-016: the user's parameter overrides, applied to the bytes of a preset loaded for display.
+    var overrides: PresetOverrideStore?
     private var archive: PresetArchive?
 
     /// Included presets load from their bundled file; pack presets from PresetArchive.bin
@@ -1870,7 +1914,22 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
         } else if !preset.isIncluded {
             playable.data = try packArchive(resources).contents(of: preset.id)
         }
+        // PRE-016-R5: overrides apply to a copy of the bytes; the file itself is never written.
+        let adjustments: [String: Double] = overrides?.overrides(for: preset.id) ?? [:]
+        if !adjustments.isEmpty {
+            let original: Data = try playable.data ?? Data(contentsOf: fileURL)
+            playable.data = PresetTextOverlay.apply(adjustments, to: original)
+        }
         try await renderer.setPreset(playable)
+    }
+
+    /// PRE-016: a preset's own bytes (user copy, bundle file or archive), read-only.
+    func originalData(for preset: IndexedPreset) async throws -> Data {
+        if preset.source == PresetLibrary.userSource {
+            guard let data = await userPresetData?(preset.id) else { throw CocoaError(.fileNoSuchFile) }
+            return data
+        }
+        return try bundledData(for: preset)
     }
 
     /// A built-in preset's bytes, read-only, for "Duplicate to My Presets" (PRE-015-R2): Included

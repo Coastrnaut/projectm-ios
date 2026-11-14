@@ -43,7 +43,7 @@ simulator QA6 (iOS 27.2): `xcodebuild` RenderGoldens and ANGLERendering schemes 
 
 **Project Type**: Swift packages (test infrastructure) + a Python script
 
-**Performance Goals**: default soak 30 s simulated in < 20 s wall on the host (hard limit 60 s);
+**Performance Goals**: default soak 60 s simulated (30 s before the 2026-11-14 CI fix) in < 20 s wall on the host (hard limit 60 s);
 negative controls < 10 s each; projectM soak < 30 s on the simulator; verdict unit tests < 1 s
 
 **Constraints**: deterministic switch sequence and audio (seeded); no wall-clock assertions; no new

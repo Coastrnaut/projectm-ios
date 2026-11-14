@@ -51,7 +51,7 @@ final class SceneArchiveLogoTests: XCTestCase {
                                                          modified: ArchiveFixtures.date)) {
             (error: any Error) in XCTAssertEqual(error as? SceneArchiveError, .missingMedia(key: "logo"))
         }
-        XCTAssertEqual(SceneArchiveLimits.maximumFiles, 4)
+        XCTAssertEqual(SceneArchiveLimits.maximumFiles, 24)   // SCN-014: + 20 slides
         XCTAssertEqual(SceneArchiveFormat.allowedExtensions(for: .logo), ["png"])
     }
 }

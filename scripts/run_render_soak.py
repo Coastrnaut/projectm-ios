@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """QA-006: run the on-demand render soak (specs/155-qa-006-render-soak, research QA-006-D8).
 
-The normal test suites run a short soak (30 s simulated). This script runs a long one:
+The normal test suites run a short soak (60 s simulated). This script runs a long one:
 
     python3 scripts/run_render_soak.py --seconds 600                       # scene soak on the macOS host
     python3 scripts/run_render_soak.py --seconds 600 --simulator <udid>    # scene soak on a simulator

@@ -3,18 +3,21 @@
 //
 // `osc.receiver.testValue` lets a user check that their controller reaches the app. It is not in the
 // visual catalog and feeds nothing that renders, so OSC-001 cannot change the visualization or
-// projectM (Constitution VIII, ADR-0008 decision 5). OSC-003 replaces the fixed route with an
-// allowlisted route table to registry IDs.
+// projectM (Constitution VIII, ADR-0008 decision 5). OSC-003 adds the allowlisted route table to registry IDs
+// (`OSCParameterRoutes`); this route stays as its first entry.
 import ParameterGraph
 
 /// An OSC address bound to a parameter.
 public struct OSCRoute: Sendable, Hashable {
     public let address: String
     public let parameter: ParameterID
+    /// OSC-003-R4: `.normalized` maps 0…1 over the parameter's range; `.raw` (OSC-001) lets the store clamp.
+    public let scale: OSCValueScale
 
-    public init(address: String, parameter: ParameterID) {
+    public init(address: String, parameter: ParameterID, scale: OSCValueScale = .raw) {
         self.address = address
         self.parameter = parameter
+        self.scale = scale
     }
 }
 

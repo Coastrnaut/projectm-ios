@@ -40,6 +40,15 @@
 //   recording's `maxDurationSeconds` is that length, fixed at start; the recorder writes exactly the frames below
 //   it, the tap calls `beginFinish()` on the frame that crossed it (never waits) and reports the stop, which is
 //   `timedStop` with "Recording stopped after 10 seconds.". The indicator reads "0:07 / 0:10".
+// * REC-009 (specs/190-rec-009-status-overlay, contract C1, C2): while recording, `statusSummary` (dropped slots from
+//   the recorder's statistics, the free storage from the Record-time and 5 s REC-015 readings, the minutes until the
+//   guard stops) is refreshed by the 0.25 s check and after each storage reading; `RecordingWarningThrottle` sets
+//   `statusWarning` for rising warnings (at most once per kind per 30 s of recording), which the view posts as X9f
+//   or X9g. The readings stay in memory (REC-009-R7). The overlay is app UI and never reaches a file (REC-009-R6,
+//   research REC-009-D1): every source feeds the recorder from its own Metal output inside its frame's command
+//   buffer — the compositor's `encodeOutput` (the shown composite after the FX-019 flash guard and FX-003 grade) or
+//   the native spectra's drawable blit — which SwiftUI layers are never drawn into, also when the visual's view is
+//   on an external display (the same host feeds the recording). There is no option to include the overlay.
 // * DEBUG: `-uitestRecordingDirectory <name>` moves the file into `<tmp>/<name>/` instead of showing
 //   the mover, and `probe` reports what AVFoundation reads back ("video hvc1 1178x2556 frames=58
 //   duration=1.93 audio=0").
@@ -213,6 +222,13 @@ final class VideoRecordingCoordinator {
     private(set) var lastCountdownCancel: RecordingCountdownCancel?
     /// REC-008-R10: the current (or last) recording's length, fixed at its start; nil with Off.
     private(set) var recordingLength: RecordingTimedStopLength?
+    /// REC-009: what the status overlay shows (nil unless recording).
+    private(set) var statusSummary: RecordingStatusSummary?
+    /// REC-009-R4: the latest warning to announce; each new one has a new sequence number.
+    private(set) var statusWarning: RecordingStatusWarning?
+    @ObservationIgnored private var storageReading = StorageReading()
+    @ObservationIgnored private var warningThrottle = RecordingWarningThrottle()
+    @ObservationIgnored private var warningSequence = 0
     /// REC-007: writers this coordinator has created (tests: a cancelled countdown creates none).
     @ObservationIgnored private(set) var writerCreations = 0
     @ObservationIgnored private let countdownClock: any RecordingCountdownClock
@@ -460,10 +476,12 @@ final class VideoRecordingCoordinator {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             // REC-015-R1, R3: one free-storage reading before anything is written.
             var policy: RecordingStoragePolicy?
+            var startAvailable: Int64?
             if let geometry = RecordingGeometry(drawableWidth: Int(size.width), drawableHeight: Int(size.height),
                                                 maxLongSide: settings.maxLongSide) {
                 let rules = RecordingStoragePolicy(estimate: RecordingStorageEstimate(geometry: geometry, settings: settings))
-                guard rules.allowsStart(availableBytes: storageProbe.availableBytes(at: directory)) else {
+                startAvailable = storageProbe.availableBytes(at: directory)
+                guard rules.allowsStart(availableBytes: startAvailable) else {
                     refuse(.lowStorage)
                     return
                 }
@@ -474,6 +492,7 @@ final class VideoRecordingCoordinator {
                                                   drawableHeight: Int(size.height), settings: settings, fault: writerFault,
                                                   audio: audio.includesAudio && c.audioTap != nil)
             storagePolicy = policy
+            storageReading = StorageReading(availableBytes: startAvailable, fileBytes: nil)   // REC-009-R3
             let tap = VideoRecordingTap(recorder: recorder)
             if recorder.hasAudioTrack, let reader = c.audioTap {
                 tapArmer?(true)   // empty, then only this recording's permitted source
@@ -503,6 +522,8 @@ final class VideoRecordingCoordinator {
         recordingLength = length
         lastStopReason = nil
         probe = "recording"
+        warningThrottle = RecordingWarningThrottle()   // REC-009-R4: per recording
+        refreshStatus()
         startTicker()
         startStorageTicker()
     }
@@ -625,6 +646,8 @@ final class VideoRecordingCoordinator {
             (probe.availableBytes(at: folder), RecordingStorage.fileBytes(at: url))
         }.value
         guard state == .recording, self.recorder === recorder else { return }
+        storageReading = StorageReading(availableBytes: reading.0, fileBytes: reading.1)   // REC-009-R3
+        refreshStatus()
         if policy.shouldStop(availableBytes: reading.0, fileBytes: reading.1, recordedSeconds: recorder.recordedSeconds) {
             stop(.lowStorage)
         }
@@ -649,6 +672,7 @@ final class VideoRecordingCoordinator {
         }
         guard state == .recording else { return }
         elapsedSeconds = recorder?.recordedSeconds ?? 0
+        refreshStatus()   // REC-009-R2
         let c = context()
         if !c.outputLive {
             stop(.blackedOut)
@@ -691,6 +715,7 @@ final class VideoRecordingCoordinator {
         // REC-008-R7: the recorder's duration limit is the user's length when one is set.
         let reason: RecordingStopReason = requested == .durationReached && recordingLength != nil ? .timedStop : requested
         state = .finishing
+        statusSummary = nil   // REC-009: the overlay shows only while recording
         lastStopReason = reason
         ticker?.cancel()
         ticker = nil
@@ -735,6 +760,42 @@ final class VideoRecordingCoordinator {
     private func fail(_ failure: RecordingFailure) {
         notice = failure.notice
         probe = "failed: \(failure)"
+    }
+
+    // MARK: - Status overlay (REC-009, contract C1, C2)
+
+    /// The latest REC-015 readings (in memory only, REC-009-R7).
+    struct StorageReading {
+        var availableBytes: Int64?
+        var fileBytes: Int64?
+    }
+
+    /// Recomputes the overlay's summary and lets the throttle raise a warning (rising levels only).
+    private func refreshStatus() {
+        guard state == .recording, let recorder else {
+            statusSummary = nil
+            return
+        }
+        let seconds: Double = recorder.recordedSeconds
+        let summary = RecordingStatusSummary(statistics: recorder.statistics, policy: storagePolicy,
+                                             availableBytes: storageReading.availableBytes,
+                                             fileBytes: storageReading.fileBytes, recordedSeconds: seconds)
+        if summary != statusSummary { statusSummary = summary }
+        let droppedLevel: Int = summary.droppedWarning ? 1 : 0
+        if warningThrottle.submit(.droppedFrames, level: droppedLevel, at: seconds) {
+            raiseWarning(.droppedFrames, summary)
+            return   // one warning per refresh: the storage one follows 0.25 s later (each is posted)
+        }
+        let storageLevel: Int = summary.storageLevel?.rawValue ?? 0
+        if warningThrottle.submit(.storage, level: storageLevel, at: seconds) {
+            raiseWarning(.storage, summary)
+        }
+    }
+
+    private func raiseWarning(_ kind: RecordingWarningKind, _ summary: RecordingStatusSummary) {
+        warningSequence += 1
+        statusWarning = RecordingStatusWarning(kind: kind, storageLevel: summary.storageLevel,
+                                               secondsLeft: summary.secondsLeft, sequence: warningSequence)
     }
 
     // MARK: - Background (REC-003-R11, research REC-003-D8)
@@ -823,6 +884,14 @@ final class VideoRecordingCoordinator {
             if self?.notice == nil { self?.notice = "Recording saved." }
         }
     }
+}
+
+/// REC-009-R4: a recording warning to announce (rows X9f, X9g); `sequence` makes each one a change.
+struct RecordingStatusWarning: Equatable, Sendable {
+    let kind: RecordingWarningKind
+    let storageLevel: RecordingStorageLevel?
+    let secondsLeft: Int64?
+    let sequence: Int
 }
 
 #if DEBUG
