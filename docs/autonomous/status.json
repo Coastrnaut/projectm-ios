@@ -12,12 +12,14 @@
   },
   "P1": {
    "audited": 32,
-   "built": 5,
-   "implementing": 4,
-   "integrated": 110
+   "built": 6,
+   "implementing": 2,
+   "integrated": 110,
+   "unit_passed": 1
   },
   "P2": {
-   "audited": 70,
+   "audited": 69,
+   "implementing": 1,
    "integrated": 9
   },
   "P3": {
@@ -25,11 +27,12 @@
   }
  },
  "by_state": {
-  "audited": 113,
-  "built": 5,
-  "implementing": 4,
+  "audited": 112,
+  "built": 6,
+  "implementing": 3,
   "integrated": 203,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -428,13 +431,13 @@
   },
   "ANL-015": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-015",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ANL-016": {
    "attempts": 1,
@@ -1869,12 +1872,12 @@
   "OSC-008": {
    "attempts": 0,
    "branch": "feature/osc-008",
-   "branch_sha": null,
+   "branch_sha": "570bded4",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "OSC-009": {
    "attempts": 0,
@@ -2129,12 +2132,12 @@
   "PERF-008": {
    "attempts": 0,
    "branch": "feature/perf-008",
-   "branch_sha": null,
+   "branch_sha": "bb757054",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "PERF-009": {
    "attempts": 0,
@@ -3289,12 +3292,12 @@
   "VIS-007": {
    "attempts": 0,
    "branch": "feature/vis-007",
-   "branch_sha": "0116459b",
+   "branch_sha": "0116459b31c691b7db7999fece1f52bd68b534fd",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "VIS-008": {
    "attempts": 0,
@@ -4469,5 +4472,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T19:34:26Z"
+ "updated": "2026-11-14T19:38:46Z"
 }
