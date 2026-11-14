@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Clarified 2026-11-14 (ten answers recorded)
 
 **Input**: User description: "Implement ACC-007 (Haptic beat feedback) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Offer optional bounded haptic pulses on selected beat events."
