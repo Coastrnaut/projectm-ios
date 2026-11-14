@@ -1633,7 +1633,7 @@
    "branch": null,
    "branch_sha": "ea8c44c900aa177886041a524276c301915202a9",
    "error_category": null,
-   "integrated_sha": "2a986abd941bd7099bbd7d01e9089925a410e003",
+   "integrated_sha": "2a986abd",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -2483,7 +2483,7 @@
    "branch": null,
    "branch_sha": "bd661ef22a94f0a384f3b5a25e1e3547868a9b3e",
    "error_category": null,
-   "integrated_sha": "ffad6e195657432d4c9ed90b7917d5119f4a2d0a",
+   "integrated_sha": "2a986abd",
    "priority": "P1",
    "spec_dir": null,
    "state": "integrated"
@@ -3978,7 +3978,7 @@
   {
    "branch": null,
    "id": "MIDI-011",
-   "sha": "2a986abd941bd7099bbd7d01e9089925a410e003"
+   "sha": "2a986abd"
   },
   {
    "branch": "feature/mod-001",
@@ -4163,7 +4163,7 @@
   {
    "branch": null,
    "id": "QA-008",
-   "sha": "ffad6e195657432d4c9ed90b7917d5119f4a2d0a"
+   "sha": "2a986abd"
   },
   {
    "branch": "feature/rec-001",
@@ -4346,5 +4346,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:48:54Z"
+ "updated": "2026-11-14T15:52:12Z"
 }
