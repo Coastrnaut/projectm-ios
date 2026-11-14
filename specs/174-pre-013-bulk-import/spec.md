@@ -49,6 +49,16 @@ conservative, local-first option that delivers the roadmap row.
 - Q: Folder name as a tag (PRE-003)? → A: No. Tags stay user-curated; a folder name from another source is not a tag the user chose. The summary names the folder instead.
 - Q: Announcements? → A: On the shared announcer's library lane: one at the start ("Importing <name>: <N> files."), progress at most at each quarter (25, 50, 75 %), and the summary at the end (or "Import cancelled. …").
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Is a second copy of a file that was itself skipped (invalid, too large) a duplicate? → A: A duplicate is decided on bytes for every file that reached hashing (not unsupported, not too large, readable, not empty): a second copy of an invalid file is a duplicate of the first, so each content is judged and reported once. Too-large and unsupported files are never hashed.
+- Q: What if the app ends during an import (crash, force quit)? → A: Added presets are saved in batches of at most 50 files, each batch all or nothing (the FILE-003 staged commit). Batches saved before the end stay; the files of an unsaved batch are simply not in My Presets (no partial file, no record without its text). Importing the folder again adds them and reports the rest as duplicates.
+- Q: In which order are files handled and listed? → A: In path order (byte-wise, so it is the same on every device and locale); the per-file list keeps that order and can be filtered to the skipped and failed files.
+- Q: Is the summary kept after the sheet closes? → A: No. It is shown once (sheet and announcement) and kept in memory until the next import; nothing about the run is written to disk (no log of file names).
+- Q: What if an added preset's name equals an existing preset's name? → A: Both are kept, as with a single import (PRE-012): names are not unique; identical bytes are what make a duplicate.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Import a folder of presets in one go (Priority: P1) — MVP
@@ -103,6 +113,7 @@ counts add up to the files handled, and the rest are reported as not handled.
 - A symbolic link in the folder: listed as unsupported and never followed.
 - A file named `.milk` with upper-case extension (`A.MILK`): treated as `.milk`.
 - Another import or an export is running: the action is disabled.
+- The app ends during an import: the batches saved before stay; the unsaved batch leaves nothing behind.
 
 ## Requirements *(mandatory)*
 
@@ -120,6 +131,8 @@ counts add up to the files handled, and the rest are reported as not handled.
 - **PRE-013-R10**: Announcements MUST go through the shared announcer's library lane: the start, progress at most at 25, 50 and 75 %, and the summary (or the cancelled summary).
 - **PRE-013-R11**: Nothing from a file's name or location MUST be used as a storage path (PRE-012-R4); every store write stays behind the store's path guard.
 - **PRE-013-R12**: Imported presets MUST NOT be tagged automatically; thumbnails follow PRE-002 unchanged.
+- **PRE-013-R13**: Added presets MUST be saved in batches of at most 50 files, each all or nothing; files are handled and listed in byte-wise path order; a second copy of any hashed file (whatever the first copy's outcome) is a duplicate.
+- **PRE-013-R14**: Nothing about a run (file names, counts) MUST be written to disk; the report lives in memory until the next import.
 
 ### Key Entities
 
