@@ -50,6 +50,10 @@ human interaction); each answer is the conservative, local-first option, recomme
 - Q: What about a mono source? → A: A mono source (identical channels) draws the diagonal in X/Y and the vertical line in Mid/Side; AUD-009's channel selection other than Mix writes the selected signal into both channels, so the Lissajous then also shows a line. This is documented in the Settings footer (VIS-004-R10).
 - Q: Settings and scenes? → A: A new Visual choice "Lissajous" (stored value `lissajous`) with Plot (X/Y, Mid/Side; key `settings.lissajous.mode`, values `xy`/`midSide`, anything else → xy) and Persistence (Bool, absent → off). Glow is shared; Bars is hidden. Scene capture records it like the oscilloscope: no native layer (VIS-003-R12). Both keys join the three key lists (FR-065 settings, FILE-005 backup policy, the device privacy allow list) (VIS-004-R11, R12).
 
+- Q (clarify pass): Should the user choose the time span of the trace? → A: No: a fixed 1,024 frames (≈ 23 ms). Two settings keys only (plot, persistence) as the brief asks; the span already shows several cycles above about 90 Hz, and persistence lengthens the visible history. Rejected: VIS-003's 10/20/40 ms choice (a third key with little visible effect on a phase plot) (VIS-004-R4).
+- Q (clarify pass): What does changing the plot mode or persistence do while running? → A: It applies from the next frame without rebuilding the generator; a mode change clears the snapshots (ghosts in the old orientation would be misleading) and keeps the gain level; turning persistence off clears them. Pause/resume (the host's loop restart) resets both gain and snapshots (VIS-004-R8, Edge Cases).
+- Q (clarify pass): Does the stereo history cost anything when another visual is shown? → A: The tap keeps it whenever the native host runs (one extra copy of at most 16 KB and one atomic exchange per analysis read, on the analysis worker), the same rule as VIS-003's mono history; nothing runs on the audio callback and nothing allocates. Rejected: a switch to enable it only for the Lissajous (a cross-thread flag for a negligible saving) (VIS-004-R2, R17).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the stereo image of the music (Priority: P1)
@@ -120,6 +124,7 @@ level, the snapshot weights and the envelope's transition counts.
 - Output size 0: nothing drawn; tiny sizes give valid geometry.
 - Pause and resume: the gain and the snapshots start afresh (no ghost of the picture before the pause).
 - Persistence turned off while ghosts are visible: they disappear at the next frame.
+- Plot mode changed while running: the snapshots are cleared, the gain level kept; effective from the next frame.
 
 ## Requirements *(mandatory)*
 
@@ -132,7 +137,7 @@ level, the snapshot weights and the envelope's transition counts.
 - **VIS-004-R5**: Colors: segment k's color is palette color k of the segment count (oldest first); premultiplied, linear; background opaque black.
 - **VIS-004-R6**: Automatic gain: level = max(peak, held/decayed level, 0.01); a rise is followed at once; after 0.5 s without a rise it decays by 0.5^(Δt / 0.5 s), never below the current peak; Δt is the frame duration clamped to 0…0.1 s. Deterministic for a given sequence of inputs and durations.
 - **VIS-004-R7**: Silence (window peak < 0.0001) or non-finite-only input draws no trace.
-- **VIS-004-R8**: Persistence (optional, off by default): up to 8 snapshots of 128 points, taken every half-life/2 of frame time while the trace is drawn; drawn behind the trace oldest first with colors × 0.5^(age / half-life); removed when age ≥ 4 half-lives; cleared when persistence turns off or the loop restarts.
+- **VIS-004-R8**: Persistence (optional, off by default): up to 8 snapshots of 128 points, taken every half-life/2 of frame time while the trace is drawn; drawn behind the trace oldest first with colors × 0.5^(age / half-life); removed when age ≥ 4 half-lives; cleared when persistence turns off, the plot mode changes or the loop restarts.
 - **VIS-004-R9**: Persistence half-life 0.2 s, limited under ACC-012 like FX-009 Trails: ≤ intensity limit × 0.5 s when the profile caps intensity, ≤ 0.25 s with Reduce flashing effective, off when the cap is 0. The host applies the clamp whenever the profile, Reduce flashing or the style changes.
 - **VIS-004-R10**: A mono source draws a line (diagonal in X/Y, vertical in Mid/Side); the Settings footer says so.
 - **VIS-004-R11**: The app MUST offer "Lissajous" as a Visual choice (stored `lissajous` under `settings.visual`) with Plot (`settings.lissajous.mode`: `xy`/`midSide`, anything else → xy) and Persistence (`settings.lissajous.persistence`, Bool, absent → off); Glow shared, Bars hidden. Switching does not restart the audio source; lifecycle and fallback are VIS-001-R12 to R16's. Both keys are FR-065 user settings, in the FILE-005 backup policy and the device privacy allow list, and are reset by `-uitestResetNotice`.
