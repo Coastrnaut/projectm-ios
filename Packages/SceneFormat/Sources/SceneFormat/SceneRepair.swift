@@ -266,7 +266,7 @@ extension SceneRepairReport {
         case .invalidModulation: (.invalidMappings, .dropInvalidModulation)
         case .unknownLayerKind: (.unknownContent, .keepUnknownContent)
         case .unknownAssetType, .unusedAsset, .orphanedParameter: (.unknownContent, nil)
-        case .unsupportedBlendMode, .unsupportedFitMode, .valueClamped, .droppedField, .parameterClamped, .rejectedParameter, .migratedReference:
+        case .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .valueClamped, .droppedField, .parameterClamped, .rejectedParameter, .migratedReference:
             (.valuesAdjusted, nil)
         }
     }

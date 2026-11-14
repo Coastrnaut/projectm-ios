@@ -185,7 +185,7 @@ struct SceneDecoder {
 
     private mutating func composite(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneComposite {
         let o = try object(value, path)
-        dropUnknown(o, known: ["opacity", "blend", "transform", "fit"], path: path)
+        dropUnknown(o, known: ["opacity", "blend", "transform", "fit", "mask"], path: path)
         var opacity = 1.0
         if let v = o["opacity"] {
             let raw = try double(v, ScenePath.key(path, "opacity"))
@@ -201,7 +201,101 @@ struct SceneDecoder {
         let fit = try o["fit"].map { (f: SceneJSON) throws(SceneDecodeError) -> SceneFit in
             try self.fit(f, ScenePath.key(path, "fit"))
         }
-        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit)
+        let mask: SceneMask? = try o["mask"].flatMap { (m: SceneJSON) throws(SceneDecodeError) -> SceneMask? in
+            try self.mask(m, ScenePath.key(path, "mask"))
+        }
+        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit, mask: mask)
+    }
+
+    /// CMP-007's saved form (contracts/shape-masks.md in specs/104): `shape` required; an unknown shape's
+    /// object is kept verbatim; a known shape's other keys are dropped, its numbers clamped (one warning
+    /// each); a polygon with < 3 or > 32 points or zero area drops the whole mask (nil, `droppedField`).
+    private mutating func mask(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneMask? {
+        let o = try object(value, path)
+        let shape = try string(o, "shape", path)
+        guard LayerMaskShape.kindNames.contains(shape) else { return .unknown(shape: shape, object: o) }
+        var known: Set<String> = ["shape", "feather", "inverted", "transform"]
+        if shape == "rectangle" { known.insert("cornerRadius") }
+        if shape == "polygon" { known.insert("points") }
+        dropUnknown(o, known: known, path: path)
+        let rawFeather: Double = try o["feather"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in
+            try double(v, ScenePath.key(path, "feather"))
+        } ?? 0
+        var inverted = false
+        if let v = o["inverted"] {
+            guard let b = v.boolValue else {
+                throw .malformed(path: ScenePath.key(path, "inverted"), reason: "expected a boolean, found \(v.typeName)")
+            }
+            inverted = b
+        }
+        let placement: LayerMaskTransform = try maskTransform(o["transform"], ScenePath.key(path, "transform"))
+        let liveShape: LayerMaskShape
+        switch shape {
+        case "ellipse":
+            liveShape = .ellipse
+        case "rectangle":
+            let raw: Double = try o["cornerRadius"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in
+                try double(v, ScenePath.key(path, "cornerRadius"))
+            } ?? 0
+            liveShape = .rectangle(cornerRadius: raw)
+            let r = LayerMask.cornerRadiusRange
+            let stored: Double = min(max(raw, r.lowerBound), r.upperBound)
+            if raw != stored { clamped(path + ".cornerRadius", raw, "\(r.lowerBound)…\(r.upperBound)", stored) }
+        default:
+            guard let pointsValue = o["points"] else { throw .malformed(path: ScenePath.key(path, "points"), reason: "a polygon needs points") }
+            let items = try array(pointsValue, ScenePath.key(path, "points"))
+            // Counted before any point is decoded (hostile input; CMP-007-R8).
+            guard items.count >= 3, items.count <= LayerMask.maximumPolygonPoints else {
+                warnings.append(SceneIssue(.droppedField, path: path,
+                                           "\(path) has a polygon of \(items.count) points (3…\(LayerMask.maximumPolygonPoints) are drawn); the mask was dropped."))
+                return nil
+            }
+            var points: [LayerPoint] = []
+            let r = LayerMask.pointRange
+            for (i, item) in items.enumerated() {
+                let itemPath = ScenePath.index(ScenePath.key(path, "points"), i)
+                let raw = try point(item, default: .zero, itemPath)
+                let x: Double = min(max(raw.x, r.lowerBound), r.upperBound)
+                let y: Double = min(max(raw.y, r.lowerBound), r.upperBound)
+                if raw.x != x { clamped(itemPath + ".x", raw.x, "\(r.lowerBound)…\(r.upperBound)", x) }
+                if raw.y != y { clamped(itemPath + ".y", raw.y, "\(r.lowerBound)…\(r.upperBound)", y) }
+                points.append(raw)
+            }
+            liveShape = .polygon(points)
+        }
+        let f = LayerMask.featherRange
+        let feather: Double = min(max(rawFeather, f.lowerBound), f.upperBound)
+        if rawFeather != feather { clamped(path + ".feather", rawFeather, "\(f.lowerBound)…\(f.upperBound)", feather) }
+        do {
+            return .known(try LayerMask(shape: liveShape, transform: placement, feather: rawFeather, inverted: inverted))
+        } catch {
+            warnings.append(SceneIssue(.droppedField, path: path, "\(path) has an unusable polygon (\(error)); the mask was dropped."))
+            return nil
+        }
+    }
+
+    /// CMP-007's mask transform: `center`, `scale`, `rotation`, each optional; clamped with warnings.
+    private mutating func maskTransform(_ value: SceneJSON?, _ path: String) throws(SceneDecodeError) -> LayerMaskTransform {
+        guard let value else { return .identity }
+        let o = try object(value, path)
+        dropUnknown(o, known: ["center", "scale", "rotation"], path: path)
+        let center = try point(o["center"], default: LayerPoint(x: 0.5, y: 0.5), ScenePath.key(path, "center"))
+        let scale = try point(o["scale"], default: LayerPoint(x: 1, y: 1), ScenePath.key(path, "scale"))
+        let rotation: Double = try o["rotation"].map { (r: SceneJSON) throws(SceneDecodeError) -> Double in
+            try double(r, ScenePath.key(path, "rotation"))
+        } ?? 0
+        let t = LayerMaskTransform(center: center, scale: scale, rotation: rotation)
+        func range(_ r: ClosedRange<Double>) -> String { "\(r.lowerBound)…\(r.upperBound)" }
+        let checks: [(String, Double, Double, ClosedRange<Double>)] = [
+            ("center.x", center.x, t.center.x, LayerMaskTransform.centerRange),
+            ("center.y", center.y, t.center.y, LayerMaskTransform.centerRange),
+            ("scale.x", scale.x, t.scale.x, LayerMaskTransform.scaleRange),
+            ("scale.y", scale.y, t.scale.y, LayerMaskTransform.scaleRange),
+        ]
+        for (name, raw, stored, r) in checks where raw != stored {
+            clamped(path + "." + name, raw, range(r), stored)
+        }
+        return t
     }
 
     /// CMP-006's saved form: `mode` required (any string kept), `anchor` optional (centre), its

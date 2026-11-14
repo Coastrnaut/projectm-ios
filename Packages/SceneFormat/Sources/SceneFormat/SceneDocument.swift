@@ -177,7 +177,33 @@ public struct SceneFit: Sendable, Hashable {
     public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.fit(self)) }
 }
 
-/// Opacity, blend mode, transform and fit (CMP-003, CMP-004, CMP-005, CMP-006).
+/// CMP-007: a layer's saved shape mask: a live mask (`ellipse`, `rectangle`, `polygon`), or the whole
+/// object of a shape kind this version does not draw, kept verbatim (drawn unmasked and warned about,
+/// `unsupportedMaskShape`). Equality and hashing go through the saved form.
+public enum SceneMask: Sendable, Hashable {
+    case known(LayerMask)
+    case unknown(shape: String, object: [String: SceneJSON])
+
+    /// The saved `shape` name.
+    public var shape: String {
+        switch self {
+        case let .known(mask): mask.shape.kindName
+        case let .unknown(shape, _): shape
+        }
+    }
+
+    /// The live mask, nil for a shape kind this version does not draw.
+    public var layerMask: LayerMask? {
+        if case let .known(mask) = self { return mask }
+        return nil
+    }
+
+    public static func == (lhs: SceneMask, rhs: SceneMask) -> Bool { SceneEncoder.mask(lhs) == SceneEncoder.mask(rhs) }
+
+    public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.mask(self)) }
+}
+
+/// Opacity, blend mode, transform, fit and mask (CMP-003, CMP-004, CMP-005, CMP-006, CMP-007).
 public struct SceneComposite: Sendable, Hashable {
     /// 0…1.
     public var opacity: Double
@@ -187,15 +213,18 @@ public struct SceneComposite: Sendable, Hashable {
     public var transform: LayerTransform
     /// CMP-006: nil when the layer has no fit set (the field is not written; the layer draws its default).
     public var fit: SceneFit?
+    /// CMP-007: nil when the layer has no mask (the field is not written).
+    public var mask: SceneMask?
 
     public static let normalBlendMode = "normal"
 
     public init(opacity: Double = 1, blendMode: String = SceneComposite.normalBlendMode, transform: LayerTransform = .identity,
-                fit: SceneFit? = nil) {
+                fit: SceneFit? = nil, mask: SceneMask? = nil) {
         self.opacity = opacity
         self.blendMode = blendMode
         self.transform = transform
         self.fit = fit
+        self.mask = mask
     }
 
     public static func == (lhs: SceneComposite, rhs: SceneComposite) -> Bool {
