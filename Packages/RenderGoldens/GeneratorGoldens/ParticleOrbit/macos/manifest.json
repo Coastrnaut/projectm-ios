@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "particle-orbit-128x96-f0.png",
+      "fileSHA256" : "b00c48df134652d91bd632f8d424649a56050e1b55dfe959f4ce1b90652117d0",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "e21fdfea207635e9dd874b540689ca3fcb26553f186bf81a1ee67d4c3e0a6cad",
+      "scene" : "particle-orbit",
+      "width" : 128
+    },
+    {
+      "file" : "particle-orbit-256x192-f0.png",
+      "fileSHA256" : "e1291b5cbd8fa4a6f7877b70387b460b1c9569b9b9c04f64e7f645015cb7dc69",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "a462abcb839c4b678b688e0e45fb8abd1f4e8bc44918844a21ee2d1f2212f5bc",
+      "scene" : "particle-orbit",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}
