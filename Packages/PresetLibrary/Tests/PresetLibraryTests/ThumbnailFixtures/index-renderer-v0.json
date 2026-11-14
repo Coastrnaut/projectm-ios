@@ -1,0 +1,22 @@
+{
+  "entries": {
+    "5a66c49eab9e264f32fd7c336a86f367": {
+      "contentHash": "hashA",
+      "file": "5a66c49eab9e264f32fd7c336a86f367.png",
+      "height": 72,
+      "presetID": "fixture/A.milk",
+      "rendererVersion": 0,
+      "width": 128
+    },
+    "6a31bb24575a9c35aad9dea0d8c69b52": {
+      "contentHash": "hashB",
+      "file": "6a31bb24575a9c35aad9dea0d8c69b52.png",
+      "height": 72,
+      "presetID": "fixture/B.milk",
+      "rendererVersion": 0,
+      "width": 128
+    }
+  },
+  "rendererVersion": 0,
+  "schemaVersion": 1
+}

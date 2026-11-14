@@ -13,6 +13,6 @@ let package = Package(
     targets: [
         .target(name: "PresetLibrary", dependencies: ["LocalPortability"]),
         .testTarget(name: "PresetLibraryTests", dependencies: ["PresetLibrary", "LocalPortability"],
-                    resources: [.copy("Golden"), .copy("FlashFixtures")]),   // PRE-007 format fixtures; ACC-002 flash fixtures
+                    resources: [.copy("Golden"), .copy("FlashFixtures"), .copy("ThumbnailFixtures")]),   // PRE-007 format fixtures; ACC-002 flash fixtures; PRE-001 index fixtures
     ]
 )

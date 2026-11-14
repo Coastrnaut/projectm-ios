@@ -101,6 +101,22 @@ final class ExpressionEvaluationTests: XCTestCase {
         XCTAssertEqual(compiled.evaluate(.silent), 0)
     }
 
+    /// ANL-008-T07: `audio.midTransient` compiles to opcode 17 and reads the frame's mid transient value.
+    func testMidTransientSourceInAFormula() throws {
+        let compiled = try CompiledExpression(source: "audio.midTransient * 2 + audio.loudness")
+        XCTAssertEqual(compiled.audioSources, [.midTransient, .loudness])
+        XCTAssertTrue(compiled.instructions.contains { (instruction: ExpressionInstruction) -> Bool in
+            instruction.opcode == .midTransient && instruction.opcode.rawValue == 17
+        })
+        let bands: [Float] = [0.5]
+        let value = bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Double in
+            let frame = AudioFeatureFrame(bands: buffer, loudness: 0.25, midTransient: 0.375)
+            return compiled.evaluate(ExpressionInputs(frame: frame, timeSeconds: 0))
+        }
+        XCTAssertEqual(value, 1)
+        XCTAssertEqual(compiled.evaluate(.silent), 0)
+    }
+
     func testSilentInputsReadZero() throws {
         let compiled = try CompiledExpression(source: "audio.band.0 + audio.bandMean + audio.onset + audio.beatConfidence + time")
         XCTAssertEqual(compiled.evaluate(.silent), 0)

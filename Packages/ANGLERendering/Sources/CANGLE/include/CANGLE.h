@@ -145,3 +145,7 @@ unsigned int PMANGLECreateBGRAFramebuffer(int width, int height, unsigned int *_
 
 /// Deletes a framebuffer and texture from PMANGLECreateBGRAFramebuffer.
 void PMANGLEDeleteFramebuffer(unsigned int framebuffer, unsigned int texture);
+
+/// PRE-001: glBindFramebuffer(GL_FRAMEBUFFER, framebuffer) through eglGetProcAddress, so the next
+/// PMANGLEReadPixelsRGBA reads that framebuffer (thumbnail read-back).
+void PMANGLEBindFramebuffer(unsigned int framebuffer);

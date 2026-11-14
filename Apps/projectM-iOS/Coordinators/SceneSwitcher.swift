@@ -3,6 +3,8 @@
 //
 // * The show's cues are the only named local scenes (spec baseline), so an entry is a cue: its
 //   number, label, the scene's name when it differs, and whether it is active or its scene missing.
+//   SCN-004: the list stays flat in show order; each entry carries its scene's folder path, shown,
+//   read by VoiceOver and matched by search (after prefix and word-start matches).
 // * `SceneSwitcherFilter`: the trimmed query folded with case, diacritic and width insensitivity
 //   (fixed `nil` locale, the same on every device language); an entry matches when its label or
 //   scene name contains it. Prefix and word-start matches come first; show order within each group.
@@ -25,6 +27,8 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
     let sceneName: String?
     let isActive: Bool
     let isMissing: Bool
+    /// SCN-004: the scene's folder path ("Set A / Encore"); nil at the top level.
+    var folderPath: String? = nil
 
     var id: UUID { cueID }
 
@@ -37,8 +41,9 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
             let missing: Bool = unreadable.contains(cue.sceneID)
             var name: String? = missing ? nil : sceneNames[cue.sceneID]
             if name == cue.label { name = nil }
+            let path: String? = list.folders.pathText(of: list.folderID(ofScene: cue.sceneID))
             rows.append(SceneSwitcherEntry(cueID: cue.id, number: index + 1, label: cue.label, sceneName: name,
-                                           isActive: cue.id == activeID, isMissing: missing))
+                                           isActive: cue.id == activeID, isMissing: missing, folderPath: path))
         }
         return rows
     }
@@ -49,6 +54,7 @@ struct SceneSwitcherEntry: Equatable, Sendable, Identifiable {
         if let sceneName { parts.append("scene \(sceneName)") }
         if isActive { parts.append("current") }
         if isMissing { parts.append("scene missing") }
+        if let folderPath { parts.append("folder \(folderPath)") }
         return parts.joined(separator: ", ")
     }
 }
@@ -76,7 +82,8 @@ enum SceneSwitcherFilter {
             let name: String? = entry.sceneName.map(fold)
             let labelMatch: Bool = label.contains(needle)
             let nameMatch: Bool = name?.contains(needle) ?? false
-            guard labelMatch || nameMatch else { continue }
+            let folderMatch: Bool = entry.folderPath.map { (p: String) -> Bool in fold(p).contains(needle) } ?? false
+            guard labelMatch || nameMatch || folderMatch else { continue }
             let early: Bool = startsWord(label, needle) || (name.map { (n: String) -> Bool in startsWord(n, needle) } ?? false)
             if early { first.append(entry) } else { rest.append(entry) }
         }

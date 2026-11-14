@@ -49,10 +49,10 @@ final class GoldenRenderSuiteTests: XCTestCase {
                         FileManager.default.fileExists(atPath: s.folder.appendingPathComponent(entry.file).path)
                     } ?? false
                     if present, entry.pixelSHA256 == actual.pixelSHA256 {
-                        comparison = GoldenComparison.compare(expected: actual, actual: actual)
+                        comparison = GoldenComparison.compare(expected: actual, actual: actual, tolerance: .golden)
                     } else if let golden = store?.image(entry) {
                         expected = golden
-                        comparison = GoldenComparison.compare(expected: golden, actual: actual)
+                        comparison = GoldenComparison.compare(expected: golden, actual: actual, tolerance: .golden)
                     }
                 }
                 let verdict = GoldenDecision.decide(capture: capture, platform: platform, policy: policy, comparison: comparison,

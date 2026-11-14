@@ -143,6 +143,11 @@ extension SceneDocument {
             return finish(.rejected, reason, issue: SceneIssue(.duplicateBindingTarget, path: path + ".target",
                                                                "Binding \(i) targets \"\(targetID)\", already bound by binding \(j)."))
         }
+        if binding.hasUnreadableCurve {   // MOD-004 contract K8: kept verbatim, never guessed
+            return finish(.rejected, "the curve cannot be read by this version",
+                          issue: SceneIssue(.unsupportedCurve, path: path + ".curve",
+                                            "Binding \(i) uses a curve this version cannot read; it is kept but not applied."))
+        }
         if let text = binding.expression {
             do {
                 _ = try CompiledExpression(source: text)

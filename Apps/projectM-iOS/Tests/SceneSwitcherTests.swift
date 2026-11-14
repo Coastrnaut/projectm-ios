@@ -51,6 +51,23 @@ final class SceneSwitcherTests: XCTestCase {
         XCTAssertEqual(rows[2].accessibilityValue, "Cue 3, scene missing")
     }
 
+    // MARK: - Folder path (SCN-004-R11)
+
+    func testEntriesCarryTheFolderPathAndSearchMatchesItAfterNameMatches() throws {
+        var show = Self.list(["Opening", "Build", "Set piece"])
+        let set = try show.createFolder(named: "Set A", in: nil)
+        let encore = try show.createFolder(named: "Encore", in: set.id)
+        try show.moveScene(Self.sceneID(2), to: encore.id)
+        var names: [String: String] = [:]
+        for n in 1...3 { names[Self.sceneID(n)] = ["Opening", "Build", "Set piece"][n - 1] }
+        let rows = SceneSwitcherEntry.entries(list: show, sceneNames: names, unreadable: [])
+        XCTAssertEqual(rows.map(\.folderPath), [nil, "Set A / Encore", nil], "flat, in show order")
+        XCTAssertEqual(rows[1].accessibilityValue, "Cue 2, folder Set A / Encore")
+        XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "set")), ["Set piece", "Build"],
+                       "a label prefix match first, then the folder match")
+        XCTAssertEqual(labels(SceneSwitcherFilter.results(rows, query: "encore")), ["Build"])
+    }
+
     // MARK: - Filter (UIX-002-R3, S4)
 
     func testCaseInsensitiveContains() {

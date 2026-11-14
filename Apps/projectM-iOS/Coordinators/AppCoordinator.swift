@@ -506,6 +506,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         routes.isActive = { [weak self] in self?.appIsActive ?? true }
         self.memoryPressure.register(presetLoader)   // PERF-006-R11: the archive's decompressed chunk
+        presets.thumbnails = Self.makeThumbnails(loader: presetLoader, renderer: { [weak self] in self?.renderer })   // PRE-001
         self.memoryPressure.register(self)           // PERF-006-R12: an idle native spectrum
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains(UITestMemoryPanel.argument) {

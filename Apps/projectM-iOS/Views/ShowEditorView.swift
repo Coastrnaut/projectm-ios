@@ -42,6 +42,17 @@ struct ShowEditorView: View {
             } footer: {
                 Text("Adds a cue that keeps the visual and its settings as they are now. Next and Previous in the controls, or the arrow keys, step through the cues.")
             }
+            // SCN-004: the show's scenes organized in logical folders.
+            if !show.list.cues.isEmpty {
+                Section {
+                    NavigationLink {
+                        SceneFoldersView(show: show, folderID: nil)
+                    } label: {
+                        Label("Scene Folders", systemImage: "folder")
+                    }
+                    .accessibilityIdentifier("showSceneFoldersLink")
+                }
+            }
             Section(show.list.cues.isEmpty ? "No cues" : "Cues") {
                 ForEach(Array(show.list.cues.enumerated()), id: \.element.id) { (index: Int, cue: ShowCue) in
                     row(cue, number: index + 1)

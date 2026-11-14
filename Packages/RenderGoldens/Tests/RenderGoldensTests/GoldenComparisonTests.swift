@@ -1,5 +1,6 @@
 // QA-002-T11: the fixed QA-002 rule at its boundaries and the diff image's colors (QA-002-R7, R8;
-// research D7, D8). Plain Swift: runs on Linux.
+// research D7, D8). Plain Swift: runs on Linux. QA-003: these tests pin `.qa002`, QA-002's colour-only
+// rule, which stays available as a preset; the QA-003 rules are in ImageDiff*Tests.
 import GoldenImages
 import XCTest
 
@@ -29,12 +30,12 @@ final class GoldenComparisonTests: XCTestCase {
 
     func testIdenticalAndWithinTolerance() {
         let base = image()
-        let same = GoldenComparison.compare(expected: base, actual: base)
+        let same = GoldenComparison.compare(expected: base, actual: base, tolerance: .qa002)
         XCTAssertEqual(same.outcome, .identical)
         XCTAssertTrue(same.passed)
         // Rounding noise everywhere (±2) passes.
         let noisy = changed(base, count: base.pixelCount, delta: 2)
-        let r = GoldenComparison.compare(expected: base, actual: noisy)
+        let r = GoldenComparison.compare(expected: base, actual: noisy, tolerance: .qa002)
         XCTAssertEqual(r.outcome, .withinTolerance)
         XCTAssertEqual(r.changedPixels, base.pixelCount)
         XCTAssertEqual(r.exceedingPixels, 0)
@@ -43,8 +44,8 @@ final class GoldenComparisonTests: XCTestCase {
 
     func testBoundaryCounts() {
         let base = image()
-        XCTAssertEqual(GoldenComparison.compare(expected: base, actual: changed(base, count: 12, delta: 3)).outcome, .withinTolerance)
-        let over = GoldenComparison.compare(expected: base, actual: changed(base, count: 13, delta: 3))
+        XCTAssertEqual(GoldenComparison.compare(expected: base, actual: changed(base, count: 12, delta: 3), tolerance: .qa002).outcome, .withinTolerance)
+        let over = GoldenComparison.compare(expected: base, actual: changed(base, count: 13, delta: 3), tolerance: .qa002)
         XCTAssertEqual(over.outcome, .exceedsTolerance)
         XCTAssertFalse(over.passed)
         XCTAssertEqual(over.exceedingPixels, 13)
@@ -56,14 +57,14 @@ final class GoldenComparisonTests: XCTestCase {
         var rgba = base.rgba
         for p in 0..<20 { rgba[p * 4 + 3] = 0 }
         let transparent = GoldenImage(width: base.width, height: base.height, rgba: rgba)!
-        let ab = GoldenComparison.compare(expected: base, actual: transparent)
-        let ba = GoldenComparison.compare(expected: transparent, actual: base)
+        let ab = GoldenComparison.compare(expected: base, actual: transparent, tolerance: .qa002)
+        let ba = GoldenComparison.compare(expected: transparent, actual: base, tolerance: .qa002)
         XCTAssertEqual(ab.outcome, .exceedsTolerance)
         XCTAssertEqual(ab, ba)
     }
 
     func testSizeMismatchFails() {
-        let r = GoldenComparison.compare(expected: image(128, 96), actual: image(256, 192))
+        let r = GoldenComparison.compare(expected: image(128, 96), actual: image(256, 192), tolerance: .qa002)
         XCTAssertEqual(r.outcome, .sizeMismatch)
         XCTAssertFalse(r.passed)
     }
@@ -74,7 +75,7 @@ final class GoldenComparisonTests: XCTestCase {
         rgba[4] = 202     // pixel 1: within (2)
         rgba[8] = 100     // pixel 2: above (100)
         let actual = GoldenImage(width: 4, height: 1, rgba: rgba)!
-        let diff = GoldenDiffImage.make(expected: base, actual: actual)
+        let diff = GoldenDiffImage.make(expected: base, actual: actual, tolerance: .qa002)
         let unchanged = diff.pixel(x: 0, y: 0)
         XCTAssertEqual(unchanged.r, unchanged.g)
         XCTAssertLessThan(Int(unchanged.r), 80, "unchanged pixels are dimmed grey")
@@ -85,7 +86,7 @@ final class GoldenComparisonTests: XCTestCase {
         XCTAssertEqual(above.g, 0)
         XCTAssertEqual(diff.pixel(x: 3, y: 0).a, 255, "opaque")
         // Different sizes: the larger size, magenta outside the overlap.
-        let wide = GoldenDiffImage.make(expected: image(2, 1), actual: image(3, 2))
+        let wide = GoldenDiffImage.make(expected: image(2, 1), actual: image(3, 2), tolerance: .qa002)
         XCTAssertEqual(wide.width, 3)
         XCTAssertEqual(wide.height, 2)
         XCTAssertEqual(wide.pixel(x: 2, y: 1).r, GoldenDiffImage.outsideColor.0)
