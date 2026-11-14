@@ -36,6 +36,7 @@ final class LibraryBackupAppTests: XCTestCase {
                ParameterShelf.pinsKey,   // UIX-004-R10
                RecordingCountdownSetting.key,   // REC-007-R8
                RecordingTimedStopSetting.key,   // REC-008-R9
+               SplitEditorSetting.key,   // UIX-007-R7 (excluded: this device's screen)
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey]   // OSC-003-R9
             + RecentPresetsStore.allKeys)   // PRE-006-R7
         let included = Set(LibrarySettingsPolicy.includedKeys)
@@ -45,7 +46,8 @@ final class LibraryBackupAppTests: XCTestCase {
         XCTAssertEqual(appKeys.intersection(excluded),
                        [AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, RecordingAudioSetting.includeMicrophoneKey,
                         VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey,   // MED-004, REC-004-R3
-                        RecentPresetsStore.historyKey])   // PRE-006-R7: history never travels
+                        RecentPresetsStore.historyKey,   // PRE-006-R7: history never travels
+                        SplitEditorSetting.key])   // UIX-007-R7
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

@@ -48,12 +48,14 @@ struct VisualizerView: View {
     @Bindable var coordinator: AppCoordinator
     /// UIX-005-R4: the edges the performance pad uses; the status stack keeps clear of them.
     @State private var performanceInsets = EdgeInsets()
+    /// UIX-007-R1: Settings opens beside the output (iPad, regular width) instead of as a sheet.
+    @State private var splitEditorAvailable = false
 
     // Split into separately type-checked parts (2026-11-14): as one expression this body made
     // Xcode 26 on CI give up ("unable to type-check this expression in reasonable time", run
     // 43557257624). Order of modifiers is unchanged: layers, system overlays, presentations, changes.
     var body: some View {
-        withChangeHandlers(withPresentations(layers))
+        withChangeHandlers(withPresentations(splitLayers))
     }
 
     // Split into @ViewBuilder parts with explicit types (2026-11-14): as one ZStack this getter took
@@ -62,8 +64,7 @@ struct VisualizerView: View {
     private var layers: some View {
         ZStack {
             Color.black.ignoresSafeArea()
-            visual
-                .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
+            scaledVisual
             // PERF-014-R10: a visual that can show nothing fades to the placeholder (0.5 s, linear).
             RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
             externalDisplayLayer
@@ -78,6 +79,29 @@ struct VisualizerView: View {
         .statusBarHidden(coordinator.hidesSystemOverlays)
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
     }
+
+    /// UIX-007-R3: the visual at full size, scaled into the output pane while editing (own property:
+    /// keeps `layers` quick to type-check).
+    private var scaledVisual: some View {
+        visual
+            .splitOutputScaled()
+            .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
+    }
+
+    /// UIX-007: the layers with, while Settings is open on iPad, the editor beside the output.
+    /// (Named functions, not closures: keeps this getter under the type-check budget.)
+    private var splitLayers: some View {
+        let settingsOpen: Bool = coordinator.showSettings
+        let setting: SplitEditorSetting = coordinator.splitEditor
+        let motion: MotionPolicy = coordinator.motion
+        return SplitEditorHost(content: layers, isOpen: settingsOpen, setting: setting, motion: motion,
+                               onAvailabilityChange: splitEditorAvailabilityChanged, close: closeSplitEditor,
+                               editor: splitEditorContent)
+    }
+
+    private func splitEditorAvailabilityChanged(_ available: Bool) { splitEditorAvailable = available }
+    private func closeSplitEditor() { coordinator.showSettings = false }
+    private func splitEditorContent() -> some View { settingsView }
 
     @ViewBuilder private var externalDisplayLayer: some View {
         if coordinator.externalDisplay.showsVisualExternally {
@@ -407,45 +431,50 @@ struct VisualizerView: View {
                               onDone: { coordinator.closeQueue() })
             }
         }
-        .sheet(isPresented: $coordinator.showSettings) {
-            SettingsView(settings: coordinator.settings, osc: coordinator.osc,
-                         reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
-                         nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
-                         glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
-                         slideshow: coordinator.slideshow,   // MED-006
-                         logo: coordinator.logo,   // MED-010
-                         videos: coordinator.videos, texts: coordinator.texts,
-                         show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
-                         libraryBackup: coordinator.libraryBackup,   // FILE-005
-                         cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
-                         missingMedia: coordinator.missingMedia,   // MED-013
-                         openGuide: { coordinator.openGuidedFirstScene() },
-                         history: coordinator.sceneHistory,      // UIX-001, SCN-010
-                         layerInspector: coordinator,            // CMP-015
-                         inputTrim: coordinator.inputTrim,       // AUD-008
-                         channelSelection: coordinator.channelSelection,   // AUD-009
-                         playbackBalance: coordinator.playbackBalance,   // AUD-010
-                         playbackBalanceAvailable: coordinator.playbackBalanceAvailable,
-                         noiseGate: coordinator.noiseGate,   // AUD-011
-                         latencyOffset: coordinator.latencyOffset,   // AUD-013
-                         colorGrade: coordinator.colorGrade,   // FX-003
-                         motionFeedback: coordinator.motionFeedback,   // FX-009
-                         midi: coordinator.midi,   // MIDI-001
-                         recordingAudio: coordinator.recordingAudio,   // REC-004
-                         recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
-                         recordingQuality: coordinator.recordingQuality,   // REC-005
-                         recordingCountdown: coordinator.recordingCountdown,   // REC-007
-                         externalOutput: coordinator.externalOutput,   // OUT-004
-                         recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
-                         explainers: coordinator.explainers,   // UIX-015
-                         cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
-                         recentPresets: coordinator.presets.recent,   // PRE-006
-                         announcer: coordinator.announcer)   // ACC-005-R7
-                .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
-                .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
-        }
+        // UIX-007-R1: a sheet unless the split editor shows Settings beside the output.
+        .sheet(isPresented: Binding(get: { coordinator.showSettings && !splitEditorAvailable },
+                                    set: { (shown: Bool) -> Void in coordinator.showSettings = shown })) { settingsView }
         // SCN-012: the repair report before a cue's scene or Reopen opens (over Settings while it is shown).
         .sceneRepairSheet(coordinator.sceneRepair, active: !coordinator.showSettings)
+    }
+
+    /// Settings with its environment (the sheet and UIX-007's editor pane show the same view).
+    private var settingsView: some View {
+        SettingsView(settings: coordinator.settings, osc: coordinator.osc,
+                     reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
+                     nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
+                     glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
+                     slideshow: coordinator.slideshow,   // MED-006
+                     logo: coordinator.logo,   // MED-010
+                     videos: coordinator.videos, texts: coordinator.texts,
+                     show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
+                     libraryBackup: coordinator.libraryBackup,   // FILE-005
+                     cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
+                     missingMedia: coordinator.missingMedia,   // MED-013
+                     openGuide: { coordinator.openGuidedFirstScene() },
+                     history: coordinator.sceneHistory,      // UIX-001, SCN-010
+                     layerInspector: coordinator,            // CMP-015
+                     inputTrim: coordinator.inputTrim,       // AUD-008
+                     channelSelection: coordinator.channelSelection,   // AUD-009
+                     playbackBalance: coordinator.playbackBalance,   // AUD-010
+                     playbackBalanceAvailable: coordinator.playbackBalanceAvailable,
+                     noiseGate: coordinator.noiseGate,   // AUD-011
+                     latencyOffset: coordinator.latencyOffset,   // AUD-013
+                     colorGrade: coordinator.colorGrade,   // FX-003
+                     motionFeedback: coordinator.motionFeedback,   // FX-009
+                     midi: coordinator.midi,   // MIDI-001
+                     recordingAudio: coordinator.recordingAudio,   // REC-004
+                     recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
+                     recordingQuality: coordinator.recordingQuality,   // REC-005
+                     recordingCountdown: coordinator.recordingCountdown,   // REC-007
+                     externalOutput: coordinator.externalOutput,   // OUT-004
+                     recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
+                     explainers: coordinator.explainers,   // UIX-015
+                     cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
+                     recentPresets: coordinator.presets.recent,   // PRE-006
+                     announcer: coordinator.announcer)   // ACC-005-R7
+            .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
+            .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
     }
 
     /// Confirmation dialogs and the Files exporter and mover.

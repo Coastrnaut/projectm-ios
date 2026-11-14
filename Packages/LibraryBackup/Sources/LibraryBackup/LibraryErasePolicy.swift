@@ -63,6 +63,8 @@ public enum LibraryErasePolicy {
     /// OUT-004-R8: the external display's output correction (display hardware: not backed up, erased with Settings).
     public static let externalDisplayKeys: [String] = ["settings.externalDisplay.fit", "settings.externalDisplay.shape",
                                                        "settings.externalDisplay.pixelAspect"]
+    /// UIX-007-R7: the iPad split editor's width (this device's screen: not backed up, erased with Settings).
+    public static let splitEditorWidthKey = "settings.splitEditor.width"
 
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
@@ -111,7 +113,7 @@ public enum LibraryErasePolicy {
                                   reduceFlashingKey, colorBlindSafePaletteKey]
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
-            + externalDisplayKeys
+            + externalDisplayKeys + [splitEditorWidthKey]
     }()
 
     /// Every key some category can remove.

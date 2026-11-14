@@ -249,6 +249,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let show: ShowCoordinator
     /// UIX-005-R1: the performance layout (large cue, tempo and blackout targets); session only, off at launch.
     var performanceLayout = AppCoordinator.startsInPerformanceLayout
+    /// UIX-007-R7: the iPad split editor's remembered width (SplitEditorSetting.swift).
+    @ObservationIgnored private(set) lazy var splitEditor = SplitEditorSetting(defaults: defaults)
     /// SCN-007, XFADE: the cues' resolved transitions, blended out on the shown compositor visual.
     @ObservationIgnored let cueTransitions = CueTransitionStage()
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).

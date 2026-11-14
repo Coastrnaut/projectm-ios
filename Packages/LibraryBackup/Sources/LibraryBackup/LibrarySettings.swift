@@ -123,6 +123,7 @@ public enum LibrarySettingsPolicy {
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
         "settings.externalDisplay.fit", "settings.externalDisplay.shape",   // OUT-004-R8: the user's display hardware
         "settings.externalDisplay.pixelAspect",
+        "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",
