@@ -33,8 +33,9 @@ enum UITestVideoFixture {
         }
     }
 
-    /// 60 pictures at 30 fps; picture i is grey 8 + 8 × (i % 30).
-    nonisolated static func writeCounter(to url: URL) async throws {
+    /// 60 pictures at 30 fps; picture i is grey 8 + 8 × (i % 30). FILE-008 tests pass another `frames`
+    /// count for a movie with different content.
+    nonisolated static func writeCounter(to url: URL, frames: Int = 60) async throws {
         let width = 64, height = 48
         let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
@@ -48,7 +49,7 @@ enum UITestVideoFixture {
         writer.add(input)
         guard writer.startWriting() else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
         writer.startSession(atSourceTime: .zero)
-        for frame in 0..<60 {
+        for frame in 0..<frames {
             var waited = 0
             while !input.isReadyForMoreMediaData {
                 guard waited < 20_000 else { throw CocoaError(.fileWriteUnknown) }

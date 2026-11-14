@@ -5,7 +5,7 @@
 // `AVMutableComposition` (the composition carries none of the source's asset or track metadata and
 // no soundtrack), its rotation copied, and the composition exported with the passthrough preset, so
 // no picture is re-compressed. The export gets no metadata (`metadata = []`) and the sharing filter.
-// The copy is probed again; any failure removes it and throws `.saveFailed` (or the probe's reason).
+// FILE-008: the copy's movie-header times are then zeroed (MovieHeaderTimes). The copy is probed again; any failure removes it and throws `.saveFailed` (or the probe's reason).
 #if canImport(AVFoundation)
 import AVFoundation
 import CoreMedia
@@ -40,6 +40,13 @@ public enum VideoSanitizer {
         try? FileManager.default.removeItem(at: destination)
         do {
             try await export.export(to: destination, as: .mov)
+        } catch {
+            try? FileManager.default.removeItem(at: destination)
+            throw .saveFailed
+        }
+        // FILE-008-R6: zero the header times so equal sources give equal copies (content-hash dedup).
+        do {
+            try MovieHeaderTimes.zero(fileAt: destination)
         } catch {
             try? FileManager.default.removeItem(at: destination)
             throw .saveFailed

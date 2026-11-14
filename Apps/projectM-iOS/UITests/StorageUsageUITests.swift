@@ -1,7 +1,7 @@
 // StorageUsageUITests.swift — FILE-009-T09 (FILE-009-S4): Settings › Storage on the simulator with the
 // DEBUG fixture container (`-uitestStorageFixture`: known sizes, the real stores untouched). The seeded
 // sizes appear; after "Add Test Recording" and Refresh, Recordings and the total grow and Photos does
-// not change. Simulator results are never device evidence.
+// not change; FILE-008: the shared-copies note shows the fixture's saving. Simulator results are never device evidence.
 import XCTest
 
 @MainActor
@@ -48,11 +48,18 @@ final class StorageUsageUITests: XCTestCase {
         XCTAssertTrue(app.reveal(add))
         add.tap()
         app.buttons["storageRefresh"].tap()
+        // Back up to the category rows: the list is lazy and the FILE-008 note adds a section above the button.
+        XCTAssertTrue(app.reveal(row("recordings"), down: true))
         XCTAssertTrue(poll(10) { self.value("recordings") == "3 MB" }, "after adding 2 MB: \(value("recordings"))")
         XCTAssertTrue(app.reveal(row("total"), down: true))
         XCTAssertNotEqual(value("total"), totalBefore, "the total grows")
         XCTAssertTrue(app.reveal(row("photos"), down: true))
         XCTAssertEqual(value("photos"), "2 MB", "other categories do not change")
         XCTAssertFalse(app.staticTexts["storageIncomplete"].exists)
+        // FILE-008-S6: the fixture's photo payload is shared by two references; Photos counts it once
+        // ("2 MB" above) and the note below Clear Caches shows the saving.
+        let shared = app.staticTexts["storageSharedSavings"]
+        XCTAssertTrue(app.reveal(shared), "the shared-copies note")
+        XCTAssertEqual(shared.label, "Shared copies of identical photos and videos save 4 KB.")
     }
 }

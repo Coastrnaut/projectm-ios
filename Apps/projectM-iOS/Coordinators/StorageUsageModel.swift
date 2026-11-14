@@ -3,6 +3,8 @@
 // FILE-010-R2, R5, R6: Clear Caches plans off the main thread with the files in use at that moment, asks
 // for confirmation, clears off the main thread with the files in use gathered again, then measures again.
 // Leaving the screen does not stop a running clear.
+// FILE-008-R11: after each measurement, the space the shared photo and video payloads save (logical −
+// physical bytes of the content-addressed folders), also off the main thread.
 import Foundation
 import LocalPortability
 import Observation
@@ -12,6 +14,8 @@ import Observation
 final class StorageUsageModel {
     private(set) var report: StorageReport?
     private(set) var isMeasuring = false
+    /// FILE-008-R11: bytes saved by shared media copies (0: nothing shared).
+    private(set) var sharedSavings: Int64 = 0
 
     /// FILE-010: what the cleanup alert shows.
     enum CleanupPrompt: Equatable {
@@ -31,6 +35,8 @@ final class StorageUsageModel {
     @ObservationIgnored private var generation = 0
     /// The running measurement (tests await it).
     @ObservationIgnored private(set) var work: Task<StorageReport, any Error>?
+    /// The step that hands the measurement (and the shared savings) to the screen (tests await it).
+    @ObservationIgnored private(set) var finishWork: Task<Void, Never>?
     @ObservationIgnored private let cleaner: CacheCleaner
     /// Absolute paths the running app must keep (FILE-010-R5).
     @ObservationIgnored private let filesInUse: @MainActor () -> Set<String>
@@ -106,11 +112,13 @@ final class StorageUsageModel {
         isMeasuring = true
         let request = locations.request
         let calculator = calculator
+        let folders = locations.mediaFolders
         let work = Task.detached(priority: .utility) { () throws -> StorageReport in try calculator.measure(request) }
         self.work = work
-        Task { @MainActor [weak self] in
+        finishWork = Task { @MainActor [weak self] in
             let result: StorageReport? = try? await work.value
-            self?.finish(result, generation: current)
+            let saved: Int64 = await Task.detached(priority: .utility) { () -> Int64 in Self.sharedSavings(of: folders) }.value
+            self?.finish(result, generation: current, sharedSavings: saved)
         }
     }
 
@@ -122,10 +130,16 @@ final class StorageUsageModel {
     }
 
     /// Only the newest request's result is shown; a cancelled one (nil) changes nothing.
-    func finish(_ result: StorageReport?, generation finished: Int) {
+    func finish(_ result: StorageReport?, generation finished: Int, sharedSavings saved: Int64? = nil) {
         guard finished == generation else { return }
         isMeasuring = false
         if let result { report = result }
+        if result != nil, let saved { sharedSavings = saved }
+    }
+
+    /// FILE-008-R11: logical − physical bytes over the media folders.
+    nonisolated static func sharedSavings(of folders: [ContentAddressedMediaFolder]) -> Int64 {
+        folders.reduce(Int64(0)) { (sum: Int64, folder: ContentAddressedMediaFolder) -> Int64 in sum + folder.usage().savedBytes }
     }
 
     /// The generation `finish` accepts (tests).

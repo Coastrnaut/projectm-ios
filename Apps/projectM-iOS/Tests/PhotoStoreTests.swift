@@ -6,6 +6,7 @@ import Foundation
 import ImageIO
 import ImageLayer
 import UniformTypeIdentifiers
+import LocalPortability
 import XCTest
 @testable import projectM_iOS
 
@@ -53,8 +54,10 @@ final class PhotoStoreTests: XCTestCase {
         return url
     }
 
+    /// Stored files (FILE-008: the reference registry is not a copy).
     private func files(in folder: URL) -> [String] {
-        ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).sorted()
+        ((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? [])
+            .filter { (name: String) -> Bool in name != ContentAddressedMediaFolder.registryName }.sorted()
     }
 
     // MARK: - Import and relaunch (T14; R3, R6, R8, R14; S2)
@@ -66,7 +69,8 @@ final class PhotoStoreTests: XCTestCase {
         let sourceBytes = try Data(contentsOf: source)
         let stored = try sandbox.store().importImage(at: source)
         XCTAssertEqual(stored.url.deletingLastPathComponent().standardizedFileURL, sandbox.photos.standardizedFileURL, "inside the folder")
-        XCTAssertEqual(stored.url.lastPathComponent, "\(stored.id.uuidString).jpg")
+        XCTAssertEqual(stored.url.lastPathComponent, try MediaContentHash.digest(ofFileAt: stored.url).sha256 + ".jpg",
+                       "FILE-008: the copy is named by its content")
         XCTAssertEqual(sandbox.defaults.string(forKey: AppSettings.photoIDKey), stored.id.uuidString, "the identifier is a setting")
         XCTAssertEqual(try Data(contentsOf: source), sourceBytes, "the picked file is untouched")
         let props = CGImageSourceCopyPropertiesAtIndex(try XCTUnwrap(CGImageSourceCreateWithURL(stored.url as CFURL, nil)), 0, nil)

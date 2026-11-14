@@ -18,8 +18,13 @@
 // MED-003 (research MED-003-D7): the stored video's loop region is `settings.video.loop` =
 // `{id, inMilliseconds, outMilliseconds}`, read only while `id` is the stored video's; a foreign or
 // malformed value reads as none and is removed. Remove Video and a new current video remove it.
+// FILE-008 (ADR-0043): the folder is content-addressed like the photo's (`ContentAddressedMediaFolder`):
+// one `<sha256>.mov` payload per content plus `references.json`; the sanitized copy has zeroed header
+// times (`MovieHeaderTimes`), so importing the same movie again adds a reference, not a file. Making a
+// video current keeps references sharing its payload; Remove releases every reference to it.
 // Sendable; imports run off the main actor (VideoCoordinator).
 import Foundation
+import LocalPortability
 import VideoLayer
 
 struct StoredVideo: Equatable, Sendable {
@@ -38,10 +43,15 @@ struct VideoStore: @unchecked Sendable {
     let defaults: UserDefaults
     let limits: VideoImportLimits
 
-    init(directory: URL, defaults: UserDefaults, limits: VideoImportLimits = .standard) {
+    /// FILE-008: payloads and references.
+    let folder: ContentAddressedMediaFolder
+
+    init(directory: URL, defaults: UserDefaults, limits: VideoImportLimits = .standard,
+         fault: (@Sendable (ContentAddressedMediaFolder.Step, URL) throws -> Void)? = nil) {
         self.directory = directory
         self.defaults = defaults
         self.limits = limits
+        self.folder = ContentAddressedMediaFolder(directory: directory, extensions: [Self.fileExtension], fault: fault)
     }
 
     /// The folder's name in Application Support (FILE-009 measures it).
@@ -63,14 +73,19 @@ struct VideoStore: @unchecked Sendable {
         return StoredVideo(id: id, url: url)
     }
 
-    /// `<UUID>.mov` inside the folder, if it exists.
+    /// The copy of `id` inside the folder: a legacy `<UUID>.mov` or its payload (FILE-008).
     func existingFile(for id: UUID) -> URL? {
-        let url = file(for: id)
-        return FileManager.default.fileExists(atPath: url.path) ? url : nil
+        folder.resolve(id)
     }
 
-    private func file(for id: UUID) -> URL {
-        directory.appendingPathComponent("\(id.uuidString).\(Self.fileExtension)", isDirectory: false)
+    /// FILE-008-R5: every identifier that resolves.
+    func knownIDs() -> [UUID] {
+        folder.references()
+    }
+
+    /// FILE-008-R5: whether `id` names the same stored movie as the current video.
+    func isSameVideo(_ id: UUID, as current: UUID) -> Bool {
+        id == current || folder.sharesPayload(id, current)
     }
 
     /// Imports the video at `source` (a picked file) and makes it the stored video.
@@ -88,57 +103,75 @@ struct VideoStore: @unchecked Sendable {
         let picked = try Self.copyPicked(source, limits: limits)
         defer { try? FileManager.default.removeItem(at: picked) }
         let id = UUID()
-        let url = file(for: id)
+        let temp = folder.incomingURL(for: id, extension: Self.fileExtension)
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         } catch {
             throw .saveFailed
         }
         do throws(VideoImportError) {
-            _ = try await VideoSanitizer.copy(picked, to: url, limits: limits)
+            _ = try await VideoSanitizer.copy(picked, to: temp, limits: limits)
         } catch {
-            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: temp)
             throw error
         }
-        return StoredVideo(id: id, url: url)
+        do {
+            let url = try folder.intern(temp, as: id, consumingSource: true)   // FILE-008-R2
+            return StoredVideo(id: id, url: url)
+        } catch {
+            try? FileManager.default.removeItem(at: temp)
+            throw .saveFailed
+        }
     }
 
     /// FILE-001: moves a copy staged by another store (a staging folder) into this folder under the
-    /// same name, without making it current. Only `<UUID>.mov` names are accepted.
+    /// same identifier, without making it current. FILE-008: an equal payload already here is reused.
     func adopt(_ staged: StoredVideo) throws(VideoImportError) -> StoredVideo {
-        guard staged.url.lastPathComponent == "\(staged.id.uuidString).\(Self.fileExtension)" else { throw .saveFailed }
-        let url = file(for: staged.id)
+        guard staged.url.pathExtension == Self.fileExtension else { throw .saveFailed }
         do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try FileManager.default.moveItem(at: staged.url, to: url)
+            let url = try folder.intern(staged.url, as: staged.id, consumingSource: true)
+            return StoredVideo(id: staged.id, url: url)
         } catch {
             throw .saveFailed
         }
-        return StoredVideo(id: staged.id, url: url)
     }
 
-    /// Makes a copy inside this folder the stored video, then deletes the previous copy (R6).
+    /// Makes a copy inside this folder the stored video, then releases the previous content (R6).
+    /// FILE-008-R4: references sharing the new video's payload stay; at most 32 per payload.
     func makeCurrent(_ video: StoredVideo) {
         let previous = current()
         defaults.set(video.id.uuidString, forKey: Self.idKey)
         if previous?.id != video.id { defaults.removeObject(forKey: Self.loopKey) }   // MED-003: a new video plays whole
-        if let previous, previous.id != video.id { try? FileManager.default.removeItem(at: previous.url) }
+        if let previous, previous.id != video.id, !folder.sharesPayload(previous.id, video.id) {
+            try? folder.releaseSharing(payloadOf: previous.id, keeping: [video.id])
+        }
+        try? folder.trim(payloadOf: video.id, keeping: [video.id])
     }
 
-    /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned).
+    /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned). FILE-008:
+    /// releases its reference; a payload another reference shares stays.
     func discard(_ video: StoredVideo) {
         guard video.id != current()?.id else { return }
-        try? FileManager.default.removeItem(at: file(for: video.id))
+        try? folder.release([video.id])
     }
 
-    /// Deletes the stored copy and its identifier (MED-002-R7).
+    /// Deletes the stored copy and its identifier (MED-002-R7). FILE-008: every reference to the current
+    /// movie is released, so its payload is deleted.
     func remove() {
         if let raw = defaults.string(forKey: Self.idKey), let id = UUID(uuidString: raw), id.uuidString == raw {
-            try? FileManager.default.removeItem(at: file(for: id))
+            try? folder.releaseSharing(payloadOf: id)
         }
         defaults.removeObject(forKey: Self.idKey)
         defaults.removeObject(forKey: Self.loopKey)   // MED-003
     }
+
+    // MARK: FILE-008 launch (research FILE-008-D5)
+
+    /// Synchronous: temporary files and already migrated legacy names. Reads no content.
+    func prepareFolder() { folder.prepare() }
+
+    /// Off the main thread: migrates legacy copies and collects unreferenced payloads.
+    func reconcileFolder() { _ = try? folder.reconcile() }
 
     // MARK: Loop region (MED-003-R7)
 

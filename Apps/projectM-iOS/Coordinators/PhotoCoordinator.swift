@@ -46,6 +46,9 @@ final class PhotoCoordinator {
         photo = store?.current()
     }
 
+    /// FILE-008-R5: every stored identifier that resolves (scene and cue checks count them as present).
+    var knownIDs: Set<String> { Set((store?.knownIDs() ?? []).map(\.uuidString)) }
+
     static func makeDefault(defaults: UserDefaults) -> PhotoCoordinator {
         PhotoCoordinator(store: (try? PhotoStore.defaultDirectory()).map { PhotoStore(directory: $0, defaults: defaults) })
     }

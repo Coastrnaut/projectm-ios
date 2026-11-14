@@ -4,6 +4,7 @@
 // Free space on the device is deliberately not shown (privacy manifest; spec Clarifications).
 // FILE-010: Clear Caches… (contracts/cache-cleanup.md C4): a confirmation stating the space to be freed and
 // what is kept, then the cleared size and a failure note; the user-data rows never change.
+// FILE-008: a note with the space shared photo and video copies save.
 // FILE-005: the Backup section (LibraryBackupSection: back up the library, restore from a backup).
 import LocalPortability
 import SwiftUI
@@ -22,6 +23,11 @@ struct StorageUsageView: View {
     static let incompleteNote = "Some files could not be counted; sizes may be higher."
     static let keptNote = "Photos, videos, scenes, the show, presets, imported audio and settings are kept."
     static let cleanupFailedNote = "Some files could not be removed."
+
+    /// FILE-008-R11: shown only when shared copies save space.
+    static func sharedSavingsNote(_ bytes: Int64) -> String {
+        "Shared copies of identical photos and videos save \(format(bytes))."
+    }
 
     /// The confirmation's message (FILE-010-R2).
     static func confirmationMessage(_ plan: CacheCleanupPlan) -> String {
@@ -88,6 +94,11 @@ struct StorageUsageView: View {
                 }
             }
             cleanupSection
+            if model.sharedSavings > 0 {
+                Section {
+                    Text(Self.sharedSavingsNote(model.sharedSavings)).accessibilityIdentifier("storageSharedSavings")   // FILE-008
+                }
+            }
             if let libraryBackup { LibraryBackupSection(model: libraryBackup) }   // FILE-005
             #if DEBUG
             if UITestStorageFixture.isEnabled {

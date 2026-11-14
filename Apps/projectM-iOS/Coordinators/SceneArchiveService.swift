@@ -370,8 +370,15 @@ struct SceneArchiveService: Sendable {
             if let adoptedVideo { videos.discard(adoptedVideo) }
             throw .saveFailed
         }
-        let replacedPhoto = adoptedPhoto != nil && photos.current() != nil
-        let replacedVideo = adoptedVideo != nil && videos.current() != nil
+        // FILE-008-R10: media equal to the stored ones (the same payload) are not "replaced".
+        let replacedPhoto = adoptedPhoto.map { (adopted: StoredPhoto) -> Bool in
+            guard let current = photos.current() else { return false }
+            return !photos.folder.sharesPayload(current.id, adopted.id)
+        } ?? false
+        let replacedVideo = adoptedVideo.map { (adopted: StoredVideo) -> Bool in
+            guard let current = videos.current() else { return false }
+            return !videos.isSameVideo(adopted.id, as: current.id)
+        } ?? false
         if let adoptedPhoto {
             photos.makeCurrent(adoptedPhoto)
             observer?(.madeCurrent(.photo))
@@ -408,8 +415,8 @@ struct SceneArchiveService: Sendable {
 
     /// Which stored photo and video exist now (for validating an imported scene).
     func availability() -> StoredMediaAvailability {
-        StoredMediaAvailability(photos: Set([photos.current()?.id.uuidString].compactMap { $0 }),
-                                videos: Set([videos.current()?.id.uuidString].compactMap { $0 }))
+        StoredMediaAvailability(photos: Set(photos.knownIDs().map(\.uuidString)),   // FILE-008-R5
+                                videos: Set(videos.knownIDs().map(\.uuidString)))
     }
 
     /// The only place the picked URL is touched: its size is checked against the archive limit, then

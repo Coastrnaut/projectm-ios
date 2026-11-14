@@ -63,6 +63,17 @@ struct StorageLocations: Sendable, Equatable {
         return standard()
     }
 
+    /// FILE-008-R11: the content-addressed media folders (their shared payloads save space).
+    var mediaFolders: [ContentAddressedMediaFolder] {
+        let photos = (roots[.photos] ?? []).map { (url: URL) -> ContentAddressedMediaFolder in
+            ContentAddressedMediaFolder(directory: url, extensions: PhotoStore.extensions)
+        }
+        let videos = (roots[.videos] ?? []).map { (url: URL) -> ContentAddressedMediaFolder in
+            ContentAddressedMediaFolder(directory: url, extensions: [VideoStore.fileExtension])
+        }
+        return photos + videos
+    }
+
     var request: StorageRequest {
         StorageRequest(container: container.path,
                        roots: roots.mapValues { (urls: [URL]) -> [String] in urls.map { (url: URL) -> String in url.path } })

@@ -4,6 +4,7 @@
 // Recordings). The real stores are never touched. Not compiled into Release builds.
 // FILE-010: also the two export folders, a nested cache folder, a link in Caches to the photo, and a show
 // (user data under Other app data), so Clear Caches has every kind of item to clear and to keep.
+// FILE-008: a photo payload shared by two references, so the Storage screen shows its saving note.
 #if DEBUG
 import Foundation
 import LocalPortability
@@ -11,6 +12,8 @@ import LocalPortability
 enum UITestStorageFixture {
     static let argument = "-uitestStorageFixture"
     static let addedRecordingBytes = 2_000_000
+    /// FILE-008: one photo payload of this size shared by two references (the Storage note's saving).
+    static let sharedPhotoBytes = 4_000
 
     static var isEnabled: Bool { ProcessInfo.processInfo.arguments.contains(argument) }
 
@@ -42,6 +45,12 @@ enum UITestStorageFixture {
             (container.appendingPathComponent("Library/Preferences", isDirectory: true), "settings.plist", 1_000),
         ]
         for (folder, name, size) in files { write(size, to: folder.appendingPathComponent(name)) }
+        // FILE-008: two references to one stored photo payload.
+        let shared = ContentAddressedMediaFolder(directory: first(.photos), extensions: PhotoStore.extensions)
+        let source = container.appendingPathComponent("shared-source.png")
+        write(sharedPhotoBytes, to: source)
+        for _ in 0..<2 { _ = try? shared.intern(source, as: UUID(), consumingSource: false) }
+        try? FileManager.default.removeItem(at: source)
         // FILE-010 additions.
         let shares = locations.roots[.sharesAndExports] ?? []
         let support = container.appendingPathComponent("Library/Application Support", isDirectory: true)

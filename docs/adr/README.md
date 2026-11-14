@@ -39,5 +39,6 @@
 | [0040](0040-layer-render-caching.md) | Layer render caching is opt-in, keyed by input generations, bit-identical | Accepted 2026-11-14 (CMP-013; owner rule 4) |
 | [0041](0041-local-library-backup.md) | The local library backup format, its exclusions and a restore at next launch | Accepted 2026-11-14 (FILE-005; owner rule 4) |
 | [0042](0042-scene-transition-bus.md) | One transition clock and a two-scene transition bus with one flash guard | Accepted 2026-11-14 (CMP-014; owner rule 4) |
+| [0043](0043-content-addressed-media-store.md) | A content-addressed store for imported photos and videos, and its migration | Accepted 2026-11-14 (FILE-008; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

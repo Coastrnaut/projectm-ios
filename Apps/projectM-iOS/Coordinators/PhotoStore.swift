@@ -16,9 +16,17 @@
 //   and video are switched together only after every check passed (SceneArchiveService).
 // * No file timestamps or volume capacity are read (required-reason APIs; research MED-001-D10): a
 //   full disk surfaces as a failed write (`.saveFailed`).
+// * FILE-008 (ADR-0043): the folder is content-addressed (`ContentAddressedMediaFolder`): the copy is
+//   stored once as `<sha256>.png|jpg` and `references.json` maps each identifier to it, so importing
+//   the same picture again (or adopting it from a scene archive) adds a reference, not a second file.
+//   Making a photo current keeps references that share its payload (scenes and cues naming them still
+//   find the picture) and releases the previous content; Remove releases every reference to the
+//   current content, so its bytes leave the device. Legacy `<UUID>.png|jpg` files still resolve and are
+//   migrated at launch (`prepareFolder`, `reconcileFolder`).
 // Synchronous and Sendable: imports run off the main actor (PhotoCoordinator).
 import Foundation
 import ImageLayer
+import LocalPortability
 
 struct StoredPhoto: Equatable, Sendable {
     let id: UUID
@@ -34,10 +42,15 @@ struct PhotoStore: @unchecked Sendable {
     let defaults: UserDefaults
     let limits: ImageImportLimits
 
-    init(directory: URL, defaults: UserDefaults, limits: ImageImportLimits = .standard) {
+    /// FILE-008: payloads and references.
+    let folder: ContentAddressedMediaFolder
+
+    init(directory: URL, defaults: UserDefaults, limits: ImageImportLimits = .standard,
+         fault: (@Sendable (ContentAddressedMediaFolder.Step, URL) throws -> Void)? = nil) {
         self.directory = directory
         self.defaults = defaults
         self.limits = limits
+        self.folder = ContentAddressedMediaFolder(directory: directory, extensions: Self.extensions, fault: fault)
     }
 
     /// The folder's name in Application Support (FILE-009 measures it).
@@ -59,10 +72,15 @@ struct PhotoStore: @unchecked Sendable {
         return StoredPhoto(id: id, url: url)
     }
 
-    /// The copy of `id` inside the folder, if one exists. Only `<UUID>.png` and `<UUID>.jpg`.
+    /// The copy of `id` inside the folder, if one exists: a legacy `<UUID>.png|jpg` or its payload (FILE-008).
     func existingFile(for id: UUID) -> URL? {
-        Self.extensions.lazy.map { directory.appendingPathComponent("\(id.uuidString).\($0)", isDirectory: false) }
-            .first { FileManager.default.fileExists(atPath: $0.path) }
+        folder.resolve(id)
+    }
+
+    /// FILE-008-R5: every identifier that resolves (the current one, earlier references to the same
+    /// picture, photos a FILE-005 restore wrote).
+    func knownIDs() -> [UUID] {
+        folder.references()
     }
 
     /// Imports the image at `source` (a picked file) and makes it the stored photo.
@@ -80,58 +98,64 @@ struct PhotoStore: @unchecked Sendable {
         let data = try Self.readPicked(source, limits: limits)
         let copy = try ImageSanitizer.sanitize(data, limits: limits)
         let id = UUID()
-        let url = directory.appendingPathComponent("\(id.uuidString).\(copy.fileExtension)", isDirectory: false)
+        let temp = folder.incomingURL(for: id, extension: copy.fileExtension)
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try copy.data.write(to: url, options: .atomic)
+            try copy.data.write(to: temp, options: .atomic)
+            let url = try folder.intern(temp, as: id, consumingSource: true)   // FILE-008-R2
+            return StoredPhoto(id: id, url: url)
         } catch {
-            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: temp)
             throw .saveFailed
         }
-        return StoredPhoto(id: id, url: url)
     }
 
     /// FILE-001: moves a copy staged by another store (a staging folder) into this folder under the
-    /// same name, without making it current. Only `<UUID>.png`/`<UUID>.jpg` names are accepted.
+    /// same identifier, without making it current. FILE-008: an equal payload already here is reused.
     func adopt(_ staged: StoredPhoto) throws(ImageImportError) -> StoredPhoto {
-        let ext = staged.url.pathExtension
-        guard Self.extensions.contains(ext), staged.url.lastPathComponent == "\(staged.id.uuidString).\(ext)" else { throw .saveFailed }
-        let url = directory.appendingPathComponent(staged.url.lastPathComponent, isDirectory: false)
+        guard Self.extensions.contains(staged.url.pathExtension) else { throw .saveFailed }
         do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try FileManager.default.moveItem(at: staged.url, to: url)
+            let url = try folder.intern(staged.url, as: staged.id, consumingSource: true)
+            return StoredPhoto(id: staged.id, url: url)
         } catch {
             throw .saveFailed
         }
-        return StoredPhoto(id: staged.id, url: url)
     }
 
-    /// Makes a copy inside this folder the stored photo, then deletes the previous copy (R6).
+    /// Makes a copy inside this folder the stored photo, then releases the previous content (R6).
+    /// FILE-008-R4: references sharing the new photo's payload stay; at most 32 per payload.
     func makeCurrent(_ photo: StoredPhoto) {
         let previous = current()
         defaults.set(photo.id.uuidString, forKey: Self.idKey)
-        if let previous, previous.id != photo.id { deleteFiles(of: previous.id) }
+        if let previous, previous.id != photo.id, !folder.sharesPayload(previous.id, photo.id) {
+            try? folder.releaseSharing(payloadOf: previous.id, keeping: [photo.id])
+        }
+        try? folder.trim(payloadOf: photo.id, keeping: [photo.id])
     }
 
-    /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned).
+    /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned). FILE-008:
+    /// releases its reference; a payload another reference shares stays.
     func discard(_ photo: StoredPhoto) {
         guard photo.id != current()?.id else { return }
-        deleteFiles(of: photo.id)
+        try? folder.release([photo.id])
     }
 
-    /// Deletes the stored copy and its identifier (MED-001-R7).
+    /// Deletes the stored copy and its identifier (MED-001-R7). FILE-008: every reference to the current
+    /// picture is released, so its payload is deleted.
     func remove() {
         if let raw = defaults.string(forKey: Self.idKey), let id = UUID(uuidString: raw), id.uuidString == raw {
-            deleteFiles(of: id)
+            try? folder.releaseSharing(payloadOf: id)
         }
         defaults.removeObject(forKey: Self.idKey)
     }
 
-    private func deleteFiles(of id: UUID) {
-        for ext in Self.extensions {
-            try? FileManager.default.removeItem(at: directory.appendingPathComponent("\(id.uuidString).\(ext)", isDirectory: false))
-        }
-    }
+    // MARK: FILE-008 launch (research FILE-008-D5)
+
+    /// Synchronous: temporary files and already migrated legacy names. Reads no content.
+    func prepareFolder() { folder.prepare() }
+
+    /// Off the main thread: migrates legacy copies and collects unreferenced payloads.
+    func reconcileFolder() { _ = try? folder.reconcile() }
 
     /// The only place the picked URL is touched: a bounded, coordinated read under its security scope.
     private static func readPicked(_ source: URL, limits: ImageImportLimits) throws(ImageImportError) -> Data {
