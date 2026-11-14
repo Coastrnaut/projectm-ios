@@ -1,0 +1,62 @@
+# Tasks: AUD-008 Input Trim
+
+**Input**: Design documents in `specs/086-aud-008-input-trim/` (spec.md, plan.md, research.md,
+data-model.md, contracts/input-trim.md, quickstart.md).
+
+**Tests**: test-first. Each test task comes before the code it covers; the red run (compile failure
+or failing assertions) is recorded before the production change. Budgets (owner rule 7): a unit
+test about 1-2 s (≤ 10 s), each package suite under 1 minute, a UI test under 30 s; representative
+cases only.
+
+**Format**: `- [ ] ID [P?] [Story?] Description with file path`. `[P]` = can run in parallel
+(different files). Tags: `{device}` = needs a physical device, done only in the roadmap's final
+device phase; `{sim}` = needs the feature's own iOS 27.2 simulator "AUD8 iPhone 17" (created for
+this row, deleted afterwards). Inside descriptions "T03" is short for `AUD-008-T03`. A task is
+ticked only when its acceptance evidence was produced, with " — Verified <date>: <how>" appended.
+Logs go to `.build/scratch/`.
+
+## Phase 1: Setup
+
+- [X] AUD-008-T01 Record the baseline: `swift test --package-path Packages/AudioCore` on the host and with `-Xswiftc -DAUDIOCORE_NO_AVFAUDIO`; `check_compliance.py`, `validate_docs.py`, `test_scripts.py`; PosterBoard report count. Evidence: counts recorded here. — Verified 2026-11-13: at 9f6839e, AudioCore 133 tests on the host (29.2 s) and 128 with `-DAUDIOCORE_NO_AVFAUDIO` (28.4 s), 0 failures; check_compliance OK; validate_docs OK; test_scripts.py 147 tests OK (1 skipped); PosterBoard reports 32 (.build/scratch/aud008-T01-*.log).
+
+## Phase 2: User Story 2 - test tone levels change predictably and saturate safely (P1, the roadmap acceptance)
+
+**Goal**: the gain law, saturation, ramp and pass-through reader (contracts C1-C4). **Independent
+test**: `InputTrimTests` (AudioCore), `InputTrimBandTests` (VisualGenerators).
+
+- [X] AUD-008-T02 [US2] Write `Packages/AudioCore/Tests/AudioCoreTests/InputTrimTests.swift`: `clamped` (−20 → −12, 30 → 24, NaN → 0); `linearGain` (0 → 1 exactly, +6.0206 → 2 within 1e-4, −12 → 0.2512); `softClip` (identity for |v| ≤ 0.5, ±1 for |v| ≥ 1.25 and ±∞, NaN → 0, monotonic and within [−1, 1] over a sweep, odd); a −20 dBFS 1 kHz stereo sine read through `InputTrimReader` at −12, +6 and +12 dB has RMS = input RMS + trim within 0.05 dB; a full-scale sine at +24 dB stays finite and within [−1, 1] with peaks ≥ 0.99; NaN/∞ input samples come out finite; at 0 dB the output is bit-identical (`bitPattern`) to the input, including values above 1 and NaN; a target jump −12 → +24 made through the shared `InputTrimControl` while a live reader runs (AUD-008-R11), read in varying buffer sizes (1…700 frames), never changes the gain by more than `maximumRampStep` (+1e-6) between frames and reaches the target exactly after 2,048 frames; a jump back to 0 dB ends bit-exact again; a session-generation change snaps the gain; a new reader starts at the control's target with no ramp (AUD-008-R7); the frame count and generation are forwarded; `InputTrimProcessor` has only scalar storage (`MemoryLayout` size ≤ 32 bytes). Record the red run. — Verified 2026-11-13: written before the code; red run `cannot find 'InputTrim' in scope` (.build/scratch/aud008-red-T02.log); 13 tests in InputTrimLawTests (4), InputTrimReaderTests (8) and InputTrimSeamTests (1).
+- [X] AUD-008-T03 [US2] Implement `Packages/AudioCore/Sources/AudioCore/InputTrim.swift` (contracts C1-C4: `InputTrim`, `InputTrimControl` "stores clamped; lock-free; any thread", `InputTrimProcessor`, `InputTrimReader`). Evidence: T02 passes on the host and with `-DAUDIOCORE_NO_AVFAUDIO`; the full AudioCore suite passes with the T01 tests unchanged. — Verified 2026-11-13: the 13 InputTrim tests pass on the host (0.07 s) and with `-DAUDIOCORE_NO_AVFAUDIO`; full AudioCore 146 tests on the host (24.1 s; 133 + 13) and 141 in the no-AVFAudio shape (22.4 s; 128 + 13), 0 failures, no warnings. Implementation finding: an accumulated ramp (gain += step) drifted 7e-5 from the target over 2,047 frames and made a final step above the bound; the gain is now computed from the ramp's start (start + step × k) (.build/scratch/aud008-T03-*.log).
+- [X] AUD-008-T04 [P] [US2] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/InputTrimBandTests.swift`: a 1 kHz sine through `SpectrumBandFeed` (32 bars) via `InputTrimReader` at −12 and +6 dB moves the tone's band by trim/80 within 0.005 (band floor −80 dB) relative to 0 dB; at 0 dB the bands are identical to the raw tap's; `WaveformTap` wrapped around the trimmed reader holds the trimmed samples (+6 dB doubles the mid history within 1e-3). Evidence: passes on the host and in the Linux shape (`-Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE`). — Verified 2026-11-13: InputTrimBandTests 2 pass on the host (0.10 s) and in the Linux shape; a −40 dBFS 1 kHz tone's band moves by trim/80 within 0.005 at −12 and +6 dB, 0 dB bands equal the raw tap's, and the trimmed WaveformTap history is 2× the raw one at +6.02 dB within 1e-3. Full VisualGenerators 129 tests on the host (22.6 s) and 104 in the Linux shape (16.9 s), 0 failures (.build/scratch/aud008-T04-*.log). Passed on first run: the test was written after T03 (no red run of its own).
+
+## Phase 3: User Story 3 - the sinks stay untouched (P1)
+
+**Goal**: prove the seam. **Independent test**: `InputTrimTests.testProjectMRingIsBitIdenticalWithTrimOnTheTap`.
+
+- [X] AUD-008-T05 [US3] In `InputTrimTests.swift`, write the seam test: a `NormalizedPCMRing` with an analysis tap receives the same tone twice (a fresh ring each run); run A reads the tap raw, run B reads it through `InputTrimReader` at +24 dB; the main ring's (projectM's) frames are bit-identical to the written frames and between A and B, and B's analysis copy differs (the trim did act). The audio-state classifier's levels are computed from the sink before the ring is written (`AudioAnalyzer`), so they are unchanged by construction; the test documents that. Evidence: passes on the host and with `-DAUDIOCORE_NO_AVFAUDIO`. — Verified 2026-11-13: `InputTrimSeamTests.testProjectMRingIsBitIdenticalWithTrimOnTheTap` passes on the host and with `-DAUDIOCORE_NO_AVFAUDIO`: the main ring's 3,600 samples equal the written tone bit for bit with and without a +24 dB trim on the tap, while the trimmed analysis copy differs and stays within ±1.
+
+## Phase 4: User Story 1 - set, persist and reset the trim (P1)
+
+**Goal**: the setting, Settings control and wiring. **Independent test**: `InputTrimSettingTests`,
+`InputTrimUITests`.
+
+- [X] AUD-008-T06 [P] [US1] Write `Apps/projectM-iOS/Tests/InputTrimSettingTests.swift`: default 0 dB on empty defaults; stored 6 → 6 and the control reads 6; set 30 → 24, −40 → −12, 5.4 → 5, NaN → 0 (stored value equals the shown value); `reset()` → 0 and stored; `text(for:)` gives "+6 dB", "0 dB", "−12 dB" (U+2212). Uses its own `UserDefaults(suiteName:)`; no main-actor mutation in setUp/tearDown. Record the red run. — Verified 2026-11-13: written before the store; red run `cannot find 'InputTrimSetting' in scope` (.build/scratch/aud008-red-T06.log); 5 tests (defaults/persistence, clamp/round/NaN incl. stored out-of-range and non-number values, reset, signed text with U+2212, a trimmed reader following the shared control from +6 dB back to 0 dB without a step).
+- [X] AUD-008-T07 [US1] Implement `Apps/projectM-iOS/Coordinators/InputTrimSetting.swift` (key `settings.inputTrim.decibels`, "Double (whole dB, −12…24)", default 0) and add the key to `ALLOWED_KEYS` in `scripts/run_device_tests.py` (AUD-008-R6, FR-065 amendment). Evidence: T06 passes `{sim}`; `test_scripts.py` passes. — Verified 2026-11-13: InputTrimSettingTests 5 pass on the iOS 27.2 simulator "AUD8 iPhone 17" (0.02 s; .build/scratch/aud008-T07.log); `settings.inputTrim.decibels` added to ALLOWED_KEYS; test_scripts.py 147 tests OK (the key-constant check included).
+- [X] AUD-008-T08 [US1] Wire `AppCoordinator`: own `inputTrim: InputTrimSetting`; add `trimmedAnalysisTap` (a new `InputTrimReader` around `manager.analysisTap` sharing `inputTrim.control`) and use it at every former `manager.analysisTap` consumer (five native-visual hosts and `tempo.runOwnAnalysis`) in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`. Evidence: `grep -n "manager.analysisTap" AppCoordinator.swift` shows only the helper; app unit tests (projectM-iOSTests) pass `{sim}`. — Verified 2026-11-13: `grep manager.analysisTap` in AppCoordinator.swift shows only the `trimmedAnalysisTap` helper (6 call sites moved: NativeSpectrumHost, CameraVisualHost, PhotoVisualHost, VideoVisualHost, TextVisualHost, tempo.runOwnAnalysis); `-uitestResetNotice` also removes the key; projectM-iOSTests 384 tests pass on "AUD8 iPhone 17" (11.0 s; .build/scratch/aud008-post.log).
+- [X] AUD-008-T09 [US1] Add `Apps/projectM-iOS/Views/InputTrimSection.swift` (section "Audio Analysis": Slider −12…24 step 1, label "Input trim", value the text, id `inputTrimSlider`; readout id `inputTrimValue`; Button "Reset to 0 dB", id `inputTrimReset`; footer per AUD-008-R8; labels built by typed steps) and pass `inputTrim` from `VisualizerView` into one new optional `SettingsView` parameter rendered with one line. Evidence: the app builds with no new warnings `{sim}`. — Verified 2026-11-13: the app builds for the simulator with no compiler warnings in the touched files (the only matching line is XCTest's runtime main-thread notice every UI test prints); SettingsUITests 4 tests still pass.
+- [X] AUD-008-T10 [US1] Write `Apps/projectM-iOS/UITests/InputTrimUITests.swift` (one test < 30 s): open Settings, move the slider to +24 dB (end stop; see the spec's US1 note), check the readout, relaunch, check +24 dB (readout and the slider's accessibility value, AUD-008-R9), tap Reset, check 0 dB. Evidence: passes on "AUD8 iPhone 17" with SettingsUITests and NativeVisualUITests still passing `{sim}`. — Verified 2026-11-13: InputTrimUITests 1 test passes on "AUD8 iPhone 17" in 21.0 s and 22.9 s (two runs, both under the 30 s budget); with it SettingsUITests 4 and NativeVisualUITests 4 pass (UI suite 9 tests, 182.7 s; .build/scratch/aud008-T10.log, aud008-post.log). Implementation finding: XCUITest's slider drag lands within a few steps of a mid position (0.5 gave +8 dB; corrections oscillated), so the test drags to the +24 dB end stop; intermediate values are unit-tested (T06).
+
+## Phase 5: Polish & cross-cutting
+
+- [X] AUD-008-T11 Run `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; count PosterBoard reports against T01; delete the "AUD8 iPhone 17" simulator. Evidence: all exit 0; counts recorded. — Verified 2026-11-13: check_compliance OK; validate_docs OK (765 files); check_motion_policy OK; check_permission_catalog OK (4 permissions); test_scripts.py 147 tests OK; check_privacy_manifest OK on the Debug simulator .app; PosterBoard reports 32 before and 32 after (no new report); "AUD8 iPhone 17" deleted.
+- [X] AUD-008-T12 Update the spec's Status line and the roadmap row's gap status in `docs/FEATURE_ROADMAP_AUTONOMOUS.md` (implemented, device task open). Evidence: `validate_docs.py` OK. — Verified 2026-11-13: spec Status set to Implemented (device task T13 open). The roadmap file's gap-status column is left to the integration run, as for the other integrated rows (none of them edits it).
+- [ ] AUD-008-T13 {device} On D1 (microphone) and D3 (In-App Playback): set +12 dB and check the bars react more strongly while playback volume is unchanged; plug or unplug headphones and take a phone call (interruption): the trim stays and the analysis resumes. Evidence: a device note in `docs/test-reports/` (final roadmap device phase).
+
+## Dependencies
+
+T01 → T02 → T03 → (T04, T05) ; T03 → T06 → T07 → T08 → T09 → T10 → T11 → T12. T13 last (device
+phase). US2 is the MVP (the roadmap acceptance); US3 proves the constraint; US1 is the user-facing
+control.
+
+## Parallel opportunities
+
+T04 and T05 (different files) after T03; T06 can be written while T04/T05 run.

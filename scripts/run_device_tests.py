@@ -68,6 +68,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
                 "settings.oscilloscope.line", "settings.oscilloscope.window",   # VIS-003-R10
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
+                "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "guide.firstScene",   # UIX-001
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",

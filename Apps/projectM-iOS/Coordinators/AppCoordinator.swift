@@ -173,6 +173,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let guide: GuidedFirstSceneCoordinator
     /// Performance overlay and Reduce flashing (T103).
     let settings: AppSettings
+    /// AUD-008: the analysis-only input trim (Settings → Audio Analysis).
+    let inputTrim: InputTrimSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// The Camera visual (CAM-001), created when Camera is chosen and released when another visual is.
@@ -219,6 +221,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     static func nativeVisualUnavailableMessage(for choice: VisualChoice) -> String {
         "\(choice.title) isn't available on this device. Showing projectM."
     }
+    /// AUD-008-R1, R11: the analysis tap seen through the input trim. A new reader per consumer (the tap
+    /// has one consumer at a time); every native host and the tempo's own analysis use it, so bands,
+    /// the oscilloscope, MOD-002 bindings and tempo detection follow the trim. projectM reads
+    /// `manager.normalizedOutput`, which the trim never touches.
+    var trimmedAnalysisTap: (any NormalizedPCMReader)? { inputTrim.trimmed(manager.analysisTap) }
+
     /// Tap tempo and the tempo estimate (SHOW-011).
     let tempo: TempoCoordinator
     /// The OSC receiver (OSC-001): off by default, listens only while enabled and active.
@@ -262,6 +270,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: FavoritesStore.favoritesKey)
             defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
             AppSettings.allKeys.forEach(defaults.removeObject(forKey:))
+            defaults.removeObject(forKey: InputTrimSetting.decibelsKey)   // AUD-008: 0 dB
             try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
             try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
             if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
@@ -272,6 +281,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let shows = try? ShowStore.defaultDirectory() { try? FileManager.default.removeItem(at: shows) }   // SHOW-001: no show
         }
         settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
+        inputTrim = InputTrimSetting(defaults: defaults)
         self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -758,7 +768,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #if DEBUG
             forceGlowFailure = ProcessInfo.processInfo.arguments.contains("-uitestGlowFailure")   // GlowUITests (FX-001-R13)
             #endif
-            let host = try NativeSpectrumHost.make(device: device, reader: manager.analysisTap, style: nativeSpectrumStyle,
+            let host = try NativeSpectrumHost.make(device: device, reader: trimmedAnalysisTap, style: nativeSpectrumStyle,
                                                    barCount: circularSpectrumBarCount, glow: settings.glowParameters,
                                                    forceGlowFailure: forceGlowFailure)
             host.reduceFlashing = settings.reduceFlashing
@@ -783,7 +793,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
-            let host = try CameraVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
@@ -811,7 +821,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
-            let host = try PhotoVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            let host = try PhotoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
@@ -857,7 +867,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
-            let host = try VideoVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            let host = try VideoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
@@ -899,7 +909,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
-            let host = try TextVisualHost.make(device: device, reader: manager.analysisTap, barCount: circularSpectrumBarCount)
+            let host = try TextVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
             host.reduceFlashing = settings.reduceFlashing
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
@@ -1006,7 +1016,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videoVisual?.pause()
             textVisual?.pause()
             renderer?.resume()
-            tempo.runOwnAnalysis(on: manager.analysisTap)
+            tempo.runOwnAnalysis(on: trimmedAnalysisTap)
         }
     }
 
