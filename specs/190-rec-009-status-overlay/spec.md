@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (REC-009-T01-T10 verified on the Mac: FrameRecording package tests on the host, app unit tests and the UI test on the REC9 iOS 27.2 simulator; device task T11 `{device}` open). No burn-in option: the overlay is never recorded (research REC-009-D1).
 
 **Input**: User description: "Implement REC-009 (Recording status overlay) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Show active duration, dropped frames and storage warnings only in UI." Acceptance,
