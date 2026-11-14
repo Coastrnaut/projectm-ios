@@ -7,12 +7,12 @@ Tests are required (roadmap acceptance, owner rule 7 budgets). `{device}` tasks 
 
 ## Phase 1: Setup
 
-- [ ] SHOW-007-T01 Create simulator "SHOW7 iPhone 17" (iOS 27.2), run `xcodegen generate`, record the PosterBoard report count before runs (project.yml unchanged)
+- [X] SHOW-007-T01 Create simulator "SHOW7 iPhone 17" (iOS 27.2), run `xcodegen generate`, record the PosterBoard report count before runs (project.yml unchanged) — Verified 2026-11-14: simulator B6E04341 (iOS 27.2) created, `xcodegen generate`, preset submodules initialised; PosterBoard reports 26 before runs
 
 ## Phase 2: Foundational (pure model, ShowControl)
 
-- [ ] SHOW-007-T02 Add `ShowTimeline` (entries: non-skipped cues in order "up to and including the first without a dwell"; `start`, `span` nil only for an open end; `duration`, `isOpenEnded`, `canLoop`; `locate(_:looping:)` clamps or wraps; `time(ofCue:elapsed:)`; `loopTarget(from:looping:)`), `ShowSeekAction`/`ShowSeekPlan.plan(list:timeline:to:looping:currentRemaining:)` and `ShowScrub` (`begin`, `move(to:)`, `end() -> Duration?`, `cancel`) in Packages/ShowControl/Sources/ShowControl/ShowTimeline.swift
-- [ ] SHOW-007-T03 [P] Package tests (skipped excluded, open end, locate/time round trip, end clamp, loop wrap, seek plan none/reposition/apply, scrub coalescing to one commit) in Packages/ShowControl/Tests/ShowControlTests/ShowTimelineTests.swift
+- [X] SHOW-007-T02 Add `ShowTimeline` (entries: non-skipped cues in order "up to and including the first without a dwell"; `start`, `span` nil only for an open end; `duration`, `isOpenEnded`, `canLoop`; `locate(_:looping:)` clamps or wraps; `time(ofCue:elapsed:)`; `loopTarget(from:looping:)`), `ShowSeekAction`/`ShowSeekPlan.plan(list:timeline:to:looping:currentRemaining:)` and `ShowScrub` (`begin`, `move(to:)`, `end() -> Duration?`, `cancel`) in Packages/ShowControl/Sources/ShowControl/ShowTimeline.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` (128 tests, 1.7 s; 5 new in ShowTimelineTests)
+- [X] SHOW-007-T03 [P] Package tests (skipped excluded, open end, locate/time round trip, end clamp, loop wrap, seek plan none/reposition/apply, scrub coalescing to one commit) in Packages/ShowControl/Tests/ShowControlTests/ShowTimelineTests.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` (128 tests, 1.7 s; 5 new in ShowTimelineTests)
 
 ## Phase 3: User Story 1 — Scrub to a point in the show (P1, MVP)
 
