@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:28:09Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T17:30:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 126 |
-| implementing | 8 |
+| audited | 124 |
+| implementing | 9 |
+| unit_passed | 1 |
 | integrated | 191 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 44 | 7 | 100 | 0 |
-| P2 | 71 | 1 | 7 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 42 | 8 | 1 | 100 | 0 |
+| P2 | 71 | 1 | 0 | 7 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1624,6 +1625,20 @@ None.
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/sim-test_ANGLERendering.log`)
 - `swift test --package-path Packages/Compositor`: pass at `b32cc31f34e8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-004/20261113T135753/swift-test_Compositor.log`)
 - `post-merge (with VideoVisualHost on the shared pool): Compositor scheme on iPhone 17 sim (Compositor 175 incl. 100-switch plateau, 211 total in the run); projectM-iOSTests incl. TexturePoolAppTests; Video, Photo, Camera UI tests`: pass at `ea0ee43e0f04` (log `.autonomous/logs/integration/perf-004/compositor-sim.log`)
+
+### PERF-005 Preset prewarm scheduler (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PresentationLifecycle`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_PresentationLifecycle.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_RenderGoldens.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/sim-test_Rendering.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `71deab68b60f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-005/20261114T122523/swift-test_ShowControl.log`)
 
 ### PERF-006 Memory warning recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `fd72d08eab5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-006/20261113T143303/compliance.log`)

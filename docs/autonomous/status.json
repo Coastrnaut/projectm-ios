@@ -11,9 +11,10 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 44,
-   "implementing": 7,
-   "integrated": 100
+   "audited": 42,
+   "implementing": 8,
+   "integrated": 100,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 71,
@@ -25,10 +26,11 @@
   }
  },
  "by_state": {
-  "audited": 126,
-  "implementing": 8,
+  "audited": 124,
+  "implementing": 9,
   "integrated": 191,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1749,13 +1751,13 @@
   },
   "MOD-012": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-012",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-013": {
    "attempts": 0,
@@ -2110,12 +2112,12 @@
   "PERF-005": {
    "attempts": 0,
    "branch": "feature/perf-005",
-   "branch_sha": null,
+   "branch_sha": "71deab68b60f4d42b0fd6cccf97cb6c8cad7867c",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "PERF-006": {
    "attempts": 0,
@@ -2589,13 +2591,13 @@
   },
   "REC-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/rec-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "REC-010": {
    "attempts": 0,
@@ -4420,5 +4422,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T17:28:09Z"
+ "updated": "2026-11-14T17:30:08Z"
 }
