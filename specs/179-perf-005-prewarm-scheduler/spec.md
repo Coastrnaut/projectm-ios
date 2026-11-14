@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PERF-005-T01-T14 verified: host package tests, the app tests on the feature's
+iOS 27.2 simulator "PERF5"; no device claim). Open: T15 `{device}` (D1 frame rate with photo cues). Simulator results
+are not performance evidence.
 
 **Input**: User description: "Implement PERF-005 (Preset prewarm scheduler) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Prioritize next likely scene assets without blocking active frame." Acceptance,
