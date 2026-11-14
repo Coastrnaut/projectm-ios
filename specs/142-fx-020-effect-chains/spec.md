@@ -45,6 +45,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: What is a chain preset and where is it kept? → A: A named copy of the chain (order, on/off flags, parameters) saved on this device in the app's settings. Applying it sets the current chain. Presets are included in library backups (FILE-005) and removed by "Erase local data" (FILE-011) with the other settings. At most 32 presets; saving a name that exists replaces it.
 - Q: Does Color get an on/off switch? → A: Yes, so the chain can turn an effect off without losing its values. Off means neutral output; it is on by default, so nothing changes for existing users.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Where does the user find the chain in Settings? → A: One row, "Effect order", under the Color and Trails sections, showing the order as text ("Trails → Color"); it opens the Effect order screen. Rejected: an editable list inside Settings itself (a reorderable list in the long Settings form needs its own edit mode and would move the form's other rows).
+- Q: Are reorder, on/off and preset apply part of scene undo (SCN-010)? → A: Yes, as part of the scene state: the chain is captured with the scene's inputs, so Undo returns to the previous order and values like any other scene edit. No separate undo stack.
+- Q: Do show cues and scene archives carry the chain? → A: Yes, implicitly: they store scene documents, and the `effects` list is part of the document. Nothing else is added to cues.
+- Q: Which parameters does a preset or a scene entry hold for Color and Trails? → A: All of the effect's user values (Color: temperature, lift, gamma, gain, saturation, hue; Trails: length), as the user set them before ACC-012's caps. The caps are applied when rendering, never written.
+- Q: What does the Effect order screen show for the fixed stages? → A: A footer line under the list: "Always last: Flash safety, then Tone map." They are not rows, so they cannot be dragged or toggled.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - My effect order is part of the scene (Priority: P1) — MVP
