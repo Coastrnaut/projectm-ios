@@ -72,6 +72,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         didSet { stageTimer?.configure(pipeline: Self.frameStages) }
     }
     public static let frameStages: [FrameStage] = [.audio, .render, .output, .present]
+    /// PERF-007 (specs/192-perf-007-frame-drop-telemetry): while set, each presented tick is submitted (frames and
+    /// skipped refresh slots). Presented, late and discarded are unavailable: ANGLE owns the drawable (research PERF-007-D1).
+    public var frameDrops: FrameDropCounter?
     /// FR-072: selects the stricter envelope (FlashLimiter.c, FX-019). Toggling keeps the envelope's
     /// history, so a strobe cannot restart its budget (FX-019-R11).
     public var reduceFlashing = false
@@ -405,6 +408,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
 
     @objc fileprivate func displayLinkFired(_ link: CADisplayLink) {
         guard presentationTick(frameTime: link.targetTimestamp - link.timestamp) else { return }
+        if let drops = frameDrops { _ = drops.submit(drops.session, timestamp: link.timestamp, targetTimestamp: link.targetTimestamp) }
         if meter.record(presentedAt: link.timestamp) {
             metrics = meter.metrics
         }
@@ -440,7 +444,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
 
     private func observeFrameRatePressure() {
         let center = NotificationCenter.default
-        for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
+        for name in QualityGovernor.changeNotifications {   // PERF-008: the power profile too
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated {
                     guard let self else { return }

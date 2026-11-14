@@ -14,6 +14,7 @@
 // PERF-003 (specs/173-perf-003-adaptive-quality): while a native visual is shown, the verdict is its effect ladder's
 // budget signal (any flag → over; the overlay off → unavailable), its frame-rate cap is the deadline's cap, and the
 // lines end with its `effect quality …` line. The automation export carries the level.
+// PERF-007 (specs/192-perf-007-frame-drop-telemetry): the "frames …" lines follow (AppCoordinator+FrameDrops.swift).
 import ANGLERendering
 import Diagnostics
 import FrameTiming
@@ -74,14 +75,25 @@ extension AppCoordinator {
     /// is off or no visual is shown.
     func frameStageLines() -> [String] {
         frameStages.sync(overlayShown: settings.showsPerformanceOverlay, target: activeStageTimedVisual)
-        guard let timer = frameStages.timer else { return [] }
+        guard let timer = frameStages.timer else {
+            frameDrops.stop()
+            return []
+        }
+        let drops: [String] = frameDropLines() + powerProfileLines()   // PERF-007, then PERF-008-R9
         let report: FrameStageReport = Self.injectingSlowStage(timer.report())
         let native: NativeSpectrumHost? = showsNativeVisual ? nativeVisual : nil
         let cap: Int? = native?.qualitySettings.maxFramesPerSecond
         let verdict: FrameBudgetVerdict = frameStages.budget.evaluate(report, deadline: Self.frameDeadline(cap: cap))
-        guard let native else { return report.lines + verdict.lines }
+        guard let native else { return report.lines + verdict.lines + drops }
         native.effectBudget = verdict.flagged.isEmpty ? .within : .over   // PERF-003-R3
-        return report.lines + verdict.lines + [native.effectQualityLine]
+        return report.lines + verdict.lines + [native.effectQualityLine] + drops
+    }
+
+    /// PERF-008-R9: `power <profile> <fps> fps <scale>x` while the active budget is not Standard's.
+    func powerProfileLines() -> [String] {
+        let line: String? = PowerProfileSetting.overlayLine(profile: PowerProfileState.current,
+                                                            lowPower: ProcessInfo.processInfo.isLowPowerModeEnabled)
+        return line.map { (l: String) -> [String] in [l] } ?? []
     }
 
     /// PERF-002-R1: the lower of the screen's maximum refresh rate and the frame-rate cap every visual's display
@@ -109,6 +121,7 @@ extension AppCoordinator {
     /// The overlay disappeared: no visual measures anything any more.
     func stopFrameStageTiming() {
         frameStages.stop()
+        frameDrops.stop()   // PERF-007: the next attach begins a new session
         nativeVisual?.effectBudget = .unavailable   // PERF-003-R3: no verdict without the overlay
     }
 

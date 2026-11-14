@@ -10,6 +10,8 @@ public struct PresetQuarantineReason: Codable, Sendable, Hashable {
         case blockTooLarge, statementTooLong, nestingTooDeep, statementTooComplex, tooMuchControlFlow
         case unbalancedEquation, incompleteShader
         case engineRejected, timedOut, interruptedDuringCheck, interruptedOnScreen, failedOnScreen
+        /// PRE-018-R6, R8: moved by the user from the Library Check screen; the detail names the issue.
+        case movedByUser
     }
 
     public var code: String
@@ -50,6 +52,7 @@ public struct PresetQuarantineReason: Codable, Sendable, Hashable {
         case .interruptedDuringCheck: return "The app closed while checking this preset."
         case .interruptedOnScreen: return "The app closed while first showing this preset."
         case .failedOnScreen: return "This preset failed while it was being shown." + Self.suffix(detail)
+        case .movedByUser: return "You moved this preset to Quarantine." + Self.suffix(detail)
         case nil: return "This preset could not be used."
         }
     }

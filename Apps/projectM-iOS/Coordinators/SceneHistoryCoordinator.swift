@@ -25,8 +25,12 @@ import VisualGenerators
 final class SceneHistoryCoordinator {
     private(set) var history: SceneHistory<SceneInputs>?
 
-    var canUndo: Bool { history?.canUndo ?? false }
-    var canRedo: Bool { history?.canRedo ?? false }
+    /// SCN-015-R3: false while the scene is locked.
+    var canUndo: Bool { !isLocked && (history?.canUndo ?? false) }
+    var canRedo: Bool { !isLocked && (history?.canRedo ?? false) }
+    /// SCN-015: the scene lock (set by AppCoordinator; nil in tests of the history alone).
+    @ObservationIgnored var sceneLock: SceneLock?
+    private var isLocked: Bool { sceneLock?.isLocked ?? false }
     var undoLabel: String? { history?.undoLabel }
     var redoLabel: String? { history?.redoLabel }
     /// "Undo Bars 16" (FR-070), "Undo" when there is nothing to undo.
@@ -122,12 +126,14 @@ final class SceneHistoryCoordinator {
     }
 
     func undo() {
+        if sceneLock?.refusesEdit() == true { return }   // SCN-015-R3
         capture()
         guard let state = history?.undo() else { return }
         apply(state.value)
     }
 
     func redo() {
+        if sceneLock?.refusesEdit() == true { return }   // SCN-015-R3
         capture()
         guard let state = history?.redo() else { return }
         apply(state.value)
@@ -152,6 +158,7 @@ enum SceneHistoryEdit {
         if old.glowRadius != new.glowRadius { changes.append(("Glow Radius \(percent(new.glowRadius, decimals: 1))", "glow.radius")) }
         if old.glowThreshold != new.glowThreshold { changes.append(("Glow Threshold \(percent(new.glowThreshold))", "glow.threshold")) }
         if old.text != new.text { changes.append(text(from: old.text, to: new.text)) }
+        if let routes = ModulationHistoryEdit.describe(from: old.bindings, to: new.bindings) { changes.append(routes) }   // MOD-012
         if old.layerComposites != new.layerComposites {   // CMP-015-R6
             changes.append(LayerHistoryEdit.describe(from: old.layerComposites ?? [:], to: new.layerComposites ?? [:]))
         }

@@ -98,6 +98,8 @@ struct SettingsView: View {
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
+    /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
+    var powerProfile: PowerProfileSetting? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
@@ -231,10 +233,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                visualChoiceSection
-                visualOptionsSection
-                smoothingSection
-                mediaSections
+                SceneLockSection(lock: settings.sceneLock)   // SCN-015
+                sceneEditSections
+                safetySections
                 performanceSection
                 audioSections
                 tailSections
@@ -309,6 +310,7 @@ struct SettingsView: View {
                 if settings.visual == .lissajous { lissajousOptions }   // VIS-004-R11
                 if settings.visual == .radialWaveform { radialWaveformOptions }   // VIS-005-R9
                 if settings.visual == .beatRings { beatRingsOptions }   // VIS-006-R9
+                if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -346,7 +348,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -373,7 +375,24 @@ struct SettingsView: View {
             .accessibilityIdentifier("lissajousPersistenceToggle")
     }
 
-    /// VIS-005-R9: the radial waveform's ring size and amplitude.
+    /// VIS-007-R9: the mandala's symmetry, mirror and petal style.
+    @ViewBuilder private var mandalaOptions: some View {
+        Picker("Symmetry", selection: $settings.mandalaSymmetry) {
+            ForEach(MandalaConfiguration.supportedSymmetries, id: \.self) { (n: Int) in Text(String(n)).tag(n) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Symmetry")
+        .accessibilityIdentifier("mandalaSymmetryPicker")
+        Toggle("Mirror", isOn: $settings.mandalaMirror)
+            .accessibilityIdentifier("mandalaMirrorToggle")
+        Picker("Petal", selection: $settings.mandalaPetal) {
+            ForEach(MandalaPetalStyle.allCases, id: \.self) { (petal: MandalaPetalStyle) in Text(petal.title).tag(petal) }
+        }
+        .segmentedUnlessAccessibilitySize()
+        .accessibilityLabel("Petal")
+        .accessibilityIdentifier("mandalaPetalPicker")
+    }
+
     /// VIS-006-R9: how long a beat ring lasts.
     private var beatRingsOptions: some View {
         Picker("Ring life", selection: $settings.beatRingsLife) {
@@ -384,6 +403,7 @@ struct SettingsView: View {
         .accessibilityIdentifier("beatRingsLifePicker")
     }
 
+    /// VIS-005-R9: the radial waveform's ring size and amplitude.
     @ViewBuilder private var radialWaveformOptions: some View {
         Picker("Ring", selection: $settings.radialWaveformRing) {
             ForEach(RadialWaveformRing.allCases, id: \.self) { (ring: RadialWaveformRing) in Text(ring.title).tag(ring) }
@@ -428,6 +448,7 @@ struct SettingsView: View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
+        if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
@@ -448,6 +469,20 @@ struct SettingsView: View {
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
+    }
+
+    /// SCN-015-R6: everything that edits the scene, disabled while the scene is locked (safety stays reachable).
+    private var sceneEditSections: some View {
+        Group {
+            visualChoiceSection
+            visualOptionsSection
+            smoothingSection
+            mediaSections
+        }
+        .disabled(settings.sceneLock.isLocked)
+    }
+
+    @ViewBuilder private var safetySections: some View {
         SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }
@@ -460,6 +495,7 @@ struct SettingsView: View {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
         .id("performance")
+        if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
     }
 
     @ViewBuilder private var audioSections: some View {
@@ -768,10 +804,14 @@ struct SettingsView: View {
                 LabeledContent("Rate-limited", value: OSCReceiverCoordinator.rateLimitedText(osc.rateLimitedCount))
                     .accessibilityIdentifier("oscRateLimited")
             }
+            if let routes = osc.routes {   // OSC-003-R10
+                NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
+                    .accessibilityIdentifier("oscRoutesLink")
+            }
         } header: {
             Text("OSC")
         } footer: {
-            Text("Lets an OSC controller on your local network send /projectm/test with a number from 0 to 1 to check the connection. projectM only listens while this is on and the app is open, never connects to the internet, and keeps nothing it receives.")
+            Text("Lets an OSC controller on your local network send /projectm/test with a number from 0 to 1 to check the connection, and the addresses in OSC Routes to control the glow. projectM only listens while this is on and the app is open, never connects to the internet, and keeps nothing it receives.")
         }
         .onAppear { portText = String(osc.port) }
         .onChange(of: portFieldFocused) { _, focused in

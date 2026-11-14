@@ -46,6 +46,8 @@ import UIKit
 
 struct VisualizerView: View {
     @Bindable var coordinator: AppCoordinator
+    /// UIX-005-R4: the edges the performance pad uses; the status stack keeps clear of them.
+    @State private var performanceInsets = EdgeInsets()
 
     // Split into separately type-checked parts (2026-11-14): as one expression this body made
     // Xcode 26 on CI give up ("unable to type-check this expression in reasonable time", run
@@ -67,7 +69,7 @@ struct VisualizerView: View {
             externalDisplayLayer
             pausedLayer
             tapArea
-            statusStack
+            statusLayers
             keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
             performanceLayer
@@ -115,6 +117,7 @@ struct VisualizerView: View {
             bottomStatus
         }
         .padding()
+        .padding(coordinator.performanceLayout ? performanceInsets : EdgeInsets())   // UIX-005-R4
         // ACC-001-R2: the controls and the badges riding on them are instant with Reduce Motion.
         .reduceMotionAware(MotionPolicy.controlsFade, value: coordinator.controlsVisible, policy: coordinator.motion)
     }
@@ -123,6 +126,7 @@ struct VisualizerView: View {
     /// CAM-012's "Camera on" badge.
     @ViewBuilder private var topStatus: some View {
         OSCListenerBadge(osc: coordinator.osc) { () -> Void in coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
+        SceneLockBadge(lock: coordinator.settings.sceneLock)   // SCN-015-R7: never hidden with the controls
         // PERF-010-R4: the recovery offer after an abnormal exit (non-blocking).
         SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { () -> Void in coordinator.reopenLastScene() },
                                  onStartFresh: { () -> Void in coordinator.startFresh() },
@@ -153,7 +157,8 @@ struct VisualizerView: View {
         if let notice = coordinator.show.notice {   // SHOW-001-R9
             ShowNotice(text: notice).transition(.opacity)
         }
-        if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout {   // SHOW-014-R1: with or without the controls
+        // SHOW-014-R1: with or without the controls; UIX-005-R8: the performance pad's Blackout replaces it.
+        if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout && !coordinator.performanceLayout {
             HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
                 .transition(.opacity)
         }
@@ -162,6 +167,21 @@ struct VisualizerView: View {
                 .transition(.opacity)
         } else {
             SourceStatusIndicator(coordinator: coordinator)
+        }
+    }
+
+    /// The status stack and, above it, UIX-005's performance pad (one property: keeps `layers` quick to type-check).
+    @ViewBuilder private var statusLayers: some View {
+        statusStack
+        performancePadLayer
+    }
+
+    /// UIX-005-R2: the performance pad, with or without the controls, while the layout is on.
+    @ViewBuilder private var performancePadLayer: some View {
+        if coordinator.performanceLayout {
+            PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay) {
+                (insets: EdgeInsets) -> Void in performanceInsets = insets
+            }
         }
     }
 
@@ -183,7 +203,8 @@ struct VisualizerView: View {
     private var performanceOverlay: some View {
         let overlay = PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                          renderHealth: { coordinator.renderHealthOverlayLine },
-                                         stageLines: { () -> [String] in coordinator.frameStageLines() })
+                                         stageLines: { () -> [String] in coordinator.frameStageLines() },
+                                         stereoLine: { () -> String? in coordinator.stereoOverlayLine })   // ANL-013
         return VStack { HStack { Spacer(); overlay }; Spacer() }
             .padding(.top, 2)
             .padding(.trailing, 8)
@@ -421,6 +442,7 @@ struct VisualizerView: View {
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
+                         powerProfile: coordinator.powerProfile,   // PERF-008
                          announcer: coordinator.announcer)   // ACC-005-R7
                 .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
@@ -510,6 +532,9 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
         .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.beatRingsLife) { coordinator.visualSettingsChanged() }   // VIS-006
+        .onChange(of: coordinator.settings.mandalaSymmetry) { coordinator.visualSettingsChanged() }   // VIS-007
+        .onChange(of: coordinator.settings.mandalaMirror) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 

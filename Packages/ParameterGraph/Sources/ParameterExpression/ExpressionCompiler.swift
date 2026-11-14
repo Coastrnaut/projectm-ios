@@ -218,7 +218,9 @@ struct ExpressionCompiler {
             case .highTransient: ExpressionInstruction(opcode: .highTransient)
             case .rolloff: ExpressionInstruction(opcode: .rolloff)
             case .flatness: ExpressionInstruction(opcode: .flatness)
+            case .correlation: ExpressionInstruction(opcode: .correlation)
             case .lfo: ExpressionInstruction(opcode: .constant, literal: 0)   // unreachable: the catalog refuses LFO names
+            case .bandEnvelope: ExpressionInstruction(opcode: .constant, literal: 0)   // unreachable: MOD-015-D5
             }
             try append(instruction, at: position)
         case let .binding(slot, position):
