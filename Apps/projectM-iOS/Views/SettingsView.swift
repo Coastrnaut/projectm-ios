@@ -84,6 +84,8 @@ struct SettingsView: View {
     var recordingAudioStatus: (() -> String)?
     /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
     var recordingQuality: RecordingQualitySetting?
+    /// REC-007: the recording countdown (nil hides the section, e.g. in previews).
+    var recordingCountdown: RecordingCountdownSetting?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -406,6 +408,7 @@ struct SettingsView: View {
     @ViewBuilder private var mediaSections: some View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
+        if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
@@ -449,6 +452,7 @@ struct SettingsView: View {
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
         if let recordingQuality { RecordingQualitySection(setting: recordingQuality) }   // REC-005-R9
         if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality) }   // REC-006-R9
+        if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
         if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 
@@ -522,6 +526,12 @@ struct SettingsView: View {
     // MARK: Photo (MED-001-R2, R7, R11, R15)
 
     /// CMP-015-R1: the layer inspector.
+    private func macrosSection(_ coordinator: AppCoordinator) -> some View {
+        MacrosSection(macros: coordinator.macros, settings: settings,
+                      endCoalescing: { [history] () -> Void in history?.endCoalescing() })
+            .id("macros")   // MOD-010 (UITestSettingsSection)
+    }
+
     private func layersSection(_ coordinator: AppCoordinator) -> some View {
         let count: Int = coordinator.layerInspectorRows.count
         return Section {
