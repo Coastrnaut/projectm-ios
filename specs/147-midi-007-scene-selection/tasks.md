@@ -21,7 +21,7 @@ stage and stay open until a person runs them.
 
 **Independent test**: PC 5 / channel 1 mapped to scene X selects X with byte-identical stored mappings.
 
-- [ ] MIDI-007-T06 [US1] Package tests `Packages/PerformanceControl/Tests/PerformanceControlTests/MIDISceneSelectionTests.swift`: codec round-trip; mixed `cc:` + `note:` trigger + scene lines (MIDI-003/004/006 lines unchanged); unknown and unreadable scene lines kept; list moves and capacity; router channel filtering, newest wins, explicit before mode; eligibility (S2-S4)
+- [ ] MIDI-007-T06 [US1] Package tests `Packages/PerformanceControl/Tests/PerformanceControlTests/MIDISceneSelectionTests.swift`: codec round-trip; mixed `cc:` + `note:` trigger + scene lines (MIDI-003/004/006 lines unchanged); unknown and unreadable scene lines kept; list moves and capacity; router channel filtering, newest wins, explicit before mode; eligibility; host and the Linux shape (`-Xswiftc -DANALYSIS_NO_ACCELERATE`) (S2-S4, R11)
 - [ ] MIDI-007-T07 [US1] `MIDISceneActionPerformer` in `Apps/projectM-iOS/Coordinators/MIDISceneActionPerformer.swift` (debounce on the active cue's scene or index, "Scene not found." / "Cue n not found." on `.midi`, Go to Cue otherwise) and wiring in `Apps/projectM-iOS/Coordinators/AppCoordinator+Show.swift` (research MIDI-007-D3, D5)
 - [ ] MIDI-007-T08 [US1] App test `Apps/projectM-iOS/Tests/MIDISceneSelectionCoordinatorTests.swift`: fake MIDI source → real `ShowCoordinator` over a temporary store; PC 5 on channel 1 selects scene X (active cue and applied scene), stored mappings byte-identical (property-list encoding) before and after, with a scene that carries SCN-001 bindings; channel 2 does nothing; a repeat re-applies nothing; a missing scene is announced and changes nothing (S1, S2)
 
@@ -35,7 +35,7 @@ stage and stay open until a person runs them.
 
 ## Phase 6: User Story 4 - Assign MIDI to a scene (P2)
 
-- [ ] MIDI-007-T11 [US4] Learn in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator+Scenes.swift` (result texts, moves from scenes and MIDI-006 triggers) and the MIDI-006 side in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator+Notes.swift` (a note learn frees a scene key); app tests: learning message selects nothing, moved note, Undo restores all lists, timeout (research MIDI-007-D6)
+- [ ] MIDI-007-T11 [US4] Learn in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator+Scenes.swift` (result texts, moves from scenes and MIDI-006 triggers) and the MIDI-006 side in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator+Notes.swift` (a note learn frees a scene key); app tests: learning message selects nothing, moved note, Undo restores all lists, timeout, scene rows ("Program 5 · Ch 1", "Scene not found" for a scene no cue shows), announcements on the `.midi` lane only (research MIDI-007-D6; R8-R10)
 - [ ] MIDI-007-T12 [US4] Views: "Scene triggers" section and picker in `Apps/projectM-iOS/Views/MIDIMappingsView.swift`; `Apps/projectM-iOS/Views/MIDISceneAssignView.swift`; "Assign MIDI…" in `Apps/projectM-iOS/Views/ShowEditorView.swift`; one argument in `Apps/projectM-iOS/Views/SettingsView.swift`; DEBUG "Send Program" in `Apps/projectM-iOS/Debug/UITestFakeMIDI.swift`
 - [ ] MIDI-007-T13 [US4] UI test `Apps/projectM-iOS/UITests/MIDISceneSelectionUITests.swift` (under 30 s): seeded show, plug Fake Keys, Settings → Show → cue 3 "Assign MIDI…", send program 5, read the result, send it again, cue 3 is active and its scene applied (S5)
 
