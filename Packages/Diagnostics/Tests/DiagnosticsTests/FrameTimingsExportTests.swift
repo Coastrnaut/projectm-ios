@@ -83,4 +83,48 @@ final class FrameTimingsExportTests: XCTestCase {
         XCTAssertTrue(text.contains("  frame GPU: 4.25/5.50\n"))
         XCTAssertTrue(text.contains("  rejected samples: 2\n"))
     }
+
+    // MARK: - PERF-002-T10: the budget verdict (optional)
+
+    private static let budget = DiagnosticsSnapshot.FrameTimings.Budget(
+        framesPerSecond: 60, deadlineMs: 16.666, thresholdShare: 0.8, clearShare: 0.7, thresholdMs: 13.333,
+        cpuEstimateMs: 15.5, gpuEstimateMs: nil, flaggedPasses: ["composite cpu"])
+
+    func testBudgetRoundTripsAndValidates() throws {
+        var timings = Self.timings
+        timings.budget = Self.budget
+        let original = try snapshot(timings)
+        let data = try DiagnosticsExporter.encode(original)
+        XCTAssertEqual(try schemaErrors(data), [])
+        XCTAssertEqual(try JSONDecoder().decode(DiagnosticsSnapshot.self, from: data), original)
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let budget = try XCTUnwrap((object["frameTimings"] as? [String: Any])?["budget"] as? [String: Any])
+        XCTAssertNil(budget["gpuEstimateMs"], "unavailable is an absent key")
+        XCTAssertEqual(budget["flaggedPasses"] as? [String], ["composite cpu"])
+        let text = DiagnosticsExporter.text(original)
+        XCTAssertTrue(text.contains("Frame budget: 16.67 ms at 60 fps, limit 13.33 ms (80%)\n"), text)
+        XCTAssertTrue(text.contains("  estimate: CPU 15.50 ms, GPU n/a\n"))
+        XCTAssertTrue(text.contains("  over budget: composite cpu\n"))
+    }
+
+    func testTimingsWithoutBudgetHaveNoBudgetKey() throws {
+        let data = try DiagnosticsExporter.encode(try snapshot(Self.timings))
+        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        XCTAssertNil((object["frameTimings"] as? [String: Any])?["budget"])
+        XCTAssertFalse(DiagnosticsExporter.text(try snapshot(Self.timings)).contains("Frame budget"))
+    }
+
+    func testBudgetDropsUnknownPassesAndInvalidValues() throws {
+        let budget = DiagnosticsSnapshot.FrameTimings.Budget(
+            framesPerSecond: .nan, deadlineMs: -1, thresholdShare: 0.8, clearShare: 0.7, thresholdMs: 13,
+            cpuEstimateMs: .infinity, gpuEstimateMs: 2, flaggedPasses: ["bogus", "gpu frame"])
+        XCTAssertEqual(budget.framesPerSecond, 0)
+        XCTAssertEqual(budget.deadlineMs, 0)
+        XCTAssertNil(budget.cpuEstimateMs)
+        XCTAssertEqual(budget.flaggedPasses, ["gpu frame"])
+        XCTAssertEqual(DiagnosticsSnapshot.FrameTimings.Budget.passNames.count, 13)
+        var timings = Self.timings
+        timings.budget = budget
+        XCTAssertEqual(try schemaErrors(DiagnosticsExporter.encode(try snapshot(timings))), [])
+    }
 }
