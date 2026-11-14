@@ -82,9 +82,15 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         // audit names no element and the AX5 screenshots show no clipped text. Bounded per audit.
         let unnamed = "unattributed element-less findings on the native visuals' Settings rows (Undo/Redo bar glyphs and "
             + "the glow sliders' accessibility-hidden title rows are the only unnamed candidates); bounded, so a new one fails"
+        // The Glow toggle (a system Toggle) when it sits at the top edge of the scrolled list: the audit's
+        // larger sizes push it out of the visible list (ACC-004's Glow filter, same artefact; seen at AX3).
+        let glow = "the system Glow Toggle at the edge of the scrolled list is pushed out of view at the audit's larger "
+            + "sizes (ACC-004's Glow filter); its label scales"
         for screen in ["settingsLinear", "settingsOscilloscope", "settingsText"] {
             list.append(AuditFilter(screen: screen, type: .dynamicType, element: "", elementless: true, limit: 8, reason: unnamed))
             list.append(AuditFilter(screen: screen, type: .textClipped, element: "", elementless: true, limit: 8, reason: unnamed))
+            list.append(AuditFilter(screen: screen, type: .dynamicType, element: "Glow", reason: glow))
+            list.append(AuditFilter(screen: screen, type: .textClipped, element: "Glow", reason: glow))
         }
         list.append(AuditFilter(screen: "showEditor", type: .dynamicType, element: "Cues",
                                 reason: "the system section header (`Section(\"Cues\")`), pushed below the visible list at the audit's "
@@ -183,14 +189,15 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         }
         var dragDown = down
         var blind = 0
-        for _ in 0..<24 where !visible() {
+        for _ in 0..<32 where !visible() {
             let known = element.exists && element.frame.height > 0
             // Inside the visualizer controls' scroll view when it is on screen (not under a sheet).
             let inControls = controlsScroll.exists && !app.navigationBars.firstMatch.exists
             if !known && !inControls {
                 // Not in the tree yet (a lazy row): long drags held at the end (no momentum, so no row is
-                // skipped). After ten without finding it, the other way: it is above.
-                if blind == 10 { dragDown.toggle() }
+                // skipped). After sixteen without finding it (Settings at AX5 is about a dozen screens), the
+                // other way: it is above.
+                if blind == 16 { dragDown.toggle() }
                 blind += 1
                 // Up: from 0.8 (lower starts land on sheets' bottom bars and do not scroll).
                 let high = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dragDown ? 0.4 : 0.2))
@@ -303,7 +310,8 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             requireReachable(app.buttons[id], id)
         }
         app.buttons["blackout"].tap()   // a stable background (ACC-004 C3 design note)
-        XCTAssertTrue(poll(3) { self.app.buttons["blackout"].label == "Restore output" }, "blacked out")
+        // The badge, not the button's label: at AX5 the badge above the controls can scroll the button away.
+        XCTAssertTrue(app.descendants(matching: .any)["blackoutBadge"].firstMatch.appears(within: 8), "blacked out")
         try audit("controls")
     }
 
@@ -334,26 +342,22 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         try audit("licenses")
     }
 
-    /// Settings with every native visual's rows: Linear Spectrum's pickers and Glow's sliders, the
-    /// Oscilloscope's pickers, Text's fields.
-    private func settingsVisualRows(_ size: String) throws {
-        launch(size, ["-uitestSeedText"])
+    /// Settings with one native visual's own rows (owner rule 7: one visual per test): the visual's
+    /// row, then its last row scrolled into view, then the audit; Text also takes typed input.
+    private func settingsVisual(_ size: String, raw: String, screen: String, last: String) throws {
+        launch(size, raw == "text" ? ["-uitestSeedText"] : [])
         openSettings()
-        // Each visual's own rows sit below the visual list: revealed, then audited where they are.
-        let visuals: [(String, String, String)] = [("linearSpectrum", "settingsLinear", "spacingPicker"),
-                                                  ("oscilloscope", "settingsOscilloscope", "oscilloscopeWindowPicker"),
-                                                  ("text", "settingsText", "textFontPicker")]
-        for (raw, screen, last) in visuals {
-            let row = app.buttons["visual.\(raw)"]
-            XCTAssertTrue(scrollTo(row, down: true) || scrollTo(row), "\(raw) row")
-            row.tap()
-            let element = app.descendants(matching: .any)[last].firstMatch
-            XCTAssertTrue(scrollTo(element), "\(last) is reachable")
-            try audit(screen)
+        let row = app.buttons["visual.\(raw)"]
+        XCTAssertTrue(scrollTo(row), "\(raw) row")
+        row.tap()
+        let element = app.descendants(matching: .any)[last].firstMatch
+        XCTAssertTrue(scrollTo(element), "\(last) is reachable")
+        try audit(screen)
+        if raw == "text" {
+            let message = app.descendants(matching: .any)["textMessageField"].firstMatch
+            XCTAssertTrue(scrollTo(message, down: true), "the Text message field")
+            requireAcceptsInput(message, "Hi", "the Text message field")
         }
-        let message = app.descendants(matching: .any)["textMessageField"].firstMatch
-        XCTAssertTrue(scrollTo(message, down: true), "the Text message field")
-        requireAcceptsInput(message, "Hi", "the Text message field")
     }
 
     /// The preset browser home, a pack, Collections and My Presets.
@@ -535,8 +539,16 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     func testSettingsAX3() throws { try settings(Self.ax3) }
     func testStorageAX5() throws { try storage(Self.ax5) }
     func testStorageAX3() throws { try storage(Self.ax3) }
-    func testSettingsVisualRowsAX5() throws { try settingsVisualRows(Self.ax5) }
-    func testSettingsVisualRowsAX3() throws { try settingsVisualRows(Self.ax3) }
+    func testLinearSpectrumRowsAX5() throws { try settingsVisual(Self.ax5, raw: "linearSpectrum", screen: "settingsLinear", last: "spacingPicker") }
+    func testLinearSpectrumRowsAX3() throws { try settingsVisual(Self.ax3, raw: "linearSpectrum", screen: "settingsLinear", last: "spacingPicker") }
+    func testOscilloscopeRowsAX5() throws {
+        try settingsVisual(Self.ax5, raw: "oscilloscope", screen: "settingsOscilloscope", last: "oscilloscopeWindowPicker")
+    }
+    func testOscilloscopeRowsAX3() throws {
+        try settingsVisual(Self.ax3, raw: "oscilloscope", screen: "settingsOscilloscope", last: "oscilloscopeWindowPicker")
+    }
+    func testTextRowsAX5() throws { try settingsVisual(Self.ax5, raw: "text", screen: "settingsText", last: "textFontPicker") }
+    func testTextRowsAX3() throws { try settingsVisual(Self.ax3, raw: "text", screen: "settingsText", last: "textFontPicker") }
     func testBrowserAX5() throws { try browser(Self.ax5) }
     func testBrowserAX3() throws { try browser(Self.ax3) }
     func testCollectionsAndMyPresetsAX5() throws { try libraries(Self.ax5) }

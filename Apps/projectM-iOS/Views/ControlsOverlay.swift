@@ -46,45 +46,54 @@ struct ControlsOverlay: View {
     @State private var contentHeight: CGFloat = 0
 
     var body: some View {
-        // The `controls` element is the content itself (below), inside the scroll fallback too, so it
-        // stays an "other" element for every suite (`otherElements["controls"]`): on the scroll view the
-        // identifier made the element a scroll view at AX5 (2026-11-13 run).
-        VStack(spacing: 0) {
-            // ACC-006-R2: at accessibility sizes the controls can be taller than the screen (AX5 with the
-            // transport, a route and a notice above them: audit 2026-11-13). They then scroll inside
-            // their backing, and take the height left above them first (layout priority), so every
-            // control stays reachable. Standard sizes keep the plain stack.
-            if typeSize.isAccessibilitySize {
-                // One copy of the content in a scroll view as tall as the content, at most the height
-                // left above the controls (layout priority below): it scrolls only when it does not fit.
-                ScrollView {
-                    content
-                        .onGeometryChange(for: CGFloat.self) { (proxy: GeometryProxy) -> CGFloat in proxy.size.height }
-                            action: { (height: CGFloat) in contentHeight = height }
-                }
-                .frame(maxHeight: contentHeight > 0 ? contentHeight : nil)
-                // Opens at the bottom, where the buttons are (as before ACC-006, when the overflow went off
-                // the top); the transport and status above are one drag away.
-                .defaultScrollAnchor(.bottom)
-                .scrollBounceBehavior(.basedOnSize)
-                // Scrolling counts as use: restart the auto-hide (a scroll-phase observer, not a drag
-                // gesture, which would take accessibility hit-testing from the buttons).
-                .onScrollPhaseChange { (_: ScrollPhase, phase: ScrollPhase) in
-                    if phase.isScrolling { coordinator.showControls() }
-                }
-            } else {
+        // ACC-006-R2: at accessibility sizes the controls can be taller than the screen (AX5 with the
+        // transport, a route and a notice above them: audit 2026-11-13). They then scroll inside their
+        // backing: one scroll view as tall as the content (measured), at most the height left above the
+        // controls (layout priority), so it scrolls only when the content does not fit. Standard sizes
+        // keep the original tree exactly (ACC-004's contrast audit is sensitive to where the backing sits).
+        if typeSize.isAccessibilitySize {
+            ScrollView {
                 content
+                    // The `controls` element is the content inside the scroll view, so it stays an "other"
+                    // element for every suite (`otherElements["controls"]`).
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("controls")
+                    .onGeometryChange(for: CGFloat.self) { (proxy: GeometryProxy) -> CGFloat in proxy.size.height }
+                        action: { (height: CGFloat) in contentHeight = height }
             }
+            .frame(maxHeight: contentHeight > 0 ? contentHeight : nil)
+            // Opens at the bottom, where the buttons are (as before ACC-006, when the overflow went off the
+            // top); the transport and status above are one drag away.
+            .defaultScrollAnchor(.bottom)
+            .scrollBounceBehavior(.basedOnSize)
+            // Scrolling counts as use: restart the auto-hide (a scroll-phase observer, not a drag gesture,
+            // which would take accessibility hit-testing from the buttons).
+            .onScrollPhaseChange { (_: ScrollPhase, phase: ScrollPhase) in
+                if phase.isScrolling { coordinator.showControls() }
+            }
+            .modifier(ControlsBacking())
+            .layoutPriority(1)
+        } else {
+            content
+                .modifier(ControlsBacking())
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("controls")
         }
-        .background(Color.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
-        .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 16))
-        // ACC-004 (audit, 2026-11-13): the controls float over a moving, often bright visualization. With
-        // the ultra-thin material in light mode, black and grey text over a bright preset failed the
-        // contrast audit (titles, times, scope, route, tempo). Like a video player's controls they are
-        // now always dark, on a thick material darkened further, so a white preset behind them cannot
-        // lift the background enough to fail small captions (scope line) either.
-        .environment(\.colorScheme, .dark)
-        .layoutPriority(1)
+    }
+
+    /// The controls' dark backing.
+    /// ACC-004 (audit, 2026-11-13): the controls float over a moving, often bright visualization. With
+    /// the ultra-thin material in light mode, black and grey text over a bright preset failed the
+    /// contrast audit (titles, times, scope, route, tempo). Like a video player's controls they are
+    /// now always dark, on a thick material darkened further, so a white preset behind them cannot
+    /// lift the background enough to fail small captions (scope line) either.
+    private struct ControlsBacking: ViewModifier {
+        func body(content: Content) -> some View {
+            content
+                .background(Color.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 16))
+                .background(.thickMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .environment(\.colorScheme, .dark)
+        }
     }
 
     /// One line of text at standard sizes; up to three at accessibility sizes, so a long name wraps
@@ -115,8 +124,6 @@ struct ControlsOverlay: View {
             }
         }
         .padding(12)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("controls")
     }
 
     /// AUD-006: the transport of In-App Playback.
@@ -163,24 +170,35 @@ struct ControlsOverlay: View {
         }
     }
 
-    private var presetRow: some View {
-        // ACC-006-R1: at accessibility sizes the name gets the full width and Duplicate sits below it.
-        // (Beside a three-line name inside the scrolling controls, UI tests found Duplicate not hittable.)
-        let layout: AnyLayout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 6)) : AnyLayout(HStackLayout(spacing: 8))
-        return layout {
-            presetTitle
-            if let current = coordinator.presets.current, current.source != PresetLibrary.userSource {
-                Button {
-                    coordinator.showControls()
-                    Task { await coordinator.userPresets.duplicate(current) }
-                } label: {
-                    Image(systemName: "plus.square.on.square")
-                }
-                .disabled(coordinator.userPresets.isDuplicating)
-                .accessibilityLabel("Duplicate to My Presets")
-                .accessibilityIdentifier("duplicateCurrent")
+    /// ACC-006-R1: at accessibility sizes the name gets the full width and Duplicate sits below it.
+    /// (Beside a three-line name inside the scrolling controls, UI tests found Duplicate not hittable.)
+    /// Standard sizes keep the original row (an `if`, not `AnyLayout`, so their tree is unchanged).
+    @ViewBuilder private var presetRow: some View {
+        if typeSize.isAccessibilitySize {
+            VStack(alignment: .leading, spacing: 6) {
+                presetTitle
+                duplicateButton
             }
+        } else {
+            HStack(spacing: 8) {
+                presetTitle
+                duplicateButton
+            }
+        }
+    }
+
+    /// PRE-015-R1: Duplicate to My Presets, for a built-in preset only.
+    @ViewBuilder private var duplicateButton: some View {
+        if let current = coordinator.presets.current, current.source != PresetLibrary.userSource {
+            Button {
+                coordinator.showControls()
+                Task { await coordinator.userPresets.duplicate(current) }
+            } label: {
+                Image(systemName: "plus.square.on.square")
+            }
+            .disabled(coordinator.userPresets.isDuplicating)
+            .accessibilityLabel("Duplicate to My Presets")
+            .accessibilityIdentifier("duplicateCurrent")
         }
     }
 

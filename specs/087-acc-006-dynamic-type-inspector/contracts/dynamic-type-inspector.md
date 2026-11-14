@@ -11,7 +11,7 @@ Suite: `Apps/projectM-iOS/UITests/DynamicTypeInspectorUITests.swift`. Every grou
 | VisualizerControls | controls (blacked out) | stop, pauseResume, blackout, saveFrame, record, previous, next, random, presets, settings, duplicateCurrent, tapTempo reachable and hittable |
 | Settings | settings | OSC port field reached and accepts input |
 | Storage | storage, licenses | the Storage and Licenses rows (the last) reached by scrolling |
-| SettingsVisualRows | settingsLinear, settingsOscilloscope, settingsText (each after scrolling its last row into view) | the Text message field accepts input |
+| LinearSpectrumRows, OscilloscopeRows, TextRows | settingsLinear, settingsOscilloscope, settingsText (after scrolling the visual's last row into view) | the visual's last row reached; the Text message field accepts input |
 | Browser | browser, pack | My Presets row reached by scrolling, the pack row by scrolling back |
 | CollectionsAndMyPresets | collections, myPresets | both rows reached by scrolling |
 | ShowEditor | showEditor, renameSceneAlert | Next cue and the Show row reachable; scene name field accepts input; Rename inside the window |
@@ -57,6 +57,7 @@ Filtered (`DynamicTypeInspectorUITests.filters`, each with its reason; nothing t
 | presetEditor | dynamicType | `presetEditorCancel`, `presetEditorSave` | same (toolbar buttons) |
 | renameSceneAlert | dynamicType | title, message, element-less body | system alert laid out by iOS; at AX5 its content scrolls and the suite types into its field |
 | showEditor | dynamicType | "Cues" header | system section header pushed below the visible list at the audit's larger sizes when the editor starts at AX3 (ACC-004's bottom-row artefact); not reported at AX5 |
+| settingsLinear, settingsOscilloscope, settingsText | dynamicType, textClipped | "Glow" | the system Toggle at the edge of the scrolled list is pushed out of view at the audit's larger sizes (ACC-004's Glow filter; seen once at AX3) |
 | settingsLinear, settingsOscilloscope, settingsText | dynamicType, textClipped | element-less (at most 8 each) | **open item**: 1-7 issues the audit reports without an element once a native visual's rows are shown; the only unnamed candidates are the glow sliders' accessibility-hidden title rows and the Undo/Redo glyphs; the AX5 screenshots show no clipped text. Bounded so a new one fails |
 
 Not checked by the inspector (system-owned): the duplicate-result alert; large navigation titles that

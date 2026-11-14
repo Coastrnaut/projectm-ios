@@ -13,24 +13,31 @@ struct PermissionNoticeView: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        let layout: AnyLayout = typeSize.isAccessibilitySize
-            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 8)) : AnyLayout(HStackLayout(spacing: 10))
-        layout {
-            Image(systemName: symbol)
-                .accessibilityHidden(true)
-            Text(notice.text)
-                .font(.footnote)
-                .fixedSize(horizontal: false, vertical: true)
-                .accessibilityIdentifier("\(identifierPrefix)NoticeText")
-            if notice.offersSettings {
-                Button("Open Settings") { PermissionCatalog.openSettings() }
-                    .font(.footnote.bold())
-                    .accessibilityIdentifier("\(identifierPrefix)OpenSettings")
+        // An `if`, not `AnyLayout`, so the standard-size tree is unchanged.
+        Group {
+            if typeSize.isAccessibilitySize {
+                VStack(alignment: .leading, spacing: 8) { parts }
+            } else {
+                HStack(spacing: 10) { parts }
             }
         }
         .padding(10)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("\(identifierPrefix)Notice")
+    }
+
+    @ViewBuilder private var parts: some View {
+        Image(systemName: symbol)
+            .accessibilityHidden(true)
+        Text(notice.text)
+            .font(.footnote)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityIdentifier("\(identifierPrefix)NoticeText")
+        if notice.offersSettings {
+            Button("Open Settings") { PermissionCatalog.openSettings() }
+                .font(.footnote.bold())
+                .accessibilityIdentifier("\(identifierPrefix)OpenSettings")
+        }
     }
 }
