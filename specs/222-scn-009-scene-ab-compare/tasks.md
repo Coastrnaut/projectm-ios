@@ -25,7 +25,7 @@
 
 ## Phase 5: Tests
 
-- [ ] SCN-009-T09 [US1] [US2] [US3] Acceptance tests in Apps/projectM-iOS/Tests/SceneCompareAcceptanceTests.swift: 20 toggles leave `current.scene`, `current.scene.bak`, snapshot entries and undo stack unchanged even with Settings closing, terminate flush and the debounce tick; Cancel restores; Keep B writes once with one undo step "Keep S2"; lock refuses start and Keep, Cancel works; a fresh coordinator on the folder during Compare restores the pre-Compare scene; Current-scene side; cue restart abandons
+- [ ] SCN-009-T09 [US1] [US2] [US3] Acceptance tests in Apps/projectM-iOS/Tests/SceneCompareAcceptanceTests.swift: 20 toggles leave `current.scene`, `current.scene.bak`, snapshot entries and undo stack unchanged even with Settings closing, terminate flush and the debounce tick; Cancel restores; Keep B writes once with one undo step "Keep S2"; lock refuses start and Keep, Cancel works; a fresh coordinator on the folder during Compare restores the pre-Compare scene; Current-scene side; cue restart abandons; a switch's values are live right after `show(_:)` returns (S5); undo/redo and snapshot save/recall are refused during Compare (R4)
 - [ ] SCN-009-T10 [US1] [US2] UI test under 30 s in Apps/projectM-iOS/UITests/SceneCompareUITests.swift: save two snapshots, start Compare, switch A/B, Keep A, the intensity slider shows A's value
 
 ## Phase 6: Polish
