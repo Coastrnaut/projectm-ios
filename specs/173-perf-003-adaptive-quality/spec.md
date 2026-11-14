@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Draft (analyzed 2026-11-14)
 
 **Input**: User description: "Implement PERF-003 (Adaptive effect quality) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Reduce costly effect iterations before dropping output frames." Acceptance,
@@ -120,11 +120,11 @@ diagnostics export carries the level.
 ### Functional Requirements
 
 - **PERF-003-R1**: The effect quality MUST be one of three ordered levels: Full, Reduced, Minimal.
-- **PERF-003-R2**: The thermal floor MUST be: nominal or fair → Full; serious → Reduced; critical → Minimal. Low Power Mode MUST give at most Reduced.
+- **PERF-003-R2**: The thermal floor MUST be: nominal or fair → Full; serious → Reduced; critical → Minimal. Low Power Mode MUST give Reduced or a cheaper level (never Full).
 - **PERF-003-R3**: A budget verdict that stays over budget for 3 s MUST lower the level one step (to at most Minimal); each further 3 s over budget lowers one more step. An unavailable verdict MUST NOT move the level and clears the over-budget timer.
 - **PERF-003-R4**: The level MUST rise by at most one step after 10 s in which the thermal floor allows the higher level and the budget is not over (hysteresis). Thermal step-downs MUST be immediate.
 - **PERF-003-R5**: The ladder MUST be deterministic: its only inputs are the thermal state, Low Power, the budget verdict and an injected monotonic time; it runs on Linux.
-- **PERF-003-R6**: At Reduced, the glow MUST use at most half the blur taps per side of Full and, where it keeps the halo extent no larger than at Full, a coarser glow image; the halo extent MUST never exceed Full's. At Minimal the glow pass MUST be skipped. At Full the glow MUST be bit-identical to today.
+- **PERF-003-R6**: At Reduced, the glow MUST use at most ⌈R/2⌉ blur taps per side, where R is Full's and, where it keeps the halo extent no larger than at Full, a coarser glow image; the halo extent MUST never exceed Full's. At Minimal the glow pass MUST be skipped. At Full the glow MUST be bit-identical to today.
 - **PERF-003-R7**: While a glow is on, the governor MUST NOT cap the frame rate at the serious state (the ladder handles it); at critical, and under Low Power, it caps as today. With no glow on it MUST behave exactly as FR-049 today.
 - **PERF-003-R8**: The flash safety envelope (FX-019), Reduce flashing (FR-072) and the ACC-012 clamp MUST be applied identically at every level; the ladder may only lower the glow's intensity weight, after the ACC-012 clamp, and the luminance model the limiter sees MUST follow the glow actually rendered.
 - **PERF-003-R9**: Each level change MUST fade the glow out over 0.4 s, switch the level at zero glow, and fade back in over 0.4 s; a change during a fade reverses from the current weight.
@@ -144,7 +144,7 @@ diagnostics export carries the level.
 ### Measurable Outcomes
 
 - **PERF-003-S1**: Under injected nominal → serious → critical, the level steps Full → Reduced → Minimal and the frame-rate cap is 60, 60, 30 fps respectively (glow on).
-- **PERF-003-S2**: At Reduced the glow's blur taps per side are at most half of Full's and its work (threadgroups × taps) is lower; at Minimal zero glow passes are encoded.
+- **PERF-003-S2**: At Reduced the glow's blur taps per side are at most ⌈R/2⌉ of Full's R and its work (threadgroups × taps) is lower; at Minimal zero glow passes are encoded.
 - **PERF-003-S3**: With the strobe fixture, the luminance rise stays within the same bound (≤ 100% of it) at every level and across level changes, with the same envelope configuration.
 - **PERF-003-S4**: Recovery from Minimal to Full takes two steps, each after at least 10 s of good conditions.
 - **PERF-003-S5**: At nominal with the glow on, the rendered glow and the frame-rate settings are identical to today's.
