@@ -13,7 +13,7 @@ public enum LibraryEraseCategory: String, Sendable, Hashable, CaseIterable, Coda
         switch self {
         case .scenes: "Scenes and show"
         case .presets: "My Presets"
-        case .collections: "Collections, tags and favorites"
+        case .collections: "Collections, tags, favorites and history"   // PRE-006-R7
         case .media: "Photos and videos"
         case .importedAudio: "Imported audio"
         case .settings: "Settings"
@@ -71,7 +71,7 @@ public enum LibraryErasePolicy {
     public static func settingKeys(_ category: LibraryEraseCategory) -> [String] {
         switch category {
         case .scenes, .presets, .importedAudio: []
-        case .collections: [LibrarySettingsPolicy.favoritesKey]
+        case .collections: [LibrarySettingsPolicy.favoritesKey, LibrarySettingsPolicy.recentPresetsKey]   // PRE-006-R7
         case .media: [LibrarySettingsPolicy.photoKey, LibrarySettingsPolicy.slideshowKey, videoKey, videoLoopKey, videoSpeedKey,   // MED-006
                       LibrarySettingsPolicy.logoKey, LibrarySettingsPolicy.logoPlacementKey]   // MED-010
         case .settings: settingsCategoryKeys
