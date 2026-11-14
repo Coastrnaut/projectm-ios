@@ -69,6 +69,22 @@ final class ExpressionEvaluationTests: XCTestCase {
         XCTAssertEqual(compiled.evaluate(.silent), 0)
     }
 
+    /// ANL-010-T09: `audio.centroid` compiles to opcode 15 and reads the frame's normalized centroid.
+    func testCentroidSourceInAFormula() throws {
+        let compiled = try CompiledExpression(source: "1 - audio.centroid + audio.kick")
+        XCTAssertEqual(compiled.audioSources, [.centroid, .kick])
+        XCTAssertTrue(compiled.instructions.contains { (instruction: ExpressionInstruction) -> Bool in
+            instruction.opcode == .centroid && instruction.opcode.rawValue == 15
+        })
+        let bands: [Float] = [0.5]
+        let value = bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Double in
+            let frame = AudioFeatureFrame(bands: buffer, kick: 0.125, centroid: 0.75)
+            return compiled.evaluate(ExpressionInputs(frame: frame, timeSeconds: 0))
+        }
+        XCTAssertEqual(value, 0.375)
+        XCTAssertEqual(compiled.evaluate(.silent), 1)
+    }
+
     func testSilentInputsReadZero() throws {
         let compiled = try CompiledExpression(source: "audio.band.0 + audio.bandMean + audio.onset + audio.beatConfidence + time")
         XCTAssertEqual(compiled.evaluate(.silent), 0)

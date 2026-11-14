@@ -83,9 +83,13 @@ public struct AnalysisFrame: Sendable, Hashable {
     public let beatConfidence: Double
     /// ANL-007's kick envelope, 0…1: 1 on the frame of a kick, decaying with a 100 ms time constant.
     public let kickEnvelope: Float
+    /// ANL-010's spectral centroid in Hz (held at silence; 0 before any signal in the session).
+    public let centroidHz: Float
+    /// ANL-010's centroid normalized 0…1 (log frequency, 50 Hz → 0, 10 kHz → 1; held / 0 likewise).
+    public let centroid: Float
 
     public init(id: UInt64, time: AnalysisTimestamp, bandCount: Int, onsetFlux: Float, bpm: Double?, beatConfidence: Double,
-                kickEnvelope: Float = 0) {
+                kickEnvelope: Float = 0, centroidHz: Float = 0, centroid: Float = 0) {
         self.id = id
         self.time = time
         self.bandCount = bandCount
@@ -93,6 +97,8 @@ public struct AnalysisFrame: Sendable, Hashable {
         self.bpm = bpm
         self.beatConfidence = beatConfidence
         self.kickEnvelope = kickEnvelope
+        self.centroidHz = centroidHz
+        self.centroid = centroid
     }
 }
 
@@ -101,7 +107,7 @@ public enum AnalysisBusError: Error, Equatable, Sendable {
     case invalidEventCapacity(Int)
     /// Already `AnalysisPipeline.maximumSubscribers` subscribers.
     case tooManySubscribers
-    /// The spectrum, onset, beat and kick configurations disagree on the sample rate.
+    /// The spectrum, onset, beat, kick and centroid configurations disagree on the sample rate.
     case sampleRateMismatch
     /// The band floor must be finite and below 0 dB.
     case invalidBandFloor(Float)

@@ -36,6 +36,20 @@ final class AudioFeatureSourceTests: XCTestCase {
     }
 
     /// ANL-007-T09: the kick envelope source (ANL-007-R11).
+    /// ANL-010-T09: the centroid source (ANL-010-R8).
+    func testCentroidSourceRoundTripsAndReadsTheNormalizedCentroid() {
+        XCTAssertEqual(AudioFeatureSource.centroid.id, "audio.centroid")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.centroid"), .centroid)
+        XCTAssertNil(AudioFeatureSource(id: "audio.Centroid"))
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            XCTAssertEqual(AudioFeatureSource.centroid.value(in: AudioFeatureFrame(bands: buffer, centroid: 0.375)), 0.375)
+            XCTAssertEqual(AudioFeatureSource.centroid.value(in: AudioFeatureFrame(bands: buffer, centroid: .infinity)), 0)
+            XCTAssertEqual(AudioFeatureSource.centroid.value(in: AudioFeatureFrame(bands: buffer, kick: 1)), 0, "no centroid feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.centroid.value(in: .silent), 0)
+    }
+
     func testKickSourceRoundTripsAndReadsTheEnvelope() {
         XCTAssertEqual(AudioFeatureSource.kick.id, "audio.kick")
         XCTAssertEqual(AudioFeatureSource(id: "audio.kick"), .kick)
