@@ -39,6 +39,7 @@ import PresetLibrary
 import Rendering
 import SwiftUI
 import TextLayer
+import VideoLayer
 import UIKit
 
 struct VisualizerView: View {
@@ -269,6 +270,7 @@ struct VisualizerView: View {
                     .font(.caption2)
                     .opacity(0.01)
                 }
+                VideoLoopProbe(video: video)   // MED-003
             }
             #if DEBUG
             // PERF-010-R12: the recovery decision and whether the OSC transport listens.
@@ -696,5 +698,33 @@ extension OutputBlackout.Phase {
         case .restoreWaiting: "Restore waiting"
         case .fadingIn: "Fading in"
         }
+    }
+}
+
+/// MED-003-R12 (diagnostics only): the shown picture's index in the file, the applied loop region and
+/// the loop counters, for VideoLoopUITests.
+private struct VideoLoopProbe: View {
+    let video: VideoVisualHost
+
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 0.1)) { _ in
+            probes
+        }
+    }
+
+    private var probes: some View {
+        let index: String = video.shownMediaFrameIndex().map { (i: Int) -> String in String(i) } ?? "none"
+        let region: String = video.loopRegion.map { (r: VideoLoopRegion) -> String in
+            String(r.inMilliseconds) + "-" + String(r.outMilliseconds)
+        } ?? "whole"
+        let stats: String = video.loopStatistics()
+        return VStack {
+            Text(index).accessibilityIdentifier("videoMediaFrameIndex").accessibilityValue(index)
+            Text(region).accessibilityIdentifier("videoLoopRegion").accessibilityValue(region)
+            Text(stats).accessibilityIdentifier("videoLoopStats").accessibilityValue(stats)
+        }
+        .font(.caption2)
+        .opacity(0.01)
+        .allowsHitTesting(false)
     }
 }

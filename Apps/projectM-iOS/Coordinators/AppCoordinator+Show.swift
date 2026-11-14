@@ -26,7 +26,8 @@ extension AppCoordinator {
                  bars: settings.circularSpectrumBars, orientation: settings.linearSpectrumOrientation,
                  spacing: settings.linearSpectrumSpacing, glowEnabled: settings.glowEnabled,
                  glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
-                 text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id)
+                 text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
+                 videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion))   // MED-003
     }
 
     /// Wires the show to this coordinator (called once at the end of init).
@@ -52,6 +53,7 @@ extension AppCoordinator {
         guard let registry = try? SceneArchiveService.appRegistry() else { return [] }
         let apply = ShowSceneSnapshot.apply(of: document, warnings: warnings, registry: registry)
         Self.set(apply, settings: settings, texts: texts)
+        videos.restoreLoop(storeID: apply.videoStoreID, loop: apply.videoLoop)   // MED-003-R8
         sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
         if refresh {
             visualSettingsChanged()

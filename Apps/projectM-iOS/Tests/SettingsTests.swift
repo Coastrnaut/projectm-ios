@@ -68,10 +68,11 @@ final class SettingsTests: XCTestCase {
         settings.cameraCropAnchor = .top
         settings.cameraZoom = 2
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
-        // MED-001, MED-002, MED-009: `settings.photo.id`, `settings.video.id` and `settings.text.overlay` are
-        // in allKeys (the UI-test reset) but written by PhotoStore, VideoStore and TextOverlayStore only.
+        // MED-001, MED-002, MED-003, MED-009: `settings.photo.id`, `settings.video.id`, `settings.video.loop`
+        // and `settings.text.overlay` are in allKeys (the UI-test reset) but written by PhotoStore,
+        // VideoStore and TextOverlayStore only.
         XCTAssertEqual(keys, Set(AppSettings.allKeys).subtracting([AppSettings.photoIDKey, AppSettings.videoIDKey,
-                                                                   AppSettings.textOverlayKey]), "FR-065")
+                                                                   AppSettings.videoLoopKey, AppSettings.textOverlayKey]), "FR-065")
     }
 
     /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.

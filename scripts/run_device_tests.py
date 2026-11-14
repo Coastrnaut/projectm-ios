@@ -78,6 +78,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
+                "settings.video.loop",   # MED-003 (the stored video's loop region)
                 "guide.firstScene",   # UIX-001
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",
                 "session.recovery.heldVisual"}   # PERF-010

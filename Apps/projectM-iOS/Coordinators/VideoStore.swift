@@ -15,6 +15,9 @@
 //   disk surfaces as a failed export (`.saveFailed`).
 // FILE-001 splits the import into stage, adopt (from a staging folder) and makeCurrent so a scene
 // archive's media are switched together after every check (SceneArchiveService).
+// MED-003 (research MED-003-D7): the stored video's loop region is `settings.video.loop` =
+// `{id, inMilliseconds, outMilliseconds}`, read only while `id` is the stored video's; a foreign or
+// malformed value reads as none and is removed. Remove Video and a new current video remove it.
 // Sendable; imports run off the main actor (VideoCoordinator).
 import Foundation
 import VideoLayer
@@ -27,6 +30,8 @@ struct StoredVideo: Equatable, Sendable {
 /// `@unchecked Sendable`: UserDefaults is thread-safe (documented) but not marked Sendable in the SDK.
 struct VideoStore: @unchecked Sendable {
     static let idKey = "settings.video.id"
+    /// MED-003: the stored video's loop region.
+    static let loopKey = "settings.video.loop"
     static let fileExtension = "mov"
 
     let directory: URL
@@ -116,6 +121,7 @@ struct VideoStore: @unchecked Sendable {
     func makeCurrent(_ video: StoredVideo) {
         let previous = current()
         defaults.set(video.id.uuidString, forKey: Self.idKey)
+        if previous?.id != video.id { defaults.removeObject(forKey: Self.loopKey) }   // MED-003: a new video plays whole
         if let previous, previous.id != video.id { try? FileManager.default.removeItem(at: previous.url) }
     }
 
@@ -131,6 +137,33 @@ struct VideoStore: @unchecked Sendable {
             try? FileManager.default.removeItem(at: file(for: id))
         }
         defaults.removeObject(forKey: Self.idKey)
+        defaults.removeObject(forKey: Self.loopKey)   // MED-003
+    }
+
+    // MARK: Loop region (MED-003-R7)
+
+    /// The loop region saved for the video `id` (nil: the whole file). A value for another video or a
+    /// malformed one is removed.
+    func loopRegion(for id: UUID) -> VideoLoopRegion? {
+        guard let stored = defaults.dictionary(forKey: Self.loopKey) else { return nil }
+        guard let raw = stored["id"] as? String, raw == id.uuidString,
+              let start = stored["inMilliseconds"] as? Int, let end = stored["outMilliseconds"] as? Int,
+              start >= 0, end > start else {
+            defaults.removeObject(forKey: Self.loopKey)
+            return nil
+        }
+        return VideoLoopRegion(inMilliseconds: start, outMilliseconds: end)
+    }
+
+    /// Saves `region` for the video `id`; nil removes it (the whole file).
+    func setLoopRegion(_ region: VideoLoopRegion?, for id: UUID) {
+        guard let region else {
+            defaults.removeObject(forKey: Self.loopKey)
+            return
+        }
+        let value: [String: Any] = ["id": id.uuidString, "inMilliseconds": region.inMilliseconds,
+                                    "outMilliseconds": region.outMilliseconds]
+        defaults.set(value, forKey: Self.loopKey)
     }
 
     /// The only place the picked URL is touched: its size is checked, then it is copied once into

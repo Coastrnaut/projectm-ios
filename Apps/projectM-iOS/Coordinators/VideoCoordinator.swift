@@ -9,10 +9,15 @@
 //   video and shows `notice` (the error's plain message), which clears itself after 6 s or on
 //   Dismiss and never blocks anything. Cancelling a picker shows nothing.
 // * `onVideoChange` tells the app coordinator which stored copy the video layer plays.
+// * MED-003 (loop region, R7, R9, R10): `loopRegion` is the stored video's saved region (nil: the
+//   whole file), kept clamped to `durationNanoseconds` once the layer reports it. Slider edits save
+//   at once and reach the player through `onLoopRegionChange` once they settle (`loopSettle` after
+//   the last change, or `commitLoop()` at the end of a drag), so a drag restarts the decoder once.
 import CoreTransferable
 import Foundation
 import Observation
 import PhotosUI
+import SceneFormat
 import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
@@ -38,12 +43,28 @@ final class VideoCoordinator {
     @ObservationIgnored private var noticeTask: Task<Void, Never>?
     @ObservationIgnored var onVideoChange: ((StoredVideo?) -> Void)?
 
+    /// MED-003: the stored video's loop region (nil: the whole file).
+    private(set) var loopRegion: VideoLoopRegion?
+    /// MED-003: the playing copy's duration, from the video layer (nil until it opened).
+    var durationNanoseconds: Int64? {
+        didSet { if let durationNanoseconds, durationNanoseconds != oldValue { clampLoopToDuration(durationNanoseconds) } }
+    }
+    /// MED-003: tells the app coordinator the region to play, after an edit settled.
+    @ObservationIgnored var onLoopRegionChange: ((VideoLoopRegion?) -> Void)?
+    /// MED-003: how long an edit must rest before it reaches the player.
+    @ObservationIgnored var loopSettle: Duration = .milliseconds(400)
+    @ObservationIgnored private var loopApplyTask: Task<Void, Never>?
+    /// MED-003: the region last handed to the player (tests).
+    @ObservationIgnored private(set) var appliedLoopRegion: VideoLoopRegion?
+
     /// `store` is nil when the folder cannot be named; imports then fail with `.saveFailed`.
     init(store: VideoStore?,
          announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }) {
         self.store = store
         self.announce = announce
         video = store?.current()
+        loopRegion = video.flatMap { (stored: StoredVideo) -> VideoLoopRegion? in store?.loopRegion(for: stored.id) }
+        appliedLoopRegion = loopRegion
     }
 
     static func makeDefault(defaults: UserDefaults) -> VideoCoordinator {
@@ -135,7 +156,106 @@ final class VideoCoordinator {
     private func setVideo(_ stored: StoredVideo?) {
         video = stored
         playingSize = nil
+        durationNanoseconds = nil
+        loopApplyTask?.cancel()
+        loopApplyTask = nil
+        loopRegion = stored.flatMap { (s: StoredVideo) -> VideoLoopRegion? in store?.loopRegion(for: s.id) }
+        appliedLoopRegion = loopRegion
         onVideoChange?(stored)
+    }
+
+    // MARK: - Loop region (MED-003)
+
+    /// The region the sliders show: the saved one clamped to the duration, or the whole file.
+    var effectiveLoop: VideoLoopRegion? {
+        guard let durationNanoseconds else { return nil }
+        return VideoLoopRegion.effective(loopRegion, duration: durationNanoseconds)
+    }
+
+    /// True when a region other than the whole file is saved.
+    var hasLoopRegion: Bool { loopRegion != nil }
+
+    /// The In slider moved to `seconds`.
+    func setLoop(inSeconds seconds: Double) {
+        guard let current = effectiveLoop else { return }
+        let start: Int64 = Self.nanoseconds(seconds)
+        var end: Int64 = current.outNanoseconds
+        if end - start < VideoLoopRegion.minimumLengthNanoseconds { end = start + VideoLoopRegion.minimumLengthNanoseconds }
+        updateLoop(VideoLoopRegion(inNanoseconds: start, outNanoseconds: end))
+    }
+
+    /// The Out slider moved to `seconds`.
+    func setLoop(outSeconds seconds: Double) {
+        guard let current = effectiveLoop else { return }
+        let end: Int64 = Self.nanoseconds(seconds)
+        var start: Int64 = current.inNanoseconds
+        if end - start < VideoLoopRegion.minimumLengthNanoseconds { start = end - VideoLoopRegion.minimumLengthNanoseconds }
+        updateLoop(VideoLoopRegion(inNanoseconds: start, outNanoseconds: end))
+    }
+
+    /// Reset Loop: the whole file, applied at once.
+    func resetLoop() {
+        updateLoop(nil)
+        commitLoop()
+    }
+
+    /// The end of a drag: the player gets the saved region now.
+    func commitLoop() {
+        loopApplyTask?.cancel()
+        loopApplyTask = nil
+        applyLoop()
+    }
+
+    /// MED-003-R8: a restored scene's, undo state's or cue's region; applied only when `storeID` is
+    /// the stored video (nil: the scene has no video, nothing changes; no loop: the whole file).
+    func restoreLoop(storeID: String?, loop: SceneVideoLoop?) {
+        guard let storeID, let video, video.id.uuidString == storeID else { return }
+        let region = SceneVideoLoopBridge.region(loop)
+        guard region != loopRegion else { return }
+        updateLoop(region)
+        commitLoop()
+    }
+
+    /// Milliseconds rounded to the nearest whole millisecond.
+    private static func nanoseconds(_ seconds: Double) -> Int64 {
+        let milliseconds: Double = (max(seconds, 0) * 1000).rounded()
+        return Int64(milliseconds) * 1_000_000
+    }
+
+    /// Saves `region` (clamped; the whole file is saved as none) and schedules the player update.
+    private func updateLoop(_ region: VideoLoopRegion?) {
+        guard let video else { return }
+        var saved: VideoLoopRegion? = region
+        if let region, let durationNanoseconds {
+            let clamped = region.effective(duration: durationNanoseconds)
+            saved = clamped.isWholeFile(duration: durationNanoseconds) ? nil : clamped
+        }
+        loopRegion = saved
+        store?.setLoopRegion(saved, for: video.id)
+        loopApplyTask?.cancel()
+        let delay = loopSettle
+        loopApplyTask = Task { [weak self] in
+            try? await Task.sleep(for: delay)
+            guard !Task.isCancelled else { return }
+            self?.applyLoop()
+        }
+    }
+
+    private func applyLoop() {
+        guard appliedLoopRegion != loopRegion else { return }
+        appliedLoopRegion = loopRegion
+        onLoopRegionChange?(loopRegion)
+    }
+
+    /// A saved region that no longer fits the opened copy is clamped (and saved) without a restart.
+    private func clampLoopToDuration(_ duration: Int64) {
+        guard let video, let region = loopRegion else { return }
+        let clamped = region.effective(duration: duration)
+        let saved: VideoLoopRegion? = clamped.isWholeFile(duration: duration) ? nil : clamped
+        guard saved != region else { return }
+        if appliedLoopRegion == region { appliedLoopRegion = saved }   // the layer already plays the clamped region
+        loopRegion = saved
+        store?.setLoopRegion(saved, for: video.id)
     }
 
     // MARK: - Notice

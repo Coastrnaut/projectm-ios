@@ -5,7 +5,8 @@
 //   visual's spec, then the visual (only when it differs from the recorded one, so an undo that keeps
 //   the visual leaves Camera running), then the same `visualSettingsChanged()` and
 //   `glowSettingsChanged()`. The audio source is never touched; the stored photo and video are not
-//   applied (they are not undoable).
+//   applied (they are not undoable). MED-003: the stored video's loop region is applied when the
+//   state's video is the stored one.
 // * The keyboard shortcuts (⌘Z, ⇧⌘Z) do not show the controls.
 import Foundation
 import VisualGenerators
@@ -31,6 +32,7 @@ extension AppCoordinator {
         if settings.glowRadius != inputs.glowRadius { settings.glowRadius = inputs.glowRadius }
         if settings.glowThreshold != inputs.glowThreshold { settings.glowThreshold = inputs.glowThreshold }
         if texts.spec != inputs.text { texts.spec = inputs.text }
+        if let id = inputs.videoID { videos.restoreLoop(storeID: id.uuidString, loop: inputs.videoLoop) }   // MED-003-R8
         let recorded = SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
         if recorded != inputs.visual { settings.visual = inputs.visual }
         visualSettingsChanged()
