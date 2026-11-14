@@ -105,3 +105,8 @@ extension LiveBandAnalyzer {
   "Manual tempo cleared. No tempo", "Tap slower", "Tap faster".
 - DEBUG launch argument `-uitestTapInterval <ms>`: every tap advances a synthetic clock by that
   many milliseconds.
+- Note (ANL-006, 2026-11-13): the readout's words, the Tap value outside a tap sequence and the
+  Reset announcement's second sentence now follow the tempo confidence indicator
+  (`specs/088-anl-006-tempo-confidence-indicator/contracts/tempo-confidence.md`): "120 BPM, stable",
+  "About 120 BPM, uncertain", "Searching for tempo" replace "126 BPM, detected" and "No tempo";
+  "120 BPM, manual" is unchanged. `TempoSnapshot` and the tempo source are unchanged.

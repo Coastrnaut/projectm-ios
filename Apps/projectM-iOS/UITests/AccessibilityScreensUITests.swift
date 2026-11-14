@@ -96,8 +96,8 @@ final class AccessibilityScreensUITests: XCTestCase {
                        reason: "the system section header style (Apple's secondary grey)")]
         + ["controls", "showRow"].map { (screen: String) -> AuditFilter in
             AuditFilter(screen: screen, type: .contrast, element: "—",
-                        reason: "the tempo readout's em dash (no tempo yet): a one-point white stroke on the dark "
-                            + "controls that the pixel sampler cannot measure; VoiceOver reads it as \"Tempo, No tempo\"")
+                        reason: "the tempo readout's em dash (searching, ANL-006): a one-point white stroke on the dark "
+                            + "controls that the pixel sampler cannot measure; VoiceOver reads it as \"Tempo, Searching for tempo\"")
         }
 
     private static let auditTypes: XCUIAccessibilityAuditType = [

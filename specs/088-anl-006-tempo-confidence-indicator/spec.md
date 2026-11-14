@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13
 
 **Input**: User description: "Implement ANL-006 (Tempo confidence indicator) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose stable, searching and
