@@ -122,7 +122,7 @@ file of about 4 s with the usual notice (none for the manual stop, the low-stora
 - **REC-008-S2**: Audio in a 10 s file ends within 20 ms of 10 s.
 - **REC-008-S3**: The frame loop never waits on the finish: no frame call blocks, and finishing runs off it.
 - **REC-008-S4**: A manual or disk-guard stop at 4 s of a 10 s length gives a file of about 4 s with the stop's own notice.
-- **REC-008-S5**: The setting survives a relaunch, and the UI test (10 s via launch argument, record on the Photo visual, the finished file reads back at 10 s) runs in under 30 s of test time beyond the 10 s recording.
+- **REC-008-S5**: The setting survives a relaunch, and the UI test (10 s via launch argument, record on the Photo visual, the finished file reads back at 10 s) runs in under 30 s in total (the 10 s recording included).
 
 ## Assumptions
 
