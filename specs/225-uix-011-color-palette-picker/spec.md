@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-011-T01–T10 verified on the Mac: SceneFormat, VisualGenerators and LibraryBackup package tests on the host; app unit and UI tests on a private iOS 27.2 simulator; the Linux build of the packages runs in CI, not on this host; no device task)
 
 **Input**: User description: "Implement UIX-011 (Color palette picker) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Create and save local palettes with swatches and gradients." Acceptance, verbatim:
