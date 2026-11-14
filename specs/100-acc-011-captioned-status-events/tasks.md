@@ -45,8 +45,8 @@ data-model, contracts/status-events.md, quickstart)
 ## Phase 6: Polish and verification
 
 - [ ] ACC-011-T14 UI test `Apps/projectM-iOS/UITests/StatusEventsUITests.swift` (`-uitestFake inAppPlayback`, `-uitestDiagnostics`): waiting → active → interrupted with hold text; Black out → restored with caption; each < 30 s
-- [ ] ACC-011-T15 Run the scripts (compliance, docs, motion policy, permission catalog, status events, test_scripts) and the simulator suites: projectM-iOSTests, StatusUITests, AccessibilityScreensUITests, StatusEventsUITests, VideoRecordingUITests, FrameCaptureUITests; PosterBoard count after; delete the simulator
-- [ ] ACC-011-T16 Update the spec status and ACC-004's note (direct posts moved) in `spec.md`
+- [ ] ACC-011-T15 Run the scripts (compliance, docs, motion policy, permission catalog, status events, test_scripts) and the simulator suites: projectM-iOSTests, StatusUITests, AccessibilityScreensUITests, StatusEventsUITests, VideoRecordingUITests, FrameCaptureUITests; PosterBoard count after; delete the simulator; confirm ACC-011-R8 with `git diff --stat main -- Packages/CaptureUI specs/*/contracts/ui-strings*` (empty)
+- [ ] ACC-011-T16 Update the spec status in `spec.md` (results, open device task) and record there that ACC-004's "other features' one-shot announcements still post directly" note is resolved for capture and recording statuses
 - [ ] ACC-011-T17 `{device}` VoiceOver pass on D1 (quickstart C) — left open, needs a person
 
 ## Dependencies

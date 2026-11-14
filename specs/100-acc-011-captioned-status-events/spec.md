@@ -194,3 +194,6 @@ recording stop/refusal, camera-state and blackout-phase enums and requires a row
   playback-transport announcements (ACC-004, PlayQueue, TransportBar) are unchanged.
 - Captions reuse existing texts; no new contract-pinned strings are added to UIStrings.
 - Simulator results are not device evidence; the VoiceOver pass is a `{device}` task left open.
+- ACC-004 spoke "Output restored" when the restore was requested; it is now spoken when the output is
+  live again, with "Restoring output" while the restore waits or fades in (research ACC-011-D3). ACC-004's
+  texts are unchanged.

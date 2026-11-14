@@ -22,7 +22,8 @@ indicator text, `UIStrings.sourceStatus` (FR-042), e.g. "In-App Playback · Acti
 | X11 | finishing → idle with the file offered | "Recording ready" | "Recording ready" | recording | U | P | user-caused (new) |
 | X12 | recording refused (each `RecordingRefusal`, incl. REC-015 low storage) | refusal notice | refusal notice | recording | U | P | user-caused |
 | X13 | recording stopped automatically (each `RecordingStopReason` except `user`: limit, background, paused, blacked out, visual changed, size changed, presentation lost, writer failed, low storage) | stop notice | stop notice | recording | S | P | safety (data) |
-| X14 | recording failed (each `RecordingFailure`) / "Recording saved." | failure notice | failure notice | recording | S | P | safety (data) |
+| X14 | recording failed (each `RecordingFailure`) | failure notice | failure notice | recording | S | P | safety (data) |
+| X14a | recording moved to Files ("Recording saved.") | "Recording saved." | same | recording | U | P | user-caused |
 | X15 | camera → requestingAccess | iOS permission alert | — | camera | U | SP | iOS reads its own alert |
 | X16 | camera → starting / running (CAM-012, CAM-002) | "Camera on" / "Front camera on" | same | camera | U | P | user-caused (new); privacy |
 | X17 | camera → denied, restricted (FILE-013), unavailable, interrupted, failed (CAM-001/002) | permission/camera notice | same | camera | S | P | safety (permission, privacy) |
