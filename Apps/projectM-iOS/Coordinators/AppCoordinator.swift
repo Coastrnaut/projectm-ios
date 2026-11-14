@@ -210,6 +210,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraNoticeDismissed = false
     /// The imported photo (MED-001): the store, the pickers' results and the notice.
     let photos: PhotoCoordinator
+    /// The image slideshow (MED-006): pictures, order, timing and the schedule; drives the Photo visual.
+    let slideshow: SlideshowCoordinator
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
     private(set) var photoVisual: PhotoVisualHost?
     /// The photo layer's state while the Photo visual exists (`empty` otherwise).
@@ -365,6 +367,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midi = MIDIDiscoveryCoordinator(settings: settings, announce: announceMIDI)
         #endif
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
+        slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
         // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
@@ -378,12 +381,13 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
+            if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
         sceneRepair = SceneRepairCoordinator(registry: try? SceneArchiveService.appRegistry())   // SCN-012
         #if DEBUG
-        UITestPhotoFixture.seedIfRequested(photos)   // MED-001: PhotoLayerUITests (pickers cannot be automated)
+        UITestPhotoFixture.seedIfRequested(photos, slideshow: slideshow)   // MED-001, MED-006 (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
         UITestTextFixture.seedIfRequested(texts)     // MED-009: TextOverlayUITests
         #endif
@@ -455,7 +459,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
-        photos.onPhotoChange = { [weak self] (stored: StoredPhoto?) in self?.photoVisual?.content = Self.photoContent(stored) }
+        photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
+        connectSlideshow()   // MED-006
         videos.onVideoChange = { [weak self] (stored: StoredVideo?) in
             guard let self, let host = videoVisual else { return }
             host.content = .none   // MED-003: the new video's region applies from its first picture
@@ -1011,7 +1016,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.faultInjection = armedRenderFaults
             #endif
             host.onImageStateChange = { [weak self] (state: ImageLayerState) in self?.photoStateChanged(state) }
-            host.content = Self.photoContent(photos.photo)
+            slideshow.restartPlayback()   // MED-006: from the first slide
+            host.beforeFrame = { [weak self] () -> Void in self?.slideshowTick() }
+            host.content = photoLayerContent
+            if let next = slideshow.nextURL { host.preload(next) }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             photoVisual = host
             applyLayerState(to: host.compositor)   // CMP-015
@@ -1032,7 +1040,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         photoState = state
         switch state {
         case .ready(let width, let height): photos.loadedSize = (width, height)
-        case .failed: photos.storedCopyFailed()   // MED-001-R11, R14
+        case .failed: if !slideshow.isActive { photos.storedCopyFailed() }   // MED-001-R11, R14; MED-006-R3: no notice per slide
         case .empty, .loading: photos.loadedSize = nil
         }
     }
@@ -1380,6 +1388,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
+            if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
         }
         if let visual { settings.visual = visual }
         sceneHistory.restart()   // SCN-010-R9: Reopen is not an edit
@@ -1405,6 +1414,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
                     videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
                     videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
+                    slideshow: slideshow.sceneValue,   // MED-006
                     layerComposites: layers.composites)   // CMP-015
     }
 

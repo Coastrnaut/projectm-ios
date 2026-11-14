@@ -265,6 +265,9 @@ struct VisualizerView: View {
                         .accessibilityValue("\(photo.framesShown)")
                 }
             }
+            #if DEBUG
+            if coordinator.photoVisual != nil { SlideshowProbe(slideshow: coordinator.slideshow) }   // MED-006-R15
+            #endif
             if let video = coordinator.videoVisual {   // MED-002: frames shown and the shown picture's index
                 TimelineView(.periodic(from: .now, by: 0.25)) { _ in
                     let index = video.shownFrameIndex().map(String.init) ?? "none"
@@ -342,6 +345,7 @@ struct VisualizerView: View {
                          reduceFlashingAvailable: coordinator.renderer?.supportsReduceFlashing ?? true,
                          nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                          glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
+                         slideshow: coordinator.slideshow,   // MED-006
                          videos: coordinator.videos, texts: coordinator.texts,
                          show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
                          libraryBackup: coordinator.libraryBackup,   // FILE-005

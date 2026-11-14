@@ -76,7 +76,8 @@ final class SettingsTests: XCTestCase {
         // reset) but written by PhotoStore, VideoStore and TextOverlayStore only.
         XCTAssertEqual(keys, Set(AppSettings.allKeys).subtracting([AppSettings.photoIDKey, AppSettings.videoIDKey,
                                                                    AppSettings.videoLoopKey, AppSettings.videoSpeedKey,
-                                                                   AppSettings.textOverlayKey]), "FR-065")
+                                                                   AppSettings.textOverlayKey,
+                                                                   AppSettings.slideshowKey]), "FR-065")   // MED-006: SlideshowStore
     }
 
     /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.

@@ -37,6 +37,8 @@ struct SceneInputs: Equatable, Sendable {
     var videoLoop: SceneVideoLoop? = nil
     /// MED-004-R7: the stored video's speed in percent (nil: 1×).
     var videoSpeedPercent: Int? = nil
+    /// MED-006-R12: the image slideshow (nil: off and empty).
+    var slideshow: SceneSlideshow? = nil
     /// CMP-015-R5 (research CMP-015-D2): the saved composite of each drawn layer kind (`photo`, `video`,
     /// `text`, `spectrum.circular`), edited in the layer inspector. nil keeps a matched layer's carried
     /// composite (callers that do not track composites); non-nil is authoritative, a missing kind
@@ -55,6 +57,8 @@ struct SceneRestoredValues: Sendable, Equatable {
     var videoLoop: SceneVideoLoop? = nil
     /// MED-004-R7: the video asset's speed in percent (nil: 1×).
     var videoSpeedPercent: Int? = nil
+    /// MED-006-R12: the photo layer's slideshow (nil: no photo layer).
+    var slideshow: SceneSlideshowRestore? = nil
     /// CMP-015: the document's drawn-layer composites (first layer of each kind; defaults left out).
     var layerComposites: [String: SceneComposite] = [:]
 }
@@ -134,8 +138,8 @@ enum SceneAutosaveCapture {
         case .linearSpectrum:
             contents = [.linearSpectrum]
         case .photo:
-            if let id = inputs.photoID {
-                assets[photoKey] = .photo(storeID: id.uuidString)
+            if let asset = SceneSlideshowBridge.photoAsset(photoID: inputs.photoID, slideshow: inputs.slideshow) {   // MED-006
+                assets[photoKey] = asset
                 contents = [.photo(asset: photoKey)]
             }
             contents += spectrumOver
@@ -248,6 +252,7 @@ enum SceneAutosaveCapture {
         let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
         return SceneRestoredValues(parameters: parameters, text: text, bindings: live.bindings,
                                    videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
+                                   slideshow: SceneSlideshowBridge.restore(in: document),   // MED-006
                                    layerComposites: layerComposites(in: document))
     }
 
