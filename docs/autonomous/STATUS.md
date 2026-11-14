@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T20:21:52Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T20:24:22Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,9 +11,9 @@
 |---|---|
 | audited | 104 |
 | implementing | 5 |
-| built | 4 |
+| built | 3 |
 | unit_passed | 1 |
-| integrated | 211 |
+| integrated | 212 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 26 | 4 | 2 | 1 | 118 | 0 |
+| P1 | 26 | 4 | 1 | 1 | 119 | 0 |
 | P2 | 67 | 1 | 2 | 0 | 9 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 114 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 113 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -245,6 +245,7 @@ The physical-device suite may **not** start:
 | VIS-005 | Radial waveform | `9bbd8af5` | `feature/vis-005` |
 | VIS-006 | Beat pulse rings | `427617b9` | `feature/vis-006` |
 | VIS-007 | Mandala symmetry | `8bdb0122` | `feature/vis-007` |
+| VIS-008 | Particle fountain | `11e727ab` | `feature/vis-008` |
 
 ## Proved already implemented
 
@@ -2029,6 +2030,12 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `bd661ef22a94` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-008/20261114T104021/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 782 + UI 5 (MIDI discovery, monitor, learn, video recording)`: pass at `2a986abd` (log `.autonomous/logs/integration/batch20/app-tests.log`)
 
+### QA-009 Accessibility snapshot suite (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d151e5288bc9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-009/20261114T152204/autonomous-tests.log`)
+
 ### REC-001 Still frame capture (integrated)
 - `python3 scripts/check_compliance.py`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/docs.log`)
@@ -2513,7 +2520,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `0116459b31c6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-007/20261114T143158/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 904 + UI 1 (mandala)`: pass at `8bdb0122` (log `.autonomous/logs/integration/batch45/app-tests.log`)
 
-### VIS-008 Particle fountain (unit_passed)
+### VIS-008 Particle fountain (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/script-tests.log`)
@@ -2527,3 +2534,4 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `a91aca48785b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-008/20261114T151548/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 938 + UI 2 (particle fountain, mandala)`: pass at `11e727ab` (log `.autonomous/logs/integration/batch53/app-tests.log`)
