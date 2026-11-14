@@ -574,7 +574,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         try openShowEditor()
         let cue = app.descendants(matching: .any)["showCue2"].firstMatch
         XCTAssertTrue(scrollTo(cue), "cue 2")
-        swipeAction(cue, id: "showRenameScene", titles: ["Name", "Rename Scene"])
+        swipeAction(cue, id: "showRenameScene", titles: ["Rename Scene…"], viaMore: true)
         let alert = app.alerts["Rename Scene"]
         XCTAssertTrue(alert.appears(within: 3), "the Rename Scene alert")
         try audit("renameSceneAlert")
@@ -589,10 +589,15 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     }
 
     /// Swipes a cue row right (short drag) and picks one of its leading actions (SceneDuplicateUITests).
-    private func swipeAction(_ row: XCUIElement, id: String, titles: [String]) {
+    private func swipeAction(_ row: XCUIElement, id: String, titles: [String], viaMore: Bool = false) {
         let start = row.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5)),
                     withVelocity: .fast, thenHoldForDuration: 0.05)
+        if viaMore {   // the cue's edit actions are in the leading swipe's More… dialog (show editor fix, 2026-11-14)
+            let more = app.buttons.matching(NSPredicate(format: "identifier == %@ OR label == %@", "showCueMore", "More Actions")).firstMatch
+            XCTAssertTrue(more.appears(within: 3), "More is offered")
+            more.tap()
+        }
         let button = app.buttons.matching(NSPredicate(format: "identifier == %@ OR label IN %@", id, titles)).firstMatch
         XCTAssertTrue(button.appears(within: 3), "\(id) is offered")
         button.tap()

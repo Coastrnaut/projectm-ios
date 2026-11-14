@@ -102,12 +102,16 @@ struct SettingsView: View {
     var cameraLens: CameraLensChoice? = nil
     /// CAM-004: the Lock exposure row (nil in previews and tests that don't need it).
     var cameraExposure: CameraExposureChoice? = nil
+    /// CAM-006: the Lock white balance row (nil in previews and tests that don't need it).
+    var cameraWhiteBalance: CameraWhiteBalanceChoice? = nil
     /// CAM-005: whether the chosen camera can focus on a point (nil: no focus note, e.g. in previews).
     var cameraCanFocus: (@MainActor () -> Bool)? = nil
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
     /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
     var powerProfile: PowerProfileSetting? = nil
+    /// ACC-007: haptic beat pulses (nil hides the section, e.g. in previews).
+    var hapticBeat: HapticBeatCoordinator? = nil
     /// PERF-012: Export performance report (Settings → Performance).
     var performanceReport: PerformanceReportExport? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
@@ -190,6 +194,7 @@ struct SettingsView: View {
             .accessibilityIdentifier("cameraPositionPicker")
             if let cameraLens { CameraLensRow(choice: cameraLens) }   // CAM-003-R2
             if let cameraExposure { CameraExposureRow(choice: cameraExposure) }   // CAM-004-R1
+            if let cameraWhiteBalance { CameraWhiteBalanceRow(choice: cameraWhiteBalance) }   // CAM-006-R1
             if let cameraCanFocus { CameraFocusNote(canFocus: cameraCanFocus()) }   // CAM-005-R5
             Toggle("Mirror", isOn: $settings.cameraMirrored)
                 .accessibilityIdentifier("cameraMirrorToggle")
@@ -197,7 +202,7 @@ struct SettingsView: View {
         } header: {
             Text("Camera")
         } footer: {
-            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Lock exposure holds the camera's current brightness until you turn it off, change lens or camera, or the camera stops. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
+            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Lock exposure holds the camera's current brightness until you turn it off, change lens or camera, or the camera stops. Lock white balance holds the camera's current colors the same way, also through an interruption. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
         }
     }
 
@@ -525,6 +530,7 @@ struct SettingsView: View {
     @ViewBuilder private var safetySections: some View {
         SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
+        if let hapticBeat { HapticBeatSection(coordinator: hapticBeat).id("haptics") }   // ACC-007-R1
     }
 
     @ViewBuilder private var performanceSection: some View {

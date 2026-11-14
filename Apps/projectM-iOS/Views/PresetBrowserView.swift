@@ -15,6 +15,8 @@
 // Roadmap PRE-005: motion chips (Calm, Moderate, Energetic) under the colour chips, joined with AND.
 // Roadmap PRE-010: every playable row offers "Preview" (menu, leading swipe, VoiceOver action); the
 // audition bar sits under the stack, and closing the browser cancels a preview.
+// Roadmap PRE-009: previewable rows offer "Compare…" / "Compare with <A>"; the pick bar sits above the audition
+// bar and the Compare sheet opens from the stack (PresetCompareView.swift); closing the browser ends both.
 import PresetLibrary
 import SwiftUI
 
@@ -98,6 +100,10 @@ struct PresetBrowserView: View {
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
             .safeAreaInset(edge: .bottom) { PresetAuditionBar(presets: presets) { dismiss() } }   // PRE-010
+            .safeAreaInset(edge: .bottom) { PresetComparePickBar(model: presets.comparison) }   // PRE-009
+            .sheet(item: compareSession) { (session: PresetComparisonModel.Session) in   // PRE-009
+                if let model = presets.comparison { PresetCompareView(model: model, session: session, onChoose: onChoose) }
+            }
         }
         // PRE-015: on the stack itself, so it shows over whichever list the row is in.
         .duplicateResultAlert(userPresets, isPresented: true)
@@ -106,6 +112,7 @@ struct PresetBrowserView: View {
         .onDisappear {
             presets.cancelFlashWarning()   // closing the browser answers Cancel
             Task { @MainActor in await presets.cancelAudition() }   // PRE-010-R4: and ends a preview
+            presets.comparison?.browserClosed()   // PRE-009: no waiting pick, no running comparison
         }
         .environment(userPresets)   // PRE-015: rows duplicate and edit through it
         .accessibilityIdentifier("presetBrowser")
@@ -117,6 +124,12 @@ struct PresetBrowserView: View {
         let colors: String = presets.selectedColors.map(\.rawValue).joined(separator: ",")
         let energies: String = presets.selectedEnergies.map(\.rawValue).joined(separator: ",")   // PRE-005
         return "\(query)|\(presets.tagsVersion)|\(tags)|\(presets.colorsVersion)|\(colors)|\(presets.motionVersion)|\(energies)"
+    }
+
+    /// PRE-009: the Compare sheet's session.
+    private var compareSession: Binding<PresetComparisonModel.Session?> {
+        Binding(get: { presets.comparison?.session },
+                set: { (value: PresetComparisonModel.Session?) in if value == nil { presets.comparison?.close() } })
     }
 
     /// PRE-008: manual and smart collections together.
@@ -327,6 +340,7 @@ struct PresetRow: View {
             .modifier(UserPresetActions(user: user))
             .modifier(CopyActions(duplicate: duplicateAction, edit: editable ? editAction : nil))
             .modifier(PreviewAction(preview: previewAction))   // PRE-010-R1
+            .modifier(PresetCompareAccessibilityAction(compare: compareAction))   // PRE-009-R1
             Button {
                 presets.toggleFavoriteAnnounced(preset)   // ACC-004-R5
             } label: {
@@ -415,6 +429,10 @@ struct PresetRow: View {
         if let previewAction {   // PRE-010-R1
             Button(action: previewAction) { Label("Preview", systemImage: "eye") }
                 .accessibilityIdentifier("previewPreset")
+        }
+        if let compareAction {   // PRE-009-R1
+            Button(action: compareAction) { Label(compareTitle, systemImage: "rectangle.split.2x1") }
+                .accessibilityIdentifier("comparePreset")
         }
         Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
         Button { tagging = true } label: { Label("Tags…", systemImage: "tag") }

@@ -10,11 +10,16 @@
 // * SHOW-002: `showAutoAdvance` advances a cue with a dwell through `show.next()`; its hold reads pause, blackout,
 //   the repair report and the scene phase.
 // * SHOW-005: `setShowHold` turns the performer's Hold on or off (session only) and announces it on the cue lane.
+// * SHOW-006: `makeCueRehearsal` reads the live values and the safety settings (never writes them), SCN-006's stored
+//   pictures, and announces on the cue lane.
 // * The buttons in the controls restart the controls' hide delay; the keyboard shortcuts do not show
 //   the controls.
+import FlashSafety
 import Foundation
 import ParameterGraph
 import SceneFormat
+import UIKit
+import VisualEffects
 import ShowControl
 import VisualGenerators
 import VisualParameters
@@ -162,6 +167,28 @@ extension AppCoordinator {
         scenePreviews.sceneSaved(document.id)   // SCN-006: the output already shows the new scene
         return true
     }
+
+    // MARK: Rehearsal (SHOW-006)
+
+    func makeCueRehearsal() -> CueRehearsalCoordinator {
+        let rehearsal = CueRehearsalCoordinator(
+            show: show,
+            liveValues: { [weak self] () -> SnapshotRenderValues in
+                guard let self else { return SnapshotRenderValues(barCount: .b64, orientation: .vertical, spacing: 0, glow: BloomParameters()) }
+                return SnapshotRenderValues(settings: self.settings)
+            },
+            safety: { [weak self] () -> (reduceFlashing: Bool, clamp: SafetyClamp) in
+                guard let self else { return (reduceFlashing: true, clamp: .standard) }
+                return (reduceFlashing: self.settings.effectiveReduceFlashing, clamp: self.settings.safetyClamp)
+            })
+        rehearsal.storedPicture = { [weak self] (sceneID: String) async -> UIImage? in
+            await self?.scenePreviews.image(forScene: sceneID)
+        }
+        rehearsal.announce = { [weak self] (message: String) in self?.announcer.announce(message, kind: .cue) }
+        return rehearsal
+    }
+
+    func toggleCueRehearsal() { showControls(); cueRehearsal.toggle() }
 
     // MARK: Controls and keys
 
