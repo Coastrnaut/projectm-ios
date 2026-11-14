@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SCN-009-T01-T11 verified on the Mac, simulator "SCN9 iPhone 17", iOS 27.2; no
+device claim). SceneCompareAcceptanceTests 4, regression 30 unit tests (0.56 s), SceneCompareUITests 1 (26.8-34.4 s on a
+loaded Mac).
 
 **Input**: Roadmap row SCN-009 (P2, size L, depends on SCN-008, integrated). Observable behavior, verbatim:
 "Preview two saved scene states and switch instantly." Acceptance, verbatim: "Switch never mutates saved document
@@ -36,8 +38,8 @@ local-first option.
 - Q: What are "two saved scene states"? → A: Two of the current scene's SCN-008 snapshots, or the current scene (as it was when Compare started) against one snapshot. A side's state is the pre-Compare values with that snapshot's usable values laid over them, so switching back and forth always reaches exactly the same two states.
 - Q: What does the switch change? → A: Only what a snapshot holds (the app-held glow and spectrum parameters, SCN-008). It never touches media, the visual choice, the preset, the effect chain, text or layers.
 - Q: Where is Compare started? → A: Settings › Visual, under the Snapshots rows: "Compare A/B…" opens a small sheet to pick A (Current scene or a snapshot) and B (a snapshot), then "Start Compare". Settings closes so the output is visible.
-- Q: What does the user see during Compare? → A: A "Comparing A/B" bar in the visualizer's top status stack, shown with or without the controls: a large two-segment A | B toggle naming both sides and a "Done" button. VoiceOver reads the toggle as "Compare side" with value "A, <name>" or "B, <name>".
-- Q: What does leaving offer? → A: "Done" asks "Finish Compare?" with "Keep A", "Keep B", "Cancel Compare" (restores the scene as it was before Compare) and "Keep Comparing" (closes the question).
+- Q: What does the user see during Compare? → A: A "Comparing A/B" bar in the visualizer's top status stack, shown with or without the controls: two large A and B buttons naming both sides (the shown one prominent and selected) and a "Done" button. VoiceOver reads the bar as "Comparing A/B" with value "A, <name>" or "B, <name>".
+- Q: What does leaving offer? → A: "Done" turns the bar's buttons into "Finish Compare?" with "Keep A", "Keep B" and "Cancel Compare" (restores the scene as it was before Compare); "Back" returns to the switch (keep comparing). In place, not an alert, so the output stays visible (implementation note 2026-11-14: an alert presented from the status stack did not appear on the simulator).
 - Q: What is saved while comparing? → A: Nothing. Autosave, the scene file, the snapshot list and the undo history are untouched until Keep. Any edit that was pending when Compare started is committed first, so the file on disk is the pre-Compare scene.
 - Q: What does Keep write? → A: The kept side becomes the live scene, the autosave commits it once through its normal path, and the history records one undo step "Keep <name>" (undo returns to the pre-Compare scene). The snapshot list is unchanged.
 - Q: Scene lock? → A: Starting Compare is refused while locked (the switch writes the same Settings targets the lock guards; a locked show's output stays as performed). If the scene is locked during Compare, the toggle and Keep are refused with the lock's message; Cancel Compare always works (it returns to the saved scene, which is not an edit).
@@ -120,7 +122,7 @@ The performer compares what is on screen now with one snapshot.
 - **SCN-009-R4**: While Compare is active, no write MUST reach the scene file, its backup, the snapshot list or the undo history (autosave triggers, Settings closing, background and terminate included); undo, redo and snapshot edits MUST be refused.
 - **SCN-009-R5**: Cancel Compare MUST restore the pre-Compare state through the history's apply path and resume autosave and history so that nothing is written when nothing else changed.
 - **SCN-009-R6**: Keep A / Keep B MUST be refused while locked; otherwise set the kept side, resume, commit the scene once through the autosave's normal path and record one undo step "Keep <name>".
-- **SCN-009-R7**: A "Comparing A/B" bar MUST stay in the visualizer's status stack during Compare, shown with or without the controls, with the A | B toggle and Done; Done asks Keep A, Keep B, Cancel Compare or Keep Comparing.
+- **SCN-009-R7**: A "Comparing A/B" bar MUST stay in the visualizer's status stack during Compare, shown with or without the controls, with the A and B buttons and Done; Done shows Keep A, Keep B and Cancel Compare in place (Back keeps comparing).
 - **SCN-009-R8**: Start, each switch and leaving MUST be announced on the library lane (ACC-004); the toggle has label "Compare side" and value "A, <name>" / "B, <name>".
 - **SCN-009-R9**: A crash or kill during Compare MUST leave the pre-Compare scene on disk, restored by the existing launch restore (SCN-002) or PERF-010's offer.
 - **SCN-009-R10**: No new stored setting, scene field or file. Compare is session state in memory only.

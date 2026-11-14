@@ -4,8 +4,9 @@
 // * `SceneCompareRow`: "Compare A/B…" under the Snapshots rows in Settings › Visual; opens the setup sheet.
 // * `SceneCompareSetupSheet`: pick A (Current scene or a snapshot) and B (a snapshot), then Start Compare.
 // * `SceneCompareBar`: "Comparing A/B" in the visualizer's top status stack, with or without the controls: two large
-//   A and B buttons (the shown one prominent and selected) and Done, which asks Keep A, Keep B, Cancel Compare or
-//   Keep Comparing. No animation: a switch is a cut.
+//   A and B buttons (the shown one prominent and selected) and Done, which turns the row into "Finish Compare?":
+//   Keep A, Keep B, Cancel Compare (Back returns). In place, not an alert, so it never hides the output. No animation:
+//   a switch is a cut.
 import SwiftUI
 
 /// A usable snapshot the sheet offers.
@@ -117,25 +118,20 @@ struct SceneCompareSetupSheet: View {
 }
 
 struct SceneCompareBar: View {
-    @Bindable var compare: SceneCompareCoordinator
+    let compare: SceneCompareCoordinator
 
     var body: some View {
         if let session = compare.session {
             VStack(spacing: 8) {
                 header(session)
-                HStack(spacing: 8) {
-                    sideButton(.a, session: session)
-                    sideButton(.b, session: session)
+                HStack(spacing: 8) {   // Done sits in the row, below the status-bar area (taps there go to the system)
+                    if compare.isConfirmingFinish { finishRow(session) } else { sideRow(session) }
+                    doneButton
                 }
             }
             .padding(10)
             .frame(maxWidth: 420)
             .statusBadgeBackground(RoundedRectangle(cornerRadius: 14))   // ACC-003-R9
-            .confirmationDialog("Finish Compare?", isPresented: $compare.isConfirmingFinish, titleVisibility: .visible) {
-                finishButtons(session)
-            } message: {
-                Text("Keep a side to save it, or cancel to return to the scene as it was.")
-            }
         }
     }
 
@@ -147,12 +143,24 @@ struct SceneCompareBar: View {
                 .accessibilityLabel(SceneCompareCoordinator.title)
                 .accessibilityValue(session.spoken(session.shown))
                 .accessibilityIdentifier("sceneCompareBar")
-            Spacer(minLength: 8)
-            Button("Done") { compare.isConfirmingFinish = true }
-                .font(.footnote.weight(.semibold))
-                .accessibilityHint("Keep A, keep B or cancel Compare.")
-                .accessibilityIdentifier("sceneCompareDone")
+            Spacer(minLength: 0)
         }
+    }
+
+    /// Done opens the finish row in place (Back returns to the switch).
+    private var doneButton: some View {
+        let finishing: Bool = compare.isConfirmingFinish
+        return Button(finishing ? "Back" : "Done") { compare.isConfirmingFinish = !finishing }
+            .font(.callout.weight(.semibold))
+            .frame(minHeight: 44)
+            .buttonStyle(.bordered)
+            .accessibilityHint(finishing ? "Returns to the A and B switch." : "Keep A, keep B or cancel Compare.")
+            .accessibilityIdentifier("sceneCompareDone")
+    }
+
+    @ViewBuilder private func sideRow(_ session: SceneCompareSession) -> some View {
+        sideButton(.a, session: session)
+        sideButton(.b, session: session)
     }
 
     @ViewBuilder private func sideButton(_ side: SceneCompareSide, session: SceneCompareSession) -> some View {
@@ -172,10 +180,24 @@ struct SceneCompareBar: View {
         if shown { button.buttonStyle(.borderedProminent) } else { button.buttonStyle(.bordered) }
     }
 
-    @ViewBuilder private func finishButtons(_ session: SceneCompareSession) -> some View {
-        Button("Keep A (" + session.aName + ")") { compare.keep(.a) }.accessibilityIdentifier("sceneCompareKeepA")
-        Button("Keep B (" + session.bName + ")") { compare.keep(.b) }.accessibilityIdentifier("sceneCompareKeepB")
-        Button("Cancel Compare", role: .destructive) { compare.cancel() }.accessibilityIdentifier("sceneCompareCancel")
-        Button("Keep Comparing", role: .cancel) {}
+    /// "Finish Compare?": Keep A, Keep B (each saves the scene once) or Cancel Compare (restores the scene as it was).
+    @ViewBuilder private func finishRow(_ session: SceneCompareSession) -> some View {
+        finishButton("Keep A", id: "sceneCompareKeepA", label: "Keep A, " + session.aName) { compare.keep(.a) }
+        finishButton("Keep B", id: "sceneCompareKeepB", label: "Keep B, " + session.bName) { compare.keep(.b) }
+        finishButton("Cancel", id: "sceneCompareCancel", label: "Cancel Compare, return to the scene as it was") { compare.cancel() }
+    }
+
+    private func finishButton(_ title: String, id: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.callout.weight(.semibold))
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+                .frame(maxWidth: .infinity, minHeight: 44)
+        }
+        .buttonStyle(.bordered)
+        .accessibilityLabel(label)
+        .accessibilityHint("Finishes Compare.")
+        .accessibilityIdentifier(id)
     }
 }

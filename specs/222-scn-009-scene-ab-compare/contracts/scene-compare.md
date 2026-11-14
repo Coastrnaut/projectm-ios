@@ -22,5 +22,5 @@
 
 ## C5 UI identifiers
 - Settings row: `sceneCompareOpen` ("Compare A/B…"); sheet pickers `sceneCompareA`, `sceneCompareB`; button `sceneCompareStart`
-- Bar: `sceneCompareBar` (label "Comparing A/B"); toggle `sceneCompareToggle` (label "Compare side", value "A, <name>" / "B, <name>"), segments `sceneCompareSideA`, `sceneCompareSideB`; `sceneCompareDone`
-- Dialog buttons: `sceneCompareKeepA`, `sceneCompareKeepB`, `sceneCompareCancel`
+- Bar: `sceneCompareBar` (label "Comparing A/B", value "A, <name>" / "B, <name>"); side buttons `sceneCompareSideA`, `sceneCompareSideB` (labels "A, <name>" / "B, <name>", the shown one Selected); `sceneCompareDone` ("Done", then "Back")
+- Finish row (in the bar, in place of the side buttons): `sceneCompareKeepA`, `sceneCompareKeepB`, `sceneCompareCancel`
