@@ -29,6 +29,46 @@ own brightness.
 | Layer inspector (CMP-015, CMP-008) | Mask and Gradient sections with help, undo and ACC-005 sliders. | No key editor. |
 | Goldens (QA-002) | `GradientMask` goldens on the Mac host and the iOS simulator. | No key golden. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the recommended, conservative option.
+
+- Q: Is the key a new kind of the CMP-007 mask, a field with its own `enabled` flag, or a separate
+  optional value whose presence turns it on? → A: **A separate optional value**:
+  `LayerCompositeSettings.lumaKey` and the saved `composite.lumaKey`; nil (absent) means no key, as for
+  `mask` and `gradientMask`. No `enabled` flag (it would add a second "off" state that saves and
+  round-trips differently from absence); the inspector's toggle sets or removes the value. The key
+  joins the CMP-007/CMP-008 mask block (one more four-float row), so no pass and no pipeline is added
+  (layer alpha = shape coverage × gradient alpha × key keep factor).
+- Q: In which space is luminance measured: linear light, or the displayed (sRGB-encoded) values? →
+  A: **Displayed values**: Rec. 709 luma Y′ = 0.2126·R′ + 0.7152·G′ + 0.0722·B′ of the layer's straight
+  colour (premultiplied colour ÷ alpha, alpha 0 reads 0), each channel clamped to 0…1 and sRGB-encoded
+  with the same curve the CMP-004 blend modes use. Thresholds then follow what the user sees (a mid
+  grey on screen is Y′ ≈ 0.5, not 0.21), which is how video luma keys are set. Rejected: linear-light
+  luminance (dark thresholds crowd into the bottom 5 % of the slider).
+- Q: What shape does the transition at the edge of the range take, and what are the limits? → A: A
+  **linear ramp** outside the range: keyed amount k = 1 for low ≤ Y′ ≤ high, k = 1 − (low − Y′)/s below
+  and 1 − (Y′ − high)/s above, clamped to 0…1 (s = softness; s = 0 is a hard cut, Y′ inside keyed);
+  keep factor = 1 − k, or k when inverted. Low and high are each clamped to 0…1 with low ≤ high (the
+  live model swaps a reversed pair; the decoder swaps with `valueClamped`); softness is clamped to
+  0…0.5. Linear rather than smoothstep keeps the ramp strictly monotonic and the CPU reference exact.
+- Q: Where does the key read the colour, relative to opacity, masks and transforms? → A: On the
+  layer's **sanitised picture colour at the shown pixel** (the same value the draw path already has:
+  per-pixel read for identity transforms, bilinear sample for transformed layers), before opacity, so
+  opacity never changes which pixels are keyed. Its keep factor multiplies the premultiplied colour
+  and alpha together with the masks' coverage in both the masked "over" path and the blend path.
+- Q: What does the inspector offer, with which defaults and undo steps? → A: A "Luma Key" section
+  after Gradient: a **Luma Key** toggle (`layerControl.lumaKey`); when on, **Low**, **High** (0…1, step
+  0.05) and **Softness** (0…0.5, step 0.02) ACC-005 sliders (`layerControl.lumaLow|lumaHigh|lumaSoftness`)
+  and an **Invert Key** toggle (`layerControl.lumaInverted`). Turning it on gives a black key: low 0,
+  high 0.1, softness 0.05, not inverted. Dragging Low above High moves High with it (and the reverse).
+  Each drag or toggle is one undo step with key `layer.<kind>.<parameter>`, as the CMP-015 sliders.
+  "GPU performance" is an opt-in Mac bench (never asserted, "not device evidence") plus a `{device}`
+  task for D1.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Key out a luminance range (Priority: P1) 🎯 MVP
@@ -114,8 +154,8 @@ A scene stores each layer's key. Opening and saving keeps it exactly.
 - **CMP-009-R2**: The key's keep factor at luminance Y MUST be 0 inside low…high, 1 at or beyond
   softness outside the range, and rise linearly in between; inverted, it MUST be 1 minus that. Hence
   monotonic on each side of the range.
-- **CMP-009-R3**: Luminance MUST be measured on the layer's own straight (unpremultiplied) colour with
-  one documented formula, independent of the layer's opacity.
+- **CMP-009-R3**: Luminance MUST be the Rec. 709 luma of the layer's own straight (unpremultiplied)
+  colour, clamped to 0…1 and sRGB-encoded, independent of the layer's opacity (see Clarifications).
 - **CMP-009-R4**: The keep factor MUST multiply the layer's colour and alpha (premultiplied), so a kept
   pixel's colour and alpha are unchanged.
 - **CMP-009-R5**: A plain reference calculation (no GPU, every platform) MUST give the keep factor of
@@ -136,7 +176,8 @@ A scene stores each layer's key. Opening and saving keeps it exactly.
 
 ### Key Entities
 
-- **Luma key**: low, high (0…1, low ≤ high), softness (0…0.5), invert.
+- **Luma key**: low, high (0…1, low ≤ high), softness (0…0.5), invert; absent means no key.
+  Default when turned on: low 0, high 0.1, softness 0.05, not inverted.
 - **Keep factor**: 0…1 per pixel from the pixel's luminance, multiplying the layer's colour and alpha
   (with the shape coverage and gradient alpha when set).
 
