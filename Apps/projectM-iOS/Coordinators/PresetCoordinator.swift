@@ -38,6 +38,9 @@
 //   PresetCoordinator+Tags.swift.
 // * Recently played (roadmap PRE-006, specs/159-pre-006-recent-history): every successful load is
 //   reported to `recent`, which records presets that stay on screen for 3 s (RecentPresetsCoordinator).
+// * Quick audition (roadmap PRE-010, specs/168-pre-010-quick-audition): a preview loads a preset on
+//   screen without selecting it (`audition`, in memory); `current` stays the committed preset. A
+//   successful `select` ends a preview; Keep reuses `didSelect`. See PresetCoordinator+Audition.swift.
 import Foundation
 import Observation
 import PresetLibrary
@@ -95,14 +98,15 @@ final class PresetCoordinator {
     private(set) var scope: PresetScope
     private(set) var unlocked = false
     var favoritesOnly = false
-    private(set) var failureMessage: String?
+    var failureMessage: String?   // PRE-010: also set when a cancelled preview cannot restore the original
     /// Set when a locked preset is chosen; the purchase sheet observes it (FR-106).
     var purchaseRequested = false
     /// The locked preset the user tapped, played after a purchase (FR-107).
     private(set) var pendingLockedPreset: IndexedPreset?
     /// Bumped on every favorite change so views refresh.
     private(set) var favoritesVersion = 0
-    private(set) var excludedThisSession: Set<String> = []
+    /// Presets that failed to load this session (FR-118); PRE-010's previews add to it too.
+    var excludedThisSession: Set<String> = []
     /// The next Random pick, chosen in advance so the renderer can warm it up (SC-104). Chosen
     /// uniformly from the scope, never the current preset (FR-117, SC-106).
     private(set) var plannedRandom: IndexedPreset?
@@ -132,11 +136,16 @@ final class PresetCoordinator {
     @ObservationIgnored var announceSearch: (String) -> Void = { (_: String) in }
     /// PRE-006: the recently played history (set by AppCoordinator; nil in tests that do not need it).
     @ObservationIgnored var recent: RecentPresetsCoordinator?
+    /// PRE-010: the preview in progress (or its failure notice); in memory only.
+    var audition: PresetAudition?
+    /// PRE-010-D3: bumped by every preview, Keep, Cancel and committed selection; a preview load that
+    /// returns under an older value changes nothing.
+    @ObservationIgnored var auditionGeneration = 0
 
     @ObservationIgnored private let store: FavoritesStore
     @ObservationIgnored private let collectionStore: PresetCollectionStore
     @ObservationIgnored private let settings: AppSettings
-    @ObservationIgnored private let loader: any PresetLoading
+    @ObservationIgnored let loader: any PresetLoading
     @ObservationIgnored private var scopeAnnouncer: ((String) -> Void)?
 
     init(store: FavoritesStore, settings: AppSettings, loader: any PresetLoading, collections: PresetCollectionStore,
@@ -251,6 +260,7 @@ final class PresetCoordinator {
     func rowLabel(_ preset: IndexedPreset, locked: Bool) -> String {
         "\(preset.name), by \(preset.author)\(locked ? ", locked" : "")\(preset == current ? ", current preset" : "")"
             + (isFlagged(preset) ? ", \(Self.mayFlashLabel)" : "") + tagsLabelSuffix(preset)
+            + (preset == audition?.showing ? Self.previewingLabel : "")   // PRE-010-R3
     }
 
     /// FR-114: favorites across packs, alphabetical, locked ones listed (marked by the view).
@@ -376,22 +386,29 @@ final class PresetCoordinator {
     func select(_ preset: IndexedPreset, in newScope: PresetScope? = nil) async {
         if let newScope { setScope(newScope) }
         let isUserPreset = preset.source == PresetLibrary.userSource
-        if let current, current != preset, current.source == PresetLibrary.userSource { await userGuard?.stoppedShowing(current) }
+        // PRE-010: the guard hears about the preset actually on screen (a preview, else the current one).
+        if let shown = onScreen, shown != preset, shown.source == PresetLibrary.userSource { await userGuard?.stoppedShowing(shown) }
         if isUserPreset { await userGuard?.willShow(preset) }   // PRE-012-R18: noted on disk before the engine sees it
         do {
             try await loader.load(preset)
-            current = preset
-            failureMessage = nil
-            store.lastPresetID = preset.id
-            recent?.shown(preset.id)   // PRE-006-R2: recorded once it stays 3 s
-            planUpcoming()
-            if isUserPreset { userGuard?.didShow(preset) }
+            endAudition()   // PRE-010-R8: a committed selection ends a preview without a restore
+            didSelect(preset)
         } catch {
             failureMessage = isUserPreset ? UserPresetText.onScreenFailure : Self.failureText
             excludedThisSession.insert(preset.id)
             // PRE-012-R19: the running preset stays; the imported one is quarantined for good.
             if isUserPreset { await userGuard?.failedOnScreen(preset, message: (error as NSError).localizedDescription) }
         }
+    }
+
+    /// What a successful selection records (split out for PRE-010's Keep, which does not load again).
+    func didSelect(_ preset: IndexedPreset) {
+        current = preset
+        failureMessage = nil
+        store.lastPresetID = preset.id
+        recent?.shown(preset.id)   // PRE-006-R2: recorded once it stays 3 s
+        planUpcoming()
+        if preset.source == PresetLibrary.userSource { userGuard?.didShow(preset) }
     }
 
     func next() async { await step(1) }
@@ -414,7 +431,7 @@ final class PresetCoordinator {
     /// After each switch: choose the next Random pick and ask the renderer to warm it and the next
     /// preset in the scope (SC-104). Previous is left out: warming costs frame rate, and Previous is
     /// the least used.
-    private func planUpcoming() {
+    func planUpcoming() {
         let scopeMembers = walkable   // ACC-002-R5: flagged presets are never warmed or planned
         var generator = SystemRandomNumberGenerator()
         plannedRandom = ScopeStepper.random(scopeMembers, excluding: current, using: &generator)
@@ -479,7 +496,7 @@ final class PresetCoordinator {
 
     // MARK: - Scope
 
-    private func setScope(_ newScope: PresetScope) {
+    func setScope(_ newScope: PresetScope) {
         guard newScope != scope else { return }
         scope = newScope
         plannedRandom = nil   // planned for the old scope

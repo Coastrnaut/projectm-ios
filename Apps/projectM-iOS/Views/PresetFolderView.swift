@@ -18,7 +18,7 @@ struct PresetFolderView: View {
                 ForEach(letterSections, id: \.letter) { section in
                     Section(section.letter) {
                         ForEach(section.presets) { preset in
-                            PresetRow(presets: presets, preset: preset, showsPack: false) { onChoose(preset, .all) }
+                            PresetRow(presets: presets, preset: preset, showsPack: false, previewScope: .all) { onChoose(preset, .all) }
                         }
                     }
                     .sectionIndexLabel(section.letter)
@@ -39,7 +39,9 @@ struct PresetFolderView: View {
                     .accessibilityIdentifier("node:\(child.id)")
                 }
                 ForEach(presets.presets(in: node)) { preset in
-                    PresetRow(presets: presets, preset: preset, showsPack: false) { onChoose(preset, node.scope) }
+                    PresetRow(presets: presets, preset: preset, showsPack: false, previewScope: node.scope) {
+                        onChoose(preset, node.scope)
+                    }
                 }
             }
         }
