@@ -12,8 +12,9 @@
   },
   "P1": {
    "audited": 52,
-   "implementing": 8,
-   "integrated": 91
+   "implementing": 7,
+   "integrated": 91,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 73,
@@ -25,9 +26,10 @@
  },
  "by_state": {
   "audited": 136,
-  "implementing": 8,
+  "implementing": 7,
   "integrated": 181,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -2579,12 +2581,12 @@
   "REC-007": {
    "attempts": 0,
    "branch": "feature/rec-007",
-   "branch_sha": null,
+   "branch_sha": "bc6b335a76bc29306ff9d8928d518c5adaef145e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "REC-008": {
    "attempts": 0,
@@ -4379,5 +4381,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T16:33:24Z"
+ "updated": "2026-11-14T16:35:55Z"
 }

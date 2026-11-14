@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:33:24Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:35:55Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 136 |
-| implementing | 8 |
+| implementing | 7 |
+| unit_passed | 1 |
 | integrated | 181 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 52 | 8 | 91 | 0 |
-| P2 | 73 | 0 | 6 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 52 | 7 | 1 | 91 | 0 |
+| P2 | 73 | 0 | 0 | 6 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1812,6 +1813,14 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `c5c566ba25f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-006/20261114T104818/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `c5c566ba25f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-006/20261114T104818/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `c5c566ba25f9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-006/20261114T104818/swift-test_ShowControl.log`)
+
+### REC-007 Recording countdown (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/swift-test_LibraryBackup.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
