@@ -24,6 +24,7 @@ Format: `- [ ] QA-006-Tnn [P?] [Story] Description`. `{device}` = needs a physic
 - [ ] QA-006-T05 [US1] Implement `RenderSoakScene`, `RenderSoakConfiguration` (128 × 96, 1,800 frames, dwell 30, transition 0.25 s, cut every 3rd switch, 1/60 s clock, seed), `RenderSoakLeak` and `RenderSoakDriver.run` (contract S1-S6: bus + shared pool, seeded fixture bands, per-frame `currentAllocatedSize` with pool fallback, dwell and cycle samples, weak-reference live counts, error counting, release record, JSON report to `QA006_REPORT_DIR` or the temporary folder) in `Packages/RenderGoldens/Sources/SceneRenderHarness/RenderSoakDriver.swift`
 - [ ] QA-006-T06 [US1] Acceptance test `testDefaultSoakIsBoundedAndErrorFree` (6 scenes, 30 s simulated, 60 switches: zero errors, slope ≤ ε, bound held, pool baselines, live ≤ 1, release empty; report attached) in `Packages/RenderGoldens/Tests/RenderGoldensTests/RenderSoakTests.swift`; run on the host
 - [ ] QA-006-T07 [US1] Run the RenderGoldens soak tests on the QA6 simulator (`build-for-testing`, `test-without-building -only-testing:RenderGoldensTests/RenderSoakTests`)
+- [ ] QA-006-T07a [US1] If any soak run finds a real leak or render error, fix it in the rendering code, report it, and add a regression test next to the leaking code (QA-006-R12); otherwise record "no leak found" with the run's figures in `docs/test-reports/render-soak.md`
 
 ## Phase 4: User Story 2 — the detector catches a leak (P1)
 
@@ -51,7 +52,7 @@ Format: `- [ ] QA-006-Tnn [P?] [Story] Description`. `{device}` = needs a physic
 
 ## Dependencies
 
-T01 → T02 → T03; T02 → T04 → T05 → T06 → T07; T05 → T08; T02 → T09; T05 → T10 → T11 → T12;
+T01 → T02 → T03; T02 → T04 → T05 → T06 → T07 → T07a; T05 → T08; T02 → T09; T05 → T10 → T11 → T12;
 T14, T15 last. T13 open (`{device}`).
 
 ## Parallel opportunities
