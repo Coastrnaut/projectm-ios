@@ -23,7 +23,7 @@ Tests are required (roadmap acceptance, owner rule 7 budgets). `{device}` tasks 
 - [ ] SHOW-007-T06 [US1] Driver: playhead (`ShowAdvanceTimeline` always running for a timed cue, same holds), `reposition(cueID:remaining:)` in Apps/projectM-iOS/Coordinators/ShowAutoAdvanceCoordinator.swift
 - [ ] SHOW-007-T07 [US1] `ShowTransportCoordinator` (timeline, current time, seek, scrub begin/move/end, preview text) in Apps/projectM-iOS/Coordinators/ShowTransportCoordinator.swift; one lazy var in AppCoordinator.swift; wiring in AppCoordinator+Show.swift
 - [ ] SHOW-007-T08 [US1] `ShowTimelineRow` (Play/Pause, accessible slider `showTimelineScrub` 5 s step, position text, Loop toggle) in Apps/projectM-iOS/Views/ShowTimelineRow.swift; shown from ShowCueRow in Apps/projectM-iOS/Views/ShowControls.swift
-- [ ] SHOW-007-T09 [US1] Acceptance tests (S1: recorder of applies, transitions, announcements, MOD-017 applies, quantized steps; seek across cues, repeat, same-cue reposition, withdrawn quantized step, scrub) in Apps/projectM-iOS/Tests/ShowTransportAcceptanceTests.swift
+- [ ] SHOW-007-T09 [US1] Acceptance tests (S1: recorder of applies, transitions, announcements, MOD-017 applies, quantized steps; seek across cues, repeat, same-cue reposition, withdrawn quantized step, scrub; the seek's transition is the resolved cut (Reduce flashing widens it); a seek while the scene is locked still applies; no announcement on seek) in Apps/projectM-iOS/Tests/ShowTransportAcceptanceTests.swift
 
 ## Phase 4: User Story 2 — Play, pause and loop (P1)
 
@@ -34,7 +34,7 @@ Tests are required (roadmap acceptance, owner rule 7 budgets). `{device}` tasks 
 ## Phase 5: Polish
 
 - [ ] SHOW-007-T13 UI test seed `-uitestShowTimelineSeed` (five cues, 30 s each) in Apps/projectM-iOS/Debug/UITestShowFixture.swift and UI test (adjust slider → "Cue 3 of 5"; Loop toggles) in Apps/projectM-iOS/UITests/ShowTimelineUITests.swift (< 30 s)
-- [ ] SHOW-007-T14 Regression: ShowAutoAdvance, CueHoldSkip, ShowCueQuantizer, LibraryBackupApp tests; ShowControl package on host; Linux shape (`-DSHOWCONTROL` none needed: Foundation only)
+- [ ] SHOW-007-T14 Regression: ShowAutoAdvance, CueHoldSkip, ShowCueQuantizer, LibraryBackupApp tests; ShowControl package on host; Linux shape (ShowTimeline.swift is Foundation only; no Apple-only API, no stdio globals)
 - [ ] SHOW-007-T15 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), type-check budget, privacy manifest and network symbols on the Debug app
 - [ ] SHOW-007-T16 {device} D1: scrub across cues during a running show on the projector; one look change per release; loop runs two passes
 

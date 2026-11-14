@@ -51,7 +51,10 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Q: Is a seek an edit (refused while the scene is locked; recorded in scene history)? → A: No. A seek is a performance action like a step: allowed while locked (SCN-015), it restarts scene history as every cue apply does (SCN-010) and saves the show's position.
 - Q: Where is the transport shown? → A: Only in the visualizer's cue row (with the controls), under Previous/Next, when a timeline exists. The performance pad (UIX-005), the HUD (UIX-013), the external display and recordings are unchanged.
 
-## User Scenarios & Testing *(mandatory)*
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass: R1 → T02, T03; R2 → T05, T06, T07, T09; R3 → T09; R4 → T02, T03, T07, T09; R5 → T04, T05, T09; R6 → T11, T12; R7 → T10, T12; R8 → T08, T13; R9 → T03, T14, T15; R10 → T06, T09, T12. S1 → T09; S2, S3 → T12; S4 → T13. No constitution conflict. Fixes applied: R10 was listed before R9 (reordered); R5's Reduce flashing fade and R10's "allowed while locked" and "no announcement" had no named test (added to T09); T14's Linux note reworded.
+ *(mandatory)*
 
 ### User Story 1 - Scrub to a point in the show (Priority: P1) — MVP
 
@@ -106,8 +109,8 @@ turn Loop on: after the last cue the show starts again at cue 1, forever, one wr
 - **SHOW-007-R6**: Pause MUST be SHOW-005's Hold (remaining time kept) and Play MUST release it; Play at Standby MUST seek to 0:00.
 - **SHOW-007-R7**: Loop (opt-in, off by default, key `settings.show.loop`, device-only: not backed up, erased with Settings and by the UI-test reset) MUST wrap from the last timeline cue to the first exactly once per pass; it MUST be unavailable for a timeline with an open end.
 - **SHOW-007-R8**: The transport row (Play/Pause, position and total, scrub slider, Loop) MUST appear in the cue row only when a timeline exists, with VoiceOver labels and values; the slider MUST use the ACC-005 accessible slider (one 5 s swipe = one seek).
-- **SHOW-007-R10**: The timeline position MUST advance through every timed cue, the last included, and stop at the end; seeks and wraps MUST NOT post announcements (Play/Pause keep the Hold announcements); a seek MUST be allowed while the scene is locked.
 - **SHOW-007-R9**: No network access, no new show-file field, no wall-clock assertions in tests; ShowControl MUST keep building on Linux.
+- **SHOW-007-R10**: The timeline position MUST advance through every timed cue, the last included, and stop at the end; seeks and wraps MUST NOT post announcements (Play/Pause keep the Hold announcements); a seek MUST be allowed while the scene is locked.
 
 ### Key Entities
 
