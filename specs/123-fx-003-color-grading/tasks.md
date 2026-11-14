@@ -29,25 +29,25 @@ finish. Logs go to `.autonomous/logs-fx-003/`.
   active, temperature keeps grey luminance and is identity at 0, saturation 0 → grey of equal luminance,
   luminance monotonicity under lift/gamma/gain over ≥ 10,000 sampled settings and inputs (FX-003-S3, under 2 s),
   hand-checked values, clamping. — Verified 2026-11-14: ColorGradeReferenceTests 8/8 in the Linux shape (0.03 s; logs-fx-003/reference-linux-shape.log), 10,000 ordering checks.
-- [ ] FX-003-T04 Add `cmp_grade` and `cmp_display` (Swift string `displaySource`, which includes
+- [X] FX-003-T04 Add `cmp_grade` and `cmp_display` (Swift string `displaySource`, which includes
   `toneMapSource`) and the `CMPGrade` block to `Packages/Compositor/Sources/Compositor/CompositorShaders.swift`;
   `cmp_output` reads the block at fragment buffer 2 and returns `cmp_display(c, grade).rgb × gain`; a Swift
-  `GradeBlock` (48 bytes) built from `ColorGradeCoefficients`.
-- [ ] FX-003-T05 Extend `Packages/Compositor/Tests/CompositorTests/OutputPassRig.swift` with a grade argument
-  (default neutral) bound at buffer 2.
+  `GradeBlock` (48 bytes) built from `ColorGradeCoefficients`. — Verified 2026-11-14: testEachOperatorMatchesTheReference and testNeutralGradeIsPixelEquivalentToBypass pass (logs-fx-003/grade-gpu.log); GradeBlock layout test (48 bytes).
+- [X] FX-003-T05 Extend `Packages/Compositor/Tests/CompositorTests/OutputPassRig.swift` with a grade argument
+  (default neutral) bound at buffer 2. — Verified 2026-11-14: OutputPassRig binds the grade at buffer 2; ColorGradeOutputTests 7/7 use it.
 
 ## Phase 3: User Story 2 - Neutral is exactly "off" (P1, the acceptance)
 
 **Goal**: neutral grading equals bypass. **Independent test**: reference image through the real output pass.
 
-- [ ] FX-003-T06 [US2] `Packages/Compositor/Tests/CompositorTests/ColorGradeOutputTests.swift`: the research D8
+- [X] FX-003-T06 [US2] `Packages/Compositor/Tests/CompositorTests/ColorGradeOutputTests.swift`: the research D8
   reference image through `cmp_output` with the neutral block vs the FX-002 shader without grading (a bypass
   library compiled from the pre-grade `cmp_output` body): bit-identical for every in-range pixel and within
-  one 8-bit step / 0.002 overall, in `bgra8Unorm_srgb` and `rgba16Float` (FX-003-S1).
-- [ ] FX-003-T07 [US2] Add `colorGrade` to `Compositor` and `SceneTransitionBus`
+  one 8-bit step / 0.002 overall, in `bgra8Unorm_srgb` and `rgba16Float` (FX-003-S1). — Verified 2026-11-14: testNeutralGradeIsPixelEquivalentToBypass: 512/512 pixels bit-identical to the FX-002 bypass shader in bgra8Unorm_srgb and rgba16Float (416 in range), worst difference 0.
+- [X] FX-003-T07 [US2] Add `colorGrade` to `Compositor` and `SceneTransitionBus`
   (`Packages/Compositor/Sources/Compositor/Compositor.swift`, `SceneTransitionBus.swift`): block built on set,
   bound in the screen, recording and capture output passes and the flash guard; whole-compositor test: a
-  neutral `colorGrade` composites identically to a fresh compositor; setting it does not stop CMP-013 reuse.
+  neutral `colorGrade` composites identically to a fresh compositor; setting it does not stop CMP-013 reuse. — Verified 2026-11-14: testCompositorAppliesTheGradeAndKeepsItsCompositeCache: graded output = reference within 0.002, compositeReused stays true after a grade change, recording = screen; block bound with setFragmentBytes/setBytes (no buffer).
 - [ ] FX-003-T08 [US2] Run RenderGoldens unchanged (FX-003-S5; log `goldens.log`).
 
 ## Phase 4: User Story 1 - Grade the look (P1)
@@ -55,9 +55,9 @@ finish. Logs go to `.autonomous/logs-fx-003/`.
 **Goal**: five controls in Settings change the composited visuals and persist. **Independent test**: GPU vs
 reference per operator; setting tests; UI test.
 
-- [ ] FX-003-T09 [P] [US1] In `ColorGradeOutputTests.swift`: each operator alone and all together at a few
+- [X] FX-003-T09 [P] [US1] In `ColorGradeOutputTests.swift`: each operator alone and all together at a few
   representative settings vs `ColorGrade.apply` then `ToneMap.map`, within one 8-bit step / 0.002 (FX-003-S2);
-  record the worst error per operator.
+  record the worst error per operator. — Verified 2026-11-14: testEachOperatorMatchesTheReference: worst half 0.00049, screen 0.77 of an 8-bit step (temperature −1); table in research D9.
 - [ ] FX-003-T10 [US1] Create `Packages/Compositor/Sources/ColorGradeParameters/ColorGradeCatalog.swift` and the
   target in `Packages/Compositor/Package.swift`: IDs `effect.colorGrade.temperature|lift|gamma|gain|saturation`,
   group `effect.colorGrade` "Color", ranges/defaults/steps from `ColorGrade`, `.continuousDefault`;
@@ -83,16 +83,16 @@ reference per operator; setting tests; UI test.
 
 ## Phase 5: User Story 3 - Grading can never defeat the flash limiter (P1)
 
-- [ ] FX-003-T17 [US3] In `Packages/Compositor/Sources/Compositor/CompositeFlashGuard.swift`: samples through
-  `cmp_display` with the grade block at compute buffer 3 (two-line change plus the bound block).
-- [ ] FX-003-T18 [US3] In `ColorGradeOutputTests.swift`: frames alternating 0.02 ↔ 0.06 grey keep the guard's
+- [X] FX-003-T17 [US3] In `Packages/Compositor/Sources/Compositor/CompositeFlashGuard.swift`: samples through
+  `cmp_display` with the grade block at compute buffer 3 (two-line change plus the bound block). — Verified 2026-11-14: CompositeFlashGuard samples through cmp_display with the block at compute buffer 3; FX-002 limiter and CompositeFlashGuard tests pass (existing-gpu.log, 28 tests).
+- [X] FX-003-T18 [US3] In `ColorGradeOutputTests.swift`: frames alternating 0.02 ↔ 0.06 grey keep the guard's
   gain at 1 ungraded; with gain 2 and gamma 2 the same frames become a visible flash and the gain drops
-  (FX-003-S4); the existing FX-002 limiter tests still pass.
+  (FX-003-S4); the existing FX-002 limiter tests still pass. — Verified 2026-11-14: testFlashLimiterMeasuresTheGradedFrame: 0.02↔0.06 ungraded gain 1.0, graded (γ 2, gain 2) 0.77, 0↔1 at saturation 0 still 0.095.
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] FX-003-T19 [P] GPU timing (FX-003-S7): output pass at 1920 × 1080, neutral vs all operators active, median
-  of 30 after 5 warm-ups; record in research D9.
+- [X] FX-003-T19 [P] GPU timing (FX-003-S7): output pass at 1920 × 1080, neutral vs all operators active, median
+  of 30 after 5 warm-ups; record in research D9. — Verified 2026-11-14: testOutputPassGPUTimeIsRecorded (Mac, 1920×1080): neutral 0.033 ms, all operators 0.044 ms median of 30; recorded in research D9.
 - [ ] FX-003-T20 ADR for the output pipeline order (grade → tone map → × gain; guard measures it) in
   `docs/adr/` (next free number) and `docs/adr/README.md`.
 - [ ] FX-003-T21 Regressions: Compositor (host and Linux shape), VisualGenerators, RenderGoldens, SceneFormat,

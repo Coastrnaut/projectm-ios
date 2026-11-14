@@ -11,6 +11,9 @@
 // kept, desaturated toward white), and the flash guard measures the same tone-mapped values, so its gain applies
 // to what is shown. Every output (screen, REC-003 recording, REC-001 capture, CMP-014's bus) uses that pass; the
 // screen pass counts non-finite composite pixels (`nonFiniteOutputPixels`).
+// FX-003 (contracts/color-grade.md in specs/123, ADR-0049): before the tone map the output pass applies `colorGrade`
+// (`cmp_grade`: temperature, lift, gamma, gain, saturation in linear light; neutral = bypass, bit for bit), and the
+// flash guard measures the graded, tone-mapped values (`cmp_display`) with the same block.
 //
 // Ownership: the compositor creates every picture and the composite, before the first frame and
 // once per output size change; layers are prepared at the same moments. At a steady size nothing
@@ -235,6 +238,17 @@ public final class Compositor {
     private var pendingCapture: (@Sendable (CapturedPixels?) -> Void)?
     /// REC-003: the command buffer of the last frame whose output pass was encoded.
     private weak var outputCommandBuffer: MTLCommandBuffer?
+    /// FX-003: the grade's shader block (built when `colorGrade` changes) and the block of the frame last shown, so
+    /// `encodeOutput` repeats exactly that frame's output.
+    private var gradeBlock = CompositorShaders.GradeBlock.neutral
+    private var shownGradeBlock = CompositorShaders.GradeBlock.neutral
+
+    /// FX-003 (contracts/color-grade.md in specs/123, ADR-0049): the colour grade every output pass applies before the
+    /// tone map, and the flash guard measures. Set between frames; neutral (the default) bypasses grading bit for bit.
+    /// Never invalidates CMP-013's caches (grading runs after the composite).
+    public var colorGrade: ColorGrade = .neutral {
+        didSet { gradeBlock = CompositorShaders.GradeBlock(colorGrade.coefficients) }
+    }
 
     /// PERF-014: the visual's render health record (PERF-014-R2).
     public private(set) var health = RenderHealth()
@@ -488,8 +502,10 @@ public final class Compositor {
         return encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
                            contentScale: contentScale, reduceFlashing: reduceFlashing,
                            audio: audio) { (composite: MTLTexture, frame: LayerFrameContext) -> Bool in
+            let grade: CompositorShaders.GradeBlock = gradeBlock   // FX-003: one block for the guard and every output
             guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
-                                    reduceFlashing: reduceFlashing) else { return false }
+                                    reduceFlashing: reduceFlashing, grade: grade) else { return false }
+            shownGradeBlock = grade
             let out = MTLRenderPassDescriptor()
             out.colorAttachments[0].texture = output
             out.colorAttachments[0].loadAction = .dontCare
@@ -500,6 +516,7 @@ public final class Compositor {
             encoder.setFragmentTexture(composite, index: 0)
             encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
             encoder.setFragmentBuffer(nonFiniteCounter.counter, offset: 0, index: 1)   // FX-002: the screen pass counts
+            Self.bindGrade(grade, encoder)
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             encoder.endEncoding()
             outputCommandBuffer = commandBuffer   // REC-003: `encodeOutput` may follow in this command buffer
@@ -1006,9 +1023,16 @@ public final class Compositor {
         encoder.setFragmentTexture(composite, index: 0)
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
         encoder.setFragmentBuffer(nonFiniteCounter.sink, offset: 0, index: 1)   // FX-002: not counted twice
+        Self.bindGrade(shownGradeBlock, encoder)   // FX-003: the shown frame's grade
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         return true
+    }
+
+    /// FX-003: `cmp_output`'s grade block at fragment buffer 2 (copied; no buffer).
+    static func bindGrade(_ grade: CompositorShaders.GradeBlock, _ encoder: MTLRenderCommandEncoder) {
+        var block = grade
+        encoder.setFragmentBytes(&block, length: MemoryLayout<CompositorShaders.GradeBlock>.size, index: 2)
     }
 
     // MARK: - Frame capture (REC-001)
@@ -1055,6 +1079,7 @@ public final class Compositor {
         encoder.setFragmentTexture(composite, index: 0)
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
         encoder.setFragmentBuffer(nonFiniteCounter.sink, offset: 0, index: 1)   // FX-002: not counted twice
+        Self.bindGrade(shownGradeBlock, encoder)   // FX-003
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         guard let blit = commandBuffer.makeBlitCommandEncoder() else { handler(nil); return }
