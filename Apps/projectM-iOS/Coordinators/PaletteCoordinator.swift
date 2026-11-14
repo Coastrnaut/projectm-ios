@@ -112,6 +112,28 @@ final class PaletteCoordinator {
         perform { (library: inout PaletteLibrary) throws(PaletteEditError) in try library.removeColor(id, at: index) }
     }
 
+    // MARK: SHD-005 stop editing
+
+    func setStopPosition(_ id: String, at index: Int, to fraction: Double) {
+        let thousandths: Int = Self.thousandths(fraction)
+        perform { (library: inout PaletteLibrary) throws(PaletteEditError) in try library.setStopPosition(id, at: index, to: thousandths) }
+    }
+
+    func setStopAlpha(_ id: String, at index: Int, to fraction: Double) {
+        let value: Int = Int((min(max(fraction.isFinite ? fraction : 1, 0), 1) * Double(ColorPalette.maximumAlpha)).rounded())
+        perform { (library: inout PaletteLibrary) throws(PaletteEditError) in try library.setStopAlpha(id, at: index, to: value) }
+    }
+
+    func setInterpolation(_ id: String, _ mode: PaletteInterpolation) {
+        perform { (library: inout PaletteLibrary) throws(PaletteEditError) in try library.setInterpolation(id, mode) }
+    }
+
+    /// 0…1 → thousandths (rounded, clamped).
+    static func thousandths(_ fraction: Double) -> Int {
+        let clamped: Double = min(max(fraction.isFinite ? fraction : 0, 0), 1)
+        return Int((clamped * Double(ColorPalette.maximumPosition)).rounded())
+    }
+
     func delete(_ id: String) {
         perform { (library: inout PaletteLibrary) throws(PaletteEditError) in try library.delete(id) }
     }
@@ -152,10 +174,35 @@ final class PaletteCoordinator {
         case ColorPalette.monoID: return .mono
         case ColorPalette.colorBlindSafeID: return .colorBlindSafe
         default:
+            // SHD-005: a gradient with stop detail draws with the shared ramp (colour × alpha on black).
+            if palette.style == .gradient, palette.hasStopDetail, let ramp = gradientRamp(for: palette) {
+                return .custom(PaletteRamp(gradient: ramp))
+            }
             let stops: [LinearColor] = palette.colors.map { (c: PaletteColor) -> LinearColor in
                 LinearColor.fromSRGB(red: Int(c.red), green: Int(c.green), blue: Int(c.blue))
             }
             return .custom(PaletteRamp(stops: stops, blended: palette.style == .gradient))
+        }
+    }
+
+    /// SHD-005: a palette's stops as the shared gradient model (positions in thousandths → 0…1, alpha / 255).
+    static func gradientRamp(for palette: ColorPalette) -> GradientRamp? {
+        let positions: [Int] = palette.stopPositions
+        let alphas: [Int] = palette.stopAlphas
+        var stops: [GradientRampStop] = []
+        for (i, c) in palette.colors.enumerated() where i < positions.count && i < alphas.count {
+            let position: Float = Float(positions[i]) / Float(ColorPalette.maximumPosition)
+            let alpha: Float = Float(alphas[i]) / Float(ColorPalette.maximumAlpha)
+            stops.append(GradientRampStop(position: position, red: c.red, green: c.green, blue: c.blue, alpha: alpha))
+        }
+        return GradientRamp(stops: stops, interpolation: interpolation(palette.interpolation))
+    }
+
+    static func interpolation(_ mode: PaletteInterpolation) -> GradientInterpolation {
+        switch mode {
+        case .smooth: .smooth
+        case .srgb: .srgb
+        case .step: .step
         }
     }
 
