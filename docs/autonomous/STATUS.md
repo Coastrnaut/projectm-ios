@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T08:25:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T08:30:05Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 197 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 125 |
+| integrated | 126 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 109 | 2 | 1 | 39 | 0 |
-| P2 | 77 | 0 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 109 | 2 | 40 | 0 |
+| P2 | 77 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 200 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
+- 199 features are not implemented yet (first: ACC-005, ACC-007, ACC-008, ACC-009, ACC-010)
 
 ## Integrated
 
@@ -97,6 +96,7 @@ The physical-device suite may **not** start:
 | FILE-002 | Archive manifest checksums | `77fcfa3f1e56` | `feature/file-002` |
 | FILE-003 | Import dry run | `5e7bcff1` | `feature/file-003` |
 | FILE-004 | Import conflict resolver | `b211a998` | `feature/file-004` |
+| FILE-005 | Local library backup | `31456ffe` | `feature/file-005` |
 | FILE-007 | Document schema validator | `d8e359893ae7` | `feature/file-007` |
 | FILE-009 | Storage usage explorer | `efddbc041837` | `feature/file-009` |
 | FILE-010 | Safe cache cleanup | `f65b410a8d7c` | `feature/file-010` |
@@ -776,11 +776,12 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `e1b64695bdf4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-004/20261114T023954/swift-test_ShowControl.log`)
 - `post-merge (FILE-004 + UI test budget pass 2): projectM-iOSTests 502 + PresetArchiveConflict/PresetArchiveImport/SessionRecovery/Settings UI tests 9`: pass at `b211a998` (log `.autonomous/logs/integration/file-004-budget2/app-tests.log`)
 
-### FILE-005 Local library backup (unit_passed)
+### FILE-005 Local library backup (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b708bb292a84` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-005/20261114T032536/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `b708bb292a84` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-005/20261114T032536/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `b708bb292a84` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-005/20261114T032536/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `b708bb292a84` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-005/20261114T032536/swift-test_LibraryBackup.log`)
+- `post-merge: projectM-iOSTests 517 (after adding ACC-003's palette key to the backup list) + LibraryBackup/StorageUsage UI tests 2; network-symbol scan OK`: pass at `31456ffe` (log `.autonomous/logs/integration/file-005/final.log`)
 
 ### FILE-007 Document schema validator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d9f90f1e1d0f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FILE-007/20261113T163821/compliance.log`)
