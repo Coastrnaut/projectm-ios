@@ -49,7 +49,7 @@ evidence was produced, with " — Verified <date>: <how>" appended. Logs go to `
 
 ## Phase 8: Polish
 
-- [ ] ANL-010-T12 Build and test the remaining dependants (PerformanceControl, Compositor, RenderGoldens, ShowControl); record the tone table and test cost in `spec.md`; run the five scripts (check_compliance covers ANL-010-R12); count PosterBoard reports; delete the row's simulator; mark the spec Implemented.
+- [X] ANL-010-T12 Build and test the remaining dependants (PerformanceControl, Compositor, RenderGoldens, ShowControl); record the tone table and test cost in `spec.md`; run the five scripts (check_compliance covers ANL-010-R12); count PosterBoard reports; delete the row's simulator; mark the spec Implemented. — Verified 2026-11-13: PerformanceControl 110, Compositor 205, RenderGoldens 39, ShowControl 31 tests, 0 failures on the host (VisualGenerators and SceneFormat in T11/T10); uncontended Linux-shape rerun: AnalysisFeatures 133 tests, 62.1 s (baseline 124 tests, 62.3 s: inside run-to-run noise; SpectralCentroidTests 0.14 s); tone table and test cost in spec.md; check_compliance, validate_docs, check_motion_policy, check_permission_catalog OK; test_scripts.py 147 OK (1 skipped); PosterBoard reports 25 before and after the simulator run; simulator "ANL10 iPhone 17" deleted; spec marked Implemented (.build/scratch/anl010-T12-*.log).
 
 ## Dependencies
 

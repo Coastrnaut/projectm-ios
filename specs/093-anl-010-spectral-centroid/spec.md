@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13
 
 **Input**: User description: "Implement ANL-010 (Spectral centroid) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Expose brightness estimate in
@@ -181,6 +181,11 @@ Other fixtures: white noise (seed 0x5EED, ±0.5) 10,955.6 Hz against an expected
 ±1 LSB dither read 0/0 with no signal; a tone then silence holds both values exactly. Through
 `AnalysisPipeline`: 4 silent lead frames read 0, 13 frames inside a 300 Hz tone and 13 inside a
 3 kHz tone each within 1 %.
+
+Test cost (owner rule 7): SpectralCentroidTests (9 tests) take 0.11 s on the host and 0.14-0.19 s
+in the Linux shape; the whole AnalysisFeatures suite went from 124 to 133 tests, 62.3 s → 62.1 s in
+the Linux shape (uncontended runs; inside run-to-run noise). Single analysis windows instead of
+streams keep the cost low; the one pipeline run feeds 0.45 s of audio.
 
 No UI was added (Clarifications). The onset and beat-confidence sources stay unfed in the app as
 before; Kick and Centroid are fed.
