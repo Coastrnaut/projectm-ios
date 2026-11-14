@@ -60,7 +60,10 @@ public actor PresetThumbnailCache {
     /// Stable IDs of `pending`, oldest first.
     private var order: [String] = []
     private var inFlight: (id: String, entry: Pending)?
-    private var failures: [String: String] = [:]
+    /// Session failures by stable ID, with the key they belong to (PRE-002 forgets a changed preset's).
+    private var failures: [String: (key: PresetThumbnailKey, message: String)] = [:]
+    /// PRE-002: the render in flight belongs to an invalidated key; its picture is not stored.
+    private var inFlightStale = false
     private var worker: Task<Void, Never>?
     private var suspended = false
     private var nextToken: UInt64 = 0
@@ -124,7 +127,7 @@ public actor PresetThumbnailCache {
     public func thumbnail(for key: PresetThumbnailKey, contents: @escaping ContentsLoader) async throws -> URL {
         if let url = cachedURL(for: key) { return url }
         let id = key.stableID
-        if let message = failures[id] { throw PresetThumbnailError.failed(message) }
+        if let failure = failures[id] { throw PresetThumbnailError.failed(failure.message) }
         try Task.checkCancellation()
         let token = nextToken
         nextToken += 1
@@ -141,6 +144,44 @@ public actor PresetThumbnailCache {
     public func setSuspended(_ value: Bool) {
         suspended = value
         if !value { startWorkerIfNeeded() }
+    }
+
+    // MARK: - Invalidation (PRE-002, contract C1, C2)
+
+    /// Removes every entry of `presetID` whose content hash is not `keepingContentHash` (all of them
+    /// when nil) with its file and remembered failure; cancels queued requests for those keys; a
+    /// render of one already running stores nothing. Other presets are not touched. The index is
+    /// saved only when an entry was removed. Returns the number of entries removed. Never throws.
+    @discardableResult
+    public func invalidate(presetID: String, keepingContentHash: String?) -> Int {
+        open()
+        let isStale: (PresetThumbnailKey) -> Bool = { (key: PresetThumbnailKey) -> Bool in
+            key.presetID == presetID && key.contentHash != keepingContentHash
+        }
+        failures = failures.filter { (_: String, failure: (key: PresetThumbnailKey, message: String)) -> Bool in !isStale(failure.key) }
+        for (id, entry) in pending where isStale(entry.key) {
+            pending[id] = nil
+            order.removeAll { (other: String) -> Bool in other == id }
+            for waiter in entry.waiters.values { waiter.resume(throwing: CancellationError()) }
+        }
+        if let current = inFlight, isStale(current.entry.key) { inFlightStale = true }
+        let removed = index.removeEntries(index.staleIDs(presetID: presetID, keepingContentHash: keepingContentHash), in: directory)
+        if removed > 0 { index.save(in: directory) }
+        return removed
+    }
+
+    /// Launch collection (PRE-002-R7): removes, with their files and failures, the entries of presets
+    /// not in `listing` (preset ID → current content hash) or listed with another hash. Saves the
+    /// index only when something was removed. Returns the number removed.
+    @discardableResult
+    public func retainOnly(_ listing: [String: String]) -> Int {
+        open()
+        failures = failures.filter { (_: String, failure: (key: PresetThumbnailKey, message: String)) -> Bool in
+            listing[failure.key.presetID] == failure.key.contentHash
+        }
+        let removed = index.removeEntries(index.unlistedIDs(listing), in: directory)
+        if removed > 0 { index.save(in: directory) }
+        return removed
     }
 
     // MARK: - Queue
@@ -190,6 +231,7 @@ public actor PresetThumbnailCache {
         while !suspended, let id = order.popLast() {
             guard let entry = pending.removeValue(forKey: id) else { continue }
             inFlight = (id, entry)
+            inFlightStale = false
             renderCount += 1
             let result = await produce(entry.key, contents: entry.contents)
             let waiters = inFlight?.entry.waiters ?? [:]
@@ -206,6 +248,7 @@ public actor PresetThumbnailCache {
         do {
             let data = try await contents()
             let png = try await renderer.render(data, spec: spec)
+            if inFlightStale { throw PresetThumbnailError.unavailable("The preset changed while it was drawn.") }
             let url = directory.appendingPathComponent(key.fileName)
             do {
                 try prepareDirectory()
@@ -222,13 +265,13 @@ public actor PresetThumbnailCache {
             if case .unavailable = error { return .failure(error) }
             let message: String
             if case .failed(let text) = error { message = text } else { message = "The thumbnail could not be made." }
-            failures[id] = message
+            failures[id] = (key, message)
             return .failure(PresetThumbnailError.failed(message))
         } catch is CancellationError {
             return .failure(CancellationError())
         } catch {
             let message = "The preset could not be drawn."
-            failures[id] = message
+            failures[id] = (key, message)
             return .failure(PresetThumbnailError.failed(message))
         }
     }

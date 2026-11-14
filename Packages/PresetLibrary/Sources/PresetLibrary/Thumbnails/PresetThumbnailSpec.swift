@@ -13,6 +13,9 @@ public struct PresetThumbnailSpec: Sendable, Equatable {
     /// Stereo frames of audio fed before each drawn frame (1/60 s at 44.1 kHz).
     public var samplesPerFrame: Int
     public var seed: UInt64
+    /// Bumped by hand whenever the picture of the same preset would change (PRE-002 contract C4): a
+    /// field above, how a renderer draws, or a projectM engine pin or ANGLE update that changes
+    /// pictures. Opening the cache drops entries of any other version with their files.
     public var rendererVersion: Int
 
     public init(width: Int, height: Int, frames: Int, sampleRate: Int, samplesPerFrame: Int, seed: UInt64,
