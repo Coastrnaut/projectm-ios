@@ -158,6 +158,14 @@ details and no listening history, and it does not turn on OSC or MIDI on another
   confirm, and the restore is applied the next time the app opens. Restored presets are checked
   again before they can play. If any check fails, nothing is changed.
 - Nothing is uploaded, downloaded or sent anywhere by the app while backing up or restoring.
+- Back Up to Folder… writes the same library file plus copies of your stored photos, videos and
+  imported audio, and a list of those copies with their sizes and checksums, into a folder you choose
+  in Files (`projectM Backup`). Later backups to the same folder copy only files that changed and
+  remove copies the app made of files you have since deleted; nothing else in that folder is touched.
+  To tell what changed, the app compares file sizes and, for files in its own storage, their dates;
+  it reads no dates of other files. Restore Media from Folder… checks every copy against its checksum
+  before anything is added, and adds the media the next time the app opens, never replacing a photo
+  or video already on this device.
 
 ## Erasing your data
 

@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FILE-006-T01-T14 verified on the Mac Studio: LibraryBackup package tests on the host, also with the portable hasher; app unit tests and UI tests on an own iOS 27.2 simulator; the Linux job is left to CI). ADR-0052.
 
 **speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T10/T11, R2 T01/T04, R3 T05/T06, R4 T05/T06, R5 T01/T04/T07, R6 T05/T07, R7 T05/T07, R8 T08/T09/T10, R9 T10-T12, R10 T02/T14, R11 T02/T14; S1 T06, S2 T06, S3 T07, S4 T09, S5 T13). Fixes applied: the kind names (`photo`, `video`, `audio`, `audio-index`) are fixed in the data model and used by T03/T08; R10's "no dates outside the container" is checked by the privacy-manifest step in T14.
 
@@ -102,7 +102,7 @@ removed." and announces it on the `library` lane.
 - The copy in the folder was deleted or truncated by the user: the asset is copied again (size check).
 - Two references share one payload: one copy in `media/`, two manifest entries.
 - The folder is read-only or full: the backup fails with a message; the previous manifest stays.
-- A restore while a FILE-005 restore or a FILE-011 erase is pending: refused with a note.
+- A media restore while a FILE-011 erase is pending: refused with a note (and Erase Data… waits for a pending media restore). A FILE-005 restore and a media restore may both be pending: the library records are restored first, then the media.
 - A restore request from a newer app: ignored and removed.
 - A manifest entry pointing outside `media/` (a crafted folder): the manifest is unusable; backup does a full pass, restore refuses.
 - A photo or video identifier already on the device during a restore: the device's file stays ("already here").
