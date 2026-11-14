@@ -67,4 +67,5 @@
   (`SceneAutosaveCoordinator.triggerBindings`) when the native visual is created, exactly like bindings
   (SCN-002), and the carry writes the stored list back unchanged.
 - **Rationale**: One frame, one feature snapshot; smallest edit to shared files (one line in
-  AppCoordinator).
+  AppCoordinator). A show cue's scene changes neither bindings nor triggers today (it applies the look
+  only), so a kick trigger on Next cue keeps stepping through the show; per-cue triggers would be a later row.

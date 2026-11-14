@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-006-T01-T11 verified on the Mac: host package tests and the app unit test host on a private iOS 27.2 simulator; no device task)
 
 **Input**: User description: "Implement MOD-006 (Threshold trigger) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Turn continuous input into debounced discrete trigger events." Acceptance,

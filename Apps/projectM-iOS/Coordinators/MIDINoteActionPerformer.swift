@@ -41,14 +41,19 @@ final class MIDINoteActionPerformer {
         for command in commands { perform(command) }
     }
 
+    /// MOD-006: a trigger-mode action fired by a threshold trigger (the same path as a note's `.fire`).
+    func fire(_ action: MIDINoteAction) {
+        switch action {
+        case .cueNext: actions.nextCue()
+        case .cuePrevious: actions.previousCue()
+        case .blackout: actions.setBlackout(!actions.isBlackoutRequested())
+        }
+    }
+
     func perform(_ command: MIDINoteCommand) {
         switch (command.target.action, command.phase) {
-        case (.cueNext, .fire):
-            actions.nextCue()
-        case (.cuePrevious, .fire):
-            actions.previousCue()
-        case (.blackout, .fire):
-            actions.setBlackout(!actions.isBlackoutRequested())
+        case (.cueNext, .fire), (.cuePrevious, .fire), (.blackout, .fire):
+            fire(command.target.action)
         case (.blackout, .engage):
             guard !actions.isBlackoutRequested() else { return }
             actions.setBlackout(true)
