@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T20:06:47Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T20:11:08Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,10 +10,10 @@
 | State | Features |
 |---|---|
 | audited | 107 |
-| implementing | 5 |
-| built | 3 |
+| implementing | 3 |
+| built | 4 |
 | unit_passed | 1 |
-| integrated | 209 |
+| integrated | 210 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 29 | 4 | 1 | 1 | 116 | 0 |
+| P1 | 29 | 2 | 2 | 1 | 117 | 0 |
 | P2 | 67 | 1 | 2 | 0 | 9 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 116 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
+- 115 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-015, CAM-003)
 
 ## Integrated
 
@@ -162,6 +162,7 @@ The physical-device suite may **not** start:
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
 | OSC-003 | OSC parameter routes | `ca21d525` | `feature/osc-003` |
 | OSC-007 | OSC network access switch | `ade4dfec39a5` | `feature/osc-007` |
+| OSC-008 | OSC peer allowlist | `1cc452b0` | `feature/osc-008` |
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
 | OUT-001 | External display scene | `dfd5757fccd4` | `feature/out-001` |
 | OUT-002 | Display connect handling | `526c47e9` | `None` |
@@ -1641,7 +1642,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/docs.log`)
 - `post-merge: projectM-iOSTests 184 incl. OSCNetworkAccessTests (real listener ready/cancelled), OSCNetworkAccessUITests 14.9 s, OSCReceiverUITests 14.8 s, CameraPrivacyStatusUITests 14.8 s (shared status stack) on iPhone 17 iOS 27.2 sim`: pass at `ade4dfec39a5` (log `.autonomous/logs/integration/osc-007-shd-001/app-tests.log`)
 
-### OSC-008 OSC peer allowlist (unit_passed)
+### OSC-008 OSC peer allowlist (integrated)
 - `python3 scripts/check_compliance.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/script-tests.log`)
@@ -1649,6 +1650,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `570bded48a26` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-008/20261114T150018/swift-test_PerformanceControl.log`)
+- `post-merge (conflicts resolved): LibraryBackup 77, projectM-iOSTests 924 + UI 2 (OSC peers, routes)`: pass at `1cc452b0` (log `.autonomous/logs/integration/batch51/app-tests.log`)
 
 ### OSC-009 OSC rate limiter (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/compliance.log`)
@@ -2129,6 +2131,16 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `e53fbaff2a00` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-009/20261114T135122/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `e53fbaff2a00` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-009/20261114T135122/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 882 + UI 3 (status overlay, video recording)`: pass at `ed68646f` (log `.autonomous/logs/integration/batch40/app-tests.log`)
+
+### REC-010 Recording library (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/LocalPortability`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_LocalPortability.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_PresetLibrary.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `946aadeca9bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-010/20261114T150300/swift-test_ShowControl.log`)
 
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
