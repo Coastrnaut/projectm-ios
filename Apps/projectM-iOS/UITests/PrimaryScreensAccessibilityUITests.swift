@@ -94,7 +94,10 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         case let .settingsLink(id, title):
             guard openSettings(tag: tag) else { return false }
             let link = app.buttons[id]
-            guard app.reveal(link) else { return fail(tag, "navigation: the \(id) row was not reached") }
+            // The anchor can leave the row just above the visible list (under the bar): look down the list, then up.
+            guard app.reveal(link) || app.reveal(link, down: true) else {
+                return fail(tag, "navigation: the \(id) row was not reached")
+            }
             link.tap()
             return app.navigationBars[title].appears(within: 10) || fail(tag, "\(title) did not open")
         case .presetBrowser:
