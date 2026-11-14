@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T00:24:31Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T00:25:07Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 229 |
-| implementing | 2 |
+| implementing | 1 |
+| unit_passed | 1 |
 | integrated | 94 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 6 | 2 | 78 | 1 |
-| P1 | 137 | 0 | 14 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 6 | 1 | 1 | 78 | 1 |
+| P1 | 137 | 0 | 0 | 14 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -669,6 +670,15 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `494ac9eeb8d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-002/20261113T162728/docs.log`)
 - `swift test --package-path Packages/RenderGoldens`: pass at `494ac9eeb8d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-002/20261113T162728/swift-test_RenderGoldens.log`)
 - `post-merge: RenderGoldens on iOS 27.2 sim (35, 7 scenes x 2 sizes against the simulator goldens), host in the gate, Linux shape (GPU compiled out)`: pass at `dffa2be908f5` (log `.autonomous/logs/integration/qa-002/goldens-sim.log`)
+
+### QA-004 Scene migration matrix (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `e3388cc102ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-004/20261113T192437/swift-test_ShowControl.log`)
 
 ### QA-005 Import fuzz suite (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e4bdc6cdaf96` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-005/20261113T174006/compliance.log`)
