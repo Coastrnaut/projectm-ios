@@ -58,6 +58,12 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Can an identifier relinked by checksum be released again? → A: Yes, under FILE-008's rules (it is an ordinary reference). Changing which photos the single-slot store protects is outside this row; the Missing Media screen will list it again and the released-hash list allows another checksum relink.
 - Q: Are scenes with unreadable files rewritten? → A: No; they cannot be decoded. The report counts them, and they stay listed as "Scene missing" (SHOW-001). Readable scenes are still rewritten.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- Finding (coverage, acceptance wording): a saved scene exists only while a cue refers to it (SHOW-001), so "scenes A and B and a show cue" means two cues, one per scene, and the cue in the acceptance is A's cue. The missing list therefore shows P "used by 2 scenes, 2 cues"; the cue count is the number of cues whose scene uses the identifier (a scene shown by two cues counts twice). Applied to the acceptance test (MED-013-T12).
+- Finding (consistency): MED-013-R4's "after every import" covers the photo and video stores' imports; slideshow and logo pictures are staged into the same Photos folder, and the Missing Media screen's refresh adopts their matches too. No new task needed.
+- Finding (underspecified): which item a Relink… replacement accepts: a photo item opens the image picker (PNG, JPEG, HEIC through the photo import), a video item the movie picker (the video import's types). Applied to MED-013-T11.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I see that media is missing and get it back by checksum (Priority: P1) — MVP

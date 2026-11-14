@@ -27,8 +27,8 @@ Budgets (owner rule 7): unit tests about 1-2 s, package suites under 1 minute, t
 
 ## Phase 4: User Story 2 — replacement (P1)
 
-- [ ] MED-013-T11 [US2] Replacement in `MediaRelinkService` (stage through the store, rewrite scenes, rewrite settings values, discard on failure) and the Relink… file importer in the view (MED-013-R6, R7).
-- [ ] MED-013-T12 [US1][US2] Acceptance test `Apps/projectM-iOS/Tests/MediaRelinkAcceptanceTests.swift`: scenes A and B and a cue use photo P, B's slideshow includes P; delete P's payload; the placeholder state is set and the missing list shows P with 2 scenes; checksum relink resolves every reference; separately replacement rewrites A, B, the cue's scene and the slideshow to the new identifier and the change survives a reload from disk; a failing rewrite discards the staged copy and changes nothing (MED-013-S1-S3).
+- [ ] MED-013-T11 [US2] Replacement in `MediaRelinkService` (stage through the store, rewrite scenes, rewrite settings values, discard on failure) and the Relink… file importer in the view (image types for a photo item, movie types for a video item) (MED-013-R6, R7).
+- [ ] MED-013-T12 [US1][US2] Acceptance test `Apps/projectM-iOS/Tests/MediaRelinkAcceptanceTests.swift`: scenes A and B and a cue use photo P, B's slideshow includes P; delete P's payload; the placeholder state is set and the missing list shows P with 2 scenes and 2 cues; checksum relink resolves every reference; separately replacement rewrites A, B, the cue's scene and the slideshow to the new identifier and the change survives a reload from disk; a failing rewrite discards the staged copy and changes nothing (MED-013-S1-S3).
 
 ## Phase 5: User Story 3 — limits and erase (P2)
 
