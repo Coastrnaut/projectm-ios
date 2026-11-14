@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T13:53:04Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T13:53:13Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,8 +10,8 @@
 | State | Features |
 |---|---|
 | audited | 168 |
-| unit_passed | 7 |
-| integrated | 149 |
+| unit_passed | 6 |
+| integrated | 150 |
 | blocked | 1 |
 | skipped_existing | 1 |
 
@@ -20,14 +20,14 @@
 | Priority | audited | unit_passed | integrated | blocked | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 84 | 0 | 1 |
-| P1 | 83 | 6 | 62 | 0 | 0 |
+| P1 | 83 | 5 | 63 | 0 | 0 |
 | P2 | 74 | 1 | 3 | 1 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 175 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
+- 174 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-008, ANL-009)
 - 1 feasible features are blocked (first: AUD-010); strict completion allows none
 
 ## Integrated
@@ -148,6 +148,7 @@ The physical-device suite may **not** start:
 | PERF-011 | Background resource release | `6d669fcb8576` | `feature/perf-011` |
 | PERF-014 | Render failure fallback | `76a8cbf21e15` | `feature/perf-014` |
 | PRE-001 | Visual thumbnail cache | `7b7a78050ada` | `feature/pre-001` |
+| PRE-002 | Thumbnail invalidation | `ae6c6e121b13` | `None` |
 | PRE-007 | Preset collections | `e834535cb98b` | `feature/pre-007` |
 | PRE-012 | Preset import validation | `4bf9f50d1af8` | `feature/pre-012` |
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
@@ -1415,7 +1416,7 @@ The physical-device suite may **not** start:
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `66ed38a3757d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-001/20261114T065814/sim-test_Rendering.log`)
 - `post-merge: projectM-iOSTests 636 + UI 12 (inspector, thumbnails, folders, switcher, settings)`: pass at `7b7a78050ada` (log `.autonomous/logs/integration/uix003-pre001-scn004/app-tests.log`)
 
-### PRE-002 Thumbnail invalidation (unit_passed)
+### PRE-002 Thumbnail invalidation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c6b61c800d19` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-002/20261114T084609/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `c6b61c800d19` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-002/20261114T084609/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `c6b61c800d19` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-002/20261114T084609/swift-test_ImportFuzz.log`)
