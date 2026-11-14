@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:12:24Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T17:13:57Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,8 +10,8 @@
 | State | Features |
 |---|---|
 | audited | 128 |
-| implementing | 8 |
-| unit_passed | 1 |
+| implementing | 7 |
+| unit_passed | 2 |
 | integrated | 188 |
 | skipped_existing | 1 |
 
@@ -20,7 +20,7 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 45 | 8 | 1 | 97 | 0 |
+| P1 | 45 | 7 | 2 | 97 | 0 |
 | P2 | 72 | 0 | 0 | 7 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
@@ -1998,6 +1998,13 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 346 incl. SceneHistoryCoordinatorTests; SceneUndoUITests 19.5 s, GuidedFirstScene reopen, Settings 4 UI tests on iOS 27.2 sim; SceneFormat 59 in the gate`: pass at `01b155c6c3d0` (log `.autonomous/logs/integration/scn-010/app-tests.log`)
+
+### SCN-011 Scene template gallery (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/swift-test_ShowControl.log`)
 
 ### SCN-012 Scene validation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/compliance.log`)
