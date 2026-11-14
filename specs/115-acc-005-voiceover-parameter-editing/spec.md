@@ -63,6 +63,27 @@ interaction); each answer is the conservative option.
   "minus 50 decibels full scale", "180 milliseconds", "1.5 seconds". The visible readouts keep their
   short forms ("+6 dB", "180 ms"). Applied to ACC-005-R2, R3.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: What is the swipe step of each slider that has no snapping step of its own? → A: A whole multiple of
+  the registry's step hint where one exists, at most 25 swipes end to end: glow intensity 5 % (0.05,
+  hint 0.01, 20 swipes), glow radius 0.5 % (0.005, hint 0.001, 11 swipes), glow threshold 5 % (0.05, 18
+  swipes), text size 1 % (0.01, 22 swipes), text outline 1 % (0.01, 15 swipes). Applied to ACC-005-R5.
+- Q: Does each swipe also post an announcement of the new value? → A: No. VoiceOver reads the element's
+  new value after every adjustable action by itself; a second announcement would double it. Only a
+  swipe that cannot move (an end) is announced. Applied to ACC-005-R7.
+- Q: Which announcer lane carries the end announcements? → A: A new kind, `parameter`, in the shared
+  announcer (ACC-004), so a burst of end swipes never swallows a preset or blackout announcement and the
+  existing one-second window and two-second repeat rule apply unchanged. Applied to ACC-005-R7.
+- Q: Is one swipe one undo step? → A: Yes. Each swipe ends coalescing right after the change, as the
+  end of a drag does (SCN-010). Applied to ACC-005-R8.
+- Q: How do the loop rules interact with "exactly one step"? → A: The step is proposed to the video
+  coordinator, which still applies MED-003's rules (at least 0.25 s, inside the file, in before out).
+  Where those rules do not bind, the stored point moves by exactly 0.1 s; the table test uses such a
+  case. Where they bind, the value the coordinator keeps is spoken. Applied to ACC-005-R4, edge cases.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I change a setting with VoiceOver swipes (Priority: P1)
