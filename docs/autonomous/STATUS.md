@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T18:36:52Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T18:36:53Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 121 |
 | implementing | 7 |
-| unit_passed | 2 |
-| integrated | 195 |
+| unit_passed | 1 |
+| integrated | 196 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,13 +21,13 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 39 | 7 | 1 | 104 | 0 |
-| P2 | 71 | 0 | 1 | 7 | 0 |
+| P2 | 71 | 0 | 0 | 8 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 130 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
+- 129 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-013, ANL-015)
 
 ## Integrated
 
@@ -53,6 +53,7 @@ The physical-device suite may **not** start:
 | ANL-009 | High-frequency transient detector | `a69be240` | `None` |
 | ANL-010 | Spectral centroid | `bf6d440f` | `feature/anl-010` |
 | ANL-011 | Spectral rolloff | `d27dc6f7` | `feature/anl-011` |
+| ANL-012 | Spectral flatness | `7a754c5d37c2` | `feature/anl-012` |
 | ANL-014 | Loudness envelope | `c3900199` | `feature/anl-014` |
 | ANL-016 | Analysis event bus | `97e498d64a14` | `feature/anl-016` |
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
@@ -460,7 +461,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `c54116b32107` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-011/20261114T120155/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 843 + UI 7 (glow, templates, show cues, inspector)`: pass at `d27dc6f7` (log `.autonomous/logs/integration/batch32/app-tests.log`)
 
-### ANL-012 Spectral flatness (unit_passed)
+### ANL-012 Spectral flatness (integrated)
 - `python3 scripts/check_compliance.py`: pass at `9c8799d3ae43` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-012/20261114T124109/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `9c8799d3ae43` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-012/20261114T124109/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `9c8799d3ae43` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-012/20261114T124109/sim-test_ANGLERendering.log`)
