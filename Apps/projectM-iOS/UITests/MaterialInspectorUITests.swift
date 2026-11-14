@@ -1,4 +1,4 @@
-// MaterialInspectorUITests.swift — SHD-003-T17 on the iOS Simulator (SHD-003-S5): the seeded scene's
+// MaterialInspectorUITests.swift — SHD-003-T17 and SHD-004-T17 on the iOS Simulator (SHD-003-S5, SHD-004-R8): the seeded scene's
 // Plasma layer shows its "Material settings", one control per metadata parameter with the metadata's label
 // and the formatted value, disabled while this version does not draw material layers. Same seed as
 // LayerInspectorUITests (`-uitestLayerInspectorSeed`, contract L5). Simulator results are never device
@@ -39,8 +39,14 @@ final class MaterialInspectorUITests: XCTestCase {
     }
 
     /// S5: five generated controls with the metadata's labels and the formatted defaults, disabled.
+    /// SHD-004-T17 (SHD-004-R8), in the same launch: the Variant picker shows Standard, read-only, with no note.
     func testPlasmaLayerShowsItsGeneratedControls() {
         openMaterialLayer()
+        let picker = app.descendants(matching: .any).matching(identifier: "materialVariant").firstMatch
+        XCTAssertTrue(app.reveal(picker), "the Variant picker in Material settings")
+        XCTAssertEqual(picker.label, "Variant, Standard", "a menu picker speaks its title and the stored variant's label")
+        XCTAssertFalse(picker.isEnabled, "read-only until material layers are drawn")
+        XCTAssertFalse(app.staticTexts["materialVariantNote"].exists, "nothing stored, nothing to note")
         let scale = control("scale")
         XCTAssertTrue(app.reveal(scale), "the Material settings section")
         XCTAssertEqual(scale.label, "Scale (waves across the shorter side)")
@@ -55,4 +61,5 @@ final class MaterialInspectorUITests: XCTestCase {
         XCTAssertEqual(last.label, "Audio reactivity")
         XCTAssertEqual(last.value as? String, "25 percent")
     }
+
 }

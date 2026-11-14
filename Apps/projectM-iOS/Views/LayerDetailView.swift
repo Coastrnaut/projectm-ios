@@ -30,7 +30,7 @@ struct LayerDetailView: View {
             LayerGradientSection(row: row, layers: layers)   // CMP-008
             LayerLumaKeySection(row: row, layers: layers)   // CMP-009
             LayerColorKeySection(row: row, layers: layers)   // CMP-010
-            MaterialParametersSection(controls: row.materialControls)   // SHD-003: read-only until materials are drawn
+            MaterialParametersSection(controls: row.materialControls, variant: row.materialVariant)   // SHD-003, SHD-004: read-only until materials are drawn
             layerSection
         }
         .navigationTitle(row.title)

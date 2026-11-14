@@ -99,14 +99,18 @@ public struct SceneLayer: Sendable, Hashable {
     public var composite: SceneComposite
     /// Unknown layer fields (and every other field of an unknown kind), kept verbatim.
     public var extra: [String: SceneJSON]
+    /// SHD-004: a material layer's selected variant (nil = the material's default; the field is not written).
+    /// Kept as stored even when this version or device cannot draw it.
+    public var materialVariant: String?
 
     public init(instance: UInt64, content: SceneLayerContent, values: [String: Double] = [:],
-                composite: SceneComposite = SceneComposite(), extra: [String: SceneJSON] = [:]) {
+                composite: SceneComposite = SceneComposite(), extra: [String: SceneJSON] = [:], materialVariant: String? = nil) {
         self.instance = instance
         self.content = content
         self.values = values
         self.composite = composite
         self.extra = extra
+        self.materialVariant = materialVariant
     }
 
     public var kind: String { content.kind }

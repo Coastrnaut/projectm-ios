@@ -13,18 +13,23 @@ import SwiftUI
 
 struct MaterialParametersSection: View {
     let controls: [ShaderParameterControl]
+    /// SHD-004-R8: the variant picker, first in the section (nil for a material with one variant).
+    var variant: MaterialVariantChoice? = nil
     /// Writes a new value; nil while the layer is read-only (the controls are disabled).
     var write: (@MainActor (ParameterID, ParameterValue) -> Void)? = nil
 
     var body: some View {
         if !controls.isEmpty {
             Section {
+                if let variant { MaterialVariantPicker(choice: variant, enabled: write != nil) }
                 ForEach(controls) { (control: ShaderParameterControl) in
                     MaterialParameterControlView(control: control, write: write)
                 }
             } header: {
                 // The identifier sits on the header only: on the Section it would replace every control's.
                 Text(MaterialInspectorModel.sectionTitle).accessibilityIdentifier("materialSettings")
+            } footer: {
+                if let note = variant?.note { Text(note).accessibilityIdentifier("materialVariantNote") }
             }
         }
     }
@@ -124,5 +129,23 @@ struct MaterialParameterControlView: View {
             .accessibilityLabel(control.label)
             .accessibilityValue(MaterialInspectorModel.spoken(control))
             .accessibilityIdentifier(MaterialInspectorModel.identifier(control))
+    }
+}
+
+/// SHD-004-R8: the material's variants from its metadata; read-only while material layers are not drawn.
+struct MaterialVariantPicker: View {
+    let choice: MaterialVariantChoice
+    let enabled: Bool
+
+    var body: some View {
+        let binding = Binding<String>(get: { () -> String in choice.selectedID }, set: { (_: String) -> Void in })
+        return Picker(MaterialVariantChoice.title, selection: binding) {
+            ForEach(choice.options, id: \.id) { (option: ShaderVariantSpec) in
+                Text(option.label).tag(option.id)
+            }
+        }
+        .pickerStyle(.menu)
+        .disabled(!enabled)
+        .accessibilityIdentifier("materialVariant")   // the menu picker speaks its title and the selected label
     }
 }

@@ -280,6 +280,7 @@ extension SceneRepairReport {
         case .unknownMacroTarget: (.unknownContent, nil)
         case .invalidSnapshot: (.invalidMappings, nil)   // SCN-008: kept verbatim, not used
         case .unknownSnapshotParameter: (.unknownContent, nil)
+        case .unknownMaterialVariant: (.unknownContent, nil)   // SHD-004: kept, the default variant drawn
         case .fixedEffectStage, .duplicateEffect: (.valuesAdjusted, nil)   // FX-020: kept, ignored
         case .unknownAssetType, .unusedAsset, .orphanedParameter: (.unknownContent, nil)
         case .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .valueClamped, .droppedField, .parameterClamped, .rejectedParameter, .migratedReference:
@@ -318,6 +319,7 @@ extension SceneRepairReport {
         case .unknownLayerKind: return "The layer is kept but not shown."
         case .unknownAssetType, .unusedAsset, .orphanedParameter, .unknownEffectKind, .unknownSnapshotParameter:
             return "It is kept but not used by this version."
+        case .unknownMaterialVariant: return "The layer draws the material's Standard variant; the choice is kept in the scene."
         case .fixedEffectStage: return "Flash safety and the tone map still run last; the entry is kept."
         case .duplicateEffect: return "Only the first entry of that effect is used; the entry is kept."
         case .rejectedParameter: return "The current value is kept."

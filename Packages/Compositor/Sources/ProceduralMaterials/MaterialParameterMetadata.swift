@@ -6,7 +6,8 @@
 // ShaderParameterMetadata reader validates them (unknown keys, ranges, defaults, IDs, enums, slots) and the
 // catalog builds the MOD-001 descriptors from the result; `MaterialMetadataTests` also checks every document
 // against the slots its fragment function reads. Values match SHD-001's data-model table; Gradient Field's
-// `shape` is SHD-003's enum. IDs are permanent: never rename, reuse or re-kind a parameter.
+// `shape` is SHD-003's enum. SHD-004: Plasma and Noise Flow list alternative variants (same parameters,
+// another fragment function `mat_<variant id>`). IDs are permanent: never rename, reuse or re-kind a parameter.
 // Plain Swift; builds on Linux.
 
 enum MaterialParameterMetadata {
@@ -51,6 +52,8 @@ enum MaterialParameterMetadata {
       "variant": "plasma",
       "name": "Plasma",
       "summary": "Soft interfering color waves.",
+      "variants": [{"id": "plasma", "label": "Standard"},
+                   {"id": "plasmaDetailed", "label": "Detailed", "requires": "apple9"}],
       "parameters": [
         {"id": "scale", "label": "Scale (waves across the shorter side)", "kind": "float", "slot": 0, "unit": "none",
          "min": 0.5, "max": 8, "step": 0.1, "default": 2},
@@ -72,6 +75,7 @@ enum MaterialParameterMetadata {
       "variant": "noiseFlow",
       "name": "Noise Flow",
       "summary": "Layered noise in one tint, drifting slowly.",
+      "variants": [{"id": "noiseFlow", "label": "Standard"}, {"id": "noiseFlowLite", "label": "Low cost"}],
       "parameters": [
         {"id": "scale", "label": "Scale (cells across the shorter side)", "kind": "float", "slot": 0, "unit": "none",
          "min": 1, "max": 16, "step": 0.1, "default": 4},
