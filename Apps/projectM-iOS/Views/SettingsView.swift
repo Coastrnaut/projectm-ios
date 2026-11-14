@@ -98,6 +98,8 @@ struct SettingsView: View {
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
     /// CAM-003: the Lens row (nil: no row, e.g. in previews).
     var cameraLens: CameraLensChoice? = nil
+    /// CAM-004: the Lock exposure row (nil in previews and tests that don't need it).
+    var cameraExposure: CameraExposureChoice? = nil
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
     /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
@@ -183,13 +185,14 @@ struct SettingsView: View {
             .accessibilityValue(settings.cameraPosition.title)
             .accessibilityIdentifier("cameraPositionPicker")
             if let cameraLens { CameraLensRow(choice: cameraLens) }   // CAM-003-R2
+            if let cameraExposure { CameraExposureRow(choice: cameraExposure) }   // CAM-004-R1
             Toggle("Mirror", isOn: $settings.cameraMirrored)
                 .accessibilityIdentifier("cameraMirrorToggle")
             cameraCropRows
         } header: {
             Text("Camera")
         } footer: {
-            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
+            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Lock exposure holds the camera's current brightness until you turn it off, change lens or camera, or the camera stops. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
         }
     }
 
@@ -477,6 +480,7 @@ struct SettingsView: View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
+        ParameterSearchLinkSection(settings: settings, open: inspectParameter).id("parameterSearch")   // UIX-009-R5
         if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
         QuantizeChangesSection(quantizer: settings.parameterQuantizer).id("quantize")   // MOD-017-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
@@ -555,6 +559,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("showEditorLink")
             }
             .id("show")
+            QuantizeCueStepsSection(quantizer: settings.showCueQuantizer).id("quantizeCues")   // SHOW-003-R1
         }
         if let openGuide {   // UIX-001-R8
             Section {

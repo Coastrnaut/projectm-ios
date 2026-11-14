@@ -70,6 +70,14 @@ public protocol CameraFrameProvider: AnyObject {
     /// returns to it. Otherwise recorded (front, idle, denied, restricted, asking) or started again
     /// (unavailable, interrupted, failed). Never crashes.
     func selectLens(_ lens: CameraLens)
+    /// CAM-004 (contracts/exposure-lock.md C3): the current camera's exposure, read back from the camera
+    /// (main thread). `canLock` is known without starting the camera; `isRunning` only while running.
+    var exposure: CameraExposureState { get }
+    /// CAM-004: called on the main thread after every change of `exposure`.
+    var onExposureChange: ((CameraExposureState) -> Void)? { get set }
+    /// CAM-004-R4: locks (true) or releases (false) the running camera's exposure. Unsupported or not
+    /// running: nothing is configured. A lens or position switch and every stop release the lock (R6, R7).
+    func setExposureLocked(_ locked: Bool)
 }
 
 extension CameraFrameProvider {
@@ -82,6 +90,13 @@ extension CameraFrameProvider {
     public var lens: CameraLens { .wide }
     public var availableLenses: [CameraLens] { [.wide] }
     public func selectLens(_ lens: CameraLens) {}
+    /// CAM-004: a provider without exposure controls cannot lock.
+    public var exposure: CameraExposureState { .notRunning(canLock: false) }
+    public var onExposureChange: ((CameraExposureState) -> Void)? {
+        get { nil }
+        set {}
+    }
+    public func setExposureLocked(_ locked: Bool) {}
 }
 
 /// The newest-picture slot shared by a provider's camera thread and the render thread.

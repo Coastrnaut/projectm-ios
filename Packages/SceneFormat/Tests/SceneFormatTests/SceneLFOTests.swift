@@ -1,6 +1,7 @@
 // SceneLFOTests.swift — MOD-007-T06 (US3; MOD-007-R5, R7, R8, S4; contract L5, L6): the optional `lfos` list in
 // the scene document and `audio.lfo.<index>` bindings. CPU only, runs on Linux.
 // MOD-009-T06 (MOD-009-R7, R8, S5; contract T5): the optional `sync` object of an entry.
+// MOD-008-T09 (MOD-008-R9, S3; contract S8): stepped shapes and the optional `duty`, `seed` and `glide` fields.
 import Foundation
 import ParameterGraph
 @testable import SceneFormat
@@ -59,7 +60,7 @@ final class SceneLFOTests: XCTestCase {
     func testUnusableLFOsAreReportedAtTheirPathsAndKept() throws {
         let entries: [String] = [
             #"{"rate":25,"shape":"sine"}"#,                    // rate out of range
-            #"{"rate":1,"shape":"square"}"#,                   // unknown shape (MOD-008's)
+            #"{"rate":1,"shape":"noise"}"#,                    // unknown shape
             #"{"shape":"sine"}"#,                              // missing rate
             #"{"amplitude":"big","rate":1,"shape":"sine"}"#,   // wrong type
             #"{"rate":1}"#,                                    // missing shape
@@ -148,5 +149,53 @@ final class SceneLFOTests: XCTestCase {
         let report = SceneRepairReport(document: saved, decodeWarnings: [], registry: registry)
         let codes: Set<String> = Set(report.entries.map { (e: SceneRepairReport.Entry) -> String in e.code })
         XCTAssertTrue(codes.isSuperset(of: ["invalidLFOSync", "unknownLFOSync"]))
+    }
+
+    // MARK: MOD-008 stepped shapes
+
+    func testSteppedShapesRoundTripShapeDutySeedAndGlide() throws {
+        let square = try LFO(shape: .square, rateHz: 2, dutyCycle: 0.3)
+        let hold = try LFO(shape: .sampleHold, rateHz: 4, phaseOffset: 0.5, seed: 4_294_967_295, glide: 0.25)
+        let unseeded = try LFO(shape: .sampleHold, rateHz: 1)
+        let entries: [SceneLFOEntry] = [SceneLFOEntry(square), SceneLFOEntry(hold), SceneLFOEntry(unseeded)]
+        XCTAssertEqual(entries[0].fields["duty"], .double(0.3))
+        XCTAssertNil(entries[0].fields["seed"])
+        XCTAssertEqual(entries[1].fields["seed"], .integer(4_294_967_295))
+        XCTAssertEqual(entries[1].fields["glide"], .double(0.25))
+        XCTAssertNil(entries[2].fields["seed"], "an unseeded oscillator writes no seed")
+        XCTAssertNil(entries[2].fields["glide"], "glide 0 is not written")
+        XCTAssertNil(SceneLFOEntry(try LFO(shape: .sine, rateHz: 1)).fields["duty"], "sine writes nothing new")
+        var document = try SceneDocument.decode(Array(SceneFixtures.minimalText.utf8)).document
+        document.lfos = entries
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.lfos, entries)
+        XCTAssertEqual(again.lfoOscillators, [square, hold, unseeded], "shape, duty, seed and glide are kept exactly")
+        XCTAssertTrue(again.validate(registry: registry).isEmpty, "\(again.validate(registry: registry))")
+        for t: UInt64 in [0, 250_000_001, 3_600_000_000_000] {
+            XCTAssertEqual(again.lfoOscillators[1]?.value(elapsedNanoseconds: t), hold.value(elapsedNanoseconds: t),
+                           "the same seed and timebase give the same step values after a round trip")
+        }
+    }
+
+    func testInvalidSteppedFieldsAreReportedAndKept() throws {
+        let entries: [String] = [
+            #"{"duty":0.99,"rate":1,"shape":"square"}"#,       // duty out of range
+            #"{"glide":2,"rate":1,"shape":"sampleHold"}"#,     // glide out of range
+            #"{"rate":1,"seed":-1,"shape":"sampleHold"}"#,     // negative seed
+            #"{"rate":1,"seed":1.5,"shape":"sampleHold"}"#,    // not a whole number
+            #"{"rate":1,"seed":4294967296,"shape":"sampleHold"}"#,   // beyond 32 bits
+            #"{"duty":"wide","rate":1,"shape":"square"}"#,     // wrong type
+            #"{"rate":1,"seed":12,"shape":"sampleHold"}"#,
+        ]
+        let document = try decode(lfosJSON: "[" + entries.joined(separator: ",") + "]")
+        let issues = document.validate(registry: registry)
+        XCTAssertEqual(issues.map(\.code), Array(repeating: SceneIssue.Code.invalidLFO, count: 6))
+        XCTAssertEqual(issues.map(\.path), ["$.lfos[0]", "$.lfos[1]", "$.lfos[2].seed", "$.lfos[3].seed", "$.lfos[4].seed",
+                                            "$.lfos[5].duty"])
+        let oscillators = document.lfoOscillators
+        XCTAssertEqual(oscillators.prefix(6).compactMap { $0 }.count, 0, "unusable entries are nil, positions kept")
+        XCTAssertEqual(oscillators[6], try LFO(shape: .sampleHold, rateHz: 1, seed: 12))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.lfos, document.lfos, "entries are kept verbatim for re-save")
     }
 }

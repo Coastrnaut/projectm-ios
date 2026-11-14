@@ -47,4 +47,41 @@ extension AVCaptureSession: CameraInputConfiguring {
     public typealias Input = AVCaptureInput
     public var configuredInputs: [AVCaptureInput] { inputs }
 }
+
+/// CAM-004 (contract C1; research CAM-004-D1): the device's exposure through the documented
+/// `lockForConfiguration` / `unlockForConfiguration` pair. Called on the provider's session queue.
+extension AVCaptureDevice: CameraExposureConfiguring {
+    static func avMode(_ mode: CameraExposureMode) -> AVCaptureDevice.ExposureMode? {
+        switch mode {
+        case .locked: .locked
+        case .continuousAuto: .continuousAutoExposure
+        case .other: nil
+        }
+    }
+
+    public func supportsExposure(_ mode: CameraExposureMode) -> Bool {
+        Self.avMode(mode).map { (avMode: AVCaptureDevice.ExposureMode) -> Bool in isExposureModeSupported(avMode) } ?? false
+    }
+
+    public var currentExposureMode: CameraExposureMode {
+        switch exposureMode {
+        case .locked: .locked
+        case .continuousAutoExposure: .continuousAuto
+        default: .other
+        }
+    }
+
+    public func beginExposureConfiguration() -> Bool {
+        (try? lockForConfiguration()) != nil
+    }
+
+    public func applyExposureMode(_ mode: CameraExposureMode) {
+        guard let avMode = Self.avMode(mode), isExposureModeSupported(avMode) else { return }
+        exposureMode = avMode
+    }
+
+    public func endExposureConfiguration() {
+        unlockForConfiguration()
+    }
+}
 #endif
