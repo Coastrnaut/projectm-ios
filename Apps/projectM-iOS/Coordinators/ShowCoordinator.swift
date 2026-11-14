@@ -28,6 +28,7 @@
 //   apply resolves it (`CueTransitionResolver`: Reduce Motion, Reduce flashing) and hands the spec to
 //   `transitionDriver` just before `applyScene`; `setTransition` saves at once and applies nothing; a
 //   duplicate's cue gets its source cue's transition.
+// * SCN-011: `addCopies` stores bundled template scenes as new scenes (new IDs) with their cues, all or nothing.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -252,6 +253,52 @@ final class ShowCoordinator {
         save()
         sceneFilesChanged([document.id])   // SCN-006
         return true
+    }
+
+    // MARK: - Template copies (SCN-011-R4 to R6: never applies anything, the position stays)
+
+    /// Stores a copy of each document under a new scene ID and appends a cue for each (label, transition),
+    /// tagging the copies; all or nothing (capacity first, written copies removed on a failure). Returns the
+    /// new cues, or nil with an editor message. `ShowCoordinator+Templates` calls it for a bundled template.
+    func addCopies(_ scenes: [(document: SceneDocument, label: String, transition: ShowCueTransition?)], tags: [String]) -> [ShowCue]? {
+        guard let store else { editorMessage = Self.saveFailedMessage; return nil }
+        guard !scenes.isEmpty, list.cues.count + scenes.count <= ShowCueList.maximumCues else {
+            editorMessage = ShowEditError.tooManyCues(limit: ShowCueList.maximumCues).description
+            return nil
+        }
+        var copies: [SceneDocument] = []
+        func undo(_ message: String) -> [ShowCue]? {
+            for copy in copies { try? FileManager.default.removeItem(at: store.sceneFile(copy.id)) }
+            editorMessage = message
+            return nil
+        }
+        for scene in scenes {
+            do throws(ShowSceneEditError) {
+                copies.append(try store.storeTemplateCopy(scene.document, newID: makeSceneID(), name: scene.document.name))
+            } catch {
+                return undo(Self.message(for: error))
+            }
+        }
+        var updated = list
+        var cues: [ShowCue] = []
+        do throws(ShowEditError) {
+            for (copy, scene) in zip(copies, scenes) {
+                let cue = try updated.append(sceneID: copy.id, label: scene.label)
+                if let transition = scene.transition { try updated.setTransition(cue.id, to: transition) }   // SCN-007
+                cues.append(updated.cues.first { (c: ShowCue) -> Bool in c.id == cue.id } ?? cue)
+            }
+        } catch {
+            return undo(error.description)
+        }
+        for copy in copies {
+            for tag in tags { _ = try? updated.addTag(tag, toScene: copy.id) }   // SCN-005; a refused tag is not fatal
+            sceneNames[copy.id] = copy.name
+            unreadableScenes.remove(copy.id)
+        }
+        list = updated
+        save()
+        sceneFilesChanged(Set(copies.map(\.id)))   // SCN-006
+        return cues
     }
 
     // MARK: - Duplicate and rename scenes (SCN-003-R6: never applies anything, the position stays)

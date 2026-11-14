@@ -1,0 +1,110 @@
+{
+  "format": "projectm-ios.scene-templates",
+  "version": 1,
+  "licenceNote": "Every template is projectM-iOS's own content under the repository's MIT licence (LICENSE): the app's native visuals, its parameter values and text written for the project. No photo, video, logo, preset or third-party image is included.",
+  "templates": [
+    {
+      "id": "pulse-rings",
+      "name": "Pulse Rings",
+      "summary": "A circular spectrum with a strong glow.",
+      "symbol": "circle.circle",
+      "tags": [
+        "template"
+      ],
+      "scenes": [
+        {
+          "file": "pulse-rings.scene.json",
+          "label": "Pulse Rings",
+          "assets": []
+        }
+      ]
+    },
+    {
+      "id": "spectrum-bars",
+      "name": "Spectrum Bars",
+      "summary": "Vertical bars rising from the bottom edge.",
+      "symbol": "chart.bar",
+      "tags": [
+        "template"
+      ],
+      "scenes": [
+        {
+          "file": "spectrum-bars.scene.json",
+          "label": "Spectrum Bars",
+          "assets": []
+        }
+      ]
+    },
+    {
+      "id": "horizon-bars",
+      "name": "Horizon Bars",
+      "summary": "Horizontal bars with a soft glow.",
+      "symbol": "chart.bar.xaxis",
+      "tags": [
+        "template"
+      ],
+      "scenes": [
+        {
+          "file": "horizon-bars.scene.json",
+          "label": "Horizon Bars",
+          "assets": []
+        }
+      ]
+    },
+    {
+      "id": "title-card",
+      "name": "Title Card",
+      "summary": "Your title over a circular spectrum; edit the text in Settings.",
+      "symbol": "textformat",
+      "tags": [
+        "template"
+      ],
+      "scenes": [
+        {
+          "file": "title-card.scene.json",
+          "label": "Title Card",
+          "assets": [
+            {
+              "key": "text",
+              "kind": "text",
+              "source": "Title text written for projectM-iOS; drawn in the system font.",
+              "licence": "MIT"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "show-starter",
+      "name": "Show Starter",
+      "summary": "Two cues: an opening spectrum, then a welcome title that fades in over 1.5 seconds.",
+      "symbol": "list.number",
+      "tags": [
+        "template"
+      ],
+      "scenes": [
+        {
+          "file": "show-starter-opening.scene.json",
+          "label": "Opening",
+          "assets": []
+        },
+        {
+          "file": "show-starter-welcome.scene.json",
+          "label": "Welcome",
+          "assets": [
+            {
+              "key": "text",
+              "kind": "text",
+              "source": "Title text written for projectM-iOS; drawn in the system font.",
+              "licence": "MIT"
+            }
+          ],
+          "transition": {
+            "type": "crossfade",
+            "seconds": 1.5
+          }
+        }
+      ]
+    }
+  ]
+}

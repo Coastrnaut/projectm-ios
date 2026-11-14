@@ -330,6 +330,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// OUT-004: the external display's output correction (Settings › External Display).
     @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
+    /// REC-008: the recording length (Settings → Stop recording after; Off by default).
+    @ObservationIgnored private(set) lazy var recordingTimedStop = RecordingTimedStopSetting(defaults: defaults)
     /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
     let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
@@ -344,6 +346,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private var lifecycleForwarding: Task<Void, Never>?
     /// Presentation-bound resources (PERF-011): the renderer registers its own in prepareRenderer().
     @ObservationIgnored let presentation = PresentationResourceRegistry()
+    /// PERF-005: the next cues' media decoded ahead (AppCoordinator+Prewarm).
+    @ObservationIgnored let mediaPrewarm = MediaPrewarmCoordinator.makeDefault()
     @ObservationIgnored private var lifecycleCoordinator: LifecycleCoordinator!
     /// PERF-006: the one receiver of memory warnings; the app's recovery steps are registered there.
     @ObservationIgnored let memoryPressure: MemoryPressureCoordinator
@@ -591,6 +595,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if recovery.decision.isCrashLoop { sceneAutosave?.commitFreshScene() }
         recovery.startObservingLifecycle()
         connectShow()   // SHOW-001
+        presetLoader.prewarmScheduler = mediaPrewarm.scheduler   // PERF-005-R8: preset picks pass through unchanged
+        connectMediaPrewarm()   // PERF-005
         connectMissingMedia(defaults: defaults)   // MED-013 (and its DEBUG seed)
         connectLayerInspector()   // CMP-015
         #if DEBUG
@@ -1074,7 +1080,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
             host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
-            for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
+            for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
             #if DEBUG
@@ -1149,6 +1155,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onImageStateChange = { [weak self] (state: ImageLayerState) in self?.photoStateChanged(state) }
             slideshow.restartPlayback()   // MED-006: from the first slide
             host.beforeFrame = { [weak self] () -> Void in self?.slideshowTick() }
+            mediaPrewarm.attach(host.photo)   // PERF-005-R11: a prewarmed picture is adopted, not decoded again
             host.content = photoLayerContent
             if let next = slideshow.nextURL { host.preload(next) }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
@@ -1423,6 +1430,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  qualityCapabilities: RecordingQualitySetting.deviceCapabilities(),
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
         context.countdown = recordingCountdown.length   // REC-007
+        context.timedStop = recordingTimedStop.length   // REC-008
         return context
     }
 
@@ -1844,6 +1852,8 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
     var library: PresetLibrary?
     /// The stored bytes of a playable imported preset (PRE-012); set by UserPresetsCoordinator.
     var userPresetData: ((String) async -> Data?)?
+    /// PERF-005-R8: the app's prewarm scheduler; preset picks are forwarded through it at once (nil: direct).
+    var prewarmScheduler: PrewarmScheduler?
     private var archive: PresetArchive?
 
     /// Included presets load from their bundled file; pack presets from PresetArchive.bin
@@ -1884,7 +1894,11 @@ final class RendererPresetLoader: PresetLoading, MemoryPressureResponder {
             }
             return item
         }
-        renderer.prewarm(playable)
+        if let prewarmScheduler {
+            prewarmScheduler.forwardPresets(playable.map(\.id)) { renderer.prewarm(playable) }
+        } else {
+            renderer.prewarm(playable)
+        }
     }
 
     // MARK: - Memory pressure (PERF-006-R11)

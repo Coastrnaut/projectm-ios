@@ -20,7 +20,8 @@ final class ExternalOutputSetting {
     static let keys: [String] = [fitKey, shapeKey, pixelAspectKey]
 
     @ObservationIgnored private let defaults: UserDefaults
-    @ObservationIgnored private weak var external: ExternalDisplayCoordinator?
+    /// OUT-012: the rehearsal row reads and drives the coordinator's rehearsal flag.
+    @ObservationIgnored private(set) weak var external: ExternalDisplayCoordinator?
 
     var fit: ExternalOutputFit {
         didSet { store(fit.rawValue, Self.fitKey) }
@@ -58,7 +59,15 @@ final class ExternalOutputSetting {
     static let sectionTitle = "External Display"
     static let footer = "Changes only the picture on a connected external display. Fit shows the whole picture "
         + "with black bars, Fill covers the screen and crops, Stretch fills the screen without correction. "
-        + "Device keeps this device's shape; Pixel aspect keeps circles round on screens with non-square pixels."
+        + "Device keeps this device's shape; Pixel aspect keeps circles round on screens with non-square pixels. "
+        + "Rehearse output previews a display that is not connected."
+
+    // OUT-012
+    static let rehearseTitle = "Rehearse output…"
+    static let rehearseUnavailable = "A connected display already shows the real output."
+    static let rehearsalFooter = "A preview of what a display of this size would show: black bars, crop and "
+        + "pixel aspect, with this app's output settings. The visualization keeps running on this device. "
+        + "Nothing here is saved; connecting a real display ends the rehearsal."
 
     static func title(_ fit: ExternalOutputFit) -> String {
         switch fit {

@@ -218,7 +218,7 @@ final class UserPresetsUITests: XCTestCase {
         open("quarantineLink")
         XCTAssertTrue(app.staticTexts["quarantineReason:photo.milk"].appears(within: 5))
         XCTAssertEqual(app.staticTexts["quarantineReason:photo.milk"].label, "This file is not text. A Milkdrop preset is a plain text file.")
-        app.navigationBars["Quarantine"].buttons["Done"].tap()
+        app.navigationBars["Quarantine"].buttons["Done"].firstMatch.tap()   // firstMatch: two bars briefly match mid-transition (2026-11-14)
         waitForLabel(current, playing)
 
         // Second launch: a preset that is valid text but whose equations the engine cannot compile.
@@ -241,7 +241,7 @@ final class UserPresetsUITests: XCTestCase {
         open("deleteQuarantined:photo.milk")
         XCTAssertTrue(app.staticTexts["quarantineReason:photo.milk"].disappears(within: 5))
         XCTAssertTrue(app.staticTexts["quarantineReason:Broken Equations.milk"].exists)
-        app.navigationBars["Quarantine"].buttons["Done"].tap()
+        app.navigationBars["Quarantine"].buttons["Done"].firstMatch.tap()   // firstMatch: two bars briefly match mid-transition (2026-11-14)
 
         // The picture never changed, and Next still plays built-in presets only.
         waitForLabel(current, playing)

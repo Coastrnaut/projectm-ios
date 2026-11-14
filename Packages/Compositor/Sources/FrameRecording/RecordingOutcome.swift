@@ -15,6 +15,9 @@ public enum RecordingStopReason: String, Sendable, Equatable, CaseIterable {
     case writerFailed
     /// REC-015: the free storage fell close to the reserve; the file is finished and offered.
     case lowStorage
+    /// REC-008 (specs/180-rec-008-timed-stop): the length the user set was reached (the app shows the length in
+    /// its own notice, "Recording stopped after 10 seconds."); `durationReached` stays the 10-minute limit.
+    case timedStop
 
     /// The notice shown after the stop (nil for the user's own stop).
     public var notice: String? {
@@ -29,6 +32,7 @@ public enum RecordingStopReason: String, Sendable, Equatable, CaseIterable {
         case .presentationLost: "Recording stopped when the visual stopped drawing."
         case .writerFailed: RecordingFailure.writerFailed("").notice
         case .lowStorage: "Recording stopped because storage is almost full."
+        case .timedStop: "Recording stopped at the set length."
         }
     }
 }

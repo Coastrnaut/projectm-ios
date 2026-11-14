@@ -31,8 +31,14 @@ final class ToneAnalyzerDeterminismTests: XCTestCase {
         return run
     }
 
+    /// Representative fixtures (one of each signal kind); every fixture with `AUD016_BENCH=1`.
+    /// Shortened 2026-11-14 under owner rule 7: every fixture was analysed twice here (and once
+    /// more in `testDocumentedFinalStatesAndLevels`, which still covers every fixture).
     func testLevelsAndStatesAreIdenticalOnRepeatedRuns() throws {
-        for fixture in ReferenceToneCatalog.fixtures {
+        let fixtures = ReferenceToneCatalogTests.repeatsEveryFixture ? ReferenceToneCatalog.fixtures
+            : ReferenceToneCatalog.fixtures.filter { ReferenceToneCatalogTests.repeatedRunFixtures.contains($0.id) }
+        XCTAssertFalse(fixtures.isEmpty)
+        for fixture in fixtures {
             let first = try analyze(fixture)
             let second = try analyze(fixture)
             XCTAssertEqual(first, second, fixture.id)

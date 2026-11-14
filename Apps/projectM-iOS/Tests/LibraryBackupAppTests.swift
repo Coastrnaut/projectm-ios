@@ -34,7 +34,8 @@ final class LibraryBackupAppTests: XCTestCase {
                MIDIMappingCoordinator.mappingsKey, RecordingAudioSetting.includeMicrophoneKey,   // MIDI-003-R9, REC-004-R3
                PlaybackBalanceSetting.positionKey,   // AUD-010-R9
                ParameterShelf.pinsKey,   // UIX-004-R10
-               RecordingCountdownSetting.key]   // REC-007-R8
+               RecordingCountdownSetting.key,   // REC-007-R8
+               RecordingTimedStopSetting.key]   // REC-008-R9
             + RecentPresetsStore.allKeys)   // PRE-006-R7
         let included = Set(LibrarySettingsPolicy.includedKeys)
         let excluded = Set(LibrarySettingsPolicy.excludedKeys)
