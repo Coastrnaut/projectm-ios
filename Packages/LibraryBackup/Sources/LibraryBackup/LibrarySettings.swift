@@ -96,7 +96,9 @@ public enum LibrarySettingsPolicy {
 
     /// Read by the app but deliberately left out (documented; a test checks none is included).
     public static let excludedKeys: [String] = [
-        "settings.osc.enabled", "settings.midi.enabled", "settings.video.id", "settings.video.loop", "settings.video.speed",
+        "settings.osc.enabled", "settings.midi.enabled",
+        "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
+        "settings.video.id", "settings.video.loop", "settings.video.speed",
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",
         "session.recovery.open", "session.recovery.heldVisual", "session.recovery.sessionsSinceReopen", "guide.firstScene",
     ]

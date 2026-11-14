@@ -359,6 +359,8 @@ struct VisualizerView: View {
                          latencyOffset: coordinator.latencyOffset,   // AUD-013
                          colorGrade: coordinator.colorGrade,   // FX-003
                          midi: coordinator.midi,   // MIDI-001
+                         recordingAudio: coordinator.recordingAudio,   // REC-004
+                         recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          announcer: coordinator.announcer)   // ACC-005-R7
@@ -654,6 +656,7 @@ struct VisualizerView: View {
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.elapsedText)")
             .accessibilityIdentifier("recordingIndicator")
+            RecordingAudioLine(recording: coordinator.videoRecording)   // REC-004-R9
         }
         // REC-003: refusals, stop reasons, failures and "Recording saved." (FR-070: a labeled element).
         if let notice = coordinator.videoRecording.notice {

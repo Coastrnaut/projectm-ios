@@ -83,6 +83,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.noiseGate.enabled",   # AUD-011-R8 (analysis-only noise gate, microphone)
                 "settings.noiseGate.thresholdDecibels",   # AUD-011-R8
+                "settings.recording.includeMicrophone",   # REC-004-R3 (microphone audio in recordings; off by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009

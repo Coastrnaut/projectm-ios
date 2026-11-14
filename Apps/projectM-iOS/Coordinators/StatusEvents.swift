@@ -135,6 +135,18 @@ enum StatusEventCatalog {
         }
     }
 
+    /// REC-004-R9: X9a, what audio the recording that just started contains (after X9, same lane);
+    /// X9b, its audio ended early (a source switch, a new session, the microphone setting turned off).
+    static func recordingAudio(_ decision: RecordingAudioDecision) -> StatusEvent {
+        let text: String = decision.statusText
+        return StatusEvent(id: "X9a", kind: .recording, visibleText: text, announcement: text, cause: .user)
+    }
+
+    static func recordingAudioEnded() -> StatusEvent {
+        let text: String = RecordingAudioDecision.endedText
+        return StatusEvent(id: "X9b", kind: .recording, visibleText: text, announcement: text, cause: .system)
+    }
+
     static func recordingRefusal(_ refusal: RecordingRefusal) -> StatusEvent {
         switch refusal {
         case .noVisual, .notRecordable, .outputBlackedOut, .paused, .busy, .lowStorage:

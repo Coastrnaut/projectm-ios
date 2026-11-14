@@ -23,9 +23,17 @@
 //   (the package deletes the partial file). The value is used only for that, never stored or sent.
 //   DEBUG `-uitestStorage low|dropAfter:<n>` fakes the readings (1 s interval) and an offered file is
 //   read back into `probe`.
+// * REC-004 (specs/134-rec-004-recording-audio, contract C4, ADR-0051): at Record the audio decision is
+//   made from the source mode, the microphone permission and "Include microphone audio"
+//   (`RecordingAudioPolicy`); only "include" gives the file an AAC track and arms the normalized ring's
+//   recording tap. After each frame the tap is drained into the recorder (`RecordingAudioFeed`). The
+//   0.25 s check ends the audio for good when the source mode changes, the tap was disarmed by a new
+//   capture session, or the microphone setting is turned off; no silence is added. Other apps' audio
+//   (System/App Capture) never reaches a file.
 // * DEBUG: `-uitestRecordingDirectory <name>` moves the file into `<tmp>/<name>/` instead of showing
 //   the mover, and `probe` reports what AVFoundation reads back ("video hvc1 1178x2556 frames=58
 //   duration=1.93 audio=0").
+import AudioCore
 import Compositor
 import Foundation
 import FrameRecording
@@ -50,6 +58,8 @@ final class VideoRecordingTap {
     let recorder: MetalFrameRecorder
     /// Called once, on the main actor, when the recording must stop (size, limit, failure).
     var onStop: ((RecordingStopReason) -> Void)?
+    /// REC-004: drains the recording tap into the recorder after each frame (nil without permitted audio).
+    var audioFeed: RecordingAudioFeed?
     private var stopReported = false
 
     init(recorder: MetalFrameRecorder) {
@@ -63,6 +73,7 @@ final class VideoRecordingTap {
         guard !stopReported else { return }
         let outcome = recorder.recordFrame(presentationNanoseconds: presentationNanoseconds, drawableWidth: drawable.width,
                                            drawableHeight: drawable.height, commandBuffer: commandBuffer, encode: encode)
+        audioFeed?.pump()   // after the frame: the first frame sets the audio's origin
         switch outcome {
         case .sizeChanged: report(.sizeChanged)
         case .durationReached: report(.durationReached)
@@ -78,6 +89,35 @@ final class VideoRecordingTap {
     }
 }
 
+/// REC-004: moves the recording tap's audio into the recorder. Main actor (the frame loop's thread);
+/// one preallocated buffer, never waits.
+@MainActor
+final class RecordingAudioFeed {
+    static let maxFrames = 22_050
+    private let reader: any RecordingTapReading
+    private let recorder: MetalFrameRecorder
+    private let buffer: UnsafeMutablePointer<Float>
+
+    init(reader: any RecordingTapReading, recorder: MetalFrameRecorder) {
+        self.reader = reader
+        self.recorder = recorder
+        buffer = UnsafeMutablePointer<Float>.allocate(capacity: Self.maxFrames * 2)
+        buffer.initialize(repeating: 0, count: Self.maxFrames * 2)
+    }
+
+    isolated deinit {
+        buffer.deinitialize(count: Self.maxFrames * 2)
+        buffer.deallocate()
+    }
+
+    /// Drains what the tap holds (at most 0.5 s) and hands it to the recorder with its host time.
+    func pump() {
+        let chunk: RecordingTapChunk = reader.read(into: buffer, maxFrames: Self.maxFrames)
+        guard chunk.frames > 0 else { return }
+        recorder.appendAudio(buffer, frames: chunk.frames, firstSampleNanoseconds: chunk.firstSampleNanoseconds)
+    }
+}
+
 @MainActor
 @Observable
 final class VideoRecordingCoordinator {
@@ -89,6 +129,13 @@ final class VideoRecordingCoordinator {
         var visualShown: Bool
         var outputLive: Bool
         var paused: Bool
+        /// REC-004: the running source's mode (nil when none), the microphone permission and the setting.
+        var audioMode: AudioSourceMode? = nil
+        var microphoneGranted = false
+        var includeMicrophone = false
+        /// REC-004: the normalized ring's recording tap and how to arm or disarm it (nil in tests without audio).
+        var audioTap: (any RecordingTapReading)? = nil
+        var setAudioTapArmed: ((Bool) -> Void)? = nil
     }
 
     enum State: Equatable, CaseIterable {   // CaseIterable: ACC-011's completeness test
@@ -111,6 +158,12 @@ final class VideoRecordingCoordinator {
     private(set) var lastStopReason: RecordingStopReason?
     /// DEBUG probe: what the last recording reads back as, or the last refusal or failure.
     private(set) var probe = "none"
+    /// REC-004: the audio decision of the current (or last) recording; nil before the first.
+    private(set) var recordingAudio: RecordingAudioDecision?
+    /// REC-004: the current recording's audio ended early (a switch, a new session, the setting off).
+    private(set) var audioEnded = false
+    @ObservationIgnored private var recordingAudioMode: AudioSourceMode?
+    @ObservationIgnored private var disarmAudioTap: (() -> Void)?
 
     @ObservationIgnored private let context: @MainActor () -> Context
     @ObservationIgnored private let directory: URL
@@ -204,6 +257,32 @@ final class VideoRecordingCoordinator {
 
     var elapsedText: String { Self.elapsedText(elapsedSeconds) }
 
+    // MARK: - Audio (REC-004)
+
+    /// The recording audio source of an app source mode.
+    nonisolated static func audioKind(_ mode: AudioSourceMode?) -> RecordingAudioSourceKind? {
+        switch mode {
+        case .inAppPlayback: .inAppPlayback
+        case .microphone: .microphone
+        case .systemAppCapture: .systemCapture
+        case nil: nil
+        }
+    }
+
+    /// The decision a recording started now would get (REC-004-R4).
+    static func audioDecision(for c: Context) -> RecordingAudioDecision {
+        RecordingAudioPolicy.decide(source: audioKind(c.audioMode), includeMicrophone: c.includeMicrophone,
+                                    microphoneGranted: c.microphoneGranted)
+    }
+
+    /// What the next (idle) or current (recording) recording's audio is (REC-004-R9).
+    var audioStatusText: String {
+        if state == .recording, let recordingAudio {
+            return audioEnded ? RecordingAudioDecision.endedText : recordingAudio.statusText
+        }
+        return Self.audioDecision(for: context()).statusText
+    }
+
     /// True when the shown visual can be recorded (the control's state).
     var isRecordable: Bool { context().source != nil }
 
@@ -273,6 +352,8 @@ final class VideoRecordingCoordinator {
         }
         guard let source = c.source else { return }
         let size = source.recordingDrawableSize
+        let audio = Self.audioDecision(for: c)   // REC-004-R4: fixed for this recording
+        let tapArmer = c.setAudioTapArmed
         let url = directory.appendingPathComponent(Self.fileName(date: Date()))
         let settings = RecordingSettings.standard
         do {
@@ -289,9 +370,15 @@ final class VideoRecordingCoordinator {
                 policy = rules
             }
             let recorder = try MetalFrameRecorder(device: source.recordingDevice, url: url, drawableWidth: Int(size.width),
-                                                  drawableHeight: Int(size.height), settings: settings, fault: writerFault)
+                                                  drawableHeight: Int(size.height), settings: settings, fault: writerFault,
+                                                  audio: audio.includesAudio && c.audioTap != nil)
             storagePolicy = policy
             let tap = VideoRecordingTap(recorder: recorder)
+            if recorder.hasAudioTrack, let reader = c.audioTap {
+                tapArmer?(true)   // empty, then only this recording's permitted source
+                tap.audioFeed = RecordingAudioFeed(reader: reader, recorder: recorder)
+                disarmAudioTap = { () -> Void in tapArmer?(false) }
+            }
             tap.onStop = { [weak self] (reason: RecordingStopReason) in self?.stop(reason) }
             source.videoRecording = tap
             self.recorder = recorder
@@ -303,6 +390,11 @@ final class VideoRecordingCoordinator {
             fail(.writerFailed(error.localizedDescription))
             return
         }
+        let hasTrack: Bool = recorder?.hasAudioTrack ?? false
+        // Without a tap to read (unit tests) an "include" decision still records no audio: say so.
+        recordingAudio = hasTrack || !audio.includesAudio ? audio : RecordingAudioDecision.exclude(.noSource)
+        recordingAudioMode = c.audioMode
+        audioEnded = false
         state = .recording
         elapsedSeconds = 0
         notice = nil
@@ -367,7 +459,27 @@ final class VideoRecordingCoordinator {
             stop(.presentationLost)
         } else if recorder?.hasFailed == true {
             stop(.writerFailed)
+        } else if shouldEndAudio(c) {
+            endAudio()
         }
+    }
+
+    /// REC-004-R5: the source changed, a new session disarmed the tap, or the microphone consent was withdrawn.
+    private func shouldEndAudio(_ c: Context) -> Bool {
+        guard recordingAudio?.includesAudio == true, !audioEnded else { return false }
+        if c.audioMode != recordingAudioMode { return true }
+        if c.audioTap?.isArmed == false { return true }
+        return recordingAudioMode == .microphone && !(c.includeMicrophone && c.microphoneGranted)
+    }
+
+    /// Ends the recording's audio for good; the video goes on (no silence is added).
+    func endAudio() {
+        guard state == .recording, recordingAudio?.includesAudio == true, !audioEnded else { return }
+        disarmAudioTap?()
+        disarmAudioTap = nil
+        source?.videoRecording?.audioFeed = nil
+        recorder?.endAudio()
+        audioEnded = true
     }
 
     /// Stops the recording and finishes the file off the main thread (idempotent).
@@ -382,6 +494,8 @@ final class VideoRecordingCoordinator {
         storagePolicy = nil
         source?.videoRecording = nil   // no later frame is offered
         source = nil
+        disarmAudioTap?()   // REC-004: the tap is written only while a recording takes audio
+        disarmAudioTap = nil
         elapsedSeconds = recorder.recordedSeconds
         Task { [weak self] in
             let result = await recorder.finish()

@@ -64,7 +64,7 @@ final class RecordingDiskGuardUITests: XCTestCase {
         XCTAssertEqual(parts.count, 6, probe)
         let frames = Int(parts[3].replacingOccurrences(of: "frames=", with: "")) ?? 0
         XCTAssertGreaterThanOrEqual(frames, 2, probe)
-        XCTAssertEqual(parts.last, "audio=0")
+        XCTAssertEqual(parts.last, "audio=1")   // REC-004: In-App Playback audio is included
         app.buttons["recordingResultDiscard"].tap()
         XCTAssertFalse(app.buttons["recordingResultShare"].appears(within: 2))
     }

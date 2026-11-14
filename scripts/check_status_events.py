@@ -46,6 +46,8 @@ CHECKED = [
     "Coordinators/LibraryEraseCoordinator.swift",   # FILE-011-R3: the erase announces on the library lane
     "Views/LibraryEraseSection.swift",
     "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer
+    "Views/RecordingAudioSection.swift",  # REC-004-R9: recording audio announces through the router (X9a, X9b)
+    "Coordinators/RecordingAudioSetting.swift",
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")

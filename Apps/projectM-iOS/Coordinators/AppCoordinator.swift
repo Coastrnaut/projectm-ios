@@ -293,9 +293,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// REC-003: Record (the shown visual's frames into a video file, handed to the file mover).
     @ObservationIgnored private(set) lazy var videoRecording = VideoRecordingCoordinator { [weak self] () -> VideoRecordingCoordinator.Context in
         guard let self else { return VideoRecordingCoordinator.Context(source: nil, visualShown: false, outputLive: false, paused: false) }
-        return VideoRecordingCoordinator.Context(source: self.activeVideoRecordingSource, visualShown: self.screen == .visualizer,
-                                                 outputLive: self.externalDisplay.blackoutPhase == .live, paused: self.userPaused)
+        return self.videoRecordingContext
     }
+    /// REC-004: "Include microphone audio" for recordings (Settings → Recording; off by default).
+    let recordingAudio: RecordingAudioSetting
+    /// REC-004: reads the microphone permission (never asks for it).
+    @ObservationIgnored private lazy var microphonePermissionProbe = AVMicrophoneBackend()
 
     private let defaults: UserDefaults
     #if DEBUG
@@ -324,6 +327,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             defaults.removeObject(forKey: ChannelSelectionSetting.modeKey)   // AUD-009: Mix
             defaults.removeObject(forKey: NoiseGateSetting.enabledKey)   // AUD-011: off
             defaults.removeObject(forKey: NoiseGateSetting.thresholdKey)   // AUD-011: −50 dBFS
+            defaults.removeObject(forKey: RecordingAudioSetting.includeMicrophoneKey)   // REC-004: off
             LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
             ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
             defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
@@ -344,6 +348,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         inputTrim = InputTrimSetting(defaults: defaults)
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
+        recordingAudio = RecordingAudioSetting(defaults: defaults)
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
@@ -1294,6 +1299,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     /// REC-003: the shown visual's recording source; nil for projectM (not recordable in this row,
     /// ADR-0027) and when no visual is shown.
+    /// REC-003/REC-004: what the recording coordinator reads (visual, output, pause; source mode, consent, tap).
+    var videoRecordingContext: VideoRecordingCoordinator.Context {
+        let manager = manager
+        return VideoRecordingCoordinator.Context(source: activeVideoRecordingSource, visualShown: screen == .visualizer,
+                                                 outputLive: externalDisplay.blackoutPhase == .live, paused: userPaused,
+                                                 audioMode: manager.activeMode,
+                                                 microphoneGranted: microphonePermissionProbe.permission == .granted,
+                                                 includeMicrophone: recordingAudio.includeMicrophone,
+                                                 audioTap: manager.recordingTap,
+                                                 setAudioTapArmed: { (armed: Bool) -> Void in manager.setRecordingTapArmed(armed) })
+    }
+
     var activeVideoRecordingSource: (any VideoRecordingSource)? {
         guard screen == .visualizer else { return nil }
         if showsCameraVisual { return cameraVisual }

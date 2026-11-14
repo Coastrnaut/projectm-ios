@@ -66,6 +66,9 @@ struct SettingsView: View {
     var colorGrade: ColorGradeSetting?
     /// MIDI-001: MIDI endpoint discovery (nil hides its section, e.g. in previews).
     var midi: MIDIDiscoveryCoordinator?
+    /// REC-004: "Include microphone audio" and the next recording's audio status (nil hides the section).
+    var recordingAudio: RecordingAudioSetting?
+    var recordingAudioStatus: (() -> String)?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
@@ -371,6 +374,7 @@ struct SettingsView: View {
         if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
         oscSection
         if let midi { MIDISettingsSection(midi: midi) }   // MIDI-001-R8
+        if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
     }
 
     @ViewBuilder private var tailSections: some View {
