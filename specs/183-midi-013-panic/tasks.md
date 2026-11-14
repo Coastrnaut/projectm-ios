@@ -21,7 +21,7 @@ person runs them.
 **Independent test**: three held notes (one hold blackout), a held CC button and a learn session → panic → zero gates, empty press rule, blackout restored, learn cancelled, stored lines byte-identical, later presses fire.
 
 - [ ] MIDI-013-T05 [US1] Package tests `Packages/PerformanceControl/Tests/PerformanceControlTests/MIDIPanicTests.swift`: held notes and a CC button released, hold commands ordered, filter empty, a press inside the old 30 ms window fires after panic, a late note-off is ignored (S1, S3, R10)
-- [ ] MIDI-013-T06 [US1] App acceptance test `Apps/projectM-iOS/Tests/MIDIPanicCoordinatorTests.swift` through the stand-in source system (`ScriptedMIDISourceSystem`): the independent test above, plus queued input dropped and the `.midi` announcement (S1, S2, S3; R1-R6)
+- [ ] MIDI-013-T06 [US1] App acceptance test `Apps/projectM-iOS/Tests/MIDIPanicCoordinatorTests.swift` through the stand-in source system (`ScriptedMIDISourceSystem`): the independent test above, plus queued input dropped, live CC values and listening unchanged, the current scene untouched (no scene command) and the `.midi` announcement (S1, S2, S3; R1-R6)
 
 ## Phase 4: User Story 2 - Panic from the keyboard, VoiceOver or a controller (P1)
 

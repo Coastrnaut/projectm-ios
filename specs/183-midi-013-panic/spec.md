@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Planned 2026-11-14 (speckit-analyze: coverage of R5's live values and listening added to MIDI-013-T06)
 
 **Input**: User description: "Implement MIDI-013 (MIDI panic) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Release held note states and clear stuck triggers on user command." Acceptance, verbatim: "After
