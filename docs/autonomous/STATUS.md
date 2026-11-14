@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T17:13:57Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T17:20:07Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,10 +9,10 @@
 
 | State | Features |
 |---|---|
-| audited | 128 |
-| implementing | 7 |
+| audited | 126 |
+| implementing | 8 |
 | unit_passed | 2 |
-| integrated | 188 |
+| integrated | 189 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 45 | 7 | 2 | 97 | 0 |
-| P2 | 72 | 0 | 0 | 7 | 0 |
+| P1 | 44 | 7 | 2 | 98 | 0 |
+| P2 | 71 | 1 | 0 | 7 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 137 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
+- 136 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-012, ANL-013)
 
 ## Integrated
 
@@ -52,7 +52,7 @@ The physical-device suite may **not** start:
 | ANL-008 | Snare-like transient detector | `ae0249ac` | `feature/anl-008` |
 | ANL-009 | High-frequency transient detector | `a69be240` | `None` |
 | ANL-010 | Spectral centroid | `bf6d440f` | `feature/anl-010` |
-| ANL-011 | Spectral rolloff | `d27dc6f7daf1` | `feature/anl-011` |
+| ANL-011 | Spectral rolloff | `d27dc6f7` | `feature/anl-011` |
 | ANL-014 | Loudness envelope | `c3900199` | `feature/anl-014` |
 | ANL-016 | Analysis event bus | `97e498d64a14` | `feature/anl-016` |
 | AUD-001 | Import DRM-free audio files | `a2813ab3fa4f` | `feature/aud-001` |
@@ -201,6 +201,7 @@ The physical-device suite may **not** start:
 | SCN-007 | Scene transition presets | `6024f5271d61` | `feature/scn-007` |
 | SCN-008 | Scene snapshots | `871e7fad` | `feature/scn-008` |
 | SCN-010 | Scene undo/redo | `01b155c6c3d0` | `feature/scn-010` |
+| SCN-011 | Scene template gallery | `2a895211` | `feature/scn-011` |
 | SCN-012 | Scene validation | `2a86515` | `feature/scn-012` |
 | SCN-013 | Scene migration | `7f597d2` | `feature/scn-013` |
 | SHD-001 | Procedural material catalog | `ade4dfec39a5` | `feature/shd-001` |
@@ -451,6 +452,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `c54116b32107` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-011/20261114T120155/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `c54116b32107` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-011/20261114T120155/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `c54116b32107` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-011/20261114T120155/swift-test_VisualGenerators.log`)
+- `post-merge: projectM-iOSTests 843 + UI 7 (glow, templates, show cues, inspector)`: pass at `d27dc6f7` (log `.autonomous/logs/integration/batch32/app-tests.log`)
 
 ### ANL-014 Loudness envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `71c12fb822f4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ANL-014/20261113T224539/compliance.log`)
@@ -1895,6 +1897,20 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `bc6b335a76bc` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-007/20261114T113329/swift-test_LibraryBackup.log`)
 - `post-merge: projectM-iOSTests 814 + UI 6 (countdown, snapshots, scene undo, macros, glow)`: pass at `1847eae2` (log `.autonomous/logs/integration/batch26/app-tests.log`)
 
+### REC-008 Timed recording stop (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `de05bc7c3217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-008/20261114T121414/swift-test_ShowControl.log`)
+
 ### REC-012 Share via Files (integrated)
 - `python3 scripts/check_compliance.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `8909040fb290` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-012/20261113T152825/docs.log`)
@@ -1999,12 +2015,13 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 346 incl. SceneHistoryCoordinatorTests; SceneUndoUITests 19.5 s, GuidedFirstScene reopen, Settings 4 UI tests on iOS 27.2 sim; SceneFormat 59 in the gate`: pass at `01b155c6c3d0` (log `.autonomous/logs/integration/scn-010/app-tests.log`)
 
-### SCN-011 Scene template gallery (unit_passed)
+### SCN-011 Scene template gallery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `5966d4ca6872` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-011/20261114T121233/swift-test_ShowControl.log`)
+- `post-merge: projectM-iOSTests 843 + UI 7 (glow, templates, show cues, inspector)`: pass at `2a895211` (log `.autonomous/logs/integration/batch32/app-tests.log`)
 
 ### SCN-012 Scene validation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f41bcda078a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-012/20261113T183809/compliance.log`)
