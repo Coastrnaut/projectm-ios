@@ -19,10 +19,10 @@ after an applied choice.
 
 | Key | Where | Effect |
 |---|---|---|
-| ⌘K | visualizer, show has cues, Settings closed | toggle the switcher |
+| ⌘K | visualizer, show has cues, Settings closed | toggle the switcher (opens, or closes without a choice) |
 | Up / Down Arrow | search field | move the highlight (no wrap) |
 | Return | search field | choose the highlighted entry; nothing when there is none |
-| Escape | search field | close without a choice |
+| Escape | search field | close without a choice (wired; not verified on the simulator, research UIX-002-D4) |
 | Right/Left Arrow, Page Up/Down, ⌘Z, ⇧⌘Z | while open | not handled by the show or scene undo (the field owns them) |
 
 ## C3: Choice path

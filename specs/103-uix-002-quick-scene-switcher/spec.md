@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (UIX-002-T01-T17 verified on the Mac on an own iOS 27.2 simulator; no device pass; Escape-to-close and VoiceOver focus return are wired but not verified, see Verification)
 
 **Input**: User description: "Implement UIX-002 (Quick scene switcher) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Search and recall local scenes
@@ -170,3 +170,20 @@ scrolls; with Reduce Motion the card appears without animation.
 - Device latency is not measured by this feature (owner rule: simulator results are never device evidence); a device pass can be added later.
 - "Recall" means opening the stored scene of a cue; live edits since the cue was applied are replaced, as with SHOW-001's Go to.
 - iPhone and iPad, portrait and landscape; the hardware keyboard paths are verified on the simulator's keyboard events.
+
+## Verification (2026-11-14, iOS 27.2 simulator "UIX2 iPhone 17"; never device evidence)
+
+Choice → applied state, in-app monotonic clock (`sceneSwitcherProbe`), budget 250 ms (UIX-002-S2):
+
+| Test | Outcome | Measured |
+|---|---|---|
+| Return on "Drop" (scene 3, Circular) | applied | 5.4 ms (5.7, 6.0 in earlier runs) |
+| Tap on "Break" (scene 4, Linear) | applied | 7.6 ms (7.5) |
+| Tap on "Finale" at AX5 (scene 5, Text visual created) | applied | 31.2 ms (36.3) |
+| Return on "Broken" (repair seed) | repairShown | 3.0 ms (3.9, 4.0) |
+
+- UIX-002-S1: "dr" + Return recalls Drop (3 key presses after opening).
+- UIX-002-S3: focus and text held after every keystroke of "b", "r", "e", deletes, "zz" and a Return with no match.
+- UIX-002-S4, S6: 13 unit tests; the worst 256-cue query took under 5 ms.
+- UIX-002-S5: the repair report appears first and nothing is applied until the user chooses.
+- Not verified: Escape closing the switcher (wired through the field's key handler and the Close button's cancel action; XCUITest's Escape key event never reached the focused field on the simulator, so the tests close with ⌘K); VoiceOver focus returning to the Scenes button (needs VoiceOver); first-frame latency and any device numbers (clarified out of scope).

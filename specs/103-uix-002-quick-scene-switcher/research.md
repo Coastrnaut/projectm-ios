@@ -49,6 +49,11 @@
   highlight and return `.handled`; `.onKeyPress(.escape)` closes; `.onSubmit` chooses. While open,
   `ShowKeyCommands` omits its arrow and Page keys and `SceneHistoryKeyCommands` is not mounted, so
   arrows and ⌘Z belong to the text field.
+- **Verification note (2026-11-14)**: Up and Down Arrow (`onKeyPress`), Return and ⌘K are verified
+  by UI tests on the iOS 27.2 simulator. Escape is also wired (`onKeyPress(.escape)` on the field and
+  `.keyboardShortcut(.cancelAction)` on Close), but XCUITest's Escape key event never reached the
+  focused field there (focus and text unchanged), so Escape is not verified; ⌘K closes the open
+  switcher as well.
 - **Rationale**: Unmodified arrow key commands registered higher in the responder chain would
   otherwise compete with the field (and step cues under the user's typing).
 
