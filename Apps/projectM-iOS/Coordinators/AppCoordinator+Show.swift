@@ -12,6 +12,7 @@
 // * SHOW-005: `setShowHold` turns the performer's Hold on or off (session only) and announces it on the cue lane.
 // * SHOW-006: `makeCueRehearsal` reads the live values and the safety settings (never writes them), SCN-006's stored
 //   pictures, and announces on the cue lane.
+// * SHOW-007: `showTransport` (made at launch) adds Play/Pause over the Hold, seek, scrub and Loop.
 // * The buttons in the controls restart the controls' hide delay; the keyboard shortcuts do not show
 //   the controls.
 import FlashSafety
@@ -55,6 +56,7 @@ extension AppCoordinator {
         }
         connectCueTransitions()   // SCN-007
         _ = showAutoAdvance   // SHOW-002: hooks into the show's step path now
+        _ = showTransport   // SHOW-007: Loop reaches the timed advance from launch
         show.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
@@ -189,6 +191,14 @@ extension AppCoordinator {
     }
 
     func toggleCueRehearsal() { showControls(); cueRehearsal.toggle() }
+
+    // MARK: Timeline transport (SHOW-007)
+
+    func makeShowTransport(defaults: UserDefaults) -> ShowTransportCoordinator {
+        let transport = ShowTransportCoordinator(show: show, driver: showAutoAdvance, defaults: defaults)
+        transport.setHold = { [weak self] (held: Bool) -> Void in self?.setShowHold(held) }   // SHOW-005's announcements
+        return transport
+    }
 
     // MARK: Controls and keys
 

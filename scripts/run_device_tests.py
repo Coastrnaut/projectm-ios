@@ -104,6 +104,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.scene.locked",  # SCN-015 (scene lock; absent = unlocked)
                 "settings.modulation.quantize",  # MOD-017 (quantize mode; absent = off)
                 "settings.show.quantizeCues",  # SHOW-003 (cue step quantize mode; absent = off)
+                "settings.show.loop",  # SHOW-007 (Loop the show timeline; absent = off)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.playbackBalance.position",   # AUD-010-R7 (In-App Playback monitoring balance)
