@@ -8,6 +8,16 @@ public protocol RecordingEncoderCapabilities: Sendable {
     func canEncode(_ codec: RecordingCodec, width: Int, height: Int) -> Bool
     /// The display's highest frame rate.
     var maxFramesPerSecond: Int { get }
+    /// REC-006-D4: the visual's render loop cap (Low Power Mode, thermal), nil when uncapped. Default nil.
+    var renderLimit: RecordingRenderLimit? { get }
+    /// REC-006-D4: the encoder's highest frame rate for `codec` at `width × height`. Default 60 (VideoToolbox
+    /// publishes no per-size rate limit; the writer's `canApply` stays the final gate).
+    func maxEncodedFramesPerSecond(_ codec: RecordingCodec, width: Int, height: Int) -> Int
+}
+
+extension RecordingEncoderCapabilities {
+    public var renderLimit: RecordingRenderLimit? { nil }
+    public func maxEncodedFramesPerSecond(_ codec: RecordingCodec, width: Int, height: Int) -> Int { 60 }
 }
 
 /// Why a profile cannot record here (REC-005-R5). The texts are shown and spoken as they are.
@@ -89,10 +99,11 @@ public enum RecordingQualityCatalog {
         fallbackPrefix + profile.title + ": " + reason.text
     }
 
-    /// Contract C2: frame rate, then codec, then size.
-    public static func availability(of profile: RecordingQualityProfile, drawableWidth: Int, drawableHeight: Int,
+    /// Contract C2: frame rate, then codec, then size. REC-006: `frameRate` (24, 30 or 60) replaces the profile's
+    /// rate; nil keeps it (REC-005 unchanged).
+    public static func availability(of profile: RecordingQualityProfile, frameRate: Int? = nil, drawableWidth: Int, drawableHeight: Int,
                                     capabilities: any RecordingEncoderCapabilities) -> RecordingProfileAvailability {
-        let settings: RecordingSettings = profile.settings
+        let settings: RecordingSettings = profile.settings(frameRate: frameRate)
         guard let geometry = RecordingGeometry(drawableWidth: drawableWidth, drawableHeight: drawableHeight,
                                                maxLongSide: settings.maxLongSide) else { return .unavailable(.noPicture) }
         if settings.maxFrameRate > capabilities.maxFramesPerSecond {
@@ -117,24 +128,25 @@ public enum RecordingQualityCatalog {
     }
 
     /// Every profile's availability, in table order (the Settings rows).
-    public static func availabilities(drawableWidth: Int, drawableHeight: Int,
+    public static func availabilities(frameRate: Int? = nil, drawableWidth: Int, drawableHeight: Int,
                                       capabilities: any RecordingEncoderCapabilities)
         -> [(profile: RecordingQualityProfile, availability: RecordingProfileAvailability)] {
         RecordingQualityProfile.allCases.map { (p: RecordingQualityProfile) -> (profile: RecordingQualityProfile, availability: RecordingProfileAvailability) in
-            (p, availability(of: p, drawableWidth: drawableWidth, drawableHeight: drawableHeight, capabilities: capabilities))
+            (p, availability(of: p, frameRate: frameRate, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
+                             capabilities: capabilities))
         }
     }
 
     /// The selected profile when available, else the first available one below it (REC-005-D5), else refuse.
-    public static func resolve(_ selected: RecordingQualityProfile, drawableWidth: Int, drawableHeight: Int,
+    public static func resolve(_ selected: RecordingQualityProfile, frameRate: Int? = nil, drawableWidth: Int, drawableHeight: Int,
                                capabilities: any RecordingEncoderCapabilities) -> RecordingProfileResolution {
-        let first = availability(of: selected, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
+        let first = availability(of: selected, frameRate: frameRate, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
                                  capabilities: capabilities)
         if let plan = first.plan { return .record(plan, fallbackFrom: nil, reason: nil) }
         let order: [RecordingQualityProfile] = RecordingQualityProfile.fallbackOrder
         guard let start = order.firstIndex(of: selected) else { return .refuse }
         for profile in order[(start + 1)...] {
-            let candidate = availability(of: profile, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
+            let candidate = availability(of: profile, frameRate: frameRate, drawableWidth: drawableWidth, drawableHeight: drawableHeight,
                                          capabilities: capabilities)
             if let plan = candidate.plan { return .record(plan, fallbackFrom: selected, reason: first.reason) }
         }

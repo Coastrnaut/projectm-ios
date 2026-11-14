@@ -85,7 +85,7 @@ stall and is zero for steady 60 Hz and 120 Hz rendering at each target.
 **Acceptance Scenarios**:
 
 1. **Given** steady rendering at 60 Hz or 120 Hz, **When** recording at 24, 30 or 60 fps, **Then** the dropped count is 0 and the frame count is duration × fps.
-2. **Given** one 200 ms stall, **When** recording at fps F, **Then** the dropped count equals the number of slots inside the stall with no rendered frame near them (about 0.2 × F, never more than ⌈0.2 × F⌉).
+2. **Given** one 200 ms stall, **When** recording at fps F, **Then** the dropped count equals the number of slots inside the stall with no rendered frame near them, or one more when the frame just before the stall was passed over for a predicted nearer one (REC-006-D2), and never more than ⌈0.2 × F⌉.
 
 ---
 
@@ -142,7 +142,7 @@ encoder limit of 30 fps; the 60 fps row is disabled with the matching reason; 24
 ### Measurable Outcomes
 
 - **REC-006-S1**: For each of 24, 30 and 60 fps and each injected pattern (60 Hz, 120 Hz, jittery, one 200 ms stall), the read-back file's nominal frame rate (or minimum frame duration) equals the selection and 100% of frame times are exactly n/fps.
-- **REC-006-S2**: Steady rendering at or above the target gives 0 dropped frames; the 200 ms stall gives exactly the number of empty slots in the stall (at most ⌈0.2 × fps⌉); jittery rendering at or above the target drops at most 1% of slots.
+- **REC-006-S2**: Steady rendering at or above the target gives 0 dropped frames; the 200 ms stall gives the number of empty slots in the stall, or one more (the frame just before the stall passed over for a predicted nearer one), and at most ⌈0.2 × fps⌉; jittery rendering at or above the target drops at most 1% of slots.
 - **REC-006-S3**: Decimating 60 Hz rendering to 24 fps writes, for 100% of slots, the rendered frame nearest the slot (ties to the earlier).
 - **REC-006-S4**: With a 30 fps display, a Low Power cap or a 30 fps encoder limit, 60 fps is disabled with the matching reason and 24 and 30 stay enabled.
 - **REC-006-S5**: The picker UI test selects a rate and sees it selected in under 30 s.

@@ -8,7 +8,7 @@
   1. t before the origin, or t ≤ the last written frame's time → `droppedNotIncreasing`.
   2. m × I ≥ the duration limit → `durationReached`.
   3. m < next free slot → `skippedRate`.
-  4. d = min(t − previous offered frame time, one slot) when a previous frame exists. If t is before the slot time, |t + d − slot| < |t − slot| and t + 1.5 d is before the window's end → `skippedRate` (a nearer frame is expected).
+  4. d = min(t − previous offered frame time, one slot) when a previous frame exists. If t is before the slot time, |t + d − slot| + 1 µs < |t − slot| (closer than 1 µs is a tie: clock rounding) and t + 1.5 d is before the window's end → `skippedRate` (a nearer frame is expected).
   5. Otherwise `candidate(tick: m × I)`; `markWritten(tick:)` makes slot m + 1 the next free slot.
 - Constant time, no allocation; one thread (the frame loop).
 
