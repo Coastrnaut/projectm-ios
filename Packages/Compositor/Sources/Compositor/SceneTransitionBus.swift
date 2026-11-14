@@ -19,6 +19,7 @@
 // returns its own pictures in its `deinit`. Nothing is cached: every blended frame is mixed again (CMP-013's
 // reuse stays inside each scene). Not Sendable: one thread drives the bus and its scenes.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
+import FlashSafety
 import Metal
 
 public final class SceneTransitionBus {
@@ -149,6 +150,10 @@ public final class SceneTransitionBus {
     /// FX-002-R7: shown pixels with a NaN or infinite channel that the screen output pass tone-mapped to 0 so far
     /// (cumulative; `encodeOutput` passes do not count). Exact once the last frame completed.
     public var nonFiniteOutputPixels: UInt32 { nonFiniteCounter.count }
+    /// ACC-012-R5: the sensory safety profile's envelope for the final flash guard when it differs from the
+    /// Reduce flashing one (`SafetyClamp.flashLimitsOverride`); nil = `forReduceFlashing(reduceFlashing)`.
+    /// From the next frame; the guard's history is kept (FX-019-R11).
+    public var flashLimits: FlashEnvelopeConfiguration?
 
     /// Encodes one shown frame into `output` (a `Compositor.supportedOutputFormats` render target). Returns
     /// false for no live scene, an empty output, an unsupported format or an encoding failure.
@@ -190,7 +195,7 @@ public final class SceneTransitionBus {
         lastCommandBuffer = commandBuffer
         shownGradeBlock = gradeBlock
         guard flashGuard.encode(composite: shown, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
-                                reduceFlashing: reduceFlashing, grade: shownGradeBlock) else { return false }
+                                reduceFlashing: reduceFlashing, flashLimits: flashLimits, grade: shownGradeBlock) else { return false }
         guard encodeOutputPass(shown, into: output, pipeline: pipeline, label: "CMP-014 output", counts: true,
                                commandBuffer: commandBuffer) else {
             return false

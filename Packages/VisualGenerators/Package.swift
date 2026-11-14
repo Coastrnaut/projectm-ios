@@ -35,7 +35,7 @@ let package = Package(
     targets: [
         .target(name: "VisualGenerators", dependencies: ["FlashSafety"]),
         .target(name: "VisualBandFeed", dependencies: ["VisualGenerators", "AudioCore", "AnalysisFeatures"]),
-        .target(name: "VisualEffects", dependencies: ["VisualGenerators"]),
+        .target(name: "VisualEffects", dependencies: ["VisualGenerators", "FlashSafety"]),   // ACC-012: SafetyClamp
         .target(name: "VisualParameters", dependencies: ["VisualGenerators", "VisualEffects", "ParameterGraph"]),
         .testTarget(name: "VisualGeneratorsTests",
                     dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters", "AudioCore",

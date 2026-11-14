@@ -187,13 +187,13 @@ final class PresetCoordinator {
     }
 
     /// ACC-002: whether the policy applies to this preset now (Reduce flashing on and flagged).
-    func isFlagged(_ preset: IndexedPreset) -> Bool { settings.reduceFlashing && preset.mayFlash }
+    func isFlagged(_ preset: IndexedPreset) -> Bool { settings.effectiveReduceFlashing && preset.mayFlash }
 
     /// ACC-002-R5: what Next, Previous, Random and the warm-up walk: the scope's members without
     /// flagged presets while Reduce flashing is on (exactly `members` with it off, R8).
     var walkable: [IndexedPreset] {
         let all = members
-        guard settings.reduceFlashing else { return all }
+        guard settings.effectiveReduceFlashing else { return all }
         return all.filter { !$0.mayFlash }
     }
 
@@ -407,7 +407,7 @@ final class PresetCoordinator {
     /// Nothing to walk: a locked scope offers the purchase; a scope whose playable presets are all
     /// flagged says so (ACC-002-R9).
     private func reportEmptyWalk() {
-        if settings.reduceFlashing, !members.isEmpty {
+        if settings.effectiveReduceFlashing, !members.isEmpty {
             failureMessage = Self.allFlaggedText
             return
         }

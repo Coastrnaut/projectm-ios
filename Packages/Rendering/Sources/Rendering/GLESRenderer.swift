@@ -36,6 +36,13 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
     /// `FlashEnvelopeConfiguration.reduceFlashing` while this is on, the always-on cap while off.
     /// Toggling keeps the envelope's history (FX-019-R11).
     public var reduceFlashing = false
+    /// ACC-012-R5: the sensory safety profile's envelope when it differs from the Reduce flashing one; nil =
+    /// `forReduceFlashing(reduceFlashing)`, today's path.
+    public var flashLimits: FlashEnvelopeConfiguration?
+    /// The envelope the next frame's pass applies.
+    public var flashConfiguration: FlashEnvelopeConfiguration {
+        flashLimits ?? FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing)
+    }
     public let supportsReduceFlashing = true
     /// The rise rate while Reduce flashing is on (FlashEnvelopeConfiguration.reduceFlashing).
     public static let flashLimitPerSecond = Float(FlashEnvelopeConfiguration.reduceFlashing.riseRatePerSecond ?? 0)
@@ -147,7 +154,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
         if let limiter = flashLimiterForFrame(),
            case let scene = PMFlashLimiterBegin(limiter, drawableSize.width, drawableSize.height), scene != 0 {
             engine.renderFrame(toFramebuffer: scene)
-            var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+            var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
             PMFlashLimiterFinish(limiter, UInt32(framebuffer), &parameters)
         } else {
             // The pass could not be created (FX-019 edge case): frames are drawn directly.
@@ -282,7 +289,7 @@ public final class GLESRenderer: NSObject, VisualizerRenderer {
         glViewport(0, 0, drawableSize.width, drawableSize.height)
         glClearColor(value, value, value, 1)
         glClear(GLbitfield(GL_COLOR_BUFFER_BIT))
-        var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+        var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
         PMFlashLimiterFinish(limiter, UInt32(framebuffer), &parameters)
         return PMFlashLimiterLastGain(limiter)
     }

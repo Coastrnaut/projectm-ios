@@ -86,6 +86,7 @@ import CaptureKit
 import Compositor
 import CaptureUI
 import Diagnostics
+import FlashSafety
 import Foundation
 import Observation
 import PresentationLifecycle
@@ -335,7 +336,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         noiseGate = NoiseGateSetting(defaults: defaults)
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
-        self.externalDisplay.reduceFlashing = settings.reduceFlashing   // OUT-010-R6
+        self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
         let recovery = SessionRecoveryCoordinator(defaults: defaults, suppressed: SessionRecoveryCoordinator.harnessSuppresses())
@@ -824,14 +825,33 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
 
     /// FR-072: the renderer follows the setting (and Reduce Motion while the user has not chosen).
+    /// ACC-012-R4, R5, R7: and the sensory safety clamp: the effective Reduce flashing (the setting, or a
+    /// profile stricter than Standard) and the profile's envelope reach every renderer; native glow is
+    /// capped where it is resolved. Standard leaves every renderer on today's path (ADR-0049).
     func applyReduceFlashing() {
-        renderer?.reduceFlashing = settings.reduceFlashing
-        nativeVisual?.reduceFlashing = settings.reduceFlashing   // VIS-001-R10
-        cameraVisual?.reduceFlashing = settings.reduceFlashing   // CAM-001: the composite flash guard
-        photoVisual?.reduceFlashing = settings.reduceFlashing    // MED-001
-        externalDisplay.reduceFlashing = settings.reduceFlashing // OUT-010-R6: the restore fade's length
-        videoVisual?.reduceFlashing = settings.reduceFlashing    // MED-002
-        textVisual?.reduceFlashing = settings.reduceFlashing     // MED-009
+        let clamp: SafetyClamp = settings.safetyClamp
+        let reduce: Bool = clamp.reducesFlashing
+        let compositors: [Compositor] = [cameraVisual?.compositor, photoVisual?.compositor, videoVisual?.compositor,
+                                         textVisual?.compositor].compactMap { (c: Compositor?) -> Compositor? in c }
+        Self.applySafety(clamp, renderer: renderer, native: nativeVisual, compositors: compositors)
+        cameraVisual?.reduceFlashing = reduce   // CAM-001: the composite flash guard
+        photoVisual?.reduceFlashing = reduce    // MED-001
+        externalDisplay.reduceFlashing = reduce // OUT-010-R6: the restore fade's length
+        videoVisual?.reduceFlashing = reduce    // MED-002
+        textVisual?.reduceFlashing = reduce     // MED-009
+    }
+
+    /// ACC-012-R4, R5: hands one clamp to every frame resolver (projectM's envelope pass, the native host's
+    /// glow and frame context, the compositors' final flash guards). Tests call it with real renderers.
+    static func applySafety(_ clamp: SafetyClamp, renderer: (any VisualizerRenderer)?, native: NativeSpectrumHost?,
+                            compositors: [Compositor]) {
+        let limits: FlashEnvelopeConfiguration? = clamp.flashLimitsOverride
+        renderer?.reduceFlashing = clamp.reducesFlashing
+        (renderer as? ANGLERenderer)?.flashLimits = limits   // projectM's envelope pass
+        (renderer as? GLESRenderer)?.flashLimits = limits    // the fallback renderer's pass
+        native?.reduceFlashing = clamp.reducesFlashing       // VIS-001-R10
+        native?.safetyClamp = clamp                          // glow cap and the generators' envelope
+        for compositor in compositors { compositor.flashLimits = limits }
     }
 
     /// FX-003-R1: the compositor-backed visuals show the colour grade (the native spectra and projectM are not graded).
@@ -915,7 +935,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             let host = try NativeSpectrumHost.make(device: device, reader: trimmedAnalysisTap, style: nativeSpectrumStyle,
                                                    barCount: circularSpectrumBarCount, glow: settings.glowParameters,
                                                    forceGlowFailure: forceGlowFailure)
-            host.reduceFlashing = settings.reduceFlashing
+            host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
+            host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
             for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
@@ -942,7 +963,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount,
                                                  position: settings.cameraPosition, mirrored: settings.cameraMirrored,   // CAM-002
                                                  crop: settings.cameraCrop)   // CAM-007
-            host.reduceFlashing = settings.reduceFlashing
+            host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
+            host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
@@ -975,7 +997,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
             let host = try PhotoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
-            host.reduceFlashing = settings.reduceFlashing
+            host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
+            host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
@@ -1023,7 +1046,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
             let host = try VideoVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
-            host.reduceFlashing = settings.reduceFlashing
+            host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
+            host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
@@ -1070,7 +1094,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if ProcessInfo.processInfo.arguments.contains("-uitestNativeVisualFailure") { device = nil }
             #endif
             let host = try TextVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount)
-            host.reduceFlashing = settings.reduceFlashing
+            host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
+            host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.grade   // FX-003
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG

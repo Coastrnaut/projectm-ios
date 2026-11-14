@@ -65,10 +65,11 @@ public final class CircularSpectrumGenerator: SpectrumTextureGenerator {
         // the downstream stages' light when set (FX-001-R10).
         let gain: Float
         if let downstream = downstreamLuminance {
-            gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration, enabled: context.reduceFlashing)
+            gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration,
+                                configuration: context.flashConfiguration)
         } else {
             gain = limiter.gain(for: layout, transfer: IdentityLuminanceTransfer(), frameTime: context.frameDuration,
-                                enabled: context.reduceFlashing)
+                                configuration: context.flashConfiguration)
         }
         lastGain = gain
         let count = layout.tessellate(into: shapes.vertices(slot), capacity: CircularSpectrumLayout.maximumVertexCount, gain: gain)

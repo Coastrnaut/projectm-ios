@@ -67,6 +67,14 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// FR-072: selects the stricter envelope (FlashLimiter.c, FX-019). Toggling keeps the envelope's
     /// history, so a strobe cannot restart its budget (FX-019-R11).
     public var reduceFlashing = false
+    /// ACC-012-R5: the sensory safety profile's envelope when it differs from the Reduce flashing one
+    /// (`SafetyClamp.flashLimitsOverride`); nil = `forReduceFlashing(reduceFlashing)`, today's path. From the
+    /// next frame; the envelope's history is kept (FX-019-R11).
+    public var flashLimits: FlashEnvelopeConfiguration?
+    /// The envelope the next frame's pass applies.
+    public var flashConfiguration: FlashEnvelopeConfiguration {
+        flashLimits ?? FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing)
+    }
     /// While Reduce flashing is on, every area's mean relative luminance rises at most this much per
     /// second (FlashEnvelopeConfiguration.reduceFlashing; a 0.10 rise takes at least 0.4 s).
     public static let flashLimitPerSecond = Float(FlashEnvelopeConfiguration.reduceFlashing.riseRatePerSecond ?? 0)
@@ -268,7 +276,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
             let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
             if framebuffer != 0 {
                 engine.renderFrame(toFramebuffer: framebuffer)
-                var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+                var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
                 PMFlashLimiterFinish(limiter, 0, &parameters)
             } else {
                 engine.renderFrame(toFramebuffer: 0)
@@ -548,7 +556,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
         guard framebuffer != 0 else { return nil }
         PMANGLEClearFramebuffer(framebuffer, value, value, value)
-        var parameters = FlashEnvelopeConfiguration.forReduceFlashing(reduceFlashing).limiterParameters(frameTime: frameTime)
+        var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
         PMFlashLimiterFinish(limiter, 0, &parameters)
         return PMFlashLimiterLastGain(limiter)
     }
