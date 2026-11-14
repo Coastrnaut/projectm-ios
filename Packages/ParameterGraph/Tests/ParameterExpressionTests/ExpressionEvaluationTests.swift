@@ -85,6 +85,22 @@ final class ExpressionEvaluationTests: XCTestCase {
         XCTAssertEqual(compiled.evaluate(.silent), 1)
     }
 
+    /// ANL-014-T08: `audio.loudness` compiles to opcode 16 and reads the frame's loudness envelope.
+    func testLoudnessSourceInAFormula() throws {
+        let compiled = try CompiledExpression(source: "audio.loudness * 2 - audio.centroid")
+        XCTAssertEqual(compiled.audioSources, [.loudness, .centroid])
+        XCTAssertTrue(compiled.instructions.contains { (instruction: ExpressionInstruction) -> Bool in
+            instruction.opcode == .loudness && instruction.opcode.rawValue == 16
+        })
+        let bands: [Float] = [0.5]
+        let value = bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Double in
+            let frame = AudioFeatureFrame(bands: buffer, centroid: 0.25, loudness: 0.375)
+            return compiled.evaluate(ExpressionInputs(frame: frame, timeSeconds: 0))
+        }
+        XCTAssertEqual(value, 0.5)
+        XCTAssertEqual(compiled.evaluate(.silent), 0)
+    }
+
     func testSilentInputsReadZero() throws {
         let compiled = try CompiledExpression(source: "audio.band.0 + audio.bandMean + audio.onset + audio.beatConfidence + time")
         XCTAssertEqual(compiled.evaluate(.silent), 0)

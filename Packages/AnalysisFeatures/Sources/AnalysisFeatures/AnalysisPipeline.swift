@@ -4,9 +4,9 @@
 // One serial worker (`org.projectmios.analysis-pipeline`, user-interactive QoS) reads a normalized
 // analysis tap (stereo, 44.1 kHz) in chunks of 2,048 frames and runs, per spectrum frame: the
 // ANL-001 stream (`.silence` lead-in, ANL-004-R7), ANL-002 band reduction with decibel
-// normalization, the ANL-004 onset detector, the ANL-005 beat tracker, the ANL-007 kick detector and
-// the ANL-010 spectral centroid. It publishes, in ID order: the feature frame (with the kick envelope
-// and the centroid), then the frame's onset (if any), then its beat (if any), then its kick (if any).
+// normalization, the ANL-004 onset detector, the ANL-005 beat tracker, the ANL-007 kick detector,
+// the ANL-010 spectral centroid and the ANL-014 loudness envelope. It publishes, in ID order: the
+// feature frame (with the kick envelope, the centroid and the loudness), then the frame's onset (if any), then its beat (if any), then its kick (if any).
 //
 // Clock (ANL-016-R5, R6): an item's session sample is the end of its window (`index + size`, the
 // first sample not yet analysed); its timeline sample adds the session's base (the samples consumed
@@ -63,6 +63,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
     private let tracker: AdaptiveBeatTracker
     private let kick: BandTransientDetector
     private var centroid: SpectralCentroidEstimator
+    private var loudness: LoudnessEnvelope
     private let scratch: UnsafeMutablePointer<Float>
     private let bandScratch: UnsafeMutablePointer<Float>
     private var bandCount: BandCount
@@ -98,6 +99,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         tracker = AdaptiveBeatTracker(configuration: configuration.beat, backend: backend)
         kick = BandTransientDetector(configuration: configuration.kick, backend: backend)
         centroid = SpectralCentroidEstimator(configuration: configuration.centroid)
+        loudness = LoudnessEnvelope(configuration: configuration.loudness, size: configuration.spectrum.size)
         scratch = .allocate(capacity: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         scratch.initialize(repeating: 0, count: AnalysisPipeline.readChunkFrames * NormalizedPCMRing.channelCount)
         bandScratch = .allocate(capacity: AnalysisSubscription.maximumBands)
@@ -256,6 +258,7 @@ public final class AnalysisPipeline: @unchecked Sendable {
         tracker.reset()
         kick.reset()
         centroid.reset()
+        loudness.reset()
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.clearFrame() }
         }
@@ -317,12 +320,14 @@ public final class AnalysisPipeline: @unchecked Sendable {
         let beat = tracker.process(frame, onset: onset)
         let transient = kick.process(frame, magnitudes: magnitudes)
         let brightness = centroid.process(frame, magnitudes: magnitudes)
+        let level = loudness.process(frame, magnitudes: magnitudes)
         let estimate = tracker.estimate
         let sample = frame.index + Int64(frame.size.rawValue)
         let time = timestamp(sample)
         let item = AnalysisFrame(id: takeID(), time: time, bandCount: count, onsetFlux: detector.lastFlux,
                                  bpm: estimate?.bpm, beatConfidence: estimate?.confidence ?? 0,
-                                 kickEnvelope: kick.envelope, centroidHz: brightness.hz, centroid: brightness.normalized)
+                                 kickEnvelope: kick.envelope, centroidHz: brightness.hz, centroid: brightness.normalized,
+                                 loudness: level.envelope, loudnessDecibels: level.decibels)
         let bands = UnsafeBufferPointer(start: bandScratch, count: count)
         subscribersLock.withLock { _ in
             for subscription in subscribers { subscription.publish(item, bands: bands) }

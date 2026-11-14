@@ -71,6 +71,23 @@ final class AudioFeatureModulatorTests: XCTestCase {
         }
     }
 
+    // ANL-014-T08: a Loudness binding follows the frame's loudness envelope (ANL-014-R8).
+    func testLoudnessBindingFollowsTheEnvelope() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .loudness, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for loudness: Float in [0.25, 0.75, 0.5] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, loudness: loudness), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(loudness)))
+        }
+    }
+
     // ANL-007-T09: a Kick binding follows the frame's kick envelope (ANL-007-R11).
     func testKickBindingFollowsTheKickEnvelope() throws {
         let registry = try Self.registry()

@@ -50,6 +50,21 @@ final class AudioFeatureSourceTests: XCTestCase {
         XCTAssertEqual(AudioFeatureSource.centroid.value(in: .silent), 0)
     }
 
+    /// ANL-014-T08: the loudness source (ANL-014-R8).
+    func testLoudnessSourceRoundTripsAndReadsTheEnvelope() {
+        XCTAssertEqual(AudioFeatureSource.loudness.id, "audio.loudness")
+        XCTAssertEqual(AudioFeatureSource(id: "audio.loudness"), .loudness)
+        XCTAssertEqual(AudioFeatureSource.loudness.description.isEmpty, false)
+        XCTAssertNil(AudioFeatureSource(id: "audio.Loudness"))
+        let bands: [Float] = [0.2]
+        bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            XCTAssertEqual(AudioFeatureSource.loudness.value(in: AudioFeatureFrame(bands: buffer, loudness: 0.625)), 0.625)
+            XCTAssertEqual(AudioFeatureSource.loudness.value(in: AudioFeatureFrame(bands: buffer, loudness: .nan)), 0)
+            XCTAssertEqual(AudioFeatureSource.loudness.value(in: AudioFeatureFrame(bands: buffer, centroid: 1)), 0, "no loudness feed reads 0")
+        }
+        XCTAssertEqual(AudioFeatureSource.loudness.value(in: .silent), 0)
+    }
+
     func testKickSourceRoundTripsAndReadsTheEnvelope() {
         XCTAssertEqual(AudioFeatureSource.kick.id, "audio.kick")
         XCTAssertEqual(AudioFeatureSource(id: "audio.kick"), .kick)
