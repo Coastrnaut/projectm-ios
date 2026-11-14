@@ -251,7 +251,7 @@ public enum SceneGradientMask: Sendable, Hashable {
     public func hash(into hasher: inout Hasher) { hasher.combine(SceneEncoder.gradientMask(self)) }
 }
 
-/// Opacity, blend mode, transform, fit, mask and gradient mask (CMP-003, CMP-004, CMP-005, CMP-006, CMP-007, CMP-008).
+/// Opacity, blend mode, transform, fit, mask, gradient mask and luma key (CMP-003 to CMP-009).
 public struct SceneComposite: Sendable, Hashable {
     /// 0…1.
     public var opacity: Double
@@ -265,17 +265,21 @@ public struct SceneComposite: Sendable, Hashable {
     public var mask: SceneMask?
     /// CMP-008: nil when the layer has no gradient mask (the field is not written).
     public var gradientMask: SceneGradientMask?
+    /// CMP-009: nil when the layer has no luma key (the field is not written).
+    public var lumaKey: LayerLumaKey?
 
     public static let normalBlendMode = "normal"
 
     public init(opacity: Double = 1, blendMode: String = SceneComposite.normalBlendMode, transform: LayerTransform = .identity,
-                fit: SceneFit? = nil, mask: SceneMask? = nil, gradientMask: SceneGradientMask? = nil) {
+                fit: SceneFit? = nil, mask: SceneMask? = nil, gradientMask: SceneGradientMask? = nil,
+                lumaKey: LayerLumaKey? = nil) {
         self.opacity = opacity
         self.blendMode = blendMode
         self.transform = transform
         self.fit = fit
         self.mask = mask
         self.gradientMask = gradientMask
+        self.lumaKey = lumaKey
     }
 
     public static func == (lhs: SceneComposite, rhs: SceneComposite) -> Bool {

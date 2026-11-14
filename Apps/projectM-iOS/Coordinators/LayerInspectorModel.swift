@@ -25,12 +25,13 @@ enum LayerInspectorParameter: String, CaseIterable, Sendable {
     case fitMode, fitAnchorX, fitAnchorY
     case maskShape, maskSize, maskCornerRadius, maskFeather, maskInverted
     case gradientKind, gradientAngle, gradientRadius, gradientStops   // CMP-008
+    case lumaKey, lumaLow, lumaHigh, lumaSoftness, lumaInverted   // CMP-009
     case group, ownParameters, solo, mute
 
     /// The sliders (continuous values).
     static let sliders: [LayerInspectorParameter] = [
         .opacity, .positionX, .positionY, .scale, .rotation, .fitAnchorX, .fitAnchorY, .maskSize, .maskCornerRadius, .maskFeather,
-        .gradientAngle, .gradientRadius,
+        .gradientAngle, .gradientRadius, .lumaLow, .lumaHigh, .lumaSoftness,
     ]
 
     var title: String { LayerInspectorHelp.entry(self).title }
@@ -65,6 +66,11 @@ enum LayerInspectorHelp {
         .gradientAngle: Entry(title: "Gradient Angle", help: "The direction of a linear gradient, in degrees. 0° fades from left to right; positive turns it clockwise."),
         .gradientRadius: Entry(title: "Gradient Radius", help: "How far a radial gradient reaches from its centre, compared with the layer's shorter side."),
         .gradientStops: Entry(title: "Gradient Stops", help: "Each stop sets how visible the layer is (Alpha) at a point along the gradient (Position). Between two stops it changes evenly. Use 2 to 8 stops."),
+        .lumaKey: Entry(title: "Luma Key", help: "Makes the parts of the layer within a brightness range transparent, so the layers below show through. It starts as a black key: the darkest parts disappear."),
+        .lumaLow: Entry(title: "Key Low", help: "The darkest brightness that is keyed out (0 is black, 1 is white, as shown on screen)."),
+        .lumaHigh: Entry(title: "Key High", help: "The brightest brightness that is keyed out. Everything between Low and High becomes transparent."),
+        .lumaSoftness: Entry(title: "Key Softness", help: "Fades the edges of the range in gradually instead of cutting them off. 0 gives a hard edge."),
+        .lumaInverted: Entry(title: "Invert Key", help: "Keeps only the brightness range and makes everything else transparent."),
         .group: Entry(title: "Group", help: "The group this layer belongs to. A group's settings apply to all of its layers together."),
         .ownParameters: Entry(title: "Layer Settings", help: "Settings that belong to this kind of layer, such as the spectrum's bar count. Change them in Settings."),
         .solo: Entry(title: "Solo", help: "Shows only the soloed layers while you check them. Solo is never saved and cannot be undone; it ends when the visual changes."),
@@ -235,6 +241,7 @@ enum LayerCompositeEdit {
         case .maskFeather: 0...0.5
         case .gradientAngle: LayerGradientEdit.angleRange
         case .gradientRadius: LayerGradientEdit.radiusRange
+        case .lumaSoftness: LayerLumaKey.softnessLimits   // CMP-009
         default: 0...1
         }
     }
@@ -244,7 +251,7 @@ enum LayerCompositeEdit {
         switch parameter {
         case .rotation, .gradientAngle: 5
         case .scale, .positionX, .positionY, .maskSize: 0.05
-        case .maskCornerRadius, .maskFeather: 0.02
+        case .maskCornerRadius, .maskFeather, .lumaSoftness: 0.02
         default: 0.05
         }
     }
@@ -267,6 +274,7 @@ enum LayerCompositeEdit {
         case .maskInverted: return (knownMask(composite)?.inverted ?? false) ? 1 : 0
         case .gradientAngle: return LayerGradientEdit.angle(composite)   // CMP-008
         case .gradientRadius: return LayerGradientEdit.radius(composite)
+        case .lumaKey, .lumaLow, .lumaHigh, .lumaSoftness, .lumaInverted: return LayerLumaKeyEdit.value(parameter, of: composite)   // CMP-009
         default: return 0
         }
     }
@@ -323,6 +331,7 @@ enum LayerCompositeEdit {
         case .gradientAngle: return String(format: "%.0f°", v)
         case .gradientRadius: return String(format: "%.2f", v)
         case .gradientStops: return LayerGradientEdit.stopsText(composite)
+        case .lumaKey, .lumaLow, .lumaHigh, .lumaSoftness, .lumaInverted: return LayerLumaKeyEdit.text(parameter, of: composite)   // CMP-009
         default: return ""
         }
     }
@@ -340,6 +349,7 @@ enum LayerCompositeEdit {
         case .maskInverted: result.mask = inverted(composite.mask, value > 0.5)
         case .gradientAngle: result = LayerGradientEdit.settingAngle(value, on: composite)   // CMP-008
         case .gradientRadius: result = LayerGradientEdit.settingRadius(value, on: composite)
+        case .lumaKey, .lumaLow, .lumaHigh, .lumaSoftness, .lumaInverted: result = LayerLumaKeyEdit.setting(parameter, to: value, on: composite)   // CMP-009
         default: break
         }
         return result
@@ -441,7 +451,8 @@ enum LayerCompositeMapping {
         let mode: LayerBlendMode = LayerBlendMode(rawValue: composite.blendMode) ?? .normal
         return LayerCompositeSettings(opacity: composite.opacity, blendMode: mode, transform: composite.transform,
                                       fit: composite.fit?.layerFit, mask: composite.mask?.layerMask,
-                                      gradientMask: composite.gradientMask?.layerGradientMask)   // CMP-008
+                                      gradientMask: composite.gradientMask?.layerGradientMask,   // CMP-008
+                                      lumaKey: composite.lumaKey)   // CMP-009
     }
 
     /// Default composites left out (research CMP-015-D2).

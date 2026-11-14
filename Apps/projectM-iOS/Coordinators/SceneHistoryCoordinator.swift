@@ -203,6 +203,7 @@ enum LayerHistoryEdit {
             let label: String = "\(title) Gradient Stop \(n) \(edit.field.title) \(LayerGradientEdit.stopText(edit.value))"
             return (label, "layer.\(kind).gradientStop\(n).\(edit.field.rawValue)")
         }
+        if let range = LayerLumaKeyEdit.rangeEdit(parameters, title: title, kind: kind, after: after) { return range }   // CMP-009
         guard parameters.count == 1, let parameter = parameters.first else {
             return (after == SceneComposite() ? "Reset \(title)" : "\(title) Layer", nil)
         }
@@ -223,8 +224,9 @@ enum LayerHistoryEdit {
 
     static func changedParameters(from old: SceneComposite, to new: SceneComposite) -> [LayerInspectorParameter] {
         var result: [LayerInspectorParameter] = []
-        for parameter in LayerInspectorParameter.sliders
-        where LayerCompositeEdit.value(parameter, of: old) != LayerCompositeEdit.value(parameter, of: new) {
+        let luma: Set<LayerInspectorParameter> = Set(LayerLumaKeyEdit.parameters)
+        for parameter in LayerInspectorParameter.sliders where !luma.contains(parameter)
+        && LayerCompositeEdit.value(parameter, of: old) != LayerCompositeEdit.value(parameter, of: new) {
             result.append(parameter)
         }
         if old.blendMode != new.blendMode { result.append(.blendMode) }
@@ -237,6 +239,7 @@ enum LayerHistoryEdit {
         if wasInverted != isInverted { result.append(.maskInverted) }
         if old.gradientMask?.kind != new.gradientMask?.kind { result.append(.gradientKind) }   // CMP-008
         else if LayerGradientEdit.stops(old) != LayerGradientEdit.stops(new) { result.append(.gradientStops) }
+        result.append(contentsOf: LayerLumaKeyEdit.changed(from: old, to: new))   // CMP-009
         if result.isEmpty && old.gradientMask != new.gradientMask { result.append(.gradientKind) }   // e.g. an unknown gradient replaced
         if result.isEmpty && old != new { result.append(.maskShape) }   // e.g. an unknown mask replaced
         return result

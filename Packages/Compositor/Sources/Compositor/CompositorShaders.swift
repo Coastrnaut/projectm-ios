@@ -58,7 +58,8 @@ enum CompositorShaders {
     // CMP-008 (contracts/gradient-masks.md in specs/207): `grad` = (kind 1 linear / 2 radial, stop count, 0, 0),
     // `axis` = linear (start x, y, end x, y) / radial (centre x, y, radius, 0) in layer pixels, `stops` =
     // (position, alpha). Kind 0: no gradient. The same steps as `LayerGradientGeometry`.
-    struct CMPMask { float4 rot; float4 shape; float4 edge; float2 points[32]; float4 grad; float4 axis; float2 stops[8]; };
+    // CMP-009 (contracts/luma-key.md in specs/220): `luma` = (low, high, softness, mode 0 none / 1 key / 2 inverted).
+    struct CMPMask { float4 rot; float4 shape; float4 edge; float2 points[32]; float4 grad; float4 axis; float2 stops[8]; float4 luma; };
 
     static float cmp_mask_distance(constant CMPMask &m, float2 p) {
         float2 dp = p - m.rot.zw;
@@ -138,6 +139,30 @@ enum CompositorShaders {
         return c;
     }
 
+    // CMP-009: the luma key's keep factor for the sanitised premultiplied colour `c` (before opacity), the same steps
+    // as `LayerLumaKey.keep`: straight colour clamped 0…1, sRGB-encoded (`cmp_key_encode`, as `cmp_encode`), Rec. 709
+    // luma; keyed 1 inside low…high, a linear ramp over softness outside; keep = 1 − keyed (inverted: keyed). Mode 0: 1.
+    static float cmp_key_encode(float x) {
+        x = clamp(x, 0.0, 1.0);
+        return x <= 0.0031308 ? x * 12.92 : 1.055 * pow(x, 1.0 / 2.4) - 0.055;
+    }
+
+    static float cmp_luma_keep(constant CMPMask &m, float4 c) {
+        int mode = int(m.luma.w + 0.5);
+        if (mode == 0) return 1.0;
+        float y = 0.0;
+        if (c.a > 0.0) {
+            float3 s = c.rgb / c.a;
+            y = 0.2126 * cmp_key_encode(s.r) + 0.7152 * cmp_key_encode(s.g) + 0.0722 * cmp_key_encode(s.b);
+        }
+        float k = 1.0;
+        if (y < m.luma.x || y > m.luma.y) {
+            float d = y < m.luma.x ? m.luma.x - y : y - m.luma.y;
+            k = m.luma.z > 0.0 ? max(1.0 - d / m.luma.z, 0.0) : 0.0;
+        }
+        return mode == 2 ? k : 1.0 - k;
+    }
+
     // CMP-007: a normal-mode masked layer, drawn in the open "over" pass (fixed-function blending, no
     // extra pass). `d` as CMPTransformedDraw: params.x opacity, params.y 1 for a transformed layer
     // (sampled as `cmp_over_transformed`), else read per pixel as `cmp_over`. The mask is evaluated at
@@ -158,7 +183,7 @@ enum CompositorShaders {
         c = select(c, float4(0.0), isnan(c) || isinf(c));
         c.a = clamp(c.a, 0.0, 1.0);
         c.rgb = max(c.rgb, float3(0.0));
-        return c * clamp(d.params.x, 0.0, 1.0) * cmp_mask_coverage(m, layerPixel);
+        return c * clamp(d.params.x, 0.0, 1.0) * (cmp_mask_coverage(m, layerPixel) * cmp_luma_keep(m, c));   // CMP-009
     }
 
     // CMP-004: a layer with a blend mode other than normal (contracts/blend-modes.md in specs/099,
@@ -215,6 +240,7 @@ enum CompositorShaders {
         c.rgb = max(c.rgb, float3(0.0));
         float4 s = c * clamp(d.params.x, 0.0, 1.0);
         if (m.shape.x > 0.5 || m.grad.x > 0.5) s *= cmp_mask_coverage(m, layerPixel);   // CMP-007, CMP-008; none leaves s untouched
+        if (m.luma.w > 0.5) s *= cmp_luma_keep(m, c);   // CMP-009: from the colour before opacity
         float4 b = backdrop.read(pixel);
         int mode = int(d.params.z + 0.5);
         float both = s.a * b.a;
@@ -337,7 +363,7 @@ enum CompositorShaders {
         }
     }
 
-    /// CMP-007: `CMPMask` in the shader (400 bytes since CMP-008, copied by `setFragmentBytes`; research
+    /// CMP-007: `CMPMask` in the shader (400 bytes since CMP-008, 416 since CMP-009, copied by `setFragmentBytes`; research
     /// CMP-007-D3, CMP-008-D3).
     struct MaskBlock {
         var rot: SIMD4<Float> = .zero
@@ -352,14 +378,20 @@ enum CompositorShaders {
         var grad: SIMD4<Float> = .zero
         var axis: SIMD4<Float> = .zero
         var stops: (SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>) = (.zero, .zero, .zero, .zero)
+        /// CMP-009: (low, high, softness, mode 0 none / 1 key / 2 inverted key).
+        var luma: SIMD4<Float> = .zero
 
         /// Kind 0: no mask (`cmp_blend` leaves the source untouched).
         static let none = MaskBlock()
 
-        /// A shape, a gradient or both (CMP-008); nil leaves that part's kind 0.
-        init(shape: LayerMaskGeometry?, gradient: LayerGradientGeometry?) {
+        /// A shape, a gradient, a luma key (CMP-009) or any combination; nil leaves that part's kind 0.
+        init(shape: LayerMaskGeometry?, gradient: LayerGradientGeometry?, lumaKey: LayerLumaKey? = nil) {
             if let shape { self.init(shape) } else { self.init() }
             if let gradient { setGradient(gradient) }
+            if let lumaKey {
+                let mode: Float = lumaKey.inverted ? 2 : 1
+                luma = SIMD4<Float>(Float(lumaKey.low), Float(lumaKey.high), Float(lumaKey.softness), mode)
+            }
         }
 
         private mutating func setGradient(_ g: LayerGradientGeometry) {
