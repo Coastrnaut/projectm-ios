@@ -45,6 +45,8 @@ interaction); each answer is the recommended, conservative, local-first option.
 - Q: Where is the error table? → A: In the feature's contract `contracts/scene-decode-errors.md`, mirrored as data in `matrix.json` (`errors`), linked from ADR-0028's amendment; tests check that code, data and document agree. Rejected: a separate `docs/` page (one more copy to keep in step).
 - Q: How does the meta-test learn the cases of `SceneDecodeError`, which has associated values? → A: Two ways together: a source scan of the enum's `case` lines (as other source tests here do) and a test-side exhaustive `switch` that builds one sample per case (the compiler refuses a new case until it gets a sample). Every scanned case must have a table entry, a sample and a documented report entry. Rejected: adding `CaseIterable` support to the production enum (changes the public API for a test).
 - Q: Does the autosave container need the app's unit tests (simulator)? → A: Yes: `SceneAutosaveStore` lives in the app target, so its cells run in projectM-iOSTests on a dedicated simulator; every other container runs in package tests (Linux and macOS).
+- Q (clarify pass): How strictly does a cell compare its outcome? → A: Exactly: a refusal cell compares the decode error value (case and associated values) and its full user-facing message; a migrated cell compares source, target and every audit log line; a current cell compares the canonical bytes with the fixture's expected document. Rejected: comparing only the case name (a wrong message or log would pass).
+- Q (clarify pass): Do the version-1 fixtures that reference photos and videos run through the archive container? → A: Yes: the archive test packs each fixture with small valid media bytes for its photo and video assets (the FILE-001 test media), so all 11 fixtures run through every container. Out-of-range rows use one media-free base fixture (`material-plasma`), because a refusal happens before media are looked at. Rejected: skipping media fixtures in the archive (the archive is where scenes with media travel).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -139,7 +141,8 @@ shown to fail on a deliberately incomplete matrix or table (in-memory).
 - **QA-004-R2**: The matrix MUST name every container that stores a scene (decode entry point, SCN-012
   report, SHOW-001 show store, FILE-001/002 archive, SCN-002 autosave, QA-002 golden harness) with its
   reader, its test file and how it surfaces each outcome.
-- **QA-004-R3**: Every row × container cell MUST be run by that container's test through the
+- **QA-004-R3**: Every row × container cell MUST compare its outcome exactly (refusal value and
+  message; migration source, target and log; canonical bytes for current documents) and MUST be run by that container's test through the
   container's real reader, or be marked not applicable with a written reason.
 - **QA-004-R4**: The production rows MUST cover every version from the oldest supported to the
   current (every historical fixture of each), oldest−1, current+1, the 64-bit limits, non-integer
