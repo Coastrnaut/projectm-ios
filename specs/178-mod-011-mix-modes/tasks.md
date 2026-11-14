@@ -32,11 +32,11 @@ Linux shape). Budgets (owner rule 7): unit test ≤ 10 s, package suite < 1 min.
 - [X] MOD-011-T06 [US3] SceneFormat: restore layers (≤ 4, `addLayer`), fifth and later-layer expression →
   `duplicateBindingTarget`; `SceneBinding.list(_:expressions:)` used by `SceneLiveState`; update
   `SceneValidationTests` and `SceneModulationRestoreTests`; add a layered round-trip test — Verified 2026-11-14: `swift test --package-path Packages/SceneFormat` 160 tests, 0 failures, 3.7 s (SceneLayeredBindingTests 2 new; SceneValidationTests, SceneModulationRestoreTests migration case and SceneRepairTests fixture updated: a same-target binding is now a layer; binding edges deduplicated for the graph check)
-- [ ] MOD-011-T07 [US3] App: `NativeSpectrumHost` uses `GlowModulationOrder` and gains `addLayer`; scene
-  restore adds layers in order (`AppCoordinator`); `SceneAutosaveCapture` uses `SceneBinding.list`
-- [ ] MOD-011-T08 [US3] Inspector: numbered layers and the order line in `ParameterInspectorModel.swift`
-- [ ] MOD-011-T09 [US3] App test `Apps/projectM-iOS/Tests/ModulationMixOrderAppTests.swift`: two bindings on the
-  glow intensity combine as documented in a real `NativeSpectrumHost`; inspector reading numbered
+- [X] MOD-011-T07 [US3] App: `NativeSpectrumHost` uses `GlowModulationOrder` and gains `addLayer`; scene
+  restore adds layers in order (`AppCoordinator`); `SceneAutosaveCapture` uses `SceneBinding.list` — Verified 2026-11-14: build-for-testing on "MOD11 iPhone 17" (iOS 27.2) succeeded, no new type-check warnings; 54 app tests touching bindings (AudioFeatureBinding, Envelope, LFO, MIDI, shelf, scene autosave and repair, sensory safety) pass in 4 s
+- [X] MOD-011-T08 [US3] Inspector: numbered layers and the order line in `ParameterInspectorModel.swift` — Verified 2026-11-14: ModulationMixOrderAppTests.testInspectorNumbersTheLayers; ParameterInspectorTests 14 pass unchanged
+- [X] MOD-011-T09 [US3] App test `Apps/projectM-iOS/Tests/ModulationMixOrderAppTests.swift`: two bindings on the
+  glow intensity combine as documented in a real `NativeSpectrumHost`; inspector reading numbered — Verified 2026-11-14: ModulationMixOrderAppTests 3 tests pass in 1.5 s on "MOD11 iPhone 17" (iOS 27.2 simulator; two and three layers, both orders, Standard/Reduced/Strict ACC-012 last)
 
 ## Phase 4: Polish
 

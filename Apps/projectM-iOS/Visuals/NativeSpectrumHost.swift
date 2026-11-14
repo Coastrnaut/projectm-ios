@@ -376,13 +376,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// Applies `glow` with any bound intensity to the bloom and the luminance model. Unbound, this is
     /// exactly the FX-001 path.
     private func resolveEffectiveGlow() {
-        var resolved = glow.applying(externalValues)   // MIDI-003: a mapped control sets the live manual value
-        if let modulator, glowIntensityIsBound {
-            let manual: Double = Double(resolved.intensity)
-            let modulated: Double = modulator.value(for: VisualParameterIDs.bloomIntensity, manual: manual)
-            resolved.intensity = Float(safetyClamp.modulated(manual: manual, modulated: modulated))   // ACC-012: depth
-        }
-        resolved = resolved.limited(by: safetyClamp)   // ACC-012-R4: the cap, after modulation, before render
+        // MOD-011 order: base (MIDI-003's live value replaces the manual one) → every binding in list order,
+        // clamped after each → ACC-012 depth scaling → ACC-012-R4 cap, last (`GlowModulationOrder`).
+        let base: BloomParameters = glow.applying(externalValues)
+        let resolved: BloomParameters = GlowModulationOrder.resolve(base: base, modulator: modulator, clamp: safetyClamp)
         effectiveGlow = resolved
         bloom?.parameters = resolved
         if glowIntensityIsBound {
@@ -398,6 +395,14 @@ final class NativeSpectrumHost: PresentationBoundResource {
     func bind(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
         guard let modulator else { throw .unknownTarget(binding.target) }
         try modulator.bind(binding)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-011: adds `binding` as its parameter's next layer (applied after the ones already bound); the
+    /// first binding when the parameter is unbound. At most 4 per parameter.
+    func addLayer(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(binding.target) }
+        try modulator.addLayer(binding)
         resolveEffectiveGlow()
     }
 

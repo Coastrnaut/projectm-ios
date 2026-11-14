@@ -1060,7 +1060,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = settings.spectrumPalette        // ACC-003-R13
             host.externalValues = midiMappings.liveValues   // MIDI-003: values held while no native visual was shown
-            for binding in sceneAutosave?.bindings ?? [] { try? host.bind(binding) }   // SCN-002: restored bindings
+            for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
             #if DEBUG

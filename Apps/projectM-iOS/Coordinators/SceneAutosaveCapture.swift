@@ -235,9 +235,7 @@ enum SceneAutosaveCapture {
         for (id, value) in parameterValues(inputs) { parameters[id] = value }
 
         let bindings = liveBindings ?? carry.bindings
-        let sceneBindings = bindings.map { (b: AudioFeatureBinding) -> SceneBinding in
-            SceneBinding(b, expression: carry.expressions[b.target])
-        } + carry.preserved.bindings
+        let sceneBindings = SceneBinding.list(bindings, expressions: carry.expressions) + carry.preserved.bindings   // MOD-011-R7
         let connections = carry.modulation.edges.map { (e: ModulationEdge) -> SceneConnection in SceneConnection(e) }
             + carry.preserved.connections
         let document = SceneDocument(id: carry.id, name: carry.name, layers: layers, parameters: parameters,
