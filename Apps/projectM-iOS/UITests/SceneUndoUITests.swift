@@ -40,7 +40,9 @@ final class SceneUndoUITests: XCTestCase {
         XCTAssertTrue(poll(5) { self.undo.label == "Undo Bars 16" }, "undo names the step: \(undo.label)")
         XCTAssertTrue(glowToggle.appears(within: 2) || app.reveal(glowToggle))
         glowToggle.switches.firstMatch.exists ? glowToggle.switches.firstMatch.tap() : glowToggle.tap()
-        XCTAssertTrue(intensity.appears(within: 2) || app.reveal(intensity))
+        // Fully on screen before the drag (2026-11-14, SCN-008): the slider can exist just below the fold once the Visual
+        // section grows, and a drag at its off-screen frame does nothing; `reveal` returns at once when it is visible.
+        XCTAssertTrue(intensity.appears(within: 2) && app.reveal(intensity))
         intensity.dragSlider(from: 0.5, to: 1)   // ACC-005: dragged by touch
         XCTAssertTrue(poll(5) { (self.intensity.value as? String) == "100 percent" })
         XCTAssertTrue(poll(5) { self.undo.label == "Undo Glow Intensity 100%" }, "one step for the drag: \(undo.label)")

@@ -9,8 +9,11 @@ iOS 27.2 simulator "SCN8 iPhone 17"; no device claim). SceneFormat 156 tests (13
 SceneSnapshotAcceptanceTests 3 (0.04 s), SceneSnapshotUITests 1 (24.5 s, 18.3 s, 17.6 s). Linux: not run here; the new
 SceneFormat code is plain Swift without Foundation. Two existing UI tests were adjusted for the longer Visual section
 (`NativeVisualUITests` reveals the Visual footer; `AccessibilityScreensUITests` uses a long reveal for the Show row).
-Seen while checking regressions, not caused by this row: `SceneUndoUITests` fails at its intensity drag (line 45) with
-the snapshot rows removed too.
+`SceneUndoUITests` failed at its intensity drag (line 45) with or without the snapshot rows, and on
+`autonomous/integration` too: the slider existed just below the fold and the drag at its off-screen frame did nothing.
+Fixed test-side 2026-11-14 (the test now reveals the slider fully before dragging); it passes (52.8 s).
+Merged with `autonomous/integration` (MOD-010 `macros` beside `snapshots`) on 2026-11-14: SceneFormat 163 tests, 9 app
+suites 39 tests, SceneSnapshotUITests 27.4 s, ParameterMacroUITests 60.8 s, all passing.
 
 **Input**: Roadmap row SCN-008 (P1, size M, depends on SCN-001, integrated). Observable behavior,
 verbatim: "Capture named parameter snapshots inside a scene." Acceptance, verbatim: "Recall restores

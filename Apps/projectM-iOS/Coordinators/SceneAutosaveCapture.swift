@@ -52,6 +52,9 @@ struct SceneInputs: Equatable, Sendable {
     var logo: SceneLogo? = nil
     /// FX-020: the live effect chain (nil: the caller does not track it; the carried list is kept).
     var effects: SceneEffectSettings? = nil
+    /// MOD-010 (research MOD-010-D4): the scene's macros with their current values (nil: the caller does not track
+    /// them; the carried list is kept). Undoable, so one macro change is one history step.
+    var macros: [SceneMacroEntry]? = nil
 }
 
 /// What a restore hands back to the app (contract A5).
@@ -73,6 +76,8 @@ struct SceneRestoredValues: Sendable, Equatable {
     var logo: SceneLogo? = nil
     /// FX-020: the document's effect chain (nil: no list).
     var effects: [SceneEffectEntry]? = nil
+    /// MOD-010: the document's macros (nil: no list); restored without being applied.
+    var macros: [SceneMacroEntry]? = nil
 }
 
 /// The restored document's content the app does not own (research SCN-002-D6).
@@ -93,6 +98,8 @@ struct SceneAutosaveCarry: Sendable {
     var triggers: [SceneTriggerEntry]?
     /// MOD-007: the opened scene's oscillators as stored (nil: none); written back unchanged.
     var lfos: [SceneLFOEntry]?
+    /// MOD-010: the opened scene's macros as stored (nil: none).
+    var macros: [SceneMacroEntry]?
     /// SCN-008: the current scene's snapshots as stored (nil: none); written back unchanged, edited by
     /// `SceneAutosaveCoordinator.replaceSnapshots`.
     var snapshots: [SceneSnapshotEntry]?
@@ -123,6 +130,7 @@ struct SceneAutosaveCarry: Sendable {
         effects = document.effects   // FX-020
         triggers = document.triggers   // MOD-006
         lfos = document.lfos   // MOD-007
+        macros = document.macros   // MOD-010
         snapshots = document.snapshots   // SCN-008
     }
 }
@@ -240,8 +248,9 @@ enum SceneAutosaveCapture {
                                      bindings: sceneBindings,
                                      modulation: SceneModulation(generators: carry.modulation.generators, connections: connections),
                                      assets: assets, effects: effects(inputs.effects, carry: carry.effects),
-                                     triggers: carry.triggers, lfos: carry.lfos, snapshots: carry.snapshots,
-                                     extra: carry.extra)   // MOD-006, MOD-007, SCN-008: as stored
+                                     triggers: carry.triggers, lfos: carry.lfos,   // MOD-006, MOD-007: as stored
+                                     macros: inputs.macros ?? carry.macros,   // MOD-010
+                                     snapshots: carry.snapshots, extra: carry.extra)   // SCN-008: as stored
         return (document, events)
     }
 
@@ -322,7 +331,8 @@ enum SceneAutosaveCapture {
                                    slideshow: SceneSlideshowBridge.restore(in: document),   // MED-006
                                    layerComposites: layerComposites(in: document),
                                    logo: document.logo,   // MED-010
-                                   effects: document.effects)   // FX-020
+                                   effects: document.effects,   // FX-020
+                                   macros: document.macros)   // MOD-010
     }
 
     /// CMP-015: the composite of the first layer of each kind the app draws in a compositor, defaults

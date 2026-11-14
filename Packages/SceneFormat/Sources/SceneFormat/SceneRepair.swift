@@ -274,6 +274,10 @@ extension SceneRepairReport {
         case .unknownTrigger: (.unknownContent, nil)
         case .invalidLFO: (.invalidMappings, nil)   // MOD-007: kept verbatim, not used
         case .unknownLFO: (.unknownContent, nil)
+        case .invalidLFOSync: (.invalidMappings, nil)   // MOD-009: kept verbatim, the oscillator runs unsynced
+        case .unknownLFOSync: (.unknownContent, nil)
+        case .invalidMacro: (.invalidMappings, nil)   // MOD-010: kept verbatim, not used
+        case .unknownMacroTarget: (.unknownContent, nil)
         case .invalidSnapshot: (.invalidMappings, nil)   // SCN-008: kept verbatim, not used
         case .unknownSnapshotParameter: (.unknownContent, nil)
         case .fixedEffectStage, .duplicateEffect: (.valuesAdjusted, nil)   // FX-020: kept, ignored
@@ -307,8 +311,10 @@ extension SceneRepairReport {
         case .invalidGroup: return "The group's layers are drawn ungrouped; the group is kept in the scene."
         case .retiredReference: return "It is dropped and not saved again."
         case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection,
-             .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO, .invalidSnapshot:
+             .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO, .invalidMacro, .unknownMacroTarget,
+             .invalidSnapshot:
             return "It is kept in the scene but has no effect."
+        case .invalidLFOSync, .unknownLFOSync: return "The oscillator runs at its stored rate; the setting is kept in the scene."
         case .unknownLayerKind: return "The layer is kept but not shown."
         case .unknownAssetType, .unusedAsset, .orphanedParameter, .unknownEffectKind, .unknownSnapshotParameter:
             return "It is kept but not used by this version."

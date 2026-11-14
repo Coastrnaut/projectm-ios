@@ -3,9 +3,12 @@
 // frame evaluation, and Reduce flashing caps a fast oscillator at 3 Hz. Deterministic: frame times are passed in.
 // Needs a Metal device (the simulator renders with the host GPU); skips without one. Also: the scene carry writes the
 // stored `lfos` list back unchanged.
+// MOD-009-T09 (MOD-009-R9, S6): a 1-beat synced oscillator on the glow follows the tap tempo (120 BPM: a 0.5 s cycle)
+// read from `TempoCoordinator.snapshot` each frame, and after Reset continues smoothly at its stored rate.
 import Foundation
 import Metal
 import ParameterGraph
+import PerformanceControl
 import SceneFormat
 import VisualEffects
 import VisualGenerators
@@ -17,6 +20,7 @@ import XCTest
 final class LFOBindingAppTests: XCTestCase {
     private static let frame: UInt64 = 16_666_667   // 60 fps
     private static let origin: UInt64 = 1_000_000_000
+    private static let second: UInt64 = 1_000_000_000
 
     private func makeHost(_ lfo: LFO) throws -> NativeSpectrumHost {
         guard let device = MTLCreateSystemDefaultDevice() else { throw XCTSkip("No Metal device in this simulator") }
@@ -80,5 +84,40 @@ final class LFOBindingAppTests: XCTestCase {
         XCTAssertEqual(document.lfoOscillators, [try LFO(shape: .sine, rateHz: 0.5)])
         let plain = SceneAutosaveCapture.document(SceneAutosaveFixtures.inputs(), carry: SceneAutosaveFixtures.carry, liveBindings: nil).document
         XCTAssertNil(plain.lfos, "a scene without oscillators stays without the field")
+    }
+
+    func testSyncedLFOFollowsTapTempo() throws {
+        let lfo = try LFO(shape: .sine, rateHz: 0.25, sync: LFOSync(beatsPerCycle: 1))
+        let host = try makeHost(lfo)
+        let tempo = TempoCoordinator(clock: TempoCoordinator.syntheticClock(stepMilliseconds: 500), announce: { (_: String) -> Void in })
+        host.lfoTempoBPM = { [weak tempo] () -> Double? in tempo?.snapshot.lfoTempoBPM }   // as AppCoordinator.connectLFOs
+        for _ in 0..<4 { tempo.tap() }
+        XCTAssertEqual(tempo.snapshot.origin, .manual)
+        XCTAssertEqual(try XCTUnwrap(tempo.snapshot.bpm), 120, accuracy: 1e-9)
+        var glow: [Double] = []
+        for index in 0...60 {   // 1 s at 60 fps: two 0.5 s cycles
+            let elapsed = UInt64(index) * Self.frame
+            apply(host, at: Self.origin + elapsed)
+            glow.append(Double(host.effectiveGlow.intensity))
+            XCTAssertEqual(glow[index], lfo.value(elapsedNanoseconds: elapsed, tempoBPM: 120), accuracy: 1e-6, "frame \(index) at 2 Hz")
+        }
+        XCTAssertEqual(glow[0], 0.5, accuracy: 1e-6)
+        XCTAssertEqual(glow[30], glow[0], accuracy: 1e-5, "0.5 s later the cycle repeats")
+        XCTAssertEqual(lfo.value(elapsedNanoseconds: Self.second / 8, tempoBPM: 120), 1, accuracy: 1e-9, "peak at 0.125 s")
+
+        tempo.reset()   // no estimate: the stored 0.25 Hz from the reached phase
+        XCTAssertNil(tempo.snapshot.lfoTempoBPM)
+        let resetTime = Self.origin + 61 * Self.frame
+        let reached: Double = 2 * Double(61 * Self.frame) / 1e9
+        var previous: Double = glow[60]
+        for index in 61...120 {
+            let time = Self.origin + UInt64(index) * Self.frame
+            apply(host, at: time)
+            let value = Double(host.effectiveGlow.intensity)
+            let cycles: Double = reached + 0.25 * Double(time - resetTime) / 1e9
+            XCTAssertEqual(value, lfo.value(atPhase: cycles - cycles.rounded(.down)), accuracy: 1e-6, "frame \(index) at 0.25 Hz")
+            XCTAssertLessThanOrEqual(abs(value - previous), 2 * Double.pi * 0.5 * 2 / 60 + 1e-6, "no jump at frame \(index)")
+            previous = value
+        }
     }
 }

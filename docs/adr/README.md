@@ -50,5 +50,6 @@
 | [0053](0053-recording-audio-policy.md) | Recordings contain only owned or consented audio, decided at Record; other apps' audio never | Accepted 2026-11-14 (REC-004; owner rule 4) |
 | [0054](0054-effect-chain-order.md) | Trails and Color are the reorderable output effects; flash safety and the tone map stay last | Accepted 2026-11-14 (FX-020; owner rule 4) |
 | [0055](0055-recently-played-history.md) | A local, opt-in recently played list of preset IDs (amends FR-065/FR-123 for two keys) | Accepted 2026-11-14 (PRE-006; owner rule 4) |
+| [0056](0056-recording-frame-grid.md) | Recordings are written on an exact 24/30/60 fps grid with the nearest frames; empty slots are counted, not repeated | Accepted 2026-11-14 (REC-006; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

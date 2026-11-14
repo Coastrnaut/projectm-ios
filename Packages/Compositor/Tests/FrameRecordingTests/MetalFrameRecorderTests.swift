@@ -110,6 +110,7 @@ final class MetalFrameRecorderTests: XCTestCase {
         XCTAssertEqual(sink.ticks, [0, 20, 40, 240])
         XCTAssertEqual(recorder.statistics.droppedNotIncreasing, 1)
         XCTAssertEqual(recorder.statistics.written, 4)
+        XCTAssertEqual(recorder.statistics.droppedSlots, 9, "REC-006 C2: slots 3-11 between ticks 40 and 240 got no frame")
     }
 
     /// A drawable of another size stops the recording; odd sizes crop to even.
@@ -231,6 +232,9 @@ final class MetalFrameRecorderTests: XCTestCase {
         XCTAssertEqual(info.frameCount, k)
         XCTAssertTrue(info.timesStrictlyIncrease, "\(info.presentationTicks)")
         XCTAssertEqual(info.presentationTicks, [0, 20, 40, 60, 80, 100])
+        // QA-008-T08: the stopped file passes the whole validation (6 frames = 0.2 s, video only, no metadata).
+        let report = await RecordingValidator.validate(url, expectation: RecordingExpectation(durationSeconds: 0.2))
+        XCTAssertTrue(report.passed, report.summary)
     }
 
     /// REC-015-S3: a real writer made to fail with "disk full" after 3 frames: the recorder stops, the

@@ -56,6 +56,8 @@ public struct SceneDocument: Sendable, Hashable {
     public var triggers: [SceneTriggerEntry]?
     /// MOD-007: oscillators (SceneLFOs.swift), verbatim; nil = no `lfos` field.
     public var lfos: [SceneLFOEntry]?
+    /// MOD-010: parameter macros (SceneMacros.swift), verbatim; nil = no `macros` field.
+    public var macros: [SceneMacroEntry]?
     /// SCN-008: named parameter snapshots (SceneSnapshots.swift), verbatim; nil = no `snapshots` field.
     public var snapshots: [SceneSnapshotEntry]?
     /// Unknown top-level fields, kept verbatim (SCN-001-R10).
@@ -64,8 +66,8 @@ public struct SceneDocument: Sendable, Hashable {
     public init(id: String, name: String, layers: [SceneLayer] = [], parameters: [ParameterID: ParameterValue] = [:],
                 bindings: [SceneBinding] = [], modulation: SceneModulation = SceneModulation(),
                 assets: [String: SceneAsset] = [:], groups: [SceneGroup] = [], effects: [SceneEffectEntry]? = nil,
-                triggers: [SceneTriggerEntry]? = nil, lfos: [SceneLFOEntry]? = nil, snapshots: [SceneSnapshotEntry]? = nil,
-                extra: [String: SceneJSON] = [:]) {
+                triggers: [SceneTriggerEntry]? = nil, lfos: [SceneLFOEntry]? = nil, macros: [SceneMacroEntry]? = nil,
+                snapshots: [SceneSnapshotEntry]? = nil, extra: [String: SceneJSON] = [:]) {
         self.id = id
         self.name = name
         self.layers = layers
@@ -77,7 +79,8 @@ public struct SceneDocument: Sendable, Hashable {
         self.effects = effects
         self.triggers = triggers
         self.lfos = lfos
-        self.snapshots = snapshots
+        self.macros = macros   // MOD-010
+        self.snapshots = snapshots   // SCN-008
         self.extra = extra
     }
 

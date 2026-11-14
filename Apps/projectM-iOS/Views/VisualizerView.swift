@@ -54,6 +54,9 @@ struct VisualizerView: View {
         withChangeHandlers(withPresentations(layers))
     }
 
+    // Split into @ViewBuilder parts with explicit types (2026-11-14): as one ZStack this getter took
+    // 314-396 ms to type-check (budget 300 ms). The layers and their modifiers are unchanged and in
+    // the same order; ZStack and VStack flatten each part's children as before.
     private var layers: some View {
         ZStack {
             Color.black.ignoresSafeArea()
@@ -61,86 +64,118 @@ struct VisualizerView: View {
                 .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
             // PERF-014-R10: a visual that can show nothing fades to the placeholder (0.5 s, linear).
             RenderPlaceholderView(shown: coordinator.showsRenderPlaceholder)
-            if coordinator.externalDisplay.showsVisualExternally {
-                // OUT-001-R2: the visualization is drawn on the external display only (no device preview, R3).
-                externalDisplayNote
-            }
-            if coordinator.userPaused {
-                // FR-085: the last frame stays, dimmed, with "Paused".
-                Color.black.opacity(0.5).ignoresSafeArea().allowsHitTesting(false)
-                Text("Paused")
-                    .font(.largeTitle.bold())
-                    .foregroundStyle(.white)
-                    .accessibilityIdentifier("pausedLabel")
-            }
-            // A full-screen tap target above the renderer (the renderer's UIView takes no taps).
-            Color.clear
-                .contentShape(Rectangle())
-                .ignoresSafeArea()
-                .onTapGesture { coordinator.toggleControls() }
-                .accessibilityIdentifier("visualizerTapArea")
-                .accessibilityLabel("Visualization")
-                .accessibilityHint("Shows or hides the controls")
-            VStack(spacing: 8) {
-                // Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the
-                // controls; then CAM-012's "Camera on" badge.
-                OSCListenerBadge(osc: coordinator.osc) { coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
-                // PERF-010-R4: the recovery offer after an abnormal exit (non-blocking).
-                SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { coordinator.reopenLastScene() },
-                                         onStartFresh: { coordinator.startFresh() },
-                                         onShown: { coordinator.announceRecoveryOffer() })
-                let indicator = coordinator.cameraIndicator
-                if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
-                    CameraIndicatorBadge(indicator: indicator) { coordinator.stopCamera() }
-                        .transition(.opacity)
-                }
-                if coordinator.externalDisplay.blackoutPhase != .live {   // OUT-010-R9: never hidden with the controls
-                    OutputBlackoutBadge(external: coordinator.externalDisplay)
-                        .transition(.opacity)
-                }
-                StatusCaptionView(router: coordinator.statusEvents)   // ACC-011-R7: camera off, OSC off, restored, reopened
-                banners
-                Spacer()
-                // AUD-007: the short explanation of a route change, with or without the controls.
-                if let explanation = coordinator.routes.explanation, coordinator.routeContext != nil {
-                    Text(explanation)
-                        .font(.footnote)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .overlaySurface(Capsule())   // ACC-008-R2
-                        .transition(.opacity)
-                        .accessibilityIdentifier("routeExplanation")
-                }
-                if let notice = coordinator.show.notice {   // SHOW-001-R9
-                    ShowNotice(text: notice).transition(.opacity)
-                }
-                if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout {   // SHOW-014-R1: with or without the controls
-                    HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
-                        .transition(.opacity)
-                }
-                if coordinator.controlsVisible {
-                    ControlsOverlay(coordinator: coordinator)
-                        .transition(.opacity)
-                } else {
-                    SourceStatusIndicator(coordinator: coordinator)
-                }
-            }
-            .padding()
-            // ACC-001-R2: the controls and the badges riding on them are instant with Reduce Motion.
-            .reduceMotionAware(MotionPolicy.controlsFade, value: coordinator.controlsVisible, policy: coordinator.motion)
-            if coordinator.show.hasCues && !coordinator.showSettings {   // SHOW-001-R15
-                ShowKeyCommands(coordinator: coordinator)
-            }
-            // SCN-010-R10; UIX-002: ⌘Z belongs to the scene switcher's field while it is open.
-            if !coordinator.showSettings && !coordinator.sceneSwitcher.isOpen { SceneHistoryKeyCommands(coordinator: coordinator) }
+            externalDisplayLayer
+            pausedLayer
+            tapArea
+            statusStack
+            keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
-            if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
-                performanceOverlay
-            }
+            performanceLayer
             diagnostics
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)
         .persistentSystemOverlays(coordinator.hidesSystemOverlays ? .hidden : .automatic)
+    }
+
+    @ViewBuilder private var externalDisplayLayer: some View {
+        if coordinator.externalDisplay.showsVisualExternally {
+            // OUT-001-R2: the visualization is drawn on the external display only (no device preview, R3).
+            externalDisplayNote
+        }
+    }
+
+    @ViewBuilder private var pausedLayer: some View {
+        if coordinator.userPaused {
+            // FR-085: the last frame stays, dimmed, with "Paused".
+            Color.black.opacity(0.5).ignoresSafeArea().allowsHitTesting(false)
+            Text("Paused")
+                .font(.largeTitle.bold())
+                .foregroundStyle(.white)
+                .accessibilityIdentifier("pausedLabel")
+        }
+    }
+
+    /// A full-screen tap target above the renderer (the renderer's UIView takes no taps).
+    private var tapArea: some View {
+        Color.clear
+            .contentShape(Rectangle())
+            .ignoresSafeArea()
+            .onTapGesture { () -> Void in coordinator.toggleControls() }
+            .accessibilityIdentifier("visualizerTapArea")
+            .accessibilityLabel("Visualization")
+            .accessibilityHint("Shows or hides the controls")
+    }
+
+    private var statusStack: some View {
+        VStack(spacing: 8) {
+            topStatus
+            banners
+            Spacer()
+            bottomStatus
+        }
+        .padding()
+        // ACC-001-R2: the controls and the badges riding on them are instant with Reduce Motion.
+        .reduceMotionAware(MotionPolicy.controlsFade, value: coordinator.controlsVisible, policy: coordinator.motion)
+    }
+
+    /// Top status stack. OSC-007-R2, R6: the OSC listener badge, with or without the controls; then
+    /// CAM-012's "Camera on" badge.
+    @ViewBuilder private var topStatus: some View {
+        OSCListenerBadge(osc: coordinator.osc) { () -> Void in coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
+        // PERF-010-R4: the recovery offer after an abnormal exit (non-blocking).
+        SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { () -> Void in coordinator.reopenLastScene() },
+                                 onStartFresh: { () -> Void in coordinator.startFresh() },
+                                 onShown: { () -> Void in coordinator.announceRecoveryOffer() })
+        let indicator: CameraIndicator = coordinator.cameraIndicator
+        if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
+            CameraIndicatorBadge(indicator: indicator) { () -> Void in coordinator.stopCamera() }
+                .transition(.opacity)
+        }
+        if coordinator.externalDisplay.blackoutPhase != .live {   // OUT-010-R9: never hidden with the controls
+            OutputBlackoutBadge(external: coordinator.externalDisplay)
+                .transition(.opacity)
+        }
+        StatusCaptionView(router: coordinator.statusEvents)   // ACC-011-R7: camera off, OSC off, restored, reopened
+    }
+
+    @ViewBuilder private var bottomStatus: some View {
+        // AUD-007: the short explanation of a route change, with or without the controls.
+        if let explanation = coordinator.routes.explanation, coordinator.routeContext != nil {
+            Text(explanation)
+                .font(.footnote)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .overlaySurface(Capsule())   // ACC-008-R2
+                .transition(.opacity)
+                .accessibilityIdentifier("routeExplanation")
+        }
+        if let notice = coordinator.show.notice {   // SHOW-001-R9
+            ShowNotice(text: notice).transition(.opacity)
+        }
+        if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout {   // SHOW-014-R1: with or without the controls
+            HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
+                .transition(.opacity)
+        }
+        if coordinator.controlsVisible {
+            ControlsOverlay(coordinator: coordinator)
+                .transition(.opacity)
+        } else {
+            SourceStatusIndicator(coordinator: coordinator)
+        }
+    }
+
+    @ViewBuilder private var keyCommandLayers: some View {
+        if coordinator.show.hasCues && !coordinator.showSettings {   // SHOW-001-R15
+            ShowKeyCommands(coordinator: coordinator)
+        }
+        // SCN-010-R10; UIX-002: ⌘Z belongs to the scene switcher's field while it is open.
+        if !coordinator.showSettings && !coordinator.sceneSwitcher.isOpen { SceneHistoryKeyCommands(coordinator: coordinator) }
+    }
+
+    @ViewBuilder private var performanceLayer: some View {
+        if coordinator.settings.showsPerformanceOverlay, coordinator.renderer != nil || coordinator.showsAlternateVisual {
+            performanceOverlay
+        }
     }
 
     /// FR-048 overlay, top trailing; PERF-001: its stage lines, and no stage timing once it is gone (R8).
@@ -211,6 +246,9 @@ struct VisualizerView: View {
                 .accessibilityIdentifier("showAppliedScene")
                 .accessibilityValue(value)
         }
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { UITestCueTransitionProbe(stage: coordinator.cueTransitions) }   // XFADE
+        #endif
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-004-R9: the last announcement
             let spoken = coordinator.announcer.lastSpoken
             Text(spoken)

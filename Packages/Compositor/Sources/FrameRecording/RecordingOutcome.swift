@@ -141,9 +141,14 @@ public struct RecordedVideo: Sendable, Equatable {
     /// The file's length (last frame + one interval).
     public let durationSeconds: Double
     public let statistics: RecordingStatistics
+    /// REC-006-R4: the nominal frame rate the file was written at (its grid).
+    public var frameRate: Int = 30
+    /// REC-006-R4: output slots between the first and last frame that got no picture (`statistics.droppedSlots`).
+    public var droppedFrames: Int { statistics.droppedSlots }
 
     public init(url: URL, codec: RecordingCodec, width: Int, height: Int, frameCount: Int, durationSeconds: Double,
-                statistics: RecordingStatistics) {
+                statistics: RecordingStatistics, frameRate: Int = 30) {
+        self.frameRate = frameRate
         self.url = url
         self.codec = codec
         self.width = width

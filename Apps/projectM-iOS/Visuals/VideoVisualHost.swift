@@ -31,12 +31,12 @@ import VisualBandFeed
 import VisualGenerators
 
 @MainActor
-final class VideoVisualHost: PresentationBoundResource {
+final class VideoVisualHost: PresentationBoundResource, CompositorVisualHost {
     let view: NativeSpectrumLayerView
     let video: VideoLayerSource
     private let spectrum: SpectrumLayerSource
     let compositor: Compositor   // REC-001: the frame capture source
-    private let queue: MTLCommandQueue
+    let queue: MTLCommandQueue   // XFADE: the freeze is encoded after this host's frames
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?
     private let bands: UnsafeMutablePointer<Float>

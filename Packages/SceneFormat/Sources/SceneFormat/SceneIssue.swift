@@ -118,6 +118,16 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case invalidLFO
         /// MOD-007: an oscillator whose shape this version does not know; kept.
         case unknownLFO
+        /// MOD-009: an oscillator's `sync` that is not an object or whose `beats` is not a finite positive number; kept,
+        /// the oscillator runs unsynced.
+        case invalidLFOSync
+        /// MOD-009: an oscillator's sync length this version does not know; kept, the oscillator runs unsynced.
+        case unknownLFOSync
+        /// MOD-010: a macro or macro target with a missing or wrong field, an unusable curve or range, an on/off or
+        /// color target, a duplicate target, or beyond a limit; kept.
+        case invalidMacro
+        /// MOD-010: a macro target naming a parameter this version does not know; kept.
+        case unknownMacroTarget
         /// SCN-008: a snapshot with a missing or wrong name or values, a malformed value, or beyond the limit; kept.
         case invalidSnapshot
         /// SCN-008: a snapshot value whose parameter ID this version does not know; kept, skipped on recall.
@@ -132,6 +142,7 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
                  .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO,
+                 .invalidLFOSync, .unknownLFOSync, .invalidMacro, .unknownMacroTarget,
                  .invalidSnapshot, .unknownSnapshotParameter:
                 .warning
             default:

@@ -88,6 +88,23 @@ final class AudioFeatureModulatorTests: XCTestCase {
         }
     }
 
+    // ANL-009-T07: a High transient binding follows the frame's high transient value (ANL-009-R8).
+    func testHighTransientBindingFollowsTheValue() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .highTransient, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for value: Float in [0.75, 0.5, 0.125] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, midTransient: 1, highTransient: value), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(value)))
+        }
+    }
+
     // ANL-008-T07: a Mid transient binding follows the frame's mid transient value (ANL-008-R8).
     func testMidTransientBindingFollowsTheValue() throws {
         let registry = try Self.registry()

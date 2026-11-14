@@ -749,3 +749,24 @@ class CIPruneTests(unittest.TestCase):
 if __name__ == "__main__":
     os.chdir(Path(__file__).resolve().parent.parent.parent.parent)
     unittest.main(verbosity=1)
+
+
+class StateConcurrentSaveTests(unittest.TestCase):
+    """Two orchestrator processes (a long gate and an `integrate`/`set`) must not lose each other's
+    transitions (2026-11-14: three `integrated` records were overwritten by a gate's save)."""
+
+    def test_saves_from_two_stores_keep_both_transitions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "state.json"
+            features = [{"id": "AAA-001", "priority": "P1", "depends_on": []},
+                        {"id": "BBB-001", "priority": "P1", "depends_on": []}]
+            st.StateStore(path).init("sha", "head", features, "main", "autonomous/integration")
+            gate = st.StateStore(path).load()        # loaded first, saves last
+            other = st.StateStore(path).load()
+            other.set_state("BBB-001", "implementing")
+            other.add_evidence("BBB-001", "post-merge", 0)
+            gate.set_state("AAA-001", "implementing")
+            fresh = st.StateStore(path).load()
+            self.assertEqual(fresh.feature("AAA-001")["state"], "implementing")
+            self.assertEqual(fresh.feature("BBB-001")["state"], "implementing")
+            self.assertEqual(len(fresh.feature("BBB-001")["evidence"]), 1)

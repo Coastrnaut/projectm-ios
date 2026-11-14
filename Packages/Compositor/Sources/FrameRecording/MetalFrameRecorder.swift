@@ -141,6 +141,7 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         nonisolated(unsafe) let pixels = buffer
         nonisolated(unsafe) let keepAlive = texture
         let sink = sink, gate = gate, pending = pending
+        let interval: Int64 = settings.frameIntervalTicks
         commandBuffer.addCompletedHandler { [self] (completed: MTLCommandBuffer) in
             let drawn = completed.status == .completed
             sink.queue.async {
@@ -156,6 +157,9 @@ public final class MetalFrameRecorder: @unchecked Sendable {
                 switch sink.append(pixels, tick: tick) {
                 case .appended:
                     self.shared.withLock { (s: inout Shared) -> Void in
+                        if let previous = s.lastAppendedTick {   // REC-006 contract C2: empty slots in between
+                            s.statistics.droppedSlots += Int(max((tick - previous) / interval - 1, 0))
+                        }
                         s.statistics.written += 1
                         s.lastAppendedTick = tick
                     }
@@ -292,7 +296,7 @@ public final class MetalFrameRecorder: @unchecked Sendable {
             return .success(RecordedVideo(url: url, codec: sink.codec, width: geometry.outputWidth, height: geometry.outputHeight,
                                           frameCount: statistics.written,
                                           durationSeconds: Double(endTick) / Double(RecordingSettings.timescale),
-                                          statistics: statistics))
+                                          statistics: statistics, frameRate: settings.maxFrameRate))
         }
     }
 }

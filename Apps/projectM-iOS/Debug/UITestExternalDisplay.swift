@@ -7,6 +7,9 @@
 // ExternalDisplayCoordinator calls that ExternalDisplaySceneDelegate makes. The fake display is an
 // off-screen 1920 × 1080 window on the app's own window scene with display scale 1, so the moved
 // visual really renders at an external size. Never device evidence (OUT-001-T15 is).
+// OUT-002-T10: the fake drives the coordinator through `ExternalDisplayEventSink` like the real
+// scenes; "ext~" connects and disconnects at once (a bounce inside the settle time), and the hidden
+// `externalResources` probe reads what the external side holds.
 #if DEBUG
 import PresentationLifecycle
 import SwiftUI
@@ -21,7 +24,7 @@ final class UITestExternalDisplay {
     private var window: UIWindow?
     private(set) var connects = 0
 
-    func connect(_ coordinator: ExternalDisplayCoordinator) {
+    func connect(_ coordinator: any ExternalDisplayEventSink) {
         guard window == nil,
               let scene = UIApplication.shared.connectedScenes.compactMap({ (s: UIScene) -> UIWindowScene? in s as? UIWindowScene }).first
         else { return }
@@ -39,7 +42,7 @@ final class UITestExternalDisplay {
         coordinator.externalConnected(id: Self.id, slot: controller.slot, geometry: controller.slot.geometry, foreground: true)
     }
 
-    func disconnect(_ coordinator: ExternalDisplayCoordinator) {
+    func disconnect(_ coordinator: any ExternalDisplayEventSink) {
         guard window != nil else { return }
         coordinator.externalDisconnected(id: Self.id)
         window?.isHidden = true
@@ -56,9 +59,28 @@ struct UITestExternalDisplayPanel: View {
                 .accessibilityIdentifier("uitestConnectExternal")
             Button("ext-") { UITestExternalDisplay.shared.disconnect(coordinator) }
                 .accessibilityIdentifier("uitestDisconnectExternal")
+            Button("ext~") {   // OUT-002: a connection that drops inside the settle time
+                UITestExternalDisplay.shared.connect(coordinator)
+                UITestExternalDisplay.shared.disconnect(coordinator)
+            }
+            .accessibilityIdentifier("uitestBounceExternal")
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                let probe: String = Self.probe(coordinator)
+                Text(probe)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalResources")
+                    .accessibilityValue(probe)
+            }
         }
         .font(.caption2)
         .buttonStyle(.bordered)
+    }
+
+    /// "slots=<n> pending=<n> holding=<n> cancelled=<n>" (OUT-002-R8).
+    static func probe(_ coordinator: ExternalDisplayCoordinator) -> String {
+        let counts: ExternalResourceCounts = coordinator.externalResources
+        let cancelled: Int = coordinator.settle.cancelled
+        return "slots=\(counts.slots) pending=\(counts.pending) holding=\(counts.slotsHoldingVisual) cancelled=\(cancelled)"
     }
 }
 #endif

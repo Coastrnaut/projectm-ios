@@ -7,7 +7,8 @@
 //   always discovery's latest, so a late update can never bring back an older list.
 // * Appearances and disappearances after the first list are announced once per update through the
 //   shared announcer (`announce`, wired to `AccessibilityAnnouncer` kind `.midi`; MIDI-001-R11). The
-//   first list after a start is silent; the status line states the count.
+//   first list after a start is silent; the status line states the count. An endpoint listed earlier since
+//   discovery started is announced "reconnected" (MIDI-011-R6).
 // * Nothing is stored except the toggle (`settings.midi.enabled`), and no name is logged (MIDI-001-R10).
 // No MIDI message is received here; MIDI-002's `MIDIInputCoordinator` receives, following this list (ADR-0038).
 import Foundation
@@ -41,6 +42,9 @@ final class MIDIDiscoveryCoordinator {
     @ObservationIgnored weak var monitor: MIDIMonitorCoordinator?
     /// MIDI-003: MIDI learn and mappings shown from the MIDI section (nil: no mappings row, e.g. in tests).
     @ObservationIgnored weak var mappings: MIDIMappingCoordinator?
+    /// MIDI-011-R6: endpoints listed since discovery started (a returning one is announced "reconnected"); in memory
+    /// only, cleared when discovery stops.
+    @ObservationIgnored private var seenSinceStart: Set<MIDIEndpointID> = []
 
     init(settings: AppSettings, discovery: MIDIEndpointDiscovery = .system(), appIsActive: Bool = true,
          announce: @escaping @MainActor (String) -> Void = { (_: String) -> Void in }) {
@@ -97,13 +101,16 @@ final class MIDIDiscoveryCoordinator {
     private func refresh() {
         state = discovery.state
         list = discovery.endpoints
+        if !state.isListening { seenSinceStart.removeAll() }
         for observer in listObservers { observer() }
     }
 
     private func receive(_ update: MIDIDiscoveryUpdate) {
         guard discovery.state.isListening else { return }   // stopped since: nothing to show or say
         refresh()
-        if let text = Self.announcement(for: update) { announce(text) }
+        let seen: Set<MIDIEndpointID> = seenSinceStart
+        for endpoint in update.endpoints.endpoints { seenSinceStart.insert(endpoint.id) }
+        if let text = Self.announcement(for: update, seen: seen) { announce(text) }
     }
 
     // MARK: Rows and texts (contract C3; unit-tested)
@@ -145,16 +152,22 @@ final class MIDIDiscoveryCoordinator {
     }
 
     /// One text per update (research MIDI-001-D7); nil for the first list and for renames or online
-    /// changes only. A device's input and output count as one device, named by the device.
-    static func announcement(for update: MIDIDiscoveryUpdate) -> String? {
+    /// changes only. A device's input and output count as one device, named by the device. An endpoint in `seen`
+    /// (listed earlier since discovery started) comes back as "reconnected" (MIDI-011-R6, research MIDI-011-D7).
+    static func announcement(for update: MIDIDiscoveryUpdate, seen: Set<MIDIEndpointID> = []) -> String? {
         guard !update.isInitial else { return nil }
         var connected: [String] = []
+        var reconnected: [String] = []
         var disconnected: [String] = []
         for change in update.changes {
             switch change {
             case .appeared(let endpoint):
                 let name: String = deviceLabel(endpoint)
-                if !connected.contains(name) { connected.append(name) }
+                if seen.contains(endpoint.id) {
+                    if !reconnected.contains(name) { reconnected.append(name) }
+                } else if !connected.contains(name) {
+                    connected.append(name)
+                }
             case .disappeared(let endpoint):
                 let name: String = deviceLabel(endpoint)
                 if !disconnected.contains(name) { disconnected.append(name) }
@@ -164,6 +177,8 @@ final class MIDIDiscoveryCoordinator {
         }
         var sentences: [String] = []
         if let sentence = sentence(connected, verb: "connected") { sentences.append(sentence) }
+        let returning: [String] = reconnected.filter { (name: String) -> Bool in !connected.contains(name) }
+        if let sentence = sentence(returning, verb: "reconnected") { sentences.append(sentence) }
         if let sentence = sentence(disconnected, verb: "disconnected") { sentences.append(sentence) }
         return sentences.isEmpty ? nil : sentences.joined(separator: ". ")
     }

@@ -74,31 +74,31 @@ final class RecordingRulesTests: XCTestCase {
         XCTAssertEqual(sixty.ticks.count, 60, "every other frame of a 60 Hz loop")
         XCTAssertEqual(sixty.outcomes.filter { (a: RecordingTimeline.Admission) -> Bool in a == .skippedRate }.count, 60)
         let oneTwenty = run((0..<120).map { (k: Int) -> UInt64 in UInt64(k) * 1_000_000_000 / 120 })
-        // 120 Hz: slots every 20 ticks from the previous slot, each taken by the first frame within a
-        // quarter interval of it: 0, 15, 35, 55, ... (30 fps on average, never 40).
-        XCTAssertEqual(oneTwenty.ticks.count, 31, "0, 15, then every 20 ticks up to 595: 30 fps after the first slot")
-        let gaps = zip(oneTwenty.ticks, oneTwenty.ticks.dropFirst()).map { (p: (Int64, Int64)) -> Int64 in p.1 - p.0 }
-        XCTAssertTrue(gaps.allSatisfy { (g: Int64) -> Bool in g >= 15 && g <= 20 }, "\(gaps)")
-        XCTAssertEqual(gaps.dropFirst().allSatisfy { (g: Int64) -> Bool in g == 20 }, true)
+        // REC-006 grid: 120 Hz into 30 fps takes the frame on each slot (every fourth), never one a quarter early.
+        XCTAssertEqual(oneTwenty.ticks, (0..<30).map { (k: Int) -> Int64 in Int64(k) * 20 })
     }
 
-    /// After a stall the slots restart from the late frame: no burst of frames to catch up.
+    /// After a stall the grid continues from the late frame's slot: no burst of frames to catch up; the
+    /// empty slots are left out (REC-006-D3).
     func testNoBurstAfterAStall() {
         let times: [UInt64] = [0, 33_333_333, 500_000_000, 516_666_667, 533_333_333, 550_000_000, 566_666_667]
         XCTAssertEqual(run(times).ticks, [0, 20, 300, 320, 340])
     }
 
-    func testSlowerLoopsKeepRealTimes() {
+    /// REC-006: a 20 fps loop recorded at 30 fps stays on the 30 fps grid; every third slot has no frame.
+    func testSlowerLoopsStayOnTheGrid() {
         let twenty = run((0..<20).map { (k: Int) -> UInt64 in UInt64(k) * 50_000_000 })   // 20 fps
-        XCTAssertEqual(twenty.ticks, (0..<20).map { (k: Int) -> Int64 in Int64(k) * 30 })
+        XCTAssertEqual(twenty.ticks.count, 20, "every frame is written")
+        XCTAssertTrue(twenty.ticks.allSatisfy { (t: Int64) -> Bool in t % 20 == 0 }, "\(twenty.ticks)")
+        XCTAssertEqual(twenty.ticks.last, 580, "19 × 50 ms = 950 ms → slot 29 (rounded half up)")
     }
 
-    func testJitterWithinAQuarterIntervalIsKept() {
-        // 30 fps with frames 4 ms early (tolerance is 5 ticks ≈ 8.3 ms).
+    func testJitterInsideTheHalfIntervalWindowIsKept() {
+        // 30 fps with frames 4 ms early: each is still nearest its own slot.
         let times: [UInt64] = [0, 33_333_333 - 4_000_000, 66_666_667 - 4_000_000, 100_000_000]
-        XCTAssertEqual(run(times).ticks.count, 4)
-        // 10 ms early is skipped.
-        XCTAssertEqual(run([0, 23_333_333]).outcomes.last, .skippedRate)
+        XCTAssertEqual(run(times).ticks, [0, 20, 40, 60])
+        // 16 ms after the first frame is still in slot 0's window: skipped.
+        XCTAssertEqual(run([0, 16_000_000]).outcomes.last, .skippedRate)
     }
 
     func testNonIncreasingTimesAreDroppedNeverWritten() {

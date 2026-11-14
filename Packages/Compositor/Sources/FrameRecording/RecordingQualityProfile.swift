@@ -75,6 +75,16 @@ public enum RecordingQualityProfile: String, Sendable, CaseIterable, Equatable {
                                  codecPreference: codecPreference, fixedBitRate: fixedBitRate)
     }
 
+    /// REC-006-R1, R12: the profile's settings at `frameRate` (nil: the profile's own rate). Only the rate
+    /// changes; Standard's per-pixel bit rate follows it, fixed bit rates stay.
+    public func settings(frameRate: Int?) -> RecordingSettings {
+        var result: RecordingSettings = settings
+        if let frameRate, frameRate != result.maxFrameRate {
+            result.maxFrameRate = Swift.min(Swift.max(frameRate, 1), 60)
+        }
+        return result
+    }
+
     /// The documented row of the profile table: "Up to 1280 px · H.264 · 4 Mb/s · 30 fps".
     public var documentation: String {
         let size: String = maxLongSide.map { (side: Int) -> String in "Up to \(side) px" } ?? "Screen size"

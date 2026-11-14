@@ -17,6 +17,8 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
     public let kick: TransientDetectorConfiguration
     /// ANL-008's mid transient detector (1–4 kHz; not a snare classifier).
     public let midTransient: TransientDetectorConfiguration
+    /// ANL-009's high transient detector (6–16 kHz, rate-capped; not a hi-hat classifier).
+    public let highTransient: TransientDetectorConfiguration
     /// ANL-010's spectral centroid.
     public let centroid: SpectralCentroidConfiguration
     /// ANL-014's loudness envelope (built for the spectrum's FFT size).
@@ -29,10 +31,12 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
                 beat: BeatTrackerConfiguration = .standard,
                 kick: TransientDetectorConfiguration = .kick,
                 midTransient: TransientDetectorConfiguration = .midTransient,
+                highTransient: TransientDetectorConfiguration = .highTransient,
                 centroid: SpectralCentroidConfiguration = .standard,
                 loudness: LoudnessConfiguration = .standard) throws(AnalysisBusError) {
         guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate,
               spectrum.sampleRate == kick.sampleRate, spectrum.sampleRate == midTransient.sampleRate,
+              spectrum.sampleRate == highTransient.sampleRate,
               spectrum.sampleRate == centroid.sampleRate,
               spectrum.sampleRate == loudness.sampleRate else {
             throw .sampleRateMismatch
@@ -45,6 +49,7 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
         self.beat = beat
         self.kick = kick
         self.midTransient = midTransient
+        self.highTransient = highTransient
         self.centroid = centroid
         self.loudness = loudness
     }

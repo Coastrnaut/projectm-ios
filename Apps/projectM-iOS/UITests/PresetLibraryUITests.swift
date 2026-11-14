@@ -61,14 +61,21 @@ final class PresetLibraryUITests: XCTestCase {
         // library's index loads more slowly, so its scope can arrive after the overlay is gone
         // (seen 2026-11-13): bring the overlay back once if the line is missing.
         let area = app.otherElements["visualizerTapArea"].firstMatch
-        var shownAgain = false
+        // Read through a snapshot (it throws instead of failing the test when the overlay hides between
+        // `exists` and `label`; seen once in a post-merge run, 2026-11-14), and show the overlay again
+        // each time it is missing, at most every 2 s.
+        var lastTap = Date.distantPast
+        var lastLabel: String? = nil
         let found = poll(10) {
-            if self.scopeLine.exists { return self.scopeLine.label == text }
-            if !shownAgain { shownAgain = true; area.tap() }
+            if let snapshot = try? self.scopeLine.snapshot() {
+                lastLabel = snapshot.label
+                return snapshot.label == text
+            }
+            if Date().timeIntervalSince(lastTap) > 2 { lastTap = Date(); area.tap() }
             return false
         }
         if !found {
-            XCTFail("scope line “\(scopeLine.exists ? scopeLine.label : "<missing>")”, expected “\(text)”", file: file, line: line)
+            XCTFail("scope line “\(lastLabel ?? "<missing>")”, expected “\(text)”", file: file, line: line)
         }
     }
 

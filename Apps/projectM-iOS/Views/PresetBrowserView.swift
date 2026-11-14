@@ -11,6 +11,8 @@
 // Roadmap PRE-003: tag chips under the picker and above search results (AND, in memory); selected
 // chips replace the home with the tagged presets; search matches tags; every row offers "Tags…".
 // Roadmap PRE-006: the home leads to Recently Played (RecentPresetsView).
+// Roadmap PRE-010: every playable row offers "Preview" (menu, leading swipe, VoiceOver action); the
+// audition bar sits under the stack, and closing the browser cancels a preview.
 import PresetLibrary
 import SwiftUI
 
@@ -85,12 +87,16 @@ struct PresetBrowserView: View {
                 results = presets.searchResults(query)   // PRE-003-R9: names, authors and tags, narrowed by chips
             }
             .toolbar { ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } } }
+            .safeAreaInset(edge: .bottom) { PresetAuditionBar(presets: presets) { dismiss() } }   // PRE-010
         }
         // PRE-015: on the stack itself, so it shows over whichever list the row is in.
         .duplicateResultAlert(userPresets, isPresented: true)
         // ACC-002-R6: likewise the warning before a flagged preset loads; Load Anyway closes the browser.
         .flashWarningAlert(presets, isPresented: true) { dismiss() }
-        .onDisappear { presets.cancelFlashWarning() }   // closing the browser answers Cancel
+        .onDisappear {
+            presets.cancelFlashWarning()   // closing the browser answers Cancel
+            Task { @MainActor in await presets.cancelAudition() }   // PRE-010-R4: and ends a preview
+        }
         .environment(userPresets)   // PRE-015: rows duplicate and edit through it
         .accessibilityIdentifier("presetBrowser")
     }
@@ -137,7 +143,7 @@ struct PresetBrowserView: View {
                 .accessibilityIdentifier("favoritesEmpty")
         }
         ForEach(presets.favoritesListing) { preset in
-            PresetRow(presets: presets, preset: preset, showsPack: true) { onChoose(preset, .favorites) }
+            PresetRow(presets: presets, preset: preset, showsPack: true, previewScope: .favorites) { onChoose(preset, .favorites) }
         }
     }
 
@@ -151,7 +157,9 @@ struct PresetBrowserView: View {
             Section(group.source == PresetLibrary.userSource ? UserPresetText.scopeTitle
                     : presets.library?.pack(id: group.source)?.title ?? group.source) {
                 ForEach(group.presets) { preset in
-                    PresetRow(presets: presets, preset: preset, showsPack: false) { onChoose(preset, .search(query)) }
+                    PresetRow(presets: presets, preset: preset, showsPack: false, previewScope: .search(query)) {
+                        onChoose(preset, .search(query))
+                    }
                 }
             }
         }
@@ -236,6 +244,8 @@ struct PresetRow: View {
         let remove: () -> Void
     }
     var user: UserActions?
+    /// PRE-010: the list a tap would choose from; set where the row may be previewed (the browser).
+    var previewScope: PresetScope?
     let onChoose: () -> Void
     @State private var addingToCollection = false
     /// PRE-003: the Tags sheet.
@@ -262,6 +272,14 @@ struct PresetRow: View {
 
     private var editAction: () -> Void { { edit() } }
 
+    /// PRE-010-R1: nil where the row is not in the browser or the preset cannot be previewed.
+    private var previewAction: (() -> Void)? {
+        guard let previewScope, presets.canPreview(preset) else { return nil }
+        let coordinator: PresetCoordinator = presets
+        let target: IndexedPreset = preset
+        return { Task { @MainActor in await coordinator.preview(target, from: previewScope) } }
+    }
+
     var body: some View {
         let locked = presets.isLocked(preset)
         let editable = userPresets?.editableRecord(for: preset) != nil
@@ -285,6 +303,7 @@ struct PresetRow: View {
             .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))
             .modifier(UserPresetActions(user: user))
             .modifier(CopyActions(duplicate: duplicateAction, edit: editable ? editAction : nil))
+            .modifier(PreviewAction(preview: previewAction))   // PRE-010-R1
             Button {
                 presets.toggleFavoriteAnnounced(preset)   // ACC-004-R5
             } label: {
@@ -296,6 +315,11 @@ struct PresetRow: View {
             .accessibilityIdentifier("star:\(preset.name)")
         }
         .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            if let previewAction {   // PRE-010-R1: first, so a short swipe shows it
+                Button(action: previewAction) { Label("Preview", systemImage: "eye") }
+                    .tint(.teal)
+                    .accessibilityIdentifier("previewPresetSwipe")
+            }
             Button {
                 addingToCollection = true
             } label: {
@@ -354,6 +378,8 @@ struct PresetRow: View {
             }
             if locked {
                 Image(systemName: "lock.fill").foregroundStyle(.secondary)
+            } else if preset == presets.audition?.showing {
+                Image(systemName: "eye").accessibilityHidden(true)   // PRE-010-R3: the label says "previewing"
             } else if preset == presets.current {
                 Image(systemName: "checkmark")
             }
@@ -362,6 +388,10 @@ struct PresetRow: View {
 
     /// The touch-and-hold menu (split from `body` for the type-check budget).
     @ViewBuilder private func menuItems(editable: Bool) -> some View {
+        if let previewAction {   // PRE-010-R1
+            Button(action: previewAction) { Label("Preview", systemImage: "eye") }
+                .accessibilityIdentifier("previewPreset")
+        }
         Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
         Button { tagging = true } label: { Label("Tags…", systemImage: "tag") }
             .accessibilityIdentifier("presetTagsAction")
@@ -400,6 +430,19 @@ struct PresetRow: View {
                 content.accessibilityAction(named: "Duplicate to My Presets", duplicate)
             } else if let edit {
                 content.accessibilityAction(named: "Edit", edit)
+            } else {
+                content
+            }
+        }
+    }
+
+    /// PRE-010-R1: the VoiceOver action "Preview".
+    private struct PreviewAction: ViewModifier {
+        let preview: (() -> Void)?
+
+        func body(content: Content) -> some View {
+            if let preview {
+                content.accessibilityAction(named: "Preview", preview)
             } else {
                 content
             }

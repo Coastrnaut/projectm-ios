@@ -10,15 +10,22 @@ import CoreGraphics
 import Foundation
 import FrameRecording
 import Observation
+import Rendering
 import UIKit
 
-/// The encoder's answers with the display's current frame rate (REC-005-D3).
+/// The encoder's answers with the display's current frame rate (REC-005-D3) and, REC-006-D4, the render loop's
+/// cap (QualityGovernor: 30 fps in Low Power Mode or at serious/critical thermal state).
 struct DisplayBoundCapabilities: RecordingEncoderCapabilities {
     let encoder: any RecordingEncoderCapabilities
     let maxFramesPerSecond: Int
+    var renderLimit: RecordingRenderLimit? = nil
 
     func canEncode(_ codec: RecordingCodec, width: Int, height: Int) -> Bool {
         encoder.canEncode(codec, width: width, height: height)
+    }
+
+    func maxEncodedFramesPerSecond(_ codec: RecordingCodec, width: Int, height: Int) -> Int {
+        encoder.maxEncodedFramesPerSecond(codec, width: width, height: height)
     }
 }
 
@@ -40,15 +47,71 @@ final class RecordingQualitySetting {
         didSet { defaults.set(profile.rawValue, forKey: Self.profileKey) }
     }
 
+    /// REC-006-R8: the frame-rate choice, key `settings.recording.frameRate` (`profile`, `24`, `30`, `60`); absent or
+    /// unknown → Profile default; nothing stored until changed. Device-local like the profile.
+    static let frameRateKey = "settings.recording.frameRate"
+    static let frameRateSectionTitle = "Recording frame rate"
+    static let frameRateFooter = "Recordings are written at exactly this rate; each frame is the shown frame nearest its time. "
+        + "Unavailable rates show why. A change applies to the next recording."
+
+    var frameRate: RecordingFrameRateChoice {
+        didSet { defaults.set(frameRate.rawValue, forKey: Self.frameRateKey) }
+    }
+
     init(defaults: UserDefaults, capabilities: @escaping @MainActor () -> any RecordingEncoderCapabilities,
          rowSize: @escaping @MainActor () -> CGSize) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
             defaults.removeObject(forKey: Self.profileKey)   // the UI-test reset: Standard (REC-005-R7)
+            defaults.removeObject(forKey: Self.frameRateKey)   // and Profile default (REC-006-R8)
         }
         self.defaults = defaults
         capabilitiesProvider = capabilities
         self.rowSize = rowSize
         profile = Self.stored(in: defaults)
+        frameRate = Self.storedFrameRate(in: defaults)
+    }
+
+    /// The stored frame-rate choice, Profile default when absent or unknown.
+    static func storedFrameRate(in defaults: UserDefaults) -> RecordingFrameRateChoice {
+        (defaults.string(forKey: frameRateKey)).flatMap(RecordingFrameRateChoice.init(rawValue:)) ?? .defaultChoice
+    }
+
+    /// The explicit rate the profile rows describe: the choice, lowered as Record would lower it (display, render
+    /// cap); nil for Profile default (REC-006-R9).
+    private func effectiveExplicitRate(_ capabilities: any RecordingEncoderCapabilities) -> Int? {
+        guard let rate = frameRate.rate else { return nil }
+        let supported: [Int] = RecordingFrameRateChoice.supportedRates.filter { (r: Int) -> Bool in
+            r <= rate && RecordingFrameRateCatalog.availability(rate: r, capabilities: capabilities).isAvailable
+        }
+        return supported.last ?? RecordingFrameRateChoice.supportedRates[0]
+    }
+
+    /// The row of a frame-rate choice for the selected profile and the current size (REC-006-R6).
+    func availability(_ choice: RecordingFrameRateChoice) -> RecordingFrameRateAvailability {
+        let size: CGSize = rowSize()
+        return RecordingFrameRateCatalog.availability(of: choice, profile: profile, drawableWidth: Int(size.width),
+                                                      drawableHeight: Int(size.height), capabilities: capabilitiesProvider())
+    }
+
+    /// Picks `choice` when it is available here (a disabled row cannot be picked, REC-006-R6).
+    @discardableResult
+    func select(_ choice: RecordingFrameRateChoice) -> Bool {
+        guard availability(choice).isAvailable else { return false }
+        frameRate = choice
+        return true
+    }
+
+    /// "Profile default (30 fps)", "24 fps".
+    func title(_ choice: RecordingFrameRateChoice) -> String {
+        choice.title(profileRate: profile.frameRate)
+    }
+
+    /// "24 fps" or "60 fps, unavailable: Low Power Mode limits the visual to 30 fps." (VoiceOver label).
+    func rowLabel(_ choice: RecordingFrameRateChoice) -> String {
+        switch availability(choice) {
+        case .available: title(choice)
+        case .unavailable(let reason): title(choice) + ", unavailable: " + reason.text
+        }
     }
 
     /// The stored profile, Standard when absent or unknown.
@@ -59,8 +122,10 @@ final class RecordingQualitySetting {
     /// The row of `profile` for the current size.
     func availability(_ profile: RecordingQualityProfile) -> RecordingProfileAvailability {
         let size: CGSize = rowSize()
-        return RecordingQualityCatalog.availability(of: profile, drawableWidth: Int(size.width), drawableHeight: Int(size.height),
-                                                    capabilities: capabilitiesProvider())
+        let capabilities: any RecordingEncoderCapabilities = capabilitiesProvider()
+        return RecordingQualityCatalog.availability(of: profile, frameRate: effectiveExplicitRate(capabilities),   // REC-006-R9
+                                                    drawableWidth: Int(size.width), drawableHeight: Int(size.height),
+                                                    capabilities: capabilities)
     }
 
     /// Picks `profile` when it is available here (a disabled row cannot be picked, REC-005-R5).
@@ -89,9 +154,18 @@ final class RecordingQualitySetting {
         UIApplication.shared.connectedScenes.compactMap { (s: UIScene) -> UIWindowScene? in s as? UIWindowScene }.first?.screen
     }
 
-    /// The encoder with the screen's highest frame rate (60 before a scene connects).
+    /// The encoder with the screen's highest frame rate (60 before a scene connects) and the render cap.
     static func deviceCapabilities() -> any RecordingEncoderCapabilities {
-        DisplayBoundCapabilities(encoder: encoder, maxFramesPerSecond: screen?.maximumFramesPerSecond ?? 60)
+        let info = ProcessInfo.processInfo
+        return DisplayBoundCapabilities(encoder: encoder, maxFramesPerSecond: screen?.maximumFramesPerSecond ?? 60,
+                                        renderLimit: renderLimit(thermal: ThermalLevel(info.thermalState), lowPower: info.isLowPowerModeEnabled))
+    }
+
+    /// REC-006-D4: the render loop's cap from QualityGovernor's rules (nil when it runs at full rate).
+    static func renderLimit(thermal: ThermalLevel, lowPower: Bool) -> RecordingRenderLimit? {
+        let cap: Int = QualityGovernor.settings(thermal: thermal, lowPower: lowPower).maxFramesPerSecond
+        guard cap < QualitySettings.full.maxFramesPerSecond else { return nil }
+        return RecordingRenderLimit(reason: lowPower ? .lowPowerMode : .thermal, maximumFramesPerSecond: cap)
     }
 
     /// The screen's native size in pixels, portrait (zero before a scene connects).
