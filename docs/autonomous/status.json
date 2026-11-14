@@ -11,10 +11,10 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 64,
-   "implementing": 2,
-   "integrated": 80,
-   "unit_passed": 5
+   "audited": 61,
+   "implementing": 3,
+   "integrated": 81,
+   "unit_passed": 6
   },
   "P2": {
    "audited": 73,
@@ -26,11 +26,11 @@
   }
  },
  "by_state": {
-  "audited": 148,
-  "implementing": 2,
-  "integrated": 169,
+  "audited": 145,
+  "implementing": 3,
+  "integrated": 170,
   "skipped_existing": 1,
-  "unit_passed": 6
+  "unit_passed": 7
  },
  "device_gate": {
   "blocked": [],
@@ -82,7 +82,6 @@
    "MIDI-012",
    "MIDI-013",
    "MOD-008",
-   "MOD-009",
    "MOD-010",
    "MOD-011",
    "MOD-012",
@@ -197,7 +196,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "156 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
+   "155 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)"
   ]
  },
  "features": {
@@ -1634,12 +1633,12 @@
   "MIDI-011": {
    "attempts": 0,
    "branch": null,
-   "branch_sha": null,
+   "branch_sha": "ea8c44c900aa177886041a524276c301915202a9",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "MIDI-012": {
    "attempts": 0,
@@ -1746,20 +1745,20 @@
    "branch": null,
    "branch_sha": "ba1c39fe1372b93e905e9ccc7fe3ad570ea8e560",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5d85f165",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MOD-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/mod-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MOD-011": {
    "attempts": 0,
@@ -2484,12 +2483,12 @@
   "QA-008": {
    "attempts": 0,
    "branch": null,
-   "branch_sha": null,
+   "branch_sha": "bd661ef22a94f0a384f3b5a25e1e3547868a9b3e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "unit_passed"
   },
   "QA-009": {
    "attempts": 0,
@@ -4014,6 +4013,11 @@
    "sha": "0c57cf7ce7202d122fa8599aa7b288e9e4e0f4b1"
   },
   {
+   "branch": null,
+   "id": "MOD-009",
+   "sha": "5d85f165"
+  },
+  {
    "branch": "feature/mod-013",
    "id": "MOD-013",
    "sha": "d08b5103b0ef93971fa6e1925181bb8856ddc2b4"
@@ -4334,5 +4338,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T15:40:04Z"
+ "updated": "2026-11-14T15:48:31Z"
 }
