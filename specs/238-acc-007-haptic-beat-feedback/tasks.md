@@ -9,13 +9,13 @@ are never device evidence.
 
 ## Phase 1: Setup
 
-- [ ] ACC-007-T01 Create the private simulator "ACC7 iPhone 17" (iOS 27.2), run `xcodegen generate`, initialise the preset submodules and keep the `Build` symlink
+- [X] ACC-007-T01 Create the private simulator "ACC7 iPhone 17" (iOS 27.2), run `xcodegen generate`, initialise the preset submodules and keep the `Build` symlink — Verified 2026-11-14: simulator 093C05C7 created, `xcodegen generate`, submodules initialised, `Build` symlink kept, baseline build-for-testing succeeded
 
 ## Phase 2: Foundational
 
-- [ ] ACC-007-T02 Implement `HapticBeatChoice`, `HapticPulseStrength`, `HapticCue`, `HapticPulseRules`, `HapticPulseDecision` and `HapticPulseGate` (contract C1) in Packages/PerformanceControl/Sources/PerformanceControl/HapticPulseGate.swift
-- [ ] ACC-007-T03 Implement `HapticCue.init?(_: AnalysisEvent)` (C2) in Packages/PerformanceControl/Sources/PerformanceControlAnalysis/HapticCue+Analysis.swift and `TempoSubscriptionReader.poll(onEvent:)` in TempoAnalyzer.swift
-- [ ] ACC-007-T04 [P] Package tests: limits at 30 Hz with a deterministic stream, downbeat counting across sessions, choice filtering, stale and suppressed decisions, mapping, `poll(onEvent:)` sees every event, in Packages/PerformanceControl/Tests/PerformanceControlTests/HapticPulseGateTests.swift
+- [X] ACC-007-T02 Implement `HapticBeatChoice`, `HapticPulseStrength`, `HapticCue`, `HapticPulseRules`, `HapticPulseDecision` and `HapticPulseGate` (contract C1) in Packages/PerformanceControl/Sources/PerformanceControl/HapticPulseGate.swift — Verified 2026-11-14: `HapticPulseGateTests` (6) passed on the host
+- [X] ACC-007-T03 Implement `HapticCue.init?(_: AnalysisEvent)` (C2) in Packages/PerformanceControl/Sources/PerformanceControlAnalysis/HapticCue+Analysis.swift and `TempoSubscriptionReader.poll(onEvent:)` in TempoAnalyzer.swift — Verified 2026-11-14: `HapticPulseGateTests.testAnalysisEventsMapToCues` and `testPollHandsEveryDrainedEventToTheObserver` passed
+- [X] ACC-007-T04 [P] Package tests: limits at 30 Hz with a deterministic stream, downbeat counting across sessions, choice filtering, stale and suppressed decisions, mapping, `poll(onEvent:)` sees every event, in Packages/PerformanceControl/Tests/PerformanceControlTests/HapticPulseGateTests.swift — Verified 2026-11-14: `swift test --package-path Packages/PerformanceControl`: 263 tests, 0 failures (20.6 s); HapticPulseGateTests 6 passed
 
 ## Phase 3: User Story 1 — feel the beat, only when asked (P1, MVP)
 
