@@ -5,6 +5,7 @@
 // SCN-012: `-uitestShowRepairSeed` instead seeds three cues for SceneRepairUITests: "Opening" (Circular,
 // applied), "Broken" (a photo that is not stored, a Circular layer and a mapping to a parameter this
 // version does not know) and "Future" (a scene file of format version 2).
+// SHOW-002: `-uitestShowDwellSeed` (with `-uitestShowSeed`) gives cue 2 a 2 s dwell.
 // XFADE: `-uitestShowTransitionSeed` seeds two Text cues, "Intro" (applied) and "Outro" with a 2 s linear
 // crossfade (CueTransitionUITests: the transition shows on screen).
 #if DEBUG
@@ -57,12 +58,18 @@ enum UITestShowFixture {
             try? store.saveScene(document)
             try? list.append(sceneID: sceneID(n), label: labels[index], cueID: cueID(n))
         }
+        if ProcessInfo.processInfo.arguments.contains(dwellArgument), let dwell = try? ShowCueDwell(seconds: 2) {
+            _ = try? list.setDwell(cueID(2), to: dwell)   // SHOW-002: cue 2 advances by itself after 2 s
+        }
         list.go(to: cueID(1))
         coordinator.show.replaceForUITests(list)
         let first = ShowSceneSnapshot.document(looks[0], id: sceneID(1), name: labels[0])
         coordinator.applyShowScene(first, warnings: [], refresh: false)
         coordinator.show.markAppliedForUITests(sceneID(1))
     }
+
+    /// SHOW-002 (with `-uitestShowSeed`): cue 2 gets a 2 s dwell (ShowAutoAdvanceUITests).
+    static let dwellArgument = "-uitestShowDwellSeed"
 
     // MARK: XFADE
 

@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-002-T01-T15 verified on the Mac, simulator "SHOW2 iPhone 17", iOS 27.2; no
+device claim). ShowControl package 105 tests (2.0 s, acceptance in `ShowAdvanceTimelineTests`); ShowAutoAdvanceCoordinatorTests 5
+(0.08 s); ShowAutoAdvanceUITests 1 (18.2 s); ShowCueUITests 2 still pass.
 
 **Input**: Roadmap row SHOW-002 (P1, size M, depends on SHOW-001, integrated). Observable behavior, verbatim:
 "Advance cue after configurable dwell time." Acceptance, verbatim: "Injected clock fires one advance per cue

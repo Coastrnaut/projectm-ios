@@ -179,7 +179,8 @@ struct VisualizerView: View {
     /// UIX-005-R2: the performance pad, with or without the controls, while the layout is on.
     @ViewBuilder private var performancePadLayer: some View {
         if coordinator.performanceLayout {
-            PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay) {
+            PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay,
+                                advance: coordinator.showAutoAdvance) {   // SHOW-002
                 (insets: EdgeInsets) -> Void in performanceInsets = insets
             }
         }
