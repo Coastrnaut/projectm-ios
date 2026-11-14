@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+**speckit-analyze (2026-11-14)**: 0 critical, 0 high; every requirement and success criterion maps to a task (R1 T10/T11, R2 T01/T04, R3 T05/T06, R4 T05/T06, R5 T01/T04/T07, R6 T05/T07, R7 T05/T07, R8 T08/T09/T10, R9 T10-T12, R10 T02/T14, R11 T02/T14; S1 T06, S2 T06, S3 T07, S4 T09, S5 T13). Fixes applied: the kind names (`photo`, `video`, `audio`, `audio-index`) are fixed in the data model and used by T03/T08; R10's "no dates outside the container" is checked by the privacy-manifest step in T14.
+
 **Input**: User description: "Implement FILE-006 (Incremental backup manifest) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Record changed file hashes to avoid
 recopying unchanged media." Acceptance, verbatim: "Second backup identifies unchanged assets without
