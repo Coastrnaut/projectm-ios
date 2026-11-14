@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T14:20:33Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T14:20:39Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 159 |
 | implementing | 8 |
-| unit_passed | 1 |
-| integrated | 157 |
+| integrated | 158 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 74 | 8 | 1 | 68 | 0 |
-| P2 | 74 | 0 | 0 | 5 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 74 | 8 | 69 | 0 |
+| P2 | 74 | 0 | 5 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 168 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
+- 167 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, ANL-009, ANL-011)
 
 ## Integrated
 
@@ -138,6 +137,7 @@ The physical-device suite may **not** start:
 | MOD-003 | Linear mapping | `29cd3bbb1e12` | `feature/mod-003` |
 | MOD-004 | Curve mapping | `ae0249ac8569` | `feature/mod-004` |
 | MOD-005 | Attack/release envelope | `4bad23aa` | `feature/mod-005` |
+| MOD-006 | Threshold trigger | `6fc64ff1d0fc` | `feature/mod-006` |
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
@@ -1292,7 +1292,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `7d5bc9fe79dd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-005/20261114T084812/swift-test_VisualGenerators.log`)
 - `post-merge: projectM-iOSTests 695 + UI 24 (effects, trails, color, balance, MIDI, scenes, thumbnails, settings)`: pass at `4bad23aa` (log `.autonomous/logs/integration/batch5/app-tests.log`)
 
-### MOD-006 Threshold trigger (unit_passed)
+### MOD-006 Threshold trigger (integrated)
 - `python3 scripts/check_compliance.py`: pass at `638315aab1cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-006/20261114T090959/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `638315aab1cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-006/20261114T090959/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `638315aab1cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-006/20261114T090959/sim-test_ANGLERendering.log`)
