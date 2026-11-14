@@ -20,14 +20,18 @@ let package = Package(
     products: [.library(name: "ShowControl", targets: ["ShowControl", "ShowStorage"])],
     dependencies: [
         .package(path: "../SceneFormat"),
+        // FILE-004: SHA-256 for derived scene IDs and the import's library digest (Foundation only).
+        .package(path: "../LocalPortability"),
         // Tests only (SCN-003): a parameter registry for SCN-001 `liveState` in the load tests.
         .package(path: "../ParameterGraph"),
     ],
     targets: [
         .target(name: "ShowControl"),
-        .target(name: "ShowStorage", dependencies: ["ShowControl", .product(name: "SceneFormat", package: "SceneFormat")]),
+        .target(name: "ShowStorage", dependencies: ["ShowControl", .product(name: "SceneFormat", package: "SceneFormat"),
+                                                    .product(name: "LocalPortability", package: "LocalPortability")]),
         .testTarget(name: "ShowControlTests",
                     dependencies: ["ShowControl", "ShowStorage", .product(name: "SceneFormat", package: "SceneFormat"),
-                                   .product(name: "ParameterGraph", package: "ParameterGraph")]),
+                                   .product(name: "ParameterGraph", package: "ParameterGraph"),
+                                   .product(name: "LocalPortability", package: "LocalPortability")]),
     ]
 )
