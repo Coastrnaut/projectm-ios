@@ -47,6 +47,15 @@ local-first option.
 - Q: When is work paused? → A: While the app cannot present (PERF-011) and while the thermal state is serious or critical (the PERF-003 signal). Low Power limits look-ahead to the next cue. A memory pressure signal (PERF-006, cache tier) releases the whole prewarm cache.
 - Q: When does media work start after a step? → A: After a settle delay of 0.5 s on an injected clock, so the step's own apply and the start of its transition come first; presets keep their own 2.5 s.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does a presentation suspension (PERF-011) keep the prewarmed pictures? → A: No. Suspension cancels the in-flight item, releases every cached entry the live scene does not use (the app should hold as little as possible while it cannot present) and remembers the plan; on resume the plan runs again after the settle delay. This mirrors the preset warm-up, which releases its context on suspension.
+- Q: Can an item that would exceed the budget avoid being decoded at all? → A: Yes. The loader is told the budget and may refuse an item whose decoded size, known from the file header, is larger; the scheduler never keeps a result larger than the budget either way.
+- Q: Does the feature add a setting, a stored key or a visible readout? → A: No. It is automatic; no Settings row, no UserDefaults key, no overlay line. Its counters (decodes, cancellations, evictions, held bytes, peak bytes) are readable by tests only.
+- Q: How does a taken entry (adopted by the live photo layer) interact with the cache afterwards? → A: Taking removes it from the cache and its bytes from the prewarm accounting; the photo layer owns it from then on, so later replans and evictions can never touch it (R4).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The next cue's picture is ready when the performer steps (Priority: P1)
@@ -104,6 +113,7 @@ existing preset warm-up keeps its timing.
 - The show is in standby: the next cue is cue 1.
 - A cue's scene cannot be read: it contributes nothing to the plan.
 - The scheduler is shut down: queued items are dropped and every held entry is released.
+- An item whose decoded size is known to exceed the budget is refused before decoding.
 
 ## Requirements *(mandatory)*
 
@@ -114,7 +124,7 @@ existing preset warm-up keeps its timing.
 - **PERF-005-R3**: Bytes held by the prewarm cache MUST never exceed the budget. The budget MUST be chosen by device class (R-D3 values) and be injectable. Admission evicts per the Clarifications order; an item larger than the budget, or that cannot fit, is released at once.
 - **PERF-005-R4**: Entries named as the live scene's assets MUST never be evicted or released by replanning; taking an entry for the live scene removes it from the prewarm accounting.
 - **PERF-005-R5**: Every load MUST run on an injected executor (by default a serial background queue at utility priority), one item at a time, never on the main thread.
-- **PERF-005-R6**: Work MUST be paused while any pause reason holds (presentation lost, thermal serious or critical, explicit): nothing new starts. A presentation suspension MUST cancel the in-flight item before its graphics step and MUST return only when no graphics step is running.
+- **PERF-005-R6**: Work MUST be paused while any pause reason holds (presentation lost, thermal serious or critical, memory pressure shed): nothing new starts. A presentation suspension MUST cancel the in-flight item before its graphics step, MUST return only when no graphics step is running, and MUST release cached entries the live scene does not use; on resume the remembered plan runs again after the settle delay.
 - **PERF-005-R7**: Media work MUST start a settle delay (0.5 s by default) after a plan, measured on an injected clock; a newer plan restarts the delay.
 - **PERF-005-R8**: Preset picks MUST be forwarded to the existing preset warm-up synchronously and unchanged; its 2.5 s delay, suspension and memory steps are unchanged, and the scheduler adds no delay of its own.
 - **PERF-005-R9**: Under Low Power, the plan MUST be cut to rank 0 (the next cue).
