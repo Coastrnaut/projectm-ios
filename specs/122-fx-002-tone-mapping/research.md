@@ -90,3 +90,11 @@ through the real compositor; the special values (NaN, ±Inf, negatives, alpha Na
 `cmp_output` on a hand-filled composite, because every layer pass already sanitises them. GPU versus
 reference: one 8-bit step for `bgra8Unorm_srgb` (the reference is sRGB-encoded by
 `FrameColorConversion.linearToSRGB`), 0.002 for `rgba16Float`.
+
+## FX-002-D7: GPU time (Mac, recorded only)
+
+`testOutputPassGPUTimeIsRecorded`: the output pass alone at 1920 × 1080 into `bgra8Unorm_srgb`, on an
+over-range composite (3, 0.6, 0.2) so every pixel takes the desaturation branch, 50 frames each after a
+warm-up: previous `cmp_output` 0.037 ms median, tone-mapped 0.070 ms median (an earlier run under parallel
+load: 0.068 / 0.127 ms). In-range frames return after one comparison. Mac timings are not device evidence;
+the device frame rate is FX-002-T18 (`{device}`).
