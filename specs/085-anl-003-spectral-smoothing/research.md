@@ -39,7 +39,7 @@
 ## ANL-003-D4: Defaults, bounds and UI
 
 - **Decision**: Default 0/0 (Instant) — bit-identical to today. Choices Attack 0/25/50/100 ms,
-  Release 0/100/250/500 ms as segmented pickers next to Bars for the circular and linear spectra.
+  Release 0/100/250/500 ms as segmented pickers in a Smoothing section below the Visual section, for the circular and linear spectra (inside the Visual section they pushed its fallback footer off screen).
   Library bounds 0…2 s. Keys `settings.spectrum.attack`, `settings.spectrum.release` (Int ms).
 - **Rationale**: "Defaults keep today's look"; discrete choices match the oscilloscope's Window
   row and fit a segmented control on a narrow iPhone. Fast attack / slower release is the common

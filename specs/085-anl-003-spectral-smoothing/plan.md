@@ -32,14 +32,16 @@ analysis pipeline, bus, onset detector and modulation inputs are untouched. Two 
      smoothed vector goes to the generator, the raw vector to `applyModulation`. `reset()` on
      resume and bar-count change (the band count change also snaps by rule).
    - `AppCoordinator`: sets `host.smoothing` at creation and in `visualSettingsChanged`.
-   - `SettingsView`: Attack and Release segmented pickers next to Bars, only for the two spectra
+   - `SettingsView`: Attack and Release segmented pickers in a Smoothing section below the Visual section, only for the two spectra
      (identifiers `smoothingAttackPicker`, `smoothingReleasePicker`).
    - `VisualizerView`: two `onChange` lines.
    - Tests: `SpectralSmoothingAppTests.swift` (defaults, persistence, invalid → 0, mapping to
      `SmoothingTimes`) and UI test `SpectralSmoothingUITests.swift` (rows shown, persisted across
      relaunch, hidden for the oscilloscope).
 4. **Shared**: `scripts/run_device_tests.py` gains the two keys in `ALLOWED_KEYS`. VIS-001-R9's
-   wording is amended in spec 019 by a note. `project.yml` and CI need no change.
+   wording is amended in spec 019 by a note. `project.yml`: the unit-test target gains
+   `package: AnalysisFeatures` (its tests use `SmoothingTimes`; the app reaches it through
+   VisualGenerators). CI needs no change.
 
 ## Technical Context
 

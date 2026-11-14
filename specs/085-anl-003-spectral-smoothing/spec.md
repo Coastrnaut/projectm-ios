@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-13
 
-**Status**: Draft
+**Status**: Implemented 2026-11-13
 
 **Input**: User description: "Implement ANL-003 (Spectral smoothing) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Apply independent attack and
@@ -45,7 +45,7 @@ first.
 - Q: Does it replace any existing smoothing? → A: No. Nothing in the code smooths bands today (VIS-001-R9 deferred it here). The Reduce-flashing slew (VIS-001-R10) is a safety bound and stays after smoothing; the peak caps (VIS-002-R6) follow the drawn (smoothed) bars as before; FX-019's envelope bounds the final light. VIS-001-R9 is amended: smoothing is the user's ANL-003 setting, applied before the Reduce-flashing limits (ANL-003-R8).
 - Q: What do "attack" and "release" mean precisely? → A: Per band, a one-pole follower: y ← y + a·(x − y), with a = 1 − exp(ln(0.1)·Δt / τ), τ the attack time when x > y and the release time when x < y, Δt the frame interval in seconds. A step from y₀ to x therefore covers 90 % of the distance exactly at t = τ, at any frame rate and with irregular intervals (the product of the per-frame factors is exp(ln(0.1)·Σ Δt/τ)). τ = 0 means instant (a = 1) (ANL-003-R3, R4).
 - Q: What are the defaults, and do they change today's look? → A: Attack and release both default to 0 ms (instant): the drawn bands are bit-identical to today's. Users opt in (ANL-003-R6).
-- Q: Is it exposed to the user, and how? → A: Yes, minimally: two segmented rows under Settings → Visual, shown with Bars (circular and linear spectrum only): Attack (Instant, 25 ms, 50 ms, 100 ms) and Release (Instant, 100 ms, 250 ms, 500 ms), stored as Int milliseconds under `settings.spectrum.attack` and `settings.spectrum.release` (anything else → 0). This amends FR-065: exactly these two user-setting keys are added, and the device privacy check's allowed list gains them. Not in the parameter catalog, scenes or show cues in this row (ANL-003-R6, R7).
+- Q: Is it exposed to the user, and how? → A: Yes, minimally: two segmented rows in a "Smoothing" section right below Settings → Visual (circular and linear spectrum only; implementation finding 2026-11-13: inside the Visual section the rows pushed its footer, which carries the fallback notice, below the fold on an iPhone 17, so they got a section of their own): Attack (Instant, 25 ms, 50 ms, 100 ms) and Release (Instant, 100 ms, 250 ms, 500 ms), stored as Int milliseconds under `settings.spectrum.attack` and `settings.spectrum.release` (anything else → 0). This amends FR-065: exactly these two user-setting keys are added, and the device privacy check's allowed list gains them. Not in the parameter catalog, scenes or show cues in this row (ANL-003-R6, R7).
 
 - Q (clarify pass): Which frame interval drives the coefficients, and is it clamped? → A: The real interval between consecutive display-link timestamps (`timestamp` now minus `timestamp` of the previous frame); on the first frame after a start or resume the state is reset anyway, so no interval is needed. Not clamped: the exponential rule is exact for any positive interval, so a long hitch simply lets the value move further, as time did. Tests inject intervals; nothing reads a wall clock (ANL-003-R3, R5).
 - Q (clarify pass): Do MOD-002 bindings read raw or smoothed bands? → A: Raw, unchanged. Modulation has its own envelope rows (MOD-015); smoothing the drawn bars must not change what a scene's bindings do (ANL-003-R2).
@@ -61,12 +61,12 @@ smoothly. Choosing Instant for both gives exactly today's picture. The choice is
 
 **Why this priority**: It is the row's observable behavior.
 
-**Independent Test**: In the simulator, choose Circular Spectrum, set Attack 50 ms and Release
-500 ms, relaunch, and check both rows show the stored choices.
+**Independent Test**: In the simulator, choose Circular Spectrum and set Attack 50 ms and Release
+500 ms; a unit test reloads the settings and finds both choices.
 
 **Acceptance Scenarios**:
 
-1. **Given** a native spectrum is chosen, **When** Settings is open, **Then** Attack and Release rows are offered next to Bars, each defaulting to Instant.
+1. **Given** a native spectrum is chosen, **When** Settings is open, **Then** Attack and Release rows are offered in a Smoothing section below the Visual section, each defaulting to Instant.
 2. **Given** Attack 50 ms and Release 500 ms chosen, **When** the app is relaunched, **Then** both are restored and applied without restarting the audio source.
 3. **Given** the oscilloscope (or projectM, Camera, Photo, Video, Text) is chosen, **When** Settings is open, **Then** no Attack or Release row is shown.
 
@@ -110,7 +110,7 @@ interval; drive the real band pipeline with a synthetic tone switched on and off
 - **ANL-003-R3**: Update rule: for each band, with input x and state y, if x > y then a = A(τa) else a = A(τr), where A(τ) = 1 for τ = 0 and 1 − exp(ln(0.1)·Δt/τ) otherwise; y ← y + a·(x − y). The coefficients are computed once per frame from the frame interval Δt.
 - **ANL-003-R4**: A step input MUST reach 90 % of the step by the attack time and decay by 90 % by the release time, independent of frame rate, within one frame interval (the roadmap acceptance).
 - **ANL-003-R5**: Resets: the first frame after creation or `reset`, a change of the band count, or a change of the capture-session generation MUST set the state to the input directly; non-finite inputs follow the edge-case rule; non-positive or non-finite Δt gives no progress for non-zero times.
-- **ANL-003-R6**: Settings: Attack (0, 25, 50, 100 ms) and Release (0, 100, 250, 500 ms), shown only for the circular and linear spectra, labeled "Instant" for 0, default 0, keys `settings.spectrum.attack` and `settings.spectrum.release` (Int ms; any other stored value → 0). FR-065 amended accordingly. Changing them MUST NOT restart the audio source.
+- **ANL-003-R6**: Settings: Attack (0, 25, 50, 100 ms) and Release (0, 100, 250, 500 ms), in a Smoothing section below the Visual section, shown only for the circular and linear spectra, labeled "Instant" for 0, default 0, keys `settings.spectrum.attack` and `settings.spectrum.release` (Int ms; any other stored value → 0). FR-065 amended accordingly. Changing them MUST NOT restart the audio source.
 - **ANL-003-R7**: Library bounds: times 0…2 s; values outside are clamped and NaN reads 0.
 - **ANL-003-R8**: Order with existing motion: smoothing → the generator's Reduce-flashing slew (VIS-001-R10) → peak caps (VIS-002-R6, on the drawn bars) → glow → FX-019's envelope. VIS-001-R9 now reads "no smoothing beyond ANL-003's setting and the Reduce flashing limits".
 - **ANL-003-R9**: Accessibility (FR-070): each row has a label equal to its meaning ("Attack", "Release") and a stable identifier.
@@ -130,7 +130,7 @@ interval; drive the real band pipeline with a synthetic tone switched on and off
 - **ANL-003-S2**: With both times 0 the output equals the input exactly for every frame of a random sequence.
 - **ANL-003-S3**: Opposite steps on two bands follow their own time constants; a generation change, a band-count change and `reset` each take the input directly.
 - **ANL-003-S4**: The tone on/off fixture through the real band pipeline meets User Story 2 scenario 5.
-- **ANL-003-S5**: Choosing Attack and Release, relaunching and finding them restored works in one UI test of at most 30 s; the existing native-visual UI tests pass unchanged.
+- **ANL-003-S5**: The rows are offered for the circular spectrum (Instant by default, labeled) and not for the oscilloscope, and a choice is made without restarting the source, in one UI test of at most 30 s; persistence across a relaunch is a unit test (implementation finding 2026-11-13: a relaunch in the UI test took it to 47 s); the existing native-visual UI tests pass unchanged.
 - **ANL-003-S6**: Every existing AnalysisFeatures and VisualGenerators test passes unchanged, on the host and in the Linux shape.
 
 ## Assumptions

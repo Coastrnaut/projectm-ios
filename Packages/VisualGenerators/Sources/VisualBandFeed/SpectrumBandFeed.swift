@@ -4,7 +4,7 @@
 // SpectrumStream (ANL-001: 2,048-point Hann spectra, hop 512, mid channel, 44.1 kHz) → BandReducer
 // (ANL-002: 16/32/64/128 log-frequency bands) → BandMath decibels (floor −80 dB) → 0…1 per band.
 // `pull(from:)` reads every buffered frame of an analysis tap and keeps the newest band vector; no
-// smoothing (ANL-003 owns it, VIS-001-R9).
+// smoothing here: ANL-003's `BandSmoother` smooths on the display side (VIS-001-R9, ANL-003-R8).
 //
 // Real-time safety (Constitution VII): the stream, the reducer's tables and the 128-value band
 // scratch are allocated in `init`; `pull`, `setBarCount` and `reset` touch only that memory. Not
