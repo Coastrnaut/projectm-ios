@@ -44,6 +44,16 @@ human interaction); each answer is the conservative, local-first option.
 - Q: When are stale entries of an older renderer version dropped? → A: When the cache opens, as PRE-001 already does: one pass over the index, before any request. That is cheaper than a check on every request, and the old files go at once.
 - Q: How are orphans collected? → A: Once per launch, after the library (built-in and user presets) is listed, the cache drops every entry whose preset is no longer listed or whose hash differs from the listed one, with its file; files no entry names are removed when the cache opens (PRE-001).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does a built-in pack preset whose bytes changed in an app update count as a changed preset? → A: Yes, through the launch collection only (PRE-002-R7): the bundled library cannot change while the app runs, so no live hook is needed for it.
+- Q: Is the decoded picture held in memory for the browser dropped too? → A: Yes, the changed preset's in-memory picture is evicted with its file, so no path can show the old picture; other presets' in-memory pictures stay.
+- Q: Should a changed preset that failed to draw before get another try in the same session? → A: Yes. A failure is remembered per thumbnail ID (PRE-001-R11); new content is a new ID, so it is tried once, and the old ID's remembered failure is forgotten with its entry.
+- Q: Should the change be announced to VoiceOver? → A: No. Thumbnails are decorative (PRE-001-R12); the row's spoken label does not change, so nothing is announced.
+- Q: Should invalidation run when the picture is not cached at all (the row was never shown)? → A: It runs and finds nothing: removing nothing is not an error and writes nothing to disk.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - An edited preset shows its new picture (Priority: P1) — MVP
@@ -106,6 +116,7 @@ every entry and file is dropped, and each preset renders once when requested.
 - **PRE-002-R6**: Entries of another renderer version MUST be dropped with their files when the cache opens, and re-rendered on request. The renderer version is bumped by hand whenever drawing changes (thumbnail specification, engine pin or ANGLE update that changes pictures).
 - **PRE-002-R7**: Once per launch, after the library is listed, entries of presets no longer listed or with a different content hash MUST be removed with their files.
 - **PRE-002-R8**: Invalidation and collection MUST never fail visibly and MUST run off the main thread's critical path.
+- **PRE-002-R10**: The changed or removed preset's in-memory picture MUST be evicted; other presets' in-memory pictures MUST stay. A remembered failure of a removed entry MUST be forgotten. Invalidation that finds nothing MUST write nothing.
 - **PRE-002-R9**: The cache logic MUST keep building and being tested on Linux.
 
 ### Key Entities
