@@ -12,15 +12,14 @@
   },
   "P1": {
    "audited": 13,
-   "built": 2,
-   "implementing": 1,
+   "built": 3,
    "integrated": 135
   },
   "P2": {
    "audited": 56,
-   "built": 2,
+   "built": 1,
    "implementing": 1,
-   "integrated": 19,
+   "integrated": 20,
    "unit_passed": 1
   },
   "P3": {
@@ -30,8 +29,8 @@
  "by_state": {
   "audited": 80,
   "built": 4,
-  "implementing": 2,
-  "integrated": 238,
+  "implementing": 1,
+  "integrated": 239,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -50,7 +49,6 @@
    "CAM-009",
    "CAM-010",
    "CAM-011",
-   "CMP-010",
    "FX-005",
    "FX-006",
    "FX-007",
@@ -131,7 +129,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "87 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)"
+   "86 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-005, CAM-006)"
   ]
  },
  "features": {
@@ -940,10 +938,10 @@
    "branch": "feature/cmp-010",
    "branch_sha": "ff65c8102c0394890d867a6a959df8544c0cc628",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "6176be5d",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "CMP-011": {
    "attempts": 0,
@@ -2108,12 +2106,12 @@
   "PERF-009": {
    "attempts": 0,
    "branch": "feature/perf-009",
-   "branch_sha": "874f1a36",
+   "branch_sha": "874f1a367df441e97e13e26dbb31c8caf8952d98",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "PERF-010": {
    "attempts": 0,
@@ -3168,12 +3166,12 @@
   "UIX-013": {
    "attempts": 0,
    "branch": "feature/uix-013",
-   "branch_sha": null,
+   "branch_sha": "2f6bc106",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "UIX-014": {
    "attempts": 0,
@@ -3751,6 +3749,11 @@
    "branch": "feature/cmp-009",
    "id": "CMP-009",
    "sha": "330e71a2"
+  },
+  {
+   "branch": "feature/cmp-010",
+   "id": "CMP-010",
+   "sha": "6176be5d"
   },
   {
    "branch": "feature/cmp-011",
@@ -4613,5 +4616,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T22:51:56Z"
+ "updated": "2026-11-14T22:56:29Z"
 }
