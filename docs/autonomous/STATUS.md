@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T09:33:21Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T09:54:54Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 191 |
-| implementing | 3 |
+| implementing | 2 |
+| unit_passed | 1 |
 | integrated | 131 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 103 | 3 | 45 | 0 |
-| P2 | 77 | 0 | 2 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 103 | 2 | 1 | 45 | 0 |
+| P2 | 77 | 0 | 0 | 2 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -884,6 +885,18 @@ None.
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/autonomous-tests.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `94f4b3a6b7c3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-001/20261113T090348/swift-test_VisualGenerators.log`)
 - `integration checkout: VisualGenerators 76 on iOS 27.2 sim (GPU tests ran) and 59 with -DVISUAL_NO_METAL; app: projectM-iOSTests 133 pass, UI 16 pass (Glow, NativeVisual, Settings, Visualizer); 0 PosterBoard reports`: pass at `1192e0d` (log `.autonomous/logs/integration/fx-001/app-tests.log`)
+
+### FX-002 Tone mapping (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `aa29cfdd5237` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-002/20261114T045152/swift-test_ShowControl.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)
