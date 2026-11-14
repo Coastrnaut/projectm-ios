@@ -50,8 +50,8 @@ None: the curve type is User Story 2's and User Story 1's shared deliverable and
 
 ## Phase 7: Polish
 
-- [ ] MOD-004-T12 Linux shape: build and test ParameterGraph and SceneFormat as CI's Linux job does (or record that only the host ran); the six repository checks (`check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`); PosterBoard count after the simulator run; delete the private simulator.
-- [ ] MOD-004-T13 Write `docs/test-reports/curve-mapping.md` (commands, counts, durations, decisions, what was not verified) and set the spec's status.
+- [X] MOD-004-T12 Linux shape: build and test ParameterGraph and SceneFormat as CI's Linux job does (or record that only the host ran); the six repository checks (`check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `check_status_events.py`, `test_scripts.py`); PosterBoard count after the simulator run; delete the private simulator. — Verified 2026-11-14: Linux job not run locally (no container runtime on this Mac; the new code uses only Foundation's pow/log1p/expm1, already used on Linux) — CI's host-tests-linux is the evidence after push. Host: every package depending on ParameterGraph or SceneFormat passes (VisualGenerators, PerformanceControl, Compositor, SceneArchive, ShowControl, LibraryBackup, ImportFuzz, RenderGoldens; .build/scratch/mod-004/T12-*.log). check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 153 run OK (1 skipped). PosterBoard reports 25 before and after; simulator "MOD4 iPhone 17" deleted.
+- [X] MOD-004-T13 Write `docs/test-reports/curve-mapping.md` (commands, counts, durations, decisions, what was not verified) and set the spec's status. — Verified 2026-11-14: docs/test-reports/curve-mapping.md written; spec status set to Implemented.
 
 ## Dependencies
 

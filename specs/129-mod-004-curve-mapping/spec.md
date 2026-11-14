@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-004-T01-T13 verified on the Mac: host package tests and the app unit test host on a private iOS 27.2 simulator; no device task)
 
 **Input**: User description: "Implement MOD-004 (Curve mapping) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Add ease-in, ease-out, logarithmic and custom piecewise curves."
