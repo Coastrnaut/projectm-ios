@@ -61,6 +61,10 @@
 //   (`ParticleFountainTrigger`) is enqueued stamped with the frame's time, and the generator steps its seeded
 //   simulation to the frame. Gravity changes only its configuration (later bursts); `reduceMotion` halves its bursts
 //   and slows them (VIS-008-R9). A loop start discards queued events and restarts the simulation.
+// * Particle orbit (VIS-009): the same bus subscription; each event `BeatRingTrigger` accepts queues a centre pulse
+//   stamped with the frame's time. After the modulation step each frame, `driveParticleOrbit` hands the generator
+//   its base radius and bass through `ParticleOrbitRadiusDrive` (unbound: the Radius setting and the kick envelope;
+//   bound: the modulator's value and no bass). Radius changes only its configuration; `reduceMotion` slows it (R9).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -217,6 +221,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             ?? (generator as? BeatRingGenerator)?.configuration.palette
             ?? (generator as? MandalaGenerator)?.configuration.palette
             ?? (generator as? ParticleFountainGenerator)?.configuration.palette
+            ?? (generator as? ParticleOrbitGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -252,8 +257,15 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = fountain.configuration
             configuration.palette = palette
             fountain.configuration = configuration
+        } else if let orbit = generator as? ParticleOrbitGenerator {
+            var configuration = orbit.configuration
+            configuration.palette = palette
+            orbit.configuration = configuration
         }
     }
+
+    /// VIS-009: the particle orbit's generator (tests; nil for another visual).
+    var particleOrbitGenerator: ParticleOrbitGenerator? { generator as? ParticleOrbitGenerator }
 
     /// VIS-008: the particle fountain's generator (tests; nil for another visual).
     var particleFountainGenerator: ParticleFountainGenerator? { generator as? ParticleFountainGenerator }
@@ -272,6 +284,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = fountain.configuration   // VIS-008-R9: later bursts
             configuration.reduceMotion = reduceMotion
             fountain.configuration = configuration
+        }
+        if let orbit = generator as? ParticleOrbitGenerator, orbit.configuration.reduceMotion != reduceMotion {
+            var configuration = orbit.configuration   // VIS-009-R9: half speed, smaller pulse, slower radius
+            configuration.reduceMotion = reduceMotion
+            orbit.configuration = configuration
         }
         guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
         var configuration = mandala.configuration
@@ -302,12 +319,19 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
     /// VIS-006: emits a ring for each accepted event since the last frame, stamped with the frame's time.
     /// VIS-008: enqueues each onset into the particle fountain, stamped likewise.
+    /// VIS-009: queues a centre pulse for each event the beat trigger accepts, stamped likewise.
     func drainBeatEvents(context: VisualFrameContext) {
         guard let subscription = beatEvents else { return }
         if let fountain = generator as? ParticleFountainGenerator {
             while let event = subscription.nextEvent() {
                 guard let onset = ParticleFountainTrigger.onset(event) else { continue }
                 fountain.enqueueOnset(atNanoseconds: context.timeNanoseconds, strength: onset.strength, threshold: onset.threshold)
+            }
+            return
+        }
+        if let orbit = generator as? ParticleOrbitGenerator {
+            while let event = subscription.nextEvent() {
+                if beatTrigger.shouldEmit(event) { orbit.enqueueBeat(atNanoseconds: context.timeNanoseconds) }
             }
             return
         }
@@ -460,6 +484,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                           configuration: ParticleFountainConfiguration(gravity: gravity.value))
             generator.barCount = barCount
             return generator
+        case let .particleOrbit(radius):   // VIS-009
+            let generator = try ParticleOrbitGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                       configuration: ParticleOrbitConfiguration(radius: radius.value))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -531,6 +560,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = fountain.configuration   // VIS-008: later bursts, no rebuild
             configuration.gravity = gravity.value
             fountain.configuration = configuration
+        } else if case let .particleOrbit(radius) = newStyle, let orbit = generator as? ParticleOrbitGenerator {
+            var configuration = orbit.configuration   // VIS-009: the base radius, eased in by the simulation
+            configuration.radius = radius.value
+            orbit.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -685,6 +718,17 @@ final class NativeSpectrumHost: PresentationBoundResource {
         resolveEffectiveGlow()
     }
 
+    /// VIS-009-R4: hands the particle orbit this frame's base radius and bass ("mapped bass"). Unbound, the base is the
+    /// Radius setting and the bass the ANL-007 kick envelope; with a binding on `visual.particleOrbit.radius` the base
+    /// is the modulator's value and the bass is off. Called by `frame(_:)` after `applyModulation`; tests call it
+    /// directly. No allocation.
+    func driveParticleOrbit(kick: Float) {
+        guard let orbit = generator as? ParticleOrbitGenerator else { return }
+        let resolved: (base: Double, bass: Double) = ParticleOrbitRadiusDrive.resolve(manual: orbit.configuration.radius,
+                                                                                      kick: Double(kick), modulator: modulator)
+        orbit.drive(base: resolved.base, bass: resolved.bass)
+    }
+
     /// "bound, manual 0.50, effective 0.73" (MOD-002-R12; the Debug readout and tests).
     var glowModulationReadout: String {
         let state = glowIntensityIsBound ? "bound" : "unbound"
@@ -718,6 +762,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .mandala(symmetry, mirror, petal):   // VIS-007-R11
             return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
         case let .particleFountain(gravity): return "\(gravity.title) gravity, \(glow)"   // VIS-008-R12
+        case let .particleOrbit(radius): return "\(radius.title) radius, \(glow)"   // VIS-009-R12
         }
     }
 
@@ -911,6 +956,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
                         highTransient: highTransient, rolloff: rolloff, flatness: flatness, correlation: correlation,
                         sectionChange: sectionChange, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+        driveParticleOrbit(kick: kickEnvelope)   // VIS-009: after the modulation step; nothing for another visual
         stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         drainBeatEvents(context: context)   // VIS-006: nothing unless beat rings are shown
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
@@ -1059,11 +1105,13 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case mandala(symmetry: Int, mirror: Bool, petal: MandalaPetalStyle)
     /// VIS-008: the particle fountain.
     case particleFountain(gravity: ParticleGravity)
+    /// VIS-009: the particle orbit.
+    case particleOrbit(radius: ParticleOrbitRadius)
 
-    /// VIS-006, VIS-008: the host drains its analysis bus subscription into the generator.
+    /// VIS-006, VIS-008, VIS-009: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
         switch self {
-        case .beatRings, .particleFountain: true
+        case .beatRings, .particleFountain, .particleOrbit: true
         default: false
         }
     }
@@ -1086,6 +1134,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .beatRings: VisualChoice.beatRings.title
         case .mandala: VisualChoice.mandala.title
         case .particleFountain: VisualChoice.particleFountain.title
+        case .particleOrbit: VisualChoice.particleOrbit.title
         }
     }
 
@@ -1099,6 +1148,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .beatRings: "beatRings"
         case .mandala: "mandala"
         case .particleFountain: "particleFountain"
+        case .particleOrbit: "particleOrbit"
         }
     }
 }

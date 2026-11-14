@@ -23,11 +23,13 @@ enum LayerInspectorParameter: String, CaseIterable, Sendable {
     case opacity, blendMode, positionX, positionY, scale, rotation
     case fitMode, fitAnchorX, fitAnchorY
     case maskShape, maskSize, maskCornerRadius, maskFeather, maskInverted
+    case gradientKind, gradientAngle, gradientRadius, gradientStops   // CMP-008
     case group, ownParameters, solo, mute
 
     /// The sliders (continuous values).
     static let sliders: [LayerInspectorParameter] = [
         .opacity, .positionX, .positionY, .scale, .rotation, .fitAnchorX, .fitAnchorY, .maskSize, .maskCornerRadius, .maskFeather,
+        .gradientAngle, .gradientRadius,
     ]
 
     var title: String { LayerInspectorHelp.entry(self).title }
@@ -58,6 +60,10 @@ enum LayerInspectorHelp {
         .maskCornerRadius: Entry(title: "Corner Radius", help: "Rounds the corners of a rectangle mask. 0 gives sharp corners."),
         .maskFeather: Entry(title: "Feather", help: "Softens the mask's edge so the layer fades out instead of stopping sharply."),
         .maskInverted: Entry(title: "Invert Mask", help: "Shows the layer outside the shape instead of inside it."),
+        .gradientKind: Entry(title: "Gradient", help: "Fades the layer with a gradient: Linear fades it across the layer, Radial fades it out from a centre. None shows all of it."),
+        .gradientAngle: Entry(title: "Gradient Angle", help: "The direction of a linear gradient, in degrees. 0° fades from left to right; positive turns it clockwise."),
+        .gradientRadius: Entry(title: "Gradient Radius", help: "How far a radial gradient reaches from its centre, compared with the layer's shorter side."),
+        .gradientStops: Entry(title: "Gradient Stops", help: "Each stop sets how visible the layer is (Alpha) at a point along the gradient (Position). Between two stops it changes evenly. Use 2 to 8 stops."),
         .group: Entry(title: "Group", help: "The group this layer belongs to. A group's settings apply to all of its layers together."),
         .ownParameters: Entry(title: "Layer Settings", help: "Settings that belong to this kind of layer, such as the spectrum's bar count. Change them in Settings."),
         .solo: Entry(title: "Solo", help: "Shows only the soloed layers while you check them. Solo is never saved and cannot be undone; it ends when the visual changes."),
@@ -223,6 +229,8 @@ enum LayerCompositeEdit {
         case .maskSize: 0.1...2
         case .maskCornerRadius: LayerMask.cornerRadiusRange
         case .maskFeather: 0...0.5
+        case .gradientAngle: LayerGradientEdit.angleRange
+        case .gradientRadius: LayerGradientEdit.radiusRange
         default: 0...1
         }
     }
@@ -230,7 +238,7 @@ enum LayerCompositeEdit {
     /// VoiceOver's increment and decrement step.
     static func step(_ parameter: LayerInspectorParameter) -> Double {
         switch parameter {
-        case .rotation: 5
+        case .rotation, .gradientAngle: 5
         case .scale, .positionX, .positionY, .maskSize: 0.05
         case .maskCornerRadius, .maskFeather: 0.02
         default: 0.05
@@ -253,6 +261,8 @@ enum LayerCompositeEdit {
         case .maskCornerRadius: return cornerRadius(knownMask(composite)) ?? defaultCornerRadius
         case .maskFeather: return knownMask(composite)?.feather ?? 0
         case .maskInverted: return (knownMask(composite)?.inverted ?? false) ? 1 : 0
+        case .gradientAngle: return LayerGradientEdit.angle(composite)   // CMP-008
+        case .gradientRadius: return LayerGradientEdit.radius(composite)
         default: return 0
         }
     }
@@ -305,6 +315,10 @@ enum LayerCompositeEdit {
         case .fitMode: return fitTitle(composite.fit?.mode)
         case .maskShape: return maskTitle(composite)
         case .maskInverted: return v > 0.5 ? "On" : "Off"
+        case .gradientKind: return LayerGradientEdit.kindTitle(composite)   // CMP-008
+        case .gradientAngle: return String(format: "%.0f°", v)
+        case .gradientRadius: return String(format: "%.2f", v)
+        case .gradientStops: return LayerGradientEdit.stopsText(composite)
         default: return ""
         }
     }
@@ -320,6 +334,8 @@ enum LayerCompositeEdit {
         case .fitAnchorX, .fitAnchorY: result.fit = fit(composite.fit, parameter, value)
         case .maskSize, .maskCornerRadius, .maskFeather: result.mask = mask(composite.mask, parameter, value)
         case .maskInverted: result.mask = inverted(composite.mask, value > 0.5)
+        case .gradientAngle: result = LayerGradientEdit.settingAngle(value, on: composite)   // CMP-008
+        case .gradientRadius: result = LayerGradientEdit.settingRadius(value, on: composite)
         default: break
         }
         return result
@@ -416,11 +432,12 @@ enum LayerCompositeEdit {
 // MARK: - Saved composite → compositor settings
 
 enum LayerCompositeMapping {
-    /// As `SceneDocument.liveState`: unknown blend names draw as normal, unknown fits and masks as none.
+    /// As `SceneDocument.liveState`: unknown blend names draw as normal, unknown fits, masks and gradient kinds as none.
     static func settings(_ composite: SceneComposite) -> LayerCompositeSettings {
         let mode: LayerBlendMode = LayerBlendMode(rawValue: composite.blendMode) ?? .normal
         return LayerCompositeSettings(opacity: composite.opacity, blendMode: mode, transform: composite.transform,
-                                      fit: composite.fit?.layerFit, mask: composite.mask?.layerMask)
+                                      fit: composite.fit?.layerFit, mask: composite.mask?.layerMask,
+                                      gradientMask: composite.gradientMask?.layerGradientMask)   // CMP-008
     }
 
     /// Default composites left out (research CMP-015-D2).

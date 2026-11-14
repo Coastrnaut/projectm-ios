@@ -3,7 +3,7 @@
 //
 // Single source of truth: every range, default and enum case is read from the configuration types
 // (`CircularSpectrumConfiguration`, `LinearSpectrumConfiguration`, `SpectrumBarCount`,
-// `LinearSpectrumOrientation`, `BloomParameters`); only IDs, names, groups, units, step hints and
+// `LinearSpectrumOrientation`, `BloomParameters`, `ParticleOrbitConfiguration`); only IDs, names, groups, units, step hints and
 // modulation policies are new here. `VisualParameterCatalogTests` fails if anything drifts.
 //
 // Not registered (spec Clarifications): Reduce flashing (a safety setting: never modulatable or
@@ -33,12 +33,15 @@ public enum VisualParameterIDs {
     public static let bloomRadius: ParameterID = "effect.bloom.radius"
     public static let bloomThreshold: ParameterID = "effect.bloom.threshold"
     public static let bloomKnee: ParameterID = "effect.bloom.knee"
+    /// VIS-009-R4: the particle orbit's base radius (bindable: "mapped bass").
+    public static let particleOrbitRadius: ParameterID = "visual.particleOrbit.radius"
 }
 
 public enum VisualParameterCatalog {
     public static let circularSpectrumGroup = ParameterGroup(id: "visual.circularSpectrum", displayName: "Circular Spectrum")
     public static let linearSpectrumGroup = ParameterGroup(id: "visual.linearSpectrum", displayName: "Linear Spectrum")
     public static let bloomGroup = ParameterGroup(id: "effect.bloom", displayName: "Glow")
+    public static let particleOrbitGroup = ParameterGroup(id: "visual.particleOrbit", displayName: "Particle Orbit")
 
     /// IDs that shipped once and may never be registered again (none yet).
     public static let retiredIDs: Set<ParameterID> = []
@@ -106,6 +109,12 @@ public enum VisualParameterCatalog {
                                 kind: continuous(Bloom.thresholdRange, Bloom.defaultThreshold, step: 0.01), modulation: .continuousDefault),
             ParameterDescriptor(id: IDs.bloomKnee, displayName: "Knee (of the threshold)", group: bloomGroup, unit: .normalized,
                                 kind: continuous(Bloom.kneeRange, Bloom.defaultKnee, step: 0.01), modulation: .continuousDefault),
+
+            ParameterDescriptor(id: IDs.particleOrbitRadius, displayName: "Radius (of half the shorter side)",
+                                group: particleOrbitGroup, unit: .fractionOfOutput,
+                                kind: continuous(ParticleOrbitConfiguration.radiusRange, ParticleOrbitConfiguration.defaultRadius,
+                                                 step: 0.01),
+                                modulation: .continuousDefault),   // VIS-009-R4
         ]
     }
 

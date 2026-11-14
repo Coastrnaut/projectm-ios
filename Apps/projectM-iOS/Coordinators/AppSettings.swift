@@ -33,6 +33,8 @@
 //   `settings.mandala.petal` (`petal`/`round`/`spike`; anything else → petal). Glow is shared; Bars does not apply.
 // * Particle fountain (VIS-008-R10): `settings.visual` may also be `particleFountain`; its gravity, key
 //   `settings.particleFountain.gravity` (`low`/`medium`/`high`; anything else → medium). Glow is shared; Bars does not apply.
+// * Particle orbit (VIS-009-R10): `settings.visual` may also be `particleOrbit`; its radius, key
+//   `settings.particleOrbit.radius` (`small`/`medium`/`large`; anything else → medium). Glow is shared; Bars does not apply.
 // * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
 //   `settings.spectrum.attack` (0, 25, 50 or 100) and `settings.spectrum.release` (0, 100, 250 or
 //   500), Int milliseconds; anything else → 0 (Instant, today's look).
@@ -46,6 +48,9 @@
 // * Camera crop (CAM-007-R1, R6): `settings.camera.cropMode` (`fill`/`fit`; else fill),
 //   `settings.camera.cropAnchor` (`center`/`top`/`bottom`; else center) and `settings.camera.zoom`
 //   (1, 1.5, 2 or 3; else 1), one set for both cameras. Same rules as position and mirror.
+// * Camera lens (CAM-003-R4, R5): `settings.camera.lens` (`ultraWide`/`wide`/`telephoto`; else wide),
+//   the back camera's last chosen lens. A lens this device lacks is used as wide (the coordinator
+//   resolves it against the device's lenses); the stored value is kept. Same rules as position.
 // * Photo (MED-001-R8): `visual` may be `photo`, stored like the spectra (no sensor is involved).
 //   The chosen photo's identifier is `settings.photo.id` (PhotoStore.idKey; absent = no photo); the
 //   copy itself lives in Application Support/Photos.
@@ -58,7 +63,7 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
+// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
 // `settings.visual.colorBlindSafePalette`).
 // * Sensory safety (ACC-012-R8): the profile and its custom limits, four `settings.sensorySafety.*` keys owned by
 //   `SensorySafetySetting`; `safetyClamp` combines them with Reduce flashing (stricter wins, ADR-0049).
@@ -96,6 +101,7 @@ final class AppSettings {
     static let mandalaMirrorKey = "settings.mandala.mirror"
     static let mandalaPetalKey = "settings.mandala.petal"
     static let particleGravityKey = "settings.particleFountain.gravity"   // VIS-008
+    static let particleOrbitRadiusKey = "settings.particleOrbit.radius"   // VIS-009
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
@@ -108,6 +114,7 @@ final class AppSettings {
     static let cameraCropModeKey = "settings.camera.cropMode"       // CAM-007
     static let cameraCropAnchorKey = "settings.camera.cropAnchor"
     static let cameraZoomKey = "settings.camera.zoom"
+    static let cameraLensKey = "settings.camera.lens"               // CAM-003
     /// MED-001: the stored photo's identifier (written by PhotoStore).
     static let photoIDKey = PhotoStore.idKey
     /// MED-006: the image slideshow (written by SlideshowStore).
@@ -126,9 +133,9 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, videoIDKey, videoLoopKey, videoSpeedKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
-                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
+                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
@@ -172,6 +179,11 @@ final class AppSettings {
     /// CAM-002-R1: which camera the Camera visual uses (back by default). Never starts the camera.
     var cameraPosition: CameraPosition {
         didSet { defaults.set(cameraPosition.rawValue, forKey: Self.cameraPositionKey) }
+    }
+
+    /// CAM-003-R4: the back camera's chosen lens (wide by default). Never starts the camera.
+    var cameraLens: CameraLens {
+        didSet { defaults.set(cameraLens.rawValue, forKey: Self.cameraLensKey) }
     }
 
     /// CAM-002-R3: the front camera's mirror (on by default).
@@ -284,6 +296,11 @@ final class AppSettings {
     /// VIS-008: the particle fountain's gravity (Medium by default).
     var particleGravity: ParticleGravity {
         didSet { defaults.set(particleGravity.rawValue, forKey: Self.particleGravityKey) }
+    }
+
+    /// VIS-009: the particle orbit's radius (Medium by default); the manual value of `visual.particleOrbit.radius`.
+    var particleOrbitRadius: ParticleOrbitRadius {
+        didSet { defaults.set(particleOrbitRadius.rawValue, forKey: Self.particleOrbitRadiusKey) }
     }
 
     /// VIS-007: the mandala's rotational symmetry N (6 by default; only `MandalaConfiguration.supportedSymmetries`).
@@ -425,6 +442,7 @@ final class AppSettings {
         let storedVisual = defaults.string(forKey: Self.visualKey).flatMap(VisualChoice.init(rawValue:)) ?? .projectM
         visual = storedVisual.usesCamera ? .projectM : storedVisual   // CAM-001-R11
         cameraPosition = defaults.string(forKey: Self.cameraPositionKey).flatMap(CameraPosition.init(rawValue:)) ?? .back
+        cameraLens = CameraLens(stored: defaults.string(forKey: Self.cameraLensKey))   // CAM-003
         cameraMirrorFront = defaults.object(forKey: Self.cameraMirrorFrontKey) as? Bool ?? CameraPosition.front.defaultMirrored
         cameraMirrorBack = defaults.object(forKey: Self.cameraMirrorBackKey) as? Bool ?? CameraPosition.back.defaultMirrored
         cameraCropMode = defaults.string(forKey: Self.cameraCropModeKey).flatMap(CameraCropMode.init(rawValue:)) ?? .fill   // CAM-007
@@ -450,6 +468,7 @@ final class AppSettings {
         mandalaMirror = defaults.bool(forKey: Self.mandalaMirrorKey)
         mandalaPetal = defaults.string(forKey: Self.mandalaPetalKey).flatMap(MandalaPetalStyle.init(rawValue:)) ?? .petal
         particleGravity = defaults.string(forKey: Self.particleGravityKey).flatMap(ParticleGravity.init(rawValue:)) ?? .medium   // VIS-008
+        particleOrbitRadius = defaults.string(forKey: Self.particleOrbitRadiusKey).flatMap(ParticleOrbitRadius.init(rawValue:)) ?? .medium   // VIS-009
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
@@ -516,6 +535,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case mandala
     /// The native particle fountain (VIS-008).
     case particleFountain
+    /// The native particle orbit (VIS-009).
+    case particleOrbit
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -536,6 +557,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .beatRings: "Beat Rings"
         case .mandala: "Mandala"
         case .particleFountain: "Particle Fountain"
+        case .particleOrbit: "Particle Orbit"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -545,7 +567,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
 
     /// Drawn by the native spectrum host instead of projectM.
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
-        || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain }
+        || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
+        || self == .particleOrbit }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum }
@@ -689,6 +712,28 @@ enum ParticleGravity: String, CaseIterable, Sendable {
         case .low: 2.0
         case .medium: 3.0
         case .high: 4.5
+        }
+    }
+}
+
+/// VIS-009-R4, R10: the particle orbit's radius; `value` is the base radius in R (half the shorter side), the manual
+/// value of `visual.particleOrbit.radius`.
+enum ParticleOrbitRadius: String, CaseIterable, Sendable {
+    case small, medium, large
+
+    var title: String {
+        switch self {
+        case .small: "Small"
+        case .medium: "Medium"
+        case .large: "Large"
+        }
+    }
+
+    var value: Double {
+        switch self {
+        case .small: 0.35
+        case .medium: 0.5
+        case .large: 0.65
         }
     }
 }

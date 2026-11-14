@@ -1088,6 +1088,17 @@ class SchemaCopyTests(unittest.TestCase):
         copy = root / "Packages" / "Diagnostics" / "Tests" / "DiagnosticsTests" / "Resources" / "diagnostics-export.schema.json"
         self.assertEqual(json.loads(contract.read_text(encoding="utf-8")), json.loads(copy.read_text(encoding="utf-8")))
 
+    def test_performance_report_schema_copy_matches_contract(self):
+        # PERF-012-T07: the package test copy equals the contract, and the reused sections equal the diagnostics schema's.
+        root = Path(__file__).resolve().parent.parent
+        contract = root / "specs" / "209-perf-012-performance-report" / "contracts" / "performance-report.schema.json"
+        copy = root / "Packages" / "Diagnostics" / "Tests" / "DiagnosticsTests" / "Resources" / "performance-report.schema.json"
+        report = json.loads(contract.read_text(encoding="utf-8"))
+        self.assertEqual(report, json.loads(copy.read_text(encoding="utf-8")))
+        diagnostics = json.loads((root / "specs" / "001-ios-projectm-visualizer" / "contracts" / "diagnostics-export.schema.json").read_text(encoding="utf-8"))
+        for key in ("frameDrops", "frameTimings"):
+            self.assertEqual(report["properties"][key], diagnostics["properties"][key], key)
+
 
 
 class DiagnosticProjectTests(unittest.TestCase):
@@ -1676,7 +1687,8 @@ class PermissionCatalogCheckTests(unittest.TestCase):
         yml, swift, policy = self.inputs()
         self.assertEqual(cpc.problems(yml, swift, policy), [])
         self.assertEqual(set(cpc.plist_keys(yml)), {"NSMicrophoneUsageDescription", "NSCameraUsageDescription",
-                                                    "NSLocalNetworkUsageDescription", "NSScreenCaptureUsageDescription"})
+                                                    "NSLocalNetworkUsageDescription", "NSScreenCaptureUsageDescription",
+                                                    "NSPhotoLibraryAddUsageDescription"})
 
     def test_capturelab_keys_are_not_the_apps(self):
         yml, _, _ = self.inputs()
@@ -1708,6 +1720,14 @@ class PermissionCatalogCheckTests(unittest.TestCase):
             bad = yml + f'\n        {key}: "x"\n'
             self.assertTrue(any(p.startswith(f"{key}: Photos library keys are not allowed")
                                 for p in cpc.problems(bad, swift, policy)), key)
+
+    def test_photos_add_key_only_in_the_app_target(self):
+        """REC-011 (ADR-0059): the add-only key is allowed in projectM-iOS and nowhere else."""
+        yml, swift, policy = self.inputs()
+        self.assertIn(cpc.PHOTOS_ADD_KEY, cpc.plist_keys(yml))
+        bad = yml.replace("  CaptureLabUITests:", f'        {cpc.PHOTOS_ADD_KEY}: "x"\n  CaptureLabUITests:', 1)
+        self.assertIn(f"{cpc.PHOTOS_ADD_KEY}: allowed only in the projectM-iOS target (REC-011, ADR-0059)",
+                      cpc.problems(bad, swift, policy))
 
     def test_policy_mismatch_fails(self):
         yml, swift, policy = self.inputs()

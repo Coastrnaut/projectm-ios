@@ -19,6 +19,7 @@ indicator text, `UIStrings.sourceStatus` (FR-042), e.g. "In-App Playback · Acti
 | X6 | Save Frame refused, failed or "Frame saved." (REC-001) | notice | notice | capture | U | P | user-caused (new) |
 | X7 | frame offered (REC-012) | "Frame ready" | "Frame ready" | capture | U | P | user-caused (new) |
 | X8 | share finished or failed (REC-012) | share notice | share notice | capture | U | P | user-caused (new) |
+| X8a | Save to Photos saved, denied, restricted or failed (REC-011) | Photos notice | Photos notice | capture | U | P | user-caused (REC-011-R9) |
 | X9 | recording idle → recording (REC-003) | "REC m:ss" | "Recording started" | recording | U | P | user-caused (ACC-004) |
 | X10 | recording → finishing | "Finishing…" | "Recording stopped" | recording | U/S | P | ACC-004; automatic stops are safety |
 | X11 | finishing → idle with the file offered | "Recording ready" | "Recording ready" | recording | U | P | user-caused (new) |

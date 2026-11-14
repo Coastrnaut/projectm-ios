@@ -36,6 +36,7 @@ final class LibraryBackupAppTests: XCTestCase {
                ParameterShelf.pinsKey,   // UIX-004-R10
                RecordingCountdownSetting.key,   // REC-007-R8
                RecordingTimedStopSetting.key,   // REC-008-R9
+               SplitEditorSetting.key,   // UIX-007-R7 (excluded: this device's screen)
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9
                PowerProfileSetting.key]   // PERF-008
             + RecentPresetsStore.allKeys   // PRE-006-R7
@@ -50,7 +51,8 @@ final class LibraryBackupAppTests: XCTestCase {
                         RecentPresetsStore.historyKey,   // PRE-006-R7: history never travels
                         SceneLock.key,   // SCN-015: the lock is session state of this device
                         OSCPeersCoordinator.enabledKey, OSCPeersCoordinator.approvedKey,   // OSC-008-R10: this device's network
-                        ParameterQuantizer.key])   // MOD-017: a performance timing choice of this device
+                        ParameterQuantizer.key,   // MOD-017: a performance timing choice of this device
+                        SplitEditorSetting.key])   // UIX-007-R7
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

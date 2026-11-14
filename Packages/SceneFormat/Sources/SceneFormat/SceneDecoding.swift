@@ -242,7 +242,7 @@ struct SceneDecoder {
 
     private mutating func composite(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneComposite {
         let o = try object(value, path)
-        dropUnknown(o, known: ["opacity", "blend", "transform", "fit", "mask"], path: path)
+        dropUnknown(o, known: ["opacity", "blend", "transform", "fit", "mask", "gradientMask"], path: path)
         var opacity = 1.0
         if let v = o["opacity"] {
             let raw = try double(v, ScenePath.key(path, "opacity"))
@@ -261,7 +261,89 @@ struct SceneDecoder {
         let mask: SceneMask? = try o["mask"].flatMap { (m: SceneJSON) throws(SceneDecodeError) -> SceneMask? in
             try self.mask(m, ScenePath.key(path, "mask"))
         }
-        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit, mask: mask)
+        let gradient: SceneGradientMask? = try o["gradientMask"].flatMap { (g: SceneJSON) throws(SceneDecodeError) -> SceneGradientMask? in
+            try self.gradientMask(g, ScenePath.key(path, "gradientMask"))
+        }
+        return SceneComposite(opacity: opacity, blendMode: blend, transform: transform, fit: fit, mask: mask, gradientMask: gradient)
+    }
+
+    /// CMP-008's saved form (contracts/gradient-masks.md G3 in specs/207): `kind` required; an unknown kind's object
+    /// is kept verbatim; a known kind's other keys (and a stop's) are dropped, its numbers clamped (one warning each),
+    /// its stops re-sorted (one warning); 2…8 stops (counted before any is decoded) and a linear gradient of non-zero
+    /// length, else the gradient is dropped (nil, `droppedField`).
+    private mutating func gradientMask(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> SceneGradientMask? {
+        let o = try object(value, path)
+        let kind = try string(o, "kind", path)
+        guard LayerGradientKind.kindNames.contains(kind) else { return .unknown(kind: kind, object: o) }
+        let geometryKeys: Set<String> = kind == "linear" ? ["start", "end"] : ["center", "radius"]
+        dropUnknown(o, known: geometryKeys.union(["kind", "stops"]), path: path)
+        let stopsPath = ScenePath.key(path, "stops")
+        guard let stopsValue = o["stops"] else {
+            warnings.append(SceneIssue(.droppedField, path: path, "\(path) has no stops; the gradient was dropped."))
+            return nil
+        }
+        let items = try array(stopsValue, stopsPath)
+        let limits = LayerGradientMask.minimumStops...LayerGradientMask.maximumStops
+        guard limits.contains(items.count) else {
+            warnings.append(SceneIssue(.droppedField, path: path,
+                                       "\(path) has \(items.count) stops (\(limits.lowerBound)…\(limits.upperBound) are drawn); the gradient was dropped."))
+            return nil
+        }
+        var stops: [LayerGradientStop] = []
+        for (i, item) in items.enumerated() {
+            stops.append(try gradientStop(item, ScenePath.index(stopsPath, i)))
+        }
+        if LayerGradientMask.sorted(stops) != stops {
+            warnings.append(SceneIssue(.valueClamped, path: stopsPath, "\(stopsPath) were not in position order; they were sorted."))
+        }
+        let live: LayerGradientKind
+        if kind == "linear" {
+            let start = try gradientPoint(o["start"], LayerPoint(x: 0, y: 0.5), ScenePath.key(path, "start"))
+            let end = try gradientPoint(o["end"], LayerPoint(x: 1, y: 0.5), ScenePath.key(path, "end"))
+            live = .linear(start: start, end: end)
+        } else {
+            let center = try gradientPoint(o["center"], LayerPoint(x: 0.5, y: 0.5), ScenePath.key(path, "center"))
+            let raw: Double = try o["radius"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in
+                try double(v, ScenePath.key(path, "radius"))
+            } ?? LayerGradientMask.defaultRadius
+            let r = LayerGradientMask.radiusRange
+            let stored: Double = min(max(raw, r.lowerBound), r.upperBound)
+            if raw != stored { clamped(path + ".radius", raw, "\(r.lowerBound)…\(r.upperBound)", stored) }
+            live = .radial(center: center, radius: stored)
+        }
+        do {
+            return .known(try LayerGradientMask(kind: live, stops: stops))
+        } catch {
+            warnings.append(SceneIssue(.droppedField, path: path, "\(path) has a linear gradient of zero length; the gradient was dropped."))
+            return nil
+        }
+    }
+
+    /// One CMP-008 stop: `position` (default 0) and `alpha` (default 1), each clamped to 0…1.
+    private mutating func gradientStop(_ value: SceneJSON, _ path: String) throws(SceneDecodeError) -> LayerGradientStop {
+        let o = try object(value, path)
+        dropUnknown(o, known: ["position", "alpha"], path: path)
+        let position: Double = try o["position"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in
+            try double(v, ScenePath.key(path, "position"))
+        } ?? 0
+        let alpha: Double = try o["alpha"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in
+            try double(v, ScenePath.key(path, "alpha"))
+        } ?? 1
+        let stop = LayerGradientStop(position: position, alpha: alpha)
+        if stop.position != position { clamped(path + ".position", position, "0.0…1.0", stop.position) }
+        if stop.alpha != alpha { clamped(path + ".alpha", alpha, "0.0…1.0", stop.alpha) }
+        return stop
+    }
+
+    /// A CMP-008 point in layer fractions, each coordinate clamped to −10…10.
+    private mutating func gradientPoint(_ value: SceneJSON?, _ fallback: LayerPoint, _ path: String) throws(SceneDecodeError) -> LayerPoint {
+        let raw = try point(value, default: fallback, path)
+        let r = LayerGradientMask.pointRange
+        let x: Double = min(max(raw.x, r.lowerBound), r.upperBound)
+        let y: Double = min(max(raw.y, r.lowerBound), r.upperBound)
+        if raw.x != x { clamped(path + ".x", raw.x, "\(r.lowerBound)…\(r.upperBound)", x) }
+        if raw.y != y { clamped(path + ".y", raw.y, "\(r.lowerBound)…\(r.upperBound)", y) }
+        return LayerPoint(x: x, y: y)
     }
 
     /// CMP-007's saved form (contracts/shape-masks.md in specs/104): `shape` required; an unknown shape's

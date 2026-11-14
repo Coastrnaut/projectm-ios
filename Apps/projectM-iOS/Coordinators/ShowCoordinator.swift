@@ -30,6 +30,9 @@
 //   duplicate's cue gets its source cue's transition.
 // * SCN-011: `addCopies` stores bundled template scenes as new scenes (new IDs) with their cues, all or nothing.
 // * SCN-014: `installImportedScene` installs a scene pack's scene with FILE-004 (copy on a taken ID, one cue).
+// * SHOW-002: each cue may carry a dwell (`advanceAfter`); every step that moves calls `cueStarted` (the timed advance
+//   restarts its countdown there) and every save calls `listChanged` (a removed active cue cancels it). `setDwell` is
+//   an edit (refused while locked), saves at once and restarts the active cue's countdown; a duplicate keeps the dwell.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -89,6 +92,10 @@ final class ShowCoordinator {
     @ObservationIgnored var scenePacks: ScenePackCoordinator?
     /// SCN-015: the scene lock (set by AppCoordinator; nil in tests of the show alone). Steps never read it.
     @ObservationIgnored var sceneLock: SceneLock?
+    /// SHOW-002: a step moved to a cue (or the active cue's dwell changed); set by `ShowAutoAdvanceCoordinator`.
+    @ObservationIgnored var cueStarted: (() -> Void)?
+    /// SHOW-002: the list was saved after a change (an edit or a step); set by `ShowAutoAdvanceCoordinator`.
+    @ObservationIgnored var listChanged: (() -> Void)?
 
     /// SCN-015-R6: the editor hides its edit gestures while true.
     var isEditLocked: Bool { sceneLock?.isLocked ?? false }
@@ -163,6 +170,7 @@ final class ShowCoordinator {
         guard step.moved, let cue = list.activeCue else { return step }
         save()
         show(cue)
+        cueStarted?()   // SHOW-002-R3, R6: the new cue's countdown starts now
         return step
     }
 
@@ -369,7 +377,7 @@ final class ShowCoordinator {
         let inserted: ShowCue
         do throws(ShowEditError) {
             inserted = try list.insert(sceneID: copy.id, label: ShowCueList.copyLabel(cue.label), after: cue.id,
-                                       transition: cue.transition)   // SCN-007-R8
+                                       transition: cue.transition, dwell: cue.dwell)   // SCN-007-R8, SHOW-002-R14
         } catch {
             editorMessage = error.description   // the copy's file is removed by the next save (unreferenced)
             return nil
@@ -447,6 +455,17 @@ final class ShowCoordinator {
         if refusedByLock() { return false }
         guard (try? list.setTransition(cueID, to: transition)) != nil else { return false }
         save()
+        return true
+    }
+
+    /// SHOW-002-R10, R11: sets or (nil) turns off a cue's dwell and saves; never applies anything. On the active cue the
+    /// countdown restarts from now with the new dwell (research SHOW-002-D6).
+    @discardableResult
+    func setDwell(_ cueID: UUID, to dwell: ShowCueDwell?) -> Bool {
+        if refusedByLock() { return false }
+        guard (try? list.setDwell(cueID, to: dwell)) != nil else { return false }
+        save()
+        if list.activeCue?.id == cueID { cueStarted?() }
         return true
     }
 
@@ -617,6 +636,7 @@ final class ShowCoordinator {
     }
 
     private func save() {
+        defer { listChanged?() }   // SHOW-002: a removed active cue cancels its countdown
         guard let store else { return }
         do throws(ShowStoreError) {
             try store.save(list)

@@ -47,7 +47,7 @@ The app turns audio into visuals. It starts no source until you choose one.
 
 ## Permissions and why
 
-The app asks for four permissions, each only when you use the feature that needs it, and never at
+The app asks for five permissions, each only when you use the feature that needs it, and never at
 launch. This list matches the app's permission catalog (FILE-013), which a check keeps in step with
 the app.
 
@@ -71,10 +71,20 @@ the app.
   own picker, so the app can receive the audio of the content you choose to share. If you decline,
   the app shows "Screen recording not allowed" with Restart (iOS asks again) and Choose source; if
   screen recording is not allowed on your device, System/App Capture cannot be chosen.
+- **Photos (add only)**: asked the first time you tap Save to Photos on a saved frame, a finished
+  recording or a kept recording, and only then, so the app can add that one item to your photo
+  library. It is add-only access: the app can never see, read, list or change anything in your
+  library, and it keeps no record of what it saved. Nothing is saved to Photos unless you tap the
+  button. If you decline, or later turn it off in Settings › Privacy & Security › Photos, Save to
+  Photos shows "Photos access is off. To save to Photos, allow adding photos for projectM in
+  Settings. The file is still in the app." with Open Settings; if Photos is restricted on your
+  device, the notice says so. In every case, including a save that fails, the frame or recording
+  stays in the app unchanged.
 
-The app asks for no other permission. Choosing a photo needs none: the Photos picker is shown by
-iOS outside the app and gives the app only the picture you pick, never access to your library.
-Choosing a video needs none either, for the same reason.
+The app asks for no other permission and never asks for access to read your photo library.
+Choosing a photo needs none: the Photos picker is shown by iOS outside the app and gives the app
+only the picture you pick, never access to your library. Choosing a video needs none either, for
+the same reason.
 
 ## The camera picture stays on your screen
 
@@ -205,7 +215,8 @@ it and choose PNG or HEIF.
   the camera shows at that moment, exactly like a screenshot you take yourself.
 - The picture is then offered with Save…, Share… and Discard (see "Sharing a picture or video").
   Save… shows iOS's own Files sheet, and you choose where the file goes (for example On My iPhone or
-  iCloud Drive) or cancel. The app never saves it to your photo library and asks for no permission.
+  iCloud Drive) or cancel. The picture is saved to your photo library only if you tap Save to Photos
+  (see "Saving to Photos").
 - The file holds only the picture and its color profile: no location, date, device, camera or
   account details. Its suggested name contains the date and time, and you can change it.
 - The app keeps no copy on its own: the picture is held in memory only until you save it to Files,
@@ -228,8 +239,8 @@ the moment the recording stops.
   recording stops, the video is offered with Save…, Share… and Discard. Save… shows iOS's own Files
   sheet and you choose where the video goes (for example On My iPhone or iCloud Drive); the file is
   moved there. Discard deletes the temporary file; if you cancel, it stays offered until you decide.
-  Any temporary file left when the app closes is deleted the next time the app starts. The app never
-  saves to your photo library and asks for no permission.
+  Any temporary file left when the app closes is deleted the next time the app starts. The video is
+  saved to your photo library only if you tap Save to Photos (see "Saving to Photos").
 - The file holds only the video and the technical details a video file needs (size, frame times,
   codec, color tags): no location, device, camera or account details. Its suggested name contains
   the date and time, and you can change it.
@@ -257,8 +268,25 @@ tap it.
   Messages, Mail, Save to Files, or another app. What that app or service does with the file (sending
   it over the internet, for example) is up to you and it, under its own privacy policy. The app
   itself sends nothing.
-- The app removes "Save to Photos" and "Assign to Contact" from the sheet: it does not write to your
-  photo library or contacts and asks for no Photos or Contacts permission.
+- The app removes "Save to Photos" and "Assign to Contact" from the sheet: the sheet does not write to
+  your photo library or contacts, and the app asks for no Contacts permission. To put the file in
+  Photos, use the app's own Save to Photos button (see "Saving to Photos").
+
+## Saving to Photos
+
+"Save to Photos" on a saved frame, a finished recording or a recording you kept in Settings › Storage ›
+Recordings adds that one item to your photo library, only when you tap it.
+
+- The first tap asks for add-only Photos access (see "Permissions and why"). The app can only add
+  items: it never sees, reads, lists or changes your library, creates no album and keeps no record of
+  what it saved.
+- The item is added exactly as it is: the picture's bytes, or the video file, which is not converted
+  and stays in the app. Nothing is saved automatically when you save a frame, finish, or keep a
+  recording.
+- If access is off or restricted, or the save fails, nothing is added, the frame or recording stays in
+  the app unchanged, and the app says so (with Open Settings when access is the reason).
+- Once an item is in Photos, what happens to it (for example iCloud Photos) is up to you and your
+  Photos settings. The app itself sends nothing.
 
 ## Audio stays in memory on your device
 
@@ -400,9 +428,18 @@ iOS each time it starts.
 
 ## Diagnostics
 
-The app has no diagnostics export and sends no diagnostics. Diagnostics exist only in a separate
-test build used by the developer's testers, and leave a device only when a tester exports them
-by hand; they contain audio levels, formats and timing, never audio.
+The app sends no diagnostics. You can export a performance report yourself (Settings → Performance →
+Export performance report, PERF-012): the app writes one JSON file into its temporary folder and
+opens the share sheet, and the file goes only where you send it; the temporary copy is deleted when
+the sheet closes. The report holds frame times, dropped-frame counts, thermal, Low Power Mode and
+power profile changes, render scale, texture and memory counters, the device model, the iOS version
+and the app version. It holds no audio, media, file names, paths, preset, scene, text or recording
+names, OSC device addresses, identifiers or anything you typed. Frame times are measured only while
+the performance overlay is shown, and nothing is kept after the app quits.
+
+Other diagnostics exist only in a separate test build used by the developer's testers, and leave a
+device only when a tester exports them by hand; they contain audio levels, formats and timing, never
+audio.
 
 ## No analytics, tracking or network use
 

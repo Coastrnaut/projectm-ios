@@ -61,6 +61,8 @@ struct PerformancePadLayer: View {
     let show: ShowCoordinator
     let tempo: TempoCoordinator
     let external: ExternalDisplayCoordinator
+    /// SHOW-002-R9: the timed advance's countdown for the cue readout (nil in previews).
+    var advance: ShowAutoAdvanceCoordinator? = nil
     /// The edges the pad uses (UIX-005-R4, research UIX-005-D3).
     let onReservedInsets: (EdgeInsets) -> Void
     @Environment(\.horizontalSizeClass) private var horizontalClass
@@ -196,7 +198,7 @@ struct PerformancePadLayer: View {
 
     private var cueReadout: some View {
         let list: ShowCueList = show.list
-        let top: String
+        var top: String
         let bottom: String
         if let cue = list.activeCue {
             top = list.positionText
@@ -208,7 +210,11 @@ struct PerformancePadLayer: View {
             top = "No cues"
             bottom = "Show"
         }
-        let spoken: String = show.hasCues ? show.accessibilityValue : "No cues"
+        var spoken: String = show.hasCues ? show.accessibilityValue : "No cues"
+        if let countdown = advance?.countdownText, let said = advance?.spokenCountdown {   // SHOW-002-R9
+            top += " · \(countdown.replacingOccurrences(of: "Next in ", with: ""))"
+            spoken += ", \(said)"
+        }
         return PerformanceReadout(top: top, bottom: bottom, label: "Show", value: spoken, identifier: "perfCueReadout",
                                   alignment: .leading)
     }

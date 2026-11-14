@@ -50,6 +50,8 @@ public struct SceneLiveState: Sendable, Equatable {
     public var preservedFits: [LayerInstanceID: SceneFit]
     /// CMP-007: saved masks with an unknown shape kind, by instance, kept verbatim for re-save.
     public var preservedMasks: [LayerInstanceID: SceneMask]
+    /// CMP-008: saved gradient masks with an unknown kind, by instance, kept verbatim for re-save.
+    public var preservedGradientMasks: [LayerInstanceID: SceneGradientMask] = [:]
     /// CMP-011: saved groups that are not live (damaged, or without live layers), kept verbatim.
     public var preservedGroups: [SceneGroup]
     /// FX-020: the document's effect chain as stored (apply `SceneEffectSettings.read`; capture writes it back).
@@ -141,9 +143,11 @@ extension SceneDocument {
             let blend = preserved ?? settings.blendMode.rawValue
             let fit: SceneFit? = settings.fit.map(SceneFit.init) ?? live.preservedFits[entry.id]   // CMP-006
             let mask: SceneMask? = settings.mask.map(SceneMask.known) ?? live.preservedMasks[entry.id]   // CMP-007
+            let gradient: SceneGradientMask? = settings.gradientMask.map(SceneGradientMask.known)
+                ?? live.preservedGradientMasks[entry.id]   // CMP-008
             layers.append(SceneLayer(instance: entry.id.rawValue, content: content, values: entry.descriptor.parameters,
                                      composite: SceneComposite(opacity: settings.opacity, blendMode: blend, transform: settings.transform,
-                                                               fit: fit, mask: mask)))
+                                                               fit: fit, mask: mask, gradientMask: gradient)))
         }
         // Canonical order (MOD-013-R10): live edges in live order, then preserved edges as stored.
         let bindings = SceneBinding.list(live.bindings, expressions: live.expressions) + live.preserved.bindings
@@ -170,6 +174,7 @@ extension SceneDocument {
         var unknownBlends: [LayerInstanceID: String] = [:]
         var unknownFits: [LayerInstanceID: SceneFit] = [:]
         var unknownMasks: [LayerInstanceID: SceneMask] = [:]
+        var unknownGradients: [LayerInstanceID: SceneGradientMask] = [:]
         for layer in layers {
             guard let kind = layer.content.layerKind else { continue }
             let id = LayerInstanceID(rawValue: layer.instance)
@@ -179,8 +184,10 @@ extension SceneDocument {
             if let saved = layer.composite.fit, fit == nil { unknownFits[id] = saved }
             let mask: LayerMask? = layer.composite.mask?.layerMask
             if let saved = layer.composite.mask, mask == nil { unknownMasks[id] = saved }
+            let gradient: LayerGradientMask? = layer.composite.gradientMask?.layerGradientMask   // CMP-008
+            if let saved = layer.composite.gradientMask, gradient == nil { unknownGradients[id] = saved }
             let settings = LayerCompositeSettings(opacity: layer.composite.opacity, blendMode: mode ?? .normal,
-                                                  transform: layer.composite.transform, fit: fit, mask: mask)
+                                                  transform: layer.composite.transform, fit: fit, mask: mask, gradientMask: gradient)
             entries.append(LayerStackEntry(id: id, descriptor: LayerDescriptor(kind: kind, parameters: layer.values), settings: settings))
             contents[id] = layer.content
         }
@@ -216,6 +223,8 @@ extension SceneDocument {
                                    preservedFits: unknownFits, preservedMasks: unknownMasks, preservedGroups: preservedGroups,
                                    effects: effects, triggers: triggers, lfos: lfos, macros: macros,
                                    snapshots: snapshots)   // FX-020, MOD-006, MOD-007, MOD-010, SCN-008
-        return SceneLoadResult(state: state, warnings: issues, modulationReport: restore.report)
+        var withGradients = state
+        withGradients.preservedGradientMasks = unknownGradients   // CMP-008
+        return SceneLoadResult(state: withGradients, warnings: issues, modulationReport: restore.report)
     }
 }

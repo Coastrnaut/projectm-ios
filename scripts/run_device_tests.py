@@ -70,6 +70,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.visual", "settings.circularSpectrum.bars",
                 "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
                 "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",   # CAM-007
+                "settings.camera.lens",   # CAM-003
                 "settings.visual.colorBlindSafePalette",   # ACC-003-R13
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8
@@ -86,6 +87,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.beatRings.life",   # VIS-006-R9
                 "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   # VIS-007-R9
                 "settings.particleFountain.gravity",   # VIS-008-R10
+                "settings.particleOrbit.radius",   # VIS-009-R10
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)
@@ -102,6 +104,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.noiseGate.thresholdDecibels",   # AUD-011-R8
                 "settings.recording.includeMicrophone",   # REC-004-R3 (microphone audio in recordings; off by default)
                 "settings.recording.qualityProfile",   # REC-005-R7 (record quality profile; Standard by default)
+                "settings.splitEditor.width",   # UIX-007-R7 (iPad split editor width; Standard by default)
                 "settings.recording.frameRate",   # REC-006-R8 (record frame rate; Profile default by default)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.performance.powerProfile",   # PERF-008-R6 (power profile; Standard by default)

@@ -6,6 +6,8 @@
 // scene IDs, duplicate cue IDs). A position naming no cue is a warning (Standby).
 // SCN-007: each cue entry may carry an optional `transition` object (`duration`, `easing`, `type`), written
 // only when the cue has one, so older shows keep their bytes; read leniently (contract X1-X3).
+// SHOW-002: each cue entry may carry an optional `advanceAfter` (whole seconds 1…3600), written only when the cue
+// has a dwell; an invalid value is dropped with a warning (contract show-cue-dwell.md D1-D2). No version bump.
 import Foundation
 import ParameterGraph
 
@@ -48,6 +50,8 @@ public enum ShowDecodeWarning: Sendable, Hashable {
     case droppedTransitions(Int)
     /// SCN-007: a cue's transition type is not one this version knows; it is kept and applied as a cut.
     case unknownTransitionType(cue: String, type: String)
+    /// SHOW-002: cue dwells that broke a rule (not a whole number of seconds 1…3600) were left out.
+    case droppedDwells(Int)
 }
 
 public struct ShowDecodeResult: Sendable {
@@ -66,7 +70,8 @@ extension ShowCueList {
         var file = ShowFileV1(format: Self.formatName, version: Self.currentVersion, id: id.uuidString, name: name,
                               cues: cues.map { (cue: ShowCue) -> ShowFileV1.Cue in
                                   ShowFileV1.Cue(id: cue.id.uuidString, scene: cue.sceneID, label: cue.label,
-                                                 transition: cue.transition.map(StoredTransition.init(_:)))
+                                                 transition: cue.transition.map(StoredTransition.init(_:)),
+                                                 advanceAfter: cue.dwell.map { (d: ShowCueDwell) -> StoredDwell in StoredDwell(seconds: d.seconds) })
                               },
                               position: activeCue?.id.uuidString)
         // SCN-004 (contract F4): written only when non-empty, so a show without folders keeps its bytes.
@@ -105,6 +110,7 @@ extension ShowCueList {
         var cues: [ShowCue] = []
         var warnings: [ShowDecodeWarning] = []
         var droppedTransitions = 0
+        var droppedDwells = 0
         for cue in file.cues {
             guard let cueID = canonicalUUID(cue.id) else { throw .invalidID(cue.id) }
             var transition: ShowCueTransition? = nil
@@ -115,9 +121,15 @@ extension ShowCueList {
                     warnings.append(.unknownTransitionType(cue: cue.id, type: type.text))
                 }
             }
-            cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label, transition: transition))
+            var dwell: ShowCueDwell? = nil
+            if let stored = cue.advanceAfter {   // SHOW-002 (contract D2)
+                dwell = stored.seconds.flatMap { (s: Int) -> ShowCueDwell? in try? ShowCueDwell(seconds: s) }
+                if dwell == nil { droppedDwells += 1 }
+            }
+            cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label, transition: transition, dwell: dwell))
         }
         if droppedTransitions > 0 { warnings.append(.droppedTransitions(droppedTransitions)) }
+        if droppedDwells > 0 { warnings.append(.droppedDwells(droppedDwells)) }
         var position = ShowPosition.standby
         if let text = file.position {
             if let cueID = canonicalUUID(text), cues.contains(where: { (c: ShowCue) -> Bool in c.id == cueID }) {
@@ -171,14 +183,17 @@ private struct ShowFileV1: Codable {
         let label: String
         /// SCN-007, optional: absent (or null) = no transition.
         var transition: StoredTransition? = nil
+        /// SHOW-002, optional: absent (or null) = no dwell.
+        var advanceAfter: StoredDwell? = nil
 
-        enum CodingKeys: String, CodingKey { case id, scene, label, transition }
+        enum CodingKeys: String, CodingKey { case id, scene, label, transition, advanceAfter }
 
-        init(id: String, scene: String, label: String, transition: StoredTransition?) {
+        init(id: String, scene: String, label: String, transition: StoredTransition?, advanceAfter: StoredDwell?) {
             self.id = id
             self.scene = scene
             self.label = label
             self.transition = transition
+            self.advanceAfter = advanceAfter
         }
 
         init(from decoder: any Decoder) throws {
@@ -187,6 +202,7 @@ private struct ShowFileV1: Codable {
             scene = try container.decode(String.self, forKey: .scene)
             label = try container.decode(String.self, forKey: .label)
             transition = try container.decodeIfPresent(StoredTransition.self, forKey: .transition)
+            advanceAfter = try container.decodeIfPresent(StoredDwell.self, forKey: .advanceAfter)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -195,6 +211,7 @@ private struct ShowFileV1: Codable {
             try container.encode(scene, forKey: .scene)
             try container.encode(label, forKey: .label)
             try container.encodeIfPresent(transition, forKey: .transition)
+            try container.encodeIfPresent(advanceAfter, forKey: .advanceAfter)
         }
     }
 
@@ -324,5 +341,33 @@ private struct StoredTransition: Codable {
         guard let transition else { return try container.encodeNil() }
         try container.encode(Fields(duration: transition.durationSeconds, easing: transition.easing.textForm,
                                     type: transition.type.text))
+    }
+}
+
+/// SHOW-002: one cue's `advanceAfter` value, read leniently: a whole number of seconds (`30` or `30.0`), or anything
+/// else (`seconds` nil: dropped with a warning) instead of refusing the show. The range is checked by `ShowCueDwell`.
+private struct StoredDwell: Codable {
+    let seconds: Int?
+
+    init(seconds: Int) { self.seconds = seconds }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if (try? container.decode(Bool.self)) != nil {   // never a number, whatever the platform's decoder allows
+            seconds = nil
+        } else if let whole = try? container.decode(Int.self) {
+            seconds = whole
+        } else if let value = try? container.decode(Double.self), value.isFinite, value.rounded() == value,
+                  abs(value) <= Double(ShowCueDwell.maximumSeconds) * 2 {
+            seconds = Int(value)
+        } else {
+            seconds = nil
+        }
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        guard let seconds else { return try container.encodeNil() }
+        try container.encode(seconds)
     }
 }
