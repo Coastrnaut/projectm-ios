@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (FX-009-T01-T17 verified on the Mac and an own iOS 27.2 simulator; T18 `{device}` open)
 
 **Input**: User description: "Implement FX-009 (Motion feedback) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Blend previous frame with decay and reset on scene changes." Acceptance, verbatim: "Reset clears
