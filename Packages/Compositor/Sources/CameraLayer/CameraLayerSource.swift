@@ -17,6 +17,8 @@
 // without touching the camera; the geometry is rebuilt every frame from the picture's size and
 // rotation and the layer picture's size, so a device rotation keeps the chosen crop. Output points
 // outside the picture (Fit's bars) are transparent (CAM-007-R4).
+// CAM-005: `drawnPicture` records the size and rotation of the picture drawn last, so a touch can be
+// mapped to the camera point under it with the same geometry.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
 import Metal
@@ -35,6 +37,9 @@ public final class CameraLayerSource: LayerSource {
     public var mirrored = false
     /// CAM-007-R1, R5: the user's crop (main thread; applies from the next frame; never touches the camera).
     public var crop: CameraCrop = .fill
+    /// CAM-005-R2: the camera picture drawn last frame (size and rotation), nil when none is drawn; a
+    /// touch is mapped against it (`CameraFocusMapping`). Three integers per frame, no allocation.
+    public private(set) var drawnPicture: CameraDrawnPicture?
 
     public init(provider: any CameraFrameProvider) {
         self.provider = provider
@@ -46,6 +51,7 @@ public final class CameraLayerSource: LayerSource {
     /// Stops the camera and drops the held picture (CAM-001-R7, R9).
     public func stop() {
         held = nil
+        drawnPicture = nil
         provider.stop()
     }
 
@@ -84,11 +90,15 @@ public final class CameraLayerSource: LayerSource {
                        audio: LayerAudioContext) throws(LayerSourceError) {
         guard provider.state.showsPicture else {
             held = nil
+            drawnPicture = nil
             throw .notReady
         }
         if let newest = provider.latestFrame() { held = newest }
         if let stale = held, stale.position != provider.position { held = nil }   // CAM-002-R7: never the previous camera
-        guard let camera = held, let pipeline, let sampler else { throw .notReady }
+        guard let camera = held, let pipeline, let sampler else {
+            drawnPicture = nil
+            throw .notReady
+        }
         let geometry = CameraPictureGeometry(pictureWidth: camera.width, pictureHeight: camera.height, rotation: camera.rotation,
                                              outputWidth: picture.width, outputHeight: picture.height, mirrored: mirrored,
                                              crop: crop)
@@ -107,6 +117,7 @@ public final class CameraLayerSource: LayerSource {
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         framesShown += 1
+        drawnPicture = CameraDrawnPicture(width: camera.width, height: camera.height, rotation: camera.rotation)   // CAM-005
     }
 
     static let shaderSource = """
