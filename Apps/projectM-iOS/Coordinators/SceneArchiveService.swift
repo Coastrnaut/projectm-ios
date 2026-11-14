@@ -22,6 +22,10 @@
 //   SCN-012 repair entries after the import, size, steps) or the typed refusal. Its temporary copy
 //   of the picked file is removed. `importArchive(at:plan:)` imports only when the archive's bytes
 //   and the current photo and video are those the plan saw (`.planChanged` otherwise).
+// * MED-010-R11: a scene's logo travels as one more PNG (`assets/logo.png`, type `logo`): exported from the
+//   Photos folder by its store ID, staged through the logo's import path (PNG, logo limits), adopted into
+//   the Photos folder (FILE-008 dedup) and made the current logo with the scene's placement. The logo is made
+//   current before the photo, keeping the adopted photo's reference, so neither release can drop the other.
 // No networking; nothing from an archive is executed. Runs off the main actor.
 import ColorGradeParameters
 import Foundation
@@ -39,6 +43,8 @@ struct SceneArchiveImportResult: Sendable {
     let document: SceneDocument
     let photo: StoredPhoto?
     let video: StoredVideo?
+    /// MED-010: the scene's logo, now the current logo (nil: the archive has none).
+    var logo: StoredPhoto? = nil
     /// Whether a previous stored photo/video was replaced (FILE-003 shows this before confirming).
     let replacedPhoto: Bool
     let replacedVideo: Bool
@@ -191,7 +197,7 @@ struct SceneArchiveService: Sendable {
                 throw .archive(.missingMedia(key: asset.key))
             }
             let file: URL? = switch asset.type {
-            case .photo: photos.existingFile(for: id)
+            case .photo, .logo: photos.existingFile(for: id)   // MED-010: logos live in the Photos folder
             case .video: videos.existingFile(for: id)
             }
             guard let file, let data = try? Data(contentsOf: file, options: .mappedIfSafe) else { throw .archive(.missingMedia(key: asset.key)) }
@@ -264,15 +270,17 @@ struct SceneArchiveService: Sendable {
             placeholders[item.key] = placeholder
             switch item.type {
             case .photo: photoIDs = [placeholder]
+            case .logo: photoIDs.insert(placeholder)   // MED-010: kept beside the photo
             case .video: videoIDs = [placeholder]
             }
             steps.append(.staged(item.path))
         }
-        let types: [SceneArchiveAssetType] = [.photo, .video].filter { (type: SceneArchiveAssetType) -> Bool in
+        let types: [SceneArchiveAssetType] = [.photo, .video, .logo].filter { (type: SceneArchiveAssetType) -> Bool in
             contents.media.contains { (item: SceneArchiveMedia) -> Bool in item.type == type }
         }
         steps += types.map { (type: SceneArchiveAssetType) -> SceneArchiveImportStep in .adopted(type) }
-        steps += types.map { (type: SceneArchiveAssetType) -> SceneArchiveImportStep in .madeCurrent(type) }
+        let currentOrder: [SceneArchiveAssetType] = [.logo, .photo, .video].filter { (type: SceneArchiveAssetType) -> Bool in types.contains(type) }
+        steps += currentOrder.map { (type: SceneArchiveAssetType) -> SceneArchiveImportStep in .madeCurrent(type) }
         let document = contents.document.remappingStoreIDs(placeholders)
         let decodeOnly = contents.warnings.filter { (issue: SceneIssue) -> Bool in
             issue.code == .valueClamped || issue.code == .droppedField
@@ -314,8 +322,10 @@ struct SceneArchiveService: Sendable {
         let stagingPhotos = PhotoStore(directory: staging.appendingPathComponent("Photos", isDirectory: true), defaults: photos.defaults, limits: photos.limits)
         let stagingVideos = VideoStore(directory: staging.appendingPathComponent("Videos", isDirectory: true), defaults: videos.defaults, limits: videos.limits)
         let incoming = staging.appendingPathComponent("Incoming", isDirectory: true)
+        let stagingLogos = LogoStore(photos: stagingPhotos)   // MED-010
         var stagedPhoto: StoredPhoto?
         var stagedVideo: StoredVideo?
+        var stagedLogo: StoredPhoto?
         var storeIDs: [String: String] = [:]
         for item in contents.media {
             let file = incoming.appendingPathComponent("\(item.key).\(item.fileExtension)", isDirectory: false)
@@ -335,6 +345,15 @@ struct SceneArchiveService: Sendable {
                 } catch {
                     throw .media(path: item.path, message: error.message)
                 }
+            case .logo:   // MED-010: the logo's import path (PNG, logo limits)
+                do throws(ImageImportError) {
+                    let staged = try stagingLogos.stage(at: file)
+                    observer?(.staged(item.path))
+                    stagedLogo = staged
+                    storeIDs[item.key] = staged.id.uuidString
+                } catch {
+                    throw .media(path: item.path, message: LogoImport.message(for: error))
+                }
             case .video:
                 do throws(VideoImportError) {
                     let staged = try await stagingVideos.stage(at: file)
@@ -349,15 +368,17 @@ struct SceneArchiveService: Sendable {
 
         // Remap and check every reference against the staged copies before touching the stores.
         let document = contents.document.remappingStoreIDs(storeIDs)
-        let staged = StoredMediaAvailability(photos: Set([stagedPhoto?.id.uuidString].compactMap { $0 }),
+        let staged = StoredMediaAvailability(photos: Set([stagedPhoto?.id.uuidString, stagedLogo?.id.uuidString].compactMap { $0 }),
                                              videos: Set([stagedVideo?.id.uuidString].compactMap { $0 }))
         let unresolved = document.validate(registry: registry, assets: staged)
             .filter { (issue: SceneIssue) -> Bool in issue.isError || issue.code == .missingAsset }
         guard unresolved.isEmpty else { throw .unresolved(unresolved) }
 
         // Commit: move the copies in (undo on failure), then switch the identifiers.
+        let logos = LogoStore(photos: photos)
         var adoptedPhoto: StoredPhoto?
         var adoptedVideo: StoredVideo?
+        var adoptedLogo: StoredPhoto?
         do {
             if let stagedPhoto {
                 adoptedPhoto = try photos.adopt(stagedPhoto)
@@ -367,9 +388,14 @@ struct SceneArchiveService: Sendable {
                 adoptedVideo = try videos.adopt(stagedVideo)
                 observer?(.adopted(.video))
             }
+            if let stagedLogo {
+                adoptedLogo = try logos.adopt(stagedLogo)
+                observer?(.adopted(.logo))
+            }
         } catch {
             if let adoptedPhoto { photos.discard(adoptedPhoto) }
             if let adoptedVideo { videos.discard(adoptedVideo) }
+            if let adoptedLogo { logos.discard(adoptedLogo) }
             throw .saveFailed
         }
         // FILE-008-R10: media equal to the stored ones (the same payload) are not "replaced".
@@ -381,6 +407,11 @@ struct SceneArchiveService: Sendable {
             guard let current = videos.current() else { return false }
             return !videos.isSameVideo(adopted.id, as: current.id)
         } ?? false
+        if let adoptedLogo {   // first, keeping the adopted photo (then the photo keeps the new logo)
+            logos.makeCurrent(adoptedLogo, alsoKeeping: Set([adoptedPhoto?.id].compactMap { $0 }))
+            logos.savePlacement(document.logo?.placement ?? .default)
+            observer?(.madeCurrent(.logo))
+        }
         if let adoptedPhoto {
             photos.makeCurrent(adoptedPhoto)
             observer?(.madeCurrent(.photo))
@@ -394,8 +425,8 @@ struct SceneArchiveService: Sendable {
         }
         let report = SceneRepairReport(document: document, decodeWarnings: decodeOnly, registry: registry, assets: availability())
         return SceneArchiveImportResult(document: document, photo: adoptedPhoto, video: adoptedVideo,
-                                        replacedPhoto: replacedPhoto, replacedVideo: replacedVideo, warnings: contents.warnings,
-                                        repairReport: report)
+                                        logo: adoptedLogo, replacedPhoto: replacedPhoto, replacedVideo: replacedVideo,
+                                        warnings: contents.warnings, repairReport: report)
     }
 
     private func newStagingFolder() -> URL {

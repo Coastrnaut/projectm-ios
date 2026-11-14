@@ -27,6 +27,7 @@ public enum SceneArchiveFormat {
         switch type {
         case .photo: ["png", "jpg"]
         case .video: ["mov"]
+        case .logo: ["png"]   // MED-010-R11: always PNG (alpha)
         }
     }
 
@@ -37,10 +38,12 @@ public enum SceneArchiveFormat {
     }
 }
 
-/// The two media types an archive carries (text and graphs stay embedded in the scene).
+/// The media types an archive carries (text and graphs stay embedded in the scene). MED-010 adds the
+/// logo: archives without one are unchanged; an app without MED-010 refuses an archive that has one.
 public enum SceneArchiveAssetType: String, Sendable, Hashable, CaseIterable, Codable {
     case photo
     case video
+    case logo
 }
 
 /// What a reader and writer accept (contract §3). `standard` mirrors the stores' own import caps.
@@ -62,12 +65,12 @@ public struct SceneArchiveLimits: Sendable, Equatable {
     public static let standard = SceneArchiveLimits(maxArchiveBytes: 600_000_000, maxManifestBytes: 65_536,
                                                     maxPhotoBytes: 40 * 1_024 * 1_024, maxVideoBytes: 500 * 1_024 * 1_024)
 
-    /// Scene, one photo, one video.
-    public static let maximumFiles = 3
+    /// Scene, one photo, one video, one logo (MED-010).
+    public static let maximumFiles = 4
 
     public func maxBytes(for type: SceneArchiveAssetType) -> Int {
         switch type {
-        case .photo: maxPhotoBytes
+        case .photo, .logo: maxPhotoBytes   // MED-010: the logo store's own 10 MB limit applies when staging
         case .video: maxVideoBytes
         }
     }

@@ -214,6 +214,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let photos: PhotoCoordinator
     /// The image slideshow (MED-006): pictures, order, timing and the schedule; drives the Photo visual.
     let slideshow: SlideshowCoordinator
+    /// The logo overlay (MED-010): the stored logo, its placement and the compositor visuals' logo layers.
+    let logo: LogoCoordinator
     /// The Photo visual (MED-001), created when Photo is chosen and released when another visual is.
     private(set) var photoVisual: PhotoVisualHost?
     /// The photo layer's state while the Photo visual exists (`empty` otherwise).
@@ -393,6 +395,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings = midiMappingCoordinator
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
+        logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
         videos = VideoCoordinator.makeDefault(defaults: defaults)
         texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
         // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
@@ -407,6 +410,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
+            if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
@@ -415,6 +419,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestPhotoFixture.seedIfRequested(photos, slideshow: slideshow)   // MED-001, MED-006 (pickers cannot be automated)
         UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
         UITestTextFixture.seedIfRequested(texts)     // MED-009: TextOverlayUITests
+        UITestLogoFixture.seedIfRequested(logo)      // MED-010: LogoOverlayUITests
         #endif
         let initialScreen: Screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         screen = initialScreen
@@ -486,6 +491,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
+        connectLogo()   // MED-010
         videos.onVideoChange = { [weak self] (stored: StoredVideo?) in
             guard let self, let host = videoVisual else { return }
             host.content = .none   // MED-003: the new video's region applies from its first picture
@@ -1018,6 +1024,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             cameraVisual = host
+            logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
             cameraNoticeDismissed = false   // UIX-015-R7: a new attempt
         } catch {
             markNativeVisualUnavailable(error)
@@ -1055,6 +1062,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             photoVisual = host
             applyLayerState(to: host.compositor)   // CMP-015
+            logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1107,6 +1115,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             videoVisual = host
             applyLayerState(to: host.compositor)   // CMP-015
+            logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1155,6 +1164,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             textVisual = host
             applyLayerState(to: host.compositor)   // CMP-015
+            logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1423,6 +1433,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
             if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
+            if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
         }
         if let visual { settings.visual = visual }
         resetTrailsHistory()   // FX-009-R5: a reopened scene starts without trails
@@ -1450,7 +1461,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
                     videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
                     slideshow: slideshow.sceneValue,   // MED-006
-                    layerComposites: layers.composites)   // CMP-015
+                    layerComposites: layers.composites,   // CMP-015
+                    logo: logo.sceneLogo)   // MED-010
     }
 
     /// ACC-003-R13: the colour-blind-safe palette setting changed; the native spectrum redraws with it.

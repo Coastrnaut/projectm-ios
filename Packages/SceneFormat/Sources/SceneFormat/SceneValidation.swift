@@ -147,7 +147,11 @@ extension SceneDocument {
     }
 
     private func validateAssets(_ availability: (any SceneAssetAvailability)?, into issues: inout [SceneIssue]) {
-        let used = Set(layers.compactMap { (l: SceneLayer) -> String? in l.content.assetKey })
+        // MED-010-R10: a logo asset is used by the app's overlay, never by a layer, so it is never "unused".
+        let logoKeys: [String] = assets.compactMap { (entry: (key: String, value: SceneAsset)) -> String? in
+            if case .logo = entry.value.kind { entry.key } else { nil }
+        }
+        let used = Set(layers.compactMap { (l: SceneLayer) -> String? in l.content.assetKey } + logoKeys)
         for key in assets.keys.sorted(by: SceneJSONWriter.utf8Precedes) {
             guard let asset = assets[key] else { continue }
             let path = ScenePath.key("$.assets", key)
@@ -156,15 +160,16 @@ extension SceneDocument {
                                          "The asset key \"\(key)\" must start with a lowercase ASCII letter and hold only ASCII letters and digits (at most \(SceneLimits.maximumAssetKeyBytes))."))
             }
             switch asset.kind {
-            case let .photo(id), let .video(id):
+            case let .photo(id), let .video(id), let .logo(id):
                 if !Self.isCanonicalUUID(id) {
                     issues.append(SceneIssue(.invalidStoreID, path: path + ".storeID",
                                              "Asset \"\(key)\" has the store ID \"\(id)\"; store IDs are uppercase UUIDs, never paths."))
                 } else if let availability {
-                    let present = if case .photo = asset.kind { availability.containsPhoto(storeID: id) } else { availability.containsVideo(storeID: id) }
+                    // MED-010: logos are references in the photo folder.
+                    let present = if case .video = asset.kind { availability.containsVideo(storeID: id) } else { availability.containsPhoto(storeID: id) }
                     if !present {
                         issues.append(SceneIssue(.missingAsset, path: path,
-                                                 "Asset \"\(key)\" (\(asset.kind.typeName) \(id)) is not on this device; its layer draws nothing until it is restored."))
+                                                 "Asset \"\(key)\" (\(asset.kind.typeName) \(id)) is not on this device; " + Self.missingConsequence(asset.kind)))
                     }
                 }
             case let .text(spec):
@@ -223,6 +228,14 @@ extension SceneDocument {
     /// MOD-013 per-edge restore (contract M3, M4): bindings, generator declarations, connections.
     private func validateModulation(_ registry: ParameterRegistry, into issues: inout [SceneIssue]) {
         issues += restoreModulation(registry: registry).issues
+    }
+}
+
+extension SceneDocument {
+    /// What a missing picture means for the scene (MED-010: the logo is simply not shown).
+    static func missingConsequence(_ kind: SceneAssetKind) -> String {
+        if case .logo = kind { return "the logo is not shown until it is restored." }
+        return "its layer draws nothing until it is restored."
     }
 }
 

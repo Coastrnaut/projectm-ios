@@ -57,7 +57,9 @@ final class SceneArchiveHostileTests: XCTestCase {
     }
 
     func testTooManyEntriesAndOversizedEntriesAreRefused() throws {
-        try assertRefused(try standard(plus: [("e1", Data()), ("e2", Data())], unlisted: ["e1", "e2"]), .archive(.zip(.tooManyEntries(4))))
+        // MED-010: up to 4 files (scene, photo, video, logo) plus the manifest.
+        try assertRefused(try standard(plus: [("e1", Data()), ("e2", Data()), ("e3", Data())], unlisted: ["e1", "e2", "e3"]),
+                          .archive(.zip(.tooManyEntries(5))))
         let big = Data(repeating: 0x41, count: 1_048_577)
         let oversized = try ArchiveFixtures.handBuilt(files: [("scene.json", ArchiveFixtures.sceneBytes(ArchiveFixtures.plainScene())), ("big.bin", big)],
                                                       records: [], unlisted: ["big.bin"])

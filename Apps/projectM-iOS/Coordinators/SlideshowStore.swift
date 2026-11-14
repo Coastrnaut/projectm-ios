@@ -49,7 +49,8 @@ struct SlideshowStore: @unchecked Sendable {
     func release(_ ids: [UUID]) {
         guard !ids.isEmpty else { return }
         let current: UUID? = photos.current()?.id
-        let releasable: Set<UUID> = Set(ids.filter { (id: UUID) -> Bool in id != current })
+        let logo: Set<UUID> = LogoStore.protectedIDs(defaults)   // MED-010-R2
+        let releasable: Set<UUID> = Set(ids.filter { (id: UUID) -> Bool in id != current && !logo.contains(id) })
         try? photos.folder.release(releasable)
     }
 

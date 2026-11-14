@@ -18,6 +18,7 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         case .collections: return key == "collections" || key == "setting/" + LibrarySettingsPolicy.favoritesKey
         case .media: return key.hasPrefix("photo/") || key == "setting/" + LibrarySettingsPolicy.photoKey
             || key == "setting/" + LibrarySettingsPolicy.slideshowKey   // MED-006
+            || key == "setting/" + LibrarySettingsPolicy.logoKey || key == "setting/" + LibrarySettingsPolicy.logoPlacementKey   // MED-010
         case .importedAudio: return false
         case .settings: return key.hasPrefix("setting/") && LibraryErasePolicy.settingKeys(.settings).contains(String(key.dropFirst(8)))
         }
@@ -113,6 +114,12 @@ final class LibraryEraseAcceptanceTests: XCTestCase {
         XCTAssertTrue(LibrarySettingsPolicy.isIncluded(LibrarySettingsPolicy.slideshowKey))
         XCTAssertTrue(LibraryErasePolicy.settingKeys(.media).contains(LibrarySettingsPolicy.slideshowKey))
         XCTAssertFalse(LibraryErasePolicy.settingKeys(.settings).contains(LibrarySettingsPolicy.slideshowKey))
+        // MED-010-R9 (S6): the logo and its placement go with the photos: backed up, erased with "Photos and videos".
+        for key in [LibrarySettingsPolicy.logoKey, LibrarySettingsPolicy.logoPlacementKey] {
+            XCTAssertTrue(LibrarySettingsPolicy.isIncluded(key), key)
+            XCTAssertTrue(LibraryErasePolicy.settingKeys(.media).contains(key), key)
+            XCTAssertFalse(LibraryErasePolicy.settingKeys(.settings).contains(key), key)
+        }
         XCTAssertFalse(LibraryErasePolicy.allFolders.contains(LibraryFolders.restoreFolderName))
         XCTAssertEqual(LibraryErasePolicy.list([.media, .scenes]), "Scenes and show and Photos and videos")
         XCTAssertEqual(LibraryEraseText.erased([.media, .scenes]), "Erased: scenes and show, photos and videos.")

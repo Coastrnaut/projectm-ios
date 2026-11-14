@@ -414,6 +414,9 @@ public enum SceneAssetKind: Sendable, Hashable {
     case photo(storeID: String)
     /// The app's stored video by its identifier (MED-002; uppercase UUID).
     case video(storeID: String)
+    /// MED-010: the logo overlay's stored picture (a reference in the photo folder; uppercase UUID).
+    /// Its placement is the optional `placement` object (`SceneAsset.logoPlacement`).
+    case logo(storeID: String)
     /// MED-009 text overlay settings (version-1 JSON), embedded.
     case text(spec: SceneJSON)
     /// An SHD-002 generator graph document, embedded (SHD-011 rules on load).
@@ -424,6 +427,7 @@ public enum SceneAssetKind: Sendable, Hashable {
         switch self {
         case .photo: "photo"
         case .video: "video"
+        case .logo: "logo"
         case .text: "text"
         case .generatorGraph: "generatorGraph"
         case let .unknown(type): type

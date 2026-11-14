@@ -77,7 +77,8 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(keys, Set(AppSettings.allKeys).subtracting([AppSettings.photoIDKey, AppSettings.videoIDKey,
                                                                    AppSettings.videoLoopKey, AppSettings.videoSpeedKey,
                                                                    AppSettings.textOverlayKey,
-                                                                   AppSettings.slideshowKey]), "FR-065")   // MED-006: SlideshowStore
+                                                                   AppSettings.slideshowKey,   // MED-006: SlideshowStore
+                                                                   AppSettings.logoIDKey, AppSettings.logoPlacementKey]), "FR-065")   // MED-010: LogoStore
     }
 
     /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.

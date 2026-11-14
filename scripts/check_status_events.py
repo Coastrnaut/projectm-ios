@@ -47,6 +47,8 @@ CHECKED = [
     "Coordinators/LibraryEraseCoordinator.swift",   # FILE-011-R3: the erase announces on the library lane
     "Views/LibraryEraseSection.swift",
     "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer
+    "Coordinators/LogoCoordinator.swift",   # MED-010-R12: logo changes announce through the announcer
+    "Views/LogoSection.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"

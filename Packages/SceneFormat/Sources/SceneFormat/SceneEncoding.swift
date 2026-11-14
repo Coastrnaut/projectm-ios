@@ -153,7 +153,7 @@ enum SceneEncoder {
         var o = a.extra
         o["type"] = .string(a.kind.typeName)
         switch a.kind {
-        case let .photo(id), let .video(id): o["storeID"] = .string(id)
+        case let .photo(id), let .video(id), let .logo(id): o["storeID"] = .string(id)
         case let .text(spec): o["spec"] = spec
         case let .generatorGraph(document): o["document"] = document
         case .unknown: break

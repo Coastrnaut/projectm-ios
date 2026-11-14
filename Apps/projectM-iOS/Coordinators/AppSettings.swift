@@ -97,13 +97,16 @@ final class AppSettings {
     static let videoSpeedKey = VideoStore.speedKey
     /// MED-009: the Text visual's message and style (written by TextOverlayStore).
     static let textOverlayKey = TextOverlayStore.key
+    /// MED-010: the logo's identifier and placement (written by LogoStore).
+    static let logoIDKey = LogoStore.idKey
+    static let logoPlacementKey = LogoStore.placementKey
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, videoIDKey, videoLoopKey, videoSpeedKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, midiEnabledKey,
-                          colorBlindSafePaletteKey] + SensorySafetySetting.allKeys   // ACC-012-R8
+                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2

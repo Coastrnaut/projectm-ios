@@ -171,6 +171,7 @@ final class SceneLegacyFixtureTests: XCTestCase {
             switch asset.kind {
             case .photo: c.formUnion(["asset:photo", "media:photo"])
             case .video: c.formUnion(["asset:video", "media:video"])
+            case .logo: c.formUnion(["asset:logo", "media:photo"])   // MED-010
             case .text: c.insert("asset:text")
             case .generatorGraph: c.insert("asset:generatorGraph")
             case .unknown: c.insert("asset:unknown")

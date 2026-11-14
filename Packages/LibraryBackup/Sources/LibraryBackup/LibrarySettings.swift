@@ -70,6 +70,9 @@ public enum LibrarySettingsPolicy {
     public static let photoKey = "settings.photo.id"
     /// MED-006-R10: the image slideshow (order and timing); its pictures are photos of the folder.
     public static let slideshowKey = "settings.photo.slideshow"
+    /// MED-010-R9: the logo overlay's picture (a reference in the photo folder) and its placement.
+    public static let logoKey = "settings.logo.id"
+    public static let logoPlacementKey = "settings.logo.placement"
 
     public static let includedKeys: [String] = [
         favoritesKey, lastPresetKey,
@@ -93,6 +96,7 @@ public enum LibrarySettingsPolicy {
         "settings.noiseGate.enabled", "settings.noiseGate.thresholdDecibels",
         "settings.latencyOffset.microphone", "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",
         photoKey, slideshowKey, "settings.text.overlay",
+        logoKey, logoPlacementKey,   // MED-010
     ]
 
     /// Read by the app but deliberately left out (documented; a test checks none is included).

@@ -44,6 +44,8 @@ struct SceneInputs: Equatable, Sendable {
     /// composite (callers that do not track composites); non-nil is authoritative, a missing kind
     /// writing the default composite. Default composites are never stored.
     var layerComposites: [String: SceneComposite]? = nil
+    /// MED-010-R10: the logo overlay and its placement (nil: no logo). Recorded for every visual.
+    var logo: SceneLogo? = nil
 }
 
 /// What a restore hands back to the app (contract A5).
@@ -61,6 +63,8 @@ struct SceneRestoredValues: Sendable, Equatable {
     var slideshow: SceneSlideshowRestore? = nil
     /// CMP-015: the document's drawn-layer composites (first layer of each kind; defaults left out).
     var layerComposites: [String: SceneComposite] = [:]
+    /// MED-010-R10: the scene's logo (nil: none recorded; the current logo stays).
+    var logo: SceneLogo? = nil
 }
 
 /// The restored document's content the app does not own (research SCN-002-D6).
@@ -198,6 +202,9 @@ enum SceneAutosaveCapture {
             if case .unknown = asset.kind { kept[key] = asset }
         }
         assets.merge(kept) { (mine: SceneAsset, _: SceneAsset) -> SceneAsset in mine }
+        if let logo = inputs.logo {   // MED-010-R10: the overlay's asset (a carried asset under the key yields)
+            assets[SceneLogo.assetKey] = .logo(storeID: logo.storeID, placement: logo.placement)
+        }
 
         var parameters = carry.parameters
         for (id, value) in parameterValues(inputs) { parameters[id] = value }
@@ -253,7 +260,8 @@ enum SceneAutosaveCapture {
         return SceneRestoredValues(parameters: parameters, text: text, bindings: live.bindings,
                                    videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
                                    slideshow: SceneSlideshowBridge.restore(in: document),   // MED-006
-                                   layerComposites: layerComposites(in: document))
+                                   layerComposites: layerComposites(in: document),
+                                   logo: document.logo)   // MED-010
     }
 
     /// CMP-015: the composite of the first layer of each kind the app draws in a compositor, defaults

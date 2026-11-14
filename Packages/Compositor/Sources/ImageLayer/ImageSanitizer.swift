@@ -8,6 +8,14 @@
 // orientation tag. Only the sRGB color profile of the new pixels is written.
 import Foundation
 
+/// Which encoding the sanitizer writes (MED-010-R3: logos are always PNG).
+public enum ImageOutputFormat: Sendable, Equatable {
+    /// PNG when the picture has transparency, JPEG 0.9 otherwise (MED-001).
+    case automatic
+    /// Always PNG (lossless; alpha kept, opaque pictures too).
+    case png
+}
+
 /// A stored copy ready to be written: the encoded bytes and what they hold.
 public struct SanitizedImage: Sendable, Equatable {
     public let data: Data
@@ -50,18 +58,20 @@ public enum ImageSanitizer {
 
     /// Decodes `data` through `decoder` and re-encodes the pixels alone.
     public static func sanitize(_ data: Data, limits: ImageImportLimits,
-                                decoder: any ImageDecoding = ImageIODecoder()) throws(ImageImportError) -> SanitizedImage {
+                                decoder: any ImageDecoding = ImageIODecoder(),
+                                format: ImageOutputFormat = .automatic) throws(ImageImportError) -> SanitizedImage {
         let decoded = try decoder.decode(data, limits: limits)
         guard let image = makeImage(decoded) else { throw .damaged }
-        let type: UTType = decoded.hasAlpha ? .png : .jpeg
+        let png: Bool = decoded.hasAlpha || format == .png
+        let type: UTType = png ? .png : .jpeg
         let output = NSMutableData()
         guard let destination = CGImageDestinationCreateWithData(output as CFMutableData, type.identifier as CFString, 1, nil) else {
             throw .saveFailed
         }
-        let properties: [CFString: Any] = decoded.hasAlpha ? [:] : [kCGImageDestinationLossyCompressionQuality: jpegQuality]
+        let properties: [CFString: Any] = png ? [:] : [kCGImageDestinationLossyCompressionQuality: jpegQuality]
         CGImageDestinationAddImage(destination, image, properties as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { throw .saveFailed }
-        return SanitizedImage(data: output as Data, fileExtension: decoded.hasAlpha ? "png" : "jpg",
+        return SanitizedImage(data: output as Data, fileExtension: png ? "png" : "jpg",
                               width: decoded.width, height: decoded.height, hasAlpha: decoded.hasAlpha)
     }
 
