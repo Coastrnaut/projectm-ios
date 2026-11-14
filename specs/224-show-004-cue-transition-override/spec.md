@@ -49,6 +49,10 @@ local-first option.
 - Q: Does the override need its own announcement? → A: No. Editing is silent like SCN-007 edits; a step announces what it always does (cue lane, ACC-004).
 - Q: Does a backup carry it? → A: Yes, automatically: FILE-005 re-encodes `show.json` through the show's own decode and encode, which keep the override.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass over spec, plan and tasks: R1 → T02; R2 → T03, T06; R3 → T04, T05; R4 → T05; R5 → T07-T09; R6 → T04, T05; R7 → T04, T05; R8 → T11; S1 → T05, S2-S3 → T06, S4 → T09. No constitution conflict. One fix applied: T05 also checks Reduce flashing on a Cut override (the edge case names it; the safety resolution is the reason an override cannot bypass ACC-012).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - One cue enters differently (Priority: P1) — MVP

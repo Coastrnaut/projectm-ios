@@ -20,7 +20,7 @@ Budgets (owner rule 7): unit tests ~1-2 s, package suite < 1 min, UI test < 30 s
 **Independent test**: two cues of one scene, 2 s crossfade default, Cut override on the first; a spy sees cut then crossfade; scene file and defaults unchanged.
 
 - [ ] SHOW-004-T04 [US1] Pass `cue.effectiveTransition` (direct apply and the SCN-012 repaired-open closure) and add `setTransitionOverride` (refused while locked via `refusedByLock`, saves, applies nothing) plus the Duplicate Scene carry-over in `Apps/projectM-iOS/Coordinators/ShowCoordinator.swift`
-- [ ] SHOW-004-T05 [US1] Acceptance test `Apps/projectM-iOS/Tests/CueTransitionOverrideAcceptanceTests.swift`: cut into A, 2 s crossfade into B, scene file bytes and both cues' `transition` equal before/after, "Use Scene Default" restores the crossfade, Reduce Motion still resolves the override to a cut, lock refuses the edit, Duplicate copies the override (contract O4-O6)
+- [ ] SHOW-004-T05 [US1] Acceptance test `Apps/projectM-iOS/Tests/CueTransitionOverrideAcceptanceTests.swift`: cut into A, 2 s crossfade into B, scene file bytes and both cues' `transition` equal before/after, "Use Scene Default" restores the crossfade, Reduce Motion still resolves the override to a cut and Reduce flashing turns a Cut override into the 0.5 s crossfade, lock refuses the edit, Duplicate copies the override (contract O4-O6)
 
 ## Phase 4: User Story 2 — the override survives the file (P1)
 
