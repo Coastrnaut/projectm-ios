@@ -25,6 +25,16 @@
 // atomic generation with release ordering; `discardBuffered()` (a seek inside a session) does not.
 // The tap's consumer (the analysis event bus) reads it with acquire ordering before and after each
 // chunk it reads: a change during the read means the chunk may hold audio of either session.
+//
+// Renderer boundary (AUD-012, contracts/source-handoff.md C1): `write` is the one place every
+// normalized sample passes before projectM and the analysis tap. A write that is clean (finite,
+// within the ring's bound, ±2 on the capture path) while the handoff envelope is at unity goes straight to the rings, bit-identical and
+// without a copy. Otherwise it goes through a preallocated 1,024-frame scratch: `PCMSanitizer`
+// replaces bad samples (counted in `sanitizedSampleCount`), then `HandoffEnvelope` applies the
+// switch ramp. The envelope and the scratch are producer-side state (the analysis queue).
+// `resetForHandoff` (a source switch) empties the tap and advances the generation like `reset`,
+// but keeps projectM's ring, whose content then ends at exact 0, and writes 1,024 frames of
+// silence: the one exception to R-06's underrun policy ("no silence is injected").
 import Synchronization
 
 /// Reports capture-session restarts to an analysis consumer (ANL-016-R9).
@@ -67,9 +77,25 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
     /// Increased by `reset()` after the drains (release); read by the tap's consumer (acquire).
     private let sessionGeneration: SessionGeneration
 
+    /// AUD-012: samples the boundary (and the analyzer's input stage) replaced since creation.
+    private let sanitized = Atomic<Int>(0)
+    /// AUD-012: producer-side scratch and switch envelope (the analysis queue only).
+    public static let boundaryChunkFrames = 1_024
+    private let boundaryScratch: UnsafeMutablePointer<Float>
+    private var envelope = HandoffEnvelope()
+
+    /// AUD-012: the largest magnitude written; `AudioAnalyzer` (the capture path to projectM) uses
+    /// `PCMSanitizer.bound` (±2). The default, infinity, replaces only NaN and ±Inf, so harness
+    /// rings that carry test patterns (sample indices) keep them.
+    public let sampleBound: Float
+
     /// `analysisTapCapacityFrames` > 0 adds an analysis tap of that many stereo frames; 0 (the
-    /// default) or less means no tap.
-    public init(analysisTapCapacityFrames: Int = 0) {
+    /// default) or less means no tap. `sampleBound` (AUD-012): see the property.
+    public init(analysisTapCapacityFrames: Int = 0, sampleBound: Float = .infinity) {
+        self.sampleBound = sampleBound
+        let scratchCount = NormalizedPCMRing.boundaryChunkFrames * NormalizedPCMRing.channelCount
+        boundaryScratch = UnsafeMutablePointer<Float>.allocate(capacity: scratchCount)
+        boundaryScratch.initialize(repeating: 0, count: scratchCount)
         let generation = SessionGeneration()
         sessionGeneration = generation
         if analysisTapCapacityFrames > 0 {
@@ -82,11 +108,103 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
         }
     }
 
-    /// Producer side (the work queue). `samples` holds `frames` interleaved stereo frames.
+    deinit {
+        boundaryScratch.deinitialize(count: NormalizedPCMRing.boundaryChunkFrames * NormalizedPCMRing.channelCount)
+        boundaryScratch.deallocate()
+    }
+
+    /// Producer side (the work queue). `samples` holds `frames` interleaved stereo frames. Every
+    /// sample reaching the rings is finite and within ±`sampleBound` (AUD-012 C1).
     public func write(_ samples: UnsafePointer<Float>, frames: Int) {
         guard frames > 0 else { return }
-        ring.write(samples, count: frames * NormalizedPCMRing.channelCount)
-        tapRing?.write(samples, count: frames * NormalizedPCMRing.channelCount)
+        let count = frames * NormalizedPCMRing.channelCount
+        if envelope.isUnity && PCMSanitizer.isClean(samples, count: count, bound: sampleBound) {
+            writeRings(samples, count: count)
+            envelope.noteLast(left: samples[count - 2], right: samples[count - 1])
+            return
+        }
+        var offset = 0
+        while offset < frames {
+            let n = min(frames - offset, NormalizedPCMRing.boundaryChunkFrames)
+            let chunkCount = n * NormalizedPCMRing.channelCount
+            boundaryScratch.update(from: samples + offset * NormalizedPCMRing.channelCount, count: chunkCount)
+            let replaced = PCMSanitizer.sanitize(boundaryScratch, count: chunkCount, bound: sampleBound)
+            if replaced > 0 { _ = sanitized.add(replaced, ordering: .relaxed) }
+            envelope.apply(boundaryScratch, frames: n)
+            writeRings(boundaryScratch, count: chunkCount)
+            offset += n
+        }
+    }
+
+    @inline(__always)
+    private func writeRings(_ samples: UnsafePointer<Float>, count: Int) {
+        ring.write(samples, count: count)
+        tapRing?.write(samples, count: count)
+    }
+
+    // MARK: - AUD-012 handoff (producer side: the analysis queue)
+
+    /// Samples replaced by the boundary or the analyzer's input stage since creation.
+    public var sanitizedSampleCount: Int { sanitized.load(ordering: .relaxed) }
+
+    /// Counts replacements made before the ring (the analyzer's input stage).
+    public func recordSanitized(_ count: Int) {
+        guard count > 0 else { return }
+        _ = sanitized.add(count, ordering: .relaxed)
+    }
+
+    /// The switch envelope's phase.
+    public var handoffPhase: HandoffEnvelope.Phase { envelope.phase }
+
+    /// The switch envelope (tests and diagnostics).
+    public var handoffEnvelope: HandoffEnvelope { envelope }
+
+    /// Starts (or continues) the fade to silence; the old source keeps delivering.
+    public func beginFadeOut() { envelope.beginFadeOut() }
+
+    /// Completes a fade-out that had no more audio: a ramp from the last written frame to exact 0
+    /// over min(remaining, 1,024) frames. Then silent. Returns the frames written.
+    @discardableResult
+    public func completeFadeOut() -> Int {
+        let total = envelope.forcedFrames
+        if total > 0 {
+            let left = envelope.lastLeft
+            let right = envelope.lastRight
+            var index = 0
+            while index < total {
+                let n = min(total - index, NormalizedPCMRing.boundaryChunkFrames)
+                HandoffEnvelope.forcedRamp(into: boundaryScratch, from: index, frames: n, total: total, left: left, right: right)
+                writeRings(boundaryScratch, count: n * NormalizedPCMRing.channelCount)
+                index += n
+            }
+        }
+        if envelope.phase != .unity { envelope.markSilent() }
+        return total
+    }
+
+    /// Starts the fade-in of the new source (after `resetForHandoff`).
+    public func beginFadeIn() { envelope.beginFadeIn() }
+
+    /// A source switch's new session (C1.6): empties the tap and restarts the counters, keeps
+    /// projectM's ring, advances the generation after the drain, then writes `silenceFrames` zero
+    /// frames to both rings. The envelope is left silent; `beginFadeIn()` ramps from 0.
+    public func resetForHandoff(silenceFrames: Int = HandoffEnvelope.silenceFrames) {
+        overflowBaseline.store(ring.droppedSamples, ordering: .relaxed)
+        if let tapRing {
+            tapRing.drain()
+            tapOverflowBaseline.store(tapRing.droppedSamples, ordering: .relaxed)
+        }
+        freshnessDropped.store(0, ordering: .relaxed)
+        sessionGeneration.advance()   // after the drain (ANL-016-R9, AUD-012-R8)
+        envelope.markSilent()
+        let chunk = NormalizedPCMRing.boundaryChunkFrames
+        boundaryScratch.update(repeating: 0, count: chunk * NormalizedPCMRing.channelCount)
+        var written = 0
+        while written < silenceFrames {
+            let n = min(silenceFrames - written, chunk)
+            writeRings(boundaryScratch, count: n * NormalizedPCMRing.channelCount)
+            written += n
+        }
     }
 
     /// Reads the analysis tap (no freshness rule); nil when the ring has no tap. One consumer only:
@@ -154,6 +272,7 @@ public final class NormalizedPCMRing: NormalizedPCMReader, @unchecked Sendable {
         }
         freshnessDropped.store(0, ordering: .relaxed)
         lastBacklog.store(0, ordering: .relaxed)
+        envelope.reset()              // AUD-012: a session that is not a handoff starts at unity
         sessionGeneration.advance()   // after the drains (ANL-016-R9)
     }
 

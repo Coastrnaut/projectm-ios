@@ -2,7 +2,9 @@
 
 ## C1. Renderer boundary (`NormalizedPCMRing.write`, AudioCore)
 
-1. Every sample written to projectM's ring and the analysis tap is finite and in [−2, 2].
+1. Every sample written to projectM's ring and the analysis tap is finite and in [−2, 2]: the
+   capture path's ring (`AudioAnalyzer.normalizedOutput`) is made with `sampleBound` 2. A ring made
+   without a bound (harnesses, RendererLab) replaces only NaN/±Inf.
 2. A write whose samples are all finite and in range, with the envelope at unity, writes the
    caller's samples unchanged (bit-identical) and makes no copy.
 3. Otherwise the write is processed in chunks of ≤ 1,024 frames through a preallocated scratch:

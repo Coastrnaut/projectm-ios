@@ -17,6 +17,14 @@
 // Discontinuities (AUD-006): `discardBufferedAudio()` runs on the queue, so it is ordered against
 // every drain pass: audio a pass had already read is in the normalized ring before that ring is
 // emptied. The analyzer registers it as its sink's discard handler.
+//
+// Source switch (AUD-012, contracts/source-handoff.md): `beginHandoffFadeOut()` makes the normalized
+// ring fade the old source's audio to silence as drain passes write it; `completeHandoffFadeOut()`
+// finishes it from the last sample when the source did not deliver enough; `beginAttempt(handoff:
+// true)` starts the new session with `NormalizedPCMRing.resetForHandoff` and arms the fade-in, and
+// its first drain pass with audio publishes at once so the switching label clears without waiting
+// for the 250 ms cadence. Every drain pass first replaces non-finite samples (counted) so they never
+// reach the level meter, the classifier or the Normalizer's converter (AUD-012-R9).
 import Dispatch
 
 public struct AnalyzerUpdate: Sendable, Equatable {
@@ -66,6 +74,8 @@ public final class AudioAnalyzer: @unchecked Sendable {
     private let normalizer: Normalizer
     private var conversionFailure: StopReason?
     private var signposts: (any AudioPipelineSignposts)?
+    /// AUD-012: the current attempt is a source switch whose first audio has not been published yet.
+    private var handoffAwaitingFirstAudio = false
 
     /// Maximum transitions recorded per session (export schema `maxItems`).
     public static let maxTransitions = 1000
@@ -76,7 +86,8 @@ public final class AudioAnalyzer: @unchecked Sendable {
                 clock: @escaping @Sendable () -> Double = { MonotonicClock.nowSeconds() },
                 analysisTapCapacityFrames: Int = 0) {
         self.sink = sink
-        normalizedOutput = NormalizedPCMRing(analysisTapCapacityFrames: analysisTapCapacityFrames)
+        normalizedOutput = NormalizedPCMRing(analysisTapCapacityFrames: analysisTapCapacityFrames,
+                                             sampleBound: PCMSanitizer.bound)   // AUD-012-R9
         self.clock = clock
         sessionStart = clock()
         classifier = AudioStateClassifier(thresholds: thresholds)
@@ -128,14 +139,39 @@ public final class AudioAnalyzer: @unchecked Sendable {
     /// emptied, and levels are silent. Stop the timer and reset the sink first. Every update
     /// published before this one belongs to the previous session; callers drop updates whose
     /// `sequence` is not greater than the returned update's.
+    ///
+    /// `handoff` (AUD-012): the attempt replaces a source in a running visualization. projectM's ring
+    /// keeps its faded tail, gets 1,024 frames of silence, and the new source fades in.
     @discardableResult
-    public func beginAttempt() -> AnalyzerUpdate {
+    public func beginAttempt(handoff: Bool = false) -> AnalyzerUpdate {
         queue.sync {
             let now = clock()
             classifier = AudioStateClassifier(thresholds: classifier.thresholds)
-            resetSession(at: now)
+            resetSession(at: now, handoff: handoff)
             attemptPending = true
             return makeUpdate(at: now)
+        }
+    }
+
+    // MARK: - Source switch (AUD-012)
+
+    /// Starts fading the current source's audio to silence (it keeps delivering meanwhile).
+    public func beginHandoffFadeOut() {
+        queue.sync { normalizedOutput.beginFadeOut() }
+    }
+
+    /// True once the fade-out reached silence.
+    public var handoffFadeOutDone: Bool {
+        queue.sync { normalizedOutput.handoffPhase == .silent }
+    }
+
+    /// Ends the fade-out: drains what the sink holds through the ramp, then completes the ramp from
+    /// the last sample if it has not reached silence. Returns the synthesized frames.
+    @discardableResult
+    public func completeHandoffFadeOut() -> Int {
+        queue.sync {
+            if normalizedOutput.handoffPhase == .fadingOut { drainAndClassify(force: false) }
+            return normalizedOutput.completeFadeOut()
         }
     }
 
@@ -226,6 +262,7 @@ public final class AudioAnalyzer: @unchecked Sendable {
             while true {
                 let n = sink.ring.read(into: scratch, maxCount: scratchCount)
                 if n == 0 { break }
+                normalizedOutput.recordSanitized(PCMSanitizer.replaceNonFinite(scratch, count: n))   // AUD-012-R9
                 let levels = LevelMeter.measure(scratch, count: n)
                 peak = max(peak, levels.peakDBFS)
                 rms = max(rms, levels.rmsDBFS)
@@ -253,8 +290,11 @@ public final class AudioAnalyzer: @unchecked Sendable {
         }
         recordIfChanged(from: before, at: now)
         let update = makeUpdate(at: now)
-        // At most 4 publishes per second (R-06); a state change is visible within 250 ms.
-        if force || now - lastPublish >= AudioAnalyzer.publishInterval {
+        // At most 4 publishes per second (R-06); a state change is visible within 250 ms. A switch's
+        // first audio is published at once (AUD-012-D7).
+        let firstHandoffAudio = handoffAwaitingFirstAudio && total > 0
+        if firstHandoffAudio { handoffAwaitingFirstAudio = false }
+        if force || firstHandoffAudio || now - lastPublish >= AudioAnalyzer.publishInterval {
             lastPublish = now
             reportLatencies()
             let toSend = update
@@ -276,14 +316,20 @@ public final class AudioAnalyzer: @unchecked Sendable {
         }
     }
 
-    private func resetSession(at now: Double) {
+    private func resetSession(at now: Double, handoff: Bool = false) {
         sessionStart = now
         log.removeAll(keepingCapacity: true)
         pending.removeAll(keepingCapacity: true)
         lastLevels = .silent
         lastPublish = -.infinity
         normalizer.reset()
-        normalizedOutput.reset()
+        if handoff {
+            normalizedOutput.resetForHandoff()   // AUD-012 C1.6
+            normalizedOutput.beginFadeIn()
+        } else {
+            normalizedOutput.reset()
+        }
+        handoffAwaitingFirstAudio = handoff
         conversionFailure = nil
     }
 
