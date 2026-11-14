@@ -24,14 +24,14 @@ Format: `- [ ] VIS-006-Txx [P?] [Story] description`. `{device}` = needs a physi
 
 - [ ] VIS-006-T03 [P] [US2] Write `Packages/VisualGenerators/Tests/VisualGeneratorsTests/BeatRingFieldTests.swift`: four beats at 0, 0.4, 0.8, 1.2 s sampled at 1.3 s → exactly 4 rings whose radius and alpha match R3 at their own ages within 1e-9; at 2.8 s → 0 rings; cap 16 drops the oldest; rate cap ≤ 3 per 1 s window with Reduce flashing (beats every 50 ms for 2 s), ≤ 6 without; out-of-order emissions ignored; determinism (replay identical); `reset()` clears (VIS-006-S1 to S3, R3 to R6).
 - [ ] VIS-006-T04 [US2] Implement `BeatRingField.swift` (contract C1). Evidence: T03 passes on the host and in the Linux shape.
-- [ ] VIS-006-T05 [US2] Implement `BeatRingLayout.swift` (contract C1) and write `BeatRingLayoutTests.swift`: 64 segments per live ring, segment midpoints at the ring's radius, colors by sequence with alpha, zero and tiny sizes, geometry identical on replay, storage addresses stable over frames (R7, R14).
+- [ ] VIS-006-T05 [US2] Implement `BeatRingLayout.swift` (contract C1) and write `BeatRingLayoutTests.swift`: 64 segments per live ring, segment midpoints at the ring's radius, colors by sequence with alpha, zero and tiny sizes, geometry identical on replay, storage addresses stable over frames; a life change applies from the next frame (R7, R14, edge case).
 - [ ] VIS-006-T06 [US2] Implement `BeatRingGenerator.swift` (contract C2) and write `BeatRingRenderTests.swift` (Metal): four rings light pixels only near their radii; no rings → background only; `restartLoop()` clears the rings.
 - [ ] VIS-006-T07 [US2] Write `Packages/RenderGoldens/Tests/RenderGoldensTests/BeatRingGoldenTests.swift` (catalog `beat-rings-four`; integrity; determinism) and record the goldens in `Packages/RenderGoldens/GeneratorGoldens/BeatRings/{macos,ios-simulator}/`; README entry (VIS-006-R12, S5).
 
 ## Phase 4: User Story 3 — safe at any tempo (P1)
 
 - [ ] VIS-006-T08 [P] [US3] Write `BeatRingFlashTests.swift`: beats on every frame at 60 Hz (thick white rings, 1.5 s) through `FlashSafetyLimiter` and the generator's rate cap stay within the transition budget in all 17 areas with Reduce flashing on and off, with and without the strongest glow model, measured with `FlashAnalysis` (as `RadialWaveformFlashTests`) (VIS-006-R5, R8, S4).
-- [ ] VIS-006-T09 [P] [US3] Implement `Packages/VisualGenerators/Sources/VisualBandFeed/BeatRingTrigger.swift` (contract C3) with tests in `BeatRingLayoutTests.swift`: a confident beat emits, a weak one does not; a kick emits without a recent confident beat and not within 2 s of one; onsets and other transients never; a session marker forgets the beat (VIS-006-R2).
+- [ ] VIS-006-T09 [P] [US3] Implement `Packages/VisualGenerators/Sources/VisualBandFeed/BeatRingTrigger.swift` (contract C3) with tests in `BeatRingLayoutTests.swift`: a confident beat emits, a weak one does not; a kick emits without a recent confident beat and not within 2 s of one (so a beat and its kick give one ring, edge case); onsets and other transients never; a session marker forgets the beat (VIS-006-R2).
 
 ## Phase 5: User Story 1 — choose and see it in the app (P1)
 
