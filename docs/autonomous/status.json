@@ -11,8 +11,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 87,
-   "implementing": 3,
+   "audited": 84,
+   "implementing": 6,
    "integrated": 60,
    "unit_passed": 1
   },
@@ -27,8 +27,8 @@
   }
  },
  "by_state": {
-  "audited": 172,
-  "implementing": 5,
+  "audited": 169,
+  "implementing": 8,
   "integrated": 146,
   "skipped_existing": 1,
   "unit_passed": 2
@@ -1407,13 +1407,13 @@
   },
   "FX-020": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-020",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MED-001": {
    "attempts": 0,
@@ -1607,13 +1607,13 @@
   },
   "MIDI-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/midi-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-007": {
    "attempts": 0,
@@ -2267,13 +2267,13 @@
   },
   "PRE-002": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-002",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-003": {
    "attempts": 0,
@@ -4243,5 +4243,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T12:12:14Z"
+ "updated": "2026-11-14T12:12:59Z"
 }
