@@ -33,6 +33,27 @@ rule, record switch, CI guard, diff artifacts and integrity check as the scene g
 (`Tests/RenderGoldensTests/LissajousGoldenTests.swift`); record with `--filter LissajousGoldenTests` or
 `-only-testing:RenderGoldensTests/LissajousGoldenTests`.
 
+`GeneratorGoldens/RadialWaveform/<class>/` (VIS-005) holds the radial waveform's goldens the same way:
+`radial-sine-<w>x<h>-f1.png` (a 220 Hz sine wrapped around the ring) and `radial-silence-<w>x<h>-f1.png`
+(the base circle), through `RadialWaveformGenerator`
+(`Tests/RenderGoldensTests/RadialWaveformGoldenTests.swift`); record with `--filter RadialWaveformGoldenTests` or
+`-only-testing:RenderGoldensTests/RadialWaveformGoldenTests`.
+
+`GeneratorGoldens/BeatRings/<class>/` (VIS-006) holds the beat rings' golden the same way:
+`beat-rings-four-<w>x<h>-f0.png` (four rings at ages 1.3, 0.9, 0.5 and 0.1 s), through `BeatRingGenerator`
+(`Tests/RenderGoldensTests/BeatRingGoldenTests.swift`); record with `--filter BeatRingGoldenTests` or
+`-only-testing:RenderGoldensTests/BeatRingGoldenTests`.
+
+`GeneratorGoldens/Mandala/<class>/` (VIS-007) holds the mandala's golden the same way:
+`mandala-six-<w>x<h>-f0.png` (6-fold, Mirror off, Petal; bands low 0.6, mid 0.5, high 0.4; time 0), through
+`MandalaGenerator` (`Tests/RenderGoldensTests/MandalaGoldenTests.swift`); record with `--filter MandalaGoldenTests` or
+`-only-testing:RenderGoldensTests/MandalaGoldenTests`.
+
+`GeneratorGoldens/ParticleFountain/<class>/` (VIS-008) holds the particle fountain's golden the same way:
+`particle-fountain-<w>x<h>-f0.png` (seed 0x5EED0008, Medium gravity; onsets at 0 s and 0.25 s; 60 Hz frames, captured
+at 0.6 s), through `ParticleFountainGenerator` (`Tests/RenderGoldensTests/ParticleFountainGoldenTests.swift`); record
+with `--filter ParticleFountainGolden` or `-only-testing:RenderGoldensTests/ParticleFountainGoldenTests`.
+
 ## Run
 
 ```bash

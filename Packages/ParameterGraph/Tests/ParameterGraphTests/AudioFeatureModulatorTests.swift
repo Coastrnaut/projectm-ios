@@ -88,6 +88,57 @@ final class AudioFeatureModulatorTests: XCTestCase {
         }
     }
 
+    // ANL-013-T09: a Correlation binding follows (r + 1)/2 (ANL-013-R6).
+    func testCorrelationBindingFollowsTheMappedValue() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .correlation, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for (r, expected): (Float, Double) in [(1, 1), (0, 0.5), (-1, 0), (-0.5, 0.25)] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, correlation: r), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(expected))
+        }
+    }
+
+    // ANL-012-T08: a Flatness binding follows the frame's flatness (ANL-012-R7).
+    func testFlatnessBindingFollowsTheValue() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .flatness, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for value: Float in [0.5625, 0.25, 0.0625] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, rolloff: 1, flatness: value), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(value)))
+        }
+    }
+
+    // ANL-011-T09: a Rolloff binding follows the frame's normalized rolloff (ANL-011-R8).
+    func testRolloffBindingFollowsTheValue() throws {
+        let registry = try Self.registry()
+        let store = ParameterStore(registry: registry)
+        let modulator = AudioFeatureModulator(registry: registry)
+        try modulator.bind(AudioFeatureBinding(source: .rolloff, target: Self.opacity, outputStart: 0, outputEnd: 1))
+        var time: UInt64 = 1_000
+        let bands: [Float] = [0]
+        for value: Float in [0.75, 0.5, 0.125] {
+            bands.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+                modulator.advance(frame: AudioFeatureFrame(bands: buffer, centroid: 1, rolloff: value), timeNanoseconds: time)
+            }
+            time += Self.frame
+            XCTAssertEqual(modulator.value(for: Self.opacity, in: store), .continuous(Double(value)))
+        }
+    }
+
     // ANL-009-T07: a High transient binding follows the frame's high transient value (ANL-009-R8).
     func testHighTransientBindingFollowsTheValue() throws {
         let registry = try Self.registry()

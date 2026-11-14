@@ -16,7 +16,8 @@ final class RecordingQualityUITests: XCTestCase {
 
     func testPickerSelectsAProfile() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback"] + Self.noStore
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "quality"] + Self.noStore   // Settings opens at Recording quality (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         if !app.buttons["settings"].appears(within: 1) { app.otherElements["visualizerTapArea"].firstMatch.tap() }

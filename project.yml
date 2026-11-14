@@ -154,6 +154,7 @@ targets:
           - "Tests/**"
           - "Resources/Presets"
           - "Resources/Licenses"
+          - "Resources/SceneTemplates"   # SCN-011: bundled as a folder below
           - "Resources/PresetExclusions.txt"   # build input only (research R-30); PresetBlocklist.json is also bundled, for imports (PRE-012-R6)
           - "Store/*.storekit"   # StoreKit test configuration: scheme and tests only
       - path: Apps/projectM-iOS/Resources/Presets
@@ -161,6 +162,10 @@ targets:
         buildPhase: resources
       # Licenses screen texts (T103, scripts/collect_licenses.py).
       - path: Apps/projectM-iOS/Resources/Licenses
+        type: folder
+        buildPhase: resources
+      # SCN-011: read-only starter scenes and their licence manifest (the app's own MIT content).
+      - path: Apps/projectM-iOS/Resources/SceneTemplates
         type: folder
         buildPhase: resources
       # In-App Playback track and the SC-006 click timings (T044).
@@ -222,6 +227,14 @@ targets:
         # networking is OSC-001's local UDP listener (unencrypted, no internet), so this stays false.
         ITSAppUsesNonExemptEncryption: false
         UIApplicationSupportsIndirectInputEvents: true
+        # SCN-014 (research SCN-014-D7): the scene pack type (FILE-001's `.pmscene`), so the file picker can
+        # offer packs. Exported only: no document types, the app is never opened with a file.
+        UTExportedTypeDeclarations:
+          - UTTypeIdentifier: org.projectmios.scene-archive
+            UTTypeDescription: projectM-iOS Scene Pack
+            UTTypeConformsTo: [public.data]
+            UTTypeTagSpecification:
+              public.filename-extension: [pmscene]
         # OUT-001 (research OUT-001-D1, ADR-0023): a connected display gets a visualization-only window
         # instead of the system's mirror. Only the external display role is configured; the application
         # role stays with SwiftUI's window group, and multiple windows stay off.

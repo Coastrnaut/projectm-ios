@@ -138,6 +138,21 @@ warning and the oscillator runs unsynced: `invalidLFOSync` (`sync` not an object
 missing or not a finite positive number at `$.lfos[i].sync.beats`) or `unknownLFOSync` (a length this version does
 not know, at `$.lfos[i].sync.beats`). Unknown keys inside `sync` are kept.
 
+### Macros (MOD-010, optional top-level `macros`)
+
+`[{"name": "Glow sweep", "value": 0.5, "targets": [{"parameter": "effect.bloom.intensity", "curve": "easeIn:2.0",
+"minimum": 0.1, "maximum": 0.9, "invert": false}]}]`: parameter macros
+(specs/170-mod-010-parameter-macro/contracts/parameter-macro.md). Written only when the scene has the list (no
+version change); each entry is an object kept verbatim, unknown keys included. `name` (non-empty string), `value`
+(finite number, used limited to 0…1) and `targets` (a list) are required. A target needs `parameter` (a registered
+continuous, integer or enum parameter); `curve` (MOD-004 text form, default `linear`), `minimum` and `maximum`
+(finite, minimum ≤ maximum; default the parameter's range, enum ranges in case positions) and `invert` (default
+false) are optional. At most 64 entries decode (`tooMany`); the first 8 macros and the first 8 targets of each are
+used. Problems are warnings and the entry is kept: `invalidMacro` (a missing or wrong field, an invalid curve or
+range, an on/off or color parameter, a duplicate target, beyond a limit; at the field's path, `$.macros[i]` or
+`$.macros[i].targets[j]`) and `unknownMacroTarget` (an unregistered parameter, at `$.macros[i].targets[j].parameter`).
+A macro stays live with its usable targets. Opening a scene does not apply its macros.
+
 ### Modulation
 
 `generators`: `[{"id": "lfo.one", "inputs": ["rate"], "name": "LFO One"}]`;
@@ -222,7 +237,7 @@ order (layers, assets, parameters, bindings, modulation). Errors block `liveStat
 | `rejectedParameter` | warning | `<MOD-001 ParameterStoreError message>; the current value is kept.` |
 | `parameterClamped` | warning | `"<id>" value <value> is outside its range; it is applied as <stored>.` |
 | `invalidBinding` | error | `Binding <i>: <MOD-002 AudioFeatureBindingError message>.` |
-| `duplicateBindingTarget` | error | `Binding <i> targets "<id>", already bound by binding <j>.` |
+| `duplicateBindingTarget` | error | MOD-011 (contract `specs/178-mod-011-mix-modes/contracts/mix-order.md` O3): up to 4 bindings per parameter are layers. A fifth: `Binding <i> targets "<id>", already bound by 4 bindings (the most per parameter).` An expression on a later layer: `Binding <i> carries an expression for "<id>", already bound by binding <j>; only a parameter's first binding may carry one.` |
 | `invalidExpression` | error | `Binding <i> expression: <SHD-009 ExpressionError description>.` |
 | `unsupportedCurve` | warning | `Binding <i> uses a curve this version cannot read; it is kept but not applied.` (MOD-004) |
 | `invalidModulation` | error | `Modulation: <MOD-014 issue message>` (cycles name their path) |

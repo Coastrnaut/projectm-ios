@@ -72,10 +72,12 @@ public struct AudioFeatureBinding: Sendable, Hashable {
     public var envelope: AudioFeatureEnvelope
     /// Shapes the smoothed 0…1 signal before the output range (MOD-004-R6); linear by default.
     public var curve: MappingCurve
+    /// MOD-012-R3: false skips this layer in the fold (MOD-011 order) without removing it; its signal keeps advancing.
+    public var isEnabled: Bool
 
     public init(source: AudioFeatureSource, target: ParameterID, inputMinimum: Double = 0, inputMaximum: Double = 1,
                 outputStart: Double, outputEnd: Double, mixMode: ModulationMixMode = .replace,
-                envelope: AudioFeatureEnvelope = .none, curve: MappingCurve = .linear) {
+                envelope: AudioFeatureEnvelope = .none, curve: MappingCurve = .linear, isEnabled: Bool = true) {
         self.source = source
         self.target = target
         self.inputMinimum = inputMinimum
@@ -85,6 +87,7 @@ public struct AudioFeatureBinding: Sendable, Hashable {
         self.mixMode = mixMode
         self.envelope = envelope
         self.curve = curve
+        self.isEnabled = isEnabled
     }
 
     /// The input and output ranges as a linear mapping (MOD-003-R7): exact ends, bounded,
@@ -115,6 +118,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
     /// The curve breaks MOD-004 contract K5; `reason` is `MappingCurve.validationProblem`.
     case invalidCurve(ParameterID, reason: String)
     case tooManyBindings(ParameterID, limit: Int)
+    /// MOD-011-R1: the target already has `limit` bindings (layers).
+    case tooManyLayers(ParameterID, limit: Int)
     /// The binding set would contain a feedback loop (MOD-014-R9); `path` is the loop, readable.
     case feedbackCycle(ParameterID, path: String)
 
@@ -142,6 +147,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
             "the curve bound to \"\(id)\" is invalid: \(reason)"
         case let .tooManyBindings(id, limit):
             "\"\(id)\" cannot be bound: \(limit) bindings already exist"
+        case let .tooManyLayers(id, limit):
+            "\"\(id)\" cannot take another binding: it already has \(limit), the most per parameter"
         case let .feedbackCycle(id, path):
             "\"\(id)\" cannot be bound: it would create the feedback loop \(path)"
         }

@@ -12,6 +12,10 @@
 // places host-timed chunks relative to the first video frame (`RecordingAudioTimeline`) and appends them
 // on the same serial queue; `endAudio` ends the audio for good (a source switch: no silence follows).
 //
+// REC-008 (specs/180-rec-008-timed-stop, contract C1, C2): the audio timeline's limit is the duration limit, so no
+// audio outlasts the last possible frame; `beginFinish` starts the finish from the frame loop without waiting
+// (the frame that crossed the limit was never encoded, so nothing after the end reaches the writer).
+//
 // `finish` stops accepting frames, waits (asynchronously) for the frames in flight, then ends the
 // session one interval after the last appended frame. Fewer than two frames, a writer failure or
 // `cancel` delete the file.
@@ -58,7 +62,7 @@ public final class MetalFrameRecorder: @unchecked Sendable {
     private let textureCache: CVMetalTextureCache
     private let gate: RecordingFrameGate
     private let pending = DispatchGroup()
-    private let shared = Mutex(Shared())
+    private let shared: Mutex<Shared>
     /// Frame-loop thread only.
     private var timeline: RecordingTimeline
     /// Frame-loop thread only: the origin was handed to the audio timeline.
@@ -96,6 +100,9 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         textureCache = cache
         gate = RecordingFrameGate(capacity: settings.framesInFlight)
         timeline = RecordingTimeline(settings: settings)
+        // REC-008-R4: audio ends where the last possible frame ends (the duration limit), never later.
+        let limit = Int64(settings.maxDurationSeconds) * Int64(RecordingAudioTimeline.sampleRate)
+        shared = Mutex(Shared(audio: RecordingAudioTimeline(limitSample: limit)))
     }
 
     // MARK: - Frames (frame-loop thread)
@@ -255,20 +262,30 @@ public final class MetalFrameRecorder: @unchecked Sendable {
         await end(keep: true)
     }
 
+    /// REC-008-R3 (contract C2): starts `finish` and returns at once (never waits; safe on the frame loop). Later
+    /// frames return `.finished`, later audio is ignored; `finish()` returns this finish's result.
+    public func beginFinish() {
+        _ = startEnd(keep: true)
+    }
+
     /// Stops and deletes the file.
     public func cancel() async {
         _ = await end(keep: false)
     }
 
     private func end(keep: Bool) async -> Result<RecordedVideo, RecordingFailure> {
-        let task = shared.withLock { (s: inout Shared) -> Task<Result<RecordedVideo, RecordingFailure>, Never> in
+        await startEnd(keep: keep).value
+    }
+
+    /// Creates the finish task once (under the lock; nothing waits here).
+    private func startEnd(keep: Bool) -> Task<Result<RecordedVideo, RecordingFailure>, Never> {
+        shared.withLock { (s: inout Shared) -> Task<Result<RecordedVideo, RecordingFailure>, Never> in
             if let existing = s.finishTask { return existing }
             s.stopped = true
             let created = Task { () -> Result<RecordedVideo, RecordingFailure> in await self.performEnd(keep: keep) }
             s.finishTask = created
             return created
         }
-        return await task.value
     }
 
     private func performEnd(keep: Bool) async -> Result<RecordedVideo, RecordingFailure> {

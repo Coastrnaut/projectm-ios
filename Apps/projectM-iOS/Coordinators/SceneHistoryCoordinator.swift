@@ -25,8 +25,12 @@ import VisualGenerators
 final class SceneHistoryCoordinator {
     private(set) var history: SceneHistory<SceneInputs>?
 
-    var canUndo: Bool { history?.canUndo ?? false }
-    var canRedo: Bool { history?.canRedo ?? false }
+    /// SCN-015-R3: false while the scene is locked.
+    var canUndo: Bool { !isLocked && (history?.canUndo ?? false) }
+    var canRedo: Bool { !isLocked && (history?.canRedo ?? false) }
+    /// SCN-015: the scene lock (set by AppCoordinator; nil in tests of the history alone).
+    @ObservationIgnored var sceneLock: SceneLock?
+    private var isLocked: Bool { sceneLock?.isLocked ?? false }
     var undoLabel: String? { history?.undoLabel }
     var redoLabel: String? { history?.redoLabel }
     /// "Undo Bars 16" (FR-070), "Undo" when there is nothing to undo.
@@ -99,6 +103,22 @@ final class SceneHistoryCoordinator {
         self.history = history
     }
 
+    /// SCN-008-R6 (research SCN-008-D5): records the current inputs as one step named `label` (no coalescing key)
+    /// and closes coalescing; the observation callback that follows finds equal bytes and records nothing.
+    /// Call `endCoalescing()` before the writes so earlier edits stay their own steps.
+    func recordStep(label: String) {
+        guard var history else { return }
+        let now = inputs()
+        let previous = history.current.value
+        if now.photoID != previous.photoID || now.videoID != previous.videoID {
+            restart()   // R9: the stored media is not undoable (a recall never changes it)
+            return
+        }
+        history.record(state(now), label: label, coalescingKey: nil)
+        history.endCoalescing()
+        self.history = history
+    }
+
     /// A boundary: a slider drag ended or Settings closed.
     func endCoalescing() {
         capture()
@@ -106,12 +126,14 @@ final class SceneHistoryCoordinator {
     }
 
     func undo() {
+        if sceneLock?.refusesEdit() == true { return }   // SCN-015-R3
         capture()
         guard let state = history?.undo() else { return }
         apply(state.value)
     }
 
     func redo() {
+        if sceneLock?.refusesEdit() == true { return }   // SCN-015-R3
         capture()
         guard let state = history?.redo() else { return }
         apply(state.value)
@@ -122,6 +144,7 @@ final class SceneHistoryCoordinator {
 @MainActor
 enum SceneHistoryEdit {
     static func describe(from old: SceneInputs, to new: SceneInputs) -> (label: String, key: String?) {
+        if let macro = MacroHistoryEdit.describe(from: old.macros, to: new.macros) { return macro }   // MOD-010: wins over its targets
         var changes: [(label: String, key: String?)] = []
         if old.visual != new.visual { changes.append(("Visual \(new.visual.title)", nil)) }
         if old.bars != new.bars { changes.append(("Bars \(new.bars)", nil)) }
@@ -135,6 +158,7 @@ enum SceneHistoryEdit {
         if old.glowRadius != new.glowRadius { changes.append(("Glow Radius \(percent(new.glowRadius, decimals: 1))", "glow.radius")) }
         if old.glowThreshold != new.glowThreshold { changes.append(("Glow Threshold \(percent(new.glowThreshold))", "glow.threshold")) }
         if old.text != new.text { changes.append(text(from: old.text, to: new.text)) }
+        if let routes = ModulationHistoryEdit.describe(from: old.bindings, to: new.bindings) { changes.append(routes) }   // MOD-012
         if old.layerComposites != new.layerComposites {   // CMP-015-R6
             changes.append(LayerHistoryEdit.describe(from: old.layerComposites ?? [:], to: new.layerComposites ?? [:]))
         }
@@ -208,5 +232,24 @@ enum LayerHistoryEdit {
         if wasInverted != isInverted { result.append(.maskInverted) }
         if result.isEmpty && old != new { result.append(.maskShape) }   // e.g. an unknown mask replaced
         return result
+    }
+}
+
+/// MOD-010 (research MOD-010-D4): one macro's value changed: "Macro <name> <percent>", key `macro.<index>`, whatever
+/// targets changed with it (one drag or step = one undo step). Nil when the macro list did not change that way.
+@MainActor
+enum MacroHistoryEdit {
+    static func describe(from old: [SceneMacroEntry]?, to new: [SceneMacroEntry]?) -> (label: String, key: String?)? {
+        guard old != new else { return nil }
+        let before: [SceneMacroEntry] = old ?? []
+        let after: [SceneMacroEntry] = new ?? []
+        guard before.count == after.count else { return ("Macros", nil) }
+        var changed: [Int] = []
+        for index in after.indices where before[index] != after[index] { changed.append(index) }
+        guard changed.count == 1, let index = changed.first else { return ("Macros", nil) }
+        let entry: SceneMacroEntry = after[index]
+        let name: String = entry.fields["name"]?.stringValue ?? "\(index + 1)"
+        let value: Double = entry.fields["value"]?.numberValue?.doubleValue ?? 0
+        return ("Macro \(name) \(SceneHistoryEdit.percent(value))", "macro.\(index)")
     }
 }

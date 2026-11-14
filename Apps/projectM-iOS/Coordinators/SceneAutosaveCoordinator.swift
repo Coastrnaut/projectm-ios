@@ -34,11 +34,26 @@ final class SceneAutosaveCoordinator {
     /// last captured live ones (contract A5).
     var bindings: [AudioFeatureBinding] { carry.bindings }
 
+    /// MOD-012 (research MOD-012-D5): the matrix changed the current scene's routes; a native spectrum created later
+    /// gets these, and the next commit writes them (the matrix mirror in `SceneInputs.bindings` triggers it).
+    func replaceCarriedBindings(_ list: [AudioFeatureBinding]) { carry.bindings = list }
+
     /// MOD-006: the current scene's usable threshold triggers (a native spectrum gets them when it is created).
     var triggerBindings: [ThresholdTriggerBinding] { SceneTriggerEntry.read(carry.triggers ?? []).bindings }
 
     /// MOD-007: the current scene's oscillators by position (a native spectrum gets them when it is created).
     var lfoOscillators: [LFO?] { SceneLFOEntry.read(carry.lfos ?? []).oscillators }
+
+    /// SCN-008: the current scene's snapshot entries as stored (empty without a list).
+    var snapshotEntries: [SceneSnapshotEntry] { carry.snapshots ?? [] }
+
+    /// SCN-008-R5, R8 (research SCN-008-D6): replaces the current scene's snapshot list (nil or empty removes
+    /// the field) and commits the scene at once. Not an undo step: SCN-010 covers the live inputs only.
+    func replaceSnapshots(_ entries: [SceneSnapshotEntry]) {
+        carry.snapshots = entries.isEmpty ? nil : entries
+        noteEdit()
+        commitNow()
+    }
 
     /// SCN-010: the content the current scene carries (the history captures its states over it).
     var carrySnapshot: SceneAutosaveCarry { carry }

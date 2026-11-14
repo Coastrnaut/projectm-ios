@@ -345,7 +345,7 @@ public enum StoredZipReader {
 
 /// Bounds-checked little-endian reads; a read outside the data returns 0 (callers check bounds
 /// before reading, this only guarantees no trap).
-private struct Bytes {
+struct Bytes {
     let data: Data
     let count: Int
     private let base: Int

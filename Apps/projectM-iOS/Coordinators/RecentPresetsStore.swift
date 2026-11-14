@@ -45,6 +45,15 @@ final class RecentPresetsStore {
         return updated
     }
 
+    /// PRE-018-R9: removes these IDs from the list (order kept); nothing while it holds none of them.
+    @discardableResult
+    func remove(_ removed: Set<String>) -> RecentPresetHistory {
+        let current = history
+        let updated = current.removing(removed)
+        if updated != current { defaults.set(updated.ids, forKey: Self.historyKey) }
+        return updated
+    }
+
     /// Removes the list only (R4).
     func clear() { defaults.removeObject(forKey: Self.historyKey) }
 }

@@ -174,14 +174,14 @@ enum PrimaryScreens {
             RequiredControl("parameterInspector.slider", .any, scrolls: 3),
             RequiredControl("parameterInspector.reset", .button),
         ]),
-        PrimaryScreen(name: "effectOrder", feature: "FX-020", auditKey: "effectOrder", launch: section("effectOrder"),
+        PrimaryScreen(name: "effectOrder", feature: "FX-020", auditKey: "effectOrder", launch: section("effects"),
                       route: .settingsLink("settings.effectOrder", title: "Effect order"), controls: [
             RequiredControl("effectChain.edit", .button, bar: true),
             RequiredControl("effectChain.row.fx.trails", .switch),
             RequiredControl("effectChain.row.fx.grade", .switch),
             RequiredControl("effectChain.savePreset", .button),
         ]),
-        PrimaryScreen(name: "recordingQuality", feature: "REC-005", auditKey: "settingsRecording", launch: section("recordingQuality"),
+        PrimaryScreen(name: "recordingQuality", feature: "REC-005", auditKey: "settingsRecording", launch: section("quality"),
                       auditsAtStandardSize: false, route: .settings, controls: [
             RequiredControl("recordingQuality.draft", .button),
             RequiredControl("recordingQuality.standard", .button),

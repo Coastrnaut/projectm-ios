@@ -10,6 +10,32 @@
     "schemaVersion": { "const": 2 },
     "exportedAt": { "type": "string", "format": "date-time" },
     "testerNote": { "type": "string", "maxLength": 500 },
+    "frameDrops": {
+      "description": "PERF-007: frames presented, late and skipped per output, counted on the device only (optional; metadata only). A missing count means unavailable on that path.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["outputs"],
+      "properties": {
+        "outputs": {
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["output", "stale"],
+            "properties": {
+              "output": { "enum": ["device", "external", "recording"] },
+              "submitted": { "type": "integer", "minimum": 0 },
+              "skipped": { "type": "integer", "minimum": 0 },
+              "presented": { "type": "integer", "minimum": 0 },
+              "late": { "type": "integer", "minimum": 0 },
+              "discarded": { "type": "integer", "minimum": 0 },
+              "stale": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
     "frameTimings": {
       "description": "PERF-001: per-stage frame timings over the most recent frames (optional; metadata only). A missing CPU or GPU key means unavailable.",
       "type": "object",
@@ -38,6 +64,16 @@
               "maxItems": 13,
               "items": { "enum": ["audio cpu", "audio gpu", "render cpu", "render gpu", "composite cpu", "composite gpu", "output cpu", "output gpu", "encode cpu", "encode gpu", "present cpu", "present gpu", "gpu frame"] }
             }
+          }
+        },
+        "effectQuality": {
+          "description": "PERF-003: the native visual's adaptive effect quality level and, below full, its reason (optional).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level"],
+          "properties": {
+            "level": { "enum": ["full", "reduced", "minimal"] },
+            "reason": { "enum": ["thermal", "low power", "budget"] }
           }
         },
         "stages": {

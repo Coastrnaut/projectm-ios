@@ -94,10 +94,15 @@ public enum LibrarySettingsPolicy {
         "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   // FX-020-R8, R10
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
+        "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9
+        "settings.beatRings.life",   // VIS-006-R9
+        "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   // VIS-007-R9
+        "settings.particleFountain.gravity",   // VIS-008-R10
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",
         "settings.osc.port",
+        "settings.osc.disabledRoutes", "settings.osc.aliases",   // OSC-003-R9: route addresses and parameter IDs only
         "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings
         "settings.parameterShelf.pins",   // UIX-004-R10: ordered pinned parameter IDs; erased with Settings
         "settings.inputTrim.decibels", "settings.analysisChannel.mode",
@@ -107,14 +112,21 @@ public enum LibrarySettingsPolicy {
         photoKey, slideshowKey, "settings.text.overlay",
         logoKey, logoPlacementKey,   // MED-010
         recentPresetsEnabledKey,   // PRE-006-R7
+        "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
+        "settings.recording.timedStop",   // REC-008-R9: a preference (off, 10, 30, 60, 300); erased with Settings
+        "settings.performance.powerProfile",   // PERF-008-R6: a preference (standard, followLowPowerMode, batterySaver)
     ]
 
     /// Read by the app but deliberately left out (documented; a test checks none is included).
     public static let excludedKeys: [String] = [
         "settings.osc.enabled", "settings.midi.enabled",
+        "settings.scene.locked",   // SCN-015: a performance lock is session state of this device
+        "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
+        "settings.externalDisplay.fit", "settings.externalDisplay.shape",   // OUT-004-R8: the user's display hardware
+        "settings.externalDisplay.pixelAspect",
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",

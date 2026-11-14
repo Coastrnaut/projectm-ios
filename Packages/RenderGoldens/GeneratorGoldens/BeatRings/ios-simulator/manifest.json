@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "beat-rings-four-128x96-f0.png",
+      "fileSHA256" : "62133421d27429fe20bf2083959194a3511b0f8606f1b1a6553718c15eff336b",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "e62cc77d1cd5331109f7ecea5bcc0599167d3dbf86600591132be846a3cd6183",
+      "scene" : "beat-rings-four",
+      "width" : 128
+    },
+    {
+      "file" : "beat-rings-four-256x192-f0.png",
+      "fileSHA256" : "84bebd34d7599787926f89cfff0c87a182e24742ac026c8f4a9967aecaf8d2b3",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "c71675865099b16db7effa3992751b4e52d48503dc17cb73f5542123ada9e98b",
+      "scene" : "beat-rings-four",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

@@ -46,6 +46,8 @@ import UIKit
 
 struct VisualizerView: View {
     @Bindable var coordinator: AppCoordinator
+    /// UIX-005-R4: the edges the performance pad uses; the status stack keeps clear of them.
+    @State private var performanceInsets = EdgeInsets()
 
     // Split into separately type-checked parts (2026-11-14): as one expression this body made
     // Xcode 26 on CI give up ("unable to type-check this expression in reasonable time", run
@@ -67,7 +69,7 @@ struct VisualizerView: View {
             externalDisplayLayer
             pausedLayer
             tapArea
-            statusStack
+            statusLayers
             keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
             performanceLayer
@@ -104,6 +106,7 @@ struct VisualizerView: View {
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
             .accessibilityHint("Shows or hides the controls")
+            .modifier(MIDIPanicVisualizerCommands(coordinator: coordinator))   // MIDI-013-R7: ⌘⇧M, VoiceOver action
     }
 
     private var statusStack: some View {
@@ -114,6 +117,7 @@ struct VisualizerView: View {
             bottomStatus
         }
         .padding()
+        .padding(coordinator.performanceLayout ? performanceInsets : EdgeInsets())   // UIX-005-R4
         // ACC-001-R2: the controls and the badges riding on them are instant with Reduce Motion.
         .reduceMotionAware(MotionPolicy.controlsFade, value: coordinator.controlsVisible, policy: coordinator.motion)
     }
@@ -122,6 +126,7 @@ struct VisualizerView: View {
     /// CAM-012's "Camera on" badge.
     @ViewBuilder private var topStatus: some View {
         OSCListenerBadge(osc: coordinator.osc) { () -> Void in coordinator.statusEvents.post(StatusEventCatalog.osc(port: nil)) }
+        SceneLockBadge(lock: coordinator.settings.sceneLock)   // SCN-015-R7: never hidden with the controls
         // PERF-010-R4: the recovery offer after an abnormal exit (non-blocking).
         SessionRecoveryOfferCard(recovery: coordinator.recovery, onReopen: { () -> Void in coordinator.reopenLastScene() },
                                  onStartFresh: { () -> Void in coordinator.startFresh() },
@@ -152,7 +157,8 @@ struct VisualizerView: View {
         if let notice = coordinator.show.notice {   // SHOW-001-R9
             ShowNotice(text: notice).transition(.opacity)
         }
-        if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout {   // SHOW-014-R1: with or without the controls
+        // SHOW-014-R1: with or without the controls; UIX-005-R8: the performance pad's Blackout replaces it.
+        if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout && !coordinator.performanceLayout {
             HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
                 .transition(.opacity)
         }
@@ -161,6 +167,21 @@ struct VisualizerView: View {
                 .transition(.opacity)
         } else {
             SourceStatusIndicator(coordinator: coordinator)
+        }
+    }
+
+    /// The status stack and, above it, UIX-005's performance pad (one property: keeps `layers` quick to type-check).
+    @ViewBuilder private var statusLayers: some View {
+        statusStack
+        performancePadLayer
+    }
+
+    /// UIX-005-R2: the performance pad, with or without the controls, while the layout is on.
+    @ViewBuilder private var performancePadLayer: some View {
+        if coordinator.performanceLayout {
+            PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay) {
+                (insets: EdgeInsets) -> Void in performanceInsets = insets
+            }
         }
     }
 
@@ -182,7 +203,8 @@ struct VisualizerView: View {
     private var performanceOverlay: some View {
         let overlay = PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                          renderHealth: { coordinator.renderHealthOverlayLine },
-                                         stageLines: { () -> [String] in coordinator.frameStageLines() })
+                                         stageLines: { () -> [String] in coordinator.frameStageLines() },
+                                         stereoLine: { () -> String? in coordinator.stereoOverlayLine })   // ANL-013
         return VStack { HStack { Spacer(); overlay }; Spacer() }
             .padding(.top, 2)
             .padding(.trailing, 8)
@@ -398,6 +420,7 @@ struct VisualizerView: View {
                          libraryBackup: coordinator.libraryBackup,   // FILE-005
                          cacheFilesInUse: { () -> Set<String> in coordinator.cacheFilesInUse() },
                          missingMedia: coordinator.missingMedia,   // MED-013
+                         recordingLibrary: coordinator.recordingLibrary,   // REC-010
                          openGuide: { coordinator.openGuidedFirstScene() },
                          history: coordinator.sceneHistory,      // UIX-001, SCN-010
                          layerInspector: coordinator,            // CMP-015
@@ -413,9 +436,13 @@ struct VisualizerView: View {
                          recordingAudio: coordinator.recordingAudio,   // REC-004
                          recordingAudioStatus: { () -> String in coordinator.videoRecording.audioStatusText },
                          recordingQuality: coordinator.recordingQuality,   // REC-005
+                         recordingCountdown: coordinator.recordingCountdown,   // REC-007
+                         externalOutput: coordinator.externalOutput,   // OUT-004
+                         recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
                          explainers: coordinator.explainers,   // UIX-015
                          cameraStatus: { () -> PermissionState? in coordinator.cameraPermissionStatus },
                          recentPresets: coordinator.presets.recent,   // PRE-006
+                         powerProfile: coordinator.powerProfile,   // PERF-008
                          announcer: coordinator.announcer)   // ACC-005-R7
                 .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
                 .sceneRepairSheet(coordinator.sceneRepair, active: true)   // SCN-012: a show editor step's report
@@ -502,6 +529,13 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.oscilloscopeWindowMilliseconds) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.lissajousMode) { coordinator.visualSettingsChanged() }   // VIS-004
         .onChange(of: coordinator.settings.lissajousPersistence) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
+        .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.beatRingsLife) { coordinator.visualSettingsChanged() }   // VIS-006
+        .onChange(of: coordinator.settings.mandalaSymmetry) { coordinator.visualSettingsChanged() }   // VIS-007
+        .onChange(of: coordinator.settings.mandalaMirror) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.particleGravity) { coordinator.visualSettingsChanged() }   // VIS-008
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
@@ -702,18 +736,20 @@ struct VisualizerView: View {
         CaptureResultPanels(frameCapture: coordinator.frameCapture, videoRecording: coordinator.videoRecording,
                             share: coordinator.captureShare)
         // REC-003: the recording indicator (app UI, never part of the recorded picture; REC-003-R16).
-        if coordinator.videoRecording.state != .idle {
+        RecordingCountdownView(recording: coordinator.videoRecording)   // REC-007-R7: the number and Cancel
+        if coordinator.videoRecording.state.hasRecording {
             let finishing = coordinator.videoRecording.state == .finishing
             // ACC-003-R3: the record symbol, or an hourglass while finishing (was a red or grey dot).
-            StatusCueLabel(cue: StatusCueCatalog.recording(finishing: finishing, elapsed: coordinator.videoRecording.elapsedText),
+            StatusCueLabel(cue: StatusCueCatalog.recording(finishing: finishing, elapsed: coordinator.videoRecording.indicatorText),   // REC-008-R8
                            font: .footnote.monospacedDigit().bold())
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .statusBadgeBackground(Capsule())   // ACC-003-R9
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.elapsedText)")
+            .accessibilityLabel(finishing ? "Finishing the recording" : "Recording, \(coordinator.videoRecording.indicatorAccessibilityText)")
             .accessibilityIdentifier("recordingIndicator")
             RecordingAudioLine(recording: coordinator.videoRecording)   // REC-004-R9
+            RecordingStatusLines(recording: coordinator.videoRecording)   // REC-009: dropped frames, storage
         }
         // REC-003: refusals, stop reasons, failures and "Recording saved." (FR-070: a labeled element).
         if let notice = coordinator.videoRecording.notice {

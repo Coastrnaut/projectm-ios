@@ -16,7 +16,7 @@ few cycles is inconclusive, errors and baseline drift fail.
 swift test --package-path Packages/RenderGoldens --filter RenderSoakTests
 ```
 
-Expected: `testDefaultSoakIsBoundedAndErrorFree` passes (30 s simulated, 60 switches) and prints the
+Expected: `testDefaultSoakIsBoundedAndErrorFree` passes (60 s simulated, 120 switches, 10 warm-up cycles) and prints the
 report path; both leak controls pass by asserting the soak failed with the named rules.
 
 ## C. Simulator (QA6, iOS 27.2)

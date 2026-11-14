@@ -1,0 +1,48 @@
+# Tasks: REC-008 Timed recording stop
+
+**Input**: `specs/180-rec-008-timed-stop/` (spec, plan, research, data-model, contracts/timed-stop.md, quickstart)
+**Tests**: requested by the roadmap acceptance (ten-second target closes the file with a readable index and no extra frames) and the brief (24/30/60 fps, jittery 60 Hz, audio, render-thread spy, manual and disk-guard stops, persistence, UI test).
+
+## Phase 1: Setup
+
+- [X] REC-008-T01 Add `RecordingTimedStopLength` (raw values `off`, `10`, `30`, `60`, `300`; seconds 0/10/30/60/300; titles "Off", "10 seconds", "30 seconds", "1 minute", "5 minutes"; `stoppedNotice` "Recording stopped after <title>."; absent or unknown → `off`) and `RecordingTimedStopSetting` (key `settings.recording.timedStop`, removed by `-uitestResetNotice`, DEBUG `-uitestTimedStop <raw>`) in Apps/projectM-iOS/Coordinators/RecordingTimedStop.swift (data model; research REC-008-D4) — Verified 2026-11-14: RecordingTimedStopAppTests.testSettingDefaultsToOffPersistsAndReadsUnknownAsOff (raw values, seconds, titles, notice, reset and launch argument) on the REC8 iOS 27.2 simulator
+
+## Phase 2: Foundational (FrameRecording)
+
+- [X] REC-008-T02 [P] Add `limitSample: Int64?` to `RecordingAudioTimeline` (nothing placed at or after it; a straddling chunk is cut) with cases in Packages/Compositor/Tests/FrameRecordingTests/RecordingAudioTimelineTests.swift (REC-008-R4; research D3) — Verified 2026-11-14: RecordingAudioTimelineTests 10/10 on the Mac host (swift test; straddling chunk cut at sample 441,000, nothing at or after it, no limit unchanged)
+- [X] REC-008-T03 Add `MetalFrameRecorder.beginFinish()` (starts the finish task under the lock, returns at once, idempotent with `finish()`) and set the audio timeline's limit from `settings.maxDurationSeconds` in Packages/Compositor/Sources/FrameRecording/MetalFrameRecorder.swift; add `RecordingStopReason.timedStop` in RecordingOutcome.swift (REC-008-R3; research D2, D5; contract C2) — Verified 2026-11-14: RecordingTimedStopTests (spy and fixtures) and the full FrameRecordingTests suite 121 tests, 0 failures (1 skipped, pre-existing), 21 s on the Mac host
+
+## Phase 3: User Story 1 - Record exactly a set length (P1) MVP
+
+**Goal**: a 10 s length gives exactly fps × 10 frames, a 10 s duration, a playable file, audio to 10 s.
+**Independent test**: package fixtures with injected frame times.
+
+- [X] REC-008-T04 [US1] Acceptance fixtures in Packages/Compositor/Tests/FrameRecordingTests/RecordingTimedStopTests.swift: 10 s length at 24, 30, 60 fps and a jittery 60 Hz render at 30 fps, frames offered past 10 s until `durationReached`, then `beginFinish()`; read back with `RecordingValidator.validate` (duration 10 s, no issues) and `RecordedVideoInspector` (playable, exactly fps × 10 frames, last tick < 6,000, duration within one frame of 10 s); audio case ends within 20 ms of 10 s (REC-008-S1, S2; contract C1) — Verified 2026-11-14: RecordingTimedStopTests.testTenSecondTargetAtTheRecordingRateClosesTheFileWithNoExtraFrames (24/30/60 fps: 240/300/600 frames, PTS n/fps, last < 10 s, encoded = fps × 10, duration 10.000 s, RecordingValidator PASS, AVAsset isPlayable), testJittery60HzRenderDecimatedTo30fpsStopsAtTenSeconds (60 Hz and 60 Hz±2 ms → 300 frames, 0 dropped), testAudioEndsWithinTwentyMillisecondsOfTheTarget (audio end 10.0000 s, 441,000 frames written); GPU on the Mac host
+- [X] REC-008-T05 [US1] Render-thread spy in RecordingTimedStopTests.swift: a sink whose `finish` is held by the test; `recordFrame` and `beginFinish` return while the finish is held, no sink `finish` runs on the calling thread, later frames return `.finished` (REC-008-S3; contract C2) — Verified 2026-11-14: RecordingTimedStopTests.testTheFramePathNeverWaitsOnTheFinish (frames driven on a render queue; beginFinish returns while the sink's finish is held; later frames .finished; one finish, never on the render queue; finish() joins it)
+- [X] REC-008-T06 [US1] Coordinator: Context `timedStop`, the length fixed at start (`recordingLength`), `settings.maxDurationSeconds = min(length, limit)`, `durationReached` with a length → `.timedStop` with the length's notice, the indicator text "0:07 / 0:10" (`elapsedWithLengthText`) in Apps/projectM-iOS/Coordinators/VideoRecordingCoordinator.swift; the tap pumps audio then calls `recorder.beginFinish()` on `durationReached` (REC-008-R2, R3, R6, R7, R8, R10) — Verified 2026-11-14: RecordingTimedStopAppTests.testTenSecondLengthStopsByItselfWithExactlyThreeHundredFrames (real tap, injected 60 Hz times: maxDurationSeconds 10, .timedStop, 300 frames, 10.00 s), testTheLengthIsFixedWhenTheRecordingStarts, testOffKeepsTheTenMinuteLimitAndItsNotice; build with the type-check flags (no warning in changed lines)
+- [X] REC-008-T07 [US1] Status: X13 for `timedStop` and the "Recording stopped after " notices in Apps/projectM-iOS/Coordinators/StatusEvents.swift; the recording indicator (Apps/projectM-iOS/Views/VisualizerView.swift, `recordingIndicator`: cue text `indicatorText` "0:07 / 0:10", label "Recording, 0:07 of 0:10") and the Record item's value in Apps/projectM-iOS/Views/ControlsOverlay.swift (REC-008-R7, R8) — Verified 2026-11-14: testTenSecondLengthStopsByItselfWithExactlyThreeHundredFrames (X13 for "Recording stopped after 10 seconds.", indicator "0:00 / 0:10" and "0:00 of 0:10"); RecordingTimedStopUITests reads the indicator label "… of 0:10"; StatusEventsTests 8/8; check_status_events OK
+- [X] REC-008-T08 [US1] Own the setting in Apps/projectM-iOS/Coordinators/AppCoordinator.swift and pass `timedStop` in the recording context; add `RecordingTimedStopSection` (rows `recordingTimedStop.<raw>`) in Apps/projectM-iOS/Views/RecordingTimedStopSection.swift wired in SettingsView.swift and VisualizerView.swift; add the key to `ALLOWED_KEYS` (scripts/run_device_tests.py), `includedKeys` (Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift) and the LibraryBackupAppTests key list (REC-008-R1, R9) — Verified 2026-11-14: build-for-testing on REC8; LibraryBackupAppTests 5/5 (key list), LibraryBackup swift test 74/74, test_scripts 159 OK (ALLOWED_KEYS). The Settings rows are not driven by a UI test (REC-007 found scrolling there exceeds the 30 s budget); the setting round trip is unit-tested
+- [X] REC-008-T09 [US1] App tests in Apps/projectM-iOS/Tests/RecordingTimedStopAppTests.swift: setting default Off, persistence, unknown value; a `durationReached` report with 10 s → `lastStopReason == .timedStop`, notice "Recording stopped after 10 seconds.", X13 classification; Off → `.durationReached` unchanged; the length is fixed at start (a change during the recording is ignored, R10); a 3 s countdown before a 10 s length leaves the length counted from the recording's start (R6); indicator text (REC-008-R8, S5) — Verified 2026-11-14: RecordingTimedStopAppTests 7/7 on REC8 (4.9 s)
+- [X] REC-008-T10 [US1] UI test in Apps/projectM-iOS/UITests/RecordingTimedStopUITests.swift: `-uitestTimedStop 10`, Photo visual, Record, wait for the stop, the probe reads a finished file of 10.0 s (REC-008-S5) — Verified 2026-11-14: RecordingTimedStopUITests 1/1 on REC8, 22.0 s in total (10 s recording included): the probe read a finished file at 10 s within one frame and the indicator was gone
+
+## Phase 4: User Story 2 - Other stops still win (P1)
+
+- [X] REC-008-T11 [US2] App tests in RecordingTimedStopAppTests.swift: with a 10 s length, a manual stop gives `.user` and no timed notice; a disk-guard stop (scripted storage probe) gives `.lowStorage` and its notice (REC-008-R5, S4) — Verified 2026-11-14: testAManualStopBeforeTheTargetWorksNormally (.user, 12 frames, 0.4 s), testADiskGuardStopBeforeTheTargetKeepsItsOwnNotice (.lowStorage, its notice)
+- [X] REC-008-T12 [US2] Package test in RecordingTimedStopTests.swift: a recorder with a 10 s length finished at 4 s of frames gives a file of 4 s (no padding) (REC-008-R5) — Verified 2026-11-14: RecordingTimedStopTests.testAStopBeforeTheTargetKeepsWhatWasRecorded (120 frames, 4.000 s, validator PASS)
+
+## Phase 5: Polish
+
+- [X] REC-008-T13 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), Compositor package tests on the host, the type-check budget flags on touched files, existing recording app tests unchanged, privacy manifest and network symbols on the built app, Linux-safe FrameRecording (pure Swift only in the timeline) — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK; check_privacy_manifest OK and check_network_symbols OK on the Debug simulator .app; existing recording app tests unchanged (VideoRecordingAppTests 18, RecordingCountdownAppTests 10, RecordingFrameRateAppTests 5, RecordingAudioAppTests 9, RecordingQualityAppTests 6, StatusEventsTests 8, LibraryBackupAppTests 5: 0 failures); the timeline edit is pure Swift (Linux-safe). Type-check: no new file or changed line over the budget; untouched expressions in SettingsView.swift:255 and VisualizerView.swift:61 measured 219/231 ms on a loaded host (a @State macro expansion measured 221 ms in the same build)
+- [ ] REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps)
+
+## Dependencies
+
+T01 → T06, T08. T02 → T03 → T04, T05, T12. T06 → T07, T09, T10, T11. T13 last.
+
+## Parallel opportunities
+
+T02 and T01 (different files). T04/T05/T12 share one file (sequential). T09/T11 share one file.
+
+## Implementation strategy
+
+MVP = Phase 2 + T04 (the acceptance in the package), then the app wiring and UI test.

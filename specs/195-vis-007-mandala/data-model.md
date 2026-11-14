@@ -1,0 +1,6 @@
+# Data Model: VIS-007 Mandala Symmetry
+
+- **MandalaConfiguration** (value): `symmetry` Int (one of `supportedSymmetries` 3, 4, 5, 6, 8, 12; anything else → 6), `mirror` Bool (default false), `petalStyle` (`MandalaPetalStyle`: petal, round, spike), `turnsPerSecond` (0…0.05, default 0.025; non-finite → default), `reduceMotion` Bool, `palette`, `background` (premultiplied linear). Constants: `stepsPerPetal` 12, `innerRadius` 0.08, `baseLength` 0.35, `lengthRange` 0.55, `baseWidth` 0.2, `widthRange` 0.4, `curlRange` 0.35, `baseAlpha` 0.5, `alphaRange` 0.3, `maximumTurnsPerSecond` 0.05. `effectiveTurnsPerSecond` = turns / (reduceMotion ? 2 : 1). `MandalaBandGroups.from(_ bands:)` → (low, mid, high, overall).
+- **MandalaPetalStyle** (enum, String raw values `petal`, `round`, `spike`): `profile(t)`.
+- **MandalaLayout** (reference, preallocated 288 regions): `sectorCount`, `regionsPerSector`, `regionCount`, `angle` (ψ of the last layout), `groups`, `alpha`; `quad(_:)`; rotation anchor (`anchorNanoseconds`, `anchorAngle`, `anchorTurns`).
+- **Settings**: `settings.mandala.symmetry` Int (3/4/5/6/8/12, else 6), `settings.mandala.mirror` Bool, `settings.mandala.petal` = `petal` | `round` | `spike` (else petal).

@@ -26,6 +26,7 @@ CHECKED = [
     "Coordinators/SceneRepairCoordinator.swift",
     "Views/VisualizerView.swift",
     "Views/SourceStatusIndicator.swift",
+    "Coordinators/StereoPhaseWarning.swift",   # ANL-013-R8: X3a, X3b through the router
     "Views/BackgroundNoticeView.swift",
     "Views/OSCListenerBadge.swift",
     "Views/SessionRecoveryOfferCard.swift",
@@ -38,6 +39,8 @@ CHECKED = [
     "Views/PresetTagsView.swift",                      # PRE-003-R12: tag edits announce through the announcer
     "Views/PresetTagChips.swift",                      # PRE-003-R12: chip counts announce through the announcer
     "Coordinators/PresetCoordinator+Tags.swift",       # PRE-003-R12
+    "Coordinators/SceneSnapshotCoordinator.swift",     # SCN-008-R9: snapshot messages announce through the announcer
+    "Views/SceneSnapshotRows.swift",                   # SCN-008-R9
     "Coordinators/RecentPresetsCoordinator.swift",     # PRE-006-R6: history changes announce through the announcer
     "Views/RecentPresetsView.swift",                   # PRE-006-R6
     "Views/RecentHistorySection.swift",                # PRE-006-R6
@@ -45,6 +48,7 @@ CHECKED = [
     "Views/PresetAuditionBar.swift",                   # PRE-010-R9
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
     "Coordinators/MIDIMappingCoordinator+Notes.swift", # MIDI-006-R9: note learn announces through the announcer
+    "Coordinators/MIDIMappingCoordinator+Panic.swift", # MIDI-013-R6: "MIDI reset" through the announcer
     "Coordinators/MIDINoteActionPerformer.swift",      # MIDI-006-R9: triggers add no announcement of their own
     "Coordinators/MIDIMappingCoordinator+Scenes.swift",  # MIDI-007-R10: scene learn announces through the announcer
     "Coordinators/MIDISceneActionPerformer.swift",     # MIDI-007-R10: "not found" on the .midi lane
@@ -55,9 +59,13 @@ CHECKED = [
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
     "Views/LayerInspectorView.swift",  # CMP-015-R10: solo and mute announce through the announcer
+    "Coordinators/LibraryIntegrityCoordinator.swift",  # PRE-018-R12: check results announce on the library lane
+    "Views/LibraryCheckView.swift",                    # PRE-018-R12
     "Coordinators/LayerInspectorCoordinator.swift",
     "Views/AccessibleParameter.swift",   # ACC-005-R7: slider ends announce through the announcer
     "Coordinators/LibraryEraseCoordinator.swift",   # FILE-011-R3: the erase announces on the library lane
+    "Coordinators/BulkPresetImportCoordinator.swift",   # PRE-013-R10: bulk import announces on the library lane
+    "Views/BulkPresetImportViews.swift",                 # PRE-013-R10
     "Views/LibraryEraseSection.swift",
     "Coordinators/FolderBackupCoordinator.swift",   # FILE-006-R9: folder backup results on the library lane
     "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer
@@ -65,6 +73,7 @@ CHECKED = [
     "Views/LogoSection.swift",
     "Views/RecordingAudioSection.swift",  # REC-004-R9: recording audio announces through the router (X9a, X9b)
     "Coordinators/RecordingAudioSetting.swift",
+    "Views/RecordingStatusLines.swift",  # REC-009-R4: recording warnings announce through the router (X9f, X9g)
     "Views/RecordingQualitySection.swift",  # REC-005-R6: the fallback announces through the router (X9c)
     "Coordinators/RecordingQualitySetting.swift",
     "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane

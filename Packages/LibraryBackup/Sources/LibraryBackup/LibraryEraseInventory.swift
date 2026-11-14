@@ -56,6 +56,9 @@ public struct LibraryEraseInventory: Sendable, Equatable {
             if let data = try? Data(contentsOf: folders.tagsFile), let tags = try? PresetTagsFile.decode(data).map {
                 total += tags.tags.count   // PRE-003: tagged presets
             }
+            if let data = try? Data(contentsOf: folders.overridesFile), let overrides = try? PresetOverridesFile.decode(data).map {
+                total += overrides.values.count   // PRE-016: presets with overrides
+            }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.favoritesKey] { total += ids.count }
             if case let .strings(ids)? = settings[LibrarySettingsPolicy.recentPresetsKey] { total += ids.count }   // PRE-006-R7
             return total
@@ -69,8 +72,15 @@ public struct LibraryEraseInventory: Sendable, Equatable {
                 .appendingPathComponent("assets", isDirectory: true)
             let names: [String] = (try? FileManager.default.contentsOfDirectory(atPath: assets.path)) ?? []
             return names.filter { (name: String) -> Bool in !name.hasPrefix(".") }.count
+        case .recordings:   // REC-010-R8: the kept recordings (non-hidden files)
+            let folder = root.appendingPathComponent(LibraryErasePolicy.recordingLibraryFolderName, isDirectory: true)
+            let names: [String] = (try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []
+            return names.filter { (name: String) -> Bool in !name.hasPrefix(".") }.count
         case .settings:
-            return LibraryErasePolicy.settingKeys(.settings).filter { (key: String) -> Bool in settings[key] != nil }.count
+            let keys: Int = LibraryErasePolicy.settingKeys(.settings).filter { (key: String) -> Bool in settings[key] != nil }.count
+            let profiles: URL = root.appendingPathComponent(LibraryErasePolicy.midiProfilesFolderName, isDirectory: true)
+                .appendingPathComponent("profiles.json", isDirectory: false)
+            return keys + (FileManager.default.fileExists(atPath: profiles.path) ? 1 : 0)   // MIDI-012: the profiles file
         }
     }
 

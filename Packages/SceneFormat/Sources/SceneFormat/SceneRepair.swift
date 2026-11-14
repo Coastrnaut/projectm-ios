@@ -276,6 +276,10 @@ extension SceneRepairReport {
         case .unknownLFO: (.unknownContent, nil)
         case .invalidLFOSync: (.invalidMappings, nil)   // MOD-009: kept verbatim, the oscillator runs unsynced
         case .unknownLFOSync: (.unknownContent, nil)
+        case .invalidMacro: (.invalidMappings, nil)   // MOD-010: kept verbatim, not used
+        case .unknownMacroTarget: (.unknownContent, nil)
+        case .invalidSnapshot: (.invalidMappings, nil)   // SCN-008: kept verbatim, not used
+        case .unknownSnapshotParameter: (.unknownContent, nil)
         case .fixedEffectStage, .duplicateEffect: (.valuesAdjusted, nil)   // FX-020: kept, ignored
         case .unknownAssetType, .unusedAsset, .orphanedParameter: (.unknownContent, nil)
         case .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .valueClamped, .droppedField, .parameterClamped, .rejectedParameter, .migratedReference:
@@ -307,11 +311,13 @@ extension SceneRepairReport {
         case .invalidGroup: return "The group's layers are drawn ungrouped; the group is kept in the scene."
         case .retiredReference: return "It is dropped and not saved again."
         case .invalidBinding, .duplicateBindingTarget, .invalidExpression, .orphanedBinding, .orphanedConnection, .rejectedConnection,
-             .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO:
+             .unsupportedCurve, .invalidTrigger, .unknownTrigger, .invalidLFO, .unknownLFO, .invalidMacro, .unknownMacroTarget,
+             .invalidSnapshot:
             return "It is kept in the scene but has no effect."
         case .invalidLFOSync, .unknownLFOSync: return "The oscillator runs at its stored rate; the setting is kept in the scene."
         case .unknownLayerKind: return "The layer is kept but not shown."
-        case .unknownAssetType, .unusedAsset, .orphanedParameter, .unknownEffectKind: return "It is kept but not used by this version."
+        case .unknownAssetType, .unusedAsset, .orphanedParameter, .unknownEffectKind, .unknownSnapshotParameter:
+            return "It is kept but not used by this version."
         case .fixedEffectStage: return "Flash safety and the tone map still run last; the entry is kept."
         case .duplicateEffect: return "Only the first entry of that effect is used; the entry is kept."
         case .rejectedParameter: return "The current value is kept."
@@ -383,6 +389,10 @@ enum ScenePathItem {
         }
         if let id = document.parameters.keys.first(where: { (id: ParameterID) -> Bool in path == ScenePath.key("$.parameters", id.rawValue) }) {
             return "Value \"\(id)\""
+        }
+        if let s = index(path, after: "$.snapshots[") {   // SCN-008
+            let name: String? = s < (document.snapshots?.count ?? 0) ? document.snapshots?[s].name : nil
+            return name.map { (n: String) -> String in "Snapshot \(s + 1) (\"\(n)\")" } ?? "Snapshot \(s + 1)"
         }
         switch path {
         case "$.name": return "Scene name"

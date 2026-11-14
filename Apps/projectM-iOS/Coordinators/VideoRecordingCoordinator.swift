@@ -15,7 +15,8 @@
 //   opens the system file mover (`fileMover`: the user picks the folder; the temporary file is moved,
 //   never copied), never the photo library; a cancelled move keeps it offered (REC-012 supersedes
 //   REC-003-R13's delete on cancel). Leftovers in `<tmp>/Recordings` are deleted at launch
-//   (REC-003-R13), so nothing outlives the session. Nothing else is stored.
+//   (REC-003-R13), so nothing outlives the session unless the user taps Keep (REC-010, specs/198-rec-010-recording-library:
+//   the file moves into `Application Support/RecordingLibrary`). Nothing else is stored.
 // * REC-015 (specs/063-rec-015-recording-disk-guard): Record reads the free storage once (after the
 //   refusals above) and refuses below the reserve plus one minute; while recording, a 5 s loop reads
 //   the free storage and the file's size off the main actor and stops with `.lowStorage` (the normal
@@ -30,6 +31,25 @@
 //   0.25 s check ends the audio for good when the source mode changes, the tap was disarmed by a new
 //   capture session, or the microphone setting is turned off; no silence is added. Other apps' audio
 //   (System/App Capture) never reaches a file.
+// * REC-007 (specs/175-rec-007-countdown, contract C1): with a countdown set (Off, 3, 5, 10 s), Record applies
+//   the refusals and then counts down (`.countingDown(remaining)`) on an injected clock; no writer, file, audio
+//   tap or storage reading exists until it completes, and the completion runs the start path exactly once
+//   (generation token). Record, Cancel or Escape cancels; a Record tap in the last 0.25 s or the first 0.5 s
+//   of the recording it started is ignored. The 0.25 s check, the background observer and leaving the
+//   visualizer cancel it.
+// * REC-008 (specs/180-rec-008-timed-stop, contract C2, C3): with a length set (Off, 10 s, 30 s, 1 min, 5 min) the
+//   recording's `maxDurationSeconds` is that length, fixed at start; the recorder writes exactly the frames below
+//   it, the tap calls `beginFinish()` on the frame that crossed it (never waits) and reports the stop, which is
+//   `timedStop` with "Recording stopped after 10 seconds.". The indicator reads "0:07 / 0:10".
+// * REC-009 (specs/190-rec-009-status-overlay, contract C1, C2): while recording, `statusSummary` (dropped slots from
+//   the recorder's statistics, the free storage from the Record-time and 5 s REC-015 readings, the minutes until the
+//   guard stops) is refreshed by the 0.25 s check and after each storage reading; `RecordingWarningThrottle` sets
+//   `statusWarning` for rising warnings (at most once per kind per 30 s of recording), which the view posts as X9f
+//   or X9g. The readings stay in memory (REC-009-R7). The overlay is app UI and never reaches a file (REC-009-R6,
+//   research REC-009-D1): every source feeds the recorder from its own Metal output inside its frame's command
+//   buffer — the compositor's `encodeOutput` (the shown composite after the FX-019 flash guard and FX-003 grade) or
+//   the native spectra's drawable blit — which SwiftUI layers are never drawn into, also when the visual's view is
+//   on an external display (the same host feeds the recording). There is no option to include the overlay.
 // * DEBUG: `-uitestRecordingDirectory <name>` moves the file into `<tmp>/<name>/` instead of showing
 //   the mover, and `probe` reports what AVFoundation reads back ("video hvc1 1178x2556 frames=58
 //   duration=1.93 audio=0").
@@ -74,6 +94,7 @@ final class VideoRecordingTap {
         let outcome = recorder.recordFrame(presentationNanoseconds: presentationNanoseconds, drawableWidth: drawable.width,
                                            drawableHeight: drawable.height, commandBuffer: commandBuffer, encode: encode)
         audioFeed?.pump()   // after the frame: the first frame sets the audio's origin
+        if outcome == .durationReached { recorder.beginFinish() }   // REC-008-R3: after the last audio; never waits
         switch outcome {
         case .sizeChanged: report(.sizeChanged)
         case .durationReached: report(.durationReached)
@@ -141,12 +162,35 @@ final class VideoRecordingCoordinator {
         var qualityCapabilities: (any RecordingEncoderCapabilities)? = nil
         /// REC-006: the frame-rate choice (Profile default keeps the profile's rate).
         var frameRateChoice: RecordingFrameRateChoice = .defaultChoice
+        /// REC-007: the countdown before a recording starts (Off: at once).
+        var countdown: RecordingCountdownLength = .defaultLength
+        /// REC-008: the length after which the recording stops by itself (Off: the 10-minute limit only).
+        var timedStop: RecordingTimedStopLength = .defaultLength
     }
 
     enum State: Equatable, CaseIterable {   // CaseIterable: ACC-011's completeness test
         case idle
+        /// REC-007: the whole seconds left before the recording starts (nothing is written yet).
+        case countingDown(Int)
         case recording
         case finishing
+
+        /// `countingDown(1)` stands for every remaining count.
+        static var allCases: [State] { [.idle, .countingDown(1), .recording, .finishing] }
+
+        var isCountingDown: Bool {
+            if case .countingDown = self { return true }
+            return false
+        }
+
+        /// REC-007: the remaining seconds while counting down.
+        var countdownRemaining: Int? {
+            if case .countingDown(let remaining) = self { return remaining }
+            return nil
+        }
+
+        /// The recording indicator shows (a file exists or is being finished).
+        var hasRecording: Bool { self == .recording || self == .finishing }
     }
 
     private(set) var state: State = .idle {
@@ -175,14 +219,42 @@ final class VideoRecordingCoordinator {
     private(set) var recordingProfile: RecordingQualityProfile?
     /// REC-006-R4: the last finished recording's facts (frame rate, frames, dropped frames); nil before the first.
     private(set) var lastRecording: RecordedVideo?
+    /// REC-007-R6: why the last countdown was cancelled (nil while counting and after a completion or a refusal).
+    private(set) var lastCountdownCancel: RecordingCountdownCancel?
+    /// REC-008-R10: the current (or last) recording's length, fixed at its start; nil with Off.
+    private(set) var recordingLength: RecordingTimedStopLength?
+    /// REC-009: what the status overlay shows (nil unless recording).
+    private(set) var statusSummary: RecordingStatusSummary?
+    /// REC-009-R4: the latest warning to announce; each new one has a new sequence number.
+    private(set) var statusWarning: RecordingStatusWarning?
+    @ObservationIgnored private var storageReading = StorageReading()
+    @ObservationIgnored private var warningThrottle = RecordingWarningThrottle()
+    @ObservationIgnored private var warningSequence = 0
+    /// REC-007: writers this coordinator has created (tests: a cancelled countdown creates none).
+    @ObservationIgnored private(set) var writerCreations = 0
+    @ObservationIgnored private let countdownClock: any RecordingCountdownClock
+    @ObservationIgnored private var countdownGeneration = 0
+    @ObservationIgnored private var countdownDeadline: Double = 0
+    @ObservationIgnored private var countdownTimer: (any RecordingCountdownTimer)?
+    @ObservationIgnored private weak var countdownSource: (any VideoRecordingSource)?
+    @ObservationIgnored private var countdownStartedRecordingAt: Double?
     @ObservationIgnored private var recordingAudioMode: AudioSourceMode?
     @ObservationIgnored private var disarmAudioTap: (() -> Void)?
 
     @ObservationIgnored private let context: @MainActor () -> Context
     @ObservationIgnored private let directory: URL
+    /// REC-010: Keep moves the offered recording here (`Application Support/RecordingLibrary`).
+    @ObservationIgnored let library: RecordingLibraryStore
+    /// REC-010-R9: Keep's announcement on the shared announcer's library lane (AppCoordinator).
+    @ObservationIgnored var onKept: (@MainActor (String) -> Void)?
     @ObservationIgnored private let debugDirectory: URL?
     @ObservationIgnored private let checkInterval: Duration?
     @ObservationIgnored private var recorder: MetalFrameRecorder?
+    /// PERF-007: the running recording's statistics (live), else the last finished recording's; nil before the first.
+    var frameDropStatistics: (statistics: RecordingStatistics, live: Bool)? {
+        if let recorder { return (recorder.statistics, true) }
+        return lastRecording.map { (video: RecordedVideo) -> (statistics: RecordingStatistics, live: Bool) in (video.statistics, false) }
+    }
     @ObservationIgnored private weak var source: (any VideoRecordingSource)?
     @ObservationIgnored private var ticker: Task<Void, Never>?
     @ObservationIgnored private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
@@ -201,14 +273,18 @@ final class VideoRecordingCoordinator {
          storageProbe: (any StorageProbe)? = nil,
          storageCheckInterval: Duration? = .seconds(RecordingStoragePolicy.checkIntervalSeconds),
          writerFault: RecordingWriterFault? = nil,
+         countdownClock: (any RecordingCountdownClock)? = nil,
+         library: RecordingLibraryStore = RecordingLibraryStore.standard(),
          context: @escaping @MainActor () -> Context) {
         self.directory = directory
+        self.library = library
         self.debugDirectory = debugDirectory
         self.checkInterval = checkInterval
         let debugStorage = Self.debugStorageFromArguments()
         self.storageProbe = storageProbe ?? debugStorage?.probe ?? VolumeStorageProbe()
         self.storageCheckInterval = storageProbe == nil ? (debugStorage?.interval ?? storageCheckInterval) : storageCheckInterval
         self.writerFault = writerFault
+        self.countdownClock = countdownClock ?? SystemRecordingCountdownClock()
         self.context = context
         Self.removeLeftovers(in: directory)   // REC-003-R13: a crash may have left a temporary file
         observeBackground()
@@ -217,6 +293,7 @@ final class VideoRecordingCoordinator {
     isolated deinit {
         ticker?.cancel()
         storageTicker?.cancel()
+        countdownTimer?.cancel()
         observers.forEach(NotificationCenter.default.removeObserver)
     }
 
@@ -224,7 +301,7 @@ final class VideoRecordingCoordinator {
     /// or finished, the offered recording and the one handed to the Save mover.
     var filesInUse: [URL] {
         var urls: [URL] = [offered, fileToMove].compactMap { (url: URL?) -> URL? in url }
-        if state != .idle {
+        if state.hasRecording {   // REC-007: a countdown has no file yet
             urls.append(directory)
             if let debugDirectory { urls.append(debugDirectory) }
         }
@@ -263,12 +340,24 @@ final class VideoRecordingCoordinator {
     }
 
     /// The indicator's text: "0:05", "1:02:03" never (10-minute limit).
-    static func elapsedText(_ seconds: Double) -> String {
+    nonisolated static func elapsedText(_ seconds: Double) -> String {
         let whole = max(Int(seconds), 0)
         return "\(whole / 60):" + String(format: "%02d", whole % 60)
     }
 
     var elapsedText: String { Self.elapsedText(elapsedSeconds) }
+
+    /// REC-008-R8: the indicator's text, "0:07 / 0:10" with a length, else "0:07".
+    var indicatorText: String {
+        guard let total = recordingLength?.indicatorText else { return elapsedText }
+        return elapsedText + " / " + total
+    }
+
+    /// REC-008-R8: what VoiceOver reads for the indicator's time, "0:07 of 0:10" with a length.
+    var indicatorAccessibilityText: String {
+        guard let total = recordingLength?.indicatorText else { return elapsedText }
+        return elapsedText + " of " + total
+    }
 
     // MARK: - Audio (REC-004)
 
@@ -304,9 +393,12 @@ final class VideoRecordingCoordinator {
     /// Record / Stop recording.
     func toggle() {
         switch state {
-        case .recording: stop(.user)
+        case .recording:
+            if !countdownStartGuardActive { stop(.user) }   // REC-007-R4: a late tap never stops the new recording
         case .finishing: refuse(.busy)
-        case .idle: start()
+        case .countingDown:
+            if countdownDeadline - countdownClock.now > Self.countdownFinalGuard { cancelCountdown(.user) }   // REC-007-R4
+        case .idle: requestStart()
         }
     }
 
@@ -330,6 +422,31 @@ final class VideoRecordingCoordinator {
         showMover = false
     }
 
+    /// REC-010 Keep (contract C1): the offered recording moves into the library; a failed move keeps it offered.
+    static let keptNotice = "Recording kept in Recordings."
+
+    @discardableResult
+    func keepOffered() -> URL? {
+        guard let offered else { return nil }
+        do {
+            let kept = try library.keep(offered)
+            self.offered = nil
+            fileToMove = nil
+            showMover = false
+            notice = Self.keptNotice
+            onKept?(Self.keptNotice)
+            return kept
+        } catch {
+            notice = RecordingFailure.writerFailed("").notice
+            return nil
+        }
+    }
+
+    #if DEBUG
+    /// Tests: offers `url` as a finished recording (REC-010 Keep tests; no recording needed).
+    func offerForTests(_ url: URL) { offered = url }
+    #endif
+
     /// The mover finished: the file was moved (success: nothing is offered any more); a cancel or a
     /// failure keeps the recording offered (REC-012-R8).
     func moverFinished(_ result: Result<URL, any Error>) {
@@ -351,18 +468,25 @@ final class VideoRecordingCoordinator {
 
     // MARK: - Start and stop
 
-    private func start() {
-        let c = context()
+    /// The start refusals (REC-003, REC-012-R10); true when Record was refused (the notice is set).
+    private func refusedStart(_ c: Context, busy: Bool) -> Bool {
         if let refusal = RecordingGate.refusal(visualAvailable: c.visualShown, recordable: c.source != nil, outputLive: c.outputLive,
-                                               paused: c.paused, busy: state != .idle || fileToMove != nil) {
+                                               paused: c.paused, busy: busy || fileToMove != nil) {
             refuse(refusal)
-            return
+            return true
         }
         if offered != nil {   // REC-012-R10: never delete an offered recording without the user's choice
             notice = Self.resultOfferedNotice
             probe = "refused: resultOffered"
-            return
+            return true
         }
+        return false
+    }
+
+    /// `afterCountdown`: the completion of a countdown (its own state is not "busy", REC-007-R3).
+    private func start(afterCountdown: Bool = false) {
+        let c = context()
+        if refusedStart(c, busy: afterCountdown ? false : state != .idle) { return }
         guard let source = c.source else { return }
         let size = source.recordingDrawableSize
         let audio = Self.audioDecision(for: c)   // REC-004-R4: fixed for this recording
@@ -377,24 +501,30 @@ final class VideoRecordingCoordinator {
             fail(.encoderUnavailable)
             return
         }
-        let settings: RecordingSettings = plan.settings
+        var settings: RecordingSettings = plan.settings
+        let length: RecordingTimedStopLength? = c.timedStop.seconds > 0 ? c.timedStop : nil   // REC-008-R10: fixed now
+        if let length { settings.maxDurationSeconds = min(length.seconds, settings.maxDurationSeconds) }   // media time
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             // REC-015-R1, R3: one free-storage reading before anything is written.
             var policy: RecordingStoragePolicy?
+            var startAvailable: Int64?
             if let geometry = RecordingGeometry(drawableWidth: Int(size.width), drawableHeight: Int(size.height),
                                                 maxLongSide: settings.maxLongSide) {
                 let rules = RecordingStoragePolicy(estimate: RecordingStorageEstimate(geometry: geometry, settings: settings))
-                guard rules.allowsStart(availableBytes: storageProbe.availableBytes(at: directory)) else {
+                startAvailable = storageProbe.availableBytes(at: directory)
+                guard rules.allowsStart(availableBytes: startAvailable) else {
                     refuse(.lowStorage)
                     return
                 }
                 policy = rules
             }
+            writerCreations += 1   // REC-007: counted before the writer exists
             let recorder = try MetalFrameRecorder(device: source.recordingDevice, url: url, drawableWidth: Int(size.width),
                                                   drawableHeight: Int(size.height), settings: settings, fault: writerFault,
                                                   audio: audio.includesAudio && c.audioTap != nil)
             storagePolicy = policy
+            storageReading = StorageReading(availableBytes: startAvailable, fileBytes: nil)   // REC-009-R3
             let tap = VideoRecordingTap(recorder: recorder)
             if recorder.hasAudioTrack, let reader = c.audioTap {
                 tapArmer?(true)   // empty, then only this recording's permitted source
@@ -421,10 +551,109 @@ final class VideoRecordingCoordinator {
         elapsedSeconds = 0
         notice = resolution.notice   // REC-005-R6, REC-006-R7: X9c, nil without a fallback
         recordingProfile = plan.profile
+        recordingLength = length
         lastStopReason = nil
         probe = "recording"
+        warningThrottle = RecordingWarningThrottle()   // REC-009-R4: per recording
+        refreshStatus()
         startTicker()
         startStorageTicker()
+    }
+
+    // MARK: - Countdown (REC-007, contract C1, research REC-007-D3 to D6)
+
+    /// A Record tap this close to the countdown's end is ignored (REC-007-R4).
+    static let countdownFinalGuard: Double = 0.25
+    /// A Record tap this soon after the countdown started the recording is ignored (REC-007-R4).
+    static let countdownStartGuard: Double = 0.5
+
+    private var countdownStartGuardActive: Bool {
+        guard let startedAt = countdownStartedRecordingAt else { return false }
+        return countdownClock.now - startedAt < Self.countdownStartGuard
+    }
+
+    /// Record from idle: at once (Off), or the refusals and then a countdown.
+    private func requestStart() {
+        countdownStartedRecordingAt = nil
+        let c = context()
+        let seconds: Int = c.countdown.seconds
+        guard seconds > 0 else {
+            start()
+            return
+        }
+        if refusedStart(c, busy: false) { return }
+        guard let source = c.source else { return }
+        countdownGeneration += 1
+        let generation: Int = countdownGeneration
+        let begin: Double = countdownClock.now
+        countdownDeadline = begin + Double(seconds)
+        countdownSource = source
+        lastCountdownCancel = nil
+        state = .countingDown(seconds)
+        scheduleCountdownTick(step: 1, begin: begin, seconds: seconds, generation: generation)
+        startTicker()   // the 0.25 s check cancels on the same changes that stop a recording
+    }
+
+    /// Step k runs at `begin + k` (no drift); a stale generation does nothing.
+    private func scheduleCountdownTick(step: Int, begin: Double, seconds: Int, generation: Int) {
+        countdownTimer = countdownClock.schedule(at: begin + Double(step)) { [weak self] () -> Void in
+            self?.countdownTick(step: step, begin: begin, seconds: seconds, generation: generation)
+        }
+    }
+
+    private func countdownTick(step: Int, begin: Double, seconds: Int, generation: Int) {
+        guard generation == countdownGeneration, state.isCountingDown else { return }
+        if step >= seconds {
+            completeCountdown()
+            return
+        }
+        state = .countingDown(seconds - step)
+        scheduleCountdownTick(step: step + 1, begin: begin, seconds: seconds, generation: generation)
+    }
+
+    /// The countdown reached zero: the start path runs exactly once (REC-007-R3).
+    private func completeCountdown() {
+        countdownGeneration += 1   // no later tick of this countdown can act
+        endCountdownSchedule()
+        start(afterCountdown: true)
+        if state == .recording {
+            countdownStartedRecordingAt = countdownClock.now
+        } else if state.isCountingDown {
+            state = .idle   // refused at completion: its notice says why
+        }
+    }
+
+    /// Cancels a countdown (Record, Cancel, Escape, or an automatic reason); nothing was written (REC-007-R6).
+    func cancelCountdown(_ reason: RecordingCountdownCancel = .user) {
+        guard state.isCountingDown else { return }
+        countdownGeneration += 1
+        endCountdownSchedule()
+        lastCountdownCancel = reason
+        state = .idle
+    }
+
+    private func endCountdownSchedule() {
+        countdownTimer?.cancel()
+        countdownTimer = nil
+        ticker?.cancel()
+        ticker = nil
+        countdownSource = nil
+    }
+
+    /// REC-007-R5: the countdown ends on the changes that would stop a recording.
+    private func checkCountdownContext() {
+        let c = context()
+        if !c.visualShown {
+            cancelCountdown(.leftVisualizer)
+        } else if !c.outputLive {
+            cancelCountdown(.blackedOut)
+        } else if c.paused {
+            cancelCountdown(.paused)
+        } else if c.source == nil || c.source !== countdownSource {
+            cancelCountdown(.visualLost)
+        } else if c.source?.isPresentingFrames == false {
+            cancelCountdown(.presentationLost)
+        }
     }
 
     // MARK: - Storage (REC-015-R4, R5)
@@ -449,6 +678,8 @@ final class VideoRecordingCoordinator {
             (probe.availableBytes(at: folder), RecordingStorage.fileBytes(at: url))
         }.value
         guard state == .recording, self.recorder === recorder else { return }
+        storageReading = StorageReading(availableBytes: reading.0, fileBytes: reading.1)   // REC-009-R3
+        refreshStatus()
         if policy.shouldStop(availableBytes: reading.0, fileBytes: reading.1, recordedSeconds: recorder.recordedSeconds) {
             stop(.lowStorage)
         }
@@ -467,8 +698,13 @@ final class VideoRecordingCoordinator {
 
     /// Updates the elapsed time and stops when the context no longer allows recording (REC-003-R11).
     func checkContext() {
+        if state.isCountingDown {
+            checkCountdownContext()   // REC-007-R5
+            return
+        }
         guard state == .recording else { return }
         elapsedSeconds = recorder?.recordedSeconds ?? 0
+        refreshStatus()   // REC-009-R2
         let c = context()
         if !c.outputLive {
             stop(.blackedOut)
@@ -506,9 +742,12 @@ final class VideoRecordingCoordinator {
     }
 
     /// Stops the recording and finishes the file off the main thread (idempotent).
-    func stop(_ reason: RecordingStopReason) {
+    func stop(_ requested: RecordingStopReason) {
         guard state == .recording, let recorder else { return }
+        // REC-008-R7: the recorder's duration limit is the user's length when one is set.
+        let reason: RecordingStopReason = requested == .durationReached && recordingLength != nil ? .timedStop : requested
         state = .finishing
+        statusSummary = nil   // REC-009: the overlay shows only while recording
         lastStopReason = reason
         ticker?.cancel()
         ticker = nil
@@ -534,7 +773,7 @@ final class VideoRecordingCoordinator {
             fail(failure)
         case .success(let video):
             lastRecording = video   // REC-006-R4
-            notice = reason.notice
+            notice = reason == .timedStop ? (recordingLength?.stoppedNotice ?? reason.notice) : reason.notice
             if let debugDirectory {
                 moveForTests(video, into: debugDirectory)
             } else {
@@ -555,6 +794,42 @@ final class VideoRecordingCoordinator {
         probe = "failed: \(failure)"
     }
 
+    // MARK: - Status overlay (REC-009, contract C1, C2)
+
+    /// The latest REC-015 readings (in memory only, REC-009-R7).
+    struct StorageReading {
+        var availableBytes: Int64?
+        var fileBytes: Int64?
+    }
+
+    /// Recomputes the overlay's summary and lets the throttle raise a warning (rising levels only).
+    private func refreshStatus() {
+        guard state == .recording, let recorder else {
+            statusSummary = nil
+            return
+        }
+        let seconds: Double = recorder.recordedSeconds
+        let summary = RecordingStatusSummary(statistics: recorder.statistics, policy: storagePolicy,
+                                             availableBytes: storageReading.availableBytes,
+                                             fileBytes: storageReading.fileBytes, recordedSeconds: seconds)
+        if summary != statusSummary { statusSummary = summary }
+        let droppedLevel: Int = summary.droppedWarning ? 1 : 0
+        if warningThrottle.submit(.droppedFrames, level: droppedLevel, at: seconds) {
+            raiseWarning(.droppedFrames, summary)
+            return   // one warning per refresh: the storage one follows 0.25 s later (each is posted)
+        }
+        let storageLevel: Int = summary.storageLevel?.rawValue ?? 0
+        if warningThrottle.submit(.storage, level: storageLevel, at: seconds) {
+            raiseWarning(.storage, summary)
+        }
+    }
+
+    private func raiseWarning(_ kind: RecordingWarningKind, _ summary: RecordingStatusSummary) {
+        warningSequence += 1
+        statusWarning = RecordingStatusWarning(kind: kind, storageLevel: summary.storageLevel,
+                                               secondsLeft: summary.secondsLeft, sequence: warningSequence)
+    }
+
     // MARK: - Background (REC-003-R11, research REC-003-D8)
 
     private func observeBackground() {
@@ -566,6 +841,7 @@ final class VideoRecordingCoordinator {
 
     /// The app left the screen: finish the file while the system still runs the app.
     func appEnteredBackground() {
+        cancelCountdown(.background)   // REC-007-R5: nothing to finish, nothing written
         guard state == .recording else { return }
         if backgroundTask == .invalid {
             backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "REC-003 finish recording") { [weak self] in
@@ -640,6 +916,14 @@ final class VideoRecordingCoordinator {
             if self?.notice == nil { self?.notice = "Recording saved." }
         }
     }
+}
+
+/// REC-009-R4: a recording warning to announce (rows X9f, X9g); `sequence` makes each one a change.
+struct RecordingStatusWarning: Equatable, Sendable {
+    let kind: RecordingWarningKind
+    let storageLevel: RecordingStorageLevel?
+    let secondsLeft: Int64?
+    let sequence: Int
 }
 
 #if DEBUG

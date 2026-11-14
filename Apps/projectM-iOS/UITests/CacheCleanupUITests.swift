@@ -19,7 +19,8 @@ final class CacheCleanupUITests: XCTestCase {
 
     func testClearCachesEmptiesTheCacheCategoriesAndKeepsUserData() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestStorageFixture", "-uitestDiagnostics", "-autostart", "inAppPlayback"] + Self.noStore
+        app.launchArguments = ["-uitestStorageFixture", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsSection", "storage"] + Self.noStore   // Settings opens at Storage (owner rule 7)
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
 
@@ -52,13 +53,14 @@ final class CacheCleanupUITests: XCTestCase {
         XCTAssertTrue(alert.appears(within: 5), "the confirmation")
         let message = alert.staticTexts.allElementsBoundByIndex.map { (text: XCUIElement) -> String in text.label }.joined(separator: " ")
         XCTAssertTrue(message.contains("Frees "), message)
-        XCTAssertTrue(message.contains("Photos, videos, scenes, the show, presets, imported audio and settings are kept."), message)
+        XCTAssertTrue(message.contains("Photos, videos, scenes, the show, presets, imported audio, saved recordings and settings are kept."), message)
         alert.buttons["Clear"].firstMatch.tap()   // the alert lists its buttons twice on iOS 27
         XCTAssertTrue(alert.disappears(within: 5))
 
         XCTAssertTrue(app.staticTexts["storageCleanupResult"].appears(within: 10), "the cleared size")
         XCTAssertFalse(app.staticTexts["storageCleanupFailed"].exists)
-        // The nine rows stay loaded above the short Clear Caches section: values read without scrolling.
+        // REC-010 added the Saved recordings row above Clear Caches: back up to the rows first.
+        XCTAssertTrue(app.reveal(row("recordings"), down: true))
         XCTAssertTrue(poll(10) { self.value("recordings") == "Zero KB" }, "recordings: \(value("recordings"))")
         XCTAssertEqual(value("sharesAndExports"), "Zero KB")
         XCTAssertEqual(value("caches"), "Zero KB")

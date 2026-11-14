@@ -51,5 +51,7 @@
 | [0054](0054-effect-chain-order.md) | Trails and Color are the reorderable output effects; flash safety and the tone map stay last | Accepted 2026-11-14 (FX-020; owner rule 4) |
 | [0055](0055-recently-played-history.md) | A local, opt-in recently played list of preset IDs (amends FR-065/FR-123 for two keys) | Accepted 2026-11-14 (PRE-006; owner rule 4) |
 | [0056](0056-recording-frame-grid.md) | Recordings are written on an exact 24/30/60 fps grid with the nearest frames; empty slots are counted, not repeated | Accepted 2026-11-14 (REC-006; owner rule 4) |
+| [0057](0057-modulation-mix-order.md) | Up to 4 bindings per parameter, folded in list order with MOD-002's formulas and a clamp after each; ACC-012 last | Accepted 2026-11-14 (MOD-011; owner rule 4) |
+| [0058](0058-osc-peer-allowlist.md) | Optional OSC peer allowlist: store user-approved local hosts on the device, show recently blocked hosts in memory | Accepted 2026-11-14 (OSC-008; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

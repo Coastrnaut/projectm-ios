@@ -26,6 +26,13 @@
 //   recording runs (`holdsPlacement`), the visual stays where it is unless its slot is gone, so the
 //   recording's size never changes. The internal render session is never touched: only its view
 //   changes window. `externalResources` counts what the external side holds (0 after disconnect).
+// * OUT-004 (spec specs/172-out-004-aspect-correction, contract C3): `correction` (Fit, Fill, Stretch;
+//   Display or Device shape; pixel aspect) and the device slot's shape are pushed to every external
+//   slot, which lays the visual out by them. While a recording holds the placement nothing is pushed
+//   (the recording's picture size must not change); the latest values follow when the hold ends.
+// * OUT-012 (spec specs/184-out-012-display-rehearsal, contract C3): the rehearsal flag. Settings'
+//   rehearsal cover is bound to `isRehearsing`; a newly settled real display clears it (the real output
+//   takes over), and it cannot start while one is connected. The rehearsal never touches the visual.
 import OSLog
 import PresentationLifecycle
 import SwiftUI
@@ -66,7 +73,11 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
 
     @ObservationIgnored private(set) var routing = ExternalDisplayRouting()
     /// The visualization is drawn on an external display; the device shows the note instead.
-    private(set) var showsVisualExternally = false
+    private(set) var showsVisualExternally = false {
+        didSet { if showsVisualExternally != oldValue { onVisualOutputChange?() } }   // PERF-007: a new counting session
+    }
+    /// PERF-007: called inside `place()` when the visual moves between the device and an external display.
+    @ObservationIgnored var onVisualOutputChange: (@MainActor () -> Void)?
     /// Times the visual view changed slot (tests; an Int, no allocation).
     @ObservationIgnored private(set) var placements = 0
 
@@ -91,6 +102,20 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     @ObservationIgnored private var heldTarget: VisualOutputTarget?
     /// Settled connections and disconnections (OUT-002-R6); AppCoordinator posts them as status events.
     @ObservationIgnored var onConnectionChange: ((ExternalDisplayConnectionChange) -> Void)?
+
+    // OUT-004: output correction.
+    /// The user's choice (ExternalOutputSetting sets it); applied to external slots unless held.
+    @ObservationIgnored var correction: ExternalOutputCorrection = .default {
+        didSet { if correction != oldValue { pushCorrection() } }
+    }
+    /// The device visualizer's shape (width ÷ height), from the device slot's size; nil until known.
+    @ObservationIgnored private(set) var deviceAspect: Double?
+
+    // OUT-012: output rehearsal.
+    /// The rehearsal is open (Settings' full-screen cover is bound to it).
+    private(set) var isRehearsing = false
+    /// A settled real external display is connected.
+    private(set) var hasExternalDisplay = false
 
     /// `connectSettle` 0 (the default): a connect moves the visual inside the call (OUT-001-R6 tests).
     init(connectSettle: Double = 0, scheduleSettle: SettleScheduler? = nil) {
@@ -118,6 +143,8 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     func registerDeviceSlot(_ slot: VisualSlotView) {
         guard deviceSlot !== slot else { return }
         deviceSlot = slot
+        slot.onSizeChange = { [weak self] (size: CGSize) -> Void in self?.deviceSizeChanged(size) }
+        if slot.bounds.width > 0, slot.bounds.height > 0 { deviceSizeChanged(slot.bounds.size) }
         place()
     }
 
@@ -146,6 +173,8 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     /// stays empty until the connection settles.
     func externalConnected(id: String, slot: VisualSlotView, geometry: ExternalDisplayGeometry, foreground: Bool) {
         externalSlots[id] = WeakSlot(slot: slot)
+        slot.correction = correction   // OUT-004: a new slot holds no visual yet, so even a hold allows it
+        slot.deviceAspect = deviceAspect
         slot.onGeometryChange = { [weak self] (geometry: ExternalDisplayGeometry) in self?.externalResized(id: id, geometry: geometry) }
         log.info("external display connected: \(geometry.width, privacy: .public) × \(geometry.height, privacy: .public) @\(geometry.scale, privacy: .public), foreground \(foreground, privacy: .public)")
         if routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id }) || settle.isImmediate {
@@ -168,6 +197,11 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         routing.apply(.connected(id: id, geometry: geometry, foreground: foreground))
         place()
         guard !known else { return }
+        hasExternalDisplay = true
+        if isRehearsing {   // OUT-012-R6: the real output takes over
+            isRehearsing = false
+            log.info("output rehearsal ended: an external display connected")
+        }
         let held = heldTarget != nil && effectiveTarget != routing.target
         log.info("external display settled\(held ? " (held by a recording)" : "", privacy: .public)")
         onConnectionChange?(.connected(heldByRecording: held))
@@ -192,6 +226,7 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         let cancelled = settle.cancel(id: id)
         let known = routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id })
         routing.apply(.disconnected(id: id))
+        hasExternalDisplay = !routing.displays.isEmpty
         log.info("external display disconnected\(cancelled ? " before it settled" : "", privacy: .public)")
         if let slot = externalSlots.removeValue(forKey: id)?.slot {
             slot.onGeometryChange = nil
@@ -212,6 +247,7 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
             heldTarget = newValue ? effectiveTarget : nil
             log.info("placement hold: \(newValue, privacy: .public)")
             place()
+            if !newValue { pushCorrection() }   // OUT-004-R7: deferred changes apply now
         }
     }
 
@@ -227,6 +263,57 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
 
     /// The visual view the coordinator places (tests).
     var currentVisual: UIView? { visual }
+
+    // MARK: - Output rehearsal (OUT-012)
+
+    /// Opens the rehearsal; refused (false) while a real external display is connected.
+    @discardableResult
+    func beginRehearsal() -> Bool {
+        guard !hasExternalDisplay else { return false }
+        isRehearsing = true
+        return true
+    }
+
+    func endRehearsal() {
+        isRehearsing = false
+    }
+
+    // MARK: - Output correction (OUT-004)
+
+    func deviceSizeChanged(_ size: CGSize) {
+        guard size.width > 0, size.height > 0 else { return }
+        let aspect = Double(size.width) / Double(size.height)
+        guard aspect != deviceAspect else { return }
+        deviceAspect = aspect
+        pushCorrection()
+    }
+
+    /// Sends the correction and device shape to every external slot and lays the visual out inside
+    /// the call; nothing while a recording holds the placement (OUT-004-R7).
+    private func pushCorrection() {
+        guard heldTarget == nil else { return }
+        for slot in externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }) {
+            slot.correction = correction
+            slot.deviceAspect = deviceAspect
+            slot.applyPlacement()
+        }
+        if let summary = externalPlacementSummary { log.info("external placement: \(summary, privacy: .public)") }
+    }
+
+    /// "fit=<fit> shape=<shape> par=<x.xx> frame=<W>x<H> bars=<none|pillarbox|letterbox>" for the
+    /// external slot holding the visual; nil when the visual is not on an external display (tests,
+    /// DEBUG probe, log; sizes only).
+    var externalPlacementSummary: String? {
+        guard let slot = visual?.superview as? VisualSlotView, slot.role == .external else { return nil }
+        let p: ExternalOutputPlacement = slot.placement
+        let applied: ExternalOutputCorrection = slot.correction
+        let par: Double = applied.pixelAspect.resolved(screen: slot.screenPixelAspect)
+        let width: Int = Int(p.frameWidth.rounded())
+        let height: Int = Int(p.frameHeight.rounded())
+        let parText: String = String(format: "%.2f", par)
+        let head: String = "fit=" + applied.fit.rawValue + " shape=" + applied.shape.rawValue + " par=" + parText
+        return head + " frame=\(width)x\(height) bars=" + p.bars.rawValue
+    }
 
     // MARK: - Output blackout (OUT-010)
 

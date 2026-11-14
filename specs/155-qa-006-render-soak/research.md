@@ -30,6 +30,37 @@
 - **Alternatives**: a single absolute ceiling (passes a slow leak, fails a larger device); comparing
   first and last cycle only (noise-sensitive).
 
+## QA-006-D2a: Warm-up on a paravirtual GPU (CI fix, 2026-11-14)
+
+- **Finding**: CI run 43612171768 (`macos-26` runner, Apple Paravirtual device) failed
+  `testDefaultSoakIsBoundedAndErrorFree`: slope 188,221 B/cycle, warm-up high-water 6,766,592 B, measured
+  maximum 7,815,168 B, while pool checkouts stayed at every scene's baseline, one scene was alive per dwell end
+  and the release was empty. The two negative-control soaks that followed in the same process started at
+  8,863,744 B and grew by exactly their injected leak (98,304 B/cycle), so the driver's growth had stopped. On
+  the Mac Studio's GPU the same soak is flat (2,719,744 B every cycle, and the next soak starts lower), and no
+  soak path branches on the device. Conclusion: the paravirtual driver keeps freed allocations during a
+  process's first ~60 scene builds (allocator warm-up), not a leak in the soak's objects.
+- **Decision**: the scene soak's warm-up is the first half of its cycles (at least 2, at most 10); the default
+  soak runs 60 s simulated (20 cycles) so 10 cycles are measured. ε, the bound and the other rules are
+  unchanged. Per-cycle samples are printed to the test log (CI keeps no attachment).
+- **Alternatives**: raising ε (would hide a one-texture leak per cycle); judging only pool and live counts (would
+  miss a non-pooled device leak, negative control (b)); a slope over the later half within 10 cycles (not enough
+  margin: whether the growth stops before cycle 5 is unknown).
+
+## QA-006-D2b: Memory source on a paravirtual GPU (CI fix, 2026-11-14)
+
+- **Finding**: the D2a warm-up was not enough. CI run 43631161188 (`macos-26`, Apple Paravirtual device) failed
+  again: `currentAllocatedSize` rose in ~1 MB steps every 4-5 cycles for all 20 cycles (6.6 → 10.8 MB), while
+  pool live bytes (786,432), pool misses (8) and the process footprint (38.6 MB at cycles 9 and 19) stayed
+  flat. The growth is the virtual GPU driver's allocation pattern, not the soak's objects.
+- **Decision**: on a device whose name contains "Paravirtual", the soak judges the pool estimate plus the
+  injected device leak bytes (`memorySource` "poolEstimate (paravirtual GPU)"). Apple GPUs (the Mac Studio host,
+  the simulator, devices) keep `deviceAllocatedSize`, so the merge gates on the build Mac still judge real
+  device memory. Both negative controls still fail on CI.
+- **Trade-off**: on CI only, a real non-pooled device leak would not fail this soak; the gates on the build Mac
+  and the device suite cover it. Judging the footprint was rejected: it moves by ±1 MB between cycles, ten
+  times the one-texture leak the soak must catch.
+
 ## QA-006-D3: Scene switching path
 
 - **Decision**: CMP-014 `SceneTransitionBus` with one shared `TexturePool`; each switch builds the

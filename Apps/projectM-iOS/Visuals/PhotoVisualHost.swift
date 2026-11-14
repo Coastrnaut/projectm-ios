@@ -45,6 +45,8 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
     private var inBackground = false
     private var sceneDisconnected = false
     private var meter = FrameRateMeter()
+    /// PERF-007: the output's frame drop counter while the performance overlay is shown (nil: no counting work).
+    var frameDrops: FrameDropCounter?
     /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
     /// frames' command buffers until their GPU times are known.
     var stageTimer: FrameStageTimer? {
@@ -84,12 +86,18 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
     var beforeFrame: (() -> Void)?
 
     /// MED-006-R9: decodes a picture ahead so that setting it as `content` later is a one-render cut.
-    func preload(_ url: URL) { photo.preload(url) }
+    func preload(_ url: URL) {
+        MediaLoadSpy.shared.note(.photo)   // SCN-008: a decode
+        photo.preload(url)
+    }
 
     /// What the photo layer shows.
     var content: ImageLayerContent {
         get { photo.content }
-        set { photo.content = newValue }
+        set {
+            MediaLoadSpy.shared.note(.photo)   // SCN-008: a decode
+            photo.content = newValue
+        }
     }
 
     var barCount: SpectrumBarCount {
@@ -134,6 +142,7 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
             }
         }
         let analyzer = try LiveBandAnalyzer(barCount: barCount)
+        MediaLoadSpy.shared.note(.host)   // SCN-008: a new visual instance
         return PhotoVisualHost(device: device, queue: queue, photo: photo, spectrum: spectrum, compositor: compositor,
                                analyzer: analyzer, reader: reader)
     }
@@ -286,6 +295,7 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
         }
         timer?.end(.encode)
         timer?.begin(.present)
+        frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)
@@ -324,6 +334,7 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
             (UIScene.willConnectNotification, { host, note in if ExternalDisplayScenes.affectsDeviceVisuals(note) { host.sceneWillConnect() } }),
             (ProcessInfo.thermalStateDidChangeNotification, { host, _ in host.qualityChanged() }),
             (Notification.Name.NSProcessInfoPowerStateDidChange, { host, _ in host.qualityChanged() }),
+            (PowerProfileState.didChangeNotification, { host, _ in host.qualityChanged() }),   // PERF-008-R4
         ]
         for (name, action) in observed {
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] (note: Notification) in

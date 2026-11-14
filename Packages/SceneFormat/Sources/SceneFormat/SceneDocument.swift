@@ -56,13 +56,18 @@ public struct SceneDocument: Sendable, Hashable {
     public var triggers: [SceneTriggerEntry]?
     /// MOD-007: oscillators (SceneLFOs.swift), verbatim; nil = no `lfos` field.
     public var lfos: [SceneLFOEntry]?
+    /// MOD-010: parameter macros (SceneMacros.swift), verbatim; nil = no `macros` field.
+    public var macros: [SceneMacroEntry]?
+    /// SCN-008: named parameter snapshots (SceneSnapshots.swift), verbatim; nil = no `snapshots` field.
+    public var snapshots: [SceneSnapshotEntry]?
     /// Unknown top-level fields, kept verbatim (SCN-001-R10).
     public var extra: [String: SceneJSON]
 
     public init(id: String, name: String, layers: [SceneLayer] = [], parameters: [ParameterID: ParameterValue] = [:],
                 bindings: [SceneBinding] = [], modulation: SceneModulation = SceneModulation(),
                 assets: [String: SceneAsset] = [:], groups: [SceneGroup] = [], effects: [SceneEffectEntry]? = nil,
-                triggers: [SceneTriggerEntry]? = nil, lfos: [SceneLFOEntry]? = nil, extra: [String: SceneJSON] = [:]) {
+                triggers: [SceneTriggerEntry]? = nil, lfos: [SceneLFOEntry]? = nil, macros: [SceneMacroEntry]? = nil,
+                snapshots: [SceneSnapshotEntry]? = nil, extra: [String: SceneJSON] = [:]) {
         self.id = id
         self.name = name
         self.layers = layers
@@ -74,6 +79,8 @@ public struct SceneDocument: Sendable, Hashable {
         self.effects = effects
         self.triggers = triggers
         self.lfos = lfos
+        self.macros = macros   // MOD-010
+        self.snapshots = snapshots   // SCN-008
         self.extra = extra
     }
 
@@ -261,11 +268,13 @@ public struct SceneBinding: Sendable, Hashable {
     /// MOD-004: stored as the optional `curve` field, omitted for linear. A stored curve this version
     /// cannot read stays in `extra["curve"]` verbatim and restore rejects the binding (`unsupportedCurve`).
     public var curve: MappingCurve
+    /// MOD-012-R5: stored as the optional `enabled` field, written only when false; absent means enabled.
+    public var isEnabled: Bool
     public var extra: [String: SceneJSON]
 
     public init(sourceID: String, target: ParameterID, mapping: LinearMapping, mix: ModulationMixMode = .replace,
                 envelope: AudioFeatureEnvelope = .none, expression: String? = nil, curve: MappingCurve = .linear,
-                extra: [String: SceneJSON] = [:]) {
+                isEnabled: Bool = true, extra: [String: SceneJSON] = [:]) {
         self.sourceID = sourceID
         self.target = target
         self.mapping = mapping
@@ -273,19 +282,20 @@ public struct SceneBinding: Sendable, Hashable {
         self.envelope = envelope
         self.expression = expression
         self.curve = curve
+        self.isEnabled = isEnabled
         self.extra = extra
     }
 
     public init(source: AudioFeatureSource, target: ParameterID, mapping: LinearMapping, mix: ModulationMixMode = .replace,
                 envelope: AudioFeatureEnvelope = .none, expression: String? = nil, curve: MappingCurve = .linear,
-                extra: [String: SceneJSON] = [:]) {
+                isEnabled: Bool = true, extra: [String: SceneJSON] = [:]) {
         self.init(sourceID: source.id, target: target, mapping: mapping, mix: mix, envelope: envelope, expression: expression,
-                  curve: curve, extra: extra)
+                  curve: curve, isEnabled: isEnabled, extra: extra)
     }
 
     public init(_ binding: AudioFeatureBinding, expression: String? = nil) {
         self.init(source: binding.source, target: binding.target, mapping: binding.mapping, mix: binding.mixMode,
-                  envelope: binding.envelope, expression: expression, curve: binding.curve)
+                  envelope: binding.envelope, expression: expression, curve: binding.curve, isEnabled: binding.isEnabled)
     }
 
     /// The stored curve could not be read by this version (kept verbatim in `extra`).
@@ -297,6 +307,16 @@ public struct SceneBinding: Sendable, Hashable {
         set { if let newValue { sourceID = newValue.id } }
     }
 
+    /// Live bindings as stored, in order, each parameter's SHD-009 expression on its first binding only
+    /// (MOD-011-R7, contract mix-order O3).
+    public static func list(_ bindings: [AudioFeatureBinding], expressions: [ParameterID: String]) -> [SceneBinding] {
+        var seen: Set<ParameterID> = []
+        return bindings.map { (b: AudioFeatureBinding) -> SceneBinding in
+            let first: Bool = seen.insert(b.target).inserted
+            return SceneBinding(b, expression: first ? expressions[b.target] : nil)
+        }
+    }
+
     /// The MOD-002 binding (the expression is carried separately), or nil for an unknown source.
     public var audioFeatureBinding: AudioFeatureBinding? {
         source.map { (s: AudioFeatureSource) -> AudioFeatureBinding in audioFeatureBinding(source: s, target: target) }
@@ -305,7 +325,7 @@ public struct SceneBinding: Sendable, Hashable {
     func audioFeatureBinding(source: AudioFeatureSource, target: ParameterID) -> AudioFeatureBinding {
         AudioFeatureBinding(source: source, target: target, inputMinimum: mapping.inputMinimum, inputMaximum: mapping.inputMaximum,
                             outputStart: mapping.outputStart, outputEnd: mapping.outputEnd, mixMode: mix, envelope: envelope,
-                            curve: curve)
+                            curve: curve, isEnabled: isEnabled)
     }
 
     /// `audio.band.2 → visual.circularSpectrum.gap`.

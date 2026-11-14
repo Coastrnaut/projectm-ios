@@ -4,7 +4,7 @@
 // * `StatusCaptionView`: the router's caption ("Camera off", "OSC off", "Output restored", "Last scene
 //   reopened.") for 4 s; static text with identifier `statusCaption`, wrapping at accessibility sizes
 //   (ACC-006), shown and hidden without animation (ACC-011-R7).
-// * `StatusEventChanges`: the `.onChange`s that post rows X6-X14a and X21-X23, kept out of
+// * `StatusEventChanges`: the `.onChange`s that post rows X6-X14a (X9d, X9e: REC-007) and X21-X23, kept out of
 //   VisualizerView's body (one modifier line there).
 import PresentationLifecycle
 import SwiftUI
@@ -49,9 +49,10 @@ struct StatusEventChanges: ViewModifier {
     }
 
     private func recordingStateChanged(_ old: VideoRecordingCoordinator.State, _ new: VideoRecordingCoordinator.State) {
-        let state: VideoRecordingCoordinator.State = new == .idle && old == .recording ? .finishing : new
-        if state != .idle {
-            post(StatusEventCatalog.recording(state, elapsed: coordinator.videoRecording.elapsedText))
+        let recording: VideoRecordingCoordinator = coordinator.videoRecording
+        if let event = StatusEventCatalog.recordingTransition(from: old, to: new, elapsed: recording.elapsedText,
+                                                              countdownCancel: recording.lastCountdownCancel) {
+            post(event)
         }
     }
 
@@ -99,7 +100,8 @@ struct CaptureEventChanges: ViewModifier {
     }
 }
 
-/// X11-X14a: the recording's notices and the offered result (split for the type-check budget, REC-004).
+/// X11-X14a: the recording's notices and the offered result (split for the type-check budget, REC-004); REC-009's
+/// X9f, X9g ride here (the parent chain is at the budget).
 struct RecordingResultChanges: ViewModifier {
     let coordinator: AppCoordinator
 
@@ -107,6 +109,7 @@ struct RecordingResultChanges: ViewModifier {
         content
             .onChange(of: coordinator.videoRecording.notice, noticeChanged)   // X12-X14a
             .onChange(of: coordinator.videoRecording.offered != nil, offeredChanged)   // X11
+            .modifier(RecordingStatusEventChanges(coordinator: coordinator))   // REC-009 X9f, X9g
     }
 
     private func noticeChanged(_: String?, _ notice: String?) {

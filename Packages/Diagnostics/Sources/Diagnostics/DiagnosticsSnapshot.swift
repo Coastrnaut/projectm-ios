@@ -22,6 +22,46 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
     /// PERF-001: per-stage frame timings (the visualizer's automation runs); nil in CaptureLab, which has no
     /// frame loop. Optional and additive: schema version 2 is unchanged and the key is absent when nil.
     public var frameTimings: FrameTimings? = nil
+    /// PERF-007 (specs/192-perf-007-frame-drop-telemetry): presented, late and skipped frames per output, counted on
+    /// the device only. Optional and additive like `frameTimings`: absent when nil.
+    public var frameDrops: FrameDrops? = nil
+
+    /// PERF-007-R11: one entry per output; an unavailable count is an absent key, never 0.
+    public struct FrameDrops: Codable, Sendable, Equatable {
+        public static let outputNames: [String] = ["device", "external", "recording"]
+
+        public var outputs: [Output]
+
+        public struct Output: Codable, Sendable, Equatable {
+            /// One of `outputNames`.
+            public var output: String
+            public var submitted: Int?
+            public var skipped: Int?
+            public var presented: Int?
+            public var late: Int?
+            public var discarded: Int?
+            public var stale: Int
+
+            public init(output: String, submitted: Int? = nil, skipped: Int? = nil, presented: Int? = nil, late: Int? = nil,
+                        discarded: Int? = nil, stale: Int = 0) {
+                self.output = output
+                self.submitted = submitted.map { (v: Int) -> Int in max(0, v) }
+                self.skipped = skipped.map { (v: Int) -> Int in max(0, v) }
+                self.presented = presented.map { (v: Int) -> Int in max(0, v) }
+                self.late = late.map { (v: Int) -> Int in max(0, v) }
+                self.discarded = discarded.map { (v: Int) -> Int in max(0, v) }
+                self.stale = max(0, stale)
+            }
+        }
+
+        /// Keeps known output names, the first entry of each, at most 3.
+        public init(outputs: [Output]) {
+            var seen: Set<String> = []
+            self.outputs = outputs.filter { (entry: Output) -> Bool in
+                Self.outputNames.contains(entry.output) && seen.insert(entry.output).inserted
+            }
+        }
+    }
 
     /// PERF-001-R10 (specs/152-perf-001-stage-timings, data-model.md): medians and nearest-rank 95th
     /// percentiles in milliseconds; an unavailable value is an absent key, never 0.
@@ -35,6 +75,23 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
         public var stages: [Stage]
         /// PERF-002 (specs/160-perf-002-gpu-budget): the budget verdict for the same window; absent when not judged.
         public var budget: Budget? = nil
+        /// PERF-003 (specs/173-perf-003-adaptive-quality): the native visual's effect quality level; absent otherwise.
+        public var effectQuality: EffectQuality? = nil
+
+        /// PERF-003-R10: the level ("full", "reduced", "minimal") and, below Full, why ("thermal", "low power", "budget").
+        public struct EffectQuality: Codable, Sendable, Equatable {
+            public static let levels: [String] = ["full", "reduced", "minimal"]
+            public static let reasons: [String] = ["thermal", "low power", "budget"]
+
+            public var level: String
+            public var reason: String?
+
+            /// An unknown level reads "full" (the export must stay schema-valid); an unknown reason is dropped.
+            public init(level: String, reason: String? = nil) {
+                self.level = Self.levels.contains(level) ? level : "full"
+                self.reason = reason.flatMap { (r: String) -> String? in Self.reasons.contains(r) ? r : nil }
+            }
+        }
 
         /// PERF-002-R9: the frame deadline, the threshold and clear shares, the estimates and the flagged passes.
         public struct Budget: Codable, Sendable, Equatable {
@@ -90,8 +147,9 @@ public struct DiagnosticsSnapshot: Codable, Sendable, Equatable {
 
         /// Keeps known stage names (at most 6) and only finite, non-negative values (others become absent).
         public init(windowFrames: Int, rejectedSamples: Int, frameGPUMedianMs: Double? = nil, frameGPUP95Ms: Double? = nil,
-                    stages: [Stage], budget: Budget? = nil) {
+                    stages: [Stage], budget: Budget? = nil, effectQuality: EffectQuality? = nil) {
             self.budget = budget
+            self.effectQuality = effectQuality
             self.windowFrames = max(0, windowFrames)
             self.rejectedSamples = max(0, rejectedSamples)
             self.frameGPUMedianMs = Self.clean(frameGPUMedianMs)

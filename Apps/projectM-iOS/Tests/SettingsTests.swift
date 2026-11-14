@@ -59,6 +59,13 @@ final class SettingsTests: XCTestCase {
         settings.oscilloscopeWindowMilliseconds = 40
         settings.lissajousMode = .midSide      // VIS-004-R11
         settings.lissajousPersistence = true
+        settings.radialWaveformRing = .small   // VIS-005-R9
+        settings.radialWaveformAmplitude = .high
+        settings.beatRingsLife = .long         // VIS-006-R9
+        settings.mandalaSymmetry = 8           // VIS-007-R9
+        settings.mandalaMirror = true
+        settings.mandalaPetal = .spike
+        settings.particleGravity = .low        // VIS-008-R10
         settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
@@ -72,6 +79,7 @@ final class SettingsTests: XCTestCase {
         settings.cameraZoom = 2
         settings.colorBlindSafePalette = true  // ACC-003-R13
         settings.sensorySafety.preset = .custom   // ACC-012-R8: the profile and its three custom keys
+        settings.sceneLock.lock()              // SCN-015-R1
         let keys = Set(defaults.persistentDomain(forName: suite)?.keys ?? [:].keys)
         // MED-001, MED-002, MED-003, MED-004, MED-009: `settings.photo.id`, `settings.video.id`,
         // `settings.video.loop`, `settings.video.speed` and `settings.text.overlay` are in allKeys (the UI-test
@@ -132,7 +140,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous])   // VIS-003, VIS-004
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

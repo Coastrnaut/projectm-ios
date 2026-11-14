@@ -65,6 +65,9 @@ public enum DiagnosticsExporter {
         lines.append("  frame GPU: \(pair(t.frameGPUMedianMs, t.frameGPUP95Ms))")
         if t.rejectedSamples > 0 { lines.append("  rejected samples: \(t.rejectedSamples)") }
         if let budget = t.budget { lines.append(contentsOf: budgetLines(budget)) }
+        if let quality = t.effectQuality {   // PERF-003
+            lines.append("Effect quality: " + quality.level + (quality.reason.map { (r: String) -> String in " (" + r + ")" } ?? ""))
+        }
         return lines
     }
 

@@ -27,6 +27,10 @@
 // without writing anything; the preview sheet shows the plan. Install re-plans and installs exactly
 // that plan, all or nothing; Cancel discards it, leaving the library byte-for-byte unchanged.
 // Announcements go through the shared announcer's `library` lane (`announceLibrary`).
+//
+// Roadmap PRE-013 (specs/174-pre-013-bulk-import): `bulk` runs "Import Folder or Archive…"; this type
+// wires its announcements to the library lane and its end to the trials and a refresh. A bulk import
+// and the other changes (single import, archive preview or install, export) exclude each other.
 import Foundation
 import Observation
 import PresetLibrary
@@ -100,7 +104,9 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     /// Reads a built-in preset's bytes (the loader's bundle and archive; tests replace it).
     @ObservationIgnored var bundledData: (@MainActor (IndexedPreset) throws -> Data)?
 
-    @ObservationIgnored private let library: UserPresetLibrary
+    @ObservationIgnored let library: UserPresetLibrary   // PRE-018: the library check reads and relinks through it
+    /// PRE-018: My Presets › Check Library (set by AppCoordinator; nil in tests that do not need it).
+    @ObservationIgnored var integrity: LibraryIntegrityCoordinator?
     @ObservationIgnored private let provingPeriod: Duration
     @ObservationIgnored private let announce: @MainActor (String) -> Void
     @ObservationIgnored private weak var presets: PresetCoordinator?
@@ -136,6 +142,8 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     /// DEBUG probe `libraryDigest`: the snapshot digest of `libraryRoots`, kept current while enabled.
     private(set) var libraryDigest = ""
     @ObservationIgnored var tracksLibraryDigest = false
+    /// PRE-013: "Import Folder or Archive…".
+    let bulk: BulkPresetImportCoordinator
 
     init(library: UserPresetLibrary, provingPeriod: Duration = PresetImportLimits.provingPeriod,
          announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) },
@@ -150,6 +158,23 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         self.exportDirectory = exportDirectory
         self.now = now
         self.appVersion = appVersion
+        bulk = BulkPresetImportCoordinator(library: library)
+        bulk.speak = { [weak self] (text: String) in self?.speak(text) }
+        bulk.afterImport = { [weak self] () async in await self?.finishBulkImport() }
+        bulk.isBlocked = { [weak self] () -> Bool in self?.blocksBulkImport ?? true }
+    }
+
+    /// PRE-013: another change is running, or the record is from a newer version.
+    private var blocksBulkImport: Bool {
+        isImporting || isExporting || isDuplicating || isInstallingArchive || archiveReview != nil || unavailableMessage != nil
+    }
+
+    /// PRE-013: the imported presets are listed (waiting), tried, then listed again.
+    private func finishBulkImport() async {
+        if !loaded { await load() }
+        await refresh()
+        await library.runPendingTrials()
+        await refresh()
     }
 
     /// The app's library in Application Support (R2).
@@ -226,7 +251,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
             await previewArchive(at: url)
             return
         }
-        guard !isImporting, !isExporting else { return }
+        guard !isImporting, !isExporting, !bulk.isRunning else { return }
         isImporting = true
         if !loaded { await load() }
         let outcome = await library.importFile(at: url)
@@ -245,6 +270,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
             resultMessage = PresetImportRefusal.saveFailed.message
         } else {
             presets?.pruneTags(preset.id)   // PRE-003-R7: its tags go with it
+            presets?.overrides?.prune(preset.id)   // PRE-016-R16: and its adjustments
         }
         await refresh()
     }
@@ -337,7 +363,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     }
 
     /// Export is offered unless the record is from a newer version or another change runs.
-    var canExport: Bool { unavailableMessage == nil && !isImporting && !isDuplicating && !isExporting }
+    var canExport: Bool { unavailableMessage == nil && !isImporting && !isDuplicating && !isExporting && !bulk.isRunning }
 
     /// "Not exported: …" for the Export sheet's footer, or nil.
     var exportExclusionText: String? { UserPresetExportExclusion.sentence(exportPlan.excluded) }
@@ -419,7 +445,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     /// Reads the picked archive once (FILE-003-R2) and opens the preview. Nothing is written.
     func previewArchive(at url: URL) async {
-        guard !isImporting, !isExporting, !isInstallingArchive, archiveReview == nil else { return }
+        guard !isImporting, !isExporting, !isInstallingArchive, archiveReview == nil, !bulk.isRunning else { return }
         isImporting = true
         if !loaded { await load() }
         let digest = currentDigest()
@@ -679,7 +705,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
 
     // MARK: - State
 
-    private func refresh() async {
+    func refresh() async {   // PRE-018: also after a library check fix
         let snapshot = await library.snapshot
         let before: [String: String] = Self.contentHashes(playable)
         playable = snapshot.playable

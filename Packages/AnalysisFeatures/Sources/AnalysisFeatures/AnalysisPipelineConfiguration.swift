@@ -23,6 +23,12 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
     public let centroid: SpectralCentroidConfiguration
     /// ANL-014's loudness envelope (built for the spectrum's FFT size).
     public let loudness: LoudnessConfiguration
+    /// ANL-011's spectral rolloff (fraction 0.85 by default).
+    public let rolloff: SpectralRolloffConfiguration
+    /// ANL-012's spectral flatness (20 Hz to Nyquist, −70 dB floor).
+    public let flatness: SpectralFlatnessConfiguration
+    /// ANL-013's stereo correlation (1,024-frame blocks, τ 0.1 s, −70 dB floor, warning hysteresis).
+    public let correlation: StereoCorrelationConfiguration
 
     public init(spectrum: SpectrumConfiguration = AnalysisPipelineConfiguration.defaultSpectrum,
                 bandCount: BandCount = .b64,
@@ -33,11 +39,15 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
                 midTransient: TransientDetectorConfiguration = .midTransient,
                 highTransient: TransientDetectorConfiguration = .highTransient,
                 centroid: SpectralCentroidConfiguration = .standard,
-                loudness: LoudnessConfiguration = .standard) throws(AnalysisBusError) {
+                loudness: LoudnessConfiguration = .standard,
+                rolloff: SpectralRolloffConfiguration = .standard,
+                flatness: SpectralFlatnessConfiguration = .standard,
+                correlation: StereoCorrelationConfiguration = .standard) throws(AnalysisBusError) {
         guard spectrum.sampleRate == onset.sampleRate, spectrum.sampleRate == beat.sampleRate,
               spectrum.sampleRate == kick.sampleRate, spectrum.sampleRate == midTransient.sampleRate,
               spectrum.sampleRate == highTransient.sampleRate,
-              spectrum.sampleRate == centroid.sampleRate,
+              spectrum.sampleRate == centroid.sampleRate, spectrum.sampleRate == rolloff.sampleRate,
+              spectrum.sampleRate == flatness.sampleRate, spectrum.sampleRate == correlation.sampleRate,
               spectrum.sampleRate == loudness.sampleRate else {
             throw .sampleRateMismatch
         }
@@ -52,5 +62,8 @@ public struct AnalysisPipelineConfiguration: Sendable, Hashable {
         self.highTransient = highTransient
         self.centroid = centroid
         self.loudness = loudness
+        self.rolloff = rolloff
+        self.flatness = flatness
+        self.correlation = correlation
     }
 }

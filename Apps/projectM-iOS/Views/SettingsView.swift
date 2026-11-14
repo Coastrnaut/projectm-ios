@@ -55,6 +55,8 @@ struct SettingsView: View {
     var cacheFilesInUse: @MainActor () -> Set<String> = { () -> Set<String> in [] }
     /// MED-013: Settings › Storage › Missing Media (nil hides the row).
     var missingMedia: MissingMediaCoordinator? = nil
+    /// REC-010: Settings › Storage › Recordings (nil hides the row).
+    var recordingLibrary: RecordingLibraryModel? = nil
     /// UIX-001: opens the guided first scene (nil hides the row, e.g. in previews).
     var openGuide: (() -> Void)?
     /// SCN-010: Undo and Redo in the navigation bar (nil hides them, e.g. in previews).
@@ -84,12 +86,20 @@ struct SettingsView: View {
     var recordingAudioStatus: (() -> String)?
     /// REC-005: the record quality profile (nil hides the section, e.g. in previews).
     var recordingQuality: RecordingQualitySetting?
+    /// REC-007: the recording countdown (nil hides the section, e.g. in previews).
+    var recordingCountdown: RecordingCountdownSetting?
+    /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
+    var externalOutput: ExternalOutputSetting? = nil
+    /// REC-008: the recording length (nil hides the section, e.g. in previews).
+    var recordingTimedStop: RecordingTimedStopSetting?
     /// UIX-015: the explainer before the camera and local network prompts (nil: none, e.g. in previews).
     var explainers: PermissionExplainerCoordinator?
     /// UIX-015-R1: the camera's permission status when Camera is picked.
     var cameraStatus: @MainActor () -> PermissionState? = { () -> PermissionState? in nil }
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
     var recentPresets: RecentPresetsCoordinator?
+    /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
+    var powerProfile: PowerProfileSetting? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
     var announcer: AccessibilityAnnouncer?
     @Environment(\.dismiss) private var dismiss
@@ -223,10 +233,9 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
-                visualChoiceSection
-                visualOptionsSection
-                smoothingSection
-                mediaSections
+                SceneLockSection(lock: settings.sceneLock)   // SCN-015
+                sceneEditSections
+                safetySections
                 performanceSection
                 audioSections
                 tailSections
@@ -299,6 +308,10 @@ struct SettingsView: View {
                     .accessibilityIdentifier("oscilloscopeWindowPicker")
                 }
                 if settings.visual == .lissajous { lissajousOptions }   // VIS-004-R11
+                if settings.visual == .radialWaveform { radialWaveformOptions }   // VIS-005-R9
+                if settings.visual == .beatRings { beatRingsOptions }   // VIS-006-R9
+                if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
+                if settings.visual == .particleFountain { particleFountainOptions }   // VIS-008-R10
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -327,6 +340,7 @@ struct SettingsView: View {
                                text: Self.percent(settings.glowThreshold), inspect: VisualParameterIDs.bloomThreshold)
                 }
             }
+            if let layerInspector { SceneSnapshotRows(snapshots: layerInspector.sceneSnapshots) }   // SCN-008-R9: under what it holds
         } header: {
             Text("Visual")
         } footer: {
@@ -335,7 +349,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Particle Fountain throws a burst of particles up from the bottom on each onset, a sudden new sound: stronger onsets throw more; they arc under gravity, slow down and fade; with Reduce Motion there are fewer and they move more slowly. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -347,6 +361,7 @@ struct SettingsView: View {
                 }
             }
         }
+        .id("visualOptions")   // UITestSettingsSection: bars and glow without drags (SceneUndoUITests)
     }
 
     /// VIS-004-R11: the Lissajous's plot and persistence.
@@ -359,6 +374,60 @@ struct SettingsView: View {
         .accessibilityIdentifier("lissajousModePicker")
         Toggle("Persistence", isOn: $settings.lissajousPersistence)
             .accessibilityIdentifier("lissajousPersistenceToggle")
+    }
+
+    /// VIS-008-R10: the particle fountain's gravity.
+    private var particleFountainOptions: some View {
+        Picker("Gravity", selection: $settings.particleGravity) {
+            ForEach(ParticleGravity.allCases, id: \.self) { (gravity: ParticleGravity) in Text(gravity.title).tag(gravity) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Gravity")
+        .accessibilityIdentifier("particleGravityPicker")
+    }
+
+    /// VIS-007-R9: the mandala's symmetry, mirror and petal style.
+    @ViewBuilder private var mandalaOptions: some View {
+        Picker("Symmetry", selection: $settings.mandalaSymmetry) {
+            ForEach(MandalaConfiguration.supportedSymmetries, id: \.self) { (n: Int) in Text(String(n)).tag(n) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Symmetry")
+        .accessibilityIdentifier("mandalaSymmetryPicker")
+        Toggle("Mirror", isOn: $settings.mandalaMirror)
+            .accessibilityIdentifier("mandalaMirrorToggle")
+        Picker("Petal", selection: $settings.mandalaPetal) {
+            ForEach(MandalaPetalStyle.allCases, id: \.self) { (petal: MandalaPetalStyle) in Text(petal.title).tag(petal) }
+        }
+        .segmentedUnlessAccessibilitySize()
+        .accessibilityLabel("Petal")
+        .accessibilityIdentifier("mandalaPetalPicker")
+    }
+
+    /// VIS-006-R9: how long a beat ring lasts.
+    private var beatRingsOptions: some View {
+        Picker("Ring life", selection: $settings.beatRingsLife) {
+            ForEach(BeatRingLife.allCases, id: \.self) { (life: BeatRingLife) in Text(life.title).tag(life) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Ring life")
+        .accessibilityIdentifier("beatRingsLifePicker")
+    }
+
+    /// VIS-005-R9: the radial waveform's ring size and amplitude.
+    @ViewBuilder private var radialWaveformOptions: some View {
+        Picker("Ring", selection: $settings.radialWaveformRing) {
+            ForEach(RadialWaveformRing.allCases, id: \.self) { (ring: RadialWaveformRing) in Text(ring.title).tag(ring) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Ring")
+        .accessibilityIdentifier("radialWaveformRingPicker")
+        Picker("Amplitude", selection: $settings.radialWaveformAmplitude) {
+            ForEach(RadialWaveformAmplitude.allCases, id: \.self) { (amplitude: RadialWaveformAmplitude) in Text(amplitude.title).tag(amplitude) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Amplitude")
+        .accessibilityIdentifier("radialWaveformAmplitudePicker")
     }
 
     @ViewBuilder private var smoothingSection: some View {
@@ -389,6 +458,8 @@ struct SettingsView: View {
     @ViewBuilder private var mediaSections: some View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
+        if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
+        if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
@@ -399,7 +470,7 @@ struct SettingsView: View {
             }
         }
         if settings.visual.usesVideo, let videos {
-            videoSection(videos)
+            videoSection(videos).id("video")   // IDs: UITestSettingsSection
         }
         if let logo { LogoSection(logo: logo) }   // MED-010: every visual (the help names those that show it)
         if settings.visual.usesText, let texts {
@@ -407,9 +478,23 @@ struct SettingsView: View {
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
-        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp) }   // FX-009-R9
-        if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effectOrder") }   // FX-020-R9 (the app coordinator)
-        SensorySafetySection(settings: settings, announcer: announcer)   // ACC-012-R10
+        if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
+        if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
+    }
+
+    /// SCN-015-R6: everything that edits the scene, disabled while the scene is locked (safety stays reachable).
+    private var sceneEditSections: some View {
+        Group {
+            visualChoiceSection
+            visualOptionsSection
+            smoothingSection
+            mediaSections
+        }
+        .disabled(settings.sceneLock.isLocked)
+    }
+
+    @ViewBuilder private var safetySections: some View {
+        SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
     }
 
@@ -420,19 +505,23 @@ struct SettingsView: View {
         } footer: {
             Text("Shows the frame rate and the audio state over the visualization.")
         }
+        .id("performance")
+        if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
     }
 
     @ViewBuilder private var audioSections: some View {
-        if let inputTrim { InputTrimSection(inputTrim: inputTrim) }   // AUD-008-R8
-        if let channelSelection { ChannelSelectionSection(selection: channelSelection) }   // AUD-009-R7
-        if let noiseGate { NoiseGateSection(noiseGate: noiseGate) }   // AUD-011-R7
-        if let playbackBalance { PlaybackBalanceSection(balance: playbackBalance, available: playbackBalanceAvailable) }   // AUD-010-R6
-        if let latencyOffset { LatencyOffsetSection(setting: latencyOffset) }   // AUD-013-R10
+        if let inputTrim { InputTrimSection(inputTrim: inputTrim).id("trim") }   // AUD-008-R8
+        if let channelSelection { ChannelSelectionSection(selection: channelSelection).id("channel") }   // AUD-009-R7
+        if let noiseGate { NoiseGateSection(noiseGate: noiseGate).id("gate") }   // AUD-011-R7
+        if let playbackBalance { PlaybackBalanceSection(balance: playbackBalance, available: playbackBalanceAvailable).id("balance") }   // AUD-010-R6
+        if let latencyOffset { LatencyOffsetSection(setting: latencyOffset).id("latency") }   // AUD-013-R10
         oscSection.id("osc")
         if let midi { MIDISettingsSection(midi: midi).id("midi") }   // MIDI-001-R8
-        if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("recordingQuality") }   // REC-005-R9
-        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality).id("recordingFrameRate") }   // REC-006-R9
-        if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus) }   // REC-004-R13
+        if let recordingQuality { RecordingQualitySection(setting: recordingQuality).id("quality") }   // REC-005-R9
+        if let recordingQuality { RecordingFrameRateSection(setting: recordingQuality).id("recordingFrameRate") }   // REC-006-R9; QA-009 anchor
+        if let recordingCountdown { RecordingCountdownSection(setting: recordingCountdown) }   // REC-007-R9
+        if let recordingTimedStop { RecordingTimedStopSection(setting: recordingTimedStop) }   // REC-008-R9
+        if let recordingAudio { RecordingAudioSection(setting: recordingAudio, status: recordingAudioStatus).id("recording") }   // REC-004-R13
     }
 
     @ViewBuilder private var tailSections: some View {
@@ -454,11 +543,14 @@ struct SettingsView: View {
             } footer: {
                 Text("A short guide to making a scene. Everything stays on this device.")
             }
+            .id("guide")
         }
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
+        if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
         Section {
-            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013
-                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia)
+            NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013, REC-010
+                StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia,
+                                 recordingLibrary: recordingLibrary)   // REC-010
             }
                 .accessibilityIdentifier("storageLink")
             NavigationLink("Licenses") { LicensesView() }
@@ -505,6 +597,12 @@ struct SettingsView: View {
     // MARK: Photo (MED-001-R2, R7, R11, R15)
 
     /// CMP-015-R1: the layer inspector.
+    private func macrosSection(_ coordinator: AppCoordinator) -> some View {
+        MacrosSection(macros: coordinator.macros, settings: settings,
+                      endCoalescing: { [history] () -> Void in history?.endCoalescing() })
+            .id("macros")   // MOD-010 (UITestSettingsSection)
+    }
+
     private func layersSection(_ coordinator: AppCoordinator) -> some View {
         let count: Int = coordinator.layerInspectorRows.count
         return Section {
@@ -717,10 +815,18 @@ struct SettingsView: View {
                 LabeledContent("Rate-limited", value: OSCReceiverCoordinator.rateLimitedText(osc.rateLimitedCount))
                     .accessibilityIdentifier("oscRateLimited")
             }
+            if let routes = osc.routes {   // OSC-003-R10
+                NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
+                    .accessibilityIdentifier("oscRoutesLink")
+            }
+            if let peers = osc.peers {   // OSC-008-R9
+                NavigationLink { OSCPeersView(peers: peers) } label: { LabeledContent("Approved Devices", value: peers.summaryText) }
+                    .accessibilityIdentifier("oscPeersLink")
+            }
         } header: {
             Text("OSC")
         } footer: {
-            Text("Lets an OSC controller on your local network send /projectm/test with a number from 0 to 1 to check the connection. projectM only listens while this is on and the app is open, never connects to the internet, and keeps nothing it receives.")
+            Text("Lets an OSC controller on your local network send /projectm/test with a number from 0 to 1 to check the connection, and the addresses in OSC Routes to control the glow. projectM only listens while this is on and the app is open, never connects to the internet, and keeps nothing it receives.")
         }
         .onAppear { portText = String(osc.port) }
         .onChange(of: portFieldFocused) { _, focused in

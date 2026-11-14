@@ -29,6 +29,7 @@ enum ExpressionCatalog {
         default:
             guard let source = AudioFeatureSource(id: name) else { return nil }
             if case .lfo = source { return nil }   // MOD-007-D4: oscillators are binding sources, not formula names
+            if case .bandEnvelope = source { return nil }   // MOD-015-D5: band envelopes likewise
             return .audio(source)
         }
     }

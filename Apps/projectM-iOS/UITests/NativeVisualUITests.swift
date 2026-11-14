@@ -134,7 +134,8 @@ final class NativeVisualUITests: XCTestCase {
         XCTAssertTrue(projectM.exists, "projectM is shown instead")
         XCTAssertFalse(circularSpectrum.exists)
         openSettings()
-        XCTAssertTrue(app.staticTexts["nativeVisualUnavailableFooter"].appears(within: 5))
+        let footer = app.staticTexts["nativeVisualUnavailableFooter"]
+        XCTAssertTrue(footer.appears(within: 5) || app.reveal(footer), "under the Visual rows (SCN-008 added snapshot rows)")
         closeSettings()
         XCTAssertEqual(starts, "1")
     }

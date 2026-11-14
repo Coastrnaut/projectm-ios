@@ -60,6 +60,14 @@ public final class BloomEffect: PostProcessEffect {
         }
     }
 
+    /// PERF-003-R6: the effect quality level. A change rebuilds the plan once (no texture is created: the working
+    /// textures are sized for D = 2); `.minimal` makes the effect pass-through, so a chain skips it.
+    public var quality: EffectQualityLevel = .full {
+        didSet { if quality != oldValue { updatePlan() } }
+    }
+    /// PERF-003-S2: compute dispatches and render passes encoded so far (4 per glowing frame; 1 per copy).
+    public private(set) var encodedPassCount = 0
+
     /// The plan for the prepared size and current parameters (nil before `prepare`).
     public private(set) var plan: BloomPlan?
     /// Counts working-texture creations (tests, diagnostics).
@@ -114,7 +122,7 @@ public final class BloomEffect: PostProcessEffect {
         pass.colorAttachments[0].storeAction = .store
     }
 
-    public var isPassThrough: Bool { parameters.isPassThrough }
+    public var isPassThrough: Bool { parameters.isPassThrough || quality == .minimal }
 
     public func prepare(width: Int, height: Int) throws(VisualGeneratorError) {
         let w = max(width, 1), h = max(height, 1)
@@ -131,14 +139,14 @@ public final class BloomEffect: PostProcessEffect {
         reducedA = a
         reducedB = b
         resourceGeneration += 1
-        plan = BloomPlan(parameters: parameters, width: w, height: h)
+        plan = BloomPlan(parameters: parameters, width: w, height: h, quality: quality)
         planBuildCount += 1
         updateUniforms()
     }
 
     private func updatePlan() {
         guard let old = plan else { return }
-        plan = BloomPlan(parameters: parameters, width: old.width, height: old.height)
+        plan = BloomPlan(parameters: parameters, width: old.width, height: old.height, quality: quality)
         planBuildCount += 1
         updateUniforms()
     }
@@ -198,6 +206,7 @@ public final class BloomEffect: PostProcessEffect {
         withUnsafeBytes(of: &uniforms) { render.setFragmentBytes($0.baseAddress!, length: $0.count, index: 0) }
         render.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         render.endEncoding()
+        encodedPassCount += 4   // three dispatches + the composite
         return true
     }
 
@@ -206,6 +215,7 @@ public final class BloomEffect: PostProcessEffect {
             guard let blit = commandBuffer.makeBlitCommandEncoder() else { return false }
             blit.copy(from: input, to: output)
             blit.endEncoding()
+            encodedPassCount += 1
             return true
         }
         let attachment = pass.colorAttachments[0]!
@@ -216,6 +226,7 @@ public final class BloomEffect: PostProcessEffect {
         render.setFragmentTexture(input, index: 0)
         render.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         render.endEncoding()
+        encodedPassCount += 1
         return true
     }
 

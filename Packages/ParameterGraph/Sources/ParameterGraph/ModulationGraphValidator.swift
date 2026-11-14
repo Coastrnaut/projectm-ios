@@ -197,7 +197,7 @@ struct ModulationGraphValidator {
                                         registry: ParameterRegistry, role: String) -> (ModulationGraphIssue.Problem, String)? {
         switch node {
         case let .audio(source):
-            if case let .band(index) = source, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {
+            if let index = source.bandIndex, !(0...AudioFeatureSource.maximumBandIndex).contains(index) {   // MOD-015: envelopes too
                 return (.unknownAudioFeature, "the \(role) band \(index) is outside 0…\(AudioFeatureSource.maximumBandIndex)")
             }
             return nil

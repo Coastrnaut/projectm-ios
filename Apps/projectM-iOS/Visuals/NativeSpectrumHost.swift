@@ -48,6 +48,19 @@
 //   generator. Its plot and persistence change only its configuration; the persistence half-life is the
 //   ACC-012-capped one (`LissajousConfiguration.persistenceHalfLife(enabled:clamp:)`), re-applied whenever
 //   the style or `safetyClamp` changes.
+// * Radial waveform (VIS-005): draws the same mono history as the oscilloscope, wrapped around a ring; its
+//   ring size and amplitude change only its configuration (no new generator).
+// * Beat rings (VIS-006; research VIS-006-D1, D2): while beat rings are shown the host holds a second
+//   subscription on its analyzer's bus; each frame drains it (`nextEvent`, a value copy, no allocation) through
+//   `BeatRingTrigger` (confident ANL-005 beats, the ANL-007 kick as the fallback) and emits a ring stamped with
+//   the frame's time under the frame's envelope (the rate cap). Leaving the style unsubscribes; a loop start
+//   discards events that queued while stopped. The ring life changes only its configuration.
+// * Mandala (VIS-007): draws the smoothed bands as N rotated petals; symmetry, mirror and petal style change only
+//   its configuration. `reduceMotion` (the system setting, from the coordinator) halves its turn (VIS-007-R5).
+// * Particle fountain (VIS-008): the same bus subscription as beat rings while it is shown; each drained ANL-004 onset
+//   (`ParticleFountainTrigger`) is enqueued stamped with the frame's time, and the generator steps its seeded
+//   simulation to the frame. Gravity changes only its configuration (later bursts); `reduceMotion` halves its bursts
+//   and slows them (VIS-008-R9). A loop start discards queued events and restarts the simulation.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -58,6 +71,11 @@
 //   MOD-002 modulation keeps the raw bands. Instant (the default) is a bit-exact copy. Starting the
 //   loop and changing the bar count reset it, so nothing ramps from a stale picture. Preallocated;
 //   nothing allocates per frame.
+// * Adaptive effect quality (PERF-003; NativeSpectrumHost+EffectQuality.swift): one `EffectQualityLadder` started with
+//   the loop and stepped each frame with the display-link time, the thermal state, Low Power and PERF-002's budget
+//   signal. Its level goes to the bloom (Reduced: fewer taps, coarser glow; Minimal: no glow pass) and its fade weight
+//   multiplies the glow intensity after the ACC-012 clamp, so the FX-019 limiter models the glow actually drawn. With
+//   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
 import AnalysisFeatures
 import AudioCore
 import FlashSafety
@@ -105,11 +123,23 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private var midTransient: Float = 0
     /// ANL-009: the newest frame's high transient value, fed to the bindings (MOD-002's High transient source).
     private var highTransient: Float = 0
+    /// ANL-011: the newest frame's normalized rolloff, fed to the bindings (MOD-002's Rolloff source).
+    private var rolloff: Float = 0
+    /// ANL-012: the newest frame's spectral flatness, fed to the bindings (MOD-002's Flatness source).
+    private var flatness: Float = 0
+    /// ANL-013: the newest frame's stereo correlation (−1…1), fed to the bindings (MOD-002's Correlation source).
+    private(set) var correlation: Float = 0
+    /// ANL-013: the newest frame's phase-inversion warning; changes go to `onPhaseWarningChange`.
+    private(set) var phaseInverted = false
+    /// ANL-013: called on the main actor when the warning is raised or cleared (cleared on start and stop).
+    var onPhaseWarningChange: (@MainActor (Bool) -> Void)?
     private var lastLinkTimestamp: CFTimeInterval?
     private var displayLink: CADisplayLink?
     private var paused = true
     private(set) var isSuspended = false
     private var meter = FrameRateMeter()
+    /// PERF-007: the output's frame drop counter while the performance overlay is shown (nil: no counting work).
+    var frameDrops: FrameDropCounter?
     /// PERF-001: the stage timer while the performance overlay is shown (nil: no timing work), and the
     /// frames' command buffers until their GPU times are known.
     var stageTimer: FrameStageTimer? {
@@ -121,6 +151,18 @@ final class NativeSpectrumHost: PresentationBoundResource {
     static let frameStages: [FrameStage] = [.audio, .render, .encode, .present]
     private let gpuTimes = MetalGPUFrameTimes()
     private var quality = QualityGovernor.current()
+    /// FR-049 / PERF-003-R7: the frame-rate cap and render scale this loop uses.
+    var qualitySettings: QualitySettings { quality }
+    /// PERF-003: the effect quality ladder and its inputs (NativeSpectrumHost+EffectQuality.swift).
+    let effectLadder = EffectQualityLadder()
+    /// PERF-002's verdict while the performance overlay runs (any flag → over); `.unavailable` otherwise.
+    var effectBudget: EffectBudgetSignal = .unavailable
+    /// Tests and DEBUG `-uitestThermalState` replace the device's thermal state; tests replace Low Power.
+    var thermalOverride: EffectThermalState? = NativeSpectrumHost.launchThermalOverride
+    var lowPowerOverride: Bool?
+    /// The inputs as last read (`refreshQuality()`).
+    var effectThermal: EffectThermalState = .nominal
+    var effectLowPower = false
     private var observers: [NSObjectProtocol] = []
 
     /// Frame rate and frame time for the FR-048 overlay.
@@ -147,7 +189,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// FX-001: the bloom and the chain that runs it; nil when the glow is unavailable.
-    private let bloom: BloomEffect?
+    let bloom: BloomEffect?
     private var chain: EffectChain?
     /// The glow could not be built on this device (FX-001-R13); the visual renders without it.
     private(set) var glowUnavailable: Bool
@@ -169,6 +211,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
             ?? (generator as? LinearSpectrumGenerator)?.configuration.palette
             ?? (generator as? OscilloscopeGenerator)?.configuration.palette
             ?? (generator as? LissajousGenerator)?.configuration.palette
+            ?? (generator as? RadialWaveformGenerator)?.configuration.palette
+            ?? (generator as? BeatRingGenerator)?.configuration.palette
+            ?? (generator as? MandalaGenerator)?.configuration.palette
+            ?? (generator as? ParticleFountainGenerator)?.configuration.palette
     }
 
     private func applyPalette() {
@@ -188,7 +234,94 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = lissajous.configuration
             configuration.palette = palette
             lissajous.configuration = configuration
+        } else if let radial = generator as? RadialWaveformGenerator {
+            var configuration = radial.configuration
+            configuration.palette = palette
+            radial.configuration = configuration
+        } else if let rings = generator as? BeatRingGenerator {
+            var configuration = rings.configuration
+            configuration.palette = palette
+            rings.configuration = configuration
+        } else if let mandala = generator as? MandalaGenerator {
+            var configuration = mandala.configuration
+            configuration.palette = palette
+            mandala.configuration = configuration
+        } else if let fountain = generator as? ParticleFountainGenerator {
+            var configuration = fountain.configuration
+            configuration.palette = palette
+            fountain.configuration = configuration
         }
+    }
+
+    /// VIS-008: the particle fountain's generator (tests; nil for another visual).
+    var particleFountainGenerator: ParticleFountainGenerator? { generator as? ParticleFountainGenerator }
+
+    /// VIS-007: the mandala's generator (tests; nil for another visual).
+    var mandalaGenerator: MandalaGenerator? { generator as? MandalaGenerator }
+
+    /// VIS-007-R5, ACC-001: the system Reduce Motion; halves the mandala's turn (applied to every generator a style
+    /// change builds).
+    var reduceMotion = false {
+        didSet { if reduceMotion != oldValue { applyReduceMotion() } }
+    }
+
+    private func applyReduceMotion() {
+        if let fountain = generator as? ParticleFountainGenerator, fountain.configuration.reduceMotion != reduceMotion {
+            var configuration = fountain.configuration   // VIS-008-R9: later bursts
+            configuration.reduceMotion = reduceMotion
+            fountain.configuration = configuration
+        }
+        guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
+        var configuration = mandala.configuration
+        configuration.reduceMotion = reduceMotion   // the layout re-anchors, so the angle stays continuous
+        mandala.configuration = configuration
+    }
+
+    /// VIS-005: the radial waveform's generator (tests; nil for another visual).
+    var radialWaveformGenerator: RadialWaveformGenerator? { generator as? RadialWaveformGenerator }
+
+    /// VIS-006: the beat rings' generator (tests; nil for another visual).
+    var beatRingGenerator: BeatRingGenerator? { generator as? BeatRingGenerator }
+    /// VIS-006: the bus subscription drained for beat rings (nil unless they are shown).
+    private(set) var beatEvents: AnalysisSubscription?
+    private var beatTrigger = BeatRingTrigger()
+
+    /// VIS-006, VIS-008: subscribes while beat rings or the particle fountain are shown, unsubscribes otherwise.
+    private func updateBeatSubscription() {
+        if style.drainsAnalysisEvents {
+            guard beatEvents == nil else { return }
+            beatEvents = try? analyzer.subscribe()
+            beatTrigger = BeatRingTrigger()
+        } else if let subscription = beatEvents {
+            analyzer.unsubscribe(subscription)
+            beatEvents = nil
+        }
+    }
+
+    /// VIS-006: emits a ring for each accepted event since the last frame, stamped with the frame's time.
+    /// VIS-008: enqueues each onset into the particle fountain, stamped likewise.
+    func drainBeatEvents(context: VisualFrameContext) {
+        guard let subscription = beatEvents else { return }
+        if let fountain = generator as? ParticleFountainGenerator {
+            while let event = subscription.nextEvent() {
+                guard let onset = ParticleFountainTrigger.onset(event) else { continue }
+                fountain.enqueueOnset(atNanoseconds: context.timeNanoseconds, strength: onset.strength, threshold: onset.threshold)
+            }
+            return
+        }
+        guard let rings = generator as? BeatRingGenerator else { return }
+        while let event = subscription.nextEvent() {
+            if beatTrigger.shouldEmit(event) {
+                rings.emitRing(atNanoseconds: context.timeNanoseconds, flashConfiguration: context.flashConfiguration)
+            }
+        }
+    }
+
+    /// VIS-006: forgets events that queued while the loop was stopped.
+    private func discardBeatEvents() {
+        guard let subscription = beatEvents else { return }
+        while subscription.nextEvent() != nil {}
+        beatTrigger = BeatRingTrigger()
     }
 
     /// VIS-004-R9: the Lissajous's persistence half-life under the safety clamp (0 = off).
@@ -219,6 +352,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// MOD-007: the current scene's oscillators and the per-frame values the bindings read (`audio.lfo.<index>`).
     private let lfoBank = LFOBank()
     private let lfoValues = UnsafeMutableBufferPointer<Double>.allocate(capacity: LFOBank.maximumOscillators)
+    /// MOD-015: every band's fast, medium and slow envelope (`audio.bandEnvelope.<profile>.<band>`), advanced with the
+    /// bindings on the frame clock; preallocated, so a frame allocates nothing.
+    private let bandEnvelopeBank = BandEnvelopeBank()
     /// MOD-009: the BPM tempo-synced oscillators follow (nil: their stored rate); read once per frame while one exists.
     var lfoTempoBPM: (@MainActor () -> Double?)?
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
@@ -274,6 +410,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let host = NativeSpectrumHost(device: device, queue: queue, style: style, generator: generator, analyzer: analyzer,
                                       reader: reader, bloom: bloom, chain: chain)
         host.glow = glow
+        host.updateBeatSubscription()   // VIS-006
         return host
     }
 
@@ -297,6 +434,28 @@ final class NativeSpectrumHost: PresentationBoundResource {
             // The persistence half-life is applied by `applyLissajousPersistence()` (it needs the clamp).
             let generator = try LissajousGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
                                                    configuration: LissajousConfiguration(mode: mode))
+            generator.barCount = barCount
+            return generator
+        case let .radialWaveform(ring, amplitude):   // VIS-005
+            let generator = try RadialWaveformGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                        configuration: RadialWaveformConfiguration(baseRadius: ring.value,
+                                                                                                   amplitude: amplitude.value))
+            generator.barCount = barCount
+            return generator
+        case let .beatRings(life):   // VIS-006
+            let generator = try BeatRingGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                  configuration: BeatRingConfiguration(life: life.seconds))
+            generator.barCount = barCount
+            return generator
+        case let .mandala(symmetry, mirror, petal):   // VIS-007
+            let generator = try MandalaGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                 configuration: MandalaConfiguration(symmetry: symmetry, mirror: mirror,
+                                                                                     petalStyle: petal))
+            generator.barCount = barCount
+            return generator
+        case let .particleFountain(gravity):   // VIS-008
+            let generator = try ParticleFountainGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                          configuration: ParticleFountainConfiguration(gravity: gravity.value))
             generator.barCount = barCount
             return generator
         }
@@ -351,13 +510,34 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = lissajous.configuration
             configuration.mode = mode   // a mode change clears the ghosts (VIS-004-R8)
             lissajous.configuration = configuration
+        } else if case let .radialWaveform(ring, amplitude) = newStyle, let radial = generator as? RadialWaveformGenerator {
+            var configuration = radial.configuration   // VIS-005: in place, from the next frame
+            configuration.baseRadius = ring.value
+            configuration.amplitude = amplitude.value
+            radial.configuration = configuration
+        } else if case let .beatRings(life) = newStyle, let rings = generator as? BeatRingGenerator {
+            var configuration = rings.configuration   // VIS-006: in place, from the next frame
+            configuration.life = life.seconds
+            rings.configuration = configuration
+        } else if case let .mandala(symmetry, mirror, petal) = newStyle, let mandala = generator as? MandalaGenerator {
+            var configuration = mandala.configuration   // VIS-007: in place, from the next frame
+            configuration.symmetry = symmetry
+            configuration.mirror = mirror
+            configuration.petalStyle = petal
+            mandala.configuration = configuration
+        } else if case let .particleFountain(gravity) = newStyle, let fountain = generator as? ParticleFountainGenerator {
+            var configuration = fountain.configuration   // VIS-008: later bursts, no rebuild
+            configuration.gravity = gravity.value
+            fountain.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
             applyPalette()   // ACC-003-R13: a new generator starts with the default palette
+            applyReduceMotion()   // VIS-007-R5
             samples.update(repeating: 0, count: WaveformFrameBuffer.capacity)   // VIS-004: mono and stereo histories differ
         }
         style = newStyle
+        updateBeatSubscription()   // VIS-006
         applyLissajousPersistence()   // VIS-004-R9
         applyGlow()
     }
@@ -367,6 +547,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         view.accessibilityLabel = "\(style.title) visualization"
         view.accessibilityIdentifier = style.accessibilityIdentifier
         view.accessibilityValue = Self.accessibilityValue(style: style, glowEnabled: glow.enabled, glowUnavailable: glowUnavailable)
+        refreshQuality()   // PERF-003-R7: switching the glow changes whether the governor defers the serious cap
     }
 
     // MARK: - Audio feature bindings (MOD-002)
@@ -375,14 +556,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
     /// Applies `glow` with any bound intensity to the bloom and the luminance model. Unbound, this is
     /// exactly the FX-001 path.
-    private func resolveEffectiveGlow() {
-        var resolved = glow.applying(externalValues)   // MIDI-003: a mapped control sets the live manual value
-        if let modulator, glowIntensityIsBound {
-            let manual: Double = Double(resolved.intensity)
-            let modulated: Double = modulator.value(for: VisualParameterIDs.bloomIntensity, manual: manual)
-            resolved.intensity = Float(safetyClamp.modulated(manual: manual, modulated: modulated))   // ACC-012: depth
-        }
-        resolved = resolved.limited(by: safetyClamp)   // ACC-012-R4: the cap, after modulation, before render
+    func resolveEffectiveGlow() {
+        // MOD-011 order: base (MIDI-003's live value replaces the manual one) → every binding in list order,
+        // clamped after each → ACC-012 depth scaling → ACC-012-R4 cap (`GlowModulationOrder`, ADR-0057).
+        let base: BloomParameters = glow.applying(externalValues)
+        var resolved: BloomParameters = GlowModulationOrder.resolve(base: base, modulator: modulator, clamp: safetyClamp)
+        let factor: Float = effectLadder.intensityFactor   // PERF-003-R8: after the clamp; only ever lowers the glow
+        if factor < 1 { resolved.intensity *= factor }
         effectiveGlow = resolved
         bloom?.parameters = resolved
         if glowIntensityIsBound {
@@ -401,8 +581,40 @@ final class NativeSpectrumHost: PresentationBoundResource {
         resolveEffectiveGlow()
     }
 
+    /// MOD-011: adds `binding` as its parameter's next layer (applied after the ones already bound); the
+    /// first binding when the parameter is unbound. At most 4 per parameter.
+    func addLayer(_ binding: AudioFeatureBinding) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(binding.target) }
+        try modulator.addLayer(binding)
+        resolveEffectiveGlow()
+    }
+
     /// The live bindings in order (SCN-002 captures them into the current scene).
     var bindings: [AudioFeatureBinding] { modulator?.bindings ?? [] }
+
+    /// MOD-012-R3: turns one layer on or off in place (its signal keeps running); effective at once.
+    func setLayerEnabled(_ enabled: Bool, for target: ParameterID, layer: Int) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(target) }
+        try modulator.setEnabled(enabled, for: target, layer: layer)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-012-R6: moves one layer within its parameter (the fold order); signals move with their layers.
+    func moveLayer(of target: ParameterID, from: Int, to: Int) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(target) }
+        try modulator.moveLayer(of: target, from: from, to: to)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-012 (undo): replaces every binding (all or nothing; signals restart at 0).
+    func replaceBindings(_ list: [AudioFeatureBinding]) throws(AudioFeatureBindingError) {
+        guard let modulator else { throw .unknownTarget(list.first?.target ?? VisualParameterIDs.bloomIntensity) }
+        try modulator.replaceBindings(list)
+        resolveEffectiveGlow()
+    }
+
+    /// MOD-012-R7: the current 0…1 signal of `target`'s `layer`-th binding (the route detail's live value).
+    func layerSignal(for target: ParameterID, layer: Int) -> Double? { modulator?.signal(for: target, layer: layer) }
 
     /// UIX-003-R7: the modulator's value for `id` given `manual`; nil when `id` is unbound. Read-only.
     func modulatorValue(for id: ParameterID, manual: Double) -> Double? {
@@ -431,6 +643,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// MOD-007: the live oscillators by position.
     var lfos: [LFO?] { lfoBank.oscillators }
 
+    /// ANL-013: records the warning and reports a change (tests call it to stand in for the bus).
+    func setPhaseInverted(_ value: Bool) {
+        guard value != phaseInverted else { return }
+        phaseInverted = value
+        onPhaseWarningChange?(value)
+    }
+
     /// MOD-006: the live threshold triggers in order.
     var triggers: [ThresholdTriggerBinding] { triggerBank.bindings }
 
@@ -438,6 +657,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// applies the result. Does nothing without bindings or triggers. Called by `frame(_:)`; tests call it directly.
     func applyModulation(bands: UnsafeBufferPointer<Float>, kick: Float? = nil, centroid: Float? = nil,
                          loudness: Float? = nil, midTransient: Float? = nil, highTransient: Float? = nil,
+                         rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
                          timeNanoseconds: UInt64) {
         let bound: Bool = modulator?.hasBindings ?? false
         guard bound || triggerBank.hasTriggers else { return }
@@ -448,8 +668,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
             lfoBank.values(atNanoseconds: timeNanoseconds, tempoBPM: tempo, maximumRateHz: cap, into: lfoValues)
             lfos = UnsafeBufferPointer(lfoValues)
         }
+        bandEnvelopeBank.advance(bands: bands, timeNanoseconds: timeNanoseconds)   // MOD-015: held while nothing is bound
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                                      highTransient: highTransient, lfos: lfos)
+                                      highTransient: highTransient, rolloff: rolloff, flatness: flatness,
+                                      correlation: correlation, lfos: lfos,
+                                      bandEnvelopes: bandEnvelopeBank.values)
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -488,6 +711,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .linear(orientation, _): return "\(orientation.title), \(glow)"
         case let .oscilloscope(_, window): return "\(window) ms, \(glow)"
         case let .lissajous(mode, persistence): return "\(mode.title), Persistence \(persistence ? "on" : "off"), \(glow)"   // VIS-004-R14
+        case let .radialWaveform(ring, amplitude): return "\(ring.title) ring, \(amplitude.title) amplitude, \(glow)"   // VIS-005-R11
+        case let .beatRings(life): return "\(life.title) ring life, \(glow)"   // VIS-006-R11
+        case let .mandala(symmetry, mirror, petal):   // VIS-007-R11
+            return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
+        case let .particleFountain(gravity): return "\(gravity.title) gravity, \(glow)"   // VIS-008-R12
         }
     }
 
@@ -550,6 +778,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let run = !paused && !isSuspended
         if run, displayLink == nil {
             generator.restartLoop()
+            discardBeatEvents()   // VIS-006: no burst of rings for beats heard while stopped
             smoother.reset()   // ANL-003-R5: no ramp from the picture before the pause
             lastLinkTimestamp = nil
             kickEnvelope = 0   // ANL-007: no kick carried over a pause
@@ -557,6 +786,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
             loudness = 0       // ANL-014: and its loudness envelope
             midTransient = 0   // ANL-008: and its mid transient
             highTransient = 0  // ANL-009: and its high transient
+            rolloff = 0        // ANL-011: and its rolloff
+            flatness = 0       // ANL-012: and its flatness
+            correlation = 0    // ANL-013: and its stereo correlation
+            setPhaseInverted(false)   // ANL-013: and its warning
+            startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
             let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
             link.preferredFrameRateRange = quality.frameRateRange
@@ -566,6 +800,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             link.invalidate()
             displayLink = nil
             analyzer.stop()
+            setPhaseInverted(false)   // ANL-013: no warning while nothing is analysed
             meter.reset()
             cancelCapture()   // REC-001-R14: no frame comes while the loop is stopped
         }
@@ -654,6 +889,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
             loudness = info.loudness
             midTransient = info.midTransient
             highTransient = info.highTransient
+            rolloff = info.rolloff
+            flatness = info.flatness
+            correlation = info.correlation
+            setPhaseInverted(info.phaseInverted)
         }
         // ANL-003: the real interval since the previous frame (the first frame after a start snaps).
         let interval: Double = lastLinkTimestamp.map { (previous: CFTimeInterval) -> Double in link.timestamp - previous } ?? 0
@@ -666,10 +905,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                        frameDuration: link.targetTimestamp - link.timestamp)
         let bandInput = UnsafeBufferPointer(start: bands, count: bandCount)
         applyModulation(bands: bandInput, kick: kickEnvelope, centroid: centroid, loudness: loudness, midTransient: midTransient,
-                        highTransient: highTransient, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+                        highTransient: highTransient, rolloff: rolloff, flatness: flatness, correlation: correlation,
+                        timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
+        stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
+        drainBeatEvents(context: context)   // VIS-006: nothing unless beat rings are shown
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
         let input: UnsafeBufferPointer<Float>
-        if case .oscilloscope = style {
+        if style.drawsMonoHistory {   // VIS-003, VIS-005
             _ = waveform?.output.readLatest(into: samples, capacity: WaveformFrameBuffer.capacity)
             input = UnsafeBufferPointer(start: samples, count: WaveformFrameBuffer.capacity)
         } else if case .lissajous = style {   // VIS-004: the newest stereo history (interleaved)
@@ -706,6 +948,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
         timer?.end(.encode)
         timer?.begin(.present)
+        frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)
@@ -725,19 +968,23 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
     }
 
+    /// FR-049, PERF-003-R7: re-reads the thermal state and Low Power Mode (or their overrides) and applies the
+    /// governor's settings when they changed.
+    func refreshQuality() {
+        readEffectInputs()
+        let quality: QualitySettings = governedQuality
+        guard quality != self.quality else { return }
+        self.quality = quality
+        displayLink?.preferredFrameRateRange = quality.frameRateRange
+        layoutDrawable()
+    }
+
     /// FR-049: frame-rate cap and render scale follow the thermal state and Low Power Mode.
     private func observeFrameRatePressure() {
         let center = NotificationCenter.default
-        for name in [ProcessInfo.thermalStateDidChangeNotification, Notification.Name.NSProcessInfoPowerStateDidChange] {
+        for name in QualityGovernor.changeNotifications {   // PERF-008: the power profile too
             observers.append(center.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
-                MainActor.assumeIsolated {
-                    guard let self else { return }
-                    let quality = QualityGovernor.current()
-                    guard quality != self.quality else { return }
-                    self.quality = quality
-                    self.displayLink?.preferredFrameRateRange = quality.frameRateRange
-                    self.layoutDrawable()
-                }
+                MainActor.assumeIsolated { self?.refreshQuality() }
             })
         }
     }
@@ -800,6 +1047,30 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case oscilloscope(line: OscilloscopeLine, windowMilliseconds: Int)
     /// VIS-004: the Lissajous scope.
     case lissajous(mode: LissajousMode, persistence: Bool)
+    /// VIS-005: the radial waveform.
+    case radialWaveform(ring: RadialWaveformRing, amplitude: RadialWaveformAmplitude)
+    /// VIS-006: beat pulse rings.
+    case beatRings(life: BeatRingLife)
+    /// VIS-007: the mandala.
+    case mandala(symmetry: Int, mirror: Bool, petal: MandalaPetalStyle)
+    /// VIS-008: the particle fountain.
+    case particleFountain(gravity: ParticleGravity)
+
+    /// VIS-006, VIS-008: the host drains its analysis bus subscription into the generator.
+    var drainsAnalysisEvents: Bool {
+        switch self {
+        case .beatRings, .particleFountain: true
+        default: false
+        }
+    }
+
+    /// The oscilloscope and the radial waveform draw the mono sample history instead of the bands.
+    var drawsMonoHistory: Bool {
+        switch self {
+        case .oscilloscope, .radialWaveform: true
+        default: false
+        }
+    }
 
     var title: String {
         switch self {
@@ -807,6 +1078,10 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .linear: VisualChoice.linearSpectrum.title
         case .oscilloscope: VisualChoice.oscilloscope.title
         case .lissajous: VisualChoice.lissajous.title
+        case .radialWaveform: VisualChoice.radialWaveform.title
+        case .beatRings: VisualChoice.beatRings.title
+        case .mandala: VisualChoice.mandala.title
+        case .particleFountain: VisualChoice.particleFountain.title
         }
     }
 
@@ -816,6 +1091,10 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .linear: "linearSpectrum"
         case .oscilloscope: "oscilloscope"
         case .lissajous: "lissajous"
+        case .radialWaveform: "radialWaveform"
+        case .beatRings: "beatRings"
+        case .mandala: "mandala"
+        case .particleFountain: "particleFountain"
         }
     }
 }

@@ -104,10 +104,10 @@ struct VideoStore: @unchecked Sendable {
     /// FILE-001: the checked, remuxed copy of `source` written into this store's folder under a new
     /// identifier, without making it current (the identifier key is not touched). A failure leaves
     /// no file.
-    func stage(at source: URL) async throws(VideoImportError) -> StoredVideo {
+    /// SCN-014: a scene pack import passes an identifier derived from the pack's bytes.
+    func stage(at source: URL, id: UUID = UUID()) async throws(VideoImportError) -> StoredVideo {
         let picked = try Self.copyPicked(source, limits: limits)
         defer { try? FileManager.default.removeItem(at: picked) }
-        let id = UUID()
         let temp = folder.incomingURL(for: id, extension: Self.fileExtension)
         do {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
