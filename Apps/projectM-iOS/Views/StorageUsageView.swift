@@ -90,7 +90,9 @@ struct StorageUsageView: View {
                 HStack {
                     Text(category.title)
                     Spacer()
-                    Text(text).monospacedDigit().foregroundStyle(.secondary)
+                    // Post-merge a11y (2026-11-14): primary colour like the other rows (QA-009); the secondary grey
+                    // "nearly passed" the contrast audit.
+                    Text(text).monospacedDigit()
                 }
             }
             .accessibilityLabel(category.title)

@@ -73,9 +73,25 @@ final class AccessibilityScreensUITests: XCTestCase {
         }
     }
 
+    /// My Presets (post-merge, 2026-11-14): PRE-013's bulk import section and its footer, then PRE-018's "Check Library"
+    /// row, put the Quarantine row (label and count) and Check Library last on the screen, where the audit's larger sizes
+    /// push them out of the visible list: the browser's bottom-row artefact. The audit names the texts inside these
+    /// system `NavigationLink` rows (as for Storage's "Saved recordings" row); hiding them with
+    /// `.accessibilityElement(children: .ignore)` did not change it (tried 2026-11-14). They are default-font `Text`
+    /// and do scale: `testBrowserRowsScaleWithAccessibilityTextSizes` checks both rows grow at AX L. The footer is a
+    /// plain `Section` footer (Apple's secondary grey), as ACC-004's Settings and Show footers.
+    nonisolated private static var myPresetsRows: [AuditFilter] {
+        ["Quarantine", "0", "Check Library"].map { (label: String) -> AuditFilter in
+            AuditFilter(screen: "myPresets", type: .dynamicType, element: label,
+                        reason: "row pushed off screen at the audit's larger sizes; scaling proven by a separate test")
+        } + [AuditFilter(screen: "myPresets", type: .contrast, element: "Imports every .milk preset in a folder", labelPrefix: true,
+                         reason: "the system section footer style (Apple's secondary grey) of the bulk import section (PRE-013)")]
+    }
+
     static let filters: [AuditFilter] =
         ["browser", "pack", "collections", "myPresets", "settings", "showEditor"].flatMap(systemDone)
         + bottomRows("browser")
+        + myPresetsRows
         + [AuditFilter(screen: "controls", type: .contrast, element: "Visual unavailable",
                        reason: "PERF-014 placeholder caught while fading (opacity < 1) or hidden behind the live "
                            + "visual; at full opacity its grey 0.55 on black is about 6:1")]
@@ -87,6 +103,9 @@ final class AccessibilityScreensUITests: XCTestCase {
                            + "section headers and the disabled undo/redo toolbar glyphs. Bounded so a new one still fails"),
            AuditFilter(screen: "settings", type: .contrast, element: "projectM plays presets.", labelPrefix: true,
                        reason: "the system section footer style (Apple's secondary grey) of the Visual section (VIS-002)"),
+           // Post-merge (2026-11-14): SCN-015's Scene lock footer, a plain `Section` footer `Text` with no colour of its own.
+           AuditFilter(screen: "settings", type: .contrast, element: "Locks the scene for a performance", labelPrefix: true,
+                       reason: "the system section footer style (Apple's secondary grey) of the Scene lock section (SCN-015)"),
            AuditFilter(screen: "settings", type: .dynamicType, element: "Glow",
                        reason: "the system Toggle at the bottom of the screen is pushed off screen at the audit's larger "
                            + "sizes, as the browser's bottom rows are (their scaling is proven by "
@@ -233,6 +252,13 @@ final class AccessibilityScreensUITests: XCTestCase {
         launch(["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityL"])
         openPresetBrowser()
         for id in ["node:collections", "node:myPresets"] {
+            let row = app.buttons[id]
+            XCTAssertTrue(app.reveal(row), "\(id) is reachable at AX L")
+            XCTAssertGreaterThan(row.frame.height, 60, "\(id) grows with the text (52 pt at the default size)")
+        }
+        // Evidence for `myPresetsRows`: My Presets' last rows grow too (post-merge, 2026-11-14).
+        app.buttons["node:myPresets"].tap()
+        for id in ["quarantineLink", "libraryCheckLink"] {
             let row = app.buttons[id]
             XCTAssertTrue(app.reveal(row), "\(id) is reachable at AX L")
             XCTAssertGreaterThan(row.frame.height, 60, "\(id) grows with the text (52 pt at the default size)")

@@ -288,9 +288,19 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
             Filter(screen: "midiMappings", type: .textClipped, element: "", elementless: true, limit: 3,
                    reason: "a text cut by the top or bottom edge of the screen, reported without an element (AX3; the AX3 "
                        + "screenshot shows no clipped text); bounded to three"),
-            Filter(screen: "settingsRecording", type: .textClipped, element: "", elementless: true, limit: 3,
+            Filter(screen: "settingsRecording", type: .textClipped, element: "", elementless: true, limit: 8,
                    reason: "the recording sections' long footer cut by the bottom edge of the screen, reported without an "
-                       + "element (AX3; the screenshot shows no clipped text); bounded to three"),
+                       + "element (AX3; the screenshot shows no clipped text); with REC-007 and REC-008 below, up to six at "
+                       + "AX5 (post-merge, 2026-11-14; see the Dynamic Type filter below); bounded to eight"),
+            // Post-merge (2026-11-14): REC-007's countdown and REC-008's timed-stop sections sit below the frame-rate
+            // section, off screen when the audit starts (pre-audit screenshots). The audit's own text-size changes
+            // re-lay out the list and scroll it down to them (post-audit screenshots end at "5 minutes" and "Recently
+            // Played"), and it reports their transient rows as non-elements (`issue.element` is nil, not merely
+            // stale). Bisected: without those two sections' rows both AX5 tests pass; their rows are plain body-font
+            // `Text`, built like the frame-rate rows that pass. Bounded like DynamicTypeInspector's unnamed filter.
+            Filter(screen: "settingsRecording", type: .dynamicType, element: "", elementless: true, limit: 8,
+                   reason: "rows of the recording sections below the audited one, scrolled into view by the audit's own "
+                       + "re-layout and reported without an element (3 to 6 per run, 2026-11-14); bounded to eight"),
             Filter(screen: "parameterInspector", type: .dynamicType, element: "parameterInspector.reset", reason: bottom),
             Filter(screen: "sceneSwitcher", type: .contrast, element: "", elementless: true, limit: 6,
                    reason: "the rows' preview placeholders (five) and the current row's play mark: decorative images hidden "
@@ -313,6 +323,14 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
                    reason: "the inspector's section headers and footer (Value, Modulation) reported without an element; "
                        + footer + "; bounded"),
             Filter(screen: "storage", type: .contrast, element: "storageRefresh", reason: glass),
+            // Post-merge (2026-11-14): REC-010's "Saved recordings" row is a system NavigationLink; the default-size audit
+            // names its two texts (title and size, "Zero KB" on a fresh install) as partly unsupported, whether or not
+            // the row hides its children (tried). Its value is now primary (the grey failed contrast); the AX5 audit of
+            // Storage, Dynamic Type included, passes, so the row scales (as ACC-004's bottom rows).
+            Filter(screen: "storage", type: .dynamicType, element: "Saved recordings",
+                   reason: "a system NavigationLink row's text at the default-size audit; the Storage AX5 audit passes"),
+            Filter(screen: "storage", type: .dynamicType, element: "Zero KB",
+                   reason: "a system NavigationLink row's text at the default-size audit; the Storage AX5 audit passes"),
             Filter(screen: "storage", type: .contrast, element: "", elementless: true, limit: 4,
                    reason: "Storage's section headers and footers reported without an element; " + footer + "; bounded"),
             Filter(screen: "licenses", type: .textClipped, element: "", elementless: true, limit: 1,
