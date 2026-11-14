@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-007-T01-T14 verified on the Mac with the stand-in camera; device tasks T15-T16 `{device}` open)
 
 **Input**: User description: "Implement CAM-007 (Camera crop and rotation) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Map camera aspect, orientation

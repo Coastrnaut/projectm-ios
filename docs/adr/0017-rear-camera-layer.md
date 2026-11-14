@@ -2,7 +2,7 @@
 
 - **Status**: Accepted 2026-11-13 (decided by Claude under the owner's best-judgement rule, owner
   rule 4)
-- **Feature**: CAM-001 (`specs/033-cam-001-rear-camera-layer`); amended by CAM-002 (`specs/096-cam-002-front-camera-layer`)
+- **Feature**: CAM-001 (`specs/033-cam-001-rear-camera-layer`); amended by CAM-002 (`specs/096-cam-002-front-camera-layer`) and CAM-007 (`specs/098-cam-007-camera-crop-and-rotation`)
 - **Constitution**: I, VI, X; Privacy
 
 ## Context
@@ -61,3 +61,24 @@ overridden, so this amends ADR-0017 instead of opening a new ADR.
 8. **Privacy text.** The badge reads "Front camera on" for the front camera; the usage
    description now names both cameras and says a picture is saved only when the user saves a
    frame or records. App Store answers stay "Data Not Collected".
+
+## Amendment 2026-11-14: crop and rotation (CAM-007)
+
+Decided by Claude under owner rule 4; `specs/098-cam-007-camera-crop-and-rotation`. The default
+picture (aspect fill, centered crop) is unchanged, so this amends ADR-0017 instead of opening a
+new ADR.
+
+9. **A user crop in the same geometry.** `CameraCrop` = mode (Fill, default; Fit), anchor (Center,
+   default; Top; Bottom) and zoom (1, default; 1.5; 2; 3), stored once for both cameras
+   (`settings.camera.cropMode`, `settings.camera.cropAnchor`, `settings.camera.zoom`), never in
+   scenes or cues. `CameraPictureGeometry` scales the upright, possibly mirrored picture by one
+   factor (cover for Fill, contain for Fit, times the zoom) and places it with
+   offset = (1 − visible) × anchor, so the anchor point of the picture always lands on the same
+   relative point of the layer picture. The geometry is still rebuilt every frame from the
+   picture's size, its rotation (from `AVCaptureDevice.RotationCoordinator`, unchanged) and the
+   layer picture's size, so a portrait-to-landscape turn keeps the chosen crop by construction.
+   Zoom is a crop in the layer, never the camera's own zoom; the capture session is untouched.
+10. **Fit's bars are transparent.** Where Fit leaves the layer uncovered the camera layer is
+    transparent (the shader's bounds test equals `CameraPictureGeometry.contains`); in the Camera
+    visual they show the black background on screen, in saved frames and in recordings. The
+    uniforms are unchanged (visible, offset, rotation and mirror already carry the transform).
