@@ -340,6 +340,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// The live bindings in order (SCN-002 captures them into the current scene).
     var bindings: [AudioFeatureBinding] { modulator?.bindings ?? [] }
 
+    /// UIX-003-R7: the modulator's value for `id` given `manual`; nil when `id` is unbound. Read-only.
+    func modulatorValue(for id: ParameterID, manual: Double) -> Double? {
+        guard let modulator, modulator.isBound(id) else { return nil }
+        return modulator.value(for: id, manual: manual)
+    }
+
     /// Removes a binding; the parameter returns to its manual value at once.
     @discardableResult
     func unbind(_ target: ParameterID) -> Bool {
