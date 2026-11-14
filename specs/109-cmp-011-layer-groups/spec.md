@@ -219,7 +219,8 @@ decode of scenes with each degenerate structure, checking the repair report and 
   removed.
 - **CMP-011-R5**: A grouped layer's drawn placement MUST be the group's placement applied after the
   layer's own (group ∘ local), for the current output aspect; the layer's own transform MUST stay
-  unchanged in the stack.
+  unchanged in the stack. A group has no picture of its own, so its anchor (pivot) is in fractions
+  of the output (centre by default).
 - **CMP-011-R6**: A switched-off group MUST hide all its layers.
 - **CMP-011-R7**: Group opacity MUST act on the group as one picture: the group's layers are
   combined first and the result is drawn over what lies below at the group's opacity (an isolated

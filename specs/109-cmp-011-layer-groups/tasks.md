@@ -53,3 +53,11 @@ included. Budgets (owner rule 7): unit test about 1-2 s and at most 10 s, packag
 
 T01 → T02 → T03 → T04 → T05; T06 → T07; T08 → T09 → T10 → T11; T12 → T13 → T14; T15 and T16 last.
 US4 (T12-T14) depends only on T02-T04 and can run beside US1-US3.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: every requirement CMP-011-R1…R13 and criterion S1…S5 maps to at least one task (R1-R4:
+T02-T05; R5, R8, R9: T06-T07, T09; R6, R7, R13: T08-T09; R10: T10; R11-R12: T12-T14; S5: T11). One
+finding applied: the group's anchor (pivot) was unstated in the spec; CMP-011-R5 now says it is in
+output fractions (research CMP-011-D3). No constitution conflicts; no duplicate or ambiguous
+requirements left.
