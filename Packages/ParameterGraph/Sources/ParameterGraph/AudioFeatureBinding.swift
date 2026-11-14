@@ -3,6 +3,7 @@
 //
 // A binding maps the feature's position in the input range (0…1, clamped) to the output range
 // with its `LinearMapping` (MOD-003),
+// shaped by its `MappingCurve` (MOD-004; linear by default),
 // optionally smoothed by an attack/release envelope, and combines it with the parameter's manual
 // value by the mix mode. `AudioFeatureModulator.bind` validates it against the registry.
 
@@ -38,10 +39,12 @@ public struct AudioFeatureBinding: Sendable, Hashable {
     public var outputEnd: Double
     public var mixMode: ModulationMixMode
     public var envelope: AudioFeatureEnvelope
+    /// Shapes the smoothed 0…1 signal before the output range (MOD-004-R6); linear by default.
+    public var curve: MappingCurve
 
     public init(source: AudioFeatureSource, target: ParameterID, inputMinimum: Double = 0, inputMaximum: Double = 1,
                 outputStart: Double, outputEnd: Double, mixMode: ModulationMixMode = .replace,
-                envelope: AudioFeatureEnvelope = .none) {
+                envelope: AudioFeatureEnvelope = .none, curve: MappingCurve = .linear) {
         self.source = source
         self.target = target
         self.inputMinimum = inputMinimum
@@ -50,6 +53,7 @@ public struct AudioFeatureBinding: Sendable, Hashable {
         self.outputEnd = outputEnd
         self.mixMode = mixMode
         self.envelope = envelope
+        self.curve = curve
     }
 
     /// The input and output ranges as a linear mapping (MOD-003-R7): exact ends, bounded,
@@ -75,6 +79,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
     case invalidInputRange(ParameterID)
     case outputOutOfRange(ParameterID, ModulationMixMode, minimum: Double, maximum: Double)
     case invalidEnvelope(ParameterID)
+    /// The curve breaks MOD-004 contract K5; `reason` is `MappingCurve.validationProblem`.
+    case invalidCurve(ParameterID, reason: String)
     case tooManyBindings(ParameterID, limit: Int)
     /// The binding set would contain a feedback loop (MOD-014-R9); `path` is the loop, readable.
     case feedbackCycle(ParameterID, path: String)
@@ -97,6 +103,8 @@ public enum AudioFeatureBindingError: Error, Sendable, Hashable, CustomStringCon
             "the \(mode.rawValue) output range for \"\(id)\" must lie within \(minimum)…\(maximum)"
         case let .invalidEnvelope(id):
             "the envelope bound to \"\(id)\" needs finite times in 0…\(AudioFeatureEnvelope.maximumSeconds) s"
+        case let .invalidCurve(id, reason):
+            "the curve bound to \"\(id)\" is invalid: \(reason)"
         case let .tooManyBindings(id, limit):
             "\"\(id)\" cannot be bound: \(limit) bindings already exist"
         case let .feedbackCycle(id, path):

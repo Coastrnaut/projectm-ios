@@ -37,6 +37,7 @@ CHECKED = [
     "Views/MIDIMonitorView.swift",                     # MIDI-002-R10
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
     "Views/MIDIMappingsView.swift",                    # MIDI-003-R11
+    "Views/MIDIMappingOptionsView.swift",              # MIDI-004-R8: curve and Invert announce through the announcer
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",
     "Views/SceneSwitcherView.swift",   # UIX-002-R9: the switcher announces through the announcer
@@ -47,6 +48,7 @@ CHECKED = [
     "Views/LibraryEraseSection.swift",
     "Coordinators/FolderBackupCoordinator.swift",   # FILE-006-R9: folder backup results on the library lane
     "Views/SensorySafetySection.swift",  # ACC-012-R10: profile changes announce through the announcer
+    "Views/SceneFoldersView.swift",  # SCN-004-R13: folder edits announce on the library lane
 ]
 COORDINATOR = "Coordinators/AppCoordinator.swift"
 ALLOWED_IN_COORDINATOR = ("onScopeChange", "nativeVisualUnavailableMessage", "glowUnavailableMessage")

@@ -102,6 +102,8 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
         case orphanedConnection
         /// MOD-013: a connection refused by MOD-014 (a feedback loop included); kept.
         case rejectedConnection
+        /// MOD-004: a binding whose stored curve this version cannot read; kept verbatim, not applied.
+        case unsupportedCurve
 
         /// MOD-013 (ADR-0028 amendment): every per-edge modulation problem is a warning, so one edge
         /// never refuses the scene; `invalidModulation` (generator declarations) stays an error.
@@ -110,7 +112,7 @@ public struct SceneIssue: Sendable, Hashable, CustomStringConvertible {
             case .unknownLayerKind, .unsupportedBlendMode, .unsupportedFitMode, .unsupportedMaskShape, .invalidGroup, .valueClamped, .droppedField, .unknownAssetType, .unusedAsset,
                  .missingAsset, .orphanedParameter, .rejectedParameter, .parameterClamped,
                  .invalidBinding, .duplicateBindingTarget, .invalidExpression, .migratedReference, .retiredReference,
-                 .orphanedBinding, .orphanedConnection, .rejectedConnection:
+                 .orphanedBinding, .orphanedConnection, .rejectedConnection, .unsupportedCurve:
                 .warning
             default:
                 .error
