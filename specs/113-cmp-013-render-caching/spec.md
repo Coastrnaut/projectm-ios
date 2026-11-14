@@ -83,6 +83,19 @@ human interaction); each answer is the recommended, conservative option.
 - Q: Extra memory? → A: **None for layer pictures**: a reused picture is the layer's own existing
   picture. The level-2 composite is the compositor's existing composite. Nothing new is allocated
   per frame.
+- Q (clarify pass): What outcome does a layer whose picture was reused report? → A: **`rendered`,
+  unchanged** (its picture is this frame's valid picture); a separate per-layer "reused" flag tells
+  them apart. Rationale: a new outcome case would break every exhaustive switch in the app and the
+  health rules that read outcomes. Rejected: a new `reused` outcome.
+- Q (clarify pass): How quickly must a GPU error invalidate the cache? → A: **At the next frame tick
+  that observes it** (PERF-014 polls the last three command buffers at the start of each tick). A
+  picture drawn in a buffer that failed can therefore be reused for at most the frames until the
+  failure is observed (normally 1–3); those frames also showed the failed work without caching, so
+  the output stays identical. Recorded, not changed.
+- Q (clarify pass): Does a hidden static layer (solo/mute, opacity 0, disabled group) render while
+  hidden? → A: **It stays cached** (CMP-012 says hidden layers keep rendering so that un-hiding shows
+  a current frame; a cached picture is current by definition). A hidden dynamic layer keeps rendering
+  every frame as before.
 
 ## User Scenarios & Testing *(mandatory)*
 
