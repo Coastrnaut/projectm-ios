@@ -79,10 +79,12 @@ ALLOWED_KEYS = {"favorites", "lastPresetID", "settings.performanceOverlay", "set
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
                 "settings.oscilloscope.line", "settings.oscilloscope.window",   # VIS-003-R10
+                "settings.lissajous.mode", "settings.lissajous.persistence",   # VIS-004-R11
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
+                "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.playbackBalance.position",   # AUD-010-R7 (In-App Playback monitoring balance)

@@ -38,6 +38,7 @@ import CFlashLimiter
 import Compositor
 import FlashSafety
 import Foundation
+import FrameTiming
 import PresentationLifecycle
 import ProjectMBridge
 import QuartzCore
@@ -64,6 +65,13 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public var view: UIView { layerView }
     public private(set) var metrics = RenderMetrics.zero
     public private(set) var presentedFrameCount = 0
+    /// PERF-001 (specs/152-perf-001-stage-timings): while set (the performance overlay is shown), each presented
+    /// frame records its audio, render, output (flash-limiter pass) and present stages. Nil: no timing work.
+    /// projectM's GPU time is unavailable: ANGLE submits the Metal work itself (research PERF-001-D3).
+    public var stageTimer: FrameStageTimer? {
+        didSet { stageTimer?.configure(pipeline: Self.frameStages) }
+    }
+    public static let frameStages: [FrameStage] = [.audio, .render, .output, .present]
     /// FR-072: selects the stricter envelope (FlashLimiter.c, FX-019). Toggling keeps the envelope's
     /// history, so a strobe cannot restart its budget (FX-019-R11).
     public var reduceFlashing = false
@@ -271,25 +279,36 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     @discardableResult
     func renderFrame(present: Bool = true, frameTime: Double = 1.0 / 60) -> Bool {
         guard !presentationSuspended, let engine, let surface else { return false }
+        // PERF-001: shown frames only; FrameTiming comes with the Compositor product.
+        let timer: FrameStageTimer? = present ? stageTimer : nil
+        timer?.beginFrame()
+        defer { timer?.endFrame() }
         eglMakeCurrent(display, surface, surface, context)
+        timer?.begin(.audio)
         if let reader {
             let frames = reader.read(into: pcm, maxFrames: maxFrames)
             if frames > 0 {
                 engine.addPCMInterleavedStereo(pcm, frames: UInt(frames))
             }
         }
+        timer?.end(.audio)
+        timer?.begin(.render)
         if !envelopeBypassed, let limiter = flashLimiterForFrame() {
             let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
             if framebuffer != 0 {
                 engine.renderFrame(toFramebuffer: framebuffer)
+                timer?.end(.render)
+                timer?.begin(.output)
                 var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
                 PMFlashLimiterFinish(limiter, 0, &parameters)
+                timer?.end(.output)
             } else {
                 engine.renderFrame(toFramebuffer: 0)
             }
         } else {
             engine.renderFrame(toFramebuffer: 0)
         }
+        timer?.end(.render)   // no-op when the output pass already ended it
         if let handler = pendingCapture {   // REC-001: the frame as shown, before the swap
             pendingCapture = nil
             let pixels = readPixels()
@@ -297,7 +316,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
             eglMakeCurrent(display, surface, surface, context)
         }
         if present {
+            timer?.begin(.present)
             var swapped = eglSwapBuffers(display, surface) == EGL_TRUE
+            timer?.end(.present)
             #if DEBUG
             if faultInjection.failPresentation { swapped = false }
             #endif
