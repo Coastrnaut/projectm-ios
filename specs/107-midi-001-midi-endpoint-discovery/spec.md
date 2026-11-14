@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Planned 2026-11-14 (analyze fixes applied)
 
 **Input**: User description: "Implement MIDI-001 (MIDI endpoint discovery) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "List connected and virtual MIDI
@@ -137,11 +137,11 @@ the network symbol scan; the stored keys are only the toggle.
 - **MIDI-001-R8**: The toggle MUST be off by default and stored as one boolean; Settings MUST show a MIDI section with the toggle, a status line ("Off", "Listening — no MIDI devices", "Listening — N devices", or the unavailable text "MIDI isn't available on this device.", with no automatic retry) and the endpoint rows.
 - **MIDI-001-R9**: Each row MUST show the name (with " (2)", " (3)"… appended when two endpoints in the same direction share a name), "Input" or "Output", and "Virtual" and "Offline" where they apply; VoiceOver reads one combined label per row. Rows are ordered inputs first, then outputs, each by display name (case-insensitive), then ID.
 - **MIDI-001-R10**: Endpoint names, IDs and counts MUST NOT be stored, logged or sent; only the toggle is stored.
-- **MIDI-001-R11**: Appearances and disappearances MUST be announced to VoiceOver through the shared announcer (ACC-004/ACC-011), one announcement per refresh, never for the first list after listening starts: "MIDI device connected: <name>", "MIDI device disconnected: <name>", or "<n> MIDI devices connected/disconnected" for more than one; never a direct post.
+- **MIDI-001-R11**: Appearances and disappearances MUST be announced to VoiceOver through the shared announcer (ACC-004/ACC-011), one announcement per refresh, never for the first list after listening starts: "MIDI device connected: <name>", "MIDI device disconnected: <name>", or "<n> MIDI devices connected/disconnected" for more than one; both sentences joined when one refresh has both. Endpoints of one device count as one device, named by the device name (a virtual endpoint by its own name). Never a direct post.
 - **MIDI-001-R12**: Discovery MUST NOT receive or parse MIDI messages and MUST NOT allocate per MIDI message (none are subscribed in this row); refreshes run off the main thread and the app copies results onto the main actor.
 - **MIDI-001-R13**: The pure endpoint model, ID rule, diffing and coalescing MUST build and pass their tests on Linux; the system implementation compiles only where the system MIDI framework exists, and elsewhere discovery reports unavailable.
 - **MIDI-001-R14**: The source compliance check and the binary network symbol scan MUST fail on network MIDI symbols, and the built app MUST pass both.
-- **MIDI-001-R15**: A DEBUG-only stand-in MIDI system (launch argument `-uitestFakeMIDI`) MUST let UI tests plug and unplug a fake device from Settings; Release builds contain none of it.
+- **MIDI-001-R15**: A stand-in MIDI system selected by the DEBUG-only launch argument `-uitestFakeMIDI` MUST let UI tests plug and unplug a fake device from Settings. The launch argument handling and the Plug/Unplug panel compile only in DEBUG; the scripted provider itself is an ordinary package type (also used by the package tests) that a Release build never instantiates.
 
 ### Key Entities
 
