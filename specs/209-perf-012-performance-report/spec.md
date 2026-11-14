@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PERF-012-T01-T16 verified: FrameTiming and Diagnostics package tests on the
+host, app unit and UI tests on the feature's iOS 27.2 simulator "PERF12 iPhone 17"). Open: T17 `{device}` (D1 export).
+Simulator results are not performance evidence.
 
 **Input**: User description: "Implement PERF-012 (Diagnostic performance report) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Export local JSON with frame percentiles and resource counters." Acceptance, verbatim:

@@ -37,7 +37,7 @@ owner rule 7 (short tests, injected values, no wall clock).
 
 ## Phase 5: Polish
 
-- [ ] PERF-012-T16 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget, `LibraryBackupAppTests` (no new key, PERF-012-R11), PosterBoard counts
+- [X] PERF-012-T16 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbol checks on the Debug app, type-check budget, `LibraryBackupAppTests` (no new key, PERF-012-R11), PosterBoard counts — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 160 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; no type-check warning in a touched file (300/150 ms flags); LibraryBackupAppTests 5 pass (no new key); PosterBoard reports 26 before and after; privacy policy Diagnostics section updated
 - [ ] PERF-012-T17 {device} D1: export after a 1-minute session with the overlay shown; the file validates and shows plausible percentiles and counters (PERF-012-S5)
 
 ## Dependencies
