@@ -29,7 +29,7 @@ Format: `- [ ] VIS-004-Txx [P?] [Story] description`. `{device}` = needs a physi
 
 ## Phase 4: User Story 3 — gain, silence, persistence, flash safety (P2)
 
-- [ ] VIS-004-T08 [P] [US3] Write `LissajousPersistenceTests.swift`: gain (0.05 sine reaches 90 % ± 1 %; hold 0.5 s then halves per 0.5 s, never below the peak; floor 0.01; Δt clamp); persistence (weights 0.5^(age/h) within 1e-9; none after 4 h; ≤ 8 snapshots; none taken in silence; mode change and off clear them; `reset()`); caps (`persistenceHalfLife(enabled:clamp:)` = 0.2 standard, 0.1 at intensity limit 0.2, ≤ 0.25 with Reduce flashing, 0 at cap 0, 0 disabled); FX-019: a 60 Hz loud/silent alternation stays within 4 (Reduce flashing) and 6 transitions per second in every area; storage addresses stable over 300 frames (VIS-004-S3, S4, R6, R8, R9, R13, R17). Evidence: passes on the host and in the Linux shape.
+- [ ] VIS-004-T08 [P] [US3] Write `LissajousPersistenceTests.swift`: gain (0.05 sine reaches 90 % ± 1 %; hold 0.5 s then halves per 0.5 s, never below the peak; floor 0.01; Δt clamp); persistence (weights (0.5^(age/h) − 1/16)/(15/16) within 1e-9; none after 4 h; ≤ 8 snapshots; none taken in silence; mode change and off clear them; `reset()`); caps (`persistenceHalfLife(enabled:clamp:)` = 0.2 standard, 0.1 at intensity limit 0.2, ≤ 0.25 with Reduce flashing, 0 at cap 0, 0 disabled); FX-019: a 60 Hz loud/silent alternation (1.5 s) stays within 4 (Reduce flashing) and 6 transitions per second in every area; storage addresses stable over 120 frames (VIS-004-S3, S4, R6, R8, R9, R13, R17). Evidence: passes on the host and in the Linux shape.
 
 ## Phase 5: User Story 1 — choose and see it in the app (P1)
 

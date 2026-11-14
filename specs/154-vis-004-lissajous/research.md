@@ -42,7 +42,7 @@ chosen, why, and what was rejected.
   loud transients do not pump. Rejected: per-frame normalization (shape size jitters with every
   window).
 - **VIS-004-D5 Persistence**: 8 CPU snapshots of 128 points at half-life/2 spacing, weight
-  0.5^(age/h), dropped at 4 h. Rationale: deterministic and testable on Linux, bounded geometry
+  (0.5^(age/h) − 1/16)/(15/16), reaching 0 and dropped at 4 h (shifted so a retraced ghost fades out without a pop; implementation finding 2026-11-14). Rationale: deterministic and testable on Linux, bounded geometry
   (≤ 1,016 extra segments), counted by the flash model. Rejected: a GPU accumulation texture (GPU-only
   state, a second pass, a texture per size); the compositor's Trails pass (not in this host).
 - **VIS-004-D6 Safety caps**: `LissajousConfiguration.persistenceHalfLife(enabled:clamp:)` mirrors
