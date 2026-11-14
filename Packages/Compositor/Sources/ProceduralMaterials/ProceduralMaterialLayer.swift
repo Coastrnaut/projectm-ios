@@ -8,7 +8,12 @@
 // `setFragmentBytes`. The picture is opaque linear color (premultiplied = straight). A failure to
 // prepare throws `.resourceUnavailable`; the compositor then shows the transparent fallback. Under
 // the compositor, the composite flash guard (CMP-001-R10) applies on top of every material.
-// Not Sendable: the compositor's thread drives it.
+// SHD-004: a layer holds a selected variant (nil = default). `prepare` builds the pipelines of the default and
+// every variant the GPU supports into a cache; `select(variant:)` only re-resolves which cached pipeline the
+// next frame uses (no pipeline creation, allocation or lock in `render`), and never touches parameters,
+// motion or the layer's identity. An unknown, unsupported or unbuildable variant draws the default with a
+// notice (`resolution.notice`); the selection is kept.
+// Not Sendable: the compositor's thread drives it (call `select` between frames on that thread).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
 import Metal
@@ -20,22 +25,51 @@ public final class ProceduralMaterialLayer: LayerSource {
     public let fallback = LayerFallback.transparent
     public private(set) var parameters: MaterialParameterValues
     public private(set) var motion = MaterialMotion()
+    /// SHD-004: the stored choice (nil = the default variant); kept even when it cannot be drawn here.
+    public private(set) var selectedVariant: String?
+    /// SHD-004: what is drawn and why; recomputed by `select` and `prepare`.
+    public private(set) var resolution: MaterialVariantResolution
+    /// The GPU families judged against; nil until `prepare` reads them from the device (unless injected).
+    public private(set) var capabilities: MaterialGPUCapabilities?
     private var library: MTLLibrary?
+    private var pipelines: [String: MTLRenderPipelineState] = [:]
     private var pipeline: MTLRenderPipelineState?
     private let speedSlot: Int
     private let reactivitySlot: Int
 
-    public init(_ definition: MaterialDefinition) {
+    /// `variant` nil (or the default's ID) draws the default; `capabilities` nil reads them from the device.
+    public init(_ definition: MaterialDefinition, variant: String? = nil, capabilities: MaterialGPUCapabilities? = nil) {
         self.definition = definition
         parameters = MaterialParameterValues(definition)
         speedSlot = definition.slot(of: definition.speedParameter) ?? -1
         reactivitySlot = definition.slot(of: definition.reactivityParameter) ?? -1
+        self.capabilities = capabilities
+        selectedVariant = variant == definition.defaultVariantID ? nil : variant
+        resolution = MaterialVariantResolution(drawn: definition.defaultVariantID)
+        resolveVariant()
     }
 
     /// The catalog material with exactly this ID, or nil.
-    public convenience init?(materialID: String) {
+    public convenience init?(materialID: String, variant: String? = nil, capabilities: MaterialGPUCapabilities? = nil) {
         guard let definition = ProceduralMaterialCatalog.material(withID: materialID) else { return nil }
-        self.init(definition)
+        self.init(definition, variant: variant, capabilities: capabilities)
+    }
+
+    /// SHD-004-R4: chooses the variant drawn from the next frame (nil or the default's ID = default). Values,
+    /// motion and composite settings are untouched; no pipeline is built here.
+    public func select(variant: String?) {
+        selectedVariant = variant == definition.defaultVariantID ? nil : variant
+        resolveVariant()
+    }
+
+    /// SHD-004: the variants whose pipelines `prepare` built (empty before it).
+    public var preparedVariants: Set<String> { Set(pipelines.keys) }
+
+    private func resolveVariant() {
+        let built: Set<String>? = pipelines.isEmpty ? nil : Set(pipelines.keys)
+        resolution = MaterialVariantResolution.resolve(selection: selectedVariant, variants: definition.variants,
+                                                       capabilities: capabilities ?? .all, built: built)
+        pipeline = pipelines[resolution.drawn]
     }
 
     public var layerName: String { definition.id }
@@ -58,15 +92,9 @@ public final class ProceduralMaterialLayer: LayerSource {
     public func resetMotion() { motion.reset() }
 
     public func prepare(picture: LayerPictureDescriptor, device: MTLDevice) throws(LayerSourceError) {
-        if pipeline != nil { return }
-        // SHD-003-R4: the material's metadata must match the slots its fragment function reads.
-        if let metadata = definition.metadata {
-            do {
-                try metadata.check(source: ProceduralMaterialShaders.source, function: definition.fragmentFunction)
-            } catch {
-                throw .resourceUnavailable("material metadata \(definition.id): \(error)")
-            }
-        }
+        if !pipelines.isEmpty { return }
+        let gpu: MaterialGPUCapabilities = capabilities ?? MaterialGPUCapabilities(device: device)
+        capabilities = gpu
         let library: MTLLibrary
         if let compiled = self.library {
             library = compiled
@@ -74,19 +102,39 @@ public final class ProceduralMaterialLayer: LayerSource {
             library = try ProceduralMaterialShaders.makeLibrary(device: device)
             self.library = library
         }
+        // The default variant must build (SHD-001: otherwise the layer is unavailable).
+        let defaultID: String = definition.defaultVariantID
+        pipelines[defaultID] = try makePipeline(variant: defaultID, library: library, device: device)
+        // SHD-004-R4: every other supported variant is built now, so switching never builds at render time.
+        for variant in definition.variants.dropFirst() where gpu.supports(variant) {
+            if let built = try? makePipeline(variant: variant.id, library: library, device: device) { pipelines[variant.id] = built }
+        }
+        resolveVariant()
+    }
+
+    private func makePipeline(variant: String, library: MTLLibrary, device: MTLDevice) throws(LayerSourceError) -> MTLRenderPipelineState {
+        let function: String = definition.fragmentFunction(for: variant)
+        // SHD-003-R4, SHD-004-R2: the material's metadata must match the slots this variant's function reads.
+        if let metadata = definition.metadata {
+            do {
+                try metadata.check(source: ProceduralMaterialShaders.source, function: function)
+            } catch {
+                throw .resourceUnavailable("material metadata \(definition.id) (\(variant)): \(error)")
+            }
+        }
         guard let vertex = library.makeFunction(name: ProceduralMaterialShaders.vertexFunction),
-              let fragment = library.makeFunction(name: definition.fragmentFunction) else {
-            throw .resourceUnavailable("material functions for \(definition.id)")
+              let fragment = library.makeFunction(name: function) else {
+            throw .resourceUnavailable("material functions for \(definition.id) (\(variant))")
         }
         let d = MTLRenderPipelineDescriptor()
-        d.label = "SHD-001 \(definition.id)"
+        d.label = "SHD-001 \(definition.id) \(variant)"
         d.vertexFunction = vertex
         d.fragmentFunction = fragment
         d.colorAttachments[0].pixelFormat = LayerPictureDescriptor.metalPixelFormat
         do {
-            pipeline = try device.makeRenderPipelineState(descriptor: d)
+            return try device.makeRenderPipelineState(descriptor: d)
         } catch {
-            throw .resourceUnavailable("material pipeline \(definition.id): \(error.localizedDescription)")
+            throw .resourceUnavailable("material pipeline \(definition.id) (\(variant)): \(error.localizedDescription)")
         }
     }
 

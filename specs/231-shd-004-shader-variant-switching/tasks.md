@@ -16,18 +16,18 @@
 **Goal**: materials declare variants; checks reject bad lists. **Independent test**: validator and catalog tests.
 
 - [X] SHD-004-T03 [P] [US1] Validator tests, one per invalid class (count, duplicate, default mismatch, prefix, unknown family, default requirement, unknown key) in `Packages/Compositor/Tests/ShaderParameterMetadataTests/ShaderVariantMetadataTests.swift` — Verified 2026-11-14: `ShaderVariantMetadataTests` 3 tests pass, 9 invalid classes each with its own error
-- [ ] SHD-004-T04 [US1] Variant lists for Plasma (`plasmaDetailed` "Detailed", requires `apple9`) and Noise Flow (`noiseFlowLite` "Low cost") in `MaterialParameterMetadata.swift`; `MaterialDefinition.variants`, `defaultVariant`, `variant(_:)`, `fragmentFunction(for:)` in `MaterialDefinition.swift`
-- [ ] SHD-004-T05 [US1] Fragment functions `mat_plasmaDetailed` and `mat_noiseFlowLite` in `ProceduralMaterialShaders.swift` (SHD-001 safety rules, `mat_finish`)
-- [ ] SHD-004-T06 [US1] Catalog tests: expected variants per material; every variant's `mat_<id>` passes SHD-003's slot check against `ProceduralMaterialShaders.source` (runs where Metal is available, as `MaterialMetadataTests` does) in `Packages/Compositor/Tests/ProceduralMaterialsTests/MaterialVariantCatalogTests.swift`
+- [X] SHD-004-T04 [US1] Variant lists for Plasma (`plasmaDetailed` "Detailed", requires `apple9`) and Noise Flow (`noiseFlowLite` "Low cost") in `MaterialParameterMetadata.swift`; `MaterialDefinition.variants`, `defaultVariant`, `variant(_:)`, `fragmentFunction(for:)` in `MaterialDefinition.swift` — Verified 2026-11-14: `MaterialVariantCatalogTests.testCatalogVariants`
+- [X] SHD-004-T05 [US1] Fragment functions `mat_plasmaDetailed` and `mat_noiseFlowLite` in `ProceduralMaterialShaders.swift` (SHD-001 safety rules, `mat_finish`) — Verified 2026-11-14: `MaterialVariantSwitchTests.testEachVariantMatchesItsGolden` and `MaterialFlashSafetyTests.testVariantsStayInsideTheBudgets` on the host GPU (Apple M5 Max)
+- [X] SHD-004-T06 [US1] Catalog tests: expected variants per material; every variant's `mat_<id>` passes SHD-003's slot check against `ProceduralMaterialShaders.source` (runs where Metal is available, as `MaterialMetadataTests` does) in `Packages/Compositor/Tests/ProceduralMaterialsTests/MaterialVariantCatalogTests.swift` — Verified 2026-11-14: `MaterialVariantCatalogTests.testEveryVariantMatchesItsShaderSlots`
 
 ## Phase 4: User Story 2 - Switching keeps the scene (P1)
 
 **Goal**: runtime switch without rebuild. **Independent test**: GPU switch test, goldens per variant, scene round trip.
 
-- [ ] SHD-004-T07 [US2] `MaterialGPUCapabilities`, `MaterialVariantNotice`, `MaterialVariantResolution.resolve` (plain Swift) in `Packages/Compositor/Sources/ProceduralMaterials/MaterialVariants.swift`; `MaterialGPUCapabilities(device:)` via `supportsFamily` in `ProceduralMaterialShaders.swift`
-- [ ] SHD-004-T08 [US2] `ProceduralMaterialLayer`: `init(_:variant:capabilities:)`, `selectedVariant`, `select(variant:)`, pipeline cache built in `prepare`, `resolution`, render draws the resolved pipeline
-- [ ] SHD-004-T09 [P] [US2] Resolution unit tests (CPU: default, supported, unsupported, unknown, pipeline unavailable — the spec's pipeline-failure edge case) in `ProceduralMaterialsTests/MaterialVariantResolutionTests.swift`
-- [ ] SHD-004-T10 [US2] GPU tests: golden signature per non-default variant (differs from Standard), switching keeps every parameter value and the motion phase, switching back draws Standard again, no rebuild in `ProceduralMaterialsTests/MaterialVariantSwitchTests.swift`; flash-safety and extremes extended to the new variants
+- [X] SHD-004-T07 [US2] `MaterialGPUCapabilities`, `MaterialVariantNotice`, `MaterialVariantResolution.resolve` (plain Swift) in `Packages/Compositor/Sources/ProceduralMaterials/MaterialVariants.swift`; `MaterialGPUCapabilities(device:)` via `supportsFamily` in `ProceduralMaterialShaders.swift` — Verified 2026-11-14: `MaterialVariantCatalogTests.testResolution`, `MaterialVariantSwitchTests.testCapabilitiesComeFromTheDevice`
+- [X] SHD-004-T08 [US2] `ProceduralMaterialLayer`: `init(_:variant:capabilities:)`, `selectedVariant`, `select(variant:)`, pipeline cache built in `prepare`, `resolution`, render draws the resolved pipeline — Verified 2026-11-14: `MaterialVariantSwitchTests` (5 tests, 0.8 s)
+- [X] SHD-004-T09 [P] [US2] Resolution unit tests (CPU: default, supported, unsupported, unknown, pipeline unavailable — the spec's pipeline-failure edge case) in `ProceduralMaterialsTests/MaterialVariantResolutionTests.swift` — Verified 2026-11-14: `MaterialVariantCatalogTests.testResolution` (all five branches)
+- [X] SHD-004-T10 [US2] GPU tests: golden signature per non-default variant (differs from Standard), switching keeps every parameter value and the motion phase, switching back draws Standard again, no rebuild in `ProceduralMaterialsTests/MaterialVariantSwitchTests.swift`; flash-safety and extremes extended to the new variants — Verified 2026-11-14: `MaterialVariantSwitchTests` goldens, switch keeps values/motion/prepared set, extremes; flash budgets; 37 material tests pass in 9.5 s
 - [ ] SHD-004-T11 [US2] SceneFormat: `SceneLayer.materialVariant` (layer key `materialVariant`, written only when non-nil), decode (material only; non-text → `droppedField`), `SceneLiveState.materialVariants`, capture
 - [ ] SHD-004-T12 [US2] Scene tests: byte-equal apart from `materialVariant`; default restores original bytes; decode → live state → capture round trip in `Packages/SceneFormat/Tests/SceneFormatTests/SceneMaterialVariantTests.swift`
 - [ ] SHD-004-T13 [US2] RenderGoldens: `GoldenLayerFactory` draws the stored variant
@@ -36,7 +36,7 @@
 
 **Goal**: fallback with notice, choice kept. **Independent test**: injected capability GPU test, scene warning.
 
-- [ ] SHD-004-T14 [US3] GPU test: capability without `apple9` + Detailed selected → Standard's picture (signature), notice `unsupported(plasmaDetailed, apple9)`, `selectedVariant` still Detailed; unknown variant → Standard with `unknownVariant` in `MaterialVariantSwitchTests.swift`
+- [X] SHD-004-T14 [US3] GPU test: capability without `apple9` + Detailed selected → Standard's picture (signature), notice `unsupported(plasmaDetailed, apple9)`, `selectedVariant` still Detailed; unknown variant → Standard with `unknownVariant` in `MaterialVariantSwitchTests.swift` — Verified 2026-11-14: `MaterialVariantSwitchTests.testUnsupportedOrUnknownVariantFallsBackToStandard` (capability without apple9 injected: Standard's exact pixels, notice, selection kept)
 - [ ] SHD-004-T15 [US3] `SceneIssue.Code.unknownMaterialVariant` (warning; SCN-012 unknown content, no action) in `SceneIssue.swift`, `SceneRepair.swift`, `SceneValidation.swift`; test in `SceneMaterialVariantTests.swift`
 
 ## Phase 6: User Story 4 - Inspector picker (P2)
