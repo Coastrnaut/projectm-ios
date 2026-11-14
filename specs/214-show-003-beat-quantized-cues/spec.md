@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-003-T01-T14 verified on the Mac: PerformanceControl, ShowControl and LibraryBackup package tests on the host, app unit and UI tests on a private iOS 27.2 simulator; no ADR, no device task)
 
 **Input**: User description: "Implement SHOW-003 (Beat-quantized cue advance) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Queue next cue for the next detected beat or bar." Acceptance, verbatim: "Synthetic

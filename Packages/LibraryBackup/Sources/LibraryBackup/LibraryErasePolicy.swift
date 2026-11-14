@@ -122,13 +122,15 @@ public enum LibraryErasePolicy {
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
             + externalDisplayKeys + [sceneLockKey] + oscPeerKeys + [splitEditorWidthKey]   // SCN-015: erasing Settings unlocks the scene; OSC-008; UIX-007
-            + [quantizeModeKey]   // MOD-017: erasing Settings turns quantizing off
+            + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
     }()
 
     /// SCN-015: the scene lock (excluded from backups; erased with Settings).
     public static let sceneLockKey = "settings.scene.locked"
     /// MOD-017: the quantize mode (excluded from backups; erased with Settings).
     public static let quantizeModeKey = "settings.modulation.quantize"
+    /// SHOW-003: the cue step quantize mode (excluded from backups; erased with Settings).
+    public static let cueQuantizeModeKey = "settings.show.quantizeCues"
 
     /// Every key some category can remove.
     public static var erasableKeys: [String] {

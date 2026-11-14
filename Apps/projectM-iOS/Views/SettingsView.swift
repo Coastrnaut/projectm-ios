@@ -555,6 +555,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("showEditorLink")
             }
             .id("show")
+            QuantizeCueStepsSection(quantizer: settings.showCueQuantizer).id("quantizeCues")   // SHOW-003-R1
         }
         if let openGuide {   // UIX-001-R8
             Section {
