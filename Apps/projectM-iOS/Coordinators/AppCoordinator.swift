@@ -330,6 +330,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// OUT-004: the external display's output correction (Settings › External Display).
     @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
+    /// REC-008: the recording length (Settings → Stop recording after; Off by default).
+    @ObservationIgnored private(set) lazy var recordingTimedStop = RecordingTimedStopSetting(defaults: defaults)
     /// UIX-004: the favorite parameter shelf (pinned controls in the visualizer's controls).
     let parameterShelf: ParameterShelf
     /// REC-004: reads the microphone permission (never asks for it).
@@ -1422,6 +1424,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                                  qualityCapabilities: RecordingQualitySetting.deviceCapabilities(),
                                                  frameRateChoice: recordingQuality.frameRate)   // REC-006
         context.countdown = recordingCountdown.length   // REC-007
+        context.timedStop = recordingTimedStop.length   // REC-008
         return context
     }
 
