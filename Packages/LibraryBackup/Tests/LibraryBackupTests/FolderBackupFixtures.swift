@@ -64,7 +64,13 @@ final class CountingFileAccess: BackupFileAccess, @unchecked Sendable {
 }
 
 struct MediaLibraryFixture {
+    /// 4 MiB with CryptoKit; 256 KiB where SHA-256 is the portable Swift hasher (Linux CI, debug builds),
+    /// which keeps the package suite under a minute there (owner rule 7).
+    #if canImport(CryptoKit) && !LIBRARYBACKUP_NO_CRYPTOKIT
     static let videoBytes = 4 << 20
+    #else
+    static let videoBytes = 256 << 10
+    #endif
     static let video = UUID(uuidString: "0B000000-0000-4000-8000-0000000000F6")!
     static let photo = UUID(uuidString: "0A000000-0000-4000-8000-0000000000F6")!
     static let legacyPhoto = UUID(uuidString: "0A000000-0000-4000-8000-0000000000F7")!
