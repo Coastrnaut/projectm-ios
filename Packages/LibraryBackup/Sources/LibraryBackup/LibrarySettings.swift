@@ -94,6 +94,7 @@ public enum LibrarySettingsPolicy {
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",
         "settings.osc.port",
         "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings
+        "settings.parameterShelf.pins",   // UIX-004-R10: ordered pinned parameter IDs; erased with Settings
         "settings.inputTrim.decibels", "settings.analysisChannel.mode",
         "settings.playbackBalance.position",   // AUD-010-R7: the In-App Playback monitoring balance
         "settings.noiseGate.enabled", "settings.noiseGate.thresholdDecibels",

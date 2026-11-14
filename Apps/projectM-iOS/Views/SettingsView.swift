@@ -382,6 +382,7 @@ struct SettingsView: View {
 
     @ViewBuilder private var mediaSections: some View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
+        if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
             cameraSection
         }
