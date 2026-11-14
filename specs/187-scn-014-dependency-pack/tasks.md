@@ -18,7 +18,7 @@
 
 - [ ] SCN-014-T06 [US2] `ScenePackImporter` preview and library import (contract P4; derived identifiers, no current change, rollback of new identifiers) in Apps/projectM-iOS/Coordinators/ScenePackImporter.swift; `ShowCoordinator.installImportedScene` in Apps/projectM-iOS/Coordinators/ShowCoordinator.swift
 - [ ] SCN-014-T07 [US2] "Import Scene…" row, file picker for the exported type, preview sheet (contract P5) in Apps/projectM-iOS/Views/ScenePackViews.swift; `UTExportedTypeDeclarations` in project.yml; AppCoordinator wiring
-- [ ] SCN-014-T08 [US2] Acceptance tests (photo + 2 slides + logo + text → export → no absolute path → wipe → import offline → equal scene apart from identifiers, byte-identical media, cue; missing media file refused; traversal entries refused; re-import stores nothing twice and adds no cue; conflicting ID → copy) in Apps/projectM-iOS/Tests/ScenePackAcceptanceTests.swift
+- [ ] SCN-014-T08 [US2] Acceptance tests (photo + 2 slides + logo + text → export → no absolute path → wipe → import offline → equal scene apart from identifiers, byte-identical media, cue; missing media file refused; traversal entries refused; re-import stores nothing twice and adds no cue; conflicting ID → copy; a file that is not a pack refused) in Apps/projectM-iOS/Tests/ScenePackAcceptanceTests.swift
 - [ ] SCN-014-T09 [US2] DEBUG fixture (`-uitestScenePackFixture`) in Apps/projectM-iOS/Debug/UITestScenePackFixture.swift and UI test under 30 s (export, import the exported pack, the copy's cue appears) in Apps/projectM-iOS/UITests/ScenePackUITests.swift
 
 ## Phase 4: Polish
@@ -32,3 +32,10 @@ T01 → T02 → T03; T02 → T04 → T05; T04 → T06 → T07 → T08, T09; all 
 ## Implementation strategy
 
 MVP is US1 + US2 together (the acceptance needs both); package work first, then the app service, then UI.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R4 → T01-T03, T08; R5-R7, R10 → T06, T08; R8 → T10 (network symbols) and T06 (single read);
+R9 → T05, T07, T09. S1-S4 → T08 (S4 also T03); S5 → T09. Findings applied: (1) the spec's audit list was
+narrower than research D2; the spec now points to D2's list as the source; (2) the edge case "the file
+picked is not a pack" had no test; T08 now includes it. No constitution conflicts, no unmapped tasks.
