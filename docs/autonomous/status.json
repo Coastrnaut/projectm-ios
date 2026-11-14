@@ -12,7 +12,8 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 133,
+   "audited": 131,
+   "implementing": 2,
    "integrated": 18
   },
   "P2": {
@@ -24,8 +25,8 @@
   }
  },
  "by_state": {
-  "audited": 224,
-  "implementing": 1,
+  "audited": 222,
+  "implementing": 3,
   "integrated": 100,
   "skipped_existing": 1
  },
@@ -449,13 +450,13 @@
   },
   "ANL-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/anl-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ANL-008": {
    "attempts": 0,
@@ -649,13 +650,13 @@
   },
   "AUD-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/aud-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "AUD-012": {
    "attempts": 0,
@@ -4055,5 +4056,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T02:09:19Z"
+ "updated": "2026-11-14T02:09:30Z"
 }
