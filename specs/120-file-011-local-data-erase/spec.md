@@ -52,6 +52,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does the flow offer a backup first? → A: Yes. The Erase sheet has "Back Up Library First…" (FILE-005's Back Up Library…), and its footer says that an erase cannot be undone except from a backup.
 - Q: What is never touched? → A: The app bundle (built-in presets, packs, the full library), the StoreKit purchase, caches including Metal caches, temporary recordings, shares and exports, notices, permission explanations, session recovery and guide state, Reduce flashing and the colour-blind-safe palette, the restore work folder, and anything outside the app's own container.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: What does each category's count mean? → A: Scenes and show: stored scenes plus the current scene (0 or 1); My Presets: records in the preset index; Collections and favorites: collections plus favorites; Photos and videos: stored photo and video references; Imported audio: imported tracks; Settings: listed settings that differ from their default (have a stored value). Sizes are the space the category's folders take (FILE-009); settings show no size (FILE-011-R9).
+- Q: What happens when the launch-time erase fails without a crash (a file cannot be moved)? → A: Every folder already moved is moved back, the journal and the request are removed, nothing else changes, and Settings › Storage shows "The erase did not finish. Nothing was erased." once; the user can request it again (FILE-011-R6).
+- Q: Does erasing scenes also delete photos and videos? → A: Only the references no one else keeps: references named only by the erased scenes (stored and current) are released, unless they are the current photo or video; a payload is deleted when its last reference goes (FILE-008). Photos and videos as a whole are erased only by their own category (FILE-011-R4).
+- Q: Can a pending erase be changed? → A: No; while it is pending, Settings › Storage lists the chosen categories with "Cancel Erase", and "Erase Data…" is disabled. Cancel Erase, then choose again (FILE-011-R3).
+- Q: Are Metal shader caches cleared by "Select All"? → A: No. Caches hold no user-created data, are rebuilt by the system and are cleared by FILE-010's Clear Caches; leaving them avoids a slow first frame for every preset after an erase (FILE-011-R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Erase chosen categories (Priority: P1)
@@ -122,7 +132,7 @@ and videos.") and it is announced on the `library` lane.
 
 - **FILE-011-R1**: Settings › Storage offers "Erase Data…", which opens a sheet listing the six categories of the Baseline as checkboxes, each with its record count and size, a "Select All" control, "Back Up Library First…", Cancel and "Erase…" (enabled with at least one category checked).
 - **FILE-011-R2**: "Erase…" opens a destructive confirmation that names every chosen category with its count and states what is kept; "Erase at Next Launch" is destructive and not the default; Cancel records nothing.
-- **FILE-011-R3**: Confirming records an erase request (the chosen categories); the request takes effect at the next launch before any store reads the library; it can be cancelled until then; its result is shown once in Settings › Storage and announced on the `library` lane.
+- **FILE-011-R3**: Confirming records an erase request (the chosen categories); the request takes effect at the next launch before any store reads the library; it can be cancelled until then (Settings › Storage lists the pending categories with "Cancel Erase"; "Erase Data…" is disabled while one is pending); its result is shown once in Settings › Storage and announced on the `library` lane.
 - **FILE-011-R4**: Each category erases exactly its data and nothing else:
   - Scenes and show: the `Show` and `Scenes` folders; then the photo and video references named only by the erased stored scenes and the erased current scene, except the current photo and video, are released through FILE-008's registry (payloads without a reference are deleted).
   - My Presets: the `UserPresets` folder; `lastPresetID` when it names a user preset.
@@ -131,10 +141,10 @@ and videos.") and it is announced on the `library` lane.
   - Imported audio: the `AudioLibrary` folder.
   - Settings: FILE-005's included setting keys except favorites, the last preset, the photo choice, Reduce flashing and the colour-blind-safe palette, plus `settings.osc.enabled` and `settings.midi.enabled`.
 - **FILE-011-R5**: Never touched by any erase: the app bundle (built-in presets, packs, full library), the StoreKit purchase, `Library/Caches` (Metal caches included), `tmp`, notices, permission explanations, session recovery, guide state, Reduce flashing, the colour-blind-safe palette, the restore work folder, and anything outside the library root.
-- **FILE-011-R6**: The erase is all or nothing: the chosen folders are moved aside under a journal, then the journal is marked committed; settings and media references are changed only after the commit point; the moved folders are deleted last. A failure before the commit moves every folder back (byte-for-byte as before) and removes the request; at the next launch a prepared journal is rolled back (then the still-pending request runs again) and a committed one is completed.
+- **FILE-011-R6**: The erase is all or nothing: the chosen folders are moved aside under a journal, then the journal is marked committed; settings and media references are changed only after the commit point; the moved folders are deleted last. A failure before the commit moves every folder back (byte-for-byte as before), removes the request and reports "The erase did not finish. Nothing was erased."; at the next launch a prepared journal is rolled back (then the still-pending request runs again) and a committed one is completed.
 - **FILE-011-R7**: After an erase the app starts as with a fresh library for the erased categories: every store reads its folder as empty, no error is shown, and bundled presets play.
 - **FILE-011-R8**: Erasing photos and videos while scenes name them leaves the scenes unchanged; their media reads as "no longer stored" (SCN-003-R9).
-- **FILE-011-R9**: Counts and sizes per category come from the library itself (records counted by their stores' readers, sizes by FILE-009's measurement), measured off the main thread.
+- **FILE-011-R9**: Counts and sizes per category come from the library itself (records counted by their stores' readers, as defined in Clarifications; sizes of the category's folders by FILE-009's measurement; settings have no size), measured off the main thread.
 - **FILE-011-R10**: The sheet and confirmation use standard rows and text that wraps at accessibility sizes; nothing animates; every control has an accessibility label; VoiceOver reads each category as "<name>, <count>, <size>, checked|not checked".
 - **FILE-011-R11**: No networking, no new permission, public APIs only; the privacy policy and the Storage footer say the erase removes data only on this device.
 
