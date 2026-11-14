@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T16:36:48Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-14T16:40:00Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,19 @@
 | State | Features |
 |---|---|
 | audited | 136 |
-| implementing | 7 |
+| implementing | 6 |
+| unit_passed | 1 |
 | integrated | 182 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 52 | 7 | 92 | 0 |
-| P2 | 73 | 0 | 6 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 52 | 6 | 1 | 92 | 0 |
+| P2 | 73 | 0 | 0 | 6 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1903,6 +1904,18 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `d705f8ab416c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-007/20261114T101122/swift-test_ShowControl.log`)
+
+### SCN-008 Scene snapshots (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `5690755d7217` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-008/20261114T113600/swift-test_ShowControl.log`)
 
 ### SCN-010 Scene undo/redo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `96baa4c3de9b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SCN-010/20261113T180647/compliance.log`)
