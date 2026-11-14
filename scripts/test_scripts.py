@@ -1044,6 +1044,17 @@ class SchemaCopyTests(unittest.TestCase):
         copy = root / "Packages" / "Diagnostics" / "Tests" / "DiagnosticsTests" / "Resources" / "diagnostics-export.schema.json"
         self.assertEqual(json.loads(contract.read_text(encoding="utf-8")), json.loads(copy.read_text(encoding="utf-8")))
 
+    def test_performance_report_schema_copy_matches_contract(self):
+        # PERF-012-T07: the package test copy equals the contract, and the reused sections equal the diagnostics schema's.
+        root = Path(__file__).resolve().parent.parent
+        contract = root / "specs" / "209-perf-012-performance-report" / "contracts" / "performance-report.schema.json"
+        copy = root / "Packages" / "Diagnostics" / "Tests" / "DiagnosticsTests" / "Resources" / "performance-report.schema.json"
+        report = json.loads(contract.read_text(encoding="utf-8"))
+        self.assertEqual(report, json.loads(copy.read_text(encoding="utf-8")))
+        diagnostics = json.loads((root / "specs" / "001-ios-projectm-visualizer" / "contracts" / "diagnostics-export.schema.json").read_text(encoding="utf-8"))
+        for key in ("frameDrops", "frameTimings"):
+            self.assertEqual(report["properties"][key], diagnostics["properties"][key], key)
+
 
 
 class DiagnosticProjectTests(unittest.TestCase):
