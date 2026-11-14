@@ -6,6 +6,11 @@
 // shown pictures with premultiplied "over" onto transparent in an `rgba16Float` composite → the
 // composite flash guard (FX-019's envelope on the finished stack, GPU only) → the output pass
 // writes composite × gain into the caller's texture, whose format does the encoding.
+// FX-002 (contracts/tone-map.md in specs/122, ADR-0047): the output pass tone-maps the composite first
+// (`cmp_tone_map`: NaN, ±Inf and negatives → 0, identity while the largest channel is ≤ 1, else luminance and hue
+// kept, desaturated toward white), and the flash guard measures the same tone-mapped values, so its gain applies
+// to what is shown. Every output (screen, REC-003 recording, REC-001 capture, CMP-014's bus) uses that pass; the
+// screen pass counts non-finite composite pixels (`nonFiniteOutputPixels`).
 //
 // Ownership: the compositor creates every picture and the composite, before the first frame and
 // once per output size change; layers are prepared at the same moments. At a steady size nothing
@@ -186,6 +191,8 @@ public final class Compositor {
     private let maskedPipeline: MTLRenderPipelineState
     private var outputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
     private let flashGuard: CompositeFlashGuard
+    /// FX-002-R7: where the output pass counts non-finite composite pixels.
+    private let nonFiniteCounter: NonFiniteOutputCounter
     /// PERF-004: where pictures come from and go back to.
     public let texturePool: TexturePool
     /// PERF-004: the last command buffer this compositor encoded with (the fence of returned pictures).
@@ -287,6 +294,7 @@ public final class Compositor {
                                                         format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
                                                         label: "CMP-007 masked over")
         flashGuard = try CompositeFlashGuard(device: device)
+        nonFiniteCounter = try NonFiniteOutputCounter(device: device)
     }
 
     /// PERF-004: every picture goes back to the pool, reusable once the last frame completed.
@@ -466,6 +474,10 @@ public final class Compositor {
     /// Forgets the composite's flash history (a new scene; FX-019-R11). A pause must not call it.
     public func resetFlashHistory() { flashGuard.reset() }
 
+    /// FX-002-R7: composite pixels with a NaN or infinite channel that the screen output pass tone-mapped to 0
+    /// so far (cumulative; recording and capture passes do not count). Exact once the last frame completed.
+    public var nonFiniteOutputPixels: UInt32 { nonFiniteCounter.count }
+
     /// Encodes one frame into `output` (a render target of a `supportedOutputFormats` format) and
     /// `commandBuffer`, which the caller commits. Returns false, encoding nothing, for an empty
     /// output, an unsupported format or when Metal cannot create an encoder.
@@ -487,6 +499,7 @@ public final class Compositor {
             encoder.setRenderPipelineState(outputPipeline)
             encoder.setFragmentTexture(composite, index: 0)
             encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
+            encoder.setFragmentBuffer(nonFiniteCounter.counter, offset: 0, index: 1)   // FX-002: the screen pass counts
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             encoder.endEncoding()
             outputCommandBuffer = commandBuffer   // REC-003: `encodeOutput` may follow in this command buffer
@@ -992,6 +1005,7 @@ public final class Compositor {
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(composite, index: 0)
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
+        encoder.setFragmentBuffer(nonFiniteCounter.sink, offset: 0, index: 1)   // FX-002: not counted twice
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         return true
@@ -1040,6 +1054,7 @@ public final class Compositor {
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(composite, index: 0)
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
+        encoder.setFragmentBuffer(nonFiniteCounter.sink, offset: 0, index: 1)   // FX-002: not counted twice
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         guard let blit = commandBuffer.makeBlitCommandEncoder() else { handler(nil); return }

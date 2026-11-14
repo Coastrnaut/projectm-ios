@@ -10,7 +10,8 @@
 //      no transition or from progress 1, and otherwise one full-screen mix pass into a pooled
 //      `rgba16Float` blend target (crossfade or dip to black at the eased progress);
 //   4. the bus's one composite flash guard (FX-019) runs on the shown texture and the output pass
-//      (`cmp_output`, the compositor's own shader source) writes it × the gain into the caller's texture.
+//      (`cmp_output`, the compositor's own shader source) writes it × the gain into the caller's texture
+//      (FX-002, ADR-0047: both through the output tone map, as `Compositor.composite(into:)`).
 // Steps 3–4 at progress 0 and ≥ 1 are the scene's own composite through the same guard and output code as
 // `Compositor.composite(into:)`, so those frames are byte-identical to the scene alone given the same guard
 // history. The blend target is the only texture the bus takes from the pool; it goes back (fenced by the last
@@ -29,6 +30,8 @@ public final class SceneTransitionBus {
     private let mixPipeline: MTLRenderPipelineState
     private var outputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
     private let flashGuard: CompositeFlashGuard
+    /// FX-002-R7: where the output pass counts non-finite pixels of the shown texture.
+    private let nonFiniteCounter: NonFiniteOutputCounter
     private var frameClock = LayerFrameClock()
 
     /// The scene shown (the incoming one during a transition).
@@ -58,6 +61,7 @@ public final class SceneTransitionBus {
                                                      format: LayerPictureDescriptor.metalPixelFormat, blendOver: false,
                                                      label: "CMP-014 transition mix")
         flashGuard = try CompositeFlashGuard(device: device)
+        nonFiniteCounter = try NonFiniteOutputCounter(device: device)
     }
 
     deinit {
@@ -133,6 +137,10 @@ public final class SceneTransitionBus {
     /// Forgets the flash history (FX-019-R11); a transition does not call it.
     public func resetFlashHistory() { flashGuard.reset() }
 
+    /// FX-002-R7: shown pixels with a NaN or infinite channel that the screen output pass tone-mapped to 0 so far
+    /// (cumulative; `encodeOutput` passes do not count). Exact once the last frame completed.
+    public var nonFiniteOutputPixels: UInt32 { nonFiniteCounter.count }
+
     /// Encodes one shown frame into `output` (a `Compositor.supportedOutputFormats` render target). Returns
     /// false for no live scene, an empty output, an unsupported format or an encoding failure.
     public func encodeFrame(into output: MTLTexture, commandBuffer: MTLCommandBuffer, presentationTimeNanoseconds: UInt64,
@@ -173,7 +181,8 @@ public final class SceneTransitionBus {
         lastCommandBuffer = commandBuffer
         guard flashGuard.encode(composite: shown, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
                                 reduceFlashing: reduceFlashing) else { return false }
-        guard encodeOutputPass(shown, into: output, pipeline: pipeline, label: "CMP-014 output", commandBuffer: commandBuffer) else {
+        guard encodeOutputPass(shown, into: output, pipeline: pipeline, label: "CMP-014 output", counts: true,
+                               commandBuffer: commandBuffer) else {
             return false
         }
         shownTexture = shown
@@ -188,7 +197,8 @@ public final class SceneTransitionBus {
         guard let shown = shownTexture, let encoded = outputCommandBuffer, encoded === commandBuffer,
               target.width <= shown.width, target.height <= shown.height,
               let pipeline = outputPipeline(for: target.pixelFormat) else { return false }
-        return encodeOutputPass(shown, into: target, pipeline: pipeline, label: "CMP-014 extra output", commandBuffer: commandBuffer)
+        return encodeOutputPass(shown, into: target, pipeline: pipeline, label: "CMP-014 extra output", counts: false,
+                                commandBuffer: commandBuffer)
     }
 
     private func encodeMix(_ a: MTLTexture, _ b: MTLTexture, weights: SceneTransitionWeights, size: LayerPictureDescriptor,
@@ -219,8 +229,9 @@ public final class SceneTransitionBus {
         return target
     }
 
+    /// `counts`: the screen pass binds the non-finite counter, any other output the sink (FX-002-R7).
     private func encodeOutputPass(_ shown: MTLTexture, into target: MTLTexture, pipeline: MTLRenderPipelineState, label: String,
-                                  commandBuffer: MTLCommandBuffer) -> Bool {
+                                  counts: Bool, commandBuffer: MTLCommandBuffer) -> Bool {
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = target
         pass.colorAttachments[0].loadAction = .dontCare
@@ -230,6 +241,7 @@ public final class SceneTransitionBus {
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentTexture(shown, index: 0)
         encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
+        encoder.setFragmentBuffer(counts ? nonFiniteCounter.counter : nonFiniteCounter.sink, offset: 0, index: 1)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         return true
