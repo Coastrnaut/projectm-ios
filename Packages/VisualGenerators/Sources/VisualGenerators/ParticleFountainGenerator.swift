@@ -30,6 +30,10 @@ public final class ParticleFountainGenerator: SpectrumTextureGenerator {
     public var barCount: SpectrumBarCount = .b64
 
     private let shapes: FlatShapePass
+    /// VIS-010: streak length (Off: the frame is exactly the pre-trails one). Applies from the next frame.
+    public var trails: ParticleTrailLength = .off
+    /// VIS-010: the fixed texture pair, made on the first frame with trails on and kept (nil before).
+    public private(set) var trailPass: ParticleTrailPass?
 
     /// Changes apply to particles spawned afterwards (and the palette from the next frame).
     public var configuration: ParticleFountainConfiguration {
@@ -51,6 +55,7 @@ public final class ParticleFountainGenerator: SpectrumTextureGenerator {
     public func restartLoop() {
         limiter.reset()
         simulation.reset()
+        trailPass?.reset()   // VIS-010: storage kept
     }
 
     /// An onset at `nanoseconds` (the frame clock); false when the queue is full.
@@ -65,6 +70,8 @@ public final class ParticleFountainGenerator: SpectrumTextureGenerator {
         guard target.pixelFormat == pixelFormat, let slot = shapes.freeSlot() else { return false }
         simulation.advance(toNanoseconds: context.timeNanoseconds)
         layout.layout(simulation: simulation, width: target.width, height: target.height)
+        if trails != .off, target.width > 0, target.height > 0 { return encodeTrails(slot: slot, target: target, commandBuffer: commandBuffer, context: context) }
+        if trails == .off, let pass = trailPass, !pass.needsReset { pass.reset() }   // VIS-010: on again starts empty
         let gain: Float
         if let downstream = downstreamLuminance {
             gain = limiter.gain(for: layout, transfer: downstream, frameTime: context.frameDuration,
@@ -77,6 +84,22 @@ public final class ParticleFountainGenerator: SpectrumTextureGenerator {
         let count = layout.tessellate(into: shapes.vertices(slot), capacity: ParticleFountainLayout.maximumVertexCount, gain: gain)
         return shapes.draw(slot: slot, count: count, into: target, background: layout.background,
                            commandBuffer: commandBuffer)
+    }
+
+    /// VIS-010: the frame with trails (contracts/particle-trails.md C2).
+    private func encodeTrails(slot: Int, target: MTLTexture, commandBuffer: MTLCommandBuffer, context: VisualFrameContext) -> Bool {
+        let (device, format, library) = (self.device, pixelFormat, shapes.library)
+        let frame = ParticleTrailFrame.encode(
+            pass: trailPass, make: { () throws(VisualGeneratorError) -> ParticleTrailPass in
+                try ParticleTrailPass(device: device, library: library, targetFormat: format, label: "VIS-008 Particle fountain")
+            }, store: { (made: ParticleTrailPass) -> Void in trailPass = made }, length: trails,
+            reduceMotion: configuration.reduceMotion, layout: layout, background: layout.background, limiter: limiter,
+            downstream: downstreamLuminance, shapes: shapes, slot: slot, target: target, commandBuffer: commandBuffer, context: context
+        ) { (gain: Float) -> Int in
+            layout.tessellate(into: shapes.vertices(slot), capacity: ParticleFountainLayout.maximumVertexCount, gain: gain)
+        }
+        lastGain = frame.gain
+        return frame.drawn
     }
 }
 #endif

@@ -301,6 +301,30 @@ final class NativeSpectrumHost: PresentationBoundResource {
         didSet { if reduceMotion != oldValue { applyReduceMotion() } }
     }
 
+    /// VIS-010: the particle visuals' trail length (Off by default); applied to every generator a style change builds.
+    var particleTrails: ParticleTrailSetting = .off {
+        didSet { if particleTrails != oldValue { applyParticleTrails() } }
+    }
+
+    private func applyParticleTrails() {
+        if let fountain = generator as? ParticleFountainGenerator { fountain.trails = particleTrails.length }
+        if let orbit = generator as? ParticleOrbitGenerator { orbit.trails = particleTrails.length }
+        view.accessibilityValue = Self.accessibilityValue(style: style, glowEnabled: glow.enabled, glowUnavailable: glowUnavailable)
+            + trailsDescription
+    }
+
+    /// VIS-010-R11: ", Trails Short" or ", Trails Long" for the particle visuals; empty when off or for another visual.
+    private var trailsDescription: String { Self.trailsSuffix(style: style, trails: particleTrails) }
+
+    /// VIS-010-R11: the suffix the visual's accessibility value gets (also used by the visualizer's SwiftUI element).
+    static func trailsSuffix(style: NativeSpectrumStyle, trails: ParticleTrailSetting) -> String {
+        guard trails != .off else { return "" }
+        switch style {
+        case .particleFountain, .particleOrbit: return ", Trails \(trails.title)"
+        default: return ""
+        }
+    }
+
     private func applyReduceMotion() {
         if let fountain = generator as? ParticleFountainGenerator, fountain.configuration.reduceMotion != reduceMotion {
             var configuration = fountain.configuration   // VIS-008-R9: later bursts
@@ -653,6 +677,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             generator = replacement
             applyPalette()   // ACC-003-R13: a new generator starts with the default palette
             applyReduceMotion()   // VIS-007-R5
+            applyParticleTrails()   // VIS-010
             samples.update(repeating: 0, count: WaveformFrameBuffer.capacity)   // VIS-004: mono and stereo histories differ
         }
         style = newStyle
@@ -666,6 +691,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         view.accessibilityLabel = "\(style.title) visualization"
         view.accessibilityIdentifier = style.accessibilityIdentifier
         view.accessibilityValue = Self.accessibilityValue(style: style, glowEnabled: glow.enabled, glowUnavailable: glowUnavailable)
+            + trailsDescription   // VIS-010-R11
         refreshQuality()   // PERF-003-R7: switching the glow changes whether the governor defers the serious cap
     }
 
