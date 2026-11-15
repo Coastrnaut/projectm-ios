@@ -1,0 +1,50 @@
+# Tasks: SHD-012 Authoring Preview Fixture
+
+**Input**: `specs/249-shd-012-authoring-preview-fixture/` (spec, plan, research, data-model, contracts, quickstart)
+
+Tests are requested by the spec (acceptance S1-S5). Budgets: unit tests ≤ 10 s, suites < 1 min, UI test < 30 s.
+
+## Phase 1: Setup
+
+- [X] SHD-012-T01 Add target `AuthoringPreview` (deps Compositor, ProceduralMaterials, ParameterGraph, VisualGenerators product) and test target `AuthoringPreviewTests` to the `Compositor` product in Packages/Compositor/Package.swift, with a header note — Verified 2026-11-14: `swift build` of the package with the new targets
+
+## Phase 2: Foundational
+
+- [X] SHD-012-T02 Implement `AuthoringPreviewFixture` (seed UInt64, seconds > 0 default 4, fps > 0 default 30; `frameCount`, `audio()`) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewFixture.swift — Verified 2026-11-14: AuthoringPreviewTrajectoryTests.testDefaultFixtureHas120FramesAndTwoRunsAreIdentical
+- [X] SHD-012-T03 Implement `AuthoringPreviewRequest`, `AuthoringPreviewFrame`, `AuthoringPreviewTrajectory` and `AuthoringPreviewSequencer` (contract P1: bindings validated by `replaceBindings`; per frame analysis → modulator → effective values → motion) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewSequencer.swift — Verified 2026-11-14: AuthoringPreviewTrajectoryTests (6 tests, host and Linux shape)
+
+## Phase 3: User Story 2 - Two runs are identical (P1, the acceptance)
+
+**Independent test**: trajectories and checksum sequences compared exactly across runs.
+
+- [X] SHD-012-T04 [US2] Trajectory tests: two runs equal (exact Double), per-frame and chunk-of-7 stepping equal a single pass, changed seed and changed binding target/source differ, refused binding throws, no-binding run, frame count 0, frames beyond the fixture's end read silence (explicit `frameCount`), in Packages/Compositor/Tests/AuthoringPreviewTests/AuthoringPreviewTrajectoryTests.swift — Verified 2026-11-14: `swift test --filter AuthoringPreviewTrajectoryTests`, 6 passed in 2.0 s
+- [X] SHD-012-T05 [US2] Implement `AuthoringPreviewRecorder` and `AuthoringPreviewRecording` (contract P3: layer prepared once, per-frame values, `LayerFrameClock` at 1 s + t(n), bands as audio context, Reduce flashing on, half-float read-back, SHA-256 per frame, run digest, optional RGBA8 frames) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewRecorder.swift — Verified 2026-11-14: AuthoringPreviewRecorderTests on the host GPU
+- [X] SHD-012-T06 [US2] GPU tests on the host: two recordings give equal checksum sequences and equal trajectories; the layer's motion matches the trajectory; a changed setting changes checksums, in Packages/Compositor/Tests/AuthoringPreviewTests/AuthoringPreviewRecorderTests.swift — Verified 2026-11-14: `swift test --filter AuthoringPreviewTests`, 3 recorder tests passed (0.2-0.8 s each) on the host GPU
+- [X] SHD-012-T07 [US2] Linux shape: build and run the trajectory tests with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE` (Packages/Compositor) — Verified 2026-11-14: `swift test -Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE --filter AuthoringPreviewTests`, 6 passed (recorder compiled out)
+
+## Phase 4: User Story 1 - Preview a material against the fixture (P1)
+
+**Independent test**: UI test plays the fixture twice and reads the same digest.
+
+- [X] SHD-012-T08 [US1] `FixturePreviewStore` (session state: target, source, seed 1…99; background run with its own recorder; `rendering`/`ready`; loop frame index; stop on settings change (R9); summary text; without Metal the trajectory still runs and the summary has no digest) in Apps/projectM-iOS/Coordinators/FixturePreviewStore.swift — Verified 2026-11-14: FixturePreviewStoreTests (3 passed, 5.2 s) on the iOS 27.2 simulator
+- [X] SHD-012-T09 [US1] Fixture preview section (pickers, seed stepper, Play/Stop, picture via `TimelineView` without `.animation`, Reduce Motion: no auto-play, frame slider with `.accessibleParameter`, summary) in Apps/projectM-iOS/Views/FixturePreviewSection.swift and wire it into Apps/projectM-iOS/Views/NoiseEditorView.swift — Verified 2026-11-14: build-for-testing with the type-check warning flags: no warnings in the new files; FixturePreviewUITests passed; check_motion_policy OK
+- [X] SHD-012-T10 [US1] App unit tests (default binding, summary text, same digest twice, seed change changes the trajectory, settings change stops the loop) in Apps/projectM-iOS/Tests/FixturePreviewStoreTests.swift — Verified 2026-11-14: `xcodebuild test-without-building -only-testing:projectM-iOSTests/FixturePreviewStoreTests`, 3 passed (0.003 s, 4.95 s, 0.25 s)
+- [X] SHD-012-T11 [US1] UI test: open Noise editor, Play fixture, read summary "120 frames", play again, same digest, in Apps/projectM-iOS/UITests/FixturePreviewUITests.swift — Verified 2026-11-14: `-only-testing:projectM-iOSUITests/FixturePreviewUITests`, 1 passed in 26.7 s
+
+## Phase 5: Polish
+
+- [X] SHD-012-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, spec status — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 179 OK; check_privacy_manifest OK; check_network_symbols OK; LibraryBackupAppTests 5 passed; NoiseEditorTests 5 passed
+- [ ] SHD-012-T13 {device} On D1: Settings › Noise editor › Play fixture; the loop plays smoothly, the warp follows the kicks, a second Play shows the same run digest
+
+## Dependencies
+
+T01 → T02 → T03 → T04 (US2 trajectory) → T05 → T06, T07 → T08 → T09 → T10, T11 → T12. T13 needs a device.
+
+## Parallel opportunities
+
+T04 and T05 touch different files once T03 is in; T10 and T11 after T09.
+
+## Implementation strategy
+
+MVP = US2 (the acceptance in the package), then US1 (the editor).
+

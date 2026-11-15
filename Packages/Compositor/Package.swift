@@ -67,13 +67,17 @@
 //   the shader's reads), maps them to MOD-001 descriptors and builds generic inspector controls. Linux-buildable.
 // * `ColorGradeParameters` (FX-003, specs/123-fx-003-color-grading) holds the colour grade's MOD-001 descriptors; the
 //   grade value, its plain-Swift reference and its shader stage are in `Compositor` (output pass).
+// * `AuthoringPreview` (SHD-012, specs/249-shd-012-authoring-preview-fixture) previews a material against REC-013's
+//   seeded fixture audio and fixed frame clock: the sequencer (plain Swift, Linux-buildable) records each frame's
+//   bound parameter values, phase and audio level; the Metal recorder draws each frame with the material's own GPU
+//   code and hashes it (SHA-256, CryptoKit; compiles out on Linux).
 // One library product, so CI's `-scheme Compositor` builds and tests every target.
 import PackageDescription
 
 let package = Package(
     name: "Compositor",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ShaderParameterMetadata", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording", "ColorGradeParameters", "FrameTiming"])],
+    products: [.library(name: "Compositor", targets: ["Compositor", "SpectrumLayers", "CameraLayer", "ShaderParameterMetadata", "ProceduralMaterials", "GeneratorGraph", "GeneratorGraphImport", "ImageLayer", "VideoLayer", "TextLayer", "FrameCapture", "MediaSniffing", "FrameRecording", "ColorGradeParameters", "FrameTiming", "AuthoringPreview"])],
     dependencies: [
         .package(path: "../AnalysisFeatures"),
         .package(path: "../FlashSafety"),
@@ -111,6 +115,9 @@ let package = Package(
         .target(name: "VideoLayer", dependencies: ["Compositor", "CameraLayer", "MediaSniffing"]),
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .target(name: "TextLayer", dependencies: ["Compositor"]),
+        // SHD-012: REC-013's offline analysis core (VisualBandFeed) drives MOD-002 bindings and a material's motion.
+        .target(name: "AuthoringPreview", dependencies: ["Compositor", "ProceduralMaterials", "ParameterGraph", "FrameCapture",
+                                                         .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "CompositorTests",
                     dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording", "FrameTiming", "ParameterGraph",
                                    .product(name: "VisualGenerators", package: "VisualGenerators"),
@@ -129,6 +136,9 @@ let package = Package(
         .testTarget(name: "FrameTimingTests", dependencies: ["FrameTiming"]),
         .testTarget(name: "GeneratorGraphImportTests", dependencies: ["GeneratorGraphImport", "GeneratorGraph"]),
         .testTarget(name: "MediaSniffingTests", dependencies: ["MediaSniffing"]),
+        .testTarget(name: "AuthoringPreviewTests",
+                    dependencies: ["AuthoringPreview", "ProceduralMaterials", "Compositor", "ParameterGraph",
+                                   .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "TextLayerTests", dependencies: ["TextLayer", "Compositor", "FlashSafety", "AnalysisFeatures"]),
     ]
 )

@@ -3,7 +3,8 @@
 // A live preview of the Noise Flow texture (a still drawn by the material's GPU code), "Randomize seed" and "Reset to
 // defaults", then one generic control per Noise Flow parameter built from its validated metadata — the same
 // `MaterialParameterControlView` rows as the material inspector (ACC-005 sliders, steppers, colour well), here
-// write-enabled. Values are saved at once by `NoiseEditorStore`. Bodies stay small (Xcode 26 type-check budget).
+// write-enabled. Values are saved at once by `NoiseEditorStore`. SHD-012 adds the fixture preview section
+// (`FixturePreviewSection`) under the still; a settings change clears its run. Bodies stay small (Xcode 26 type-check budget).
 import ParameterGraph
 import ShaderParameterMetadata
 import SwiftUI
@@ -23,11 +24,14 @@ struct NoiseEditorLinkSection: View {
 
 struct NoiseEditorView: View {
     @State private var store: NoiseEditorStore?
+    /// SHD-012: the fixture preview (session state).
+    @State private var fixture = FixturePreviewStore()
 
     var body: some View {
         List {
             if let store {
                 NoiseEditorPreviewSection(store: store)
+                FixturePreviewSection(store: fixture, noise: store)
                 NoiseEditorControlsSection(store: store)
             }
         }
@@ -35,6 +39,8 @@ struct NoiseEditorView: View {
         .onAppear { () -> Void in
             if store == nil { store = NoiseEditorStore(defaults: .standard) }
         }
+        .onChange(of: store?.values) { () -> Void in fixture.invalidate() }   // SHD-012-R9: frames no longer match
+        .onDisappear { () -> Void in fixture.stop() }
     }
 }
 
