@@ -51,6 +51,14 @@ local-first option.
 - Q: Does the performance lock block gestures? → A: No: mapped actions are performance actions (the lock never blocks navigation, SCN-015). The lock blocks editing the mapping: the switch and the pickers are disabled with the lock's note "Scene locked. Unlock the scene to edit.", and a write that still reaches the setting is refused through `refusesEdit()`.
 - Q: Is the mapping stored and backed up? → A: Yes: one preference on the device (switch plus mapping), included in the FILE-005 library backup like the other performance preferences (Show HUD), erased with the Settings category (FILE-011) and by the UI-test reset. Unknown or damaged stored values read as the defaults.
 
+### Session 2026-11-15 (speckit-clarify)
+
+- Q: Where are the shortcuts recognised: the whole screen or only the visualization? → A: Only the visualization's tap area (`visualizerTapArea`): touches on the controls, the performance pad, the emergency button, sheets and editors never reach it, so corner-pin and other editor drags are unaffected.
+- Q: Does a two-finger touch whose gesture is None still toggle the controls? → A: Yes, as it does today: when no action wins, the touch is left to the existing single tap (R4). When an action wins, the single tap does not also fire (R3: one action per touch).
+- Q: Is a fired shortcut announced or shown? → A: Only through the action's own feedback (the cue lane, the preset announcement, the HUD); no extra banner. A DEBUG-only probe (`-uitestDiagnostics`) shows the last fired action for UI tests.
+- Q: What does "Show/hide HUD" change? → A: UIX-013's "Show HUD" preference itself (the same switch as Settings), so it persists like the switch does. Rejected: a session-only HUD state (two sources of truth).
+- Q: Is the mapping editor reachable while VoiceOver runs? → A: Yes: the switch and pickers stay editable (so a VoiceOver user can prepare a mapping for a sighted performer), with the note that shortcuts are paused while VoiceOver is on.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Step the show with a gesture (Priority: P2)
