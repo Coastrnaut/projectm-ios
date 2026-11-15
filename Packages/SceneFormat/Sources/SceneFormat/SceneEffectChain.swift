@@ -4,7 +4,7 @@
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
-// `fx.chromatic`, FX-008's `fx.radialBlur`, FX-012's `fx.mosaic`) gives that effect's
+// `fx.chromatic`, FX-008's `fx.radialBlur`, FX-012's `fx.mosaic`, FX-014's `fx.edgeOutline`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
@@ -90,10 +90,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var echo: EchoFeedback?
     /// FX-012 (ADR-0110): `isEnabled` is the entry's flag (`SceneEffectChain+Mosaic.swift`).
     public var mosaic: Mosaic?
+    /// FX-014 (ADR-0114): `isEnabled` is the entry's flag (`SceneEffectChain+EdgeOutline.swift`).
+    public var edgeOutline: EdgeOutline?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
                 chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil,
-                echo: EchoFeedback? = nil, mosaic: Mosaic? = nil) {
+                echo: EchoFeedback? = nil, mosaic: Mosaic? = nil, edgeOutline: EdgeOutline? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
@@ -103,6 +105,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
         self.radialBlur = radialBlur
         self.echo = echo
         self.mosaic = mosaic   // FX-012
+        self.edgeOutline = edgeOutline   // FX-014
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -149,8 +152,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let radialBlurOff: Bool = !(radialBlur?.isEnabled ?? false)   // FX-008
         let echoOff: Bool = !(echo?.isEnabled ?? false)   // FX-010
         let mosaicOff: Bool = !(mosaic?.isEnabled ?? false)   // FX-012
+        let outlineOff: Bool = !(edgeOutline?.isEnabled ?? false)   // FX-014
         return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && radialBlurOff
-            && echoOff && mosaicOff
+            && echoOff && mosaicOff && outlineOff
     }
 
     // MARK: Reading
@@ -194,6 +198,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
                                                  delaySeconds: v[1], decay: v[2])
                 case .mosaic:   // FX-012
                     settings.mosaic = readMosaic(entry, path, &issues)
+                case .edgeOutline:   // FX-014
+                    settings.edgeOutline = readEdgeOutline(entry, path, &issues)
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -291,6 +297,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         case .mosaic:   // FX-012
             guard let m = mosaic else { return stored }
             Self.writeMosaic(m, into: &entry)
+        case .edgeOutline:   // FX-014
+            guard let o = edgeOutline else { return stored }
+            Self.writeEdgeOutline(o, into: &entry)
         }
         return entry
     }
