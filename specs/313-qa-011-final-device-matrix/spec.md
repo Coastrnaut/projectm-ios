@@ -172,6 +172,15 @@ checklist.
 
 ## Clarifications
 
+### Owner ruling 2026-11-15 (device stage)
+
+- Records are public, so a record's signing section keeps only the certificate type ("Apple Development") and the
+  team ID; the certificate holder's name and personal certificate ID are withheld (`redact_signing`). Paths inside
+  the repository are written relative to it. The seven records written before the ruling were rewritten this way
+  (new record hashes; each says so in `signing.redaction`).
+- Package suites run on a device hosted in the signed app (`DeviceTests.yml`): Xcode refuses tool-hosted package
+  tests on device destinations. ANGLE's layer tests have no device host yet and are recorded "not-run".
+
 ### Session 2026-11-15 (speckit-clarify)
 
 Answered by Claude under the owner's standing approval (owner rules 4 and 9); each answer is the conservative,

@@ -198,8 +198,20 @@ def summarize_cases(cases: list[dict]) -> dict[str, int]:
     return counts
 
 
+def relative_paths(record: dict) -> dict:
+    """Paths inside the repository are written relative to it: the records are public and the checkout's absolute
+    path names the Mac's user (owner ruling 2026-11-15)."""
+    text = json.dumps(record, ensure_ascii=False)
+    root = str(ROOT)
+    text = text.replace(root + "/", "").replace(root, ".")
+    return json.loads(text)
+
+
 def write_record(record: dict, directory: Path) -> Path:
     directory.mkdir(parents=True, exist_ok=True)
+    clean = relative_paths(record)
+    record.clear()
+    record.update(clean)
     record["summary"] = summarize_cases(record["cases"])
     record["recordSha256"] = record_hash(record)
     path = directory / "record.json"
@@ -308,8 +320,48 @@ def parse_codesign(text: str) -> dict:
     if team_value == "not set":
         team_value = None
     raw = [line for line in text.splitlines() if line.startswith(("Authority=", "TeamIdentifier=", "Signature="))]
-    return {"signed": bool(authorities) or adhoc, "identity": authorities[0] if authorities else None,
-            "team": team_value, "adhoc": adhoc, "raw": raw}
+    return redact_signing({"signed": bool(authorities) or adhoc, "identity": authorities[0] if authorities else None,
+                           "team": team_value, "adhoc": adhoc, "raw": raw})
+
+
+# Owner ruling 2026-11-15: records are public, so a signing identity keeps only the certificate type and the team ID.
+# The certificate's holder name and personal certificate ID ("Apple Development: NAME (ABCDE12345)") are dropped.
+REDACTION_NOTE = "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)"
+
+
+def redact_identity(value: str | None) -> str | None:
+    """'Apple Development: NAME (ID)' → 'Apple Development'; Apple's own CA names are kept."""
+    if value is None:
+        return None
+    kind, sep, _ = value.partition(":")
+    return kind.strip() if sep else value
+
+
+def redact_signing(signing: dict) -> dict:
+    out = dict(signing)
+    out["identity"] = redact_identity(signing.get("identity"))
+    raw = []
+    for line in signing.get("raw", []):
+        if line.startswith("Authority="):
+            raw.append("Authority=" + redact_identity(line[len("Authority="):]))
+        else:
+            raw.append(line)
+    out["raw"] = raw
+    if out["identity"] != signing.get("identity"):
+        out["redaction"] = REDACTION_NOTE
+    return out
+
+
+def redact_record_file(path: Path) -> bool:
+    """Rewrite a committed-to-be record with its signing identity redacted; a new record hash. True if changed."""
+    record = json.loads(path.read_text(encoding="utf-8"))
+    before = canonical(record)
+    record["signing"] = redact_signing(record.get("signing") or {})
+    record = relative_paths(record)
+    if canonical(record) == before:
+        return False
+    write_record(record, path.parent)
+    return True
 
 
 def capture(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:

@@ -2265,6 +2265,18 @@ class QA011MatrixTests(unittest.TestCase):
                "Executed 12 tests, with 0 failures (0 unexpected)\n")
         self.assertTrue(rdm.test_counts(log).startswith("134 tests, 2 failures"))
 
+    def test_signing_identity_keeps_only_the_certificate_type_and_team(self):
+        text = ("Authority=Apple Development: JANE EXAMPLE (ABCDE12345)\n"
+                "Authority=Apple Worldwide Developer Relations Certification Authority\n"
+                "Authority=Apple Root CA\nTeamIdentifier=TEAM123456\n")
+        s = rdm.parse_codesign(text)
+        self.assertEqual(s["identity"], "Apple Development")
+        self.assertEqual(s["team"], "TEAM123456")
+        self.assertNotIn("JANE", json.dumps(s))
+        self.assertNotIn("ABCDE12345", json.dumps(s))
+        self.assertIn("Authority=Apple Root CA", s["raw"])
+        self.assertIn("redaction", s)
+
     def test_device_package_cases_map_to_app_hosted_bundles(self):
         self.assertEqual(rdm.device_only_testing(["CompositorTests/LayerGradientCompositeTests/testX"]),
                          ["CompositorDeviceTests/LayerGradientCompositeTests/testX"])
@@ -2297,7 +2309,7 @@ class QA011MatrixTests(unittest.TestCase):
                                     "Authority=Apple Worldwide Developer Relations Certification Authority\n"
                                     "TeamIdentifier=TEAM123456\n")
         self.assertEqual((signed["signed"], signed["identity"], signed["team"], signed["adhoc"]),
-                         (True, "Apple Development: Owner (ABCDE12345)", "TEAM123456", False))
+                         (True, "Apple Development", "TEAM123456", False))   # name withheld (owner ruling)
         adhoc = rdm.parse_codesign("Signature=adhoc\nTeamIdentifier=not set\n")
         self.assertEqual((adhoc["signed"], adhoc["adhoc"], adhoc["team"]), (True, True, None))
         unsigned = rdm.parse_codesign("/x.app: code object is not signed at all\n")
