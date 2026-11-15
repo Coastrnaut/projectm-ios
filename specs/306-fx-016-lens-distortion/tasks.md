@@ -74,8 +74,8 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 6: Polish
 
-- [ ] FX-016-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
-  privacy manifest and network symbols on the Debug app, type check budget; test report in `docs/test-reports/lens-distortion.md`; spec status
+- [X] FX-016-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
+  privacy manifest and network symbols on the Debug app, type check budget; test report in `docs/test-reports/lens-distortion.md`; spec status — Verified 2026-11-15: compliance, docs, motion policy, permission catalog, status events OK; 186 script tests; privacy manifest and network symbols OK on the Debug app; LibraryBackup 88 tests; no type-check warning in the new files; docs/test-reports/lens-distortion.md
 - [ ] FX-016-T17 {device} On D1: Camera visual, Lens distortion at +100 % and −100 %, zoom on and off: bulge and pinch,
   corners show picture (black only at barrel with zoom off), no sparkles; frame rate with and without recorded
   (FX-016-S8)
