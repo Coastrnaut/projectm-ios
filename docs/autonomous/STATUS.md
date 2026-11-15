@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T05:29:58Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T05:33:02Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,24 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 25 |
-| implementing | 3 |
-| unit_passed | 2 |
-| integrated | 295 |
+| built | 3 |
+| unit_passed | 1 |
+| integrated | 296 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 18 | 2 | 2 | 57 | 0 |
+| P2 | 18 | 2 | 1 | 58 | 0 |
 | P3 | 5 | 1 | 0 | 3 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 30 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
+- 29 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
 
 ## Integrated
 
@@ -300,6 +300,7 @@ The physical-device suite may **not** start:
 | SHOW-009 | Keyframe easing | `c13a236e462f` | `feature/show-009` |
 | SHOW-010 | Beat grid | `5ec1a2e59b21` | `feature/show-010` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
+| SHOW-012 | Cue annotations | `1cd8b442a130` | `feature/show-012` |
 | SHOW-013 | Auto scene rotation | `100b6d662165` | `feature/show-013` |
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
 | SHOW-015 | Performance lock | `6b42bdb5af63` | `feature/show-015` |
@@ -3289,7 +3290,7 @@ None.
 - `post-merge: xcodebuild test projectM-iOSTests (146) + TapTempo/RouteIndicator/NativeVisual UI tests (6) on iPhone 17 iOS 27.2 sim`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/app-tests.log`)
 - `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (25)`: pass at `11329d52e6dc` (log `.autonomous/logs/integration/show-011/perf-sim.log`)
 
-### SHOW-012 Cue annotations (unit_passed)
+### SHOW-012 Cue annotations (integrated)
 - `python3 scripts/check_compliance.py`: pass at `810fe9e132b2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-012/20261115T002410/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `810fe9e132b2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-012/20261115T002410/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `810fe9e132b2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-012/20261115T002410/script-tests.log`)
@@ -3297,6 +3298,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `810fe9e132b2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-012/20261115T002410/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `810fe9e132b2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-012/20261115T002410/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `810fe9e132b2` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-012/20261115T002410/swift-test_ShowControl.log`)
+- `swift test ShowControl 179, LibraryBackup 88; scripts 181, compliance OK; postmerge projectM-iOSTests 1262 + CueNoteUITests 1`: pass at `1cd8b442a130` (log `.autonomous/logs/integration/batch122/app-tests.log`)
 
 ### SHOW-013 Auto scene rotation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ba0b3c0a6d61` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-013/20261114T210629/compliance.log`)
