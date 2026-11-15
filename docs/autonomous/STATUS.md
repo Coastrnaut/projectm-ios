@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T04:04:26Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T04:07:30Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,10 +9,10 @@
 
 | State | Features |
 |---|---|
-| audited | 39 |
-| implementing | 2 |
-| unit_passed | 3 |
-| integrated | 281 |
+| audited | 38 |
+| implementing | 3 |
+| unit_passed | 1 |
+| integrated | 283 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,13 +21,13 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 29 | 2 | 3 | 45 | 0 |
-| P3 | 8 | 0 | 0 | 1 | 0 |
+| P2 | 29 | 2 | 1 | 47 | 0 |
+| P3 | 7 | 1 | 0 | 1 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 44 features are not implemented yet (first: CAM-010, FX-005, FX-006, FX-007, FX-008)
+- 42 features are not implemented yet (first: CAM-010, FX-005, FX-006, FX-007, FX-008)
 
 ## Integrated
 
@@ -160,6 +160,7 @@ The physical-device suite may **not** start:
 | MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
 | MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
 | MIDI-009 | MIDI feedback | `13f2f3ff5fef` | `feature/midi-009` |
+| MIDI-010 | MIDI clock receive | `24af20e28a43` | `feature/midi-010` |
 | MIDI-011 | MIDI hot-plug recovery | `2a986abd` | `None` |
 | MIDI-012 | MIDI mapping profiles | `93aae150` | `feature/midi-012` |
 | MIDI-013 | MIDI panic | `8d194e27` | `feature/midi-013` |
@@ -183,6 +184,7 @@ The physical-device suite may **not** start:
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
 | OSC-003 | OSC parameter routes | `ca21d525` | `feature/osc-003` |
+| OSC-004 | OSC learn | `24af20e28a43` | `feature/osc-004` |
 | OSC-007 | OSC network access switch | `ade4dfec39a5` | `feature/osc-007` |
 | OSC-008 | OSC peer allowlist | `1cc452b0` | `feature/osc-008` |
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
@@ -1743,7 +1745,7 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `83672cf76d5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-009/20261114T223341/swift-test_PerformanceControl.log`)
 - `swift test PerformanceControl 286; compliance, docs OK; postmerge projectM-iOSTests 1212 + MIDIFeedback/MIDIHighResolution UI tests 2`: pass at `13f2f3ff5fef` (log `.autonomous/logs/integration/batch107/app-tests.log`)
 
-### MIDI-010 MIDI clock receive (unit_passed)
+### MIDI-010 MIDI clock receive (integrated)
 - `python3 scripts/check_compliance.py`: pass at `707c94fa536a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-010/20261114T230040/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `707c94fa536a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-010/20261114T230040/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `707c94fa536a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-010/20261114T230040/script-tests.log`)
@@ -1751,6 +1753,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `707c94fa536a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-010/20261114T230040/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `707c94fa536a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-010/20261114T230040/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `707c94fa536a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-010/20261114T230040/swift-test_PerformanceControl.log`)
+- `swift test PerformanceControl 304 (OSC-004 + MIDI-010 together), LibraryBackup 87; postmerge projectM-iOSTests 1225 + OSCLearn/MIDIClock UI tests 2`: pass at `24af20e28a43` (log `.autonomous/logs/integration/batch110/app-tests.log`)
 
 ### MIDI-011 MIDI hot-plug recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ea8c44c900aa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-011/20261114T104655/compliance.log`)
@@ -2051,13 +2054,14 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `fe8563beddaf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-003/20261114T140849/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 890 + UI 1 (OSC routes), after the backup key test fix`: pass at `57bb8c1e` (log `.autonomous/logs/integration/batch42b/app-tests.log`)
 
-### OSC-004 OSC learn (unit_passed)
+### OSC-004 OSC learn (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0ef1840e2a52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-004/20261114T225905/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `0ef1840e2a52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-004/20261114T225905/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `0ef1840e2a52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-004/20261114T225905/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `0ef1840e2a52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-004/20261114T225905/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `0ef1840e2a52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-004/20261114T225905/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `0ef1840e2a52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-004/20261114T225905/swift-test_PerformanceControl.log`)
+- `swift test PerformanceControl 304 (OSC-004 + MIDI-010 together), LibraryBackup 87; postmerge projectM-iOSTests 1225 + OSCLearn/MIDIClock UI tests 2`: pass at `24af20e28a43` (log `.autonomous/logs/integration/batch110/app-tests.log`)
 
 ### OSC-007 OSC network access switch (integrated)
 - `python3 scripts/check_compliance.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/compliance.log`)
