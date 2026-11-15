@@ -672,6 +672,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         OSCSendCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-005: Send OSC off, no destination
+        OSCDiscoveryCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-011: discovery off
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -700,6 +701,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             guard let snapshot = self?.tempo.snapshot, let anchor = snapshot.anchorNanoseconds, let period = snapshot.periodNanoseconds else { return nil }
             return (anchor: anchor, period: period)
         }
+        osc.discovery = OSCDiscoveryCoordinator(osc: osc, defaults: defaults)   // OSC-011: Nearby Devices
         if let routes = osc.routes {   // OSC-004: learn on OSC Routes, announced on the .osc lane
             let announcer: AccessibilityAnnouncer = statusEvents.announcer
             osc.learn = OSCLearnCoordinator(osc: osc, routes: routes) { (text: String) -> Void in announcer.announce(text, kind: .osc) }

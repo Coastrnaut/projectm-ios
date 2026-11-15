@@ -114,6 +114,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   # OSC-008 (user-approved local hosts)
                 "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   # OSC-005 (Send OSC)
                 "settings.osc.send.kinds", "settings.osc.send.sceneNames",
+                "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   # OSC-011 (Nearby Devices switches)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)

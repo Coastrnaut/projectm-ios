@@ -392,6 +392,18 @@ network) send control messages to the app. It is off until you turn it on.
   "OSC receiver" off or leaving the app stops sending at once. The address, port and choices are stored
   on your device only: they are not included in a library backup and are removed when you erase
   Settings. The app keeps only counts of sent messages in memory while it runs.
+- "Nearby Devices" (Settings › OSC › Nearby Devices) has two switches, both off unless you turn them
+  on, and both work only while "OSC receiver" is on and the app is open in the foreground. "Find nearby
+  devices" looks for other devices offering projectM's OSC service on your local network using Bonjour
+  (multicast DNS on your network only: no server, no relay, never the internet or cellular data) and
+  shows their advertised names and local addresses, in memory only. "Let nearby devices find this one"
+  announces this device's OSC port the same way under a generic name, "projectM" and four random
+  characters chosen each time the app starts, never your device's or your own name. A device found
+  this way is never trusted by itself: it is added to "Approved Devices" or used as the Send OSC
+  destination only when you tap Allow or Use as send destination. Turning a switch off, turning "OSC
+  receiver" off or leaving the app stops looking and announcing at once. Only the two switches are
+  stored, on your device only: they are not included in a library backup and are removed when you
+  erase Settings.
 - If the app closed unexpectedly (a crash, or it was ended while open on screen), it turns "OSC
   receiver" off when it starts again and does not listen until you turn it on yourself. The camera is
   never turned back on by itself either.
@@ -531,3 +543,4 @@ issue in that repository.
 | PERF-010-R13 (`specs/070-perf-010-crash-safe-session-recovery/spec.md`): the session recovery values (session open, launches since a reopen, the visual to reopen); after an unexpected close the OSC receiver is turned off and nothing listens until the user turns it on | OSC control on your local network; What is stored on your device |
 | PRE-006-R9 (`specs/159-pre-006-recent-history/spec.md`, ADR-0055, amends FR-065/FR-123): the recently played preset IDs (at most 50, no times), kept only when the user turns on the "Remember Recently Played" switch (off by default); off or Clear History deletes the list; never in a backup | What is stored on your device |
 | PRE-012-R30 (`specs/008-pre-012-preset-import-validation/spec.md`, amends FR-065): preset files the user imports, quarantined ones included, and their record; extended by PRE-015-R23 (`specs/010-pre-015-user-preset-duplication/spec.md`): copies of built-in presets, their origin, and edited preset text | What is stored on your device |
+| OSC-011-R10, R11 (`specs/289-osc-011-local-peer-discovery/spec.md`, ADR-0100): the optional Bonjour discovery on the local network, its generic announced name and its two switches | OSC control on your local network |
