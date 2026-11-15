@@ -550,6 +550,7 @@ struct SettingsView: View {
         if let sceneHUD { SceneHUDSection(setting: sceneHUD).id("sceneHUD") }   // UIX-013-R1
         if let oneHanded { HandednessSections(setting: oneHanded) }   // ACC-010-R1 (all devices), ACC-009-R1 (iPhone)
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
+        if let layerInspector { MotionModulationSection(coordinator: layerInspector.motionModulation).id("motion") }   // CAM-011 (the app coordinator)
         if let performanceReport { PerformanceReportSection(export: performanceReport).id("performanceReport") }   // PERF-012-R1
     }
 

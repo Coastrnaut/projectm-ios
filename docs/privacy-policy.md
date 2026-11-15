@@ -294,6 +294,14 @@ Audio from every source is processed only in memory, on your device, to draw the
 What the app hears or captures is never recorded, never written to storage, and never transmitted.
 There is no setting that changes this.
 
+## Device motion
+
+If a scene uses tilt or shake to drive the visualization (CAM-011), or while Settings › Motion is open, the app
+reads the device's motion sensors (how it is tilted and turned, and how hard it is moved), only while the app is
+open. The readings are used only on your device, at that moment, to move the visualization; they are never
+recorded, never written to storage and never transmitted. Calibrate only takes the current position as the
+middle, for this session. iOS asks no permission for this, and the app reads no activity, step or altitude data.
+
 ## When the app is in the background
 
 When you leave the app (the Home Screen, another app) or lock your device:
