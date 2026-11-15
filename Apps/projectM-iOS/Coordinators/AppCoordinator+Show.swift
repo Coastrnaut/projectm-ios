@@ -43,7 +43,8 @@ extension AppCoordinator {
                  videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
                  slideshow: slideshow.sceneValue,   // MED-006
                  kenBurns: kenBurns.sceneValue,   // MED-007
-                 logo: logo.sceneLogo)   // MED-010
+                 logo: logo.sceneLogo,   // MED-010
+                 countdownSeconds: countdown.settings.startsFromCues ? countdown.settings.durationSeconds : nil)   // MED-012-R8
     }
 
     /// Wires the show to this coordinator (called once at the end of init).
@@ -134,6 +135,7 @@ extension AppCoordinator {
         videos.restoreSpeed(storeID: apply.videoStoreID, speedPercent: apply.videoSpeedPercent)   // MED-004-R7
         if let restore = apply.slideshow { restorePhotoMotion(restore) }   // MED-006-R12, MED-007-R10
         if let scene = apply.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
+        if let seconds = apply.countdownSeconds { countdown.startFromCue(seconds: seconds) }   // MED-012-R8: a cue starts it
         sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
         resetTrailsHistory()   // FX-009-R5: a cue's scene (and UIX-002's switcher) starts without trails
         if refresh {

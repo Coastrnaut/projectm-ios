@@ -72,6 +72,9 @@
 // * Tunnel (VIS-015): the same generator in its tunnel mode; Pace and switches with Noise Field and Kaleidoscope change
 //   only its configuration; `tunnelTempo` (SHOW-011's snapshot) is read once per frame while it is shown and handed to
 //   the generator, whose drive eases the speed; `reduceMotion` halves its speed and bass punch (R8).
+// * Spectrum waterfall (VIS-020): the same generator in its waterfall mode, fed the smoothed bands like the spectra; it
+//   keeps the last 60 s in a fixed ring; switches with the other noise-field modes change only its configuration (the
+//   history starts empty); `reduceMotion` halves its scroll (R8).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -536,6 +539,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                     configuration: NoiseFieldConfiguration.tunnel(pace: pace))
             generator.barCount = barCount
             return generator
+        case .waterfall:   // VIS-020: the noise field's generator in its waterfall mode
+            let generator = try NoiseFieldGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                    configuration: NoiseFieldConfiguration.waterfall())
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -618,6 +626,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.seed = seed
             configuration.wedges = 0   // VIS-014: from the kaleidoscope, the fold turns off
             configuration.tunnelPace = 0   // VIS-015: from the tunnel, back to the field
+            configuration.waterfall = false   // VIS-020: from the waterfall, back to the field
             field.configuration = configuration
         } else if case let .kaleidoscope(wedges) = newStyle, let field = generator as? NoiseFieldGenerator {
             // VIS-014: in place, from the next frame (from Noise Field too: the kaleidoscope's own source settings)
@@ -627,6 +636,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
             // VIS-015: in place, from the next frame; a pace change eases the speed (the drive is kept)
             field.configuration = NoiseFieldConfiguration.tunnel(pace: pace, reduceMotion: field.configuration.reduceMotion,
                                                                  palette: field.configuration.palette)
+        } else if case .waterfall = newStyle, let field = generator as? NoiseFieldGenerator {
+            // VIS-020: in place, from the next frame (the history starts empty; storage kept)
+            field.configuration = NoiseFieldConfiguration.waterfall(reduceMotion: field.configuration.reduceMotion,
+                                                                    palette: field.configuration.palette)
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -856,6 +869,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             return "\(frequency.title) frequency, \(octaves) octaves, seed \(seed), \(glow)"
         case let .kaleidoscope(wedges): return "\(wedges) wedges, \(glow)"   // VIS-014-R12
         case let .tunnel(pace): return "\(pace.title), \(glow)"   // VIS-015-R12
+        case .waterfall: return "Newest at top, \(glow)"   // VIS-020-R12
         }
     }
 
@@ -1217,6 +1231,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case kaleidoscope(wedges: Int)
     /// VIS-015: the tunnel (the noise field's generator in its tunnel mode) at `pace` rings per beat.
     case tunnel(pace: TunnelPace)
+    /// VIS-020: the spectrum waterfall (the noise field's generator in its waterfall mode).
+    case waterfall
 
     /// VIS-006, VIS-008, VIS-009: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1248,6 +1264,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .noiseField: VisualChoice.noiseField.title
         case .kaleidoscope: VisualChoice.kaleidoscope.title
         case .tunnel: VisualChoice.tunnel.title
+        case .waterfall: VisualChoice.spectrumWaterfall.title
         }
     }
 
@@ -1265,6 +1282,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .noiseField: "noiseField"
         case .kaleidoscope: "kaleidoscope"
         case .tunnel: "tunnel"
+        case .waterfall: "spectrumWaterfall"
         }
     }
 }

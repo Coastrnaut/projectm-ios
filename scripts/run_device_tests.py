@@ -74,6 +74,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.logo.id",   # MED-010
                 "settings.logo.placement",   # MED-010
                 "settings.clock.overlay",   # MED-011 (clock overlay; off by default)
+                "settings.countdown.overlay",   # MED-012 (countdown overlay; off by default)
                 "settings.presetScope", "notice.photosensitivityAcknowledged",
                 "settings.visual", "settings.circularSpectrum.bars",
                 "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",

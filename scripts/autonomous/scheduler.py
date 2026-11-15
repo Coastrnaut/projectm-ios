@@ -57,6 +57,17 @@ AREA_LOCKS: dict[str, tuple[str, ...]] = {
 }
 
 
+# How many running features may hold a lock at once (default 1). Raised on 2026-11-14 for the two
+# packages that most of the remaining rows share: 21 of the last 43 features (FX, VIS, SHD) lock
+# VisualGenerators and 9 (OSC, MIDI, SHOW) lock PerformanceControl, which serialized them while six
+# agent slots stood empty. Each feature still works in its own worktree; the single integration
+# writer merges them one at a time, and the conflicts seen so far were small (shared key lists).
+LOCK_CAPACITY: dict[str, int] = {
+    "Packages/VisualGenerators": 2,
+    "Packages/PerformanceControl": 2,
+}
+
+
 def effective_priorities(roadmap: Roadmap) -> dict[str, str]:
     """Each feature's own priority raised to the highest priority among its dependents."""
     rank = {fid: PRIORITIES.index(f.priority) for fid, f in roadmap.features.items()}
@@ -106,12 +117,14 @@ class Selection:
 
 class Scheduler:
     def __init__(self, roadmap: Roadmap, max_concurrency: int = DEFAULT_CONCURRENCY,
-                 lock_overrides: dict[str, tuple[str, ...]] | None = None):
+                 lock_overrides: dict[str, tuple[str, ...]] | None = None,
+                 lock_capacity: dict[str, int] | None = None):
         if not 1 <= max_concurrency <= HARD_MAX_CONCURRENCY:
             raise ValueError(f"max_concurrency must be 1..{HARD_MAX_CONCURRENCY}")
         self.roadmap = roadmap
         self.max_concurrency = max_concurrency
         self.lock_overrides = lock_overrides
+        self.lock_capacity = LOCK_CAPACITY if lock_capacity is None else lock_capacity
         self.order = topological_order(roadmap)
         self.priority = effective_priorities(roadmap)
 
@@ -148,21 +161,23 @@ class Scheduler:
         return sorted(out, key=lambda fid: (PRIORITIES.index(self.priority[fid]), position[fid]))
 
     def select(self, states: dict[str, str], running: set[str]) -> Selection:
-        held: set[str] = set()
+        held: dict[str, int] = {}
         for fid in running:
-            held.update(locks_for(self.roadmap.features[fid], self.lock_overrides))
+            for lock in set(locks_for(self.roadmap.features[fid], self.lock_overrides)):
+                held[lock] = held.get(lock, 0) + 1
         start: list[str] = []
         on_lock: list[str] = []
         on_slot: list[str] = []
         for fid in self.ready(states, running):
             locks = set(locks_for(self.roadmap.features[fid], self.lock_overrides))
-            if locks & held:
+            if any(held.get(lock, 0) >= self.lock_capacity.get(lock, 1) for lock in locks):
                 on_lock.append(fid)
             elif len(running) + len(start) >= self.max_concurrency:
                 on_slot.append(fid)
             else:
                 start.append(fid)
-                held |= locks
+                for lock in locks:
+                    held[lock] = held.get(lock, 0) + 1
         return Selection(tuple(start), tuple(on_lock), tuple(on_slot),
                          self.blocked_by_dependency(states))
 
