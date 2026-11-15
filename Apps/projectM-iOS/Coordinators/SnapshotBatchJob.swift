@@ -161,6 +161,7 @@ enum SnapshotBatchPlanner {
         case .starfield: return .starfield(speed: settings.starfieldSpeed, density: settings.starfieldDensity)   // VIS-016
         case .signedDistance: return .signedDistance(quality: settings.signedDistanceQuality)   // VIS-017
         case .cymatic: return .cymatic(bands: settings.cymaticBands)   // VIS-019
+        case .tessellation: return .tessellation(settings.tessellation)   // VIS-018
         default: return .circular
         }
     }

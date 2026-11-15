@@ -1,0 +1,48 @@
+{
+  "entries" : [
+    {
+      "file" : "tessellation-hexagon-128x96-f0.png",
+      "fileSHA256" : "b4e33162356e1eb2171eb2534ac22bf236a01badbc89d3a327c6183577aaa729",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "5db67f06c97c0e3208dcaf5fdfa8bd924be27ab9976f1e21708daa6cc42a92c0",
+      "scene" : "tessellation-hexagon",
+      "width" : 128
+    },
+    {
+      "file" : "tessellation-hexagon-256x192-f0.png",
+      "fileSHA256" : "3d806a367972d0c579008ff2021e875b282b10f089c73271ec412fe8d9b4c652",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "8f9aed546b748b2eead0ca32dfa7da9c77985f91ed28e74fd6ff76b308c3b6f4",
+      "scene" : "tessellation-hexagon",
+      "width" : 256
+    },
+    {
+      "file" : "tessellation-trihexagonal-128x96-f0.png",
+      "fileSHA256" : "92f08eb807957f88b95f683ebc47cb52efa93e50037bb3b2ab29da37bc4aede0",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "2d5f8764656206f9fca1f2e01cd1a6811d4d5ed742775bcb91f7b310445b88d3",
+      "scene" : "tessellation-trihexagonal",
+      "width" : 128
+    },
+    {
+      "file" : "tessellation-trihexagonal-256x192-f0.png",
+      "fileSHA256" : "6e91e536bb672524e55ee7cd5a0c239deb7fb0d1759d90fa5049cd75c5d63bf8",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "ce5abe35cf23c052db76d4d9679317b090df6b1c73617524928d1cfd99689686",
+      "scene" : "tessellation-trihexagonal",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}

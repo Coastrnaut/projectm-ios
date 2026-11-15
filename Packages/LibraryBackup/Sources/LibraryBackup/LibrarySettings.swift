@@ -127,6 +127,8 @@ public enum LibrarySettingsPolicy {
         "settings.starfield.speed", "settings.starfield.density",   // VIS-016-R8
         "settings.signedDistance.quality",   // VIS-017-R8
         "settings.cymatic.bands",   // VIS-019-R10
+        "settings.tessellation.tiling", "settings.tessellation.tiles", "settings.tessellation.symmetry",   // VIS-018-R10
+        "settings.tessellation.mirror", "settings.tessellation.palette",
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",
