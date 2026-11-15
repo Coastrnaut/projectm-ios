@@ -47,6 +47,13 @@ interaction); each answer is the conservative, local-first option.
 - Q: Lifecycle? → A: The pending queue is cleared whenever the receiver stops or starts (switch off, background, port change) (OSC-006-R10).
 - Q: UI? → A: None in this row; the counters are kept in memory with the others (OSC-006-R11).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Are late, dropped and scheduled counts kept per bundle or per message? → A: Per message, like `applied` and `ignored` (OSC-001/002), so the counts add up; a bundle datagram still adds one to `bundles` (OSC-006-R11).
+- Q: When a new datagram arrives while earlier scheduled messages are already due but their wake-up has not run yet, which goes first? → A: The due scheduled messages: every datagram first applies what is due, so a timer that fires a little late never reorders values (OSC-006-R5).
+- Q: Does a malformed element still reject a bundle that also holds future messages? → A: Yes, unchanged from OSC-002: the whole datagram is rejected and nothing is scheduled.
+- Q: Is the route of a scheduled message fixed at receipt? → A: No; the route table at the due time is used, so a route removed in between makes the message an unknown address (OSC-006-R9).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cues land on the beat I scheduled (Priority: P2)
