@@ -743,6 +743,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectOfflineExport()   // REC-013
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
+        connectMIDIFeedback()   // MIDI-009
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
@@ -1200,6 +1201,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
         case .tunnel: .tunnel(pace: settings.tunnelPace)   // VIS-015
+        case .spectrumWaterfall: .waterfall   // VIS-020
         default: .circular
         }
     }

@@ -11,22 +11,22 @@
    "skipped_existing": 1
   },
   "P1": {
-   "implementing": 1,
-   "integrated": 150
+   "integrated": 151
   },
   "P2": {
-   "audited": 34,
-   "implementing": 2,
-   "integrated": 43
+   "audited": 31,
+   "implementing": 4,
+   "integrated": 44
   },
   "P3": {
-   "audited": 9
+   "audited": 8,
+   "implementing": 1
   }
  },
  "by_state": {
-  "audited": 45,
-  "implementing": 3,
-  "integrated": 277,
+  "audited": 41,
+  "implementing": 5,
+  "integrated": 279,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -51,7 +51,6 @@
    "FX-017",
    "FX-018",
    "MED-005",
-   "MIDI-009",
    "MIDI-010",
    "OSC-004",
    "OSC-005",
@@ -81,12 +80,11 @@
    "VIS-016",
    "VIS-017",
    "VIS-018",
-   "VIS-019",
-   "VIS-020"
+   "VIS-019"
   ],
   "phase": "implementation",
   "reasons": [
-   "48 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "46 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -752,13 +750,13 @@
   },
   "CAM-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cam-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CAM-010": {
    "attempts": 0,
@@ -1503,22 +1501,22 @@
   "MIDI-009": {
    "attempts": 0,
    "branch": "feature/midi-009",
+   "branch_sha": "83672cf76d5d258195bbd76a6be1740421760298",
+   "error_category": null,
+   "integrated_sha": "13f2f3ff5feff9bf2eba28f5f8b5ad1aa8479b3d",
+   "priority": "P2",
+   "spec_dir": null,
+   "state": "integrated"
+  },
+  "MIDI-010": {
+   "attempts": 0,
+   "branch": "feature/midi-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
    "state": "implementing"
-  },
-  "MIDI-010": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
-   "error_category": null,
-   "integrated_sha": null,
-   "priority": "P2",
-   "spec_dir": null,
-   "state": "audited"
   },
   "MIDI-011": {
    "attempts": 0,
@@ -2792,13 +2790,13 @@
   },
   "SHD-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/shd-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHD-008": {
    "attempts": 0,
@@ -3242,13 +3240,13 @@
   },
   "VIS-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-011": {
    "attempts": 0,
@@ -3343,12 +3341,12 @@
   "VIS-020": {
    "attempts": 0,
    "branch": "feature/vis-020",
-   "branch_sha": null,
+   "branch_sha": "019d5a0a910ebb9e67a067087e653183ff77ebca",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "7cdcce682ee8e5f2329dd6836c2bccf9dcb442b5",
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   }
  },
  "integrated": [
@@ -3976,6 +3974,11 @@
    "branch": "feature/midi-008",
    "id": "MIDI-008",
    "sha": "265ddd1401f9b6b4732556c66a10d6a9be758182"
+  },
+  {
+   "branch": "feature/midi-009",
+   "id": "MIDI-009",
+   "sha": "13f2f3ff5feff9bf2eba28f5f8b5ad1aa8479b3d"
   },
   {
    "branch": null,
@@ -4736,6 +4739,11 @@
    "branch": "feature/vis-015",
    "id": "VIS-015",
    "sha": "2a948e0d62e746e1b44bc1158c4e2d888458bb6a"
+  },
+  {
+   "branch": "feature/vis-020",
+   "id": "VIS-020",
+   "sha": "7cdcce682ee8e5f2329dd6836c2bccf9dcb442b5"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -4763,5 +4771,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:20:12Z"
+ "updated": "2026-11-15T03:38:44Z"
 }

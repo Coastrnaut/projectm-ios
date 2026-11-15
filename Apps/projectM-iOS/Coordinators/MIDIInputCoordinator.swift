@@ -8,6 +8,8 @@
 //   change (plug, unplug). Network MIDI is never listed (ADR-0038), so it is never connected.
 // * The ring is drained on the main actor by a `CADisplayLink` capped at 30 Hz; each non-empty batch (or a change
 //   of the clock, active sensing or dropped counters) goes to every client. Tests drive `drain()` directly.
+// * MIDI-009: tick observers run after every drain, also an empty one (feedback sends at most once per tick, and only
+//   while the input receives).
 // * MIDI-011: the provider repairs connections on hot-plug by itself; when it reports a lost source, the next drain
 //   runs the state observers first (held keys are released).
 // Nothing here logs or stores messages or names an endpoint (MIDI-002-R7).
@@ -26,6 +28,8 @@ final class MIDIInputCoordinator {
     private let discovery: MIDIDiscoveryCoordinator
     private var clients: [String: BatchHandler] = [:]
     private var stateObservers: [@MainActor () -> Void] = []
+    /// MIDI-009: called after every drain (the display tick), after the clients.
+    private var tickObservers: [@MainActor () -> Void] = []
     private var ticker: MIDIDrainTicker?
     private let drivesDisplayLink: Bool
     private var batch: [MIDIEvent] = []
@@ -61,6 +65,11 @@ final class MIDIInputCoordinator {
     /// Runs after every apply (clients read `state`).
     func addStateObserver(_ observer: @escaping @MainActor () -> Void) {
         stateObservers.append(observer)
+    }
+
+    /// MIDI-009: runs after every drain, after the clients got the batch.
+    func addTickObserver(_ observer: @escaping @MainActor () -> Void) {
+        tickObservers.append(observer)
     }
 
     /// The online inputs MIDI-001 lists.
@@ -113,6 +122,7 @@ final class MIDIInputCoordinator {
 
     /// Moves queued events to the clients (display rate in the app; called directly by tests).
     func drain() {
+        defer { for observer in tickObservers { observer() } }   // MIDI-009: after the clients
         let losses: Int = service.sourceLossCount
         if losses != lastLossCount {   // MIDI-011-R5: observers release held keys before newer messages arrive
             lastLossCount = losses

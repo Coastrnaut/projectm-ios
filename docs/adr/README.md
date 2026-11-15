@@ -61,6 +61,7 @@
 | [0064](0064-material-parameter-cap-16.md) | Procedural materials may have up to 16 parameters (uniform block of 16 slots) | Accepted 2026-11-14 (SHD-006; owner rule 4) |
 | [0065](0065-device-motion-modulation.md) | Device motion modulation reads the motion sensors only while used, on the device, without storing readings (no permission needed) | Accepted 2026-11-14 (CAM-011; owner rule 4) |
 | [0066](0066-noise-field-shared-seeded-noise.md) | The noise field compiles a module-constant shader built from SHD-006's shared seeded noise (tenth reviewed Metal compile site) | Accepted 2026-11-14 (VIS-013; owner rule 4) |
+| [0080](0080-midi-feedback-output.md) | MIDI feedback sends bounded control changes to paired local destinations (opt-in per mapping; amends ADR-0038) | Accepted 2026-11-14 (MIDI-009; owner rule 4) |
 | [0081](0081-on-device-face-landmarks.md) | Face landmark emitters run only after explicit consent, on the device, from pictures the camera already captures; only eight scalars, memory only | Accepted 2026-11-14 (CAM-009; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
