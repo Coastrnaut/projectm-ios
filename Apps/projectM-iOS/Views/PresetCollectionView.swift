@@ -19,9 +19,13 @@ struct PresetCollectionView: View {
     @State private var editMode = EditMode.inactive
     @State private var renaming = false
 
+    /// SHOW-015-R4: no reorder and no Remove while the lock is on.
+    private var locked: Bool { presets.isCollectionEditLocked }
+
     var body: some View {
         let listing = presets.collectionListing(collectionID)
         List {
+            if locked { Section { SceneLockNote() } }   // SHOW-015-R4
             if listing.isEmpty {
                 Text("No presets yet. In any preset list, touch and hold a preset (or swipe it to the right) and choose Add to Collection.")
                     .accessibilityIdentifier("collectionEmpty")
@@ -34,14 +38,14 @@ struct PresetCollectionView: View {
                     onChoose(preset, .collection(collectionID))
                 }
             }
-            .onMove(perform: editMode.isEditing ? { presets.movePresets(in: collectionID, fromOffsets: $0, toOffset: $1) } : nil)
+            .onMove(perform: editMode.isEditing && !locked ? { presets.movePresets(in: collectionID, fromOffsets: $0, toOffset: $1) } : nil)
         }
         .navigationTitle(presets.collection(id: collectionID)?.name ?? "Collection")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) }
             if presets.collection(id: collectionID) != nil {
                 ToolbarItemGroup(placement: .bottomBar) {
-                    EditButton().disabled(listing.count < 2)
+                    if !locked { EditButton().disabled(listing.count < 2) }   // SHOW-015-R4
                     Spacer()
                     Button("Rename") { renaming = true }
                         .accessibilityIdentifier("renameCollection")
@@ -49,6 +53,7 @@ struct PresetCollectionView: View {
             }
         }
         .environment(\.editMode, $editMode)
+        .onChange(of: locked) { if locked { editMode = .inactive } }   // SHOW-015: locking ends Edit mode
         .sheet(isPresented: $renaming) {
             CollectionNameSheet(presets: presets, renaming: presets.collection(id: collectionID))
         }

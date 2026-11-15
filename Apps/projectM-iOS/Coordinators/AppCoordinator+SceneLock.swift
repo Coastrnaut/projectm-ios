@@ -3,6 +3,8 @@
 //
 // * The lock lives in `AppSettings` (so the Settings targets, macros and snapshots see it); here the show and the
 //   undo history get the same lock, and its announcements go to the announcer's library lane (ACC-004).
+// * SHOW-015 (specs/260-show-015-performance-lock): the same lock is the performance lock; preset collections and
+//   the Storage erase and restore refuse through it too.
 // * Nothing here touches navigation: cue steps, blackout, tempo, presets and MIDI/OSC values never consult the lock.
 import Foundation
 
@@ -13,6 +15,8 @@ extension AppCoordinator {
         show.sceneLock = sceneLock
         sceneHistory.sceneLock = sceneLock
         modulationMatrix.sceneLock = sceneLock   // MOD-012
+        presets.sceneLock = sceneLock            // SHOW-015: collection deletes and reorders
+        libraryBackup.sceneLock = sceneLock      // SHOW-015: Erase Data… and Restore from Backup…
         sceneLock.announce = { [weak self] (text: String) -> Void in self?.announcer.announce(text, kind: .library) }
     }
 }

@@ -377,7 +377,7 @@ struct PresetRow: View {
             .tint(.indigo)
         }
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            if let collection {
+            if let collection, !presets.isCollectionEditLocked {   // SHOW-015-R4
                 Button {
                     presets.removeFromCollection([preset], collection.id)
                 } label: {
@@ -474,7 +474,7 @@ struct PresetRow: View {
             Button(action: user.info) { Label("Information", systemImage: "info.circle") }
             Button(role: .destructive, action: user.remove) { Label("Remove from My Presets", systemImage: "trash") }
         }
-        if let collection {
+        if let collection, !presets.isCollectionEditLocked {   // SHOW-015-R4
             Button { presets.movePreset(preset, in: collection.id, by: -1) } label: { Label("Move Up", systemImage: "arrow.up") }
                 .disabled(collection.isFirst)
             Button { presets.movePreset(preset, in: collection.id, by: 1) } label: { Label("Move Down", systemImage: "arrow.down") }
@@ -532,7 +532,7 @@ struct PresetRow: View {
         let collection: CollectionPlace?
 
         func body(content: Content) -> some View {
-            if let collection {
+            if let collection, !presets.isCollectionEditLocked {   // SHOW-015-R4
                 content
                     .accessibilityAction(named: "Move Up") { presets.movePreset(preset, in: collection.id, by: -1) }
                     .accessibilityAction(named: "Move Down") { presets.movePreset(preset, in: collection.id, by: 1) }
