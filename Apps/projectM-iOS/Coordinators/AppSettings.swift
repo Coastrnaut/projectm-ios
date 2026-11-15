@@ -40,6 +40,8 @@
 //   `settings.noiseField.seed` (Int 0…65535; absent or outside → 1301). Glow is shared; Bars does not apply.
 // * Kaleidoscope (VIS-014-R9): `settings.visual` may also be `kaleidoscope`; key `settings.kaleidoscope.wedges` (Int 2…24;
 //   absent or anything else → 6). Glow is shared; Bars does not apply.
+// * Tunnel (VIS-015-R9): `settings.visual` may also be `tunnel`; key `settings.tunnel.pace` (`half`/`beat`/`double`;
+//   anything else → beat). Its speed follows the tempo snapshot (SHOW-011). Glow is shared; Bars does not apply.
 // * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
 //   `settings.spectrum.attack` (0, 25, 50 or 100) and `settings.spectrum.release` (0, 100, 250 or
 //   500), Int milliseconds; anything else → 0 (Instant, today's look).
@@ -70,7 +72,7 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, VIS-013-R9 the three noise field keys, VIS-014-R9 the kaleidoscope's key, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
+// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, VIS-013-R9 the three noise field keys, VIS-014-R9 the kaleidoscope's key, VIS-015-R9 the tunnel's key, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
 // `settings.visual.colorBlindSafePalette`).
 // * Sensory safety (ACC-012-R8): the profile and its custom limits, four `settings.sensorySafety.*` keys owned by
 //   `SensorySafetySetting`; `safetyClamp` combines them with Reduce flashing (stricter wins, ADR-0049).
@@ -113,6 +115,7 @@ final class AppSettings {
     static let noiseFieldOctavesKey = "settings.noiseField.octaves"   // VIS-013
     static let noiseFieldSeedKey = "settings.noiseField.seed"   // VIS-013
     static let kaleidoscopeWedgesKey = "settings.kaleidoscope.wedges"   // VIS-014
+    static let tunnelPaceKey = "settings.tunnel.pace"   // VIS-015
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
@@ -149,7 +152,7 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
@@ -346,6 +349,11 @@ final class AppSettings {
         }
     }
 
+    /// VIS-015: the tunnel's rings per beat (1 by default).
+    var tunnelPace: TunnelPace {
+        didSet { defaults.set(tunnelPace.rawValue, forKey: Self.tunnelPaceKey) }
+    }
+
     /// VIS-014: the kaleidoscope's wedge count (2…24, 6 by default).
     var kaleidoscopeWedges: Int {
         didSet {
@@ -531,6 +539,7 @@ final class AppSettings {
                                         fallback: NoiseFieldConfiguration.defaultSeed)
         kaleidoscopeWedges = Self.storedInt(defaults, Self.kaleidoscopeWedgesKey, in: KaleidoscopeFold.wedgeRange,
                                             fallback: KaleidoscopeFold.defaultWedges)   // VIS-014
+        tunnelPace = defaults.string(forKey: Self.tunnelPaceKey).flatMap(TunnelPace.init(rawValue:)) ?? .defaultPace   // VIS-015
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
@@ -603,6 +612,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case noiseField
     /// The native kaleidoscope (VIS-014).
     case kaleidoscope
+    /// The native tunnel (VIS-015).
+    case tunnel
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -626,6 +637,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .particleOrbit: "Particle Orbit"
         case .noiseField: "Noise Field"
         case .kaleidoscope: "Kaleidoscope"
+        case .tunnel: "Tunnel"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -636,7 +648,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     /// Drawn by the native spectrum host instead of projectM.
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
-        || self == .particleOrbit || self == .noiseField || self == .kaleidoscope }
+        || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum }

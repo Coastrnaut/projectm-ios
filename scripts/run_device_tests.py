@@ -102,6 +102,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.particleOrbit.radius",   # VIS-009-R10
                 "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   # VIS-013-R9
                 "settings.kaleidoscope.wedges",   # VIS-014-R9
+                "settings.tunnel.pace",   # VIS-015-R9
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)
