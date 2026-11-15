@@ -490,6 +490,13 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         return .make(readings)
     }
 
+    /// OUT-014 (contract C2): the connected display's class (OUT-011's live readings and the screen's own pixel aspect,
+    /// not the user's override); nil while no display is settled. Built at every read, like `outputDiagnostics`.
+    var outputDisplayClass: OutputDisplayClass? {
+        guard case let .connected(readings) = outputDiagnostics else { return nil }
+        return OutputDisplayClass(readings: readings, screenPixelAspect: diagnosedSlot?.screenPixelAspect)
+    }
+
     /// The routed external display's slot, else the first settled one's; nil while none is settled (OUT-011 Clarifications).
     private var diagnosedSlot: VisualSlotView? {
         let settled: [String] = routing.displays.map { (d: ExternalDisplay) -> String in d.id }
