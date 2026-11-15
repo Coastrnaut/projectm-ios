@@ -1183,6 +1183,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
         case .particleFountain: .particleFountain(gravity: settings.particleGravity)   // VIS-008
         case .particleOrbit: .particleOrbit(radius: settings.particleOrbitRadius)   // VIS-009
+        case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         default: .circular
         }
     }

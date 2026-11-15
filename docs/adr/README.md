@@ -60,5 +60,6 @@
 | [0063](0063-on-device-person-segmentation.md) | Person silhouette mask uses only the system's on-device segmentation, in memory, at a bounded rate (pauses when warm; unsupported draws the full picture) | Accepted 2026-11-14 (CAM-008; owner rule 4) |
 | [0064](0064-material-parameter-cap-16.md) | Procedural materials may have up to 16 parameters (uniform block of 16 slots) | Accepted 2026-11-14 (SHD-006; owner rule 4) |
 | [0065](0065-device-motion-modulation.md) | Device motion modulation reads the motion sensors only while used, on the device, without storing readings (no permission needed) | Accepted 2026-11-14 (CAM-011; owner rule 4) |
+| [0066](0066-noise-field-shared-seeded-noise.md) | The noise field compiles a module-constant shader built from SHD-006's shared seeded noise (tenth reviewed Metal compile site) | Accepted 2026-11-14 (VIS-013; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
