@@ -8,9 +8,9 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
 
 ## Phase 1: Setup
 
-- [ ] FX-017-T01 ADR-0122 (film grain pass last in the chain, PCG integer hash, exact noise, additive bounded blend with
+- [X] FX-017-T01 ADR-0122 (film grain pass last in the chain, PCG integer hash, exact noise, additive bounded blend with
   the zero floor, grain frame ≤ 24 Hz from the injected clock, static under Reduce Motion and Reduce flashing) in
-  `docs/adr/0122-film-grain.md` and its row in `docs/adr/README.md`
+  `docs/adr/0122-film-grain.md` and its row in `docs/adr/README.md` — Verified 2026-11-15: docs/adr/0122-film-grain.md and README row; validate_docs OK
 
 ## Phase 2: Foundational
 
