@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T07:25:37Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T07:38:59Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 15 |
+| audited | 14 |
 | implementing | 2 |
+| unit_passed | 1 |
 | integrated | 308 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 151 | 0 |
-| P2 | 9 | 2 | 68 | 0 |
-| P3 | 4 | 0 | 5 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 0 | 151 | 0 |
+| P2 | 8 | 2 | 1 | 68 | 0 |
+| P3 | 4 | 0 | 0 | 5 | 0 |
 
 ## Final device gate
 
@@ -1592,6 +1593,20 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
+
+### FX-010 Echo feedback (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_ShowControl.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)
