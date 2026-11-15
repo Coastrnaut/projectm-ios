@@ -90,6 +90,10 @@ struct VisualizerView: View {
             visual
                 .splitOutputScaled()
                 .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
+            // OUT-005-R1: device only, above the visual and scaled with it; never in the visual's view or output.
+            SafeAreaGuidesLayer(setting: coordinator.safeAreaGuides, external: coordinator.externalDisplay,
+                                output: coordinator.externalOutput)
+                .splitOutputScaled()
         }
     }
 
@@ -509,6 +513,7 @@ struct VisualizerView: View {
                      recordingQuality: coordinator.recordingQuality,   // REC-005
                      recordingCountdown: coordinator.recordingCountdown,   // REC-007
                      sceneHUD: coordinator.sceneHUD,   // UIX-013
+                     safeAreaGuides: coordinator.safeAreaGuides,   // OUT-005
                      oneHanded: coordinator.oneHanded,   // ACC-009
                      externalOutput: coordinator.externalOutput,   // OUT-004
                      recordingTimedStop: coordinator.recordingTimedStop,   // REC-008

@@ -44,6 +44,7 @@ final class LibraryBackupAppTests: XCTestCase {
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9
                PowerProfileSetting.key]   // PERF-008
             + RecordingQualitySetting.aspectKeys   // REC-014-R7 (excluded: this device's screen and memory)
+            + SafeAreaGuideSetting.allKeys   // OUT-005-R6
             + RecentPresetsStore.allKeys   // PRE-006-R7
             + OSCPeersCoordinator.allKeys   // OSC-008-R10
             + HapticBeatCoordinator.allKeys   // ACC-007-R8
