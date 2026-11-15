@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T02:18:24Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T02:20:41Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,19 @@
 
 | State | Features |
 |---|---|
-| audited | 54 |
-| implementing | 2 |
-| built | 1 |
+| audited | 53 |
+| implementing | 3 |
+| unit_passed | 1 |
 | integrated | 268 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 2 | 2 | 0 | 147 | 0 |
-| P2 | 41 | 0 | 1 | 37 | 0 |
+| P2 | 40 | 1 | 1 | 37 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
@@ -1546,6 +1546,18 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `2ca8a1db733a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-007/20261114T204133/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `2ca8a1db733a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-007/20261114T204133/swift-test_ShowControl.log`)
 - `swift test ShowControl 154, Compositor 1039, SceneFormat 201, LibraryBackup 87; postmerge projectM-iOSTests 1152 + 4 UI tests`: pass at `5ec1a2e59b21` (log `.autonomous/logs/integration/batch92/app-tests.log`)
+
+### MED-008 Animated image support (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_ShowControl.log`)
 
 ### MED-009 Text overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/compliance.log`)
