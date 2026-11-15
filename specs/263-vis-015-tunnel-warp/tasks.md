@@ -24,7 +24,7 @@
 ## Phase 5: User Story 4 - the app (VIS-015-R9, R11, R12; S6)
 
 - [ ] VIS-015-T08 [US4] Visual choice `tunnel`, key `settings.tunnel.pace` (`half`/`beat`/`double`, else `beat`), `TunnelOptions` Pace picker, host style `.tunnel(pace:)` with in-place update and the `tunnelTempo` closure (connected in `AppCoordinator+LFOs.swift`), accessibility value, scene capture as no layer; key in `ALLOWED_KEYS`, FILE-005 policy, `allKeys` (UI-test reset).
-- [ ] VIS-015-T09 [P] [US4] `TunnelAppTests` (setting persists and falls back; key in every list; host names itself, changes pace in place, reads the tempo closure per frame, switches with Noise Field/Kaleidoscope in place; scene capture no layer); `SettingsTests`, `CameraVisualTests`, `LibraryBackupAppTests` updated and passing.
+- [ ] VIS-015-T09 [P] [US4] `TunnelAppTests` (setting persists and falls back; key in every list; host names itself, changes pace in place (same generator; the speed eases to the new target), reads the tempo closure per frame, switches with Noise Field/Kaleidoscope in place; scene capture no layer); `SettingsTests`, `CameraVisualTests`, `LibraryBackupAppTests` updated and passing.
 - [ ] VIS-015-T10 [P] [US4] `TunnelUITests`: choose Tunnel, Pace offered at "1 ring per beat", Bars not, choose 2, value "2 rings per beat…", source started once (< 30 s).
 
 ## Phase 6: Polish
@@ -44,3 +44,12 @@ T03 and T04 (different test files) after T02; T09 and T10 after T08.
 
 MVP = T01-T03 (the acceptance: tempo mapping and smooth fallback, proven by pure drive tests); then the picture
 (T05-T07), then the app (T08-T10).
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- Coverage: every R1-R13 maps to a task (R3-R6 T01-T04; R1, R2, R10, R13 T05-T07, T11; R7 T04; R8 T04; R9, R11,
+  R12 T08-T10). S1-S7 each have a test task. No constitution conflict (no new compile site, no new dependency, no
+  networking, nothing reaches projectM).
+- Fix applied (inconsistency): R5 said "τ of frame time" while research D3 integrates timestamp deltas; R5 now names
+  the frame clock's step, clamped to 0…0.25 s, as the single dt for smoothing and phase.
+- Fix applied (coverage): US4 scenario 3 (pace change eases without a rebuild) is now asserted in T09.
