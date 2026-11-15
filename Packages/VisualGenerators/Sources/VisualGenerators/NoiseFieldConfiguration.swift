@@ -49,10 +49,13 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
     public var waterfall: Bool
     /// VIS-011: fluid ink (onset-driven stable fluids); on forces `wedges`, `tunnelPace` and `waterfall` off.
     public var fluidInk: Bool
+    /// VIS-012: reaction diffusion with these settings (nil: off); on forces every other mode off.
+    public var reactionDiffusion: ReactionDiffusionSettings?
 
     public init(frequency: Double = NoiseFieldConfiguration.defaultFrequency, octaves: Int = NoiseFieldConfiguration.defaultOctaves,
                 seed: Int = NoiseFieldConfiguration.defaultSeed, reduceMotion: Bool = false, palette: VisualPalette = .spectrum,
-                wedges: Int = 0, tunnelPace: Double = 0, waterfall: Bool = false, fluidInk: Bool = false) {
+                wedges: Int = 0, tunnelPace: Double = 0, waterfall: Bool = false, fluidInk: Bool = false,
+                reactionDiffusion: ReactionDiffusionSettings? = nil) {
         self.frequency = frequency
         self.octaves = octaves
         self.seed = seed
@@ -62,6 +65,7 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         self.tunnelPace = tunnelPace
         self.waterfall = waterfall
         self.fluidInk = fluidInk
+        self.reactionDiffusion = reactionDiffusion
         self = clamped()
     }
 
@@ -88,6 +92,12 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, fluidInk: true)
     }
 
+    /// VIS-012: reaction diffusion with `settings` (only the palette and Reduce Motion apply besides).
+    public static func reactionDiffusion(_ settings: ReactionDiffusionSettings = .default, reduceMotion: Bool = false,
+                                         palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
+        NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, reactionDiffusion: settings)
+    }
+
     /// VIS-015: the tunnel is on.
     public var isTunnel: Bool { tunnelPace > 0 }
 
@@ -109,6 +119,10 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         if c.tunnelPace > 0 { c.wedges = 0 }
         if c.waterfall { c.wedges = 0; c.tunnelPace = 0 }   // VIS-020
         if c.fluidInk { c.wedges = 0; c.tunnelPace = 0; c.waterfall = false }   // VIS-011
+        if let r = c.reactionDiffusion {   // VIS-012
+            c.reactionDiffusion = r.clamped()
+            c.wedges = 0; c.tunnelPace = 0; c.waterfall = false; c.fluidInk = false
+        }
         return c
     }
 
