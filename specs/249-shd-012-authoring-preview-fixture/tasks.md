@@ -6,21 +6,21 @@ Tests are requested by the spec (acceptance S1-S5). Budgets: unit tests ≤ 10 s
 
 ## Phase 1: Setup
 
-- [ ] SHD-012-T01 Add target `AuthoringPreview` (deps Compositor, ProceduralMaterials, ParameterGraph, VisualGenerators product) and test target `AuthoringPreviewTests` to the `Compositor` product in Packages/Compositor/Package.swift, with a header note
+- [X] SHD-012-T01 Add target `AuthoringPreview` (deps Compositor, ProceduralMaterials, ParameterGraph, VisualGenerators product) and test target `AuthoringPreviewTests` to the `Compositor` product in Packages/Compositor/Package.swift, with a header note — Verified 2026-11-14: `swift build` of the package with the new targets
 
 ## Phase 2: Foundational
 
-- [ ] SHD-012-T02 Implement `AuthoringPreviewFixture` (seed UInt64, seconds > 0 default 4, fps > 0 default 30; `frameCount`, `audio()`) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewFixture.swift
-- [ ] SHD-012-T03 Implement `AuthoringPreviewRequest`, `AuthoringPreviewFrame`, `AuthoringPreviewTrajectory` and `AuthoringPreviewSequencer` (contract P1: bindings validated by `replaceBindings`; per frame analysis → modulator → effective values → motion) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewSequencer.swift
+- [X] SHD-012-T02 Implement `AuthoringPreviewFixture` (seed UInt64, seconds > 0 default 4, fps > 0 default 30; `frameCount`, `audio()`) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewFixture.swift — Verified 2026-11-14: AuthoringPreviewTrajectoryTests.testDefaultFixtureHas120FramesAndTwoRunsAreIdentical
+- [X] SHD-012-T03 Implement `AuthoringPreviewRequest`, `AuthoringPreviewFrame`, `AuthoringPreviewTrajectory` and `AuthoringPreviewSequencer` (contract P1: bindings validated by `replaceBindings`; per frame analysis → modulator → effective values → motion) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewSequencer.swift — Verified 2026-11-14: AuthoringPreviewTrajectoryTests (6 tests, host and Linux shape)
 
 ## Phase 3: User Story 2 - Two runs are identical (P1, the acceptance)
 
 **Independent test**: trajectories and checksum sequences compared exactly across runs.
 
-- [ ] SHD-012-T04 [US2] Trajectory tests: two runs equal (exact Double), per-frame and chunk-of-7 stepping equal a single pass, changed seed and changed binding target/source differ, refused binding throws, no-binding run, frame count 0, frames beyond the fixture's end read silence (explicit `frameCount`), in Packages/Compositor/Tests/AuthoringPreviewTests/AuthoringPreviewTrajectoryTests.swift
-- [ ] SHD-012-T05 [US2] Implement `AuthoringPreviewRecorder` and `AuthoringPreviewRecording` (contract P3: layer prepared once, per-frame values, `LayerFrameClock` at 1 s + t(n), bands as audio context, Reduce flashing on, half-float read-back, SHA-256 per frame, run digest, optional RGBA8 frames) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewRecorder.swift
-- [ ] SHD-012-T06 [US2] GPU tests on the host: two recordings give equal checksum sequences and equal trajectories; the layer's motion matches the trajectory; a changed setting changes checksums, in Packages/Compositor/Tests/AuthoringPreviewTests/AuthoringPreviewRecorderTests.swift
-- [ ] SHD-012-T07 [US2] Linux shape: build and run the trajectory tests with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE` (Packages/Compositor)
+- [X] SHD-012-T04 [US2] Trajectory tests: two runs equal (exact Double), per-frame and chunk-of-7 stepping equal a single pass, changed seed and changed binding target/source differ, refused binding throws, no-binding run, frame count 0, frames beyond the fixture's end read silence (explicit `frameCount`), in Packages/Compositor/Tests/AuthoringPreviewTests/AuthoringPreviewTrajectoryTests.swift — Verified 2026-11-14: `swift test --filter AuthoringPreviewTrajectoryTests`, 6 passed in 2.0 s
+- [X] SHD-012-T05 [US2] Implement `AuthoringPreviewRecorder` and `AuthoringPreviewRecording` (contract P3: layer prepared once, per-frame values, `LayerFrameClock` at 1 s + t(n), bands as audio context, Reduce flashing on, half-float read-back, SHA-256 per frame, run digest, optional RGBA8 frames) in Packages/Compositor/Sources/AuthoringPreview/AuthoringPreviewRecorder.swift — Verified 2026-11-14: AuthoringPreviewRecorderTests on the host GPU
+- [X] SHD-012-T06 [US2] GPU tests on the host: two recordings give equal checksum sequences and equal trajectories; the layer's motion matches the trajectory; a changed setting changes checksums, in Packages/Compositor/Tests/AuthoringPreviewTests/AuthoringPreviewRecorderTests.swift — Verified 2026-11-14: `swift test --filter AuthoringPreviewTests`, 3 recorder tests passed (0.2-0.8 s each) on the host GPU
+- [X] SHD-012-T07 [US2] Linux shape: build and run the trajectory tests with `-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE` (Packages/Compositor) — Verified 2026-11-14: `swift test -Xswiftc -DCOMPOSITOR_NO_METAL -Xswiftc -DVISUAL_NO_METAL -Xswiftc -DANALYSIS_NO_ACCELERATE --filter AuthoringPreviewTests`, 6 passed (recorder compiled out)
 
 ## Phase 4: User Story 1 - Preview a material against the fixture (P1)
 
