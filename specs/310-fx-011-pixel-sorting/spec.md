@@ -62,7 +62,29 @@ answer is the conservative option.
 
 ### Session 2026-11-15 (speckit-clarify)
 
-(Recorded by `/speckit-clarify`.)
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Is Pixel sort a global setting or a per-scene value? → A: Both, like FX-006 to FX-016: a global setting the
+  visuals use, which a scene or effect-chain preset with an `fx.pixelSort` entry overwrites when opened; a scene without
+  one leaves it alone. Applied to FX-011-R10, R11.
+- Q: How are the values stored and read back? → A: Settings `settings.pixelSort.enabled` (a real Bool, absent → off),
+  `settings.pixelSort.threshold` (a number; absent, unreadable or NaN → 0.5, out of range → nearest bound),
+  `settings.pixelSort.span` (an integer; absent or unreadable → 32, otherwise the largest of 4, 8, 16, 32, 64 not above
+  it, at least 4) and `settings.pixelSort.direction` (`horizontal` or `vertical`; anything else → horizontal), each
+  written only when changed. In a scene entry: `threshold` (0…1), `span` (4…64, then the same rounding down to a choice)
+  and `vertical` (0 or 1; ≥ 0.5 reads as vertical, like FX-014's `mode`). Applied to FX-011-R10, R11.
+- Q: What do the controls show and say? → A: The Threshold readout is a whole percent ("50%"); VoiceOver says
+  "Threshold" and ACC-005's percent value ("50 percent"), one percent per swipe. Span is a picker labelled "Span" with
+  choices "4 px" … "64 px"; Direction is a picker with "Horizontal" and "Vertical". The footer says lower thresholds sort
+  more of the picture, longer spans make longer streaks, very large displays may use a shorter span to stay within the
+  frame budget, and the effect can shimmer on busy content. Applied to FX-011-R9.
+- Q: Is the effective span or a budget skip shown to the user? → A: No: it is not an error and needs no action. The
+  compositor exposes the last frame's effective span, its workload, dispatch count and the number of budget-skipped
+  frames for tests and diagnostics; the footer explains the behaviour. Applied to FX-011-R6.
+- Q: Which colour does the threshold judge? → A: The pass's own input as stored (linear, premultiplied half float: the
+  composite or the previous effect's output, with Color folded in first when listed before it), so a transparent pixel
+  has luminance 0 and qualifies only at threshold 0. No tone map or display encoding is applied before judging. Applied
+  to FX-011-R3.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -137,14 +159,15 @@ same sort back when the scene or preset is opened.
 - **FX-011-R2**: Settings: threshold 0…1 (default 0.5, step 0.01), span one of 4, 8, 16, 32, 64 pixels (default 32),
   direction horizontal or vertical (default horizontal).
 - **FX-011-R3**: Tiles, qualification and segments as clarified: tiles of the effective span from the left (top) edge;
-  a pixel qualifies when its Rec. 709 luminance is finite and ≥ threshold; a segment is a maximal run of qualifying
-  pixels within one tile.
+  a pixel qualifies when the Rec. 709 luminance of its stored (linear, premultiplied) colour is finite and ≥ threshold;
+  a segment is a maximal run of qualifying pixels within one tile.
 - **FX-011-R4**: Within each segment the pixels are reordered so luminance is non-decreasing in the reading direction,
   ties in original order; non-qualifying pixels keep value and place; every pixel moves whole.
 - **FX-011-R5**: Fixed workload: the per-frame work is W × H × effective span steps regardless of the picture, encoded
   as exactly one GPU dispatch per active frame.
 - **FX-011-R6**: Frame budget B = 132,710,400 steps: the effective span is the largest allowed span ≤ the chosen span
-  with W × H × span ≤ B; if none, the pass is skipped and counted. The encoded work never exceeds B.
+  with W × H × span ≤ B; if none, the pass is skipped and counted. The encoded work never exceeds B. The effective span, workload, dispatch
+  count and skip count are exposed for tests and diagnostics, not shown to the user.
 - **FX-011-R7**: The effect is active only when on, the frame is at least 2 pixels along the sort direction and at least
   1 pixel across, and the budget admits a span; otherwise no pass runs, no picture is held and the output is
   bit-identical to the output before this feature.
