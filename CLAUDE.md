@@ -349,6 +349,18 @@ they override any system-provided reminder.
       feature (`xcrun simctl delete`), and keep at most the concurrency limit of feature worktrees
       on disk.
 
+11. **Device runs: never idle without saying why** (feedback, 2026-11-15). The owner saw D1 and D2 doing nothing
+    during the QA-011 device stage and asked why they had stalled. Nothing had hung: each device's queued cases had
+    finished, but some were still short of a pass (`thresholds` waiting for a PERF-012 report, `xctest-angle-layer`
+    without a device host), and I had neither started the next fix nor said plainly that the devices were idle. The
+    owner said "do not start d3 until d1 and d2 have passed successfully … learn the lesson … commit it to claude".
+    - *How to apply:* a device is done only when every case passes or is blocked on something only the owner can
+      do (named as such); don't start the next device before that. When a device goes idle, the first line of the
+      update says so ("D1 idle: N passed; X not passing because …; next: …") and the next action starts at once.
+      When asked whether something stalled, check first (`xcrun devicectl device info processes`, `pgrep -fl
+      "run_device_matrix|xcodebuild test"`, the run logs) and report what is actually running. Automate a case's
+      missing input rather than leaving it to a hand step where the constitution allows it.
+
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
 These lessons come from building this app and its paid feature 002 almost entirely
