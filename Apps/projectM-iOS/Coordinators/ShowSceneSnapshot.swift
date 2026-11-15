@@ -13,6 +13,7 @@
 // * This is a minimal path because SCN-002's restore was not integrated when SHOW-001 was built;
 //   unify the two (same layer mapping, same seven values) once it is (ADR-0033 follow-up).
 // Pure functions; no files.
+import Compositor
 import Foundation
 import ParameterGraph
 import SceneFormat
@@ -38,6 +39,8 @@ struct ShowLook: Equatable, Sendable {
     var videoSpeedPercent: Int? = nil
     /// MED-006-R12: the image slideshow (nil: off and empty).
     var slideshow: SceneSlideshow? = nil
+    /// MED-007-R10: the photo's Ken Burns movement (nil: off).
+    var kenBurns: KenBurnsMotion? = nil
     /// MED-010-R10: the logo and its placement (nil: none).
     var logo: SceneLogo? = nil
 }
@@ -98,7 +101,7 @@ enum ShowSceneSnapshot {
         case .linearSpectrum:
             contents = [.linearSpectrum]
         case .photo:
-            if let asset = SceneSlideshowBridge.photoAsset(photoID: look.photoID, slideshow: look.slideshow) {   // MED-006
+            if let asset = SceneSlideshowBridge.photoAsset(photoID: look.photoID, slideshow: look.slideshow, kenBurns: look.kenBurns) {   // MED-006, MED-007
                 assets[photoKey] = asset
                 contents.append(.photo(asset: photoKey))
             }

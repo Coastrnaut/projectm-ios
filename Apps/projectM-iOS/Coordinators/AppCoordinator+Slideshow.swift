@@ -20,6 +20,7 @@ extension AppCoordinator {
     func connectSlideshow() {
         slideshow.announce = { [weak self] (text: String) -> Void in self?.announcer.announce(text, kind: .library) }
         slideshow.onPlaybackChange = { [weak self] () -> Void in self?.refreshPhotoContent() }
+        connectKenBurns()   // MED-007
     }
 
     /// What the photo layer shows: the slideshow's current slide when it is on, else the stored photo.
@@ -33,6 +34,7 @@ extension AppCoordinator {
         guard let host = photoVisual else { return }
         host.content = photoLayerContent
         if let next = slideshow.nextURL { host.preload(next) }
+        applyKenBurns()   // MED-007-R8: the slideshow started, stopped or was edited
     }
 
     /// MED-006-R7: the shortest time between two slide changes for the effective safety limits.
@@ -43,8 +45,8 @@ extension AppCoordinator {
     /// One frame of the Photo visual (before compositing).
     func slideshowTick() {
         guard slideshow.isActive, let host = photoVisual else { return }
-        let grid: SlideshowBeatGrid? = slideshow.settings.mode == .beats
-            ? SlideshowCoordinator.grid(snapshot: tempo.snapshot, readout: tempo.readout) : nil
+        let grid: SlideshowBeatGrid? = currentSlideshowGrid
+        if kenBurns.isEnabled { host.photo.kenBurnsDurationNanoseconds = kenBurnsDurationOverride(grid: grid) }   // MED-007-R8
         guard let url = slideshow.tick(now: MonotonicClock.nowNanoseconds(), grid: grid, floorNanoseconds: slideshowFloorNanoseconds) else { return }
         host.content = .file(url)
         if let next = slideshow.nextURL { host.preload(next) }

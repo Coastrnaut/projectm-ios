@@ -43,6 +43,8 @@ struct SceneInputs: Equatable, Sendable {
     var videoSpeedPercent: Int? = nil
     /// MED-006-R12: the image slideshow (nil: off and empty).
     var slideshow: SceneSlideshow? = nil
+    /// MED-007-R10: the photo's Ken Burns movement (nil: off).
+    var kenBurns: KenBurnsMotion? = nil
     /// CMP-015-R5 (research CMP-015-D2): the saved composite of each drawn layer kind (`photo`, `video`,
     /// `text`, `spectrum.circular`), edited in the layer inspector. nil keeps a matched layer's carried
     /// composite (callers that do not track composites); non-nil is authoritative, a missing kind
@@ -183,7 +185,7 @@ enum SceneAutosaveCapture {
         case .linearSpectrum:
             contents = [.linearSpectrum]
         case .photo:
-            if let asset = SceneSlideshowBridge.photoAsset(photoID: inputs.photoID, slideshow: inputs.slideshow) {   // MED-006
+            if let asset = SceneSlideshowBridge.photoAsset(photoID: inputs.photoID, slideshow: inputs.slideshow, kenBurns: inputs.kenBurns) {   // MED-006, MED-007
                 assets[photoKey] = asset
                 contents = [.photo(asset: photoKey)]
             }

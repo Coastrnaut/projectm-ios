@@ -6,6 +6,8 @@
 // MOD-009-T09 (MOD-009-R9, S6): a 1-beat synced oscillator on the glow follows the tap tempo (120 BPM: a 0.5 s cycle)
 // read from `TempoCoordinator.snapshot` each frame, and after Reset continues smoothly at its stored rate.
 // MOD-008-T10 (MOD-008-R3, S5): a seeded sample-and-hold oscillator on the glow holds its seeded level for each step.
+// MOD-016-T09 (MOD-016-R2, R4, R6, S5): a seeded random walk on the glow follows its timeline, inside its bounds and
+// without jumps.
 import Foundation
 import Metal
 import ParameterGraph
@@ -136,5 +138,25 @@ final class LFOBindingAppTests: XCTestCase {
         }
         XCTAssertEqual(held.count, 5)
         XCTAssertGreaterThan(Set(held.values).count, 1, "the level changes between steps")
+    }
+
+    func testRandomWalkBindingDrivesTheGlowAlongItsTimeline() throws {
+        let lfo = try LFO(shape: .randomWalk, rateHz: 2, amplitude: 0.6, center: 0.5, seed: 16, smoothness: 1)
+        let host = try makeHost(lfo)
+        let bound: Double = 0.6 * RandomWalk.maximumSlope(smoothness: 1) * 2 / 60   // per 60 Hz frame
+        var glows: [Double] = []
+        for index in 0...120 {   // 2 s at 60 fps: 4 targets
+            let elapsed = UInt64(index) * Self.frame
+            apply(host, at: Self.origin + elapsed)
+            let glow = Double(host.effectiveGlow.intensity)
+            XCTAssertEqual(glow, lfo.value(elapsedNanoseconds: elapsed), accuracy: 1e-6, "frame \(index) follows the walk")
+            XCTAssertTrue(glow >= 0.2 - 1e-6 && glow <= 0.8 + 1e-6, "frame \(index) stays within centre ± depth/2")
+            if let previous = glows.last {
+                XCTAssertLessThanOrEqual(abs(glow - previous), bound + 1e-6, "no jump at frame \(index)")
+            }
+            glows.append(glow)
+        }
+        XCTAssertGreaterThan(Set(glows).count, 100, "the glow moves smoothly, not in steps")
+        XCTAssertEqual(host.glow.intensity, 0.5, "the manual intensity is unchanged")
     }
 }

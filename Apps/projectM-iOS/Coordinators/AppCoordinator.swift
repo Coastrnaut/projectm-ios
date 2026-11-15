@@ -254,6 +254,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let photos: PhotoCoordinator
     /// The image slideshow (MED-006): pictures, order, timing and the schedule; drives the Photo visual.
     let slideshow: SlideshowCoordinator
+    /// MED-007: the photo's Ken Burns pan and zoom (shared by every slide).
+    let kenBurns: KenBurnsCoordinator
     /// The logo overlay (MED-010): the stored logo, its placement and the compositor visuals' logo layers.
     let logo: LogoCoordinator
     /// UIX-011: palettes and the scene's palette link.
@@ -483,6 +485,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings = midiMappingCoordinator
         photos = PhotoCoordinator.makeDefault(defaults: defaults)
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
+        kenBurns = KenBurnsCoordinator.makeDefault(defaults: defaults)   // MED-007
         logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
         palettes = PaletteCoordinator.makeDefault()   // UIX-011 (after FILE-005's pending restore and FILE-011's erase)
         macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
@@ -500,7 +503,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
-            if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
+            if let restore = values.slideshow {   // MED-006-R12, MED-007-R10 (in init: no method call on self yet)
+                slideshow.restore(restore.value)
+                kenBurns.restore(restore.kenBurns)
+            }
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
             macros.restore(values.macros)   // MOD-010: restored, not applied
             palettes.restore(values.paletteID)   // UIX-011
@@ -1302,6 +1308,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let next = slideshow.nextURL { host.preload(next) }
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             photoVisual = host
+            applyKenBurns()   // MED-007
             applyLayerState(to: host.compositor)   // CMP-015
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
         } catch {
@@ -1733,7 +1740,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
             videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
-            if let restore = values.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
+            if let restore = values.slideshow { restorePhotoMotion(restore) }   // MED-006-R12, MED-007-R10
             if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
             macros.restore(values.macros)   // MOD-010: restored, not applied
             palettes.restore(values.paletteID)   // UIX-011
@@ -1766,6 +1773,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
                     videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
                     slideshow: slideshow.sceneValue,   // MED-006
+                    kenBurns: kenBurns.sceneValue,   // MED-007
                     layerComposites: layers.composites,   // CMP-015
                     logo: logo.sceneLogo,   // MED-010
                     effects: liveEffectSettings,   // FX-020
@@ -1827,6 +1835,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     func systemReduceMotionChanged(_ enabled: Bool) {
         settings.systemReduceMotion = enabled
         nativeVisual?.reduceMotion = enabled   // VIS-007-R5
+        photoVisual?.photo.reduceMotion = enabled   // MED-007-R7
         applyReduceFlashing()
     }
 
