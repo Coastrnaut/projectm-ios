@@ -85,6 +85,14 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   larger stored thickness with it, so what the slider shows is what is drawn. A scene or old stored value with a larger
   thickness is kept and used as spacing − 1. Applied to FX-018-R2, R8.
 
+### Session 2026-11-15 (speckit-analyze)
+
+- Finding A1 (underspecified): at spacing 2 the thickness range is 1…1; the Thickness slider then shows 1 and is
+  disabled (a slider with equal bounds is not offered). Applied to FX-018-R8. Finding A2 (coverage): T11 now asserts
+  the sliders' spoken values. Finding A3 (ambiguity): S2 names the representative 4K cases (spacings 2, 3 and 16)
+  within the test budget; every spacing 2…16 runs at the three smaller sizes. Finding A4 (coverage): T05 states the
+  shader shape behind FX-018-R6 (one read, no loop). No constitution conflicts; every requirement has a task.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A scanline look (Priority: P1)
@@ -173,7 +181,7 @@ same lines back when the scene or preset is opened.
   standard order. Its position is honoured; the flash guard and the tone map always run after it.
 - **FX-018-R8**: Settings has a "Scanlines" section: an on/off toggle, Spacing, Thickness and Intensity sliders with
   ACC-005 spoken values (Spacing and Thickness "3 px", spoken "3 pixels"; Intensity "50%", spoken "50 percent"), an
-  Orientation picker, and help text. The Effect order screen lists it with its own on/off switch.
+  Orientation picker, and help text; at spacing 2 the Thickness slider shows 1 and is disabled. The Effect order screen lists it with its own on/off switch.
 - **FX-018-R9**: The values are saved on the device, restored at launch, included in library backups, erased with the
   other settings, checked on read, and removed by the UI-test reset.
 - **FX-018-R10**: Scenes and effect-chain presets store Scanlines as an `fx.scanlines` entry (`spacing`, `thickness`,
@@ -198,8 +206,8 @@ same lines back when the scene or preset is opened.
 
 - **FX-018-S1**: Off, and on at intensity 0 (several spacings, thicknesses and both orientations), are bit-identical to
   the output without the feature on random content; all existing RenderGoldens pass unchanged.
-- **FX-018-S2**: For every spacing 2…16 and several output sizes (odd widths and heights, portrait and landscape, a 4K
-  size), the darkened rows (columns) are exactly the predicted ones, all darkened by one factor, all other pixels
+- **FX-018-S2**: For every spacing 2…16 at several output sizes (odd widths and heights, portrait and landscape), and
+  for representative spacings (2, 3, 16) at a 4K size, the darkened rows (columns) are exactly the predicted ones, all darkened by one factor, all other pixels
   bit-identical, and the pitch measured from the rendered picture (first row of each dark band to the next) equals the
   spacing exactly for every pair of bands.
 - **FX-018-S3**: The GPU output equals the software reference within half-float rounding, and every output is finite

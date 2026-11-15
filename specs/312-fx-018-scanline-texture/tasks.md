@@ -31,7 +31,8 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
 **Independent test**: GPU tests through the real compositor.
 
 - [ ] FX-018-T05 [US1] `ScanlinesPass` with `cmp_scanlines` in
-  `Packages/Compositor/Sources/Compositor/ScanlinesPass.swift` (one pooled picture, released when unused)
+  `Packages/Compositor/Sources/Compositor/ScanlinesPass.swift` (one pooled picture, released when unused; one exact
+  read per pixel, an integer modulo and at most one multiply, no loop: FX-018-R6)
 - [ ] FX-018-T06 [US1] `Compositor.swift`: `scanlines` property, splice the source at the existing compile site, the
   `.scanlines` case in `encodeOutputEffects` (Color folded before it), release in deinit; add the source to
   `CompositorShaderSources.archived` (FX-018-R4, R7, R11, R13)
@@ -61,7 +62,8 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
   `LibraryBackupAppTests`, `LibraryEraseAppTests` (FX-018-R1, R9)
 - [ ] FX-018-T11 [US1] [US3] UI: `ScanlinesSection.swift` (toggle, three ACC-005 sliders, orientation picker, help text)
   in Settings, the Effect order row and name in `EffectChainSetting`/`EffectChainView`; `ScanlinesSettingTests`
-  (persistence with a reloaded store, clamping, thickness follows spacing, scene apply); update the order tests that
+  (persistence with a reloaded store, clamping, thickness follows spacing, scene apply); the spoken values ("3 pixels",
+  "50 percent") and the disabled Thickness slider at spacing 2; update the order tests that
   list every kind; `ScanlinesUITests` under 30 s; `EffectChainUITests` still pass (FX-018-R8, S5)
 
 ## Phase 5: Polish
