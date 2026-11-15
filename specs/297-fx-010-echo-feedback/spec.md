@@ -56,6 +56,27 @@ answer is the conservative option.
   scaled down so its longer side is at most 960 pixels. The worst case is 4 × 960 × 960 × 8 bytes = 29,491,200 bytes
   of picture data whatever the output size, echo count or delay. Applied to FX-010-R6, R7.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Is the echo delay counted in frames or in milliseconds? → A: Milliseconds on the compositor's frame clock (the
+  injected frame durations Trails already use), 10…500 ms, so echoes are as far apart in time at 30, 60 or 120 fps.
+  Applied to FX-010-R3, R5.
+- Q: How are the echoes combined with the live picture: added, mixed, or the brighter of the two? → A: The brighter of
+  the two per channel (like FX-009 Trails), with the echo weights summing to at most 1: the output is never brighter
+  than the brightest frame it is made of, so Echo adds no new peak brightness, and the live picture is never dimmed.
+  Applied to FX-010-R2, US3.
+- Q: Are the stored frames copies of the picture entering Echo, or of Echo's own output (an echo of an echo)? → A: Of
+  the picture entering Echo: no feedback loop, so each copy appears once with exactly its own weight and nothing
+  accumulates. Applied to FX-010-R2, Assumptions.
+- Q: When Echo turns off, is its history memory freed or kept for a quick return? → A: Freed (returned to the shared
+  texture pool, fenced by the last command buffer), like every other output effect; turning it on again allocates the
+  ring once and starts from an empty history. Applied to FX-010-R6.
+- Q: Is Echo a global setting or a per-scene value? → A: Both, like Trails, the chromatic split and the directional
+  blur: a global setting the visuals use, which a scene or effect-chain preset with an `fx.echo` entry overwrites when
+  opened; a scene without one leaves it alone (FX-020's rule). Applied to FX-010-R13, R14.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Delayed copies of motion (Priority: P1)
