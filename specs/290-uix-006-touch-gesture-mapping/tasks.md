@@ -5,9 +5,9 @@
 
 ## Phase 1: Pure rules (PerformanceControl)
 
-- [ ] UIX-006-T01 Gestures, action catalogue, configuration (JSON, defaults, unknown names ignored) in `Packages/PerformanceControl/Sources/PerformanceControl/Gestures/GestureShortcuts.swift` (R1, R2, R9; data model)
-- [ ] UIX-006-T02 Classifier with the R10 thresholds and the precedence resolver (G1, G2; R3, R4, R5, R6) in the same file
-- [ ] UIX-006-T03 Pure tests `GestureShortcutTests.swift`: every overlapping pair resolves per the table, None hands over to the next or to nothing, master off and VoiceOver fire nothing, classifier thresholds, catalogue has no blackout/destructive action, JSON round trip and unknown names (S1, S2)
+- [X] UIX-006-T01 Gestures, action catalogue, configuration (JSON, defaults, unknown names ignored) in `Packages/PerformanceControl/Sources/PerformanceControl/Gestures/GestureShortcuts.swift` (R1, R2, R9; data model)
+- [X] UIX-006-T02 Classifier with the R10 thresholds and the precedence resolver (G1, G2; R3, R4, R5, R6) in the same file
+- [X] UIX-006-T03 Pure tests `GestureShortcutTests.swift`: every overlapping pair resolves per the table, None hands over to the next or to nothing, master off and VoiceOver fire nothing, classifier thresholds, catalogue has no blackout/destructive action, JSON round trip and unknown names (S1, S2) — Verified 2026-11-15: `swift test --filter GestureShortcutTests` (PerformanceControl), 8 tests pass
 
 ## Phase 2: App (US1, US3)
 
