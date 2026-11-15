@@ -101,6 +101,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.particleFountain.gravity",   # VIS-008-R10
                 "settings.particleOrbit.radius",   # VIS-009-R10
                 "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   # VIS-013-R9
+                "settings.kaleidoscope.wedges",   # VIS-014-R9
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)
@@ -134,6 +135,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.externalDisplay.fit", "settings.externalDisplay.shape",   # OUT-004-R8 (external output correction)
                 "settings.externalDisplay.pixelAspect",   # OUT-004-R8
                 "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   # OUT-003-R7
+                "settings.externalDisplay.outputMode",   # OUT-006-R7
                 "settings.recording.timedStop",   # REC-008-R9 (stop recording after a length; Off by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11

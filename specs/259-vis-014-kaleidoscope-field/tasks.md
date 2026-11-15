@@ -1,0 +1,39 @@
+# Tasks: VIS-014 Kaleidoscope Field
+
+**Input**: `specs/259-vis-014-kaleidoscope-field/` (spec, plan, research, data-model, contracts/kaleidoscope.md)
+
+## Phase 1: Shared fold (VIS-014-R3, R4, R6)
+
+- [X] VIS-014-T01 `KaleidoscopeFold` (CPU mirror, constants) and `KaleidoscopeFoldShader.function` in `Packages/VisualGenerators/Sources/VisualGenerators/KaleidoscopeFold.swift` (research D2). — Verified 2026-11-14: swift test --filter Kaleidoscope (KaleidoscopeFoldTests 5 passed)
+- [X] VIS-014-T02 [P] `KaleidoscopeFoldTests`: identity below 2 wedges; continuity across every boundary and axis and the ±π wrap for N = 2, 5, 6, 24 (K2); rotation and mirror invariance (K3); Linux shape. — Verified 2026-11-14: KaleidoscopeFoldTests 5 passed on the host and in the -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE shape
+
+## Phase 2: User Story 1 + 2 - the folded field (VIS-014-R1, R2, R4-R8)
+
+- [X] VIS-014-T03 `NoiseFieldConfiguration.wedges` and `kaleidoscope(wedges:…)`; `NoiseFieldDrive` spin and rotation (research D3). — Verified 2026-11-14: KaleidoscopeDriveFlashTests 4 passed; NoiseFieldDriveTests unchanged and passing
+- [X] VIS-014-T04 `NoiseFieldFlashAreas` folds its sample points; `NoiseFieldGenerator` appends the fold function and writes wedges and rotation into the former padding. — Verified 2026-11-14: NoiseFieldRenderTests 3 passed with the recorded VIS-013 digests unchanged (K4); KaleidoscopeRenderTests 3 passed
+- [X] VIS-014-T05 [P] `KaleidoscopeDriveFlashTests`: silence and full bass settle to 0.1 and 0.4 rad/s, never above 0.4, half with Reduce Motion; rotation never backwards and ≤ 1 s per frame; no rotation when unfolded; bursts alternating with silence within the envelope in all 17 areas with Reduce flashing on and off (S3, S4). — Verified 2026-11-14: KaleidoscopeDriveFlashTests 4 passed (worst 1 transition per window with Reduce flashing on, 4 off; limits 4/6)
+- [X] VIS-014-T06 `KaleidoscopeRenderTests` (GPU): N-fold rotation and mirror symmetry for N = 5 and 6 and the other count's rotation rejected (S1); seam test across every boundary and axis, square and non-square (S2); GPU agrees with the CPU fold; Noise Field digests unchanged (K4). — Verified 2026-11-14: KaleidoscopeRenderTests 3 passed on the host GPU: rotation/mirror mean |Δ| ≈ 8e-5 vs the other count's rotation 0.026-0.030; seams side ≈ 1.5e-4, centre 0.004-0.005 ≤ interior 0.0065-0.0084 (square and 160 × 96); GPU vs CPU fold < 0.02
+- [X] VIS-014-T07 `KaleidoscopeGoldenTests` + goldens (macOS host, iOS Simulator) (S5). — Verified 2026-11-14: swift test --filter 'Kaleidoscope|NoiseField' (RenderGoldens 4 passed, macOS golden recorded then identical) and xcodebuild test on "VIS14 iPhone 17" (iOS 27.2): kaleidoscope goldens identical (SSIM 1.0), integrity passed, NoiseField goldens identical
+
+## Phase 3: User Story 3 - the app (VIS-014-R9, R11, R12)
+
+- [X] VIS-014-T08 Visual choice `kaleidoscope`, key `settings.kaleidoscope.wedges`, Wedges stepper, host style and in-place update, accessibility value, scene capture as no layer; key in `ALLOWED_KEYS`, FILE-005 policy, UI-test reset. — Verified 2026-11-14: xcodebuild build-for-testing on VIS14 iPhone 17 with the type-check flags (no warning in touched code); KaleidoscopeAppTests 4 passed
+- [X] VIS-014-T09 [P] `KaleidoscopeAppTests` (setting persists and falls back, style mapping, value text, in-place wedge change, switching to Noise Field turns the fold off) and existing list tests updated; `LibraryBackupAppTests` passes. — Verified 2026-11-14: xcodebuild test-without-building: KaleidoscopeAppTests, NoiseFieldAppTests, SettingsTests, CameraVisualTests, LibraryBackupAppTests (30 passed)
+- [X] VIS-014-T10 [P] `KaleidoscopeUITests`: choose Kaleidoscope, Wedges offered, Bars not, raise Wedges, value "7 wedges…", source started once (< 30 s). — Verified 2026-11-14: KaleidoscopeUITests passed in 22.7 s on VIS14 iPhone 17
+
+## Phase 4: Polish
+
+- [X] VIS-014-T11 Touched package suites, Linux shape, repo checks, privacy manifest and network symbol scans, type-check budget. — Verified 2026-11-14: VisualGenerators swift test 291 passed (40 s); Linux shape 244 passed (33 s); RenderGoldens 'Golden' 92 passed (1 on-demand skip; NoiseField goldens identical); LibraryBackup 87 passed; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events, test_scripts (179) all exit 0; check_privacy_manifest OK; check_network_symbols OK (19 images); no type-check warning in touched code
+- [ ] VIS-014-T12 {device} On D1 with music, Kaleidoscope holds the display's frame rate on the PERF-001/007 overlay and shows no seam at 2, 7 and 24 wedges.
+
+## Dependencies
+
+T01 → T02, T03, T04; T03-T04 → T05-T07; T04 → T08 → T09, T10; all → T11. T12 needs a device.
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- Coverage: every R1-R13 maps to a task (R3, R4, R6 T01-T02, T06; R1, R2, R5, R7, R8 T03-T06; R10 T07; R9, R11,
+  R12 T08-T10; R13 T06 (K4 digests), T11). S1-S7 each have a test task. No constitution conflict.
+- Fix applied: the non-square edge case is covered by the golden (256 × 192) and the seam test's non-square run
+  in T06 (the fold centre is the frame centre, the shorter side sets the scale).
+- Fix applied: T11 also runs the Noise Field goldens and render tests, since S5 requires them unchanged.

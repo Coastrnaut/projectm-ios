@@ -1,5 +1,7 @@
 // NoiseFieldDrive.swift — how the bands move the noise field (VIS-013-R5, R7, R8; research VIS-013-D3).
 //
+// VIS-014: while folded, the low group also sets the kaleidoscope's turning speed (smoothed, ≤ 0.4 rad/s) and the
+// rotation advances on the same clock as the drift.
 // Per frame: VIS-007's band groups → targets (warp = base + depth × low; brightness = 0.5 + 0.3 × overall, ≤ 0.8) →
 // one-pole smoothing on the frame's duration (τ 0.25 s; the frame time clamped to 0…0.1 s) → the drift phase on the
 // injected clock (cells, from the first frame after a reset; at most 1 s per frame, never backwards). No wall clock,
@@ -19,6 +21,10 @@ public struct NoiseFieldDrive: Sendable, Equatable {
     public private(set) var brightness: Double = NoiseFieldConfiguration.baseBrightness
     /// Drift, cells.
     public private(set) var phase: Double = 0
+    /// VIS-014: kaleidoscope turning speed, rad/s (smoothed; only advanced while folded).
+    public private(set) var spin: Double = KaleidoscopeFold.baseSpin
+    /// VIS-014: kaleidoscope rotation, radians in [0, 2π) (only advanced while folded; never backwards).
+    public private(set) var rotation: Double = 0
     private var lastNanoseconds: UInt64?
 
     public init() {}
@@ -46,9 +52,18 @@ public struct NoiseFieldDrive: Sendable, Equatable {
         warp += (target.warp - warp) * k
         brightness += (target.brightness - brightness) * k
         brightness = min(brightness, NoiseFieldConfiguration.maximumBrightness)
+        let folded: Bool = configuration.isKaleidoscope
+        if folded {
+            let spinTarget: Double = KaleidoscopeFold.spinTarget(low: groups.low, reduceMotion: configuration.reduceMotion)
+            spin += (spinTarget - spin) * k
+        }
         if let last = lastNanoseconds, nanoseconds > last {
             let seconds: Double = min(Double(nanoseconds - last) / 1e9, NoiseFieldConfiguration.maxDriftStep)
             phase += configuration.effectiveDriftSpeed * seconds
+            if folded {
+                let turn: Double = 2 * Double.pi
+                rotation = (rotation + spin * seconds).truncatingRemainder(dividingBy: turn)
+            }
         }
         if lastNanoseconds == nil || nanoseconds > lastNanoseconds! { lastNanoseconds = nanoseconds }
     }
