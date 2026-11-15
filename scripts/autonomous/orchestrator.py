@@ -143,7 +143,10 @@ def retire_worktree(wt: Worktrees, fid: str) -> bool:
 
 def sweep_worktrees(wt: Worktrees, store) -> list[str]:
     """Pre-batch sweep: remove merged worktrees that no running agent uses."""
-    active = {fid.lower() for fid in store.in_flight()}
+    # Every roadmap feature that is not finished keeps its checkout, not only the in-flight ones: a fresh
+    # worktree has no commits of its own, so it counts as merged, and two were swept before their agents
+    # started (SHD-007 on 2026-11-14, FX-005 on 2026-11-15).
+    active = {fid.lower() for fid, state in store.states().items() if state not in DONE_STATES}
     removed, kept = wt.sweep(active)
     if removed:
         print(f"swept {len(removed)} merged worktrees", file=sys.stderr)
