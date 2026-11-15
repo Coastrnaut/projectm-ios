@@ -23,7 +23,9 @@ public enum OutputEffectKind: String, CaseIterable, Sendable, Hashable {
     case mosaic = "fx.mosaic"
     /// FX-014 Edge outline (appended after Mosaic: stored orders without it read with it last; ADR-0114).
     case edgeOutline = "fx.edgeOutline"
-    /// FX-015 Vignette (appended last, after Edge outline: stored orders without it read with it last; ADR-0116).
+    /// FX-016 Lens distortion (appended after Edge outline: stored orders without it read with it last; ADR-0117).
+    case lensDistortion = "fx.lensDistortion"
+    /// FX-015 Vignette (appended last, after Lens distortion: stored orders without it read with it last; ADR-0116).
     case vignette = "fx.vignette"
 }
 
@@ -40,9 +42,10 @@ public struct OutputEffectOrder: Sendable, Hashable, CustomStringConvertible {
     public let effects: [OutputEffectKind]
 
     /// Today's order: Trails, then Color (FX-020-R1), then FX-006's Chromatic split, FX-007's Directional blur,
-    /// FX-008's Radial blur, FX-010's Echo and FX-012's Mosaic, then FX-014's Edge outline and FX-015's Vignette.
+    /// FX-008's Radial blur, FX-010's Echo and FX-012's Mosaic, then FX-014's Edge outline, FX-016's Lens distortion and
+    /// FX-015's Vignette.
     public static let standard = OutputEffectOrder([.trails, .grade, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic,
-                                                    .edgeOutline, .vignette])   // FX-014, FX-015 appended
+                                                         .edgeOutline, .lensDistortion, .vignette])   // FX-014, FX-016, FX-015 appended
 
     /// Repeats are dropped (the first counts); missing kinds are appended in standard order.
     public init(_ kinds: [OutputEffectKind]) {

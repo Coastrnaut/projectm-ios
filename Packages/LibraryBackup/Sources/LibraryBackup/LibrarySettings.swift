@@ -105,6 +105,7 @@ public enum LibrarySettingsPolicy {
         "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   // FX-012-R9
         "settings.edgeOutline.enabled", "settings.edgeOutline.threshold", "settings.edgeOutline.width",   // FX-014-R10
         "settings.edgeOutline.color", "settings.edgeOutline.mode",
+        "settings.lensDistortion.enabled", "settings.lensDistortion.strength", "settings.lensDistortion.zoomToFill",   // FX-016-R9
         "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   // FX-015-R9
         "settings.vignette.centerX", "settings.vignette.centerY",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
