@@ -374,6 +374,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
+    /// ACC-009: the one-handed layout preference (Settings → One-handed layout; Off by default; iPhone only).
+    @ObservationIgnored private(set) lazy var oneHanded = OneHandedSetting(defaults: defaults)
     /// SHOW-006: cue rehearsal (session only; device-only panel).
     @ObservationIgnored private(set) lazy var cueRehearsal: CueRehearsalCoordinator = makeCueRehearsal()
     /// SHOW-007: the show timeline transport (Play/Pause over SHOW-005's Hold, seek, scrub, Loop).
@@ -634,6 +636,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
         ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
+        NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
@@ -641,6 +644,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
+        #if DEBUG
+        // LibraryCheckUITests (PRE-018): the broken files are written right after the reset, in `init`, before anything
+        // can open the user preset store (the renderer's pending-trial run may open it before the library task).
+        UITestBrokenLibraryFixture.seedFilesIfRequested()
+        #endif
         if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
         if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
         if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
@@ -1045,9 +1053,6 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presetLoader.library = library
                 // PRE-012: the imported presets are read first (a preset that ended the last launch
                 // is quarantined there), so the library never lists one that must not play.
-                #if DEBUG
-                UITestBrokenLibraryFixture.seedFilesIfRequested()   // LibraryCheckUITests (PRE-018)
-                #endif
                 await userPresets.load()
                 await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)

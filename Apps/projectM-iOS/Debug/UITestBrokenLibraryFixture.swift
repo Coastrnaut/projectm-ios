@@ -1,10 +1,10 @@
 // UITestBrokenLibraryFixture.swift — DEBUG only: `-uitestBrokenLibrary` with `-uitestResetNotice`
 // (PRE-018-T11; LibraryCheckUITests). Seeds one issue of every kind and every reference store:
-//   * files (before the user presets load): "Textured" (a warp shader using a texture the app does not
+//   * files (in the UI-test reset, before anything opens the user preset store): "Textured" (a warp shader using a texture the app does not
 //     have), "Lost" (its stored file deleted), "Broken" (stored without the [preset00] header, playable),
 //     and "Clean";
-//   * references (after the library is attached): a favorite, a tag, an adjustment, a collection entry
-//     and a recently played entry, each naming a preset ID that does not exist.
+//   * references (after the library is attached): a favorite, a tag, an adjustment, a note (PRE-011), a
+//     collection entry and a recently played entry, each naming a preset ID that does not exist.
 // The preset text is written for this repository. `-uitestResetNotice` has already removed the folders.
 #if DEBUG
 import Foundation
@@ -43,7 +43,9 @@ enum UITestBrokenLibraryFixture {
                           license: PresetLicenseMetadata(authorFromFileName: false, linesFound: []))
     }
 
-    /// Before `UserPresetsCoordinator.load()`.
+    /// At the end of the UI-test reset in `AppCoordinator.init`: before anything opens the user preset store. The store is
+    /// read once per launch, and the renderer's pending-trial run (`rendererReady`) can open it before the library
+    /// task reaches `UserPresetsCoordinator.load()`; files written after that were never listed.
     static func seedFilesIfRequested() {
         guard requested else { return }
         let store = UserPresetStore(directory: UserPresetStore.defaultDirectory())
@@ -63,6 +65,7 @@ enum UITestBrokenLibraryFixture {
         presets.favoritesVersion += 1
         _ = try? presets.tagStore.add("broken", to: goneID)
         _ = try? presets.overrides?.store.set(1.05, for: "zoom", preset: goneID)
+        _ = try? presets.noteStore.set("A note for a removed preset", for: goneID)   // PRE-011-R8
         if let collection = presets.createCollection(named: collectionName) {
             presets.changeCollections { _ = try presets.collectionStore.add(goneID, to: collection.id) }
         }

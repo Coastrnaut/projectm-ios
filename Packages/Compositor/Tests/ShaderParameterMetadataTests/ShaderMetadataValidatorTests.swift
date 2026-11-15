@@ -129,9 +129,11 @@ final class ShaderMetadataValidatorTests: XCTestCase {
         let none = "{\"schema\": 1, \"variant\": \"v\", \"name\": \"V\", \"summary\": \"S\", \"parameters\": []}"
         assertRejected(none, .parameterCount(document: d, count: 0))
         let item = "{\"id\": \"p%d\", \"label\": \"P\", \"kind\": \"bool\", \"slot\": %d, \"default\": false}"
-        let nine = (0..<9).map { (i: Int) -> String in String(format: item, i, i) }.joined(separator: ",")
-        assertRejected("{\"schema\": 1, \"variant\": \"v\", \"name\": \"V\", \"summary\": \"S\", \"parameters\": [\(nine)]}",
-                       .parameterCount(document: d, count: 9))
+        // SHD-006 (ADR): the cap is 16; sixteen pass, seventeen are refused.
+        let list = { (n: Int) -> String in (0..<n).map { (i: Int) -> String in String(format: item, i, i) }.joined(separator: ",") }
+        XCTAssertNoThrow(try validate("{\"schema\": 1, \"variant\": \"v\", \"name\": \"V\", \"summary\": \"S\", \"parameters\": [\(list(16))]}"))
+        assertRejected("{\"schema\": 1, \"variant\": \"v\", \"name\": \"V\", \"summary\": \"S\", \"parameters\": [\(list(17))]}",
+                       .parameterCount(document: d, count: 17))
         XCTAssertThrowsError(try validate(Self.valid, required: ["speed", "audioReactivity"])) { (error: Error) in
             XCTAssertEqual(error as? ShaderMetadataError, .missingRequiredParameter(document: d, parameterID: "audioReactivity"))
         }

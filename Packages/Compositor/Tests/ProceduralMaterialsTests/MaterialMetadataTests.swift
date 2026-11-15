@@ -39,7 +39,7 @@ final class MaterialMetadataTests: XCTestCase {
         XCTAssertEqual(values.value(for: shape), .enumeration("radial"), "an unknown case keeps the stored value")
     }
 
-    /// S3: the controls equal the metadata for every material (29 parameters).
+    /// S3: the controls equal the metadata for every material (34 parameters since SHD-006).
     func testControlsEqualTheMetadata() throws {
         var total = 0
         for kind in MaterialKind.allCases {
@@ -70,7 +70,7 @@ final class MaterialMetadataTests: XCTestCase {
                 total += 1
             }
         }
-        XCTAssertEqual(total, 29)
+        XCTAssertEqual(total, 34)
     }
 
     #if canImport(Metal) && !COMPOSITOR_NO_METAL

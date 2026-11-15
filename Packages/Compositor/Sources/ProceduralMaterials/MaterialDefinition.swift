@@ -22,7 +22,7 @@ public enum MaterialKind: String, CaseIterable, Sendable {
 
 public struct MaterialDefinition: Sendable, Hashable {
     /// The most parameters (uniform slots) a material may have.
-    public static let maximumParameterCount = 8
+    public static let maximumParameterCount = 16   // SHD-006 (ADR): was 8
 
     public let kind: MaterialKind
     public let displayName: String

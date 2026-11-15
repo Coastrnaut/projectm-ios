@@ -461,6 +461,48 @@ class WorktreeTests(unittest.TestCase):
         self.assertFalse(path.exists())
         self.assertEqual(self.wt.head("feature/aaa-001"), sha)
 
+    def test_sweep_removes_merged_idle_worktrees_with_submodules_and_keeps_the_rest(self):
+        # Owner rule 10 (2026-11-14): merged and idle -> removed (submodules too), never forced;
+        # active, dirty and unmerged checkouts stay; every branch stays.
+        sub = Path(self.tmp.name).resolve() / "sub"
+        sub.mkdir()
+        run(["git", "init", "-q", "-b", "main"], sub)
+        run(["git", "-c", "user.email=t@x.invalid", "-c", "user.name=T", "commit", "-q",
+             "--allow-empty", "-m", "s"], sub)
+        run(["git", "-c", "protocol.file.allow=always", "submodule", "add", "-q", str(sub), "vendor/sub"],
+            self.repo)
+        run(["git", "commit", "-q", "-m", "submodule"], self.repo)
+        for fid in ("AAA-001", "BBB-001", "CCC-001", "DDD-001"):
+            self.commit(fid, f"{fid}.txt", "x\n")
+        a = self.wt.path("AAA-001")
+        run(["git", "-c", "protocol.file.allow=always", "submodule", "update", "--init", "-q"], a)
+        for fid in ("AAA-001", "BBB-001", "CCC-001"):
+            self.assertTrue(self.wt.integrate(fid, gates_passed=True).ok)
+        (self.wt.path("CCC-001") / "wip.txt").write_text("unsaved")
+        removed, kept = self.wt.sweep(active={"bbb-001"})
+        self.assertEqual(removed, ["aaa-001"])
+        self.assertFalse(a.exists())
+        self.assertEqual(kept["bbb-001"], "in use by a running agent")
+        self.assertIn("uncommitted", kept["ccc-001"])
+        self.assertTrue(self.wt.path("DDD-001").exists())          # not merged: not swept
+        self.assertNotIn("ddd-001", kept)
+        for fid in ("AAA-001", "BBB-001", "CCC-001", "DDD-001"):
+            self.assertTrue(self.wt.branch_exists(wtm.branch_name(fid)))
+
+    def test_orchestrator_retires_a_worktree_after_integration_and_keeps_dirty_ones(self):
+        import orchestrator
+        self.commit("AAA-001", "a.txt", "a\n")
+        self.assertTrue(self.wt.integrate("AAA-001", gates_passed=True).ok)
+        self.assertTrue(orchestrator.retire_worktree(self.wt, "AAA-001"))
+        self.assertFalse(self.wt.path("AAA-001").exists())
+        self.assertTrue(self.wt.branch_exists("feature/aaa-001"))
+        path = self.commit("BBB-001", "b.txt", "b\n")
+        (path / "wip.txt").write_text("unsaved")
+        self.assertFalse(orchestrator.retire_worktree(self.wt, "BBB-001"))
+        self.assertTrue((path / "wip.txt").exists())
+        store = SimpleNamespace(in_flight=lambda: ["BBB-001"])
+        self.assertEqual(orchestrator.sweep_worktrees(self.wt, store), [])
+
     def test_dirty_or_wrong_branch_integration_checkout_is_refused(self):
         self.commit("AAA-001", "a.txt", "a\n")
         (self.repo / "shared.txt").write_text("local edit\n")

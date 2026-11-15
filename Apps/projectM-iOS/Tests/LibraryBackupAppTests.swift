@@ -29,6 +29,7 @@ final class LibraryBackupAppTests: XCTestCase {
 
     func testIncludedKeysAndFolderNamesAgreeWithTheStores() {
         let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys + EffectChainSetting.allKeys
+            + NoiseEditorStore.allKeys   // SHD-006-R7
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, TextOverlayStore.key,
                MIDIMappingCoordinator.mappingsKey, RecordingAudioSetting.includeMicrophoneKey,   // MIDI-003-R9, REC-004-R3
@@ -36,6 +37,7 @@ final class LibraryBackupAppTests: XCTestCase {
                ParameterShelf.pinsKey,   // UIX-004-R10
                RecordingCountdownSetting.key,   // REC-007-R8
                SceneHUDSetting.key,   // UIX-013-R11
+               OneHandedSetting.key,   // ACC-009-R9
                RecordingTimedStopSetting.key,   // REC-008-R9
                SplitEditorSetting.key,   // UIX-007-R7 (excluded: this device's screen)
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9

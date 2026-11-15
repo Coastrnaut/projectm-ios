@@ -95,6 +95,11 @@ struct MaterialParameterControlView: View {
             .accessibilityLabel(control.label)
             .accessibilityValue(MaterialInspectorModel.spoken(control))
             .accessibilityIdentifier(MaterialInspectorModel.identifier(control))
+            .accessibilityAdjustableAction { (direction: AccessibilityAdjustmentDirection) -> Void in   // SHD-006: swipe to step
+                let next: Double = direction == .increment ? number + step : number - step
+                guard write != nil, range.contains(next) else { return }
+                send(.integer(Int(next.rounded())))
+            }
     }
 
     private var picker: some View {

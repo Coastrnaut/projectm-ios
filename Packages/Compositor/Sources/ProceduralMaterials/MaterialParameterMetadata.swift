@@ -7,7 +7,8 @@
 // catalog builds the MOD-001 descriptors from the result; `MaterialMetadataTests` also checks every document
 // against the slots its fragment function reads. Values match SHD-001's data-model table; Gradient Field's
 // `shape` is SHD-003's enum. SHD-004: Plasma and Noise Flow list alternative variants (same parameters,
-// another fragment function `mat_<variant id>`). IDs are permanent: never rename, reuse or re-kind a parameter.
+// another fragment function `mat_<variant id>`). SHD-006: Noise Flow adds seed, lacunarity, gain and warp (slots 6-10)
+// and widens octaves to 1…8 (specs/245-shd-006-noise-editor). IDs are permanent: never rename, reuse or re-kind a parameter.
 // Plain Swift; builds on Linux.
 
 enum MaterialParameterMetadata {
@@ -82,12 +83,22 @@ enum MaterialParameterMetadata {
         {"id": "speed", "label": "Drift (cells per second)", "kind": "float", "slot": 1, "unit": "perSecond",
          "min": 0, "max": 1, "step": 0.01, "default": 0.08},
         {"id": "octaves", "label": "Detail (octaves)", "kind": "int", "slot": 2, "unit": "count",
-         "min": 1, "max": 5, "step": 1, "default": 3},
+         "min": 1, "max": 8, "step": 1, "default": 3},
         {"id": "tint", "label": "Tint", "kind": "color", "slot": 3, "default": [0.10, 0.35, 0.45, 1]},
         {"id": "brightness", "label": "Brightness", "kind": "float", "slot": 4, "unit": "normalized",
          "min": 0, "max": 1, "step": 0.01, "default": 0.6},
         {"id": "audioReactivity", "label": "Audio reactivity", "kind": "float", "slot": 5, "unit": "normalized",
-         "min": 0, "max": 1, "step": 0.01, "default": 0.25}
+         "min": 0, "max": 1, "step": 0.01, "default": 0.25},
+        {"id": "seed", "label": "Seed", "kind": "int", "slot": 6, "unit": "none",
+         "min": 0, "max": 65535, "step": 1, "default": 0},
+        {"id": "lacunarity", "label": "Lacunarity (frequency step per octave)", "kind": "float", "slot": 7, "unit": "none",
+         "min": 1.5, "max": 3.5, "step": 0.01, "default": 2.03},
+        {"id": "gain", "label": "Gain (strength step per octave)", "kind": "float", "slot": 8, "unit": "none",
+         "min": 0.2, "max": 0.8, "step": 0.01, "default": 0.5},
+        {"id": "warpAmount", "label": "Warp amount (cells)", "kind": "float", "slot": 9, "unit": "none",
+         "min": 0, "max": 4, "step": 0.05, "default": 0.8},
+        {"id": "warpFrequency", "label": "Warp frequency (of the scale)", "kind": "float", "slot": 10, "unit": "none",
+         "min": 0.25, "max": 4, "step": 0.05, "default": 1}
       ]
     }
     """
