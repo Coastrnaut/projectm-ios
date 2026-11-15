@@ -16,8 +16,9 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
     string literals removed): loading bundles or libraries other than the main bundle; script
     engines (JavaScriptCore) and expression evaluation (NSExpression, NSPredicate(format:) with a
     non-literal format); process spawning; executable memory; and Metal libraries created from
-    source outside METAL_SOURCE_ALLOWED (nine reviewed files that compile module constants; the ninth,
-    VideoLayerSource.swift, added by MED-002 / ADR-0022) or from
+    source outside METAL_SOURCE_ALLOWED (ten reviewed files that compile module constants; the ninth,
+    VideoLayerSource.swift, added by MED-002 / ADR-0022; the tenth, NoiseFieldGenerator.swift, by VIS-013 /
+    ADR-0066) or from
     URLs, data, files or dynamic libraries anywhere, and binary archives outside BINARY_ARCHIVE_ALLOWED
     (one file: PERF-009's warm-start pipeline archive of the app's own shaders, ADR-0062).
   * PRE-011-R6 (private preset notes): no diagnostics source (Packages/Diagnostics, Apps/CaptureLab, the
@@ -122,6 +123,7 @@ METAL_SOURCE_ALLOWED = frozenset({
     "Packages/Compositor/Sources/ImageLayer/ImageLayerSource.swift",
     "Packages/Compositor/Sources/VideoLayer/VideoLayerSource.swift",   # MED-002 (ADR-0022): module-constant shader
     "Packages/VisualGenerators/Sources/VisualGenerators/FlatShapePass.swift",
+    "Packages/VisualGenerators/Sources/VisualGenerators/NoiseFieldGenerator.swift",   # VIS-013 (ADR-0066): module-constant shader with SHD-006's shared noise
     "Packages/VisualGenerators/Sources/VisualEffects/PostProcessEffect.swift",
 })
 # Swift multi-line and single-line literals (raw #"..."# included); Objective-C @"..." keeps its @.

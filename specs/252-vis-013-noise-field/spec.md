@@ -145,3 +145,4 @@ change Frequency, close Settings and check the visual's value.
 - Simulator results are not device evidence; the frame rate on D1 is `{device}` work.
 - Three new setting keys; no new catalog parameter; no network; the privacy manifest does not change.
 - projectM stays the default visual.
+- ADR-0066 records the shared noise module and the tenth reviewed Metal compile site (`NoiseFieldGenerator.swift`, SHD-011 / ADR-0024).
