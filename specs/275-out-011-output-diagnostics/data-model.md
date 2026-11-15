@@ -12,7 +12,7 @@
 | gamut | Gamut? (.sRGB, .displayP3) | screen.traitCollection.displayGamut | unspecified |
 | potentialEDRHeadroom, currentEDRHeadroom | Double? | screen | ≤ 0 / non-finite |
 | mirrored | Bool? | screen.mirrored != nil | no screen |
-| overscan | Overscan? (.scale, .insetBounds, .none) | screen.overscanCompensation | unknown case |
+| overscan | Overscan? (.scale, .insetBounds, .off) | screen.overscanCompensation | unknown case |
 | drawableWidth, drawableHeight | Int? | slot.resolvedOutput (visual in that slot) | visual elsewhere |
 | pixelAspect | Double? | correction.pixelAspect.resolved(screen:) | ≤ 0 / non-finite |
 | outputMode | String? | ExternalOutputSetting.title(outputMode) | — |
