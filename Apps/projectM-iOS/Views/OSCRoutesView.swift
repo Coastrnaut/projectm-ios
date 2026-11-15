@@ -19,6 +19,7 @@ struct OSCRoutesView: View {
             if let learn { OSCLearnSection(learn: learn) }
             OSCRoutesListSection(routes: routes, unknownCount: unknownCount)
             OSCRouteAliasSection(routes: routes)
+            OSCSchemaExportSection(routes: routes)   // OSC-010
         }
         .navigationTitle("OSC Routes")
         .onDisappear { learn?.leave() }
