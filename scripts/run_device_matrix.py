@@ -61,10 +61,8 @@ def case(id: str, kind: str, title: str, closes: list[str], timeout: int, **para
 
 # In run order. `closes`: the tasks the case fully closes (category a); `partOf`: tasks of which it scripts a part.
 CASES: list[dict] = [
-    # First (2026-11-15, owner request): sc009 is the only case that needs a person, the one-time microphone prompt
-    # after the fresh install, so it runs before everything else and the owner can leave after one tap.
-    case("autorun-sc009", "autorun", "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
-         ["AUD-014-T32"], 600, mode="sc009", prefix="automation-sc009", wait=540, permission="microphone"),
+    # No case needs a person (owner ruling 2026-11-15): AUD-014's sc009 lifecycle script triggers the one-time
+    # microphone prompt after the fresh install, so it moved to owner session B05 (the AutomationRunner mode stays).
     case("autorun-perf001", "autorun", "AutomationRunner perf001: per-stage frame timings, 1 s frame-rate windows, "
          "PERF-007 drops", ["PERF-001-T16", "PERF-002-T13", "QA-010-T12"], 300, mode="perf001",
          prefix="automation-perf001", wait=240),

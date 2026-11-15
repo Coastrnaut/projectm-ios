@@ -12,12 +12,12 @@
       "waived": 11
     },
     "byCategory": {
-      "a": 14,
-      "b": 239
+      "a": 13,
+      "b": 240
     },
     "byCategoryIncludingWaived": {
-      "a": 14,
-      "b": 250
+      "a": 13,
+      "b": 251
     },
     "byDevice": {
       "D1": 243,
@@ -26,16 +26,16 @@
     },
     "byDeviceAndCategory": {
       "D1": {
-        "a": 13,
-        "b": 230
+        "a": 12,
+        "b": 231
       },
       "D2": {
         "a": 3,
         "b": 51
       },
       "D3": {
-        "a": 4,
-        "b": 50
+        "a": 3,
+        "b": 51
       }
     },
     "bySession": {
@@ -43,7 +43,7 @@
       "B02": 12,
       "B03": 5,
       "B04": 18,
-      "B05": 25,
+      "B05": 26,
       "B06": 21,
       "B07": 20,
       "B08": 14,
@@ -52,25 +52,11 @@
       "B11": 31,
       "B12": 5,
       "B13": 21,
-      "MATRIX": 14
+      "MATRIX": 13
     },
     "devicesInferred": 2
   },
   "matrixCases": [
-    {
-      "id": "autorun-sc009",
-      "kind": "autorun",
-      "title": "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
-      "closes": [
-        "AUD-014-T32"
-      ],
-      "partOf": [],
-      "devices": [
-        "D1",
-        "D3"
-      ],
-      "timeoutSeconds": 600
-    },
     {
       "id": "autorun-perf001",
       "kind": "autorun",
@@ -482,6 +468,7 @@
         "009-aud-014-audio-session-interruption-recovery:AUD-014-T29",
         "009-aud-014-audio-session-interruption-recovery:AUD-014-T30",
         "009-aud-014-audio-session-interruption-recovery:AUD-014-T31",
+        "009-aud-014-audio-session-interruption-recovery:AUD-014-T32",
         "011-aud-016-reference-tone-suite:AUD-016-T30",
         "013-qa-007-audio-source-contract-suite:QA-007-T23",
         "015-aud-003-audio-library-queue:AUD-003-T22",
@@ -498,7 +485,7 @@
         "216-perf-013-audio-render-sync:PERF-013-T12"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 185
+      "estimatedMinutes": 195
     },
     {
       "id": "B06",
@@ -1392,16 +1379,14 @@
         "device"
       ],
       "status": "open",
-      "category": "a",
-      "session": "MATRIX",
+      "category": "b",
+      "session": "B05",
       "devices": [
         "D1",
         "D3"
       ],
       "devicesInferred": false,
-      "matrixCases": [
-        "autorun-sc009"
-      ],
+      "matrixCases": [],
       "estimatedMinutes": 10,
       "text": "AUD-014-T32 {device} `PROJECTM_AUTORUN=sc009` on D1 and D3 with this build: the In-App Playback and Microphone lifecycle scripts end in the same states as the 2026-11-10 run (`docs/test-reports/performance.md`)."
     },

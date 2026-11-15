@@ -2213,7 +2213,7 @@ class QA011MatrixTests(unittest.TestCase):
     def inventory(self):
         return {"tasks": [
             {"status": "open", "devices": ["D1"], "matrixCases": ["xctest-soak-600", "autorun-perf001"]},
-            {"status": "open", "devices": ["D1", "D3"], "matrixCases": ["autorun-sc009"]},
+            {"status": "open", "devices": ["D2", "D3"], "matrixCases": ["xctest-materials"]},
             {"status": "waived", "devices": ["D2"], "matrixCases": ["bench-cmp008"]},
             {"status": "open", "devices": ["D1"], "matrixCases": ["bench-cmp008"]}]}
 
@@ -2224,9 +2224,9 @@ class QA011MatrixTests(unittest.TestCase):
         d3 = [c["id"] for c in rdm.plan("D3", devices)]
         self.assertIn("xctest-soak-600", d1)
         self.assertNotIn("xctest-soak-600", d2)
-        self.assertIn("autorun-sc009", d3)
+        self.assertIn("xctest-materials", d3)
         self.assertNotIn("bench-cmp008", d2, "a waived task adds no device")
-        self.assertEqual(d2, ["autorun-perf001", "launches-sc015", "thresholds"])
+        self.assertEqual(d2, ["autorun-perf001", "launches-sc015", "thresholds", "xctest-materials"])
         self.assertEqual([c["id"] for c in rdm.plan(None, devices)], rdm.CASE_IDS)
         order = rdm.CASE_IDS
         self.assertEqual(order[-1], "xctest-offline-export", "the app-hosted suite replaces the app: last")

@@ -47,7 +47,6 @@ CATEGORY_A: dict[str, list[str]] = {
     "PERF-002-T13": ["autorun-perf001"],
     "PERF-009-T16": ["warmstart-perf009"],
     "QA-010-T12": ["autorun-perf001", "launches-sc015", "autorun-perf012", "thresholds"],
-    "AUD-014-T32": ["autorun-sc009"],
     "QA-003-T17": ["xctest-goldens"],
     "QA-006-T13": ["xctest-soak-600"],
     "SHD-004-T20": ["xctest-materials"],
@@ -361,9 +360,9 @@ def render_checklist(inv: dict) -> str:
         "## Session 0: the scripted matrix (category a)",
         "",
         "Preparation for each device: connect the cable, unlock it, set Auto-Lock to Never (Settings › Display & "
-        "Brightness), keep it unlocked and on power. The run starts with a fresh install (an empty container), so on "
-        "D1 and D3 stay at the device for `autorun-sc009`: iOS asks once for microphone access; tap Allow. "
-        "Nothing else needs a person. The main session runs (D1, then D2, then D3):",
+        "Brightness), keep it unlocked and on power. The run starts with a fresh install (an empty container) and needs "
+        "no person: steps that trigger a permission prompt (AUD-014's microphone lifecycle script) are in session B05. "
+        "The main session runs (D1, then D2, then D3):",
         "",
         "```bash",
         "python3 scripts/verify_environment.py",

@@ -179,7 +179,10 @@ checklist.
   the repository are written relative to it. The seven records written before the ruling were rewritten this way
   (new record hashes; each says so in `signing.redaction`).
 - Package suites run on a device hosted in the signed app (`DeviceTests.yml`): Xcode refuses tool-hosted package
-  tests on device destinations. ANGLE's layer tests have no device host yet and are recorded "not-run".
+  tests on device destinations. ANGLE's layer tests run there too (`ANGLEDeviceTests`).
+- The automated matrix needs no person: cases that trigger a permission prompt are human steps. AUD-014's sc009
+  lifecycle script (the one-time microphone prompt after a fresh install) moved from the matrix to owner session
+  B05; its AutomationRunner mode stays. D1's earlier matrix runs, with the owner's tap, already passed it.
 
 ### Session 2026-11-15 (speckit-clarify)
 
