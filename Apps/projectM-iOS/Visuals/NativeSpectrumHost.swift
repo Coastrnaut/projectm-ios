@@ -88,6 +88,8 @@
 // * SDF Shapes (VIS-017): the noise field's generator in its signed-distance mode (`SignedDistanceHostSupport.swift`);
 //   Quality changes only its configuration (the pose keeps turning); it reads the frame's bands; `reduceMotion` halves the
 //   turning and the swell.
+// * Tessellation (VIS-018): the noise field's generator in its tessellation mode (`TessellationHostSupport.swift`); any
+//   setting changes only its configuration (the drift keeps going); `reduceMotion` halves the drift, light and swell.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -622,6 +624,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             return try StarfieldGenerator.make(device: device, speed: speed, density: density, barCount: barCount)
         case let .signedDistance(quality):   // VIS-017: the noise field's generator in its SDF mode
             return try NoiseFieldGenerator.makeSignedDistance(device: device, quality: quality, barCount: barCount)
+        case let .tessellation(settings):   // VIS-018: the noise field's generator in its tessellation mode
+            return try NoiseFieldGenerator.makeTessellation(device: device, settings: settings, barCount: barCount)
         }
     }
 
@@ -712,6 +716,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.fluidInk = false   // VIS-011: from fluid ink, back to the field
             configuration.reactionDiffusion = nil   // VIS-012: from reaction diffusion, back to the field
             configuration.signedDistance = nil   // VIS-017: from the SDF shapes, back to the field
+            configuration.tessellation = nil   // VIS-018: from the tessellation, back to the field
             field.configuration = configuration
         } else if case let .kaleidoscope(wedges) = newStyle, let field = generator as? NoiseFieldGenerator {
             // VIS-014: in place, from the next frame (from Noise Field too: the kaleidoscope's own source settings)
@@ -735,6 +740,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                                             palette: field.configuration.palette)
         } else if case let .signedDistance(quality) = newStyle, let field = generator as? NoiseFieldGenerator {
             field.applySignedDistance(quality: quality)   // VIS-017: in place, from the next frame
+        } else if case let .tessellation(settings) = newStyle, let field = generator as? NoiseFieldGenerator {
+            field.applyTessellation(settings)   // VIS-018: in place, from the next frame
         } else if case let .starfield(speed, density) = newStyle, let stars = generator as? StarfieldGenerator {
             stars.apply(speed: speed, density: density)   // VIS-016: in place, from the next frame
         } else {
@@ -984,6 +991,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .reactionDiffusion(settings): return settings.accessibilityDescription + ", \(glow)"   // VIS-012-R13
         case let .starfield(speed, density): return StarfieldDescription.accessibilityValue(speed: speed, density: density, glow: glow)   // VIS-016-R11
         case let .signedDistance(quality): return "\(quality.title) quality, \(glow)"   // VIS-017-R11
+        case let .tessellation(settings): return settings.accessibilityValue(glow: glow)   // VIS-018-R13
         }
     }
 
@@ -1370,6 +1378,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case starfield(speed: StarfieldSpeed, density: Int)
     /// VIS-017: SDF shapes (the noise field's generator in its signed-distance mode) at `quality`.
     case signedDistance(quality: SignedDistanceQuality)
+    /// VIS-018: geometric tessellation (the noise field's generator in its tessellation mode) with `settings`.
+    case tessellation(TessellationSettings)
 
     /// VIS-006, VIS-008, VIS-009, VIS-011: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1406,6 +1416,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .reactionDiffusion: VisualChoice.reactionDiffusion.title
         case .starfield: VisualChoice.starfield.title
         case .signedDistance: VisualChoice.signedDistance.title
+        case .tessellation: VisualChoice.tessellation.title
         }
     }
 
@@ -1428,6 +1439,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .reactionDiffusion: "reactionDiffusion"
         case .starfield: "starfield"
         case .signedDistance: "signedDistance"
+        case .tessellation: "tessellation"
         }
     }
 }

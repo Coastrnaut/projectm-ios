@@ -51,6 +51,10 @@
 //   and glow are shared; Bars does not apply.
 // * SDF Shapes (VIS-017-R8): `settings.visual` may also be `signedDistance`; key `settings.signedDistance.quality`
 //   (`low`/`medium`/`high`; anything else → medium). Bands swell and turn it; palette and glow are shared; Bars does not apply.
+// * Tessellation (VIS-018-R10): `settings.visual` may also be `tessellation`; keys `settings.tessellation.tiling`
+//   (`triangle`/`square`/`hexagon`/`trihexagonal`/`truncatedSquare`; else hexagon), `.tiles` (Int 2…16; else 6), `.symmetry`
+//   (Int 1, 2, 3, 4 or 6; else 6), `.mirror` (Bool, off) and `.palette` (`spectrum`/`ice`/`mono`; else spectrum; the
+//   colour-blind-safe palette wins). Bands breathe and drift it; glow is shared; Bars does not apply.
 // * Reaction Diffusion (VIS-012-R13): `settings.visual` may also be `reactionDiffusion`; keys
 //   `settings.reactionDiffusion.preset` (`coral`/`mitosis`/`spots`/`maze`; else coral), `.pattern`
 //   (`square`/`spots`/`ring`/`stripes`; else square), `.seed` (Int 0…9999; else 1), `.speed` (Int 1…16; else 8). Bass
@@ -87,7 +91,7 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, VIS-013-R9 the three noise field keys, VIS-014-R9 the kaleidoscope's key, VIS-015-R9 the tunnel's key, VIS-016-R8 the starfield's two keys, VIS-017-R8 the SDF shapes' key, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
+// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, VIS-013-R9 the three noise field keys, VIS-014-R9 the kaleidoscope's key, VIS-015-R9 the tunnel's key, VIS-016-R8 the starfield's two keys, VIS-017-R8 the SDF shapes' key, VIS-018-R10 the tessellation's five keys, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
 // `settings.visual.colorBlindSafePalette`).
 // * Sensory safety (ACC-012-R8): the profile and its custom limits, four `settings.sensorySafety.*` keys owned by
 //   `SensorySafetySetting`; `safetyClamp` combines them with Reduce flashing (stricter wins, ADR-0049).
@@ -140,6 +144,7 @@ final class AppSettings {
     static let starfieldSpeedKey = "settings.starfield.speed"   // VIS-016
     static let starfieldDensityKey = "settings.starfield.density"   // VIS-016
     static let signedDistanceQualityKey = "settings.signedDistance.quality"   // VIS-017
+    static let tessellationKeys = TessellationSettingsKeys.all   // VIS-018 (TessellationHostSupport.swift)
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
@@ -182,6 +187,8 @@ final class AppSettings {
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey, videoReverseKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleEmitterKey, particleTrailsKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, reactionPresetKey, reactionPatternKey, reactionSeedKey, reactionSpeedKey, starfieldSpeedKey, starfieldDensityKey, signedDistanceQualityKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
+                          TessellationSettingsKeys.tiling, TessellationSettingsKeys.tiles, TessellationSettingsKeys.symmetry,
+                          TessellationSettingsKeys.mirror, TessellationSettingsKeys.palette,   // VIS-018
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
                           ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, MED-011, MED-012, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
@@ -422,6 +429,14 @@ final class AppSettings {
         didSet { defaults.set(signedDistanceQuality.rawValue, forKey: Self.signedDistanceQualityKey) }
     }
 
+    /// VIS-018: the tessellation's settings (hexagons, 6 tiles, 6-fold, mirror off, Spectrum by default); stored as five keys.
+    var tessellation: TessellationSettings {
+        didSet {
+            if tessellation != tessellation.clamped() { tessellation = tessellation.clamped() }
+            TessellationSettingsKeys.store(tessellation, in: defaults)
+        }
+    }
+
     /// VIS-016: the starfield's speed (Medium by default).
     var starfieldSpeed: StarfieldSpeed {
         didSet { defaults.set(starfieldSpeed.rawValue, forKey: Self.starfieldSpeedKey) }
@@ -647,6 +662,7 @@ final class AppSettings {
         starfieldDensity = Self.isStarfieldDensity(density) ? density : StarfieldConfiguration.defaultDensity   // VIS-016
         signedDistanceQuality = defaults.string(forKey: Self.signedDistanceQualityKey)
             .flatMap(SignedDistanceQuality.init(rawValue:)) ?? .defaultQuality   // VIS-017
+        tessellation = TessellationSettingsKeys.load(from: defaults)   // VIS-018
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
@@ -731,6 +747,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case starfield
     /// The native SDF shapes (VIS-017).
     case signedDistance
+    /// The native geometric tessellation (VIS-018).
+    case tessellation
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -760,6 +778,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .reactionDiffusion: "Reaction Diffusion"
         case .starfield: "Starfield"
         case .signedDistance: "SDF Shapes"
+        case .tessellation: "Tessellation"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -771,7 +790,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
         || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel
-        || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield || self == .signedDistance }
+        || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield || self == .signedDistance
+        || self == .tessellation }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .spectrumWaterfall }   // VIS-020: band count
