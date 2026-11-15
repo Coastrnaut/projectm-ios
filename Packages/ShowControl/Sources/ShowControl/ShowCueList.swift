@@ -108,6 +108,8 @@ public struct ShowCueList: Sendable, Hashable {
     public internal(set) var folders: SceneFolderTree = SceneFolderTree()
     /// SCN-005: each scene's tags (by scene ID; scene files never change).
     public internal(set) var tags: SceneTagMap = SceneTagMap()
+    /// SHOW-008: keyframe tracks along the show timeline (independent of the cues; `ShowKeyframeTracks` keeps its rules).
+    public var tracks: ShowKeyframeTracks = ShowKeyframeTracks()
 
     /// An empty show at Standby.
     public init(id: UUID = UUID(), name: String = ShowCueList.defaultName) {
