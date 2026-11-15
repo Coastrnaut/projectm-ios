@@ -55,9 +55,9 @@ finish. Logs go to `.autonomous/logs-fx-013/`.
 - [X] FX-013-T09 [P] MOD-001 descriptors in `Packages/Compositor/Sources/ColorGradeParameters/ColorGradeCatalog.swift`
   (two booleans, one integer, `discreteManual`; `grade(from:)` reads them) and
   `Packages/Compositor/Tests/ColorGradeParametersTests/ColorGradeCatalogTests.swift`. — Verified 2026-11-15: ColorGradeCatalogTests 5/5 incl. testPosterizeDescriptors (logs-fx-013/catalog.log).
-- [ ] FX-013-T10 [P] Scene fields in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift` (read, warn on
+- [X] FX-013-T10 [P] Scene fields in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift` (read, warn on
   malformed, write only when on or already present) and `SceneEffectChainTests.swift` (round-trip, old scenes off,
-  malformed values).
+  malformed values). — Verified 2026-11-15: swift test SceneFormat 216 passed, 0 failed, incl. testPosterizeRoundTripsAndOldEntriesReadAsOff and testMalformedPosterizeValuesReadAsDefaultsAndAreReported (logs-fx-013/scene.log).
 - [ ] FX-013-T11 App setting in `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (three keys in `allKeys`,
   stored, read checked, reset), `SceneAutosaveCapture.swift` (apply from scenes), FILE-005 `LibrarySettings.swift`
   included keys, `scripts/run_device_tests.py` `ALLOWED_KEYS`; tests in `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`;

@@ -10,6 +10,9 @@
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
 // name) and `contrastStrength` (0…1). Missing → Linear and 0.5; an unknown or non-string name → Linear with a warning.
 // They are written only when the curve is not Linear or the stored entry already had them, so other scenes are unchanged.
+// FX-013 (specs/301-fx-013-posterization, research FX-013-D8): `posterize` (bool), `posterizeLevels` (2…32, rounded) and
+// `posterizeDither` (bool). Missing → off, 6, off; a malformed value → its default with a warning. Written only while
+// posterize is on or when the stored entry already had any of them.
 import Compositor
 
 /// One saved effect.
@@ -170,6 +173,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
                     let v = values(entry, gradeParameters, path, &issues)
                     var g = ColorGrade(temperature: v[0], lift: v[1], gamma: v[2], gain: v[3], saturation: v[4], hue: v[5])
                     readContrast(entry, path, &issues, into: &g)   // FX-005
+                    readPosterize(entry, path, &issues, into: &g)   // FX-013
                     settings.grade = g
                     settings.gradeEnabled = entry.enabled
                 case .trails:
@@ -255,6 +259,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
             let values: [Double] = [g.temperature, g.lift, g.gamma, g.gain, g.saturation, g.hue]
             for (p, v) in zip(Self.gradeParameters, values) { entry.parameters[p.name] = .double(v) }
             Self.writeContrast(g, into: &entry)   // FX-005
+            Self.writePosterize(g, into: &entry)   // FX-013
         case .trails:
             guard let t = trails else { return stored }
             entry.enabled = t.isEnabled
@@ -327,5 +332,45 @@ extension SceneEffectSettings {
            ContrastCurve(rawValue: raw.stringValue ?? "") == nil { return }   // an unknown name read as Linear is kept
         entry.parameters[contrastKey] = .string(grade.contrast.rawValue)
         entry.parameters[contrastStrengthParameter.name] = .double(grade.contrastStrength)
+    }
+}
+
+// MARK: - FX-013 posterize in the grade entry
+
+extension SceneEffectSettings {
+    static let posterizeKey = "posterize"
+    static let posterizeDitherKey = "posterizeDither"
+    static let posterizeLevelsParameter = SceneEffectParameter(
+        name: "posterizeLevels",
+        range: Double(Posterize.levelsRange.lowerBound)...Double(Posterize.levelsRange.upperBound),
+        fallback: Double(Posterize.defaultLevels))
+
+    /// Reads `posterize`, `posterizeLevels` and `posterizeDither` (research FX-013-D8).
+    static func readPosterize(_ entry: SceneEffectEntry, _ path: String, _ issues: inout [SceneIssue], into grade: inout ColorGrade) {
+        let levels: Double = values(entry, [posterizeLevelsParameter], path, &issues)[0]
+        grade.posterizeLevels = Posterize.levels(from: levels)
+        grade.posterize = flag(entry, posterizeKey, path, &issues)
+        grade.posterizeDither = flag(entry, posterizeDitherKey, path, &issues)
+    }
+
+    /// A Bool parameter: missing → off; not a Bool → off with a warning.
+    private static func flag(_ entry: SceneEffectEntry, _ key: String, _ path: String, _ issues: inout [SceneIssue]) -> Bool {
+        guard let raw = entry.parameters[key] else { return false }
+        guard let value = raw.boolValue else {
+            let location: String = path + ".parameters." + key
+            issues.append(SceneIssue(.valueClamped, path: location, "\(location) is not true or false; read as false."))
+            return false
+        }
+        return value
+    }
+
+    /// Writes the three fields while posterize is on or when the entry already had any of them.
+    static func writePosterize(_ grade: ColorGrade, into entry: inout SceneEffectEntry) {
+        let names: [String] = [posterizeKey, posterizeLevelsParameter.name, posterizeDitherKey]
+        let had: Bool = names.contains { (name: String) -> Bool in entry.parameters[name] != nil }
+        guard had || grade.posterize else { return }
+        entry.parameters[posterizeKey] = .bool(grade.posterize)
+        entry.parameters[posterizeLevelsParameter.name] = .double(Double(Posterize.clampLevels(grade.posterizeLevels)))
+        entry.parameters[posterizeDitherKey] = .bool(grade.posterizeDither)
     }
 }
