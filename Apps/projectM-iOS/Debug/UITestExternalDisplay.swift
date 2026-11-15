@@ -20,6 +20,9 @@
 // ("pin=… card=… corners=…", or "none" without a display).
 // OUT-009-T12: the hidden `externalCalibration` probe reads the display calibration and whether the visual on the fake
 // display applies it ("cal=… applied=… values=…").
+// OUT-011-T08: the fake sets stand-in screen readings (its window sits on the device's own screen, whose values would be
+// wrong; research OUT-011-D4), "ext+720" connects a 1280 × 720 stand-in, and the hidden `externalDiagnostics` probe reads
+// `OutputDiagnostics.summary` ("disconnected" or "connected native=… pt=…@… fps=… drawable=…").
 #if DEBUG
 import PresentationLifecycle
 import SwiftUI
@@ -34,15 +37,24 @@ final class UITestExternalDisplay {
     private var window: UIWindow?
     private(set) var connects = 0
 
-    func connect(_ coordinator: any ExternalDisplayEventSink) {
+    /// OUT-011-D4: what the stand-in reports as its screen: its window size at scale 1, 60 Hz, sRGB, extended, no
+    /// overscan compensation; EDR headroom is not reported.
+    static func standInReadings(width: Int, height: Int) -> OutputReadings {
+        OutputReadings(nativeWidth: width, nativeHeight: height, nativeScale: 1, pointWidth: Double(width),
+                       pointHeight: Double(height), scale: 1, maximumFramesPerSecond: 60, gamut: .sRGB,
+                       mirrored: false, overscan: .off)
+    }
+
+    func connect(_ coordinator: any ExternalDisplayEventSink, width: Int = 1920, height: Int = 1080) {
         guard window == nil,
               let scene = UIApplication.shared.connectedScenes.compactMap({ (s: UIScene) -> UIWindowScene? in s as? UIWindowScene }).first
         else { return }
         let controller = ExternalDisplayViewController()
         controller.slot.traitOverrides.displayScale = 1
+        controller.slot.standInReadings = Self.standInReadings(width: width, height: height)
         let window = UIWindow(windowScene: scene)
         // Off screen, below the app's window: it takes no touches and covers nothing.
-        window.frame = CGRect(x: 100_000, y: 0, width: 1920, height: 1080)
+        window.frame = CGRect(x: 100_000, y: 0, width: CGFloat(width), height: CGFloat(height))
         window.windowLevel = .normal - 1
         window.rootViewController = controller
         window.isHidden = false
@@ -74,6 +86,8 @@ struct UITestExternalDisplayPanel: View {
                 UITestExternalDisplay.shared.disconnect(coordinator)
             }
             .accessibilityIdentifier("uitestBounceExternal")
+            Button("ext+720") { UITestExternalDisplay.shared.connect(coordinator, width: 1280, height: 720) }   // OUT-011
+                .accessibilityIdentifier("uitestConnectExternalSmall")
             TimelineView(.periodic(from: .now, by: 0.25)) { _ in
                 let probe: String = Self.probe(coordinator)
                 Text(probe)
@@ -105,6 +119,11 @@ struct UITestExternalDisplayPanel: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("externalCalibration")
                     .accessibilityValue(calibration)
+                let diagnostics: String = coordinator.outputDiagnostics.summary   // OUT-011
+                Text(diagnostics)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalDiagnostics")
+                    .accessibilityValue(diagnostics)
             }
         }
         .font(.caption2)

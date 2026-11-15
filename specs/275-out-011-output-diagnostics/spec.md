@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (OUT-011-T01-T11, T13 verified on the Mac host and the iOS 27.2 simulator; T12 `{device}` open)
 
 **Input**: User description: "Implement OUT-011 (Output connection diagnostics) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Show resolution, refresh rate and supported color format where available."
