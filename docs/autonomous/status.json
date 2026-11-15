@@ -11,26 +11,24 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 8,
-   "implementing": 1,
+   "audited": 7,
+   "implementing": 2,
    "integrated": 142
   },
   "P2": {
-   "audited": 48,
-   "implementing": 1,
-   "integrated": 29,
-   "unit_passed": 1
+   "audited": 47,
+   "implementing": 2,
+   "integrated": 30
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 67,
-  "implementing": 2,
-  "integrated": 255,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 65,
+  "implementing": 4,
+  "integrated": 256,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -79,7 +77,6 @@
    "OUT-011",
    "OUT-013",
    "OUT-014",
-   "PRE-011",
    "PRE-017",
    "QA-011",
    "QA-012",
@@ -111,7 +108,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "70 features are not implemented yet (first: ACC-010, CAM-009, CAM-010, CAM-011, FX-005)"
+   "69 features are not implemented yet (first: ACC-010, CAM-009, CAM-010, CAM-011, FX-005)"
   ]
  },
  "features": {
@@ -207,13 +204,13 @@
   },
   "ACC-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-011": {
    "attempts": 0,
@@ -2250,10 +2247,10 @@
    "branch": "feature/pre-011",
    "branch_sha": "8a093668941dfd064b311ca591a50a637004b2c3",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "69fd0e13",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PRE-012": {
    "attempts": 0,
@@ -2867,13 +2864,13 @@
   },
   "SHD-012": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/shd-012",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHOW-001": {
    "attempts": 0,
@@ -4238,6 +4235,11 @@
    "sha": "a653f631"
   },
   {
+   "branch": "feature/pre-011",
+   "id": "PRE-011",
+   "sha": "69fd0e13"
+  },
+  {
    "branch": "feature/pre-012",
    "id": "PRE-012",
    "sha": "4bf9f50d1af88eaf7b40aa3523c59c9b2d8c4bf6"
@@ -4678,5 +4680,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T00:37:41Z"
+ "updated": "2026-11-15T00:39:53Z"
 }
