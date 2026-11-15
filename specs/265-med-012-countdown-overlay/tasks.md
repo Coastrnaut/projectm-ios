@@ -23,7 +23,7 @@ package suite under 1 minute, the UI test under 30 s.
 - [ ] MED-012-T06 [US1] App: `CountdownOverlayStore.swift` (`settings.countdown.overlay`: missing → defaults, damaged → defaults and removed, newer → defaults untouched), `CountdownOverlayCoordinator.swift` (timer, Start/Pause/Reset, tick task while running, finished announcement on the new `.countdown` lane of `AccessibilityAnnouncer.swift`, attach), `AppCoordinator.swift` (create, attach above the clock in the four prepare functions, foreground tick), `AppSettings.swift` (key in `allKeys`)
 - [ ] MED-012-T07 [US1] Settings: `Apps/projectM-iOS/Views/CountdownSection.swift` (Show Countdown, Minutes, Seconds, Start/Pause/Resume, Reset, Start From New Cues, Position, Alignment) and one line in `SettingsView.swift` after Clock (`.id("countdown")`, `UITestSettingsSection` list), `VisualizerView.swift` passes it
 - [ ] MED-012-T08 [US1] Keys: `scripts/run_device_tests.py` ALLOWED_KEYS, `LibrarySettingsPolicy.includedKeys`, `SettingsTests.testOnlyTheSettingsKeysAreWritten`; run `LibraryBackupAppTests` and `SettingsTests`
-- [ ] MED-012-T09 [US1] `Apps/projectM-iOS/Tests/CountdownOverlayTests.swift`: store round trip and damaged value, coordinator with an injected clock (strings pushed once per second, finished once, announcement once, Reset re-arms, duration change resets)
+- [ ] MED-012-T09 [US1] `Apps/projectM-iOS/Tests/CountdownOverlayTests.swift`: store round trip and damaged value, coordinator with an injected clock (strings pushed once per second, finished once, announcement once, Reset re-arms, duration change resets, MED-012-R7: the `.countdown` entry sits above `.clock` in a compositor stack)
 - [ ] MED-012-T10 [US1] DEBUG `-uitestCountdownFixed` fixture and `countdownProbe`; `Apps/projectM-iOS/UITests/CountdownOverlayUITests.swift` (S5: Show Countdown, Start, "05:00 running" drawn on the Text visual)
 
 ## Phase 4: User Story 2 - Start it from a cue (P2)
@@ -31,7 +31,7 @@ package suite under 1 minute, the UI test under 30 s.
 **Independent test**: scene round trip; applying a scene with the field starts the countdown.
 
 - [ ] MED-012-T11 [US2] `Packages/SceneFormat/Sources/SceneFormat/SceneCountdown.swift` (`{"durationSeconds": <integer 1…5940>}`, exactly that key, else absent and kept verbatim) and `Packages/SceneFormat/Tests/SceneFormatTests/SceneCountdownTests.swift` (round trip through encode and decode, malformed cases)
-- [ ] MED-012-T12 [US2] `ShowSceneSnapshot.swift` (`ShowLook.countdownSeconds` written, `ShowSceneApply.countdownSeconds` read), `AppCoordinator+Show.swift` (`showLook` records it when Start From New Cues is on; `applyShowScene` starts it); tests in `CountdownOverlayTests.swift` (cue apply starts at "01:30", no field leaves it alone)
+- [ ] MED-012-T12 [US2] `ShowSceneSnapshot.swift` (`ShowLook.countdownSeconds` written, `ShowSceneApply.countdownSeconds` read), `AppCoordinator+Show.swift` (`showLook` records it when Start From New Cues is on; `applyShowScene` starts it); tests in `CountdownOverlayTests.swift` (cue apply starts at "01:30", no field leaves it alone; MED-012-R8: launch restore and reopen never call the start path, checked by reading `SceneAutosaveCapture`'s restored values, which carry no countdown)
 
 ## Phase 5: Polish
 
