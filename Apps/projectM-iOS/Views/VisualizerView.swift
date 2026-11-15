@@ -978,11 +978,13 @@ private struct VideoLoopProbe: View {
         } ?? "whole"
         let stats: String = video.loopStatistics()
         let speed: String = video.speedProbe()   // MED-004-R11
+        let reverse: String = video.reverseProbe()   // MED-005-R11
         return VStack {
             Text(index).accessibilityIdentifier("videoMediaFrameIndex").accessibilityValue(index)
             Text(region).accessibilityIdentifier("videoLoopRegion").accessibilityValue(region)
             Text(stats).accessibilityIdentifier("videoLoopStats").accessibilityValue(stats)
             Text(speed).accessibilityIdentifier("videoSpeed").accessibilityValue(speed)
+            Text(reverse).accessibilityIdentifier("videoReverse").accessibilityValue(reverse)
         }
         .font(.caption2)
         .opacity(0.01)

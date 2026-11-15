@@ -36,6 +36,12 @@
 //   the external display slot gives it the display calibration (the device slot the identity). Each frame passes
 //   it to the FX-019 pass, whose output step applies it after the envelope's gain. A REC-001 capture is read from an
 //   uncalibrated redraw of that step (same envelope state), then the calibrated step is drawn again for the display.
+// * OUT-013 (specs/281-out-013-frame-pacing, contract C3): the display link is the one of the screen that shows the view
+//   (`ScreenDisplayLink`, rebuilt when the view moves to another screen). Each display-link tick (`pacedTick`) polls the
+//   frame fences (zero timeout), asks `outputPacing` for a slot (at most 2 frames in flight; a full output drops the
+//   tick, counted) and inserts a fence after the presented frame. ANGLE still fetches its drawable inside the frame and
+//   waits for one indefinitely if the layer has none (research OUT-013-D3); the bound and the per-screen pacing keep a
+//   free drawable there in the normal case. Direct `presentationTick` calls (tests) are not paced.
 import AudioCore
 import CANGLE
 import CFlashLimiter
@@ -79,6 +85,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// PERF-007 (specs/192-perf-007-frame-drop-telemetry): while set, each presented tick is submitted (frames and
     /// skipped refresh slots). Presented, late and discarded are unavailable: ANGLE owns the drawable (research PERF-007-D1).
     public var frameDrops: FrameDropCounter?
+    /// OUT-013: this output's frames in flight and drops (contract C1).
+    public let outputPacing = OutputFrameGate()
+    let frameFences: ANGLEFrameFences
     /// FR-072: selects the stricter envelope (FlashLimiter.c, FX-019). Toggling keeps the envelope's
     /// history, so a strobe cannot restart its budget (FX-019-R11).
     public var reduceFlashing = false
@@ -108,7 +117,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     private var surface: EGLSurface?
     private var surfaceSize = (width: 0, height: 0)
     private var engine: ProjectMEngine?
-    private var displayLink: CADisplayLink?
+    private var displayLink: ScreenDisplayLink?
     private var reader: (any NormalizedPCMReader)?
     private let pcm: UnsafeMutablePointer<Float>
     private let maxFrames: Int
@@ -170,6 +179,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         pcm = UnsafeMutablePointer<Float>.allocate(capacity: maxFrames * 2)
         pcm.initialize(repeating: 0, count: maxFrames * 2)
         layerView = MetalLayerView(frame: .zero)
+        frameFences = ANGLEFrameFences(gate: outputPacing)
         warmUp = PresetWarmUpController(worker: PresetPrewarmer(display: display, config: config),
                                         delay: .milliseconds(Int(presetBlendSeconds * 1000) + 500))
         trialRunner = PresetTrialRunner(display: display, config: config)
@@ -178,8 +188,10 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         super.init()
         layerView.onLayout = { [weak self] in self?.layoutSurface() }
         layerView.onWindowChange = { [weak self] inWindow in
-            self?.inWindow = inWindow
-            inWindow ? self?.startDisplayLink() : self?.stopDisplayLink()
+            guard let self else { return }
+            self.inWindow = inWindow
+            guard inWindow else { return self.stopDisplayLink() }
+            if let link = self.displayLink { link.follow(self.layerView) } else { self.startDisplayLink() }   // OUT-013
         }
         observeFrameRatePressure()
     }
@@ -223,6 +235,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         displayLink?.invalidate()
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
         eglMakeCurrent(display, placeholder, placeholder, context)
+        frameFences.drain()   // OUT-013: while the context exists
         PMFlashLimiterDestroy(flashLimiter)
         engine = nil   // destroyed while its context is current (bridge guarantee 3)
         eglMakeCurrent(display, nil, nil, nil)
@@ -361,13 +374,34 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// tick the window surface is recreated first. Returns true when a frame was presented.
     @discardableResult
     func presentationTick(frameTime: Double = 1.0 / 60) -> Bool {
+        guard advancePresentationTick() else { return false }
+        return renderFrame(frameTime: frameTime)
+    }
+
+    /// PERF-014's tick bookkeeping; false while the presentation part holds this tick.
+    private func advancePresentationTick() -> Bool {
         displayTicks &+= 1
         if presentationRetry.isRetryDue(atTick: displayTicks) {
             presentationRetry.beginRetry(atTick: displayTicks)
             recreateSurface()
         }
-        guard !presentationRetry.isHolding else { return false }
-        return renderFrame(frameTime: frameTime)
+        return !presentationRetry.isHolding
+    }
+
+    /// OUT-013: one display-link tick, paced: a held tick (PERF-014) is not a pacing drop; a full output drops the tick
+    /// (counted) without waiting; a presented frame gets a fence, a frame that was not presented returns its slot.
+    @discardableResult
+    func pacedTick(frameTime: Double = 1.0 / 60) -> Bool {
+        guard advancePresentationTick() else { return false }
+        makeCurrent()
+        frameFences.poll()
+        guard outputPacing.tryBegin() else { return false }
+        guard renderFrame(frameTime: frameTime) else {
+            outputPacing.abandon()
+            return false
+        }
+        frameFences.frameSubmitted()
+        return true
     }
 
     private func presentationResult(_ swapped: Bool) {
@@ -430,7 +464,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     }
 
     @objc fileprivate func displayLinkFired(_ link: CADisplayLink) {
-        guard presentationTick(frameTime: link.targetTimestamp - link.timestamp) else { return }
+        guard pacedTick(frameTime: link.targetTimestamp - link.timestamp) else { return }
         if let drops = frameDrops { _ = drops.submit(drops.session, timestamp: link.timestamp, targetTimestamp: link.targetTimestamp) }
         if meter.record(presentedAt: link.timestamp) {
             metrics = meter.metrics
@@ -444,11 +478,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
 
     private func startDisplayLink() {
         guard displayLink == nil, !presentationSuspended else { return }
-        let link = CADisplayLink(target: ANGLEDisplayLinkProxy(self), selector: #selector(ANGLEDisplayLinkProxy.fire(_:)))
-        link.preferredFrameRateRange = frameRateRange()
-        link.isPaused = paused
-        link.add(to: .main, forMode: .common)
-        displayLink = link
+        displayLink = ScreenDisplayLink(view: layerView, target: ANGLEDisplayLinkProxy(self),
+                                        selector: #selector(ANGLEDisplayLinkProxy.fire(_:)), range: frameRateRange(), paused: paused)
     }
 
     private func stopDisplayLink() {
@@ -531,6 +562,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         comparisonRunner.setSuspended(true)   // PRE-009: nor a comparison
         stopDisplayLink()
         eglMakeCurrent(display, placeholder, placeholder, context)
+        frameFences.drain()   // OUT-013: no frame of a released surface stays in flight
         if let flashLimiter {
             PMFlashLimiterDestroy(flashLimiter)   // recreated on the next limited frame
             self.flashLimiter = nil
@@ -585,6 +617,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     // MARK: - Test support
 
     var isDisplayLinkPaused: Bool? { displayLink?.isPaused }
+    /// OUT-013: the screen the frame link follows, and how many links were built (tests).
+    var displayLinkScreen: ObjectIdentifier? { displayLink?.screenIdentity }
+    var displayLinkBuilds: Int? { displayLink?.builds }
     var isPresentationSuspended: Bool { presentationSuspended }
     var hasFlashLimiter: Bool { flashLimiter != nil }
     var currentSurfaceSize: (width: Int, height: Int) { surfaceSize }
@@ -651,6 +686,8 @@ final class MetalLayerView: UIView, DisplayCalibrationReceiver {
         super.init(frame: frame)
         metalLayer.isOpaque = true
         metalLayer.pixelFormat = .bgra8Unorm
+        metalLayer.maximumDrawableCount = 3       // OUT-013-R6: stated, not assumed
+        metalLayer.allowsNextDrawableTimeout = true
         isOpaque = true
         backgroundColor = .black
     }

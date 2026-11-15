@@ -197,9 +197,11 @@ final class ShowKeyframeCoordinator {
         let time: Int = playheadMilliseconds
         let raw: ShowKeyframeValue = track.value(at: .milliseconds(time)) ?? currentValue(target)
         guard let value = target.clamped(raw) else { return nil }
+        // SHOW-009 clarify: a new keyframe is Linear; a replaced one keeps its mode.
+        let mode: ShowKeyframeInterpolation = track.keyframes.first { (k: ShowKeyframe) -> Bool in k.time == time }?.interpolation ?? .linear
         let done: Bool = commit { (t: inout ShowKeyframeTracks) throws(ShowKeyframeError) -> Void in
             try t.edit(id) { (track: inout ShowKeyframeTrack) throws(ShowKeyframeError) -> Void in
-                try track.setKeyframe(ShowKeyframe(time: time, value: value, interpolation: .linear))
+                try track.setKeyframe(ShowKeyframe(time: time, value: value, interpolation: mode))
             }
         }
         return done ? time : nil
