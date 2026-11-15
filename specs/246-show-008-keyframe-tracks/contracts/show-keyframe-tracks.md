@@ -13,4 +13,4 @@
 - **K6 Edit.** Add Keyframe at Playhead replaces a keyframe at the same time; numbers are clamped to the target's range
   when stored; every edit is refused while the scene is locked.
 - **K7 UI.** `showKeyframeTracks` list; `showKeyframeAddTrack` menu; per track `showKeyframeAddKey`; keyframe rows
-  `showKeyframeRow` with label "0:30, 1.50, Linear"; `showKeyframePlayhead` text.
+  `showKeyframeRow` with label "0:30, 0.90, Linear"; `showKeyframePlayhead` text.

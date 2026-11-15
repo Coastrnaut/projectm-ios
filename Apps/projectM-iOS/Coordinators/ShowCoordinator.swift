@@ -114,6 +114,8 @@ final class ShowCoordinator {
     @ObservationIgnored var cueStarted: (() -> Void)?
     /// SHOW-002: the list was saved after a change (an edit or a step); set by `ShowAutoAdvanceCoordinator`.
     @ObservationIgnored var listChanged: (() -> Void)?
+    /// SHOW-008: the keyframe tracks' coordinator (set by AppCoordinator; nil in tests of the show alone), for the editor.
+    @ObservationIgnored weak var keyframes: ShowKeyframeCoordinator?
 
     /// SCN-015-R6: the editor hides its edit gestures while true.
     var isEditLocked: Bool { sceneLock?.isLocked ?? false }
@@ -605,6 +607,17 @@ final class ShowCoordinator {
         guard (try? list.setDwell(cueID, to: dwell)) != nil else { return false }
         save()
         if list.activeCue?.id == cueID { cueStarted?() }
+        return true
+    }
+
+    /// SHOW-008-R8: replaces the show's keyframe tracks and saves; an edit (refused while locked). Never applies a scene
+    /// or moves the position (the keyframe coordinator resamples the live values).
+    @discardableResult
+    func setKeyframeTracks(_ tracks: ShowKeyframeTracks) -> Bool {
+        if refusedByLock() { return false }
+        guard tracks != list.tracks else { return true }
+        list.tracks = tracks
+        save()
         return true
     }
 

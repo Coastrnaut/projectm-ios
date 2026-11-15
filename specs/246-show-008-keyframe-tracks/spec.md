@@ -59,15 +59,15 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 
 ### User Story 1 - Glow rises along the show (Priority: P1) — MVP
 
-A VJ has a timed show of three 30 s cues. They want the glow to rise from 0.2 at 0:00 to 1.5 at 0:30 and stay there,
+A VJ has a timed show of three 30 s cues. They want the glow to rise from 0.2 at 0:00 to 0.9 at 0:30 and stay there,
 then snap back to 0.4 at 1:00. They add a Glow Intensity track, add keyframes at those times and play the show.
 
 **Independent Test**: A track with keyframes at 0, 30 s and 60 s (Linear, Hold, Linear); evaluating at each keyframe
-time returns exactly the stored value; at 15 s it returns the linear midpoint; between 30 s and 60 s it holds 1.5.
+time returns exactly the stored value; at 15 s it returns the linear midpoint; between 30 s and 60 s it holds 0.9.
 
 **Acceptance Scenarios**:
 
-1. **Given** the track, **When** the show plays across 0:30 with an injected clock, **Then** the glow intensity applied at 0:30 is exactly 1.5, and the sequence of applied values is the same on every run.
+1. **Given** the track, **When** the show plays across 0:30 with an injected clock, **Then** the glow intensity applied at 0:30 is exactly 0.9, and the sequence of applied values is the same on every run.
 2. **Given** the show paused, **When** the performer seeks to 1:00, **Then** 0.4 is applied exactly once and nothing else is applied for the track.
 3. **Given** a MIDI control mapped to glow intensity, **When** the performer moves it, **Then** the MIDI value wins over the track.
 4. **Given** the show at Standby, **When** nothing plays, **Then** the glow is the manual setting.
@@ -86,7 +86,7 @@ linear light and is exactly the stored magenta at 0:30.
 ### User Story 3 - Edit tracks (Priority: P1)
 
 In Settings → Show → Keyframe Tracks the VJ adds a track for a parameter, adds a keyframe at the playhead, changes its
-value and interpolation, and deletes keyframes or tracks. VoiceOver reads each keyframe ("0:30, 1.50, Linear").
+value and interpolation, and deletes keyframes or tracks. VoiceOver reads each keyframe ("0:30, 0.90, Linear").
 
 **Acceptance Scenarios**:
 
