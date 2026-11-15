@@ -80,6 +80,12 @@ final class ExpressionRejectionTests: XCTestCase {
         XCTAssertNil(Self.error(for: "audio.band.0 * 2"))
     }
 
+    /// CAM-011-R2: motion sources are binding sources, not formula names.
+    func testMotionSourcesAreNotFormulaNames() {
+        XCTAssertEqual(Self.error(for: "audio.motion.pitch + 1")?.reason, .unknownIdentifier("audio.motion.pitch"))
+        XCTAssertEqual(Self.error(for: "audio.motion.shake")?.reason, .unknownIdentifier("audio.motion.shake"))
+    }
+
     func testErrorCarriesPositionAndReason() {
         let error = Self.error(for: "1 +\n  audio.bass")
         XCTAssertEqual(error?.position, SourcePosition(line: 2, column: 3))

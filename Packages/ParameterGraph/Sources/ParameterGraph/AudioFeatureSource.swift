@@ -55,6 +55,10 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// MOD-015: one band's fast, medium or slow envelope (0-based band index 0…127), read from
     /// `AudioFeatureFrame.bandEnvelopes` (a `BandEnvelopeBank`'s values).
     case bandEnvelope(Int, BandEnvelopeProfile)
+    /// CAM-011: device tilt (pitch, roll, yaw) around a calibrated neutral, or shake, each 0…1, read from
+    /// `AudioFeatureFrame.motion` (a `MotionTracker`'s values). The `audio.` prefix keeps every stored-binding path
+    /// reading it (research CAM-011-D2, as MOD-007-D4).
+    case motion(MotionAxis)
 
     /// The highest band index (the largest band count is 128).
     public static let maximumBandIndex = 127
@@ -62,7 +66,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// The stable identifier (MOD-013 stores it): `audio.band.<index>`, `audio.bandMean`,
     /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`,
     /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.correlation`, `audio.sectionChange`, `audio.lfo.<index>` (MOD-007),
-    /// `audio.bandEnvelope.<fast|medium|slow>.<index>` (MOD-015).
+    /// `audio.bandEnvelope.<fast|medium|slow>.<index>` (MOD-015), `audio.motion.<pitch|roll|yaw|shake>` (CAM-011).
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -80,6 +84,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case .sectionChange: "audio.sectionChange"
         case let .lfo(index): "audio.lfo.\(index)"
         case let .bandEnvelope(index, profile): "audio.bandEnvelope.\(profile.rawValue).\(index)"
+        case let .motion(axis): "audio.motion." + axis.rawValue
         }
     }
 
@@ -108,11 +113,16 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
                 self = .lfo(index)
             } else if let envelope = Self.bandEnvelope(in: id) {
                 self = envelope
+            } else if id.hasPrefix(Self.motionPrefix), let axis = MotionAxis(rawValue: String(id.dropFirst(Self.motionPrefix.count))) {
+                self = .motion(axis)   // CAM-011
             } else {
                 return nil
             }
         }
     }
+
+    /// CAM-011: the motion sources' ID prefix.
+    static let motionPrefix = "audio.motion."
 
     /// MOD-007: the highest oscillator index (`LFOBank.maximumOscillators` − 1).
     public static let maximumLFOIndex = LFOBank.maximumOscillators - 1
@@ -190,6 +200,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             let i: Int = index * BandEnvelopeBank.profileCount + profile.index
             guard i < frame.bandEnvelopes.count else { return 0 }
             return min(max(Self.finite(frame.bandEnvelopes[i]), 0), 1)
+        case let .motion(axis):   // CAM-011: no motion fed reads the neutral value (attitude 0.5, shake 0)
+            return (frame.motion ?? .neutral).value(axis)
         }
     }
 
@@ -226,13 +238,17 @@ public struct AudioFeatureFrame {
     /// MOD-015: every band's fast, medium and slow envelope, band-major (`band · 3 + profile.index`), borrowed like
     /// `bands`; empty when the producer has no envelope bank (every `.bandEnvelope` source then reads 0).
     public var bandEnvelopes: UnsafeBufferPointer<Double>
+    /// CAM-011: the motion tracker's values; nil when the producer has no motion (every `.motion` source then reads
+    /// its neutral value: attitude 0.5, shake 0).
+    public var motion: MotionFeatureValues?
 
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
                 centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil,
                 highTransient: Float? = nil, rolloff: Float? = nil, flatness: Float? = nil, correlation: Float? = nil,
                 sectionChange: Float? = nil,
                 lfos: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0),
-                bandEnvelopes: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0)) {
+                bandEnvelopes: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0),
+                motion: MotionFeatureValues? = nil) {
         self.bands = bands
         self.onset = onset
         self.beatConfidence = beatConfidence
@@ -247,6 +263,7 @@ public struct AudioFeatureFrame {
         self.sectionChange = sectionChange
         self.lfos = lfos
         self.bandEnvelopes = bandEnvelopes
+        self.motion = motion
     }
 
     /// No audio: every feature reads 0.
