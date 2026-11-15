@@ -81,6 +81,18 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   opacity is the only strength control. No ACC-012 cap: the mean brightness never changes and the peak change is
   bounded; the flash guard judges the shown frame. Applied to FX-017-R3, R5 and the Assumptions.
 
+### Session 2026-11-15 (speckit-analyze)
+
+- Finding A1 (inconsistency): the first data-model draft named a 16-byte block while listing five fields; fixed to the
+  32-byte `CMPFilmGrain` (five fields, three pads), as in contract C2.
+- Finding A2 (coverage): FX-017-R7 (per-pixel cost) and R1's "every output" have no own test; R7 holds by construction
+  (one read, ≤ 3 hashes, reviewed in T05) and R1 because the pass sits in `encodeOutputEffects`, which every output
+  path (screen, recording, capture, external display) reads, as for FX-015 and FX-016. Recorded in T05/T06.
+- Finding A3 (underspecified): the `settings.filmGrain.*` keys are written by their own store, not `AppSettings.allKeys`,
+  so `SettingsTests.testOnlyTheSettingsKeysAreWritten` needs no change; T14 still runs `SettingsTests`.
+- Finding A4 (ambiguity): S2's "renders at different frame times" means static grain; T07 now names both two renders
+  and two frame times. No constitution conflicts; every requirement has a task.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Add a film texture (Priority: P1)

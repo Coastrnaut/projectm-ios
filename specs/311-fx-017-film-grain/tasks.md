@@ -32,10 +32,10 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
 **Independent test**: GPU tests through the real compositor.
 
 - [ ] FX-017-T05 [US1] `FilmGrainPass` with `cmp_grain_hash`, `cmp_grain_noise` and `cmp_film_grain` in
-  `Packages/Compositor/Sources/Compositor/FilmGrainPass.swift` (one pooled picture, released when unused)
+  `Packages/Compositor/Sources/Compositor/FilmGrainPass.swift` (one pooled picture, released when unused; one read and at most three hashes per pixel, FX-017-R7)
 - [ ] FX-017-T06 [US1] `Compositor.swift`: `filmGrain` property, splice the source at the existing compile site, the
   `.filmGrain` case in `encodeOutputEffects` (Color folded before it; grain frame from the frame context), release in
-  deinit; add the source to `CompositorShaderSources.archived` in `CompositorShaders.swift` (FX-017-R7, R12, R14)
+  deinit; add the source to `CompositorShaderSources.archived` in `CompositorShaders.swift` (every output path reads `encodeOutputEffects`, FX-017-R1; R12, R14)
 - [ ] FX-017-T07 [US1] [US2] [US3] `FilmGrainCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and
   opacity 0 (several seeds, sizes, colour, temporal) bit-identical with no pass and no picture; the pass encoded
   directly at opacity 0 bit-identical; GPU hash and noise equal the CPU exactly (test kernel through
