@@ -20,13 +20,17 @@
   `elapsed % total` (integer nanoseconds), so selection is exact and allocation-free.
 - **MED-008-D6 Budget.** Device classes as PERF-005 (4 / 8 GiB): 32 / 64 / 128 MB for decoded animation frames
   (smaller than the prewarm cache, which holds whole stills). A frame decode transiently holds the ImageIO bitmap,
-  the straight-alpha pixels and the premultiplied texels (3 × w × h × 4), reserved while it runs. Decoded size: scale
-  so that 5 frames (2 resident + 3 reserve) fit. Textures are single-level `rgba8Unorm_srgb` (w × h × 4 bytes).
+  the straight-alpha pixels, the premultiplied texels and the new texture (4 × w × h × 4), reserved while it runs.
+  Decoded size: scale so that 6 frames (frame 0 and the frame on screen + 4 reserve) fit; each frame is accounted with
+  one pixel of slack per side, since ImageIO may round a scaled size up. Textures are single-level `rgba8Unorm_srgb` (w × h × 4 bytes).
 - **MED-008-D7 Decode scheduling.** One serial queue per animated picture; `request(i)` enqueues i and i + 1 unless
   resident or in flight; a decode result for a replaced picture is dropped (the picture object is released with
   its generation). The render thread takes the cache lock only with `withLockIfAvailable` (as the slot does).
 - **MED-008-D8 Prewarm.** PERF-005 prewarms `decodeStored` (first picture, still). Adopting it stays instant; the
   layer then probes the file on its load queue and attaches the animation for the same generation.
+- **MED-008-D10 Float delays.** ImageIO returns APNG/GIF delays as 32-bit floats (0.2 → 0.20000000298 s). Summed
+  without rounding, frame starts drift 3 ns per frame and land just after an injected frame time, so a frame shows one
+  frame late (found by the acceptance test). Delays are rounded to 0.1 ms before clamping.
 - **MED-008-D9 Large fixture.** CGImageDestination retains every frame until `Finalize` (D2), so a 200 × 2048²
   fixture is written by hand: frame 0 full-canvas IDAT (zlib = `NSData.compressed(.zlib)` raw deflate with a zlib
   header and Adler-32), frames 1…199 a 64 × 64 `fdAT` patch at a moving offset, `CRC32` from MediaSniffing.

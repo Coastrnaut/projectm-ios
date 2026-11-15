@@ -24,8 +24,8 @@ cache.
   `ImageLayerSource`: the load returns a still or an animation (frame 0 decoded with it), the slot and the prepared
   slot carry the animation, prewarm adoption probes for an animation; `render` picks the frame from the shared
   `KenBurnsPlayhead` counter (unbounded), draws the cached texture or keeps the last one; `reduceFlashing`;
-  `renderDependencies` adds the time dependency while animating; `animationFrameCount` for VoiceOver.
-- **App** — `PhotoVisualHost.reduceFlashing` forwards to the layer; the VoiceOver value names an animation. No new
+  the Reduce flashing timeline from the frame context (`LayerFrameContext.reduceFlashing`); `renderDependencies` adds the time dependency while animating; `animationFrameCount`, `shownFrameIndex` and `animationCacheStatistics` for VoiceOver, diagnostics and tests.
+- **App** — the VoiceOver value names an animation (`PhotoVisualHost.accessibilityValue(_:frames:)`, used by the host and `VisualizerView`); Reduce flashing already reaches the layer through the frame context. No new
   setting, key, scene field or asset kind.
 
 ## Technical Context
@@ -72,6 +72,7 @@ Packages/Compositor/Tests/CompositorTests/
 ├── AnimatedImageFixtures.swift    # new (GIF via CGImageDestination, hand-written APNG)
 └── AnimatedImageLayerTests.swift  # new (GPU)
 Apps/projectM-iOS/Visuals/PhotoVisualHost.swift      # edited
+Apps/projectM-iOS/Views/VisualizerView.swift         # edited (one line)
 Apps/projectM-iOS/Tests/AnimatedPhotoAppTests.swift  # new
 ```
 

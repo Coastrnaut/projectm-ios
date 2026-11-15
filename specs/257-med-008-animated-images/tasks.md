@@ -19,7 +19,7 @@ for the filtered run, app test < 30 s.
 ## Phase 3: User Story 1 - An animated GIF plays (P1) 🎯 MVP
 
 - [ ] MED-008-T04 [US1] `AnimatedImageProbe`, `AnimatedImageFrames`, `AnimatedImageSanitizer` in `Packages/Compositor/Sources/ImageLayer/AnimatedImageDecoding.swift`; `ImageSanitizer.sanitize` sends `.automatic` animations to it (MED-008-R1 to R3)
-- [ ] MED-008-T05 [US1] `AnimatedPicture` in `Packages/Compositor/Sources/ImageLayer/AnimatedPicture.swift`; `ImageLayerSource` load/slot/prepared/prewarm/render/dependencies/`reduceFlashing`/`animationFrameCount`/`animationCacheStatistics` (MED-008-R6, R7, R9 to R11)
+- [ ] MED-008-T05 [US1] `AnimatedPicture` in `Packages/Compositor/Sources/ImageLayer/AnimatedPicture.swift`; `ImageLayerSource` load/slot/prepared/prewarm/render/dependencies (Reduce flashing from the frame context)/`animationFrameCount`/`shownFrameIndex`/`animationCacheStatistics` (MED-008-R6, R7, R9 to R11)
 - [ ] MED-008-T06 [US1] Fixtures (`AnimatedImageFixtures.swift`: GIF via `CGImageDestination`, hand-written APNG) and GPU acceptance in `AnimatedImageLayerTests.swift`: import to APNG keeps frames and delays, no metadata (S4); the fixture loops through the real compositor and boundaries follow the clamped delays (S1); a still behaves as before; a logo stays still
 
 ## Phase 4: User Story 2 - A huge animation stays within memory (P1)
@@ -33,7 +33,7 @@ for the filtered run, app test < 30 s.
 ## Phase 6: User Story 4 - Everywhere a photo goes (P2)
 
 - [ ] MED-008-T09 [US4] Prepared slide (`preload`) adopts an animation; Ken Burns with an animation still moves; the scene archive content check accepts the APNG copy (S5)
-- [ ] MED-008-T10 [US4] `PhotoVisualHost`: forward `reduceFlashing`; VoiceOver value "Animated photo W × H, N frames" (R12); app test `Apps/projectM-iOS/Tests/AnimatedPhotoAppTests.swift`: `PhotoStore.importImage` of a generated GIF stores an APNG, the Photo visual's layer animates (S6)
+- [ ] MED-008-T10 [US4] `PhotoVisualHost` and `VisualizerView`: VoiceOver value "Animated photo W × H, N frames" (R12); app test `Apps/projectM-iOS/Tests/AnimatedPhotoAppTests.swift`: `PhotoStore.importImage` of a generated GIF stores an APNG, the Photo visual's layer animates (S6)
 
 ## Phase 7: Polish
 

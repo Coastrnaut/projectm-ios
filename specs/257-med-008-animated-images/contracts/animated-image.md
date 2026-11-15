@@ -14,9 +14,10 @@
   frame 0 is decoded; `animationFrameCount` = frame count (0 for a still).
 - Frame for a render = `timeline.frameIndex(playhead.elapsed)`; Reduce Motion → 0. Missing texture → the last drawn
   frame; frames i and i + 1 are requested.
-- `reduceFlashing` changes the timeline's clamp from the next render, keeping the elapsed time.
+- The frame context's `reduceFlashing` selects the Reduce flashing timeline for that render, keeping the elapsed time.
 - `renderDependencies`: time while animating (frames > 1, not Reduce Motion) or Ken Burns moving; else still.
-- `animationCacheStatistics` → (budget, resident, peak, decodes, decoded size) for tests and diagnostics.
+- `animationCacheStatistics` → (budget, resident, peak, decodes, decoded size) and `shownFrameIndex` for tests and
+  diagnostics; `isAnimating`.
 - `waitUntilLoaded()` also drains the animation's decode queue.
 
 ## A3 Budget
