@@ -44,6 +44,8 @@ struct SettingsView: View {
     var kenBurns: KenBurnsCoordinator? = nil
     /// MED-010: the logo overlay (nil hides its section).
     var logo: LogoCoordinator?
+    /// MED-011: the clock overlay (nil hides its section).
+    var clock: ClockOverlayCoordinator? = nil
     /// MED-002: the imported video (nil hides the Video section).
     var videos: VideoCoordinator?
     /// MED-009: the Text visual's message and style (nil hides the Text section).
@@ -523,6 +525,7 @@ struct SettingsView: View {
             videoSection(videos).id("video")   // IDs: UITestSettingsSection
         }
         if let logo { LogoSection(logo: logo) }   // MED-010: every visual (the help names those that show it)
+        if let clock { ClockSection(clock: clock).id("clock") }   // MED-011: after the logo (the help names the visuals)
         if settings.visual.usesText, let texts {
             textSection(texts)
         }

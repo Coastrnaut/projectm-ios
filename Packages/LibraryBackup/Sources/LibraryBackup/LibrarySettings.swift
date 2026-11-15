@@ -118,6 +118,7 @@ public enum LibrarySettingsPolicy {
         photoKey, slideshowKey, "settings.text.overlay",
         "settings.photo.kenBurns",   // MED-007-R9: a preference (the photo's pan and zoom); erased with Settings
         logoKey, logoPlacementKey,   // MED-010
+        "settings.clock.overlay",   // MED-011-R9: a preference (shown, format, placement); erased with Settings
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
         "settings.visualizer.sceneHUD",   // UIX-013-R11: a preference (Bool); erased with Settings
