@@ -8,12 +8,12 @@ Budgets (owner rule 7): unit test ≤ 2 s, package suite < 1 min, UI test < 30 s
 
 ## Phase 1: Setup
 
-- [ ] MED-007-T01 Create the private simulator "MED7 iPhone 17" (iOS 27.2), count PosterBoard reports, check the `Build` symlink and the preset submodules, run `xcodegen generate` in the worktree
+- [X] MED-007-T01 Create the private simulator "MED7 iPhone 17" (iOS 27.2), count PosterBoard reports, check the `Build` symlink and the preset submodules, run `xcodegen generate` in the worktree — Verified 2026-11-14: simulator "MED7 iPhone 17" created (iOS 27.2), PosterBoard 26 reports before, `Build` symlink present, preset submodules initialised, `xcodegen generate` OK
 
 ## Phase 2: Foundational (model)
 
-- [ ] MED-007-T02 Add `KenBurnsRect` ("width/height ≥ 0.05, x, y ≥ 0, x + width ≤ 1, y + height ≤ 1 (1e-9 tolerance)", `clamped`, `init?(validating:)`, `full`, `lerp`), `KenBurnsEasing` (`linear`, `easeInOut` = 3u² − 2u³), `KenBurnsMotion` ("durationMilliseconds 2000…60000, default 10000", default easing easeInOut, `crop(elapsedNanoseconds:durationNanoseconds:)` exact at 0 and ≥ duration, presets `zoomIn`/`zoomOut`/`panLeftToRight`/`panRightToLeft`, Codable with the scene keys) and `KenBurnsPlayhead` in `Packages/Compositor/Sources/Compositor/KenBurns.swift`
-- [ ] MED-007-T03 Model tests in `Packages/Compositor/Tests/CompositorTests/KenBurnsModelTests.swift`: exact start and end (bit-equal), monotonic edges over a run for both easings and every preset, intermediate rectangles valid, validation and clamping, playhead (frame durations, saturation, restart), JSON round trip and malformed JSON (MED-007-S2)
+- [X] MED-007-T02 Add `KenBurnsRect` ("width/height ≥ 0.05, x, y ≥ 0, x + width ≤ 1, y + height ≤ 1 (1e-9 tolerance)", `clamped`, `init?(validating:)`, `full`, `lerp`), `KenBurnsEasing` (`linear`, `easeInOut` = 3u² − 2u³), `KenBurnsMotion` ("durationMilliseconds 2000…60000, default 10000", default easing easeInOut, `crop(elapsedNanoseconds:durationNanoseconds:)` exact at 0 and ≥ duration, presets `zoomIn`/`zoomOut`/`panLeftToRight`/`panRightToLeft`, Codable with the scene keys) and `KenBurnsPlayhead` in `Packages/Compositor/Sources/Compositor/KenBurns.swift` — Verified 2026-11-14: builds in `swift test --package-path Packages/Compositor` (KenBurnsModelTests)
+- [X] MED-007-T03 Model tests in `Packages/Compositor/Tests/CompositorTests/KenBurnsModelTests.swift`: exact start and end (bit-equal), monotonic edges over a run for both easings and every preset, intermediate rectangles valid, validation and clamping, playhead (frame durations, saturation, restart), JSON round trip and malformed JSON (MED-007-S2) — Verified 2026-11-14: KenBurnsModelTests 8 tests pass in 0.003 s on the host
 
 ## Phase 3: User Story 1 - A photo zooms and pans (P1) 🎯 MVP
 
