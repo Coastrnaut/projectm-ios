@@ -17,18 +17,17 @@
    "integrated": 79
   },
   "P3": {
-   "audited": 1,
-   "built": 1,
    "implementing": 1,
-   "integrated": 6
+   "integrated": 7,
+   "unit_passed": 1
   }
  },
  "by_state": {
-  "audited": 3,
-  "built": 1,
+  "audited": 2,
   "implementing": 1,
-  "integrated": 320,
-  "skipped_existing": 1
+  "integrated": 321,
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -36,7 +35,6 @@
   "implementation_complete": false,
   "infeasible": [],
   "pending": [
-   "FX-011",
    "FX-017",
    "FX-018",
    "QA-011",
@@ -44,7 +42,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "5 features are not implemented yet (first: FX-011, FX-017, FX-018, QA-011, QA-012)"
+   "4 features are not implemented yet (first: FX-017, FX-018, QA-011, QA-012)"
   ]
  },
  "features": {
@@ -1141,12 +1139,12 @@
   "FX-011": {
    "attempts": 0,
    "branch": "feature/fx-011",
-   "branch_sha": "b1fd8888",
+   "branch_sha": "624fbe33f8657b47193fbb5b075b149e113c85b9",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "d3f32373",
    "priority": "P3",
    "spec_dir": null,
-   "state": "built"
+   "state": "integrated"
   },
   "FX-012": {
    "attempts": 0,
@@ -1201,22 +1199,22 @@
   "FX-017": {
    "attempts": 0,
    "branch": "feature/fx-017",
+   "branch_sha": "a56ee802f292c080ab0157356f3cf2d037dfb714",
+   "error_category": null,
+   "integrated_sha": null,
+   "priority": "P3",
+   "spec_dir": null,
+   "state": "unit_passed"
+  },
+  "FX-018": {
+   "attempts": 0,
+   "branch": "feature/fx-018",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
    "state": "implementing"
-  },
-  "FX-018": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
-   "error_category": null,
-   "integrated_sha": null,
-   "priority": "P3",
-   "spec_dir": null,
-   "state": "audited"
   },
   "FX-019": {
    "attempts": 0,
@@ -3856,6 +3854,11 @@
    "sha": "198fb9535f79dcaaccfff8eb9347ee1f313df411"
   },
   {
+   "branch": "feature/fx-011",
+   "id": "FX-011",
+   "sha": "d3f32373"
+  },
+  {
    "branch": "feature/fx-012",
    "id": "FX-012",
    "sha": "192e64b350e4354f85186942a46aaf403b011ee3"
@@ -4936,5 +4939,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T14:37:27Z"
+ "updated": "2026-11-15T14:54:32Z"
 }
