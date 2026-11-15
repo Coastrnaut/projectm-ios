@@ -4,7 +4,7 @@
 
 ## Phase 1: Foundational - the history ring (VIS-020-R3, R4, R5, R8)
 
-- [ ] VIS-020-T01 `SpectrumWaterfallHistory` (fixed 512 × 256 `UInt8` ring, sequences, integer-nanosecond row clock, running mean, hold on skipped rows, ≤ 512 rows per frame, re-anchor on time backwards, Reduce Motion doubles the step from the next row, log-band → column interpolation, pending rows, `clear()`) and `WaterfallShader.function` in `Packages/VisualGenerators/Sources/VisualGenerators/SpectrumWaterfall.swift`.
+- [ ] VIS-020-T01 `SpectrumWaterfallHistory` (fixed 512 × 256 `UInt8` ring, sequences, integer-nanosecond row clock, running mean, hold on skipped rows, ≤ 512 rows per frame, re-anchor on time backwards, Reduce Motion doubles the step from the next row, log-band → column interpolation, pending rows, `clear()`, and the CPU pixel mirror `level(atX:y:width:height:)` the shader matches) and `WaterfallShader.function` in `Packages/VisualGenerators/Sources/VisualGenerators/SpectrumWaterfall.swift`.
 - [ ] VIS-020-T02 `NoiseFieldConfiguration.waterfall` (on forces wedges 0 and tunnel pace 0) and `waterfall(reduceMotion:palette:)` in `NoiseFieldConfiguration.swift`.
 
 ## Phase 2: User Stories 1 + 2 - time order and fixed storage (VIS-020-R3, R4; S1, S2)
@@ -23,7 +23,7 @@
 
 ## Phase 5: User Story 4 - the app (VIS-020-R9, R11, R12; S6)
 
-- [ ] VIS-020-T08 [US4] Visual choice `spectrumWaterfall` (Bars applies), host style `.waterfall` with in-place mode switches, accessibility value, scene capture as no layer, snapshot and batch-job arms, Settings description text.
+- [ ] VIS-020-T08 [US4] Visual choice `spectrumWaterfall` (`usesBars` true: Bars applies), host style `.waterfall` with in-place mode switches, accessibility value, scene capture as no layer, snapshot and batch-job arms, Settings description text.
 - [ ] VIS-020-T09 [P] [US4] `WaterfallAppTests` (choice stored and restored; host names itself; switches with the other noise-field modes in place; palette and Reduce Motion; no new key written; scene capture no layer); `SettingsTests`, `CameraVisualTests`, `LibraryBackupAppTests` passing.
 - [ ] VIS-020-T10 [P] [US4] `WaterfallUITests`: choose Spectrum Waterfall, Bars offered, the visual shown with its value, source started once (< 30 s).
 
@@ -44,3 +44,13 @@ T03 and T04 (different test files) after T02; T09 and T10 after T08.
 
 MVP = T01-T03 (the acceptance: time order and fixed storage, proven by the pure ring); then the picture (T05-T07),
 then the app (T08-T10).
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- Coverage: every R1-R13 maps to a task (R3-R5, R8 T01-T03; R6, R7 T04; R1, R2, R10, R13 T05-T07, T11; R9, R11,
+  R12 T08-T10). S1-S6 each have a test task. No constitution conflict (no new compile site, no new dependency, no
+  networking, nothing reaches projectM, no new key).
+- Fix applied (underspecification): S3 compares the GPU with "the CPU mirror", which no task defined; T01 now
+  includes the per-pixel CPU mirror of the shader's sampling.
+- Fix applied (inconsistency): spec R9 says Bars applies, but VIS-013 to VIS-015 hide Bars; T08 sets `usesBars` for
+  the waterfall and T10 asserts Bars is offered.
