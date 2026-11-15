@@ -30,6 +30,23 @@ This is a gap row. The audit confirms the gap.
 | Tunnel (VIS-015) | Depth-like motion whose speed follows the tempo, smoothed. | Not a star field; its speed is not user-set. |
 | Noise field family (VIS-013, 014, 015, 020, 011) | One generator with several modes; VIS-012 is adding another mode in parallel. | Not touched by this row. |
 
+## Clarifications
+
+### Session 2026-11-15
+
+Answered by Claude under the owner's standing approval (owner rule 4); each answer is the conservative,
+local-first option.
+
+- Q: Where does the starfield live? → A: A new generator, `StarfieldGenerator`, on the particle path: a CPU simulation and layout of squares drawn by the reviewed flat-shape pass (VIS-008/009/010's compile site; its shader source is already a pipeline archive key source). No new shader, no new compile site, no ADR. Rejected: a mode of the noise field generator (VIS-012 is changing it in parallel; a per-pixel star shader would be a new shader text) (VIS-016-R1).
+- Q: How big is the pool, and does the cap follow the device class or power profile (PERF-008)? → A: A fixed pool of 2000 stars on every device and profile. 2000 squares are 12 000 vertices and about 8 000 star updates per 60 Hz frame — small next to the other native visuals; the power profile already lowers the frame rate. One cap keeps the acceptance (exactly the cap) and determinism independent of the device. The model clamps a requested density to 1…2000; Settings offers 100…2000 in steps of 100, default 600 (VIS-016-R2, R8).
+- Q: How is determinism kept? → A: The whole pool is simulated whatever the density (density only chooses how many of the first stars are drawn), so positions never depend on density. One SplitMix64 stream (VIS-008's) seeded with the seed: at reset every star draws x, y, z in index order; on each fixed 1/240 s step stars are visited in index order and each respawn draws x then y. Steps start at anchor + ⌊k·10⁹/240⌋ ns on the injected frame clock, so any frame timing that reaches the same time has run the same steps; at most 240 steps per frame, a longer gap is skipped and counted (as VIS-008). Bass enters per step from the latest band input (VIS-016-R3, R4).
+- Q: Geometry and perspective? → A: x, y uniform in −2…2, depth z uniform in near 0.05 … far 1 at reset. Each step z −= speed·Δt; below near, z += far − near (keeps the overshoot, so depths stay uniform) with new x, y. Drawn at the frame centre + (x, −y)·0.5·R / z (R = half the shorter side): the far plane spans ±1 R. Side = 0.004·R / z, at least 1 px and at most 0.04 R; alpha = min(0.12 / z, 0.8) × fade-in (over 0.15 of depth after the far plane) × fade-out (over 0.05 before near), so respawns neither pop in nor vanish abruptly. Colour: half white, half the palette's colour k mod 16 of 16. Stars outside the frame are not drawn (VIS-016-R5).
+- Q: Which speeds, and do they follow the beat? → A: Slow 0.1, Medium 0.2 (default), Fast 0.4 depth units per second (a star crosses in about 9.5, 4.75 and 2.4 s). Bass boost: × (1 + 0.5·low), the low band group (VIS-007's thirds of the bands) smoothed per step with τ 0.2 s, the product capped at 0.6; Reduce Motion halves it after the cap. No tempo-synced speed (VIS-015 already offers a tempo-driven flight; one more mode is a follow-up if asked) (VIS-016-R6).
+- Q: How is the total light bounded? → A: The layout sums each drawn star's area × alpha × luminance; when the frame's mean exceeds 0.05 (5 % of full white), every alpha is scaled by the same factor so the mean equals 0.05. Then FX-019's envelope over 17 areas from the stars' squares, as VIS-009 (VIS-016-R7).
+- Q: Trails (VIS-010)? → A: Not in this row: trails are wired to the fountain and the orbit, and streaking 2000 fast stars adds light the bound would have to cover. Recorded as a follow-up (VIS-016-R12).
+- Q: What resets the stars, and is there a seed setting? → A: The generator's loop restart (re-entering the visual builds a fresh generator; resuming the frame loop calls the restart) and a seed change. The seed is fixed (0x5EED0016) with no setting, as VIS-009; speed and density changes apply in place without a reset (VIS-016-R4, R8).
+- Q: Scenes and accessibility? → A: As VIS-015: no SCN-001 layer kind; label "Starfield visualization", identifier `starfield`, value "<Speed> speed, <n> stars, <glow>"; Speed is a segmented picker (`starfieldSpeedPicker`), Stars a stepper (`starfieldDensityStepper`) (VIS-016-R10, R11).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Fly through stars (Priority: P1)
