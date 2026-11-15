@@ -427,14 +427,19 @@ struct SettingsView: View {
         .accessibilityIdentifier("particleOrbitRadiusPicker")
     }
 
-    /// VIS-008-R10: the particle fountain's gravity.
-    private var particleFountainOptions: some View {
+    /// VIS-008-R10: the particle fountain's gravity (SHD-007: the emitter's gravity replaces it when the emitter is on).
+    @ViewBuilder private var particleFountainOptions: some View {
         Picker("Gravity", selection: $settings.particleGravity) {
             ForEach(ParticleGravity.allCases, id: \.self) { (gravity: ParticleGravity) in Text(gravity.title).tag(gravity) }
         }
         .segmentedUnlessAccessibilitySize()   // ACC-006-R1
         .accessibilityLabel("Gravity")
         .accessibilityIdentifier("particleGravityPicker")
+        if settings.particleEmitter.enabled {
+            Text("The particle emitter is on, so its own gravity is used.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 
     /// VIS-007-R9: the mandala's symmetry, mirror and petal style.
@@ -538,6 +543,7 @@ struct SettingsView: View {
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let layerInspector { PaletteLinkSection(palettes: layerInspector.palettes).id("palettes") }   // UIX-011
         NoiseEditorLinkSection().id("noiseEditor")   // SHD-006-R6
+        ParticleEmitterLinkSection(settings: settings).id("particleEmitter")   // SHD-007-R7
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)

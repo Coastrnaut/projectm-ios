@@ -9,6 +9,14 @@
 // Semi-implicit Euler: v ← v + (g − k·v)Δt, then p ← p + v·Δt. Each particle carries its own gravity, drag and
 // life, captured at spawn, so a configuration change applies to later bursts. No clock is read; no allocation.
 // Not Sendable: one owner.
+//
+// SHD-007 (contracts/particle-emitter.md E1): with `configuration.emitter` set, every step also adds the rate in
+// thousandths of a particle to an integer accumulator and spawns one particle whenever it reaches one whole particle
+// (240 000), so after k steps at a constant rate the attempts are exactly ⌊rateMilli·k/240 000⌋, whatever the frame
+// timing. Particles (continuous and onset bursts) are drawn from the emitter's shape, direction ± spread, speed
+// range and lifetime range in a fixed order (position, direction, speed, lifetime); the emitter's bounds replace
+// VIS-008's floor and side kill (bounce: back on the bound, the component reversed × restitution; kill: removed).
+// A particle dies at the first step where its age ≥ its lifetime; those ages are recorded in the expiry stats.
 #if canImport(Darwin)
 import Darwin
 #elseif canImport(Glibc)
@@ -78,10 +86,21 @@ public final class ParticleFountainSimulation {
     public private(set) var droppedOnsets = 0
     /// Steps skipped by long gaps (VIS-008-R3).
     public private(set) var skippedGaps = 0
+    /// SHD-007: the continuous spawn accumulator, thousandths of a particle (< one particle between steps).
+    public private(set) var spawnAccumulator: UInt64 = 0
+    /// SHD-007: continuous spawns attempted since the last reset (spawned or dropped for a full pool).
+    public private(set) var spawnAttempts = 0
+    /// SHD-007: particles that died of age since the last reset, and the least and greatest age at that death.
+    public private(set) var expiredCount = 0
+    public private(set) var minimumAgeAtExpiry = Double.infinity
+    public private(set) var maximumAgeAtExpiry = 0.0
+    /// SHD-007: particles removed by the emitter's bounds (kill) and bounces off them, since the last reset.
+    public private(set) var boundKills = 0
+    public private(set) var bounces = 0
 
     public init(configuration: ParticleFountainConfiguration = ParticleFountainConfiguration()) {
         self.configuration = configuration.clamped()
-        rng = SplitMix64(seed: configuration.seed)
+        rng = SplitMix64(seed: configuration.clamped().effectiveSeed)
         particles = .allocate(capacity: Self.capacity)
         particles.initialize(repeating: .zero, count: Self.capacity)
         onsetTimes = .allocate(capacity: Self.onsetQueueCapacity)
@@ -116,7 +135,14 @@ public final class ParticleFountainSimulation {
         queueCount = 0
         anchorNanoseconds = nil
         stepIndex = 0
-        rng = SplitMix64(seed: configuration.seed)
+        spawnAccumulator = 0
+        spawnAttempts = 0
+        expiredCount = 0
+        minimumAgeAtExpiry = .infinity
+        maximumAgeAtExpiry = 0
+        boundKills = 0
+        bounces = 0
+        rng = SplitMix64(seed: configuration.effectiveSeed)
     }
 
     /// Onsets waiting for their step.
@@ -166,6 +192,7 @@ public final class ParticleFountainSimulation {
             let end: UInt64 = anchor &+ Self.stepOffset(stepIndex &+ 1)
             guard end <= nanoseconds else { return }
             spawnDue(atOrBefore: anchor &+ Self.stepOffset(stepIndex))
+            spawnContinuous()
             step()
             stepIndex &+= 1
             steps += 1
@@ -199,6 +226,10 @@ public final class ParticleFountainSimulation {
                 droppedParticles += n - i
                 return
             }
+            if let emitter = c.emitter {
+                spawnFromEmitter(emitter)
+                continue
+            }
             let angle: Double = (2 * rng.unit() - 1) * cone
             let speed: Double = (low + span * rng.unit()) * scale
             particles[liveCount] = FountainParticle(x: 0, y: 0, vx: speed * sin(angle), vy: speed * cos(angle), age: 0,
@@ -208,11 +239,73 @@ public final class ParticleFountainSimulation {
         }
     }
 
+    /// SHD-007-R3: one continuous spawn attempt whenever the accumulator holds a whole particle (rate halved under
+    /// Reduce Motion). A full pool drops the particle (counted) without drawing.
+    private func spawnContinuous() {
+        guard let emitter = configuration.emitter else { return }
+        let milli: UInt64 = emitter.rateMilli
+        spawnAccumulator &+= configuration.reduceMotion ? milli / 2 : milli
+        while spawnAccumulator >= ParticleEmitterSettings.accumulatorUnit {
+            spawnAccumulator -= ParticleEmitterSettings.accumulatorUnit
+            spawnAttempts += 1
+            if liveCount < Self.capacity {
+                spawnFromEmitter(emitter)
+            } else {
+                droppedParticles += 1
+            }
+        }
+    }
+
+    /// SHD-007-R1, R4: one particle drawn from the emitter (position, direction, speed, lifetime, in that order).
+    /// The caller checked the pool.
+    private func spawnFromEmitter(_ e: ParticleEmitterSettings) {
+        let c = configuration
+        let scale: Double = c.timeScale
+        var x = 0.0, y = 0.0
+        switch e.shape {
+        case .point:
+            break
+        case .line:
+            x = (rng.unit() - 0.5) * e.shapeWidth
+        case .circle:
+            let r: Double = 0.5 * e.shapeWidth * rng.unit().squareRoot()
+            let theta: Double = 2 * Double.pi * rng.unit()
+            x = r * cos(theta)
+            y = r * sin(theta)
+        case .rectangle:
+            x = (rng.unit() - 0.5) * e.shapeWidth
+            y = (rng.unit() - 0.5) * e.shapeHeight
+        }
+        let box = Self.box(e)
+        if e.bounds != .none {
+            x = min(max(x, box.left), box.right)
+            y = min(max(y, box.bottom), box.top)
+        }
+        let degrees: Double = e.direction + (2 * rng.unit() - 1) * e.spread
+        let angle: Double = degrees * Double.pi / 180
+        let speed: Double = (e.minimumSpeed + (e.maximumSpeed - e.minimumSpeed) * rng.unit()) * scale
+        let life: Double = (e.minimumLifetime + (e.maximumLifetime - e.minimumLifetime) * rng.unit()) / scale
+        particles[liveCount] = FountainParticle(x: x, y: y, vx: speed * sin(angle), vy: speed * cos(angle), age: 0,
+                                                life: life, gravity: e.gravity * scale * scale, drag: c.effectiveDrag,
+                                                sequence: spawnedCount)
+        liveCount += 1
+        spawnedCount += 1
+    }
+
+    /// The emitter's collision region (R from the emitter point): the floor is the output's bottom edge; a floor
+    /// alone has no sides or top.
+    static func box(_ e: ParticleEmitterSettings) -> (left: Double, right: Double, bottom: Double, top: Double) {
+        let bottom: Double = -ParticleFountainConfiguration.emitterHeight
+        guard e.bounds == .box else { return (-Double.infinity, Double.infinity, bottom, Double.infinity) }
+        return (-e.boxHalfWidth, e.boxHalfWidth, bottom, bottom + e.boxHeight)
+    }
+
     /// One Δt for every live particle; the dead are removed (the last particle takes the slot).
     private func step() {
         let dt: Double = Self.stepSeconds
         let floor: Double = ParticleFountainConfiguration.floorHeight
         let side: Double = ParticleFountainConfiguration.sideBound
+        let emitter: ParticleEmitterSettings? = configuration.emitter
         var i = 0
         while i < liveCount {
             var p = particles[i]
@@ -221,7 +314,19 @@ public final class ParticleFountainSimulation {
             p.x += p.vx * dt
             p.y += p.vy * dt
             p.age += dt
-            if p.age >= p.life || p.y < floor || abs(p.x) > side {
+            let inside: Bool
+            if let emitter {
+                inside = resolveBounds(&p, emitter)
+            } else {
+                inside = !(p.y < floor || abs(p.x) > side)
+            }
+            let expired: Bool = p.age >= p.life
+            if inside, expired {
+                expiredCount += 1
+                minimumAgeAtExpiry = min(minimumAgeAtExpiry, p.age)
+                maximumAgeAtExpiry = max(maximumAgeAtExpiry, p.age)
+            }
+            if expired || !inside {
                 liveCount -= 1
                 particles[i] = particles[liveCount]
             } else {
@@ -229,5 +334,34 @@ public final class ParticleFountainSimulation {
                 i += 1
             }
         }
+    }
+
+    /// SHD-007-R5: keeps `p` inside the emitter's bounds (bounce) or reports it outside (kill → false).
+    private func resolveBounds(_ p: inout FountainParticle, _ e: ParticleEmitterSettings) -> Bool {
+        guard e.bounds != .none else { return true }
+        let b = Self.box(e)
+        let outside: Bool = p.x < b.left || p.x > b.right || p.y < b.bottom || p.y > b.top
+        guard outside else { return true }
+        guard e.action == .bounce else {
+            boundKills += 1
+            return false
+        }
+        bounces += 1
+        let r: Double = e.restitution
+        if p.y < b.bottom {
+            p.y = b.bottom
+            if p.vy < 0 { p.vy = -p.vy * r }
+        } else if p.y > b.top {
+            p.y = b.top
+            if p.vy > 0 { p.vy = -p.vy * r }
+        }
+        if p.x < b.left {
+            p.x = b.left
+            if p.vx < 0 { p.vx = -p.vx * r }
+        } else if p.x > b.right {
+            p.x = b.right
+            if p.vx > 0 { p.vx = -p.vx * r }
+        }
+        return true
     }
 }
