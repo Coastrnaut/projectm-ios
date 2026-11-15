@@ -36,7 +36,7 @@ suite < 1 min, single xcodebuild run < 10 min; no wall-clock assertion in the mo
 ## Phase 5: Polish
 
 - [ ] OUT-013-T12 {device} D1 with a real external display (USB-C HDMI adapter) and a deliberately heavy preset at the display's native resolution: the device's controls and HUD stay smooth; the external drop counts rise (S5)
-- [ ] OUT-013-T13 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`, privacy manifest and network symbols on the Debug app), type-check budget, PosterBoard counts; delete the simulator and derived data
+- [X] OUT-013-T13 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`, privacy manifest and network symbols on the Debug app), type-check budget, PosterBoard counts; delete the simulator and derived data — Verified 2026-11-14: all six repo checks OK (179 script tests), check_privacy_manifest OK and check_network_symbols OK on the Debug simulator app, no type-check warnings in changed files, FrameTimingTests 63 passed (1 skipped), PosterBoard reports 32 before and 32 after; simulator OUT13 and derived data deleted
 
 ## Dependencies
 

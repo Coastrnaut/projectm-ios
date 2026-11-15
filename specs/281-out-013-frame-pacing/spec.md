@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft (speckit-analyze 2026-11-14: 2 MEDIUM findings fixed: R7 and its edge case scoped to the Metal
+**Status**: Implemented 2026-11-14 (OUT-013-T01-T11, T13 verified on the Mac host and the iOS 27.2 simulator; T12
+`{device}` open). Earlier: (speckit-analyze 2026-11-14: 2 MEDIUM findings fixed: R7 and its edge case scoped to the Metal
 visuals; requirement coverage 10/10)
 
 **Input**: Roadmap row OUT-013 (frozen), verbatim: "Coordinate internal and external redraw without unbounded queues."
