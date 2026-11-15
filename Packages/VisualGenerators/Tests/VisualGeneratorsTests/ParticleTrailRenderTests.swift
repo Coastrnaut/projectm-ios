@@ -84,7 +84,13 @@ final class ParticleTrailRenderTests: XCTestCase {
         XCTAssertEqual(last?.status, .completed)
         XCTAssertEqual(checks, drawnFrames, "checked after every encoded frame (trails were on from frame 0)")
         XCTAssertGreaterThan(drawnFrames, full ? 35_999 : 3_000)
-        XCTAssertGreaterThanOrEqual(bytes, 2 * ParticleTrails.textureSide * ParticleTrails.textureSide * 8, "two 512² rgba16Float textures")
+        for texture in generator.trailPass?.textures ?? [] {   // the fixed size and format, on every platform
+            XCTAssertEqual([texture.width, texture.height], [ParticleTrails.textureSide, ParticleTrails.textureSide])
+            XCTAssertEqual(texture.pixelFormat, .rgba16Float)
+        }
+        if bytes > 0 {   // the iOS Simulator reports allocatedSize 0; the macOS host reports the real size
+            XCTAssertGreaterThanOrEqual(bytes, 2 * ParticleTrails.textureSide * ParticleTrails.textureSide * 8, "two 512² rgba16Float textures")
+        }
         XCTAssertGreaterThan(generator.trailPass?.framesWithTrail ?? 0, drawnFrames * 3 / 4, "the trail was drawn, not just reset")
         print("VIS-010 fixture: 600 s clock (36 000 frames), \(drawnFrames) encoded on the GPU, 2 trail textures, \(bytes) bytes, identities constant")
     }
