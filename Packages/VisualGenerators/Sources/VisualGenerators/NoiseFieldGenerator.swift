@@ -240,7 +240,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         }
         guard let pass = fluidPass else { return false }
         let c: NoiseFieldConfiguration = configuration
-        if lastMode != .fluid { resetFluid() }
+        if let last = lastMode, last != .fluid { resetFluid() }   // entering from another mode starts at rest
         let speedCap: Float = FluidInk.effectiveSpeedCap(reduceMotion: c.reduceMotion)
         if pass.pollHealth(speedCap: speedCap) {
             fluidHealthResets += 1

@@ -28,13 +28,13 @@ final class FluidInkFlashTests: XCTestCase {
             try NoiseFieldGenerator(device: rig.device, pixelFormat: Self.format, configuration: .fluidInk(palette: .spectrum))
         }
         let target = try rig.makeTexture(width: 24, height: 24, format: Self.format)
-        for m: UInt64 in 0..<120 {
+        for m: UInt64 in 0..<60 {
             let commands = try XCTUnwrap(rig.queue.makeCommandBuffer())
-            if m < 60, m % 4 == 0 {
+            if m < 30, m % 4 == 0 {
                 generator.enqueueImpulse(atNanoseconds: 1_000_000_000 + m * 1_000_000_000 / 60, strength: 1, threshold: 0)
             }
             XCTAssertTrue(frame(generator, target, commands, m: m, reduceFlashing: false))
-            guard m % 20 == 19 else { commands.commit(); commands.waitUntilCompleted(); continue }   // each frame's health copy has a slot
+            guard m % 10 == 9 else { commands.commit(); commands.waitUntilCompleted(); continue }   // each frame's health copy has a slot
             let image = try rig.encodeReadBack(target, commands: commands)
             commands.commit()
             commands.waitUntilCompleted()

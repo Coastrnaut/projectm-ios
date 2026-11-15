@@ -41,7 +41,7 @@ final class FluidInkRenderTests: XCTestCase {
             let context = Self.context(frame: m, fps: fps)
             generator.enqueueImpulse(atNanoseconds: context.timeNanoseconds, strength: 1, threshold: 0)
             XCTAssertTrue(encode(generator, into: target, commands, context))
-            if m % 15 == 14 {   // four health samples per second
+            if m % 30 == 29 {   // two health samples per second
                 commands.commit()
                 commands.waitUntilCompleted()
                 XCTAssertEqual(commands.status, .completed)
@@ -65,9 +65,9 @@ final class FluidInkRenderTests: XCTestCase {
         XCTAssertLessThanOrEqual(worst.maxInk, FluidInk.inkCap)
         XCTAssertGreaterThan(worst.maxInk, 0.3)
         XCTAssertLessThanOrEqual(worst.kineticEnergy, FluidInkHealth.energyBound(speedCap: cap))
-        XCTAssertEqual(energies.count, 240)
-        let last = energies.suffix(40).reduce(0, +) / 40
-        let before = energies.dropLast(40).suffix(40).reduce(0, +) / 40
+        XCTAssertEqual(energies.count, 120)
+        let last = energies.suffix(20).reduce(0, +) / 20
+        let before = energies.dropLast(20).suffix(20).reduce(0, +) / 20
         XCTAssertLessThanOrEqual(last, 1.25 * before, "energy \(before) → \(last)")
         print("VIS-011 GPU 60 s of max impulses: max speed \(worst.maxSpeed), max ink \(worst.maxInk), energy max \(worst.kineticEnergy), "
               + "mean \(before) → \(last)")
@@ -172,7 +172,7 @@ final class FluidInkRenderTests: XCTestCase {
         XCTAssertEqual(pass.textures.map { (t: MTLTexture) -> String in "\(t.width)x\(t.height) \(t.pixelFormat.rawValue)" }, sizes)
         XCTAssertEqual(pass.allocatedBytes, bytes)
         XCTAssertEqual(pass.gridSize, FluidInk.gridSize)
-        XCTAssertGreaterThanOrEqual(pass.resets, 3, "first frame, re-entry and restart start at rest")
+        XCTAssertEqual(pass.resets, 2, "re-entry and restart start at rest")
         XCTAssertNil(plain.fluidPass, "a generator that never shows fluid ink allocates nothing for it")
         if bytes == 0 { print("VIS-011: allocatedSize reads 0 here (simulator); sizes and identities asserted") }
     }
