@@ -53,6 +53,25 @@ answer is the conservative option.
 - Q: Frame edges? → A: Every tap is clamped to the frame, so a flat picture has zero gradient everywhere including the
   border and no outline appears at the frame edge. Applied to FX-014-R3.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Is Edge outline a global setting or a per-scene value? → A: Both, like FX-006 to FX-012: a global setting the
+  visuals use, which a scene or effect-chain preset with an `fx.edgeOutline` entry overwrites when opened; a scene
+  without one leaves it alone. Applied to FX-014-R10, R11.
+- Q: How is the colour stored? → A: In settings as a six-digit sRGB hex string (`settings.edgeOutline.color`,
+  "FFFFFF"; anything unreadable is white); in the scene entry as `red`, `green`, `blue` numbers 0…1. The colour well
+  offers no opacity (the outline is opaque). Applied to FX-014-R2, R10, R11.
+- Q: How are width and mode chosen and stored? → A: Two segmented choices: Width "1 px / 2 px / 3 px" (stored as a
+  whole number, rounded and clamped), Mode "Overlay / Outline only" (stored as the string `overlay` or `outlineOnly`,
+  anything else reads as overlay; in a scene `mode` 0 or 1, ≥ 0.5 reads as outline only). Applied to FX-014-R9, R11.
+- Q: What does VoiceOver say for the threshold? → A: "Threshold", the value with two decimals ("0.20"), one hundredth
+  per swipe; the on-screen readout is the same "0.20". Applied to FX-014-R9.
+- Q: What happens where the picture holds non-finite values? → A: A non-finite edge strength counts as no edge: the
+  mask is 0 and overlay keeps the input pixel (FX-002 handles the non-finite value downstream). Applied to the Edge
+  Cases and FX-014-R4.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Outline the picture's edges (Priority: P1)
@@ -111,8 +130,8 @@ same outline back when the scene or preset is opened.
 - A frame smaller than 2 pixels in either direction: passes through.
 - Transparent areas: luminance is taken from the premultiplied colour; the overlay mixes premultiplied colour and alpha
   together (the outline colour is opaque).
-- Non-finite picture values: a non-finite strength never exceeds the threshold test's band in a defined way; FX-002
-  handles non-finite output downstream.
+- Non-finite picture values: a non-finite edge strength counts as no edge (mask 0); FX-002 handles the value
+  downstream.
 - Sensory safety: under a profile with an intensity limit below 1 the outline colour is scaled by that limit; the flash
   guard still judges the shown frame.
 - Visuals that are not compositor-backed: unchanged; the help text names the visuals.
@@ -127,7 +146,8 @@ same outline back when the scene or preset is opened.
   white), mode Overlay (default) or Outline only.
 - **FX-014-R3**: Edge strength at pixel p is |(Gx, Gy)| ÷ 4, Gx and Gy the 3 × 3 Sobel responses of linear luminance with
   taps at offsets of −width, 0, +width, each tap clamped to the frame.
-- **FX-014-R4**: The mask is smoothstep(threshold, threshold + 0.1, strength): exactly 0 at or below the threshold.
+- **FX-014-R4**: The mask is smoothstep(threshold, threshold + 0.1, strength): exactly 0 at or below the threshold and
+  where the strength is not finite.
 - **FX-014-R5**: Overlay: where the mask is 0 the output pixel is the input pixel bit for bit; elsewhere the input mixed
   toward the opaque outline colour by the mask. Outline only: opaque black mixed toward the outline colour by the mask.
 - **FX-014-R6**: A step between two flat regions is outlined on 2 × width pixels across the step and nowhere else.
