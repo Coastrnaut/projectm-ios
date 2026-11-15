@@ -6,7 +6,7 @@ Tests are requested by the spec (acceptance fixture, goldens, UI test). `{device
 
 ## Phase 1: Setup
 
-- [ ] VIS-010-T01 Create simulator "VIS10 iPhone 17" (iOS 27.2), init preset submodules, `xcodegen generate` in the worktree
+- [X] VIS-010-T01 Create simulator "VIS10 iPhone 17" (iOS 27.2), init preset submodules, `xcodegen generate` in the worktree — Verified 2026-11-14: simulator created (2D6F1CE8…), presets initialised, xcodegen generate exit 0
 
 ## Phase 2: Foundational (CPU model, every platform)
 
@@ -27,11 +27,11 @@ Tests are requested by the spec (acceptance fixture, goldens, UI test). `{device
 
 ## Phase 5: US4 Choose it (P2)
 
-- [ ] VIS-010-T10 [US4] App setting `settings.particleTrails` (`ParticleTrailSetting`, unknown → Off) in Apps/projectM-iOS/Coordinators/AppSettings.swift; key in scripts/run_device_tests.py `ALLOWED_KEYS` and Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift `includedKeys`
-- [ ] VIS-010-T11 [US4] `NativeSpectrumHost.particleTrails` applied to fountain/orbit (also after a rebuild), accessibility value suffix, coordinator wiring and `onChange` in Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift, Coordinators/AppCoordinator.swift, Views/VisualizerView.swift
-- [ ] VIS-010-T12 [US4] "Trails" picker (`particleTrailsPicker`) in both particle options in Apps/projectM-iOS/Views/SettingsView.swift
-- [ ] VIS-010-T13 [US4] App tests (persistence, unknown → Off, key lists, host applies to generator) in Apps/projectM-iOS/Tests/ParticleTrailAppTests.swift; SettingsTests `testOnlyTheSettingsKeysAreWritten`; LibraryBackupAppTests
-- [ ] VIS-010-T14 [US4] UI test (≤ 30 s): choose Particle Fountain, set Trails Long in Apps/projectM-iOS/UITests/ParticleTrailUITests.swift
+- [X] VIS-010-T10 [US4] App setting `settings.particleTrails` (`ParticleTrailSetting`, unknown → Off) in Apps/projectM-iOS/Coordinators/AppSettings.swift; key in scripts/run_device_tests.py `ALLOWED_KEYS` and Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift `includedKeys` — Verified 2026-11-14: ParticleTrailAppTests (default, persistence, unknown → Off, key lists) and LibraryBackupAppTests 5/5 on the iOS 27.2 simulator
+- [X] VIS-010-T11 [US4] `NativeSpectrumHost.particleTrails` applied to fountain/orbit (also after a rebuild), accessibility value suffix, coordinator wiring and `onChange` in Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift, Coordinators/AppCoordinator.swift, Views/VisualizerView.swift — Verified 2026-11-14: ParticleTrailAppTests.testHostAppliesTrailsToFountainAndOrbit and ParticleTrailUITests (value "…, Trails Long") on the iOS 27.2 simulator
+- [X] VIS-010-T12 [US4] "Trails" picker (`particleTrailsPicker`) in both particle options in Apps/projectM-iOS/Views/SettingsView.swift — Verified 2026-11-14: ParticleTrailUITests on the iOS 27.2 simulator (picker offered, Off selected, Long chosen)
+- [X] VIS-010-T13 [US4] App tests (persistence, unknown → Off, key lists, host applies to generator) in Apps/projectM-iOS/Tests/ParticleTrailAppTests.swift; SettingsTests `testOnlyTheSettingsKeysAreWritten`; LibraryBackupAppTests — Verified 2026-11-14: ParticleTrailAppTests 3/3, SettingsTests 9/9 (testOnlyTheSettingsKeysAreWritten), LibraryBackupAppTests 5/5, ParticleFountainAppTests and ParticleOrbitAppTests on the iOS 27.2 simulator
+- [X] VIS-010-T14 [US4] UI test (≤ 30 s): choose Particle Fountain, set Trails Long in Apps/projectM-iOS/UITests/ParticleTrailUITests.swift — Verified 2026-11-14: ParticleTrailUITests passed in 20.4 s on "VIS10 iPhone 17" (iOS 27.2); ParticleFountainUITests still passes (13.3 s)
 
 ## Phase 6: Polish
 

@@ -622,6 +622,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.mandalaMirror) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.particleGravity) { coordinator.visualSettingsChanged() }   // VIS-008
+        .onChange(of: coordinator.settings.particleTrails) { coordinator.visualSettingsChanged() }   // VIS-010
         .onChange(of: coordinator.settings.particleOrbitRadius) { coordinator.visualSettingsChanged() }   // VIS-009
         .onChange(of: coordinator.settings.noiseFieldFrequency) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.noiseFieldOctaves) { coordinator.visualSettingsChanged() }   // VIS-013
@@ -681,6 +682,14 @@ struct VisualizerView: View {
     #endif
 
     /// The shown visual: Camera, Photo, a native spectrum or projectM.
+    /// The native visual's accessibility value: its style and glow (VIS-002-R13, FX-001), then its trails (VIS-010-R11).
+    private func nativeAccessibilityValue(_ native: NativeSpectrumHost) -> String {
+        let base: String = NativeSpectrumHost.accessibilityValue(style: native.style, glowEnabled: coordinator.settings.glowEnabled,
+                                                                 glowUnavailable: coordinator.glowUnavailable)
+        let trails: String = NativeSpectrumHost.trailsSuffix(style: native.style, trails: coordinator.settings.particleTrails)
+        return base + trails
+    }
+
     @ViewBuilder private var visual: some View {
         if coordinator.showsCameraVisual, let camera = coordinator.cameraVisual {
             VisualSlotHost(visual: camera.view, external: coordinator.externalDisplay)
@@ -715,9 +724,7 @@ struct VisualizerView: View {
                 .ignoresSafeArea()
                 .accessibilityElement()
                 .accessibilityLabel("\(native.style.title) visualization")
-                .accessibilityValue(NativeSpectrumHost.accessibilityValue(style: native.style,
-                                                                          glowEnabled: coordinator.settings.glowEnabled,
-                                                                          glowUnavailable: coordinator.glowUnavailable))   // FX-001, VIS-002-R13
+                .accessibilityValue(nativeAccessibilityValue(native))   // FX-001, VIS-002-R13, VIS-010-R11
                 .accessibilityIdentifier(native.style.accessibilityIdentifier)
         } else if let renderer = coordinator.renderer {
             VisualSlotHost(visual: renderer.view, external: coordinator.externalDisplay)

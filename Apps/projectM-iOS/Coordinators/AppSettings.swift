@@ -35,6 +35,8 @@
 //   `settings.particleFountain.gravity` (`low`/`medium`/`high`; anything else → medium). Glow is shared; Bars does not apply.
 // * Particle orbit (VIS-009-R10): `settings.visual` may also be `particleOrbit`; its radius, key
 //   `settings.particleOrbit.radius` (`small`/`medium`/`large`; anything else → medium). Glow is shared; Bars does not apply.
+// * Particle trails (VIS-010-R9): key `settings.particleTrails` (`off`/`short`/`long`; anything else → off), shared by
+//   the fountain and the orbit.
 // * Noise field (VIS-013-R9): `settings.visual` may also be `noiseField`; keys `settings.noiseField.frequency`
 //   (`low`/`medium`/`high`; anything else → medium), `settings.noiseField.octaves` (Int 1…6; anything else → 4) and
 //   `settings.noiseField.seed` (Int 0…65535; absent or outside → 1301). Glow is shared; Bars does not apply.
@@ -113,6 +115,7 @@ final class AppSettings {
     static let mandalaPetalKey = "settings.mandala.petal"
     static let particleGravityKey = "settings.particleFountain.gravity"   // VIS-008
     static let particleOrbitRadiusKey = "settings.particleOrbit.radius"   // VIS-009
+    static let particleTrailsKey = "settings.particleTrails"   // VIS-010
     static let noiseFieldFrequencyKey = "settings.noiseField.frequency"   // VIS-013
     static let noiseFieldOctavesKey = "settings.noiseField.octaves"   // VIS-013
     static let noiseFieldSeedKey = "settings.noiseField.seed"   // VIS-013
@@ -156,7 +159,7 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, particleTrailsKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
@@ -330,6 +333,11 @@ final class AppSettings {
     /// VIS-009: the particle orbit's radius (Medium by default); the manual value of `visual.particleOrbit.radius`.
     var particleOrbitRadius: ParticleOrbitRadius {
         didSet { defaults.set(particleOrbitRadius.rawValue, forKey: Self.particleOrbitRadiusKey) }
+    }
+
+    /// VIS-010: the particle fountain's and orbit's trail length (Off by default).
+    var particleTrails: ParticleTrailSetting {
+        didSet { defaults.set(particleTrails.rawValue, forKey: Self.particleTrailsKey) }
     }
 
     /// VIS-013: the noise field's frequency (Medium by default).
@@ -536,6 +544,7 @@ final class AppSettings {
         mandalaPetal = defaults.string(forKey: Self.mandalaPetalKey).flatMap(MandalaPetalStyle.init(rawValue:)) ?? .petal
         particleGravity = defaults.string(forKey: Self.particleGravityKey).flatMap(ParticleGravity.init(rawValue:)) ?? .medium   // VIS-008
         particleOrbitRadius = defaults.string(forKey: Self.particleOrbitRadiusKey).flatMap(ParticleOrbitRadius.init(rawValue:)) ?? .medium   // VIS-009
+        particleTrails = defaults.string(forKey: Self.particleTrailsKey).flatMap(ParticleTrailSetting.init(rawValue:)) ?? .off   // VIS-010
         noiseFieldFrequency = defaults.string(forKey: Self.noiseFieldFrequencyKey).flatMap(NoiseFieldFrequency.init(rawValue:)) ?? .medium   // VIS-013
         noiseFieldOctaves = Self.storedInt(defaults, Self.noiseFieldOctavesKey, in: NoiseFieldConfiguration.octaveRange,
                                            fallback: NoiseFieldConfiguration.defaultOctaves)
@@ -800,6 +809,27 @@ enum ParticleGravity: String, CaseIterable, Sendable {
         case .low: 2.0
         case .medium: 3.0
         case .high: 4.5
+        }
+    }
+}
+
+/// VIS-010-R9: the particle visuals' trail length (the generators' `ParticleTrailLength`).
+enum ParticleTrailSetting: String, CaseIterable, Sendable {
+    case off, short, long
+
+    var title: String {
+        switch self {
+        case .off: "Off"
+        case .short: "Short"
+        case .long: "Long"
+        }
+    }
+
+    var length: ParticleTrailLength {
+        switch self {
+        case .off: .off
+        case .short: .short
+        case .long: .long
         }
     }
 }

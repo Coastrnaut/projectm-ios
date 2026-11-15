@@ -68,6 +68,7 @@ final class SettingsTests: XCTestCase {
         settings.mandalaPetal = .spike
         settings.particleGravity = .low        // VIS-008-R10
         settings.particleOrbitRadius = .large  // VIS-009-R10
+        settings.particleTrails = .long        // VIS-010-R9
         settings.noiseFieldFrequency = .high   // VIS-013-R9
         settings.noiseFieldOctaves = 6
         settings.noiseFieldSeed = 7
