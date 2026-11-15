@@ -917,6 +917,10 @@ struct SettingsView: View {
                 NavigationLink { OSCSendView(send: send) } label: { LabeledContent("Send OSC", value: send.summaryText) }
                     .accessibilityIdentifier("oscSendLink")
             }
+            if let discovery = osc.discovery {   // OSC-011-R3
+                NavigationLink { OSCDiscoveryView(discovery: discovery) } label: { LabeledContent("Nearby Devices", value: discovery.browseSummaryText) }
+                    .accessibilityIdentifier("oscDiscoveryLink")
+            }
         } header: {
             Text("OSC")
         } footer: {
