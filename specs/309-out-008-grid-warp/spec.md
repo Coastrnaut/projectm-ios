@@ -76,6 +76,13 @@ answer is the conservative, local-first option.
 - Q: Where does the mesh apply when the visual is letterboxed (Fit)? → A: Within the visual's picture (its frame as laid
   out by OUT-004); the black bars stay as OUT-004 lays them, and areas the bent picture no longer covers are black. With
   Fill or Stretch the picture is the whole display (OUT-008-R2).
+- Q: What does "exact pass-through" mean, measurably? → A: Byte-for-byte equality of the display's pixels (the app's
+  8-bit sRGB display format) between the frame with the identity mesh and the frame with no grid warp; additionally the
+  warp pass forced on with the identity mesh reproduces its input bytes exactly. No tolerance (OUT-008-R7, S1).
+- Q: What may an active warp cost? → A: Nothing while the mesh is the identity and the editor is closed (no pass, no
+  memory). While active: on projectM no extra pass (the FX-019 output step draws the mesh instead of a full-screen
+  triangle); on compositor visuals one extra full-screen pass and one display-sized picture. The drawn mesh is a fixed
+  16 × 16 triangle-pair subdivision per control cell (at most 128 × 128 pairs) (OUT-008-R2; research OUT-008-D3).
 
 ## User Scenarios & Testing *(mandatory)*
 
