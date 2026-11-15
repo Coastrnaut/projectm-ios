@@ -53,6 +53,8 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
     public var reactionDiffusion: ReactionDiffusionSettings?
     /// VIS-017: SDF shapes with these settings (nil: off); on forces every other mode off.
     public var signedDistance: SignedDistanceSettings?
+    /// VIS-019: cymatic lines with these settings (nil: off); on forces every other mode off. Set through `cymatic(_:)`.
+    public var cymatic: CymaticSettings? = nil
     /// VIS-018: geometric tessellation with these settings (nil: off); on forces every other mode off.
     public var tessellation: TessellationSettings?
 
@@ -111,6 +113,14 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, signedDistance: settings)
     }
 
+    /// VIS-019: cymatic lines with `settings` (only the palette and Reduce Motion apply besides).
+    public static func cymatic(_ settings: CymaticSettings = .default, reduceMotion: Bool = false,
+                               palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
+        var c = NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette)
+        c.cymatic = settings
+        return c.clamped()
+    }
+
     /// VIS-018: geometric tessellation with `settings` (only the palette and Reduce Motion apply besides).
     public static func tessellation(_ settings: TessellationSettings = .default, reduceMotion: Bool = false,
                                     palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
@@ -151,8 +161,12 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         if c.signedDistance != nil {   // VIS-017
             c.wedges = 0; c.tunnelPace = 0; c.waterfall = false; c.fluidInk = false; c.reactionDiffusion = nil
         }
+        if c.cymatic != nil {   // VIS-019
+            c.wedges = 0; c.tunnelPace = 0; c.waterfall = false; c.fluidInk = false; c.reactionDiffusion = nil; c.signedDistance = nil
+        }
         if let t = c.tessellation {   // VIS-018
             c.tessellation = t.clamped()
+            c.cymatic = nil   // VIS-019: one mode at a time
             c.wedges = 0; c.tunnelPace = 0; c.waterfall = false; c.fluidInk = false; c.reactionDiffusion = nil; c.signedDistance = nil
         }
         return c

@@ -44,7 +44,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again, document)
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
-        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline])   // FX-006, FX-007, FX-008 appended
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])   // FX-006, FX-007, FX-008 appended
         XCTAssertEqual(settings.grade, ColorGrade(gamma: 1.6, saturation: 0.4))
         XCTAssertEqual(settings.trails, MotionFeedback(isEnabled: true, halfLifeSeconds: 0.3))
         XCTAssertFalse(settings.isDefault)
@@ -84,7 +84,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.chromatic, split)
-        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline])
+        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])
         let wild = SceneEffectEntry(kind: "fx.chromatic", enabled: false, parameters: ["amount": .double(1), "angle": .string("up")])
         let read = SceneEffectSettings.read([trails, grade, wild])
         XCTAssertEqual(read.settings.chromatic, ChromaticSplit(isEnabled: false, amount: 0.02, angleDegrees: 0))
@@ -96,7 +96,7 @@ final class SceneEffectChainTests: XCTestCase {
 
     func testFX020ListsReadWithTheSplitLastAndUntouched() throws {
         let settings = SceneEffectSettings.read([grade, trails]).settings
-        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline])
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])
         XCTAssertNil(settings.chromatic, "no entry: the current split stays")
         XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
     }
@@ -105,14 +105,14 @@ final class SceneEffectChainTests: XCTestCase {
 
     func testRadialBlurEntryRoundTripsAndIsClamped() throws {
         let blur = RadialBlur(isEnabled: true, strength: 0.2, focusX: 0.25, focusY: 0.75)
-        let live = SceneEffectSettings(order: OutputEffectOrder([.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline]), radialBlur: blur)
+        let live = SceneEffectSettings(order: OutputEffectOrder([.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette]), radialBlur: blur)
         XCTAssertFalse(live.isDefault)
         let document = try minimal(live.entries(over: nil))
         let again = try SceneDocument.decode(document.encoded()).document
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.radialBlur, blur)
-        XCTAssertEqual(settings.order.effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline])
+        XCTAssertEqual(settings.order.effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])
         let wild = SceneEffectEntry(kind: "fx.radialBlur", enabled: true,
                                     parameters: ["strength": .double(4), "focusX": .string("left"), "focusY": .double(-1)])
         let read = SceneEffectSettings.read([trails, wild])
@@ -173,7 +173,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.directionalBlur, blur)
-        XCTAssertEqual(settings.order.effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur, .echo, .mosaic, .edgeOutline])
+        XCTAssertEqual(settings.order.effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])
         let wild = SceneEffectEntry(kind: "fx.directionalBlur", enabled: false, parameters: ["radius": .double(1), "angle": .string("up")])
         let read = SceneEffectSettings.read([trails, grade, wild])
         XCTAssertEqual(read.settings.directionalBlur, DirectionalBlur(isEnabled: false, radius: 0.02, angleDegrees: 0))
@@ -206,7 +206,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.echo, echo)
-        XCTAssertEqual(settings.order.effects, [.echo, .trails, .grade, .chromatic, .directionalBlur, .radialBlur, .mosaic, .edgeOutline])
+        XCTAssertEqual(settings.order.effects, [.echo, .trails, .grade, .chromatic, .directionalBlur, .radialBlur, .mosaic, .edgeOutline, .lensDistortion, .vignette])
         let wild = SceneEffectEntry(kind: "fx.echo", parameters: ["count": .integer(12), "delay": .double(9), "decay": .string("x")])
         let read = SceneEffectSettings.read([trails, grade, wild])
         XCTAssertEqual(read.settings.echo, EchoFeedback(isEnabled: true, count: 4, delaySeconds: 0.5, decay: 0.6),

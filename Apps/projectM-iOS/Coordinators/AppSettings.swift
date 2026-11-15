@@ -51,6 +51,9 @@
 //   and glow are shared; Bars does not apply.
 // * SDF Shapes (VIS-017-R8): `settings.visual` may also be `signedDistance`; key `settings.signedDistance.quality`
 //   (`low`/`medium`/`high`; anything else → medium). Bands swell and turn it; palette and glow are shared; Bars does not apply.
+// * Cymatic Lines (VIS-019-R10): `settings.visual` may also be `cymatic`; key `settings.cymatic.bands`
+//   (`all`/`low`/`mid`/`high`; anything else → all). The loudest selected band picks the figure; palette and glow are
+//   shared; Bars does not apply.
 // * Tessellation (VIS-018-R10): `settings.visual` may also be `tessellation`; keys `settings.tessellation.tiling`
 //   (`triangle`/`square`/`hexagon`/`trihexagonal`/`truncatedSquare`; else hexagon), `.tiles` (Int 2…16; else 6), `.symmetry`
 //   (Int 1, 2, 3, 4 or 6; else 6), `.mirror` (Bool, off) and `.palette` (`spectrum`/`ice`/`mono`; else spectrum; the
@@ -144,6 +147,7 @@ final class AppSettings {
     static let starfieldSpeedKey = "settings.starfield.speed"   // VIS-016
     static let starfieldDensityKey = "settings.starfield.density"   // VIS-016
     static let signedDistanceQualityKey = "settings.signedDistance.quality"   // VIS-017
+    static let cymaticBandsKey = "settings.cymatic.bands"   // VIS-019
     static let tessellationKeys = TessellationSettingsKeys.all   // VIS-018 (TessellationHostSupport.swift)
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
@@ -191,7 +195,8 @@ final class AppSettings {
                           TessellationSettingsKeys.mirror, TessellationSettingsKeys.palette,   // VIS-018
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
-                          ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, MED-011, MED-012, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
+                          ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key,
+                          cymaticBandsKey] + SensorySafetySetting.allKeys   // VIS-019-R10   // ACC-012-R8, MED-010, MED-011, MED-012, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -429,6 +434,11 @@ final class AppSettings {
         didSet { defaults.set(signedDistanceQuality.rawValue, forKey: Self.signedDistanceQualityKey) }
     }
 
+    /// VIS-019: which bands drive the cymatic lines (All by default).
+    var cymaticBands: CymaticBandRange {
+        didSet { defaults.set(cymaticBands.rawValue, forKey: Self.cymaticBandsKey) }
+    }
+
     /// VIS-018: the tessellation's settings (hexagons, 6 tiles, 6-fold, mirror off, Spectrum by default); stored as five keys.
     var tessellation: TessellationSettings {
         didSet {
@@ -662,6 +672,8 @@ final class AppSettings {
         starfieldDensity = Self.isStarfieldDensity(density) ? density : StarfieldConfiguration.defaultDensity   // VIS-016
         signedDistanceQuality = defaults.string(forKey: Self.signedDistanceQualityKey)
             .flatMap(SignedDistanceQuality.init(rawValue:)) ?? .defaultQuality   // VIS-017
+        cymaticBands = defaults.string(forKey: Self.cymaticBandsKey)
+            .flatMap(CymaticBandRange.init(rawValue:)) ?? .defaultRange   // VIS-019
         tessellation = TessellationSettingsKeys.load(from: defaults)   // VIS-018
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
@@ -747,6 +759,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case starfield
     /// The native SDF shapes (VIS-017).
     case signedDistance
+    /// The native cymatic lines (VIS-019).
+    case cymatic
     /// The native geometric tessellation (VIS-018).
     case tessellation
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
@@ -778,6 +792,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .reactionDiffusion: "Reaction Diffusion"
         case .starfield: "Starfield"
         case .signedDistance: "SDF Shapes"
+        case .cymatic: "Cymatic Lines"
         case .tessellation: "Tessellation"
         case .camera: "Camera"
         case .photo: "Photo"
@@ -791,6 +806,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
         || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel
         || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield || self == .signedDistance
+        || self == .cymatic
         || self == .tessellation }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).

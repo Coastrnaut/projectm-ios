@@ -24,7 +24,11 @@
 // bands move `signedDistanceDrive` (swell, angle, brightness), the 64 flash samples come from the CPU mirror of the same
 // bounded march, and a second small uniform block (buffer 1) carries the preset's step cap and threshold and the pose.
 // Entering the mode or a loop restart starts from the rest pose. `makeStepCountPipeline()` (tests) draws step counts.
-// VIS-018: `configuration.tessellation` draws a polygon tiling with an eighth entry point (`TessellationShader`): the
+// VIS-019: `configuration.cymatic` draws cymatic lines with an eighth entry point (`CymaticShader`): the selected bands
+// move `cymaticDrive` (target mode, blend weights, amplitude), the 64 flash samples come from the CPU mirror
+// (`CymaticField`), and a 40-float block (buffer 1) carries the modes and weights. Entering the mode or a loop restart
+// starts at rest. The mode's frame step and its tests-only mask view live in `NoiseFieldGenerator+Cymatic.swift`.
+// VIS-018: `configuration.tessellation` draws a polygon tiling with its own entry point (`TessellationShader`): the
 // bands move `tessellationDrive` (inset, drift, light, brightness), the 64 flash samples come from the CPU lattice
 // (`TessellationLattice`, the same tile function), and a 12-float block (buffer 1) carries the tiling, tile count,
 // symmetry, mirror, the frame's drive state and the lattice origin. The drawn palette is the tessellation's own unless
@@ -89,6 +93,14 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     public private(set) var signedDistanceDrive = SignedDistanceDrive()
     private let sdfUniforms: UnsafeMutablePointer<Float>
     private var sdfPipeline: MTLRenderPipelineState?
+    /// VIS-019: the lines' drive and their uniform block (written by `writeCymaticUniforms`).
+    public internal(set) var cymaticDrive = CymaticDrive()
+    let cymUniforms: UnsafeMutablePointer<Float>
+    private var cymPipeline: MTLRenderPipelineState?
+    /// VIS-019: the shared block for `NoiseFieldGenerator+Cymatic.swift` (same storage).
+    var sharedUniformBlock: UnsafeMutablePointer<Float> { uniforms }
+    var paletteStopsBlock: UnsafeMutablePointer<LinearColor> { palette }
+    func writeSharedUniforms(width: Int, height: Int, gain: Float) { writeUniforms(width: width, height: height, gain: gain) }
     /// VIS-018: the tiles' drive (the state of the last frame) and their uniform block.
     public private(set) var tessellationDrive = TessellationDrive()
     private let tessUniforms: UnsafeMutablePointer<Float>
@@ -120,10 +132,14 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     private var tunnelPipeline: MTLRenderPipelineState?
 
     /// Which entry point draws.
-    enum Mode { case plain, folded, tunnel, waterfall, fluid, reaction, signedDistance, tessellation }
+    enum Mode { case plain, folded, tunnel, waterfall, fluid, reaction, signedDistance
+        case cymatic   // VIS-019
+        case tessellation   // VIS-018
+    }
 
     static func mode(_ c: NoiseFieldConfiguration) -> Mode {
-        if c.tessellation != nil { return .tessellation }   // VIS-018
+        if c.tessellation != nil { return .tessellation }   // VIS-018 (clamped() keeps one mode)
+        if c.cymatic != nil { return .cymatic }   // VIS-019
         if c.signedDistance != nil { return .signedDistance }   // VIS-017
         if c.reactionDiffusion != nil { return .reaction }   // VIS-012
         if c.fluidInk { return .fluid }   // VIS-011
@@ -151,6 +167,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         reactionStops.initialize(repeating: SIMD3<Float>(1, 1, 1), count: ReactionDiffusion.paletteStops)
         sdfUniforms = .allocate(capacity: SignedDistanceShader.uniformFloats)   // VIS-017
         sdfUniforms.initialize(repeating: 0, count: SignedDistanceShader.uniformFloats)
+        cymUniforms = .allocate(capacity: CymaticShader.uniformFloats)   // VIS-019
+        cymUniforms.initialize(repeating: 0, count: CymaticShader.uniformFloats)
         tessUniforms = .allocate(capacity: TessellationShader.uniformFloats)   // VIS-018
         tessUniforms.initialize(repeating: 0, count: TessellationShader.uniformFloats)
         if initialMode == .fluid {   // VIS-011: its pass is its pipelines
@@ -166,6 +184,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
             case .tunnel: tunnelPipeline = initial
             case .waterfall: waterfallPipeline = initial
             case .signedDistance: sdfPipeline = initial   // VIS-017
+            case .cymatic: cymPipeline = initial   // VIS-019
             case .tessellation: tessPipeline = initial   // VIS-018
             case .fluid, .reaction: break
             }
@@ -200,6 +219,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .tunnel: name = "vis_tunnel_fragment"
         case .waterfall: name = "vis_waterfall_fragment"
         case .signedDistance: name = "vis_sdf_fragment"   // VIS-017
+        case .cymatic: name = "vis_cym_fragment"   // VIS-019
         case .tessellation: name = "vis_tess_fragment"   // VIS-018
         }
         guard let vertex = library.makeFunction(name: "vis_noise_vertex"),
@@ -227,6 +247,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .fluid: "VIS-011 Fluid ink"
         case .reaction: "VIS-012 Reaction diffusion"
         case .signedDistance: "VIS-017 SDF shapes"
+        case .cymatic: "VIS-019 Cymatic lines"
         case .tessellation: "VIS-018 Tessellation"
         }
     }
@@ -246,6 +267,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .signedDistance:   // VIS-017
             if sdfPipeline == nil { sdfPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .signedDistance) }
             return sdfPipeline
+        case .cymatic:   // VIS-019
+            if cymPipeline == nil { cymPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .cymatic) }
+            return cymPipeline
         case .tessellation:   // VIS-018
             if tessPipeline == nil { tessPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .tessellation) }
             return tessPipeline
@@ -262,6 +286,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         palette.deinitialize(count: NoiseFieldConfiguration.paletteColors); palette.deallocate()
         reactionStops.deinitialize(count: ReactionDiffusion.paletteStops); reactionStops.deallocate()
         sdfUniforms.deinitialize(count: SignedDistanceShader.uniformFloats); sdfUniforms.deallocate()
+        cymUniforms.deinitialize(count: CymaticShader.uniformFloats); cymUniforms.deallocate()   // VIS-019
         tessUniforms.deinitialize(count: TessellationShader.uniformFloats); tessUniforms.deallocate()
     }
 
@@ -386,6 +411,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         resetFluid()   // VIS-011
         reactionReloadPending = true   // VIS-012: re-seed
         signedDistanceDrive.reset()   // VIS-017: rest pose
+        cymaticDrive.reset()   // VIS-019: rest
         tessellationDrive.reset()   // VIS-018
     }
 
@@ -515,6 +541,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
             let pose: SignedDistancePose = writeSignedDistanceUniforms(quality: settings.quality)
             flashAreas.sampleSignedDistance(pose: pose, quality: settings.quality, paletteStops: palette,
                                             width: target.width, height: target.height)
+        } else if mode == .cymatic, let settings = c.cymatic {   // VIS-019
+            advanceCymatic(settings: settings, bands: bands, context: context, entering: lastMode != .cymatic,
+                           width: target.width, height: target.height)
         } else if mode == .tessellation, let settings = c.tessellation {   // VIS-018
             if lastMode != .tessellation { tessellationDrive.reset() }
             tessellationDrive.advance(groups: MandalaBandGroups.from(bands), timeNanoseconds: context.timeNanoseconds,
@@ -550,6 +579,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         if mode == .waterfall { encoder.setFragmentTexture(historyTexture, index: 0) }   // VIS-020
         if mode == .signedDistance {   // VIS-017
             encoder.setFragmentBytes(sdfUniforms, length: SignedDistanceShader.uniformFloats * MemoryLayout<Float>.stride, index: 1)
+        }
+        if mode == .cymatic {   // VIS-019
+            encoder.setFragmentBytes(cymUniforms, length: CymaticShader.uniformFloats * MemoryLayout<Float>.stride, index: 1)
         }
         if mode == .tessellation {   // VIS-018
             encoder.setFragmentBytes(tessUniforms, length: TessellationShader.uniformFloats * MemoryLayout<Float>.stride, index: 1)
@@ -597,6 +629,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         if c.signedDistance != nil {   // VIS-017: the drive's brightness in the same slot
             uniforms[3] = signedDistanceDrive.pose.brightness * gain
         }
+        if c.cymatic != nil { uniforms[3] = cymaticDrive.frame.brightness * gain }   // VIS-019: the same slot
         if c.tessellation != nil {   // VIS-018: the drive's brightness in the same slot
             uniforms[3] = tessellationDrive.frame.brightness * gain
         }
@@ -623,6 +656,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         + TunnelShader.function + WaterfallShader.function + shaderBody + FluidInkShader.functions   // VIS-011: after the body
         + ReactionDiffusionShader.functions   // VIS-012: after the body
         + SignedDistanceShader.functions   // VIS-017: after the body
+        + CymaticShader.functions   // VIS-019: after the body
         + TessellationShader.functions   // VIS-018: after the body
 
     static let shaderHeader = """

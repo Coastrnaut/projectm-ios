@@ -105,6 +105,9 @@ public enum LibrarySettingsPolicy {
         "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   // FX-012-R9
         "settings.edgeOutline.enabled", "settings.edgeOutline.threshold", "settings.edgeOutline.width",   // FX-014-R10
         "settings.edgeOutline.color", "settings.edgeOutline.mode",
+        "settings.lensDistortion.enabled", "settings.lensDistortion.strength", "settings.lensDistortion.zoomToFill",   // FX-016-R9
+        "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   // FX-015-R9
+        "settings.vignette.centerX", "settings.vignette.centerY",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9
@@ -123,6 +126,7 @@ public enum LibrarySettingsPolicy {
         "settings.reactionDiffusion.speed",
         "settings.starfield.speed", "settings.starfield.density",   // VIS-016-R8
         "settings.signedDistance.quality",   // VIS-017-R8
+        "settings.cymatic.bands",   // VIS-019-R10
         "settings.tessellation.tiling", "settings.tessellation.tiles", "settings.tessellation.symmetry",   // VIS-018-R10
         "settings.tessellation.mirror", "settings.tessellation.palette",
         "settings.spectrum.attack", "settings.spectrum.release",

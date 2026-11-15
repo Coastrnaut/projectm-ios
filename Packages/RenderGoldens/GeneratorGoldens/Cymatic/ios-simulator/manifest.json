@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "cymatic-128x96-f0.png",
+      "fileSHA256" : "f8a8f9966b06ae4390ce2d892664c487ca90ae43a813c4a0ae29f27f0da8eddc",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "156e02e5ce6f3d5b7388641bd1378c0ac3884d4b8fc69f81056a281d8b8977ff",
+      "scene" : "cymatic",
+      "width" : 128
+    },
+    {
+      "file" : "cymatic-256x192-f0.png",
+      "fileSHA256" : "a6560a0cd7ad38399bcc0bc22d1609133962da6c2cc5f2801312dd8bd761252f",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "fcec9eeaa51b23079f566ec90944f0dc02f344db53a67ee4bd50d047b723faf0",
+      "scene" : "cymatic",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

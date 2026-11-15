@@ -360,6 +360,7 @@ struct SettingsView: View {
                 if settings.visual == .reactionDiffusion { ReactionDiffusionOptions(settings: settings) }   // VIS-012-R13
                 if settings.visual == .starfield { StarfieldOptions(settings: settings) }   // VIS-016-R8
                 if settings.visual == .signedDistance { SignedDistanceOptions(settings: settings) }   // VIS-017-R8
+                if settings.visual == .cymatic { CymaticOptions(settings: settings) }   // VIS-019-R10
                 if settings.visual == .tessellation { TessellationOptions(settings: settings) }   // VIS-018-R10
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
@@ -571,6 +572,8 @@ struct SettingsView: View {
         if let layerInspector { EchoSection(setting: layerInspector.echoFeedback).id("echo") }   // FX-010-R12
         if let layerInspector { MosaicSection(setting: layerInspector.mosaic).id("mosaic") }   // FX-012-R8
         if let layerInspector { EdgeOutlineSection(setting: layerInspector.edgeOutline).id("edgeOutline") }   // FX-014-R9
+        if let layerInspector { LensDistortionSection(setting: layerInspector.lensDistortion).id("lensDistortion") }   // FX-016-R8
+        if let layerInspector { VignetteSection(setting: layerInspector.vignette).id("vignette") }   // FX-015-R8
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
     }
 
