@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Draft (speckit-analyze 2026-11-14: 2 MEDIUM findings fixed: R7 and its edge case scoped to the Metal
+visuals; requirement coverage 10/10)
 
 **Input**: Roadmap row OUT-013 (frozen), verbatim: "Coordinate internal and external redraw without unbounded queues."
 Acceptance, verbatim: "Slow external output does not stall primary display render loop." P2, L, depends on OUT-001
@@ -102,7 +103,8 @@ frame-rate range and pause state.
 
 - The output stops consuming entirely (cable pulled): OUT-002 removes the slot; in-flight frames complete or are
   abandoned and the gate empties; a later output starts with a clean count of frames in flight.
-- The drawable request returns nothing: the tick is dropped (counted as a drawable drop); nothing is retried in a loop.
+- The drawable request returns nothing (Metal visuals): the tick is dropped (counted as a drawable drop); nothing is
+  retried in a loop.
 - A drawable wait that took longer than half the output's refresh interval: the next tick is skipped (one-tick
   back-off) so the output can catch up.
 - PERF-011 suspension: no ticks; frames already in flight complete normally.
@@ -127,7 +129,9 @@ frame-rate range and pause state.
   life (a screen move does not reset them).
 - **OUT-013-R6**: The visual layers MUST state their drawable policy explicitly: three drawables and a bounded drawable
   wait.
-- **OUT-013-R7**: A drawable wait longer than half of the output's refresh interval MUST skip the output's next tick.
+- **OUT-013-R7**: Where the app requests the drawable itself (the Metal visuals), a drawable wait longer than half of
+  the output's refresh interval MUST skip the output's next tick, and a request that returns nothing MUST be a counted
+  drop. projectM's drawable is fetched inside ANGLE and is covered by R1 and R8 (research OUT-013-D3).
 - **OUT-013-R8**: projectM's frames on ANGLE MUST be bounded the same way without waiting: completion is polled once per
   tick with a zero timeout.
 - **OUT-013-R9**: The pacing rules MUST be a pure model testable with an injected clock (no wall clock), and build where
