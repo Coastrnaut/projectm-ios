@@ -315,7 +315,8 @@ class Target:
             return sorted(f["relativePath"] for f in json.loads(out.read_text())["result"]["files"])
 
     def pull(self, relative: str, destination: Path) -> None:
-        destination.parent.mkdir(parents=True, exist_ok=True)
+        if not DRY_RUN:   # a dry run writes nothing (QA-011: it left empty run folders behind)
+            destination.parent.mkdir(parents=True, exist_ok=True)
         if self.simulator:
             data = Path(run(["xcrun", "simctl", "get_app_container", self.identifier, BUNDLE, "data"],
                             capture=True, quiet=True).stdout.strip())

@@ -64,3 +64,6 @@ docs/test-reports/exports/feature002/sim/
 
 # Autonomous roadmap run: local state, logs and worktrees (reports live in docs/autonomous/)
 .autonomous/
+
+# QA-011 simulator rehearsals are not evidence (CLAUDE.md: keep simulator exports gitignored)
+docs/test-reports/qa-011/runs/sim/

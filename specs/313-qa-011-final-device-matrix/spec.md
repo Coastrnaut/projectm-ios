@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft (speckit-specify, speckit-clarify 2026-11-15).
+**Status**: Implemented on the Mac 2026-11-15 (tooling, inventory, checklist); device runs T19-T22 open.
 
 **Input**: User description: "Implement QA-011 (Final physical device matrix) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Run complete D1/D2/D3 matrix only after all
