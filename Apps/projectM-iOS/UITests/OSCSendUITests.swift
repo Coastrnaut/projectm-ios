@@ -62,6 +62,9 @@ final class OSCSendUITests: XCTestCase {
 
         XCTAssertEqual(app.switches["oscSendKind.scene"].value as? String, "1")
         XCTAssertEqual(app.switches["oscSendKind.beat"].value as? String, "0")
+        // The address field keeps the keyboard up, and reveal's drags land on the keyboard instead of the list.
+        if app.keyboards.firstMatch.exists { host.typeText("\n") }
+        XCTAssertTrue(poll(3) { !self.app.keyboards.firstMatch.exists }, "the keyboard is closed")
         XCTAssertTrue(app.reveal(app.switches["oscSendSceneNames"]), "Include scene names is offered")
         XCTAssertEqual(app.switches["oscSendSceneNames"].value as? String, "0")
     }
