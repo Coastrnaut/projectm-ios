@@ -568,6 +568,7 @@ struct SettingsView: View {
         if let layerInspector { RadialBlurSection(setting: layerInspector.radialBlur).id("radialBlur") }   // FX-008-R8
         if let layerInspector { EchoSection(setting: layerInspector.echoFeedback).id("echo") }   // FX-010-R12
         if let layerInspector { MosaicSection(setting: layerInspector.mosaic).id("mosaic") }   // FX-012-R8
+        if let layerInspector { EdgeOutlineSection(setting: layerInspector.edgeOutline).id("edgeOutline") }   // FX-014-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
     }
 
