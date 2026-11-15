@@ -104,6 +104,7 @@ public enum LibrarySettingsPolicy {
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   // VIS-013-R9
         "settings.kaleidoscope.wedges",   // VIS-014-R9
+        "settings.tunnel.pace",   // VIS-015-R9
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",

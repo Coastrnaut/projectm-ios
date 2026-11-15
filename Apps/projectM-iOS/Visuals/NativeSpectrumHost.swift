@@ -69,6 +69,9 @@
 //   configuration; `reduceMotion` halves its drift and band warp (R8).
 // * Kaleidoscope (VIS-014): the same generator with `wedges` set (folded); Wedges and switches to and from Noise Field
 //   change only its configuration; `reduceMotion` also halves its turning (R8).
+// * Tunnel (VIS-015): the same generator in its tunnel mode; Pace and switches with Noise Field and Kaleidoscope change
+//   only its configuration; `tunnelTempo` (SHOW-011's snapshot) is read once per frame while it is shown and handed to
+//   the generator, whose drive eases the speed; `reduceMotion` halves its speed and bass punch (R8).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -403,6 +406,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private let bandEnvelopeBank = BandEnvelopeBank()
     /// MOD-009: the BPM tempo-synced oscillators follow (nil: their stored rate); read once per frame while one exists.
     var lfoTempoBPM: (@MainActor () -> Double?)?
+    /// VIS-015: the tempo the tunnel follows (nil: none, the base speed); read once per frame while the tunnel is shown.
+    var tunnelTempo: (@MainActor () -> TunnelTempo)?
     /// CAM-011: true while a binding or trigger reads a motion source (recomputed when they change, never per frame).
     private(set) var usesMotion = false
     /// CAM-011: the motion tracker's current values, read once per evaluated frame while `usesMotion`.
@@ -525,6 +530,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                     configuration: NoiseFieldConfiguration.kaleidoscope(wedges: wedges))
             generator.barCount = barCount
             return generator
+        case let .tunnel(pace):   // VIS-015: the noise field's generator in its tunnel mode
+            let generator = try NoiseFieldGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                    configuration: NoiseFieldConfiguration.tunnel(pace: pace))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -606,11 +616,16 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.octaves = octaves
             configuration.seed = seed
             configuration.wedges = 0   // VIS-014: from the kaleidoscope, the fold turns off
+            configuration.tunnelPace = 0   // VIS-015: from the tunnel, back to the field
             field.configuration = configuration
         } else if case let .kaleidoscope(wedges) = newStyle, let field = generator as? NoiseFieldGenerator {
             // VIS-014: in place, from the next frame (from Noise Field too: the kaleidoscope's own source settings)
             field.configuration = NoiseFieldConfiguration.kaleidoscope(wedges: wedges, reduceMotion: field.configuration.reduceMotion,
                                                                        palette: field.configuration.palette)
+        } else if case let .tunnel(pace) = newStyle, let field = generator as? NoiseFieldGenerator {
+            // VIS-015: in place, from the next frame; a pace change eases the speed (the drive is kept)
+            field.configuration = NoiseFieldConfiguration.tunnel(pace: pace, reduceMotion: field.configuration.reduceMotion,
+                                                                 palette: field.configuration.palette)
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -795,6 +810,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
         orbit.drive(base: resolved.base, bass: resolved.bass)
     }
 
+    /// VIS-015-R4: hands the tunnel this frame's tempo (SHOW-011's snapshot through `tunnelTempo`; none without it). Called
+    /// by `frame(_:)`; tests call it directly. A struct copy, no allocation.
+    func driveTunnel() {
+        guard let field = generator as? NoiseFieldGenerator, field.configuration.isTunnel else { return }
+        field.tempo = tunnelTempo?() ?? .none
+    }
+
     /// "bound, manual 0.50, effective 0.73" (MOD-002-R12; the Debug readout and tests).
     var glowModulationReadout: String {
         let state = glowIntensityIsBound ? "bound" : "unbound"
@@ -832,6 +854,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .noiseField(frequency, octaves, seed):   // VIS-013-R12
             return "\(frequency.title) frequency, \(octaves) octaves, seed \(seed), \(glow)"
         case let .kaleidoscope(wedges): return "\(wedges) wedges, \(glow)"   // VIS-014-R12
+        case let .tunnel(pace): return "\(pace.title), \(glow)"   // VIS-015-R12
         }
     }
 
@@ -1028,6 +1051,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
                         highTransient: highTransient, rolloff: rolloff, flatness: flatness, correlation: correlation,
                         sectionChange: sectionChange, timeNanoseconds: context.timeNanoseconds)   // MOD-002; no-op without bindings
         driveParticleOrbit(kick: kickEnvelope)   // VIS-009: after the modulation step; nothing for another visual
+        driveTunnel()   // VIS-015: the tempo snapshot, once per frame; nothing for another visual
         stepEffectQuality(time: link.timestamp)   // PERF-003: arithmetic; the glow changes only when the level or fade moves
         drainBeatEvents(context: context)   // VIS-006: nothing unless beat rings are shown
         // VIS-003: the oscilloscope draws the newest sample history (kept when nothing new arrived).
@@ -1182,6 +1206,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case noiseField(frequency: NoiseFieldFrequency, octaves: Int, seed: Int)
     /// VIS-014: the kaleidoscope (the noise field folded into `wedges`).
     case kaleidoscope(wedges: Int)
+    /// VIS-015: the tunnel (the noise field's generator in its tunnel mode) at `pace` rings per beat.
+    case tunnel(pace: TunnelPace)
 
     /// VIS-006, VIS-008, VIS-009: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1212,6 +1238,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .particleOrbit: VisualChoice.particleOrbit.title
         case .noiseField: VisualChoice.noiseField.title
         case .kaleidoscope: VisualChoice.kaleidoscope.title
+        case .tunnel: VisualChoice.tunnel.title
         }
     }
 
@@ -1228,6 +1255,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .particleOrbit: "particleOrbit"
         case .noiseField: "noiseField"
         case .kaleidoscope: "kaleidoscope"
+        case .tunnel: "tunnel"
         }
     }
 }
