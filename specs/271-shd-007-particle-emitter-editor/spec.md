@@ -84,6 +84,15 @@ local-first option. The SHD-011 policy holds: no user-authored executable shader
   0…65535, skipping the current seed (SHD-006's approach).
 - Q: Does the Gravity picker still apply? → A: Only with the emitter off. With it on the emitter's gravity is used;
   the picker's footer says so.
+- Q: How does VoiceOver describe the preview? → A: As one element "Emitter preview" whose value reads the live
+  particle count and the spawn count of the run ("42 particles, 120 spawned"); the sliders read their values with
+  units (ACC-005).
+- Q: Can the preview flash? → A: It draws the fountain's colours at their fixed alpha ≤ 0.8 (VIS-008-R7) in a
+  small inline canvas, on a dark background, with no full-frame changes; it plays only while visible and never
+  under Reduce Motion. The full-screen visual keeps the strobe safety envelope.
+- Q: What does "jittery frame rate" mean in the acceptance test? → A: Frame gaps drawn from a fixed seed between
+  5 ms and 40 ms, with the last frame at exactly 10 s after the anchor. Because the spawn schedule depends only
+  on the fixed steps, the jittery run must equal the 60 Hz run particle for particle.
 
 ## User Scenarios & Testing *(mandatory)*
 
