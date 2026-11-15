@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "starfield-128x96-f0.png",
+      "fileSHA256" : "67524676ff9a03a0c5c65ba266b8c572b0859ea45281fe2548803078f1a2001a",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "8518d9b4d8d61ec19361e3c087514e3a6582a4d9a5061639c35cfddc5d6ceb13",
+      "scene" : "starfield",
+      "width" : 128
+    },
+    {
+      "file" : "starfield-256x192-f0.png",
+      "fileSHA256" : "b2a42297d9d3fd4a958894f8fbdb0783372916ea5a6ab601e1543293070fc17e",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "325b3659c51d084f06e622472e063c3a3b3dd6db2720b1cb1febc9bf7fa18772",
+      "scene" : "starfield",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}

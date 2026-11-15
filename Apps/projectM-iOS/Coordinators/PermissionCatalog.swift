@@ -88,7 +88,7 @@ enum PermissionCatalog {
         PermissionEntry(permission: .localNetwork,
                         name: "Local Network",
                         infoPlistKey: "NSLocalNetworkUsageDescription",
-                        usageDescription: "When you turn on OSC receiver in Settings, projectM listens on your local network for OSC control messages; if you also turn on Send OSC, it sends OSC messages to the one local device you enter. It never connects to the internet.",
+                        usageDescription: "When you turn on OSC receiver in Settings, projectM listens on your local network for OSC control messages; if you also turn on Send OSC, it sends OSC messages to the one local device you enter; if you turn on Nearby Devices, it finds other devices or lets them find this one on your local network with Bonjour. It never connects to the internet.",
                         features: ["OSC receiver (OSC-001)", "Send OSC (OSC-005)"],
                         askedWhen: "When you turn on OSC receiver in Settings.",
                         settingsCanChange: true,

@@ -16,6 +16,10 @@
 // * MED-004 (speed, R6, R8): `speed` is the stored video's saved speed (1× by default). A pick saves
 //   and reaches the player at once through `onSpeedChange` (no settle: one discrete action). Speed
 //   only ever goes to the video layer; nothing here touches the audio source.
+// * MED-005 (reverse, R1, R5, R7): `reverse` is the stored video's saved direction (forward by default). The switch
+//   saves and reaches the player at once through `onReverseChange`. The layer's `VideoReverseState` comes back through
+//   `reverseStateChanged`: `reverseCaption` is "Preparing reverse…" or the unsupported clip's sentence (announced once);
+//   the clip keeps playing forward meanwhile.
 import CoreTransferable
 import Foundation
 import Observation
@@ -65,6 +69,18 @@ final class VideoCoordinator {
     /// MED-004: tells the app coordinator the speed to play, at once.
     @ObservationIgnored var onSpeedChange: ((VideoPlaybackSpeed) -> Void)?
 
+    /// MED-005: reverse playback of the stored video (forward without a video).
+    private(set) var reverse = false
+    /// MED-005: the video layer's reverse state.
+    private(set) var reverseState: VideoReverseState = .off
+    /// MED-005: tells the app coordinator the direction to play, at once.
+    @ObservationIgnored var onReverseChange: ((Bool) -> Void)?
+    /// MED-005: the unsupported reason announced last (each reason is announced once while reverse stays on).
+    @ObservationIgnored private var announcedReverseReason: VideoReverseUnsupported?
+
+    /// "Preparing reverse…" while the cache is built.
+    static let reversePreparingCaption = "Preparing reverse…"
+
     /// `store` is nil when the folder cannot be named; imports then fail with `.saveFailed`.
     init(store: VideoStore?,
          announce: @escaping @MainActor (String) -> Void = { UIAccessibility.post(notification: .announcement, argument: $0) }) {
@@ -74,6 +90,7 @@ final class VideoCoordinator {
         loopRegion = video.flatMap { (stored: StoredVideo) -> VideoLoopRegion? in store?.loopRegion(for: stored.id) }
         appliedLoopRegion = loopRegion
         speed = video.map { (stored: StoredVideo) -> VideoPlaybackSpeed in store?.speed(for: stored.id) ?? .normal } ?? .normal
+        reverse = video.map { (stored: StoredVideo) -> Bool in store?.isReversed(stored.id) ?? false } ?? false   // MED-005
     }
 
     /// FILE-008-R5: every stored identifier that resolves (scene and cue checks count them as present).
@@ -174,6 +191,9 @@ final class VideoCoordinator {
         loopRegion = stored.flatMap { (s: StoredVideo) -> VideoLoopRegion? in store?.loopRegion(for: s.id) }
         appliedLoopRegion = loopRegion
         speed = stored.map { (s: StoredVideo) -> VideoPlaybackSpeed in store?.speed(for: s.id) ?? .normal } ?? .normal   // MED-004
+        reverse = stored.map { (s: StoredVideo) -> Bool in store?.isReversed(s.id) ?? false } ?? false   // MED-005
+        reverseState = .off
+        announcedReverseReason = nil
         onVideoChange?(stored)
     }
 
@@ -295,6 +315,38 @@ final class VideoCoordinator {
 
     /// The scene field for the current speed (nil at 1×).
     var sceneSpeedPercent: Int? { speed.isNormal ? nil : speed.percent }
+
+    // MARK: - Reverse (MED-005)
+
+    /// The Reverse switch: saved and applied at once (nothing without a video).
+    func setReverse(_ on: Bool) {
+        guard let video, on != reverse else { return }
+        reverse = on
+        store?.setReversed(on, for: video.id)
+        if !on {
+            reverseState = .off
+            announcedReverseReason = nil
+        }
+        onReverseChange?(on)
+    }
+
+    /// The video layer reported its reverse state. An unsupported reason is announced once.
+    func reverseStateChanged(_ state: VideoReverseState) {
+        reverseState = state
+        guard reverse, case .unsupported(let reason) = state, reason != announcedReverseReason else { return }
+        announcedReverseReason = reason
+        announce(reason.message)
+    }
+
+    /// The caption under the switch while reverse is on: preparing, or why the clip plays forward; nil otherwise.
+    var reverseCaption: String? {
+        guard reverse else { return nil }
+        switch reverseState {
+        case .preparing: return Self.reversePreparingCaption
+        case .unsupported(let reason): return reason.message
+        case .off, .playing: return nil
+        }
+    }
 
     // MARK: - Notice
 

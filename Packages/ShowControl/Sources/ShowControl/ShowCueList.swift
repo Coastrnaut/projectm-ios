@@ -24,9 +24,11 @@ public struct ShowCue: Sendable, Hashable, Identifiable {
     public internal(set) var transitionOverride: ShowCueTransition?
     /// SHOW-005: Next and Previous (manual, timed, quantized) pass over a skipped cue; Go to Cue still reaches it.
     public internal(set) var skipped: Bool
+    /// SHOW-012: the operator's private note (`ShowCueNote` rules; nil = none). Operator UI only, never live output.
+    public internal(set) var operatorNote: String?
 
     public init(id: UUID, sceneID: String, label: String, transition: ShowCueTransition? = nil, dwell: ShowCueDwell? = nil,
-                transitionOverride: ShowCueTransition? = nil, skipped: Bool = false) {
+                transitionOverride: ShowCueTransition? = nil, skipped: Bool = false, operatorNote: String? = nil) {
         self.id = id
         self.sceneID = sceneID
         self.label = label
@@ -34,6 +36,7 @@ public struct ShowCue: Sendable, Hashable, Identifiable {
         self.dwell = dwell
         self.transitionOverride = transitionOverride
         self.skipped = skipped
+        self.operatorNote = operatorNote
     }
 
     /// SHOW-004-R3: what a step into this cue drives: the override when set, else the scene default (nil = at once).
@@ -81,6 +84,8 @@ public enum ShowEditError: Error, Sendable, Hashable, CustomStringConvertible {
     case unknownCue(UUID)
     case duplicateCueID(UUID)
     case invalidMove
+    /// SHOW-012: a note longer than `ShowCueNote.maximumCharacters`, or not in its stored form.
+    case invalidNote
 
     public var description: String {
         switch self {
@@ -90,6 +95,7 @@ public enum ShowEditError: Error, Sendable, Hashable, CustomStringConvertible {
         case let .unknownCue(id): "The show has no cue \(id.uuidString)."
         case let .duplicateCueID(id): "The cue ID \(id.uuidString) is used twice."
         case .invalidMove: "The cues cannot be moved there."
+        case .invalidNote: "A note is at most \(ShowCueNote.maximumCharacters) characters."
         }
     }
 }
@@ -129,6 +135,7 @@ public struct ShowCueList: Sendable, Hashable {
             guard seen.insert(cue.id).inserted else { throw .duplicateCueID(cue.id) }
             guard Self.isSceneID(cue.sceneID) else { throw .invalidSceneID(cue.sceneID) }
             guard let label = Self.normalizedLabel(cue.label), label == cue.label else { throw .invalidLabel }
+            if let note = cue.operatorNote, ShowCueNote.normalized(note) != note { throw .invalidNote }   // SHOW-012
             checked.append(cue)
         }
         guard let name = Self.normalizedLabel(name) else { throw .invalidLabel }
@@ -251,18 +258,21 @@ public struct ShowCueList: Sendable, Hashable {
 
     /// Inserts a cue right after the cue `after` (SCN-003 Duplicate Scene). The label is trimmed; the
     /// position keeps its cue. SCN-007: `transition` is the new cue's transition (a duplicate passes its source's);
-    /// SHOW-002: `dwell` likewise; SHOW-004: `transitionOverride` likewise; SHOW-005: `skipped` likewise.
+    /// SHOW-002: `dwell` likewise; SHOW-004: `transitionOverride` likewise; SHOW-005: `skipped` likewise; SHOW-012:
+    /// `operatorNote` likewise (already in stored form, else `.invalidNote`).
     @discardableResult
     public mutating func insert(sceneID: String, label: String, after: UUID, cueID: UUID = UUID(),
                                 transition: ShowCueTransition? = nil, dwell: ShowCueDwell? = nil,
-                                transitionOverride: ShowCueTransition? = nil, skipped: Bool = false) throws(ShowEditError) -> ShowCue {
+                                transitionOverride: ShowCueTransition? = nil, skipped: Bool = false,
+                                operatorNote: String? = nil) throws(ShowEditError) -> ShowCue {
         guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == after }) else { throw .unknownCue(after) }
         guard cues.count < Self.maximumCues else { throw .tooManyCues(limit: Self.maximumCues) }
         guard Self.isSceneID(sceneID) else { throw .invalidSceneID(sceneID) }
         guard let label = Self.normalizedLabel(label) else { throw .invalidLabel }
         guard !cues.contains(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .duplicateCueID(cueID) }
+        if let operatorNote, ShowCueNote.normalized(operatorNote) != operatorNote { throw .invalidNote }
         let cue = ShowCue(id: cueID, sceneID: sceneID, label: label, transition: transition, dwell: dwell,
-                          transitionOverride: transitionOverride, skipped: skipped)
+                          transitionOverride: transitionOverride, skipped: skipped, operatorNote: operatorNote)
         cues.insert(cue, at: index + 1)
         return cue
     }
@@ -301,6 +311,22 @@ public struct ShowCueList: Sendable, Hashable {
     public mutating func setSkipped(_ cueID: UUID, _ skipped: Bool) throws(ShowEditError) {
         guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .unknownCue(cueID) }
         cues[index].skipped = skipped
+    }
+
+    /// SHOW-012-R1: sets a cue's note from edited text (cleaned by `ShowCueNote`); empty text or nil removes it; text longer
+    /// than 500 characters throws `.invalidNote`. Never changes the position, the order or any other field. Returns the
+    /// stored note.
+    @discardableResult
+    public mutating func setOperatorNote(_ cueID: UUID, to text: String?) throws(ShowEditError) -> String? {
+        guard let index = cues.firstIndex(where: { (cue: ShowCue) -> Bool in cue.id == cueID }) else { throw .unknownCue(cueID) }
+        let clean: String = ShowCueNote.cleaned(text ?? "")
+        guard !clean.isEmpty else {
+            cues[index].operatorNote = nil
+            return nil
+        }
+        guard let note = ShowCueNote.normalized(clean) else { throw .invalidNote }
+        cues[index].operatorNote = note
+        return note
     }
 
     /// SCN-007: sets (or, with nil, removes) a cue's transition. Never changes the position or the order.

@@ -601,12 +601,12 @@ struct VisualizerView: View {
     }
 
     private func withVisualChanges(_ content: some View) -> some View {
-        withGeneratorChanges(withSpectrumChanges(content
+        withStarfieldChanges(withGeneratorChanges(withSpectrumChanges(content
             .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
             .onChange(of: coordinator.settings.sensorySafety.profile) { coordinator.applyReduceFlashing() }   // ACC-012
             .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
             .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
-            .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() })) // ACC-003-R13
+            .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() }))) // ACC-003-R13
     }
 
     private func withSpectrumChanges(_ content: some View) -> some View {
@@ -642,6 +642,13 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.kaleidoscopeWedges) { coordinator.visualSettingsChanged() }   // VIS-014
         .onChange(of: coordinator.settings.tunnelPace) { coordinator.visualSettingsChanged() }   // VIS-015
         .onChange(of: coordinator.settings.reactionDiffusion) { coordinator.visualSettingsChanged() }   // VIS-012
+    }
+
+    /// VIS-016: the starfield's settings (its own short chain, so withGeneratorChanges stays at about ten).
+    private func withStarfieldChanges(_ content: some View) -> some View {
+        content
+        .onChange(of: coordinator.settings.starfieldSpeed) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.starfieldDensity) { coordinator.visualSettingsChanged() }
     }
 
     private func withSourceChanges(_ content: some View) -> some View {
@@ -979,11 +986,13 @@ private struct VideoLoopProbe: View {
         } ?? "whole"
         let stats: String = video.loopStatistics()
         let speed: String = video.speedProbe()   // MED-004-R11
+        let reverse: String = video.reverseProbe()   // MED-005-R11
         return VStack {
             Text(index).accessibilityIdentifier("videoMediaFrameIndex").accessibilityValue(index)
             Text(region).accessibilityIdentifier("videoLoopRegion").accessibilityValue(region)
             Text(stats).accessibilityIdentifier("videoLoopStats").accessibilityValue(stats)
             Text(speed).accessibilityIdentifier("videoSpeed").accessibilityValue(speed)
+            Text(reverse).accessibilityIdentifier("videoReverse").accessibilityValue(reverse)
         }
         .font(.caption2)
         .opacity(0.01)

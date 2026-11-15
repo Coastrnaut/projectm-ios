@@ -9,6 +9,7 @@
 // OUT-006 (contract C4): an Output picker (Same scene, Clean output), applied live.
 // OUT-007 (contract C4): "Corner pin…" opens `CornerPinEditorView` full screen (available with or without a display).
 // OUT-009 (contract C5): "Color calibration…" opens `DisplayCalibrationEditorView` full screen, likewise.
+// OUT-014 (contract C3): `OutputProfileRows` (export and import of these settings as a local file) closes the section.
 import PresentationLifecycle
 import SwiftUI
 
@@ -28,6 +29,7 @@ struct ExternalDisplaySection: View {
             rehearseRow
             cornerPinRow
             calibrationRow
+            OutputProfileRows(setting: setting)
         } header: {
             Text(ExternalOutputSetting.sectionTitle)
         } footer: {

@@ -672,6 +672,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         OSCSendCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-005: Send OSC off, no destination
+        OSCDiscoveryCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-011: discovery off
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -700,6 +701,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             guard let snapshot = self?.tempo.snapshot, let anchor = snapshot.anchorNanoseconds, let period = snapshot.periodNanoseconds else { return nil }
             return (anchor: anchor, period: period)
         }
+        osc.discovery = OSCDiscoveryCoordinator(osc: osc, defaults: defaults)   // OSC-011: Nearby Devices
         if let routes = osc.routes {   // OSC-004: learn on OSC Routes, announced on the .osc lane
             let announcer: AccessibilityAnnouncer = statusEvents.announcer
             osc.learn = OSCLearnCoordinator(osc: osc, routes: routes) { (text: String) -> Void in announcer.announce(text, kind: .osc) }
@@ -713,10 +715,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.content = .none   // MED-003: the new video's region applies from its first picture
             host.loopRegion = videos.loopRegion
             host.playbackSpeed = videos.speed   // MED-004
+            host.reverse = videos.reverse   // MED-005
             host.content = Self.videoContent(stored)
         }
         videos.onLoopRegionChange = { [weak self] (region: VideoLoopRegion?) in self?.videoVisual?.loopRegion = region }   // MED-003
         videos.onSpeedChange = { [weak self] (speed: VideoPlaybackSpeed) in self?.videoVisual?.playbackSpeed = speed }   // MED-004
+        videos.onReverseChange = { [weak self] (on: Bool) in self?.videoVisual?.reverse = on }   // MED-005
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         colorGrade.onChange = { [weak self] (_: ColorGrade) in self?.applyColorGrade() }   // FX-003
         connectMotionFeedback()   // FX-009
@@ -1224,6 +1228,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .spectrumWaterfall: .waterfall   // VIS-020
         case .fluidInk: .fluidInk   // VIS-011
         case .reactionDiffusion: .reactionDiffusion(settings.reactionDiffusion)   // VIS-012
+        case .starfield: .starfield(speed: settings.starfieldSpeed, density: settings.starfieldDensity)   // VIS-016
         default: .circular
         }
     }
@@ -1409,6 +1414,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onVideoStateChange = { [weak self] (state: VideoLayerState) in self?.videoStateChanged(state) }
             host.loopRegion = videos.loopRegion   // MED-003: before the first start
             host.playbackSpeed = videos.speed     // MED-004
+            host.reverse = videos.reverse         // MED-005
+            host.onReverseStateChange = { [weak self] (state: VideoReverseState) in self?.videos.reverseStateChanged(state) }
             host.content = Self.videoContent(videos.video)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             videoVisual = host

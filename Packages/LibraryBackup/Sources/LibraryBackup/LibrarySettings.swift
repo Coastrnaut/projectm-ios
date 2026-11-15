@@ -111,6 +111,7 @@ public enum LibrarySettingsPolicy {
         "settings.reactionDiffusion.pattern",
         "settings.reactionDiffusion.seed",
         "settings.reactionDiffusion.speed",
+        "settings.starfield.speed", "settings.starfield.density",   // VIS-016-R8
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",
@@ -146,6 +147,7 @@ public enum LibrarySettingsPolicy {
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
         "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   // OSC-005-R12: this device's
         "settings.osc.send.kinds", "settings.osc.send.sceneNames",                         // network output setup
+        "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   // OSC-011-R10: this device's network
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
         "settings.show.quantizeCues",   // SHOW-003: a performance timing choice of this device
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
@@ -164,7 +166,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
         "settings.externalDisplay.calibration",   // OUT-009-R9: likewise (one display's colour response)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
-        "settings.video.id", "settings.video.loop", "settings.video.speed",
+        "settings.video.id", "settings.video.loop", "settings.video.speed", "settings.video.reverse",   // MED-005
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
         "notice.photosensitivityAcknowledged", "permission.explained.camera", "permission.explained.localNetwork",
         "session.recovery.open", "session.recovery.heldVisual", "session.recovery.sessionsSinceReopen", "guide.firstScene",

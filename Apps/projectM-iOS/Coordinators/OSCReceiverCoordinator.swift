@@ -18,6 +18,8 @@
 // * OSC-008 (specs/200-osc-008-peer-allowlist): `peers` is Approved Devices; its blocked list and count are read on the
 //   same gated refresh.
 // * OSC-005 (specs/277-osc-005-osc-send): `sender` (Send OSC) is re-evaluated on every switch or foreground change.
+// * OSC-011 (specs/289-osc-011-local-peer-discovery): `discovery` (Nearby Devices) likewise; it announces through
+//   `setAdvertisement(_:)` on this receiver's listener.
 // * OSC-004 (specs/274-osc-004-osc-learn): `learn` is OSC learn on OSC Routes; every refresh tells it whether the
 //   receiver still listens (learn ends when it stops). `dispatcher` lets it arm the one-shot capture.
 // The test value feeds nothing that renders (OSC-001-R7). The networking itself lives in
@@ -48,6 +50,8 @@ final class OSCReceiverCoordinator {
     var learn: OSCLearnCoordinator?
     /// OSC-005: Send OSC (nil in tests that do not need it); follows this switch and the foreground (OSC-005-R4).
     var sender: OSCSendCoordinator?
+    /// OSC-011: Nearby Devices (nil in tests that do not need it); follows this switch and the foreground (OSC-011-R5).
+    var discovery: OSCDiscoveryCoordinator?
     /// OSC-003: messages to addresses that are not on the route list, since launch.
     private(set) var unknownAddressCount = 0
 
@@ -100,6 +104,12 @@ final class OSCReceiverCoordinator {
     /// OSC-004: the receiver's dispatcher (learn arms its capture).
     var dispatcher: OSCDispatcher { receiver.dispatcher }
 
+    /// OSC-011-R7: the name the listener announces (nil: none).
+    func setAdvertisement(_ name: String?) { receiver.setAdvertisement(name) }
+
+    /// OSC-011: what the receiver was last asked to announce.
+    var advertisement: String? { receiver.advertisement }
+
     /// OSC-008: the receiver's peer allowlist, checked per datagram.
     var peerAllowlist: OSCPeerAllowlist { receiver.peerAllowlist }
 
@@ -137,6 +147,7 @@ final class OSCReceiverCoordinator {
             receiver.stop()
         }
         sender?.conditionsChanged()   // OSC-005-R4, R5: sending follows the switch and the foreground
+        discovery?.conditionsChanged()   // OSC-011-R5, R6: so do browsing and announcing
         refresh()
     }
 

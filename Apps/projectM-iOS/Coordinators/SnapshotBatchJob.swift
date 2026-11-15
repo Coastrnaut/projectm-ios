@@ -158,6 +158,7 @@ enum SnapshotBatchPlanner {
         case .spectrumWaterfall: return .waterfall   // VIS-020
         case .fluidInk: return .fluidInk   // VIS-011
         case .reactionDiffusion: return .reactionDiffusion(settings.reactionDiffusion)   // VIS-012
+        case .starfield: return .starfield(speed: settings.starfieldSpeed, density: settings.starfieldDensity)   // VIS-016
         default: return .circular
         }
     }

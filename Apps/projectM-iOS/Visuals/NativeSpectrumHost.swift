@@ -83,6 +83,8 @@
 //   speed; it reads bass from the frame's bands (no bus subscription); switches with the other noise-field modes and
 //   settings changes change only its configuration (a preset, pattern or seed change re-seeds); `reduceMotion` halves
 //   the iterations and spaces the injections (R12).
+// * Starfield (VIS-016): its own generator on the flat-shape pass (`StarfieldHostSupport.swift`); Speed and Stars change
+//   only its configuration (the stars keep flying); the loop restart resets the stars; `reduceMotion` halves its speed.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -98,6 +100,7 @@
 //   signal. Its level goes to the bloom (Reduced: fewer taps, coarser glow; Minimal: no glow pass) and its fade weight
 //   multiplies the glow intensity after the ACC-012 clamp, so the FX-019 limiter models the glow actually drawn. With
 //   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
+import ANGLERendering
 import AnalysisFeatures
 import AudioCore
 import Compositor
@@ -159,7 +162,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// ANL-013: called on the main actor when the warning is raised or cleared (cleared on start and stop).
     var onPhaseWarningChange: (@MainActor (Bool) -> Void)?
     private var lastLinkTimestamp: CFTimeInterval?
-    private var displayLink: CADisplayLink?
+    private var displayLink: ScreenDisplayLink?   // OUT-013: the screen that shows the view
+    /// OUT-013: this visual's frames in flight and drops (contract C4).
+    let outputPacing = MetalOutputPacing()
     private var paused = true
     private(set) var isSuspended = false
     private var meter = FrameRateMeter()
@@ -244,6 +249,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         if let g = generator as? ParticleFountainGenerator { return g.configuration.palette }
         if let g = generator as? ParticleOrbitGenerator { return g.configuration.palette }
         if let g = generator as? NoiseFieldGenerator { return g.configuration.palette }   // VIS-013
+        if let g = generator as? StarfieldGenerator { return g.configuration.palette }   // VIS-016
         return nil
     }
 
@@ -288,11 +294,16 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = field.configuration
             configuration.palette = palette
             field.configuration = configuration
+        } else if let stars = generator as? StarfieldGenerator {   // VIS-016
+            stars.apply(palette: palette)
         }
     }
 
     /// VIS-013: the noise field's generator (tests; nil for another visual).
     var noiseFieldGenerator: NoiseFieldGenerator? { generator as? NoiseFieldGenerator }
+
+    /// VIS-016: the starfield's generator (tests; nil for another visual).
+    var starfieldGenerator: StarfieldGenerator? { generator as? StarfieldGenerator }
 
     /// VIS-009: the particle orbit's generator (tests; nil for another visual).
     var particleOrbitGenerator: ParticleOrbitGenerator? { generator as? ParticleOrbitGenerator }
@@ -349,6 +360,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.reduceMotion = reduceMotion
             field.configuration = configuration
         }
+        (generator as? StarfieldGenerator)?.apply(reduceMotion: reduceMotion)   // VIS-016: half speed
         guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
         var configuration = mandala.configuration
         configuration.reduceMotion = reduceMotion   // the layout re-anchors, so the angle stays continuous
@@ -603,6 +615,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                     configuration: NoiseFieldConfiguration.reactionDiffusion(settings))
             generator.barCount = barCount
             return generator
+        case let .starfield(speed, density):   // VIS-016
+            return try StarfieldGenerator.make(device: device, speed: speed, density: density, barCount: barCount)
         }
     }
 
@@ -629,6 +643,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         samples.initialize(repeating: 0, count: WaveformFrameBuffer.capacity)
         view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
+        view.onWindowChange = { [weak self] in self?.followScreen() }   // OUT-013
         observeFrameRatePressure()
         applyGlow()
         applyLissajousPersistence()   // VIS-004-R9
@@ -712,6 +727,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             // VIS-012: in place, from the next frame (entering, or a preset/pattern/seed change, re-seeds; storage kept)
             field.configuration = NoiseFieldConfiguration.reactionDiffusion(settings, reduceMotion: field.configuration.reduceMotion,
                                                                             palette: field.configuration.palette)
+        } else if case let .starfield(speed, density) = newStyle, let stars = generator as? StarfieldGenerator {
+            stars.apply(speed: speed, density: density)   // VIS-016: in place, from the next frame
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -957,6 +974,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case .waterfall: return "Newest at top, \(glow)"   // VIS-020-R12
         case .fluidInk: return "Ink from sudden sounds, \(glow)"   // VIS-011-R12
         case let .reactionDiffusion(settings): return settings.accessibilityDescription + ", \(glow)"   // VIS-012-R13
+        case let .starfield(speed, density): return StarfieldDescription.accessibilityValue(speed: speed, density: density, glow: glow)   // VIS-016-R11
         }
     }
 
@@ -1015,6 +1033,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
         updateLoop()
     }
 
+    /// OUT-013: the view joined a window, maybe on another screen; the frame link follows it.
+    private func followScreen() {
+        displayLink?.follow(view)
+    }
+
     private func updateLoop() {
         let run = !paused && !isSuspended
         if run, displayLink == nil {
@@ -1034,10 +1057,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             setPhaseInverted(false)   // ANL-013: and its warning
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
-            let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
-            link.preferredFrameRateRange = quality.frameRateRange
-            link.add(to: .main, forMode: .common)
-            displayLink = link
+            displayLink = ScreenDisplayLink(view: view, target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)),
+                                            range: quality.frameRateRange)
         } else if !run, let link = displayLink {
             link.invalidate()
             displayLink = nil
@@ -1144,7 +1165,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
         lastLinkTimestamp = link.timestamp
         let smoothedBands = smoother.update(target: bands, count: bandCount, frameInterval: interval, generation: bandSession)
         timer?.end(.audio)   // the drawable wait is not audio work; the modulation below is (accumulated)
-        guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
+        guard outputPacing.begin() else { return }   // OUT-013: a full output drops the tick (counted), never waits
+        guard let drawable = outputPacing.nextDrawable(from: layer, refreshInterval: link.targetTimestamp - link.timestamp) else { return }
+        guard let commands = queue.makeCommandBuffer() else { return outputPacing.abandon() }
         timer?.begin(.audio)
         let context: VisualFrameContext = frameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                                        frameDuration: link.targetTimestamp - link.timestamp)
@@ -1185,7 +1208,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             drawn = generator.encode(into: target, commandBuffer: commands, bands: input, context: context)
         }
         timer?.end(.render)
-        guard drawn else { return }
+        guard drawn else { return outputPacing.abandon() }
         encodeCaptureIfPending(target, commands: commands)   // REC-001; nothing without a request
         if videoRecording != nil { timer?.begin(.encode) }
         // REC-003: the drawn drawable (glow included) copied into the recording's pixel buffer.
@@ -1196,6 +1219,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         timer?.end(.encode)
         timer?.begin(.present)
         frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
+        outputPacing.track(commands)   // OUT-013: the slot returns when the GPU completes the frame
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)
@@ -1258,6 +1282,7 @@ final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
         metalLayer.pixelFormat = .bgra8Unorm_srgb
         metalLayer.framebufferOnly = true
         metalLayer.isOpaque = true
+        MetalOutputPacing.configure(metalLayer)   // OUT-013-R6
         isOpaque = true
         backgroundColor = .black
         isUserInteractionEnabled = false
@@ -1273,6 +1298,14 @@ final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
     override func layoutSubviews() {
         super.layoutSubviews()
         onLayout?()
+    }
+
+    /// OUT-013: the host's frame link follows the screen of the window this view joins.
+    var onWindowChange: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onWindowChange?()
     }
 }
 
@@ -1324,6 +1357,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case fluidInk
     /// VIS-012: reaction diffusion (the noise field's generator in its reaction mode).
     case reactionDiffusion(ReactionDiffusionSettings)
+    /// VIS-016: the starfield at `speed` with `density` stars requested.
+    case starfield(speed: StarfieldSpeed, density: Int)
 
     /// VIS-006, VIS-008, VIS-009, VIS-011: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1358,6 +1393,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .waterfall: VisualChoice.spectrumWaterfall.title
         case .fluidInk: VisualChoice.fluidInk.title
         case .reactionDiffusion: VisualChoice.reactionDiffusion.title
+        case .starfield: VisualChoice.starfield.title
         }
     }
 
@@ -1378,6 +1414,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .waterfall: "spectrumWaterfall"
         case .fluidInk: "fluidInk"
         case .reactionDiffusion: "reactionDiffusion"
+        case .starfield: "starfield"
         }
     }
 }

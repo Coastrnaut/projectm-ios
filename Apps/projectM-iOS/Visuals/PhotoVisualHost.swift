@@ -14,6 +14,7 @@
 //   itself (specs/257-med-008-animated-images), with Reduce flashing from the frame context and Reduce Motion from MED-007.
 // * Per frame this file allocates nothing: the band scratch is preallocated and the audio context is
 //   a view of it. This repeats CameraVisualHost's loop on purpose (plan, Complexity Tracking).
+import ANGLERendering
 import AudioCore
 import Compositor
 import FrameTiming
@@ -40,7 +41,9 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
     private let reader: (any NormalizedPCMReader)?
     private let bands: UnsafeMutablePointer<Float>
     private var bandCount = 0
-    private var displayLink: CADisplayLink?
+    private var displayLink: ScreenDisplayLink?   // OUT-013: the screen that shows the view
+    /// OUT-013: this visual's frames in flight and drops (contract C4).
+    let outputPacing = MetalOutputPacing()
     private var paused = true
     private(set) var isSuspended = false
     private var inBackground = false
@@ -163,6 +166,7 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
         bands.initialize(repeating: 0, count: SpectrumBarCount.maximum)
         view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
+        view.onWindowChange = { [weak self] in self?.followScreen() }   // OUT-013
         view.onDisplayCalibrationChange = { [weak self] (c: DisplayCalibration) -> Void in   // OUT-009: the screen pass
             self?.compositor.displayCalibration = c
         }
@@ -248,16 +252,19 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
         updateLoop()
     }
 
+    /// OUT-013: the view joined a window, maybe on another screen; the frame link follows it.
+    private func followScreen() {
+        displayLink?.follow(view)
+    }
+
     private func updateLoop() {
         let run = !paused && !isSuspended && !inBackground && !sceneDisconnected
         if run, displayLink == nil {
             compositor.resetFlashHistory()   // a new scene for the flash guard (FX-019-R11)
             compositor.resetRenderHealth()   // PERF-014-R6: a fresh retry budget whenever the loop starts
             if let reader { analyzer.start(reader: reader) }
-            let link = CADisplayLink(target: PhotoVisualLinkProxy(self), selector: #selector(PhotoVisualLinkProxy.fire(_:)))
-            link.preferredFrameRateRange = quality.frameRateRange
-            link.add(to: .main, forMode: .common)
-            displayLink = link
+            displayLink = ScreenDisplayLink(view: view, target: PhotoVisualLinkProxy(self), selector: #selector(PhotoVisualLinkProxy.fire(_:)),
+                                            range: quality.frameRateRange)
         } else if !run, let link = displayLink {
             link.invalidate()
             displayLink = nil
@@ -283,7 +290,9 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
             bandCount = info.count
         }
         timer?.end(.audio)
-        guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
+        guard outputPacing.begin() else { return }   // OUT-013: a full output drops the tick (counted), never waits
+        guard let drawable = outputPacing.nextDrawable(from: layer, refreshInterval: link.targetTimestamp - link.timestamp) else { return }
+        guard let commands = queue.makeCommandBuffer() else { return outputPacing.abandon() }
         let audio = LayerAudioContext(frame: nil, bands: UnsafeBufferPointer(start: bands, count: bandCount),
                                       events: UnsafeBufferPointer(start: nil, count: 0), droppedEvents: 0)
         let compositeStart: UInt64 = timer?.now() ?? 0
@@ -291,6 +300,7 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
                                    presentationTimeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                    contentScale: Double(view.contentScaleFactor), reduceFlashing: reduceFlashing,
                                    audio: audio) else {
+            outputPacing.abandon()
             reportRenderHealth()
             return
         }
@@ -305,6 +315,7 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
         timer?.end(.encode)
         timer?.begin(.present)
         frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
+        outputPacing.track(commands)   // OUT-013: the slot returns when the GPU completes the frame
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)

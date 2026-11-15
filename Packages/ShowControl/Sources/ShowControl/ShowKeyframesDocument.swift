@@ -7,6 +7,10 @@
 // Read leniently: a track with a bad ID or parameter, a duplicate ID or parameter, or past the 16-track limit is dropped
 // (`droppedKeyframeTracks`); a keyframe with a bad time, value or interpolation, a duplicate time, the other kind than
 // the track's first valid keyframe, or past the 256 limit is dropped (`droppedKeyframes`). The rest of the show loads.
+// SHOW-009 (specs/283-show-009-keyframe-easing research D5): `interpolation` keeps SHOW-008's names (`linear`, `hold` =
+// Stepped, `ease`); an optional `easing` (`hold`, `cubic`) is written only for Hold and Cubic, beside the nearest older
+// curve, so a SHOW-008 build reads them as Stepped and Ease. Read: a known `easing` wins, then `interpolation`; a
+// missing `interpolation` means Linear.
 import Foundation
 import ParameterGraph
 
@@ -48,19 +52,37 @@ struct StoredKeyframeTrack: Codable {
 struct StoredKeyframe: Codable {
     let keyframe: ShowKeyframe?
 
-    enum CodingKeys: String, CodingKey { case time, value, interpolation }
+    enum CodingKeys: String, CodingKey { case time, value, interpolation, easing }
 
     init(_ keyframe: ShowKeyframe) { self.keyframe = keyframe }
 
     init(from decoder: any Decoder) throws {
         guard let container = try? decoder.container(keyedBy: CodingKeys.self),
               let time = Self.time(container), let value = Self.value(container),
-              let text = try? container.decode(String.self, forKey: .interpolation),
-              let interpolation = ShowKeyframeInterpolation(rawValue: text) else {
+              let interpolation = Self.interpolation(container) else {
             keyframe = nil
             return
         }
         keyframe = ShowKeyframe(time: time, value: value, interpolation: interpolation)
+    }
+
+    /// SHOW-009 read rules: a known `easing`, else `interpolation` (`hold` = Stepped), else Linear when it is missing.
+    private static func interpolation(_ c: KeyedDecodingContainer<CodingKeys>) -> ShowKeyframeInterpolation? {
+        if let text = try? c.decode(String.self, forKey: .easing), let mode = ShowKeyframeInterpolation(rawValue: text) { return mode }
+        guard c.contains(.interpolation) else { return .linear }
+        guard let text = try? c.decode(String.self, forKey: .interpolation) else { return nil }
+        return text == "hold" ? .stepped : ShowKeyframeInterpolation(rawValue: text)
+    }
+
+    /// The `interpolation` name a SHOW-008 build knows, and the `easing` written beside it (nil when none is needed).
+    static func storedNames(_ mode: ShowKeyframeInterpolation) -> (interpolation: String, easing: String?) {
+        switch mode {
+        case .linear: ("linear", nil)
+        case .stepped: ("hold", nil)
+        case .hold: ("hold", "hold")
+        case .ease: ("ease", nil)
+        case .cubic: ("ease", "cubic")
+        }
     }
 
     private static func time(_ c: KeyedDecodingContainer<CodingKeys>) -> Int? {
@@ -81,7 +103,9 @@ struct StoredKeyframe: Codable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         guard let keyframe else { return }
         try container.encode(keyframe.time, forKey: .time)
-        try container.encode(keyframe.interpolation.rawValue, forKey: .interpolation)
+        let names = Self.storedNames(keyframe.interpolation)
+        try container.encode(names.interpolation, forKey: .interpolation)
+        try container.encodeIfPresent(names.easing, forKey: .easing)
         switch keyframe.value {
         case let .number(v): try container.encode(v, forKey: .value)
         case let .color(c): try container.encode(c.components, forKey: .value)
