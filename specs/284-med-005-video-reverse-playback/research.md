@@ -34,13 +34,14 @@
   the build rather than exceed the budget; it records the peak.
 - **Rationale**: one memory policy for decoded media across the app; `AnimatedFrameCache`'s LRU
   eviction would silently drop pictures reverse needs.
-- **Numbers**: 30 s, 30/s, 16:9 at 64 MB → about 298 × 167; at 128 MB → about 421 × 236.
+- **Numbers** (MED-005-T03, 30 s 1080p, 928 planned pictures): 125 × 70 at 32 MB, 177 × 99 at 64 MB, 252 × 141 at
+  128 MB. Reverse is a low-resolution background; the forward picture is unchanged.
 
 ## MED-005-D4: Picture selection
 
 - **Decision**: with the region [a, b) (MED-003, whole file by default), L = b − a, cached media
-  times P (ascending) and a start offset o = b − 1 − s (s = the picture shown when reverse began,
-  or b − 1), the shown picture at video time e since the start is the last P[i] ≤
+  times P (ascending) and a start offset o = b − 1 − s (s = the top of the picture shown when reverse
+  began, i.e. the next picture's time − 1, so that picture plays its full interval; or b − 1), the shown picture at video time e since the start is the last P[i] ≤
   m = b − 1 − ((e + o) mod L), clamped to the first picture at or after a.
 - **Rationale**: pure, integer, wraps from a back to b, honours speed (e is the speed-scaled clock)
   and starts without a jump.

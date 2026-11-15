@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (MED-005-T01-T19 verified on the Mac host and the iOS 27.2 simulator; device task T20 `{device}` open; report `docs/test-reports/video-reverse-playback.md`)
 
 **Input**: User description: "Implement MED-005 (Video reverse playback) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Provide cached reverse playback
@@ -70,7 +70,7 @@ Five questions, each answered by Claude with the recommended option (owner rules
   spinner over the visual (MED-005-R1, R6).
 - Q: How large are cached pictures? → A: As large as the budget allows for this clip, never larger
   than the clip's own picture: every cached picture plus two transient ones must fit the budget
-  (for a 30 s 30 fps clip on a 6 GB device about 290 × 160); the forward picture is unchanged
+  (for a 30 s 1080p clip: 125 × 70 at 32 MB, 177 × 99 at 64 MB, 252 × 141 at 128 MB, measured by MED-005-T03); the forward picture is unchanged
   (MED-005-R3).
 - Q: Do scenes, undo and show cues record the direction? → A: No. Direction is a playback choice
   of the stored video, like the video itself in Settings; restoring a scene never changes it and
