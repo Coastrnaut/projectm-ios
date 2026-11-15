@@ -16,8 +16,7 @@
   "P2": {
    "audited": 31,
    "implementing": 4,
-   "integrated": 43,
-   "unit_passed": 1
+   "integrated": 44
   },
   "P3": {
    "audited": 8,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 41,
   "implementing": 5,
-  "integrated": 278,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 279,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -53,7 +51,6 @@
    "FX-017",
    "FX-018",
    "MED-005",
-   "MIDI-009",
    "MIDI-010",
    "OSC-004",
    "OSC-005",
@@ -87,7 +84,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "47 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "46 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -1506,10 +1503,10 @@
    "branch": "feature/midi-009",
    "branch_sha": "83672cf76d5d258195bbd76a6be1740421760298",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "13f2f3ff5feff9bf2eba28f5f8b5ad1aa8479b3d",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MIDI-010": {
    "attempts": 0,
@@ -3979,6 +3976,11 @@
    "sha": "265ddd1401f9b6b4732556c66a10d6a9be758182"
   },
   {
+   "branch": "feature/midi-009",
+   "id": "MIDI-009",
+   "sha": "13f2f3ff5feff9bf2eba28f5f8b5ad1aa8479b3d"
+  },
+  {
    "branch": null,
    "id": "MIDI-011",
    "sha": "2a986abd"
@@ -4769,5 +4771,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:34:49Z"
+ "updated": "2026-11-15T03:38:44Z"
 }
