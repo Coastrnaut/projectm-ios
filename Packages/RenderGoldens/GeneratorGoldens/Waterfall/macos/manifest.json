@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "waterfall-128x96-f0.png",
+      "fileSHA256" : "e3bd542d8780c998aac857fe82ffeb56e825d2a33ea7152aaa840ee41787869c",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "3a0fbcdd0f7af110d7be2de4a6e70e7d079a8a69f2e3b1caa8cb154541739b08",
+      "scene" : "waterfall",
+      "width" : 128
+    },
+    {
+      "file" : "waterfall-256x192-f0.png",
+      "fileSHA256" : "964b15578598be41e9103c925a806c82d16f038cdd5a95d7333d971167bcd8c7",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "1cd98333bfce13d5ba131d1e89538cf4a5f8ba95e519e6e78de5b2ac523e9c6d",
+      "scene" : "waterfall",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}
