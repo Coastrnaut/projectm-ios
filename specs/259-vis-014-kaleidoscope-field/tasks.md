@@ -23,7 +23,7 @@
 
 ## Phase 4: Polish
 
-- [ ] VIS-014-T11 Touched package suites, Linux shape, repo checks, privacy manifest and network symbol scans, type-check budget.
+- [X] VIS-014-T11 Touched package suites, Linux shape, repo checks, privacy manifest and network symbol scans, type-check budget. — Verified 2026-11-14: VisualGenerators swift test 291 passed (40 s); Linux shape 244 passed (33 s); RenderGoldens 'Golden' 92 passed (1 on-demand skip; NoiseField goldens identical); LibraryBackup 87 passed; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events, test_scripts (179) all exit 0; check_privacy_manifest OK; check_network_symbols OK (19 images); no type-check warning in touched code
 - [ ] VIS-014-T12 {device} On D1 with music, Kaleidoscope holds the display's frame rate on the PERF-001/007 overlay and shows no seam at 2, 7 and 24 wedges.
 
 ## Dependencies
