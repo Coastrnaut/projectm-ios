@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-006-T01-T17 verified on the Mac and an own iOS 27.2 simulator; T18 `{device}` open)
 
 **Input**: User description: "Implement FX-006 (Chromatic split) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Offset color channels with edge-aware controls." Acceptance, verbatim: "Zero offset is exact
