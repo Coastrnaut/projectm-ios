@@ -94,6 +94,7 @@ struct VisualizerView: View {
             SafeAreaGuidesLayer(setting: coordinator.safeAreaGuides, external: coordinator.externalDisplay,
                                 output: coordinator.externalOutput)
                 .splitOutputScaled()
+            SplitPlacementReporter(sampler: coordinator.colorSampler)   // UIX-012: the placement for tap mapping
         }
     }
 
@@ -108,7 +109,10 @@ struct VisualizerView: View {
                                editor: splitEditorContent)
     }
 
-    private func splitEditorAvailabilityChanged(_ available: Bool) { splitEditorAvailable = available }
+    private func splitEditorAvailabilityChanged(_ available: Bool) {
+        splitEditorAvailable = available
+        coordinator.colorSampler.editorBesideOutput = available   // UIX-012-R3: the editor stays open while sampling
+    }
     private func closeSplitEditor() { coordinator.showSettings = false }
     private func splitEditorContent() -> some View { settingsView }
 
@@ -134,6 +138,7 @@ struct VisualizerView: View {
     /// keeps `layers` quick to type-check).
     @ViewBuilder private var tapLayers: some View {
         tapArea
+        ColorSamplingLayer(sampler: coordinator.colorSampler)   // UIX-012: above the tap target, only while sampling
         CameraFocusLayer(coordinator: coordinator)   // CAM-005-R5, R6
         GestureShortcutProbe(coordinator: coordinator)   // UIX-006 contract G5 (DEBUG probe)
     }

@@ -280,6 +280,7 @@ struct SettingsView: View {
                 tailSections
             }
             .uitestSettingsSection()   // DEBUG: `-uitestSettingsSection <id>` (UI tests, owner rule 7)
+            .colorSamplerReturn(layerInspector?.colorSampler)   // UIX-012-R3: back to the sampled control
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { if let splitEditorClose { splitEditorClose() } else { dismiss() } } }
@@ -554,7 +555,7 @@ struct SettingsView: View {
         if let clock { ClockSection(clock: clock).id("clock") }   // MED-011: after the logo (the help names the visuals)
         if let countdown { CountdownSection(countdown: countdown).id("countdown") }   // MED-012: after the clock
         if settings.visual.usesText, let texts {
-            textSection(texts)
+            textSection(texts).id("text")   // UIX-012: `-uitestSettingsSection text`
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let layerInspector { PaletteLinkSection(palettes: layerInspector.palettes).id("palettes") }   // UIX-011
@@ -812,6 +813,14 @@ struct SettingsView: View {
         })
     }
 
+    /// UIX-012: the eyedropper for a text colour (the app's sampler; none in previews).
+    @ViewBuilder
+    private func eyedropper(_ path: WritableKeyPath<TextOverlaySpec, TextColor>, key: String, name: String) -> some View {
+        if let app = layerInspector {
+            EyedropperButton(sampler: app.colorSampler, target: app.textColorTarget(path, key: key, name: name))
+        }
+    }
+
     private func textSection(_ texts: TextOverlayCoordinator) -> some View {
         Section {
             TextField("Message", text: Binding(get: { texts.spec.message }, set: { (value: String) in texts.setMessage(value) }),
@@ -833,8 +842,11 @@ struct SettingsView: View {
             }
             .accessibilityIdentifier("textWeightPicker")
             glowSlider(AccessibleParameterCatalog.textSize, target: Self.textTarget(texts, \.size), text: Self.percent(texts.spec.size))
-            ColorPicker("Color", selection: color(texts, \.color), supportsOpacity: true)
-                .accessibilityIdentifier("textColorPicker")
+            HStack {
+                ColorPicker("Color", selection: color(texts, \.color), supportsOpacity: true)
+                    .accessibilityIdentifier("textColorPicker")
+                eyedropper(\.color, key: "textColor", name: "Text color")   // UIX-012-R1
+            }
             Picker("Alignment", selection: field(texts, \.alignment)) {
                 ForEach(TextAlignmentChoice.allCases, id: \.self) { Text($0.title).tag($0) }
             }
@@ -849,13 +861,19 @@ struct SettingsView: View {
             .accessibilityIdentifier("textPositionPicker")
             glowSlider(AccessibleParameterCatalog.textOutline, target: Self.textTarget(texts, \.outlineWidth),
                        text: Self.percent(texts.spec.outlineWidth))
-            ColorPicker("Outline color", selection: color(texts, \.outlineColor), supportsOpacity: true)
-                .accessibilityIdentifier("textOutlineColorPicker")
+            HStack {
+                ColorPicker("Outline color", selection: color(texts, \.outlineColor), supportsOpacity: true)
+                    .accessibilityIdentifier("textOutlineColorPicker")
+                eyedropper(\.outlineColor, key: "textOutlineColor", name: "Outline color")   // UIX-012-R1
+            }
             Toggle("Background box", isOn: field(texts, \.showsBox))
                 .accessibilityIdentifier("textBoxToggle")
             if texts.spec.showsBox {
-                ColorPicker("Box color", selection: color(texts, \.boxColor), supportsOpacity: true)
-                    .accessibilityIdentifier("textBoxColorPicker")
+                HStack {
+                    ColorPicker("Box color", selection: color(texts, \.boxColor), supportsOpacity: true)
+                        .accessibilityIdentifier("textBoxColorPicker")
+                    eyedropper(\.boxColor, key: "textBoxColor", name: "Box color")   // UIX-012-R1
+                }
             }
             Button("Reset Text", role: .destructive) { texts.reset() }
                 .accessibilityIdentifier("resetText")
