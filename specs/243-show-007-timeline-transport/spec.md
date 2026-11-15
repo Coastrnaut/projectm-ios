@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-007-T01-T15 verified on the Mac, simulator "SHOW7 iPhone 17", iOS 27.2;
+T16 `{device}` open; no device claim). ShowControl 128 tests (1.7 s; 5 new); app `ShowTransportAcceptanceTests` 7
+(0.1 s, the roadmap acceptance); `ShowTimelineUITests` 1 (8.5 s).
 
 **Input**: Roadmap row SHOW-007 (P1, size L, depends on SHOW-001, integrated). Observable behavior, verbatim: "Provide
 play, pause, scrub and loop for local show timeline." Acceptance, verbatim: "Seek updates scheduled parameter values
@@ -47,7 +49,7 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 
 - Q: Does the position keep moving through the last timeline cue when Loop is off (SHOW-002 shows no countdown there)? → A: Yes. The position tracks elapsed time in every timed cue, the last one included, and stops at the end of the timeline; SHOW-002's "Next in" text is unchanged (still none on the last cue without Loop).
 - Q: Does a seek or a loop wrap post a VoiceOver announcement? → A: No. A seek is the performer's own action and the slider's value speaks the new position; a wrap is a timed advance (which announces nothing today). Only Play/Pause keep SHOW-005's Hold announcements ("Hold on, timed advances paused" / "Hold off") on the cue lane, so nothing is announced twice.
-- Q: How large is one VoiceOver swipe on the scrub slider? → A: 5 seconds (ACC-005 grid from 0:00), each swipe one committed seek; the spoken value is the position ("1 minute 15 seconds, cue 3 of 5").
+- Q: How large is one VoiceOver swipe on the scrub slider? → A: 5 seconds (ACC-005 grid from 0:00), each swipe one committed seek; the spoken value is ACC-005's seconds form ("75.0 seconds") and the visible text beside it reads "1:15 / 2:30". (Implementation note, 2026-11-14: the track is a custom scrub bar with the ACC-005 modifier, because a system slider in the controls lost its release under XCUITest drags; the end of a drag, released or cancelled, commits the one seek.)
 - Q: Is a seek an edit (refused while the scene is locked; recorded in scene history)? → A: No. A seek is a performance action like a step: allowed while locked (SCN-015), it restarts scene history as every cue apply does (SCN-010) and saves the show's position.
 - Q: Where is the transport shown? → A: Only in the visualizer's cue row (with the controls), under Previous/Next, when a timeline exists. The performance pad (UIX-005), the HUD (UIX-013), the external display and recordings are unchanged.
 
