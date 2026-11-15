@@ -62,6 +62,7 @@ final class LibraryBackupAppTests: XCTestCase {
                         ParameterQuantizer.key,   // MOD-017: a performance timing choice of this device
                         ShowCueQuantizer.key,   // SHOW-003: a performance timing choice of this device
                         ShowTransportCoordinator.loopKey,   // SHOW-007: a performance choice of this device
+                        SceneRotationCoordinator.key,   // SHOW-013: a performance choice of this device
                         SplitEditorSetting.key])   // UIX-007-R7
                        .union(RecordingQualitySetting.aspectKeys)   // REC-014-R7
                        .union(ExternalOutputSetting.keys))   // OUT-004-R8, OUT-003-R7
