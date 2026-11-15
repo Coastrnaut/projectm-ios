@@ -137,7 +137,7 @@ The VJ copies the diagnostics as text to paste into a message to the venue's tec
   no value of any earlier display.
 - **OUT-011-R6**: The section MUST update when a display connects or disconnects while it is open, and refresh
   changing values (EDR headroom) at least once a second while open.
-- **OUT-011-R6a**: Values MUST use the formats recorded in Clarifications (session speckit-clarify).
+- **OUT-011-R11**: Values MUST use the formats recorded in Clarifications (session speckit-clarify).
 - **OUT-011-R7**: Each row MUST be one accessibility element whose label is the row's name and whose value is its
   value (VoiceOver).
 - **OUT-011-R8**: "Copy diagnostics" (shown only while connected) MUST copy the rows as text to the local

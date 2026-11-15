@@ -22,8 +22,8 @@
 - [ ] OUT-011-T06 [US2] `ExternalDisplayCoordinator.outputDiagnostics`, computed at read time from the first settled display's live slot, else `.disconnected` (OUT-011-R4) in Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift
 - [ ] OUT-011-T07 [US1] `OutputDiagnosticsSection` (rows as labelled accessibility elements, 1 s TimelineView, observes `hasExternalDisplay`) in Apps/projectM-iOS/Views/OutputDiagnosticsSection.swift; add it after ExternalDisplaySection in Apps/projectM-iOS/Views/SettingsView.swift
 - [ ] OUT-011-T08 [US2] DEBUG fake: stand-in readings, `uitestConnectExternalSmall` (1280 × 720), probe `externalDiagnostics` in Apps/projectM-iOS/Debug/UITestExternalDisplay.swift
-- [ ] OUT-011-T09 [US2] App acceptance test (connect → values; disconnect → `.disconnected`, no old value in rows, text or summary; reconnect 1280 × 720 → new values; settling connection reads disconnected) in Apps/projectM-iOS/Tests/OutputDiagnosticsAppTests.swift
-- [ ] OUT-011-T10 [US2] UI test (connect, read the panel, disconnect, "No external display connected"; under 30 s) in Apps/projectM-iOS/UITests/OutputDiagnosticsUITests.swift
+- [ ] OUT-011-T09 [US2] App acceptance test (connect → values; disconnect → `.disconnected`, no old value in rows, text or summary; reconnect 1280 × 720 → new values; settling connection reads disconnected; drawable reads "Not available" while the visual is on the device (OUT-011-R2, R4, R5)) in Apps/projectM-iOS/Tests/OutputDiagnosticsAppTests.swift
+- [ ] OUT-011-T10 [US2] UI test (connect, read the panel, disconnect, "No external display connected"; asserts each row's accessibility label is its title and value its value (OUT-011-R7); under 30 s) in Apps/projectM-iOS/UITests/OutputDiagnosticsUITests.swift
 
 ## Phase 4: User Story 3 — copy (P3)
 
@@ -45,3 +45,7 @@ T03 alongside T04/T05 (different files). T09 and T10 build once, run separately.
 ## Implementation strategy
 
 MVP = Phases 2-3 (the roadmap acceptance). US3 is a small addition in the same view.
+
+## Analyze (2026-11-14)
+
+speckit-analyze: 0 critical; applied: C1 R7 VoiceOver assertion added to T10; C2 edge cases (settling, drawable while the visual is on the device) added to T09; A1 R6a renumbered R11. Coverage R1-R11: 100 %.
