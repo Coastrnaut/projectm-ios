@@ -293,19 +293,19 @@ enum SceneAutosaveCapture {
     @MainActor
     static func applyEffects(_ entries: [SceneEffectEntry]?, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
-                             radialBlur: RadialBlurSetting? = nil) {
+                             directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil) {
         guard let entries else {
             chain.order = .standard
             return
         }
         applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic,
-                     radialBlur: radialBlur)
+                     directionalBlur: directionalBlur, radialBlur: radialBlur)
     }
 
     @MainActor
     static func applyEffects(_ settings: SceneEffectSettings, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
-                             radialBlur: RadialBlurSetting? = nil) {
+                             directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil) {
         chain.order = settings.order
         if let g = settings.grade {
             if grade.temperature != g.temperature { grade.temperature = g.temperature }
@@ -323,6 +323,7 @@ enum SceneAutosaveCapture {
             trails.isEnabled = t.isEnabled
         }
         if let c = settings.chromatic { chromatic?.apply(c) }   // FX-006
+        if let b = settings.directionalBlur { directionalBlur?.apply(b) }   // FX-007
         if let r = settings.radialBlur { radialBlur?.apply(r) }   // FX-008
     }
 

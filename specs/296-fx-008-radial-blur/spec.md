@@ -164,7 +164,7 @@ scene and an effect-chain preset, and gets the same blur back when the scene or 
 - **FX-008-R6**: The tap count is fixed (16) whatever the strength, distance or frame size: the cost per pixel is
   constant.
 - **FX-008-R7**: The blur is an FX-020 reorderable output effect (`fx.radialBlur`); the standard order is Trails,
-  Color, Chromatic split, Radial blur. Its position is honoured; the flash guard and the tone map always run after it.
+  Color, Chromatic split, FX-007's Directional blur, Radial blur (merged 2026-11-15). Its position is honoured; the flash guard and the tone map always run after it.
 - **FX-008-R8**: Settings has a "Radial blur" section: an on/off toggle, a Strength slider ("10%"), Focus X and
   Focus Y sliders ("50%"), with ACC-005 spoken values, and help text. The Effect order screen lists it with its own
   on/off switch.

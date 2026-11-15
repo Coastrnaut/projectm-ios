@@ -38,7 +38,9 @@ final class ExternalDisplayCoordinatorTests: XCTestCase {
 
     func testInfoPlistConfiguresOnlyTheExternalDisplayRole() throws {
         let manifest = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UIApplicationSceneManifest") as? [String: Any])
-        XCTAssertEqual(manifest["UIApplicationSupportsMultipleScenes"] as? Bool, false, "multiple windows stay off")
+        // UIX-008 (ADR-0105, amending ADR-0023): iPadOS scene-editor windows need multiple scenes; the external
+        // display keeps its single non-interactive role configuration below.
+        XCTAssertEqual(manifest["UIApplicationSupportsMultipleScenes"] as? Bool, true, "editor windows (UIX-008)")
         let configurations = try XCTUnwrap(manifest["UISceneConfigurations"] as? [String: [[String: Any]]])
         XCTAssertEqual(Array(configurations.keys), [UISceneSession.Role.windowExternalDisplayNonInteractive.rawValue],
                        "the application role stays with SwiftUI")

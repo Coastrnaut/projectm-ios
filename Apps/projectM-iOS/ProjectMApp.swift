@@ -5,6 +5,7 @@
 // and offers generated test signals under Diagnostics (AUD-016).
 // UIX-001: the guided first scene covers the current screen (no animation) while it is presented.
 // ACC-003: the status appearance (Increase Contrast, Differentiate Without Colour) is set at the root.
+// UIX-008: a second window group edits saved scenes; the main window group's content is gated to one performer.
 import CaptureKit
 import CaptureUI
 import SwiftUI
@@ -14,15 +15,21 @@ import UniformTypeIdentifiers
 @main
 struct ProjectMApp: App {
     @State private var coordinator = AppCoordinator()
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
-            RootView(coordinator: coordinator)
-                // OUT-001: the visualization-only window on a connected display (iOS 27 scene
-                // accessory; iOS 26 uses the Info.plist external display role).
-                .externalDisplayAccessory(coordinator.externalDisplay)
-                .onChange(of: scenePhase) { _, phase in coordinator.sceneBecame(active: phase == .active) }
+            // UIX-008-D7, D8: one main window performs; it forwards its own scene phase.
+            PerformanceWindowGate(claim: coordinator.performanceWindows,
+                                  onPhase: { (active: Bool) in coordinator.sceneBecame(active: active) }) {
+                RootView(coordinator: coordinator)
+                    // OUT-001: the visualization-only window on a connected display (iOS 27 scene
+                    // accessory; iOS 26 uses the Info.plist external display role).
+                    .externalDisplayAccessory(coordinator.externalDisplay)
+            }
+        }
+        // UIX-008: scene editor windows (iPadOS multiple windows; ADR-0105). No engine, capture or output.
+        WindowGroup("Scene", for: SceneEditorWindowID.self) { (id: Binding<SceneEditorWindowID?>) in
+            SceneEditorWindowView(windowID: id.wrappedValue, router: coordinator.sceneEditors, show: coordinator.show)
         }
     }
 }

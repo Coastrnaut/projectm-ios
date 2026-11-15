@@ -4,29 +4,33 @@ import XCTest
 
 final class OutputEffectOrderTests: XCTestCase {
     func testStandardIsTrailsThenColor() {
-        XCTAssertEqual(OutputEffectOrder.standard.effects, [.trails, .grade, .chromatic, .radialBlur])   // FX-006, FX-008 appended
+        XCTAssertEqual(OutputEffectOrder.standard.effects, [.trails, .grade, .chromatic, .directionalBlur, .radialBlur])   // FX-006, FX-007, FX-008 appended
         XCTAssertFalse(OutputEffectOrder.standard.gradeBeforeTrails)
         XCTAssertTrue(OutputEffectOrder([.grade]).gradeBeforeTrails, "missing Trails appended after Color")
     }
 
     func testRepeatsDroppedAndMissingAppended() {
-        XCTAssertEqual(OutputEffectOrder([.grade, .grade, .trails, .grade]).effects, [.grade, .trails, .chromatic, .radialBlur])
-        XCTAssertEqual(OutputEffectOrder([]).effects, [.trails, .grade, .chromatic, .radialBlur])
-        XCTAssertEqual(OutputEffectOrder([.chromatic]).effects, [.chromatic, .trails, .grade, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder([.grade, .grade, .trails, .grade]).effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder([]).effects, [.trails, .grade, .chromatic, .directionalBlur, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder([.chromatic]).effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder([.directionalBlur]).effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur])   // FX-007
+        XCTAssertEqual(OutputEffectOrder([.radialBlur]).effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur])   // FX-008
     }
 
     func testMoveUsesSwiftUISemantics() {
-        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [1], to: 0).effects, [.grade, .trails, .chromatic, .radialBlur])
-        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [0], to: 2).effects, [.grade, .trails, .chromatic, .radialBlur])
-        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [2], to: 0).effects, [.chromatic, .trails, .grade, .radialBlur])
-        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [3], to: 0).effects, [.radialBlur, .trails, .grade, .chromatic])   // FX-008
+        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [1], to: 0).effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [0], to: 2).effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [2], to: 0).effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [3], to: 0).effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur])
+        XCTAssertEqual(OutputEffectOrder.standard.moving(from: [4], to: 0).effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur])   // FX-008
         XCTAssertEqual(OutputEffectOrder.standard.moving(from: [0], to: 0), .standard)
         XCTAssertEqual(OutputEffectOrder.standard.moving(from: [5], to: 0), .standard, "out-of-range offsets are ignored")
     }
 
     func testStorageTextRoundTripsAndToleratesJunk() {
         let order = OutputEffectOrder([.grade, .trails])
-        XCTAssertEqual(order.storageText, "fx.grade,fx.trails,fx.chromatic,fx.radialBlur")
+        XCTAssertEqual(order.storageText, "fx.grade,fx.trails,fx.chromatic,fx.directionalBlur,fx.radialBlur")
+        XCTAssertEqual(OutputEffectOrder(storageText: "fx.grade,fx.trails,fx.chromatic"), order, "an FX-006 stored order reads with the blurs last")
         XCTAssertEqual(OutputEffectOrder(storageText: "fx.grade,fx.trails"), order, "an FX-020 stored order reads with the split last")
         XCTAssertEqual(OutputEffectOrder(storageText: order.storageText), order)
         XCTAssertEqual(OutputEffectOrder(storageText: "fx.flashGuard,,fx.grade,banana"), order)

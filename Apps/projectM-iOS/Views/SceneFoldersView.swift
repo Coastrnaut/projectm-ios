@@ -13,6 +13,8 @@
 // has "Import Scene…" (`ScenePackSection`); the share sheet shows from the level on screen.
 // SCN-006: scene rows show the scene's preview picture in place of the scene symbol (placeholder until
 // one exists; `show.previews` is nil without the app coordinator).
+// UIX-008-R1: where iPadOS supports multiple windows, readable scene rows offer "Open in New Window" (context menu,
+// leading swipe, VoiceOver action), which opens or brings forward that scene's editor window.
 import ShowControl
 import SwiftUI
 
@@ -46,6 +48,8 @@ struct SceneFoldersView: View {
     @State private var deleting: SceneFolder?
     @State private var tagging: SceneTagsTarget?   // SCN-005
     @State private var onScreen = false   // SCN-014: only the level on screen presents the share sheet
+    @Environment(\.supportsMultipleWindows) private var supportsMultipleWindows   // UIX-008-R1
+    @Environment(\.openWindow) private var openWindow
 
     private var tree: SceneFolderTree { show.list.folders }
     /// SHOW-015-R4 (the show coordinator refuses these edits anyway, SCN-015-R3).
@@ -238,6 +242,7 @@ struct SceneFoldersView: View {
                 Button("Go to Cue") { show.goToScene(sceneID) }
                 if !locked { Button("Tags…") { tagging = SceneTagsTarget(sceneID: sceneID) } }   // SCN-005; SHOW-015-R4
                 Button("Export Scene…") { exportScene(sceneID) }   // SCN-014
+                if canOpenWindow(missing) { Button("Open in New Window") { openSceneWindow(sceneID) } }   // UIX-008
             }
             .swipeActions(edge: .leading) {
                 if !locked {   // SHOW-015-R4
@@ -253,6 +258,12 @@ struct SceneFoldersView: View {
                     .tint(.green)
                     .accessibilityLabel("Export Scene")
                     .accessibilityIdentifier("sceneFolderExportScene")
+                if canOpenWindow(missing) {   // UIX-008
+                    Button("Window") { openSceneWindow(sceneID) }
+                        .tint(.purple)
+                        .accessibilityLabel("Open in New Window")
+                        .accessibilityIdentifier("sceneFolderOpenWindow")
+                }
             }
             .swipeActions(edge: .trailing) {   // SCN-005
                 if !locked {   // SHOW-015-R4
@@ -266,7 +277,17 @@ struct SceneFoldersView: View {
                 Button("Go to Cue") { show.goToScene(sceneID) }
                 if !locked { Button("Tags") { tagging = SceneTagsTarget(sceneID: sceneID) } }
                 Button("Export Scene") { exportScene(sceneID) }   // SCN-014
+                if canOpenWindow(missing) { Button("Open in New Window") { openSceneWindow(sceneID) } }   // UIX-008
             }
+    }
+
+    /// UIX-008-R1: only where windows can be opened, and only for a scene that reads.
+    private func canOpenWindow(_ missing: Bool) -> Bool { supportsMultipleWindows && !missing }
+
+    /// UIX-008-R6: an open editor window for the scene is brought forward instead of a second one.
+    private func openSceneWindow(_ sceneID: String) {
+        SceneEditorWindowRouter.openedThisLaunch = true
+        openWindow(value: SceneEditorWindowID(sceneID: sceneID))
     }
 
     /// SCN-014: packs the scene with its media and opens the share sheet.

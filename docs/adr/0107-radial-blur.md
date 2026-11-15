@@ -1,11 +1,11 @@
-# ADR-0107: The Radial Blur Is Its Own Output Pass, Fourth in the Effect Chain, Gathering 16 Samples Towards the Focus
+# ADR-0107: The Radial Blur Is Its Own Output Pass, Fifth in the Effect Chain, Gathering 16 Samples Towards the Focus
 
 - **Status**: Accepted 2026-11-15 (decided by Claude under the owner's best-judgement rule, owner rule 4)
 - **Feature**: FX-008 (`specs/296-fx-008-radial-blur`)
 - **Constitution**: I (public APIs; shader policy of ADR-0024), VI (modular boundaries), VIII (default output
   bit-identical), X (evidence-based quality)
-- **Builds on and amends**: ADR-0104 (FX-006's spatial-pass pattern; the standard order gains a fourth kind,
-  `fx.radialBlur`, after the split), ADR-0054 (FX-020 effect chains), ADR-0024 (no new compile site), ADR-0009
+- **Builds on and amends**: ADR-0104 (FX-006's spatial-pass pattern; the standard order gains a fifth kind,
+  `fx.radialBlur`, after the split and ADR-0106's directional blur), ADR-0054 (FX-020 effect chains), ADR-0024 (no new compile site), ADR-0009
   (run-time compiled module constant)
 
 ## Context
@@ -29,8 +29,8 @@ FX-007 (directional blur) is built in parallel and appends its own kind.
 4. **Bounds**: strength ≤ 25%; focus 0…1 of width and height (0 = left/top). No ACC-012 cap (averaging adds no
    brightness); the flash guard measures the shown frame.
 5. **Chain**: `OutputEffectKind.radialBlur` is appended, so stored orders read with the blur last; a non-neutral
-   Color listed before an active blur is folded into the grade pass right before it (FX-006's rule). The merge with
-   FX-007 decides the relative position of the two new kinds by appending both.
+   Color listed before an active blur is folded into the grade pass right before it (FX-006's rule). Merged after
+   FX-007 (2026-11-15): the standard order is Trails → Color → Chromatic split → Directional blur → Radial blur.
 6. **Storage**: a global setting (`settings.radialBlur.*`); scenes and presets carry an `fx.radialBlur` entry
    (`strength`, `focusX`, `focusY`); a disabled blur counts as default, so older scenes save byte-identically.
 
