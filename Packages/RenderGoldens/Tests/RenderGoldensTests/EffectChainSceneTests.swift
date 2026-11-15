@@ -60,7 +60,7 @@ final class EffectChainSceneTests: XCTestCase {
 
         // Order and values persist.
         let restored = try XCTUnwrap(reloaded.effectSettings)
-        XCTAssertEqual(restored.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])
+        XCTAssertEqual(restored.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette, .filmGrain])
         XCTAssertEqual(restored.grade, ColorGrade(temperature: 0.3, lift: 0.02, gamma: 2.0, gain: 1.1, saturation: 0.4, hue: 25))
         XCTAssertEqual(restored.gradeEnabled, true)
         XCTAssertEqual(restored.trails, MotionFeedback(isEnabled: true, halfLifeSeconds: 0.5))
@@ -80,7 +80,7 @@ final class EffectChainSceneTests: XCTestCase {
         let r = try renderer()
         let hostile = try plasma(effects: [SceneEffectEntry(kind: "fx.flashGuard"), SceneEffectEntry(kind: "fx.toneMap"), grade, trails])
         let read = SceneEffectSettings.read(try XCTUnwrap(hostile.effects))
-        XCTAssertEqual(read.settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])
+        XCTAssertEqual(read.settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette, .filmGrain])
         XCTAssertEqual(read.issues.map(\.code), [.fixedEffectStage, .fixedEffectStage])
         let a = try frame(r, hostile, allowEffectWarnings: true)
         let b = try frame(r, try plasma(effects: [grade, trails]))

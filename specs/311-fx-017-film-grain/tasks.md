@@ -51,10 +51,10 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
   clamp, write, `isDefault`) in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift` and
   `SceneEffectChain+FilmGrain.swift`; `FilmGrainSceneEntryTests`; whole-order updates in `SceneEffectChainTests`; the new
   file in `SceneSourceSafetyTests` (FX-017-R11, S5) — Verified 2026-11-15: SceneFormat 226 tests on the host, 0 failures (FilmGrainSceneEntryTests 2/2, SceneEffectChainTests, SceneSourceSafetyTests, VignetteSceneEntryTests position update)
-- [ ] FX-017-T10 [US4] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the grain;
+- [X] FX-017-T10 [US4] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the grain;
   `FilmGrainSceneGoldenTests` (off and opacity 0 render as no chain; a grain scene round-trips and renders identically
   twice; stored golden images in `GeneratorGoldens/FilmGrain/` for macos and ios-simulator, with their integrity test);
-  `EffectChainSceneTests` order update; existing goldens unchanged (FX-017-S1, S2, S5)
+  `EffectChainSceneTests` order update; existing goldens unchanged (FX-017-S1, S2, S5) — Verified 2026-11-15: RenderGoldens 127 tests on the host, 0 failures, 1 skipped, 23.4 s (FilmGrainSceneGoldenTests 3/3 incl. the stored goldens identical, integrity 1/1, EffectChainSceneTests); on the own iOS 27.2 simulator FilmGrain golden and integrity tests 4/4, goldens identical; recorded with GOLDEN_RECORD=1 (host, Apple M5 Max) and TEST_RUNNER_GOLDEN_RECORD=1 (simulator)
 
 ## Phase 5: App (US1, US3, US4)
 

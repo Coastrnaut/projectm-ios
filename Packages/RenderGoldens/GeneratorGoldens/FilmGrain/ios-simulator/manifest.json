@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "film-grain-128x96-f7.png",
+      "fileSHA256" : "11f4eb5ac76a2287ae32152ad50790d170d7d7f61cb0b48bdef413e5d2215024",
+      "frame" : 7,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "3ace3bedaa33e94370ef284d67cd27b06f4b18110437f37d7bc4cc56be6e355f",
+      "scene" : "film-grain",
+      "width" : 128
+    },
+    {
+      "file" : "film-grain-256x192-f7.png",
+      "fileSHA256" : "241977a028ef79640e140a25b8a4844efd88a1c1d58f20b3cb45f354efaeb993",
+      "frame" : 7,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "1bf6e5741fe6dcdeb3e069a4d5217c522edd448f0a3154c386edb1d342c4583b",
+      "scene" : "film-grain",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}
