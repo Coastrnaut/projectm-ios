@@ -202,7 +202,7 @@ struct VisualizerView: View {
         }
         // SHOW-014-R1: with or without the controls; UIX-005-R8: the performance pad's Blackout replaces it.
         if coordinator.externalDisplay.blackoutPhase.offersEmergencyBlackout && !coordinator.performanceLayout {
-            HStack { Spacer(); EmergencyBlackoutButton(external: coordinator.externalDisplay) }
+            EmergencyBlackoutCorner(external: coordinator.externalDisplay, side: coordinator.oneHanded.controlsSide)   // ACC-010-R2
                 .transition(.opacity)
         }
         if coordinator.controlsVisible {
@@ -240,6 +240,7 @@ struct VisualizerView: View {
                                 advance: coordinator.showAutoAdvance,   // SHOW-002
                                 oneHanded: coordinator.oneHandedActive ? coordinator.oneHanded.hand : nil,   // ACC-009-R7
                                 oneHandedActions: CriticalAction.displayed(coordinator.oneHandedContext),
+                                side: coordinator.oneHanded.controlsSide,   // ACC-010-R3
                                 onSetHold: { (held: Bool) -> Void in coordinator.setShowHold(held) }) {   // SHOW-005
                 (insets: EdgeInsets) -> Void in performanceInsets = insets
             }
