@@ -38,12 +38,12 @@ Budgets (owner rule 7): unit test ≤ 2 s, package suite < 1 min, UI test < 30 s
 
 ## Phase 6: User Story 4 - Reduce Motion (P2)
 
-- [ ] MED-007-T13 [US4] Covered by T05 (layer) and T12 (app wiring); the Settings note in T08
+- [ ] MED-007-T13 [US4] Reduce Motion end to end: `testReduceMotionHoldsTheStartRectangle` in `Packages/Compositor/Tests/CompositorTests/KenBurnsLayerTests.swift` (every frame equals the start frame; one render, then reuse) and `testReduceMotionReachesThePhotoLayer` in `Apps/projectM-iOS/Tests/KenBurnsAppTests.swift` (`systemReduceMotionChanged` sets the layer's `reduceMotion`) (MED-007-R7, S4)
 
 ## Phase 7: Polish & cross-cutting
 
 - [ ] MED-007-T14 The new key in `Apps/projectM-iOS/Coordinators/AppSettings.swift` (`allKeys`), `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift` (included keys), `scripts/run_device_tests.py` (`ALLOWED_KEYS`), `Apps/projectM-iOS/Tests/SettingsTests.swift` (store-written keys); run `LibraryBackupAppTests`, `SettingsTests` and the LibraryBackup package tests
-- [ ] MED-007-T15 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), Linux shape of Compositor and SceneFormat, privacy manifest and network symbols on the built app, type-check budget, PosterBoard count; delete the simulator and derived data
+- [ ] MED-007-T15 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), the SceneFormat suite including the QA-004 meta-test (`SceneMigrationMatrixMetaTests`), Linux shape of Compositor and SceneFormat (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`), privacy manifest and network symbols on the built app, type-check budget, PosterBoard count; delete the simulator and derived data
 - [ ] MED-007-T16 {device} On D1: a photo with Zoom in over 10 s moves smoothly and holds; a slideshow restarts the movement at each slide; Reduce Motion stops it
 
 ## Dependencies
