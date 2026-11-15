@@ -6,12 +6,12 @@ acceptance; owner rule 7 budgets).
 
 ## Phase 1: Setup
 
-- [ ] SHOW-010-T01 Create simulator "SHOW10 iPhone 17" (iOS 27.2), run `xcodegen generate`, record the PosterBoard report count before runs
+- [X] SHOW-010-T01 Create simulator "SHOW10 iPhone 17" (iOS 27.2), run `xcodegen generate`, record the PosterBoard report count before runs — Verified 2026-11-14: simulator 6B12C60C ("SHOW10 iPhone 17", iOS 27.2) created, `xcodegen generate`, preset submodules initialised; PosterBoard reports 26 before runs
 
 ## Phase 2: Foundational (grid model)
 
-- [ ] SHOW-010-T02 Add `BeatGridTempo` (`init?` fails for period ≤ 0 or non-finite BPM), `BeatGridTick`, `BeatGridPosition`, `BeatGridMark` and `BeatGrid` (`ticks` G1 with the 512 bound, `stride` G2, `marks` G3, `position`, `nearestBeat`, `readoutText`, `accessibilityValue` G4) in Packages/ShowControl/Sources/ShowControl/BeatGrid.swift
-- [ ] SHOW-010-T03 [P] Package tests: 120 BPM ticks exactly 500,000,000 ns apart over 0–10 s (21 ticks), bars at 0, 2 … 10 s; anchor 0.25 s shifts every tick; window before the anchor; no tempo → none; 512 bound and stride choice; positions (bar 3 beat 2 at 4.5 s; 0:00 in bar 1 with an offset anchor); nearest beat; texts; marks for a 20 s timeline 300 points wide (x within 0.01 point, SHOW-010-S3) in Packages/ShowControl/Tests/ShowControlTests/BeatGridTests.swift
+- [X] SHOW-010-T02 Add `BeatGridTempo` (`init?` fails for period ≤ 0 or non-finite BPM), `BeatGridTick`, `BeatGridPosition`, `BeatGridMark` and `BeatGrid` (`ticks` G1 with the 512 bound, `stride` G2, `marks` G3, `position`, `nearestBeat`, `readoutText`, `accessibilityValue` G4) in Packages/ShowControl/Sources/ShowControl/BeatGrid.swift — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` (154 tests, 1.3 s; 8 new in BeatGridTests); Foundation only
+- [X] SHOW-010-T03 [P] Package tests: 120 BPM ticks exactly 500,000,000 ns apart over 0–10 s (21 ticks), bars at 0, 2 … 10 s; anchor 0.25 s shifts every tick; window before the anchor; no tempo → none; 512 bound and stride choice; positions (bar 3 beat 2 at 4.5 s; 0:00 in bar 1 with an offset anchor); nearest beat; texts; marks for a 20 s timeline 300 points wide (x within 0.01 point, SHOW-010-S3) in Packages/ShowControl/Tests/ShowControlTests/BeatGridTests.swift — Verified 2026-11-14: `BeatGridTests` 8/8 (21 ticks exactly 500,000,000 ns apart, bars at 0…10 s; 0.25 s anchor shift; before the anchor; no tempo; 512 bound and strides 1/4/16; positions; texts; 41 marks within 0.01 point)
 
 ## Phase 3: User Story 1 — See the beats on the show timeline (P1) MVP
 
