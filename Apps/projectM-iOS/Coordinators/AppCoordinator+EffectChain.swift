@@ -12,11 +12,13 @@ import SceneFormat
 extension AppCoordinator {
     /// The chain as the user set it.
     var liveEffectSettings: SceneEffectSettings {
-        SceneEffectSettings(order: effectChain.order, grade: colorGrade.grade, gradeEnabled: colorGrade.isEnabled,
-                            trails: motionFeedback.feedback, chromatic: chromaticSplit.split,
-                            directionalBlur: directionalBlur.blur, radialBlur: radialBlur.blur,
-                            echo: echoFeedback.feedback, mosaic: mosaic.mosaic,
-                            edgeOutline: edgeOutline.outline)   // FX-006, FX-007, FX-008, FX-010, FX-012, FX-014
+        var live = SceneEffectSettings(order: effectChain.order, grade: colorGrade.grade, gradeEnabled: colorGrade.isEnabled,
+                                       trails: motionFeedback.feedback, chromatic: chromaticSplit.split,
+                                       directionalBlur: directionalBlur.blur, radialBlur: radialBlur.blur,
+                                       echo: echoFeedback.feedback, mosaic: mosaic.mosaic,
+                                       edgeOutline: edgeOutline.outline)   // FX-006, FX-007, FX-008, FX-010, FX-012, FX-014
+        live.lensDistortion = lensDistortion.lens   // FX-016
+        return live
     }
 
     /// Wires the setting to the visuals (called once from init).
@@ -46,7 +48,7 @@ extension AppCoordinator {
         SceneAutosaveCapture.applyEffects(preset.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
                                           directionalBlur: directionalBlur, radialBlur: radialBlur,
                                           echo: echoFeedback, mosaic: mosaic,
-                                          edgeOutline: edgeOutline)   // FX-007, FX-008, FX-010, FX-012, FX-014
+                                          edgeOutline: edgeOutline, lensDistortion: lensDistortion)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016
         announcer.announce("Applied effect preset " + preset.name, kind: .parameter)
     }
 }

@@ -56,21 +56,21 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 5: App (US1, US3)
 
-- [ ] FX-016-T11 [US1] `LensDistortionSetting` (three keys) in
+- [X] FX-016-T11 [US1] `LensDistortionSetting` (three keys) in
   `Apps/projectM-iOS/Coordinators/LensDistortionSetting.swift` and `AppCoordinator+LensDistortion.swift`; wire into
   `AppCoordinator.swift` (init, the four compositor creations, scene apply, reset), `+SceneHistory`, `+EffectChain`,
-  `SceneAutosaveCapture.applyEffects` (FX-016-R1, R9)
-- [ ] FX-016-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005
+  `SceneAutosaveCapture.applyEffects` (FX-016-R1, R9) — Verified 2026-11-15: app unit tests 1359/1359 on the own iOS 27.2 simulator (LensDistortionSettingTests 5/5, incl. the host compositor push)
+- [X] FX-016-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005
   `LibrarySettingsPolicy.includedKeys`, the UI-test reset, `LibraryBackupAppTests` and `LibraryEraseAppTests` `appKeys`
-  (FX-016-R9)
-- [ ] FX-016-T13 [US1] `LensDistortionSection` (toggle, ACC-005 Strength slider with "+30%" readout, Zoom to fill
+  (FX-016-R9) — Verified 2026-11-15: LibraryBackupAppTests, LibraryEraseAppTests, LensDistortionSettingTests.testLensDistortionKeysAreBackedUpErasedAndNamed, SettingsTests pass (full app suite 1359)
+- [X] FX-016-T13 [US1] `LensDistortionSection` (toggle, ACC-005 Strength slider with "+30%" readout, Zoom to fill
   toggle, help) in `Apps/projectM-iOS/Views/LensDistortionSection.swift`, one line in `SettingsView.swift`, the section
   ID in `UITestSettingsSection.swift`; Effect order row and name in `EffectChainView.swift`/`EffectChainSetting.swift`
-  (FX-016-R8)
-- [ ] FX-016-T14 [US1] App tests `LensDistortionSettingTests` (persistence, clamp, readout, slider step, keys,
+  (FX-016-R8) — Verified 2026-11-15: LensDistortionUITests and EffectChainUITests pass on the own simulator
+- [X] FX-016-T14 [US1] App tests `LensDistortionSettingTests` (persistence, clamp, readout, slider step, keys,
   scene/preset round trip, compositor push) and the whole-order updates in `EffectChainSettingTests` and the other
-  effect setting tests; `SettingsTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` pass (FX-016-S6, S7)
-- [ ] FX-016-T15 [US1] UI test `LensDistortionUITests` (find, turn on, move Strength) under 30 s (FX-016-S7)
+  effect setting tests; `SettingsTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` pass (FX-016-S6, S7) — Verified 2026-11-15: LensDistortionSettingTests 5/5, EffectChainSettingTests, Chromatic/Directional/Radial/Echo/Mosaic/EdgeOutline setting tests, SettingsTests, LibraryBackupAppTests, LibraryEraseAppTests pass (full app unit suite 1359, 52 s)
+- [X] FX-016-T15 [US1] UI test `LensDistortionUITests` (find, turn on, move Strength) under 30 s (FX-016-S7) — Verified 2026-11-15: LensDistortionUITests 1/1 (12.9 s)
 
 ## Phase 6: Polish
 
