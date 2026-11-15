@@ -21,9 +21,11 @@
   is not applied; the lifetime ends every particle (at most 10 s).
 - **SHD-007-D6 Seed.** The emitter's seed replaces the configuration seed when present (reset restores it).
 - **SHD-007-D7 Preview.** SwiftUI `Canvas` drawing `ParticleFountainLayout` squares of a private simulation
-  advanced on a fixed 30 fps clock in a `TimelineView(.animation)` tick (the tick only advances the frame index;
-  time comes from the index). Rationale: the real simulation and layout code; no Metal context needed in Settings.
+  advanced on a fixed 30 fps clock; a view task paces one frame per ~33 ms (pacing only: time comes from the frame
+  index), and every frame is advanced separately because one advance runs at most 1 s of steps (found by
+  `ParticleEmitterEditorTests.testPreviewRunDependsOnlyOnFramesAndSettings`). Rationale: the real simulation and layout code; no Metal context needed in Settings.
   Alternatives: SHD-012's material fixture (materials only), an MTKView (heavier, a second render loop).
 - **SHD-007-D8 Storage.** One JSON key holding `{enabled, settings}`; included in backups (a creative setting
   like the fountain's gravity). Lenient decoding: each field optional, clamped.
-- **SHD-007-D9 New seed.** SplitMix64 of a per-launch counter, mod 65 536, skipping the current seed (SHD-006).
+- **SHD-007-D9 New seed.** SHD-006's `NoiseSeedSequence` reused as is (a per-launch counter hashed to 0…65535,
+  skipping the current seed). The emitter's default seed is 7 so it sits inside the editor's range.

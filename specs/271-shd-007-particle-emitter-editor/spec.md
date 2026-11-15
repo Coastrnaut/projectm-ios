@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feature/shd-007` (spec directory `271-shd-007-particle-emitter-editor`)
 **Created**: 2026-11-14
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHD-007-T01-T12 verified on the Mac: host, Linux shape, host GPU, iOS 27.2 simulator; device task T13 `{device}` open)
 **Input**: User description: "Implement SHD-007 (Particle emitter editor) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Adjust spawn shape, rate, velocity, lifetime and collision bounds." Acceptance,
 verbatim: "Ten-second seeded run matches expected spawn count and lifetime bounds." P2, size L, depends on VIS-008
@@ -80,8 +80,8 @@ local-first option. The SHD-011 policy holds: no user-authored executable shader
   simulation's laid-out squares (the fountain's own layout code) in a small canvas. It plays only while the
   screen is shown and not under Reduce Motion (then "Step" advances one second); any settings change restarts it
   from the seed, so the same settings always show the same run.
-- Q: "New seed" without a system random source? → A: A per-launch counter hashed with SplitMix64 and reduced to
-  0…65535, skipping the current seed (SHD-006's approach).
+- Q: "New seed" without a system random source? → A: SHD-006's `NoiseSeedSequence` (a per-launch counter hashed and
+  reduced to 0…65535, skipping the current seed), reused as is.
 - Q: Does the Gravity picker still apply? → A: Only with the emitter off. With it on the emitter's gravity is used;
   the picker's footer says so.
 - Q: How does VoiceOver describe the preview? → A: As one element "Emitter preview" whose value reads the live
