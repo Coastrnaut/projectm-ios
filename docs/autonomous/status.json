@@ -12,12 +12,12 @@
   },
   "P1": {
    "audited": 1,
-   "integrated": 149,
-   "unit_passed": 1
+   "integrated": 150
   },
   "P2": {
    "audited": 36,
-   "implementing": 3,
+   "built": 1,
+   "implementing": 2,
    "integrated": 40
   },
   "P3": {
@@ -26,10 +26,10 @@
  },
  "by_state": {
   "audited": 48,
-  "implementing": 3,
-  "integrated": 273,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "built": 1,
+  "implementing": 2,
+  "integrated": 274,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -83,7 +83,6 @@
    "VIS-010",
    "VIS-011",
    "VIS-012",
-   "VIS-015",
    "VIS-016",
    "VIS-017",
    "VIS-018",
@@ -92,7 +91,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "52 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "51 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -1909,12 +1908,12 @@
   "OUT-007": {
    "attempts": 0,
    "branch": "feature/out-007",
-   "branch_sha": null,
+   "branch_sha": "e18eed4cbf8a00999bef02d39e72ed885fc45bfb",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "OUT-008": {
    "attempts": 0,
@@ -3301,10 +3300,10 @@
    "branch": "feature/vis-015",
    "branch_sha": "055b15c16832309be2fa2828291051a14c47694b",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "2a948e0d62e746e1b44bc1158c4e2d888458bb6a",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "VIS-016": {
    "attempts": 0,
@@ -4722,6 +4721,11 @@
    "branch": "feature/vis-014",
    "id": "VIS-014",
    "sha": "5bc17cf6b3526aac8d9a7400920fe57b085a8f2c"
+  },
+  {
+   "branch": "feature/vis-015",
+   "id": "VIS-015",
+   "sha": "2a948e0d62e746e1b44bc1158c4e2d888458bb6a"
   }
  ],
  "integration_branch": "autonomous/integration",
@@ -4749,5 +4753,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:00:02Z"
+ "updated": "2026-11-15T03:03:30Z"
 }
