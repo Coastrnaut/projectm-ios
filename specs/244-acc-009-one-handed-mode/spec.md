@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (ACC-009-T01–T13, T15–T17 verified on the Mac: ShowControl package tests on the host, app unit tests and UI tests on private iOS 27.2 simulators iPhone 17 and iPhone SE (3rd generation). Open: ACC-009-T14 `{device}` thumb-reach check on D1. Simulator results are UI evidence only.)
 
 **Input**: User description: "Implement ACC-009 (One-handed performance mode) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Relocate primary controls into reachable touch zones."
