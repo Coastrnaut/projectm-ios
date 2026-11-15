@@ -72,6 +72,22 @@ final class LibraryBackupCoordinator {
     /// The running step (tests await it).
     @ObservationIgnored private(set) var work: Task<Void, Never>?
 
+    /// SHOW-015-R3: the SCN-015 scene lock (the performance lock; set by AppCoordinator). While locked, Restore from
+    /// Backup… and Erase Data… are refused; Cancel Restore and Cancel Erase stay.
+    @ObservationIgnored var sceneLock: SceneLock? {
+        didSet { erase.sceneLock = sceneLock }
+    }
+
+    /// SHOW-015-R3: Restore from Backup… is disabled while true.
+    var isRestoreLocked: Bool { sceneLock?.isLocked ?? false }
+
+    /// SHOW-015-R3: true (with the section message; the lock announces it) while locked.
+    private func refusedByLock() -> Bool {
+        guard sceneLock?.refusesEdit() == true else { return false }
+        message = SceneLock.refusalMessage
+        return true
+    }
+
     /// FILE-011: Erase Data… (shares the folders, the defaults and the announcer).
     @ObservationIgnored let erase: LibraryEraseCoordinator
     /// FILE-006: Back Up to Folder… and Restore Media from Folder… (same sharing).
@@ -125,6 +141,7 @@ final class LibraryBackupCoordinator {
     /// Restore from Backup… : the system picker, or in DEBUG the `-uitestRestoreFrom` file (pickers
     /// cannot be automated). True when the picker should open.
     func restoreTapped() -> Bool {
+        if refusedByLock() { return false }   // SHOW-015-R3
         #if DEBUG
         if let path = defaults.string(forKey: "uitestRestoreFrom") {
             previewRestore(at: URL(fileURLWithPath: path))
@@ -347,6 +364,7 @@ final class LibraryBackupCoordinator {
 
     /// Records the request for the next launch.
     func requestRestore() {
+        if refusedByLock() { cancelPreview(); return }   // SHOW-015-R3: a preview left open records nothing
         guard let data = previewData, let plan = preview?.plan, erase.pending == nil else { return }   // FILE-011: not while an erase waits
         do {
             try LibraryRestoreRequestStore(folders: folders).save(backup: data, choice: plan.choice)

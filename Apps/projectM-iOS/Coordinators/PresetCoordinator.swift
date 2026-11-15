@@ -135,6 +135,9 @@ final class PresetCoordinator {
     var collectionsMessage: String?
     /// Set once when unreadable saved collections were set aside (PRE-007-R15).
     private(set) var collectionsNotice: String?
+    /// SHOW-015: the SCN-015 scene lock, which is also the performance lock (set by AppCoordinator; nil in tests of
+    /// the presets alone). While locked, collection deletes and reorders are refused.
+    @ObservationIgnored var sceneLock: SceneLock?
 
     /// PRE-008: bumped on every smart collection change so views refresh.
     var smartVersion = 0
@@ -625,6 +628,7 @@ final class PresetCoordinator {
     /// Removes the collection only: presets, favorites and other collections stay (R3). If it was
     /// the scope, the scope falls back and the playing preset keeps playing (R12).
     func deleteCollection(_ id: String) {
+        if refusedByLock() { return }   // SHOW-015-R2
         if changeCollections({ try collectionStore.delete(id) }) { resolveScope() }
     }
 
@@ -636,12 +640,14 @@ final class PresetCoordinator {
     }
 
     func removeFromCollection(_ presets: [IndexedPreset], _ id: String) {
+        if refusedByLock() { return }   // SHOW-015-R2
         changeCollections { try collectionStore.remove(Set(presets.map(\.id)), from: id) }
     }
 
     /// A list move of the shown presets (offsets as the list control gives them). Entries that are
     /// not shown keep their places (R14).
     func movePresets(in id: String, fromOffsets: IndexSet, toOffset: Int) {
+        if refusedByLock() { return }   // SHOW-015-R2 (also Move Up / Move Down)
         let shown = collectionListing(id).map(\.id)
         let order = PresetCollectionOrder.moved(shown, fromOffsets: fromOffsets, toOffset: toOffset)
         guard order != shown else { return }
@@ -655,6 +661,7 @@ final class PresetCoordinator {
     }
 
     func moveCollections(fromOffsets: IndexSet, toOffset: Int) {
+        if refusedByLock() { return }   // SHOW-015-R2 (also Move Up / Move Down)
         let ids = collections.map(\.id)
         let order = PresetCollectionOrder.moved(ids, fromOffsets: fromOffsets, toOffset: toOffset)
         guard order != ids else { return }
@@ -664,6 +671,18 @@ final class PresetCoordinator {
     func moveCollection(_ id: String, by delta: Int) {
         guard let index = collections.firstIndex(where: { $0.id == id }) else { return }
         moveCollections(fromOffsets: [index], toOffset: delta < 0 ? index - 1 : index + 2)
+    }
+
+    /// SHOW-015-R4: the collection screens hide their delete and reorder gestures while true.
+    var isCollectionEditLocked: Bool { sceneLock?.isLocked ?? false }
+
+    /// SHOW-015-R2: true (with the collections message; the lock announces it) when the lock is on. Creating, adding
+    /// to and renaming collections never call it (additive; research SHOW-015-D4).
+    func refusedByLock() -> Bool {
+        guard sceneLock?.refusesEdit() == true else { return false }
+        collectionsMessage = SceneLock.refusalMessage
+        collectionsVersion += 1   // an optimistic list move snaps back
+        return true
     }
 
     /// "Friday set, 3 presets": a collection row for VoiceOver (R18).

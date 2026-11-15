@@ -32,6 +32,9 @@ final class LibraryEraseCoordinator {
 
     /// The shared announcer's `library` lane (forwarded by LibraryBackupCoordinator).
     @ObservationIgnored var announce: (@MainActor (String) -> Void)?
+    /// SHOW-015-R3: the SCN-015 scene lock (the performance lock), set through LibraryBackupCoordinator. While locked,
+    /// Erase Data… is refused; Cancel Erase stays (the safe direction).
+    @ObservationIgnored var sceneLock: SceneLock?
     /// FILE-005: true while a restore waits for the next launch.
     @ObservationIgnored var isRestorePending: @MainActor () -> Bool = { () -> Bool in false }
     @ObservationIgnored let root: URL
@@ -66,7 +69,17 @@ final class LibraryEraseCoordinator {
     }
 
     /// Erase Data… is offered while no erase and no restore is pending.
-    var canStart: Bool { pending == nil && !isRestorePending() }
+    var canStart: Bool { pending == nil && !isRestorePending() && !isLocked }
+
+    /// SHOW-015-R3: the lock is on (the section shows the lock note).
+    var isLocked: Bool { sceneLock?.isLocked ?? false }
+
+    /// SHOW-015-R3: true (with the section message; the lock announces it) while locked.
+    private func refusedByLock() -> Bool {
+        guard sceneLock?.refusesEdit() == true else { return false }
+        message = SceneLock.refusalMessage
+        return true
+    }
 
     func measure() {
         let root = root
@@ -82,6 +95,7 @@ final class LibraryEraseCoordinator {
     // MARK: - Sheet
 
     func openSheet() {
+        if refusedByLock() { return }
         guard canStart else { return }
         selection = []
         showConfirmation = false
@@ -115,6 +129,11 @@ final class LibraryEraseCoordinator {
     func requestErase() {
         let chosen = selection
         showConfirmation = false
+        if refusedByLock() {   // SHOW-015-R3: a sheet left open when the lock turned on records nothing
+            showSheet = false
+            selection = []
+            return
+        }
         guard !chosen.isEmpty, canStart else { return }
         do {
             try LibraryEraseRequestStore(root: root).save(chosen)

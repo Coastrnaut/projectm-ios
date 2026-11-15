@@ -10,6 +10,9 @@
 // * `attach(to:)` gives a compositor visual (Photo, Video, Text, Camera) its own `LogoLayerSource` as the
 //   top stack entry (`Compositor.attachLogo`); layers are held weakly, so a released visual drops out.
 // * Announcements go through the injected closure (the app wires the shared announcer, kind `library`).
+// * OUT-006 (contract C3): `outputSuppressed` (Clean output while the visual is on an external display) pushes
+//   an effective placement with opacity 0 to every layer (MED-010: opacity 0 draws nothing); `placement` and
+//   the stored value never change, so clearing it shows the logo again from the next frame without a reload.
 import Compositor
 import Foundation
 import ImageLayer
@@ -37,6 +40,13 @@ final class LogoCoordinator {
     @ObservationIgnored var announce: @MainActor (String) -> Void
     @ObservationIgnored private var noticeTask: Task<Void, Never>?
     @ObservationIgnored private var layers: [WeakLogoLayer] = []
+    /// OUT-006-R2: the logo is left out of the output (the layers draw nothing); set by the output routing.
+    @ObservationIgnored var outputSuppressed = false {
+        didSet { if outputSuppressed != oldValue { pushPlacement() } }
+    }
+
+    /// What the layers draw with: the placement, or with opacity 0 while the output leaves the logo out.
+    var effectivePlacement: LogoPlacement { outputSuppressed ? placement.with(opacity: 0) : placement }
 
     init(store: LogoStore?, announce: @escaping @MainActor (String) -> Void = { (_: String) -> Void in }) {
         self.store = store
@@ -137,7 +147,12 @@ final class LogoCoordinator {
         guard new != placement else { return }
         placement = new
         store?.savePlacement(new)
-        for layer in liveLayers() { layer.placement = new }
+        pushPlacement()
+    }
+
+    private func pushPlacement() {
+        let effective: LogoPlacement = effectivePlacement
+        for layer in liveLayers() { layer.placement = effective }
     }
 
     /// MED-010-R10, R11: a scene's logo (launch restore, Reopen, cues, archive import). A store ID whose
@@ -173,7 +188,7 @@ final class LogoCoordinator {
     @discardableResult
     func attach(to compositor: Compositor) -> LogoLayerSource? {
         let layer = LogoLayerSource(device: compositor.device)
-        layer.placement = placement
+        layer.placement = effectivePlacement   // OUT-006
         layer.content = logo.map { (stored: StoredPhoto) -> ImageLayerContent in .file(stored.url) } ?? .none
         layer.onStateChange = { [weak self] (state: ImageLayerState) in self?.layerStateChanged(state) }
         guard compositor.attachLogo(layer) else { return nil }

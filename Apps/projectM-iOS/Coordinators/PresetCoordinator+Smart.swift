@@ -83,6 +83,7 @@ extension PresetCoordinator {
 
     /// Removes the rule set only; if it was the scope, the scope falls back (R9).
     func deleteSmartCollection(_ id: String) {
+        if refusedByLock() { return }   // SHOW-015-R2
         if changeSmart({ try smartStore.delete(id) }) { resolveScope() }
     }
 
