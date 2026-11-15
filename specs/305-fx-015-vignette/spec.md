@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-015-T01-T14 verified on the Mac and an own iOS 27.2 simulator; T15 `{device}` open)
 
 **Input**: User description: "Implement FX-015 (Vignette) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior,
 verbatim: "Apply radial falloff with center and softness controls." Acceptance, verbatim: "Center brightness stays
@@ -173,7 +173,7 @@ vignette back when the scene or preset is opened.
   (after Mosaic, and after FX-014's Edge outline once both are merged). Its position is honoured; the flash guard and
   the tone map always run after it.
 - **FX-015-R8**: Settings has a "Vignette" section: an on/off toggle, Intensity, Softness, Center X and Center Y
-  sliders with ACC-005 spoken values (Intensity and Softness "50 %", spoken "50 percent"; Center X and Y "0.50"), and
+  sliders with ACC-005 spoken values (Intensity and Softness "50%", spoken "50 percent"; Center X and Y "0.50"), and
   help text. The Effect order screen lists it with its own on/off switch.
 - **FX-015-R9**: The values are saved on the device, restored at launch, included in library backups, erased with the
   other settings, checked on read, and removed by the UI-test reset.

@@ -65,12 +65,12 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 5: Polish
 
-- [ ] FX-015-T12 Repo checks (`test_scripts`, `check_compliance`, `validate_docs`, `check_motion_policy`,
+- [X] FX-015-T12 Repo checks (`test_scripts`, `check_compliance`, `validate_docs`, `check_motion_policy`,
   `check_permission_catalog`, `check_status_events`), package suites (Compositor, SceneFormat, LibraryBackup,
-  RenderGoldens), the Linux-shape build of the model, the app's `SettingsTests`, backup and erase tests
-- [ ] FX-015-T13 Test report `docs/test-reports/vignette.md`; spec status Implemented
-- [ ] FX-015-T14 Type-check budget on the new app files (`-warn-long-function-bodies=300`,
-  `-warn-long-expression-type-checking=150`), no warnings from the new files
+  RenderGoldens), the Linux-shape build of the model, the app's `SettingsTests`, backup and erase tests — Verified 2026-11-15: all six repo checks OK, 186 script tests; Compositor 755, SceneFormat 220, LibraryBackup 88, RenderGoldens 115 (0 failures); Linux-shape model tests; app SettingsTests, backup and erase tests pass
+- [X] FX-015-T13 Test report `docs/test-reports/vignette.md`; spec status Implemented — Verified 2026-11-15: docs/test-reports/vignette.md; spec status Implemented; validate_docs OK
+- [X] FX-015-T14 Type-check budget on the new app files (`-warn-long-function-bodies=300`,
+  `-warn-long-expression-type-checking=150`), no warnings from the new files — Verified 2026-11-15: build with the flags; no warning in the new files (existing bodies near 300 ms listed in the report)
 - [ ] FX-015-T15 {device} On D1, Photo visual: Vignette at intensity 100 % with softness 10 % and 90 % and the centre
   moved: edges darken smoothly and the middle is unchanged; frame rate with and without it (FX-015-S7)
 
