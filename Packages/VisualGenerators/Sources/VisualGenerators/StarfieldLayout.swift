@@ -1,7 +1,7 @@
 // StarfieldLayout.swift — the starfield's squares on the CPU (VIS-016-R5, R7; contract S5; research VIS-016-D4).
 //
 // Per frame, for the first `activeCount` stars of the pool: centre (W/2 + x·f·R/z, H/2 − y·f·R/z) with f = 0.5 and
-// R = min(W, H)/2; side clamp(0.004·R/z, 1 px, 0.04·R); alpha min(0.12/z, 0.8) × fade-in (over 0.15 of depth after the
+// R = min(W, H)/2; side clamp(0.004·R/z, 1 px, 0.04·R); alpha min(0.2/z, 0.8) × fade-in (over 0.15 of depth after the
 // far plane) × fade-out (over 0.05 before the near plane); colour half white, half palette(k mod 16 of 16). Squares
 // wholly outside the frame are not drawn. Total light (VIS-016-R7): when Σ side²·alpha·Y / (W·H) exceeds 0.05, every
 // alpha is scaled by the same factor so the mean is 0.05 (a square's whole area counts, even past the edge: an

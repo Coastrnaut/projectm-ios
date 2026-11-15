@@ -6,7 +6,7 @@
   `reduceMotion`, `palette`, `background`. Constants: `capacity` 2000, `densityRange` 1…2000, `settingsDensityRange`
   100…2000 step 100, `defaultDensity` 600, `stepsPerSecond` 240, `maximumStepsPerAdvance` 240, `near` 0.05, `far` 1,
   `lateralSpread` 2, `focal` 0.5, `bassBoost` 0.5, `bassTimeConstant` 0.2, `maximumSpeed` 0.6, `reduceMotionScale`
-  0.5, `baseSide` 0.004, `maximumSide` 0.04, `brightness` 0.12, `maximumAlpha` 0.8, `fadeInDepth` 0.15,
+  0.5, `baseSide` 0.004, `maximumSide` 0.04, `brightness` 0.2, `maximumAlpha` 0.8, `fadeInDepth` 0.15,
   `fadeOutDepth` 0.05, `lightBound` 0.05. `activeCount` = clamp(density).
 - **Star** (value): x, y, z (Double).
 - **StarfieldSimulation**: pool (2000 stars, allocated in init), `rng`, `anchorNanoseconds`, `stepIndex`, `bass`

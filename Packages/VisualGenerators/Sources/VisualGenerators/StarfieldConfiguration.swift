@@ -60,7 +60,7 @@ public struct StarfieldConfiguration: Sendable, Equatable {
     public static let maximumSide = 0.04
     public static let minimumSidePixels = 1.0
     /// Alpha = min(brightness / z, maximumAlpha) × fades (ACC-012: below 0.8).
-    public static let brightness = 0.12
+    public static let brightness = 0.2
     public static let maximumAlpha = 0.8
     public static let fadeInDepth = 0.15
     public static let fadeOutDepth = 0.05
