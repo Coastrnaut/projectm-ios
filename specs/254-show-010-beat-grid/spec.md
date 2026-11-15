@@ -47,7 +47,11 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Q: Is the anchor placement smoothed? → A: No. While playing it is recomputed on every redraw from the playhead and the tempo's anchor (both monotonic clocks, differences only); the error is far below one point at timeline scale, and smoothing would lag behind new taps.
 - Q: How is the tempo source worded? → A: Manual is "tap tempo" and an accepted estimate is "detected" (VoiceOver: "120 BPM, tap tempo, bar 3 beat 2"); an estimate below the 0.5 confidence floor is no tempo ("No tempo"), exactly as SHOW-011's snapshot reports it.
 
-## User Scenarios & Testing *(mandatory)*
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass: R1 → T02, T03; R2 → T02, T03, T05; R3 → T02, T03; R4 → T04, T06; R5 → T05, T06, T07; R6 → T07, T08, T09; R7 → T03, T10. S1, S2 → T03; S3 → T03, T06; S4 → T09. No constitution conflict (no network, no storage, public APIs, ShowControl stays Foundation-only).
+- Fix applied: S3's 0.01-point tolerance was not named in the tasks; T03 and T06 now assert it.
+ & Testing *(mandatory)*
 
 ### User Story 1 - See the beats on the show timeline (Priority: P1) — MVP
 

@@ -11,7 +11,7 @@ acceptance; owner rule 7 budgets).
 ## Phase 2: Foundational (grid model)
 
 - [ ] SHOW-010-T02 Add `BeatGridTempo` (`init?` fails for period ≤ 0 or non-finite BPM), `BeatGridTick`, `BeatGridPosition`, `BeatGridMark` and `BeatGrid` (`ticks` G1 with the 512 bound, `stride` G2, `marks` G3, `position`, `nearestBeat`, `readoutText`, `accessibilityValue` G4) in Packages/ShowControl/Sources/ShowControl/BeatGrid.swift
-- [ ] SHOW-010-T03 [P] Package tests: 120 BPM ticks exactly 500,000,000 ns apart over 0–10 s (21 ticks), bars at 0, 2 … 10 s; anchor 0.25 s shifts every tick; window before the anchor; no tempo → none; 512 bound and stride choice; positions (bar 3 beat 2 at 4.5 s; 0:00 in bar 1 with an offset anchor); nearest beat; texts; marks for a 20 s timeline 300 points wide in Packages/ShowControl/Tests/ShowControlTests/BeatGridTests.swift
+- [ ] SHOW-010-T03 [P] Package tests: 120 BPM ticks exactly 500,000,000 ns apart over 0–10 s (21 ticks), bars at 0, 2 … 10 s; anchor 0.25 s shifts every tick; window before the anchor; no tempo → none; 512 bound and stride choice; positions (bar 3 beat 2 at 4.5 s; 0:00 in bar 1 with an offset anchor); nearest beat; texts; marks for a 20 s timeline 300 points wide (x within 0.01 point, SHOW-010-S3) in Packages/ShowControl/Tests/ShowControlTests/BeatGridTests.swift
 
 ## Phase 3: User Story 1 — See the beats on the show timeline (P1) MVP
 
@@ -19,7 +19,7 @@ acceptance; owner rule 7 budgets).
 
 - [ ] SHOW-010-T04 [US1] `ShowBeatGridCoordinator` (tempo and tempo-clock closures; placement while playing, kept while paused/Standby, 0 without anchor; `gridTempo()`, `marks(width:inset:)`, `readout()`) in Apps/projectM-iOS/Coordinators/ShowBeatGridCoordinator.swift; lazy `beatGrid` in Apps/projectM-iOS/Coordinators/ShowTransportCoordinator.swift; tempo wiring in Apps/projectM-iOS/Coordinators/AppCoordinator+Show.swift
 - [ ] SHOW-010-T05 [US1] Draw ticks under the thumb in `ShowScrubBar` (Apps/projectM-iOS/Views/ShowBeatGridTicks.swift, Apps/projectM-iOS/Views/ShowTimelineRow.swift); the scrub gesture unchanged
-- [ ] SHOW-010-T06 [US1] App acceptance tests (placement, kept while paused, 0:00 without phase, marks at expected x for 120 BPM, no tempo → no marks) in Apps/projectM-iOS/Tests/ShowBeatGridAcceptanceTests.swift
+- [ ] SHOW-010-T06 [US1] App acceptance tests (placement, kept while paused, 0:00 without phase, marks at expected x for 120 BPM (within 0.01 point), no tempo → no marks) in Apps/projectM-iOS/Tests/ShowBeatGridAcceptanceTests.swift
 
 ## Phase 4: User Story 2 — Hear the position with VoiceOver (P1)
 
