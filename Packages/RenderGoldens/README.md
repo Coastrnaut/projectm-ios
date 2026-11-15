@@ -84,6 +84,12 @@ per beat, a 120 BPM tempo for 0.25 s then none, the same fixture bands, captured
 `signedDistance` set (`Tests/RenderGoldensTests/SignedDistanceGoldenTests.swift`); record with
 `--filter SignedDistanceGolden` or `-only-testing:RenderGoldensTests/SignedDistanceGoldenTests`.
 
+`GeneratorGoldens/Tessellation/<class>/` (VIS-018) holds the tessellation's goldens: `tessellation-hexagon-<w>x<h>-f0.png`
+(hexagons, 6 tiles, 6-fold symmetry, Spectrum) and `tessellation-trihexagonal-<w>x<h>-f0.png` (5 tiles, mirrored 3-fold, Ice),
+the same fixture bands, captured at 0.5 s, through `NoiseFieldGenerator` with `tessellation` set
+(`Tests/RenderGoldensTests/TessellationGoldenTests.swift`); record with `--filter TessellationGolden` or
+`-only-testing:RenderGoldensTests/TessellationGoldenTests`.
+
 `GeneratorGoldens/Waterfall/<class>/` (VIS-020) holds the spectrum waterfall's golden: `waterfall-<w>x<h>-f0.png` (the
 spectrum palette, a bass slope plus one lit band stepping five bands right each second, 10 Hz frames for 12 s), through
 `NoiseFieldGenerator` with `waterfall: true` (`Tests/RenderGoldensTests/WaterfallGoldenTests.swift`); record with
