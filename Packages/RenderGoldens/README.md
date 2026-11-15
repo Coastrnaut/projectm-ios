@@ -74,6 +74,11 @@ per beat, a 120 BPM tempo for 0.25 s then none, the same fixture bands, captured
 `NoiseFieldGenerator` with `tunnelPace: 1` (`Tests/RenderGoldensTests/TunnelGoldenTests.swift`); record with
 `--filter TunnelGolden` or `-only-testing:RenderGoldensTests/TunnelGoldenTests`.
 
+`GeneratorGoldens/Waterfall/<class>/` (VIS-020) holds the spectrum waterfall's golden: `waterfall-<w>x<h>-f0.png` (the
+spectrum palette, a bass slope plus one lit band stepping five bands right each second, 10 Hz frames for 12 s), through
+`NoiseFieldGenerator` with `waterfall: true` (`Tests/RenderGoldensTests/WaterfallGoldenTests.swift`); record with
+`--filter WaterfallGolden` or `-only-testing:RenderGoldensTests/WaterfallGoldenTests`.
+
 ## Run
 
 ```bash

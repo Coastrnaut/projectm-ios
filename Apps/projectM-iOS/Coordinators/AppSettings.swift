@@ -42,6 +42,8 @@
 //   absent or anything else → 6). Glow is shared; Bars does not apply.
 // * Tunnel (VIS-015-R9): `settings.visual` may also be `tunnel`; key `settings.tunnel.pace` (`half`/`beat`/`double`;
 //   anything else → beat). Its speed follows the tempo snapshot (SHOW-011). Glow is shared; Bars does not apply.
+// * Spectrum Waterfall (VIS-020-R9): `settings.visual` may also be `spectrumWaterfall`; no key of its own. Bars applies
+//   (the band count feeding its columns); palette and glow are shared.
 // * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
 //   `settings.spectrum.attack` (0, 25, 50 or 100) and `settings.spectrum.release` (0, 100, 250 or
 //   500), Int milliseconds; anything else → 0 (Instant, today's look).
@@ -616,6 +618,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case kaleidoscope
     /// The native tunnel (VIS-015).
     case tunnel
+    /// The native spectrum waterfall (VIS-020).
+    case spectrumWaterfall
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -640,6 +644,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .noiseField: "Noise Field"
         case .kaleidoscope: "Kaleidoscope"
         case .tunnel: "Tunnel"
+        case .spectrumWaterfall: "Spectrum Waterfall"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -650,10 +655,11 @@ enum VisualChoice: String, CaseIterable, Sendable {
     /// Drawn by the native spectrum host instead of projectM.
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
-        || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel }
+        || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel
+        || self == .spectrumWaterfall }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
-    var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum }
+    var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .spectrumWaterfall }   // VIS-020: band count
 
     /// Shown instead of projectM (a native spectrum, the camera or the photo visual).
     var replacesProjectM: Bool { self != .projectM }

@@ -155,6 +155,7 @@ enum SnapshotBatchPlanner {
         case .noiseField: return .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: return .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
         case .tunnel: return .tunnel(pace: settings.tunnelPace)   // VIS-015
+        case .spectrumWaterfall: return .waterfall   // VIS-020
         default: return .circular
         }
     }

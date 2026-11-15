@@ -6,6 +6,11 @@
 // VIS-015: `configuration.tunnelPace` > 0 draws the tunnel with a third entry point (`TunnelShader`), moved by
 // `TunnelDrive` at the speed `tempo` (set by the host every frame) gives; its phase and brightness go into the same
 // uniform slots, so the block's layout is unchanged.
+// VIS-020: `configuration.waterfall` draws the spectrum waterfall with a fourth entry point that reads `historyTexture`
+// (256 × 512 levels, made in `init` with its staging buffer and never replaced): each frame the bands go into
+// `SpectrumWaterfallHistory`, the rows it wrote are copied ring → staging → texture by a blit in the frame's own command
+// buffer before the draw, and the newest row's index goes in the phase slot. Entering the mode or a loop restart clears
+// the history (same storage).
 // Per frame: VIS-007's band groups of the input bands → `NoiseFieldDrive` (smoothed warp and brightness, drift on the
 // frame context's clock) → the CPU mirror's 64 samples → the strobe safety envelope's gain over 17 areas (after the
 // downstream stages when `downstreamLuminance` is set; FX-001-R10, FX-019-R9) → one full-screen triangle whose
@@ -37,6 +42,18 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     public var tempo: TunnelTempo = .none
     /// VIS-015: the tunnel's speed, brightness and phase of the last frame.
     public private(set) var tunnelDrive = TunnelDrive()
+    /// VIS-020: the waterfall's history ring (fixed storage).
+    public let waterfallHistory = SpectrumWaterfallHistory()
+    /// VIS-020: the GPU copy of the ring (256 × 512 `r8Unorm`, private), made once in `init`.
+    public let historyTexture: MTLTexture
+    /// VIS-020: what each flash estimate cell shows.
+    public let waterfallCells = WaterfallFlashCells()
+    private let historyStaging: MTLBuffer
+    private var waterfallPipeline: MTLRenderPipelineState?
+    /// The mode of the last frame drawn (VIS-020: entering the waterfall clears its history).
+    private var lastMode: Mode?
+    /// VIS-020: the cells' sums were made with an older palette.
+    private var cellsStale = true
     /// Kept for the host (it carries the bar count between native visuals); does not affect drawing.
     public var barCount: SpectrumBarCount = .b64
 
@@ -44,7 +61,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     public var configuration: NoiseFieldConfiguration {
         didSet {
             configuration = configuration.clamped()
-            if configuration.palette != oldValue.palette { fillPalette() }
+            if configuration.palette != oldValue.palette { fillPalette(); cellsStale = true }
         }
     }
 
@@ -56,9 +73,10 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     private var tunnelPipeline: MTLRenderPipelineState?
 
     /// Which entry point draws.
-    enum Mode { case plain, folded, tunnel }
+    enum Mode { case plain, folded, tunnel, waterfall }
 
     static func mode(_ c: NoiseFieldConfiguration) -> Mode {
+        if c.waterfall { return .waterfall }   // VIS-020
         if c.isTunnel { return .tunnel }
         return c.isKaleidoscope ? .folded : .plain
     }
@@ -83,7 +101,20 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .plain: plainPipeline = initial
         case .folded: foldedPipeline = initial
         case .tunnel: tunnelPipeline = initial
+        case .waterfall: waterfallPipeline = initial
         }
+        // VIS-020: the history's GPU copy and staging rows, once; independent of any output size.
+        let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: SpectrumWaterfallHistory.columns,
+                                                         height: SpectrumWaterfallHistory.rows, mipmapped: false)
+        d.usage = [.shaderRead]
+        d.storageMode = .private
+        guard let texture = device.makeTexture(descriptor: d),
+              let staging = device.makeBuffer(length: SpectrumWaterfallHistory.byteCount, options: .storageModeShared) else {
+            throw .pipelineUnavailable("waterfall history storage")
+        }
+        texture.label = "VIS-020 Waterfall history"
+        historyTexture = texture
+        historyStaging = staging
         uniforms = .allocate(capacity: Self.uniformFloats)
         uniforms.initialize(repeating: 0, count: Self.uniformFloats)
         palette = .allocate(capacity: NoiseFieldConfiguration.paletteColors)
@@ -100,6 +131,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .plain: name = "vis_noise_fragment"
         case .folded: name = "vis_kaleido_fragment"
         case .tunnel: name = "vis_tunnel_fragment"
+        case .waterfall: name = "vis_waterfall_fragment"
         }
         guard let vertex = library.makeFunction(name: "vis_noise_vertex"),
               let fragment = library.makeFunction(name: name) else {
@@ -122,6 +154,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .plain: "VIS-013 Noise field"
         case .folded: "VIS-014 Kaleidoscope"
         case .tunnel: "VIS-015 Tunnel"
+        case .waterfall: "VIS-020 Spectrum waterfall"
         }
     }
 
@@ -134,6 +167,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .tunnel:
             if tunnelPipeline == nil { tunnelPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .tunnel) }
             return tunnelPipeline
+        case .waterfall:
+            if waterfallPipeline == nil { waterfallPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .waterfall) }
+            return waterfallPipeline
         case .plain:
             if plainPipeline == nil { plainPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .plain) }
             return plainPipeline
@@ -155,6 +191,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         limiter.reset()
         drive.reset()
         tunnelDrive.reset()   // VIS-015
+        waterfallHistory.clear()   // VIS-020: storage kept
     }
 
     public func encode(into target: MTLTexture, commandBuffer: MTLCommandBuffer,
@@ -163,7 +200,12 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         let c: NoiseFieldConfiguration = configuration
         let mode: Mode = Self.mode(c)
         guard let state = pipeline(mode) else { return false }
-        if mode == .tunnel {   // VIS-015
+        if mode == .waterfall {   // VIS-020
+            if lastMode != .waterfall { waterfallHistory.clear() }
+            waterfallHistory.advance(bands: bands, timeNanoseconds: context.timeNanoseconds, reduceMotion: c.reduceMotion)
+            uploadWaterfallRows(commandBuffer: commandBuffer)
+            flashAreas.loadWaterfall(waterfallCells, history: waterfallHistory, brightness: Float(NoiseFieldConfiguration.maximumBrightness))
+        } else if mode == .tunnel {   // VIS-015
             tunnelDrive.advance(groups: MandalaBandGroups.from(bands), tempo: tempo, timeNanoseconds: context.timeNanoseconds,
                                 configuration: c)
             flashAreas.sampleTunnel(configuration: c, drive: tunnelDrive, paletteStops: palette, width: target.width, height: target.height)
@@ -181,16 +223,41 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
                                    configuration: context.flashConfiguration)
         }
         lastGain = gain
+        lastMode = mode
         writeUniforms(width: target.width, height: target.height, gain: gain)
         pass.colorAttachments[0].texture = target
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
         encoder.label = Self.label(mode)
         encoder.setRenderPipelineState(state)
         encoder.setFragmentBytes(uniforms, length: Self.uniformFloats * MemoryLayout<Float>.stride, index: 0)
+        if mode == .waterfall { encoder.setFragmentTexture(historyTexture, index: 0) }   // VIS-020
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         pass.colorAttachments[0].texture = nil
         return true
+    }
+
+    /// VIS-020: copies the rows the history wrote since the last frame to the texture, in this command buffer (before
+    /// the draw), and updates their flash cell sums (all rows after a palette change). A staging row is rewritten only
+    /// after 512 more rows, so no earlier frame's copy reads a row being written.
+    private func uploadWaterfallRows(commandBuffer: MTLCommandBuffer) {
+        let history: SpectrumWaterfallHistory = waterfallHistory
+        let width: Int = SpectrumWaterfallHistory.columns
+        let staging: UnsafeMutablePointer<UInt8> = historyStaging.contents().bindMemory(to: UInt8.self, capacity: SpectrumWaterfallHistory.byteCount)
+        var blit: MTLBlitCommandEncoder?
+        history.drainPending { (ring: Int) -> Void in
+            (staging + ring * width).update(from: history.levels + ring * width, count: width)
+            if blit == nil { blit = commandBuffer.makeBlitCommandEncoder() }
+            blit?.copy(from: historyStaging, sourceOffset: ring * width, sourceBytesPerRow: width, sourceBytesPerImage: width,
+                       sourceSize: MTLSize(width: width, height: 1, depth: 1), to: historyTexture, destinationSlice: 0,
+                       destinationLevel: 0, destinationOrigin: MTLOrigin(x: 0, y: ring, z: 0))
+            if !cellsStale { waterfallCells.update(ring: ring, history: history, stops: palette) }
+        }
+        blit?.endEncoding()
+        if cellsStale {
+            waterfallCells.updateAll(history: history, stops: palette)
+            cellsStale = false
+        }
     }
 
     private func writeUniforms(width: Int, height: Int, gain: Float) {
@@ -200,6 +267,10 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         let tunnel: Bool = c.isTunnel   // VIS-015: the tunnel's phase (rings) and brightness in the same slots
         uniforms[2] = tunnel ? Float(tunnelDrive.phase) : Float(drive.phase)
         uniforms[3] = (tunnel ? Float(tunnelDrive.brightness) : Float(drive.brightness)) * gain
+        if c.waterfall {   // VIS-020: the newest ring row and the fixed brightness (ACC-012) in the same slots
+            uniforms[2] = Float(max(waterfallHistory.newestRow, 0))
+            uniforms[3] = Float(NoiseFieldConfiguration.maximumBrightness) * gain
+        }
         uniforms[4] = Float(c.frequency)
         uniforms[5] = Float(drive.warp)
         uniforms[6] = Float(c.octaves)
@@ -220,7 +291,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     /// Module-authored shader: SHD-006's shared noise functions, VIS-014's fold, VIS-015's tunnel, then the field (no user
     /// text; SHD-011).
     public static let shaderSource: String = shaderHeader + SeededNoiseShader.functions + KaleidoscopeFoldShader.function
-        + TunnelShader.function + shaderBody
+        + TunnelShader.function + WaterfallShader.function + shaderBody
 
     static let shaderHeader = """
     #include <metal_stdlib>
@@ -297,6 +368,20 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         int i = min(int(position), 14);
         float f = position - float(i);
         float3 c = mix(u.palette[i].rgb, u.palette[i + 1].rgb, f) * s.y * u.brightness;
+        c = select(c, float3(0.0), isnan(c) || isinf(c));
+        return float4(clamp(c, 0.0, 1.0), 1.0);
+    }
+
+    // VIS-020: the spectrum waterfall (its own entry point): palette at level v × v × brightness; newest row (phase slot)
+    // at the top.
+    fragment float4 vis_waterfall_fragment(NoiseOut in [[stage_in]], constant NoiseUniforms &u [[buffer(0)]],
+                                           texture2d<float, access::read> history [[texture(0)]]) {
+        float2 size = max(u.size, float2(1.0));
+        float v = clamp(vis_waterfall_level(history, in.position.xy, size, u.phase), 0.0, 1.0);
+        float position = v * 15.0;
+        int i = min(int(position), 14);
+        float f = position - float(i);
+        float3 c = mix(u.palette[i].rgb, u.palette[i + 1].rgb, f) * v * u.brightness;
         c = select(c, float3(0.0), isnan(c) || isinf(c));
         return float4(clamp(c, 0.0, 1.0), 1.0);
     }
