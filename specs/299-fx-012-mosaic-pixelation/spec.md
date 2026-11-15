@@ -52,6 +52,25 @@ answer is the conservative option.
   reorderable entry of the FX-020 effect chain ("Mosaic", stored kind `fx.mosaic`), appended after the radial blur. The
   native spectra and projectM are unchanged. Applied to FX-012-R1, R7.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Should the block size follow the display scale (points) instead of pixels? → A: No: pixels of the composite
+  picture. Every output of a frame (screen, external display, recording, capture) reads the same composite, so they
+  agree; the roadmap's "block size one" is a pixel. The 64-pixel cap gives about 18 blocks across a phone picture.
+  Applied to FX-012-R2.
+- Q: Do the sensory safety profile or Reduce flashing limit the mosaic? → A: No cap: it only copies existing colours,
+  adding no brightness; the flash guard still judges the shown frame. Applied to the Assumptions.
+- Q: Is Mosaic a global setting or a per-scene value? → A: Both, like FX-006 to FX-008: a global setting the visuals
+  use, which a scene or effect-chain preset with an `fx.mosaic` entry overwrites when opened; a scene without one
+  leaves it alone. Applied to FX-012-R9, R10.
+- Q: How is the shape stored and shown? → A: A Square/Hexagon segmented choice; stored as the string `square` or
+  `hexagon` in settings (anything else reads as square) and as `shape` 0 or 1 in the scene entry (≥ 0.5 reads as
+  hexagon, like FX-006's `radial`). Applied to FX-012-R8, R10.
+- Q: What does VoiceOver say for the block size? → A: "Block size", the whole number ("8"), one pixel per swipe; the
+  on-screen readout is "8 px". Applied to FX-012-R8.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pixelate the picture (Priority: P1)
