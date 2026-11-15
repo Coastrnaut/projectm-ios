@@ -12,8 +12,9 @@ clamped linear RGBA. The app adds a main-actor `ColorSamplerCoordinator` that as
 `FrameCaptureSource` for its next presented frame (asynchronous, never blocking rendering, 1 s timeout, late frames
 dropped), maps the tap with the captured size, converts to the target's space (linear `ParameterColor` or
 sRGB-encoded `TextColor`, alpha kept) and writes it between SCN-010 `endCoalescing()` and one
-`recordStep(label: "Sample <name>")`. A `ColorSamplingLayer` in the visualizer's backdrop catches taps in window
-coordinates while sampling (the rest of the visualizer's layers stop hit-testing) and shows a banner with Cancel; an
+`recordStep(label: "Sample <name>")`. A `ColorSamplingLayer` above the visualizer's tap target catches taps in window
+coordinates while sampling (status, controls and the emergency blackout above it stay usable; a reporter in the
+backdrop hands it the UIX-007 placement) and shows a banner with Cancel; an
 `EyedropperButton` sits next to the three MED-009 text colour pickers. Results announce on the parameter lane.
 
 ## Technical Context
@@ -59,7 +60,7 @@ Packages/Compositor/Tests/CompositorTests/ColorSampleCompositorTests.swift # new
 Apps/projectM-iOS/Coordinators/ColorSamplerCoordinator.swift              # new: mode, request, write, announce (C3)
 Apps/projectM-iOS/Coordinators/AppCoordinator+ColorSampler.swift          # new: wiring, availability, targets
 Apps/projectM-iOS/Views/ColorSamplingViews.swift                          # new: eyedropper button, sampling layer
-Apps/projectM-iOS/Views/VisualizerView.swift                              # 3 small edits: layer, hit-testing, split flag
+Apps/projectM-iOS/Views/VisualizerView.swift                              # 3 small edits: sampling layer, placement reporter, split flag
 Apps/projectM-iOS/Views/SettingsView.swift                                # eyedroppers by the 3 text colour pickers
 Apps/projectM-iOS/Tests/ColorSamplerTests.swift                           # new
 Apps/projectM-iOS/UITests/ColorSamplerUITests.swift                       # new
