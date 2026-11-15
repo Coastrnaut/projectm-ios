@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (OUT-008-T01-T14 verified on the Mac host and the iOS 27.2 simulator; T15
+`{device}` open)
 
 **Input**: User description: "Implement OUT-008 (Grid warp) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior,
 verbatim: "Adjust a bounded mesh for curved projection surfaces." Acceptance, verbatim: "Identity mesh is exact
