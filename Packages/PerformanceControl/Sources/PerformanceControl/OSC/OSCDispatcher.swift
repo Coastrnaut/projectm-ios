@@ -37,6 +37,11 @@
 // applies what is already due, so values never reorder. A due message goes through `apply(message:)` like any
 // other (routes, policy, learn, per-target limit at dispatch); the allow list and datagram limits were checked at
 // receipt. `clearScheduled` (receiver stop and start) drops everything pending.
+//
+// OSC-012 (specs/291-osc-012-peer-cue-sync, contract C4): `setMessageTap(address:handler:)` hands every message to that
+// address (peer cue sync's `/projectm/cue`) to one handler instead of the routes, after the allow list and the datagram
+// limits (also inside bundles). The handler runs under the dispatcher's lock on the receiving side, so it must be cheap
+// and must not call back into the dispatcher (the app only pushes into a bounded inbox).
 import ParameterGraph
 import Synchronization
 
@@ -58,6 +63,8 @@ public enum OSCDispatchOutcome: Sendable, Hashable {
     case scheduled
     /// OSC-006: the message was too late, too far ahead or did not fit the schedule.
     case dropped(OSCBundleDrop)
+    /// OSC-012: the message went to the message tap (peer cue sync), never to a parameter.
+    case tapped
     /// OSC-002: a bundle; one outcome per message, depth-first in packet order (never `.rejected`
     /// or `.bundle`). A scheduled message's later outcome is counted when it applies.
     indirect case bundle([OSCDispatchOutcome])
@@ -94,6 +101,8 @@ public struct OSCReceiverCounters: Sendable, Equatable {
     public var beyondHorizon = 0
     /// OSC-006: bundle messages dropped because the schedule was full.
     public var scheduleOverflow = 0
+    /// OSC-012: messages handed to the message tap.
+    public var tapped = 0
     /// `OSCDecodeError.reason` → count.
     public var rejectedByReason: [String: Int] = [:]
 
@@ -121,7 +130,12 @@ public final class OSCDispatcher: Sendable {
         var schedule = OSCBundleSchedule()
         var sequence: UInt64 = 0
         var armedWake: UInt64?
+        /// OSC-012: the one message tap (address and handler).
+        var tap: (address: String, handler: MessageTap)?
     }
+
+    /// OSC-012: receives a tapped message under the dispatcher's lock.
+    public typealias MessageTap = @Sendable (OSCMessage) -> Void
 
     public typealias LearnHandler = @Sendable (String) -> Void
 
@@ -260,6 +274,22 @@ public final class OSCDispatcher: Sendable {
 
     public var isLearnArmed: Bool { state.withLock { $0.learnHandler != nil } }
 
+    // MARK: Message tap (OSC-012)
+
+    /// Hands every message to `address` to `handler` instead of the routes; nil removes the tap.
+    public func setMessageTap(address: String, handler: MessageTap?) {
+        state.withLock { s in
+            if let handler {
+                s.tap = (address: address, handler: handler)
+            } else if s.tap?.address == address {
+                s.tap = nil
+            }
+        }
+    }
+
+    /// The tapped address, nil without a tap (tests and the app).
+    public var messageTapAddress: String? { state.withLock { $0.tap?.address } }
+
     /// Called on the receiving side after every handled datagram, drop and flush (OSC-009-R11).
     public func onActivity(_ handler: @escaping ActivityHandler) {
         activityHandlers.withLock { $0.append(handler) }
@@ -304,6 +334,7 @@ public final class OSCDispatcher: Sendable {
             c.ignored += 1
             c.unknownAddresses += 1
         case .wrongArguments, .notExternallyControllable, .refusedByStore: c.ignored += 1
+        case .tapped: c.tapped += 1                       // OSC-012
         case .scheduled, .dropped: break                  // counted when classified (OSC-006)
         case .rejected, .bundle, .rateLimited: break      // never produced per message
         }
@@ -447,6 +478,10 @@ public final class OSCDispatcher: Sendable {
     }
 
     private func apply(_ message: OSCMessage, now: UInt64, _ s: inout State) -> OSCDispatchOutcome {
+        if let tap = s.tap, tap.address == message.address {   // OSC-012: never a route, never learned
+            tap.handler(message)
+            return .tapped
+        }
         if s.learnHandler != nil, s.learnCaptured == nil, let address = OSCLearnEligibility.address(of: message) {
             s.learnCaptured = address                 // OSC-004-R5: the first eligible message only
         }

@@ -644,6 +644,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.noiseFieldSeed) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.kaleidoscopeWedges) { coordinator.visualSettingsChanged() }   // VIS-014
         .onChange(of: coordinator.settings.tunnelPace) { coordinator.visualSettingsChanged() }   // VIS-015
+        .onChange(of: coordinator.settings.reactionDiffusion) { coordinator.visualSettingsChanged() }   // VIS-012
     }
 
     /// VIS-016: the starfield's settings (its own short chain, so withGeneratorChanges stays at about ten).

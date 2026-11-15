@@ -107,6 +107,10 @@ public enum LibrarySettingsPolicy {
         "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   // VIS-013-R9
         "settings.kaleidoscope.wedges",   // VIS-014-R9
         "settings.tunnel.pace",   // VIS-015-R9
+        "settings.reactionDiffusion.preset",   // VIS-012-R13
+        "settings.reactionDiffusion.pattern",
+        "settings.reactionDiffusion.seed",
+        "settings.reactionDiffusion.speed",
         "settings.starfield.speed", "settings.starfield.density",   // VIS-016-R8
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
@@ -145,6 +149,7 @@ public enum LibrarySettingsPolicy {
         "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   // OSC-005-R12: this device's
         "settings.osc.send.kinds", "settings.osc.send.sceneNames",                         // network output setup
         "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   // OSC-011-R10: this device's network
+        "settings.osc.cueSync.role",   // OSC-012-R12: this device's network role (lead or follow a peer)
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
         "settings.show.quantizeCues",   // SHOW-003: a performance timing choice of this device
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)

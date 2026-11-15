@@ -108,6 +108,10 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   # VIS-013-R9
                 "settings.kaleidoscope.wedges",   # VIS-014-R9
                 "settings.tunnel.pace",   # VIS-015-R9
+                "settings.reactionDiffusion.preset",   # VIS-012-R13
+                "settings.reactionDiffusion.pattern",
+                "settings.reactionDiffusion.seed",
+                "settings.reactionDiffusion.speed",
                 "settings.starfield.speed", "settings.starfield.density",   # VIS-016-R8
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
@@ -116,6 +120,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   # OSC-005 (Send OSC)
                 "settings.osc.send.kinds", "settings.osc.send.sceneNames",
                 "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   # OSC-011 (Nearby Devices switches)
+                "settings.osc.cueSync.role",   # OSC-012 (Cue Sync role: off, lead, follow; absent = off)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)
