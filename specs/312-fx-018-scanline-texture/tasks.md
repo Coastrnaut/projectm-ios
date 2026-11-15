@@ -51,10 +51,10 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
   `SceneEffectChain.swift`; tests for round trip, clamping and old scenes byte-identical in
   `Packages/SceneFormat/Tests/SceneFormatTests/ScanlinesSceneEntryTests.swift`; the source-safety list names the new
   file; update `SceneEffectChainTests` if it lists the order (FX-018-R10, S4) — Verified 2026-11-15: SceneFormat suite 226 tests, 0 failures (2.8 s), incl. ScanlinesSceneEntryTests 2/2, SceneSourceSafetyTests and the order lists in SceneEffectChainTests
-- [ ] FX-018-T09 [US3] RenderGoldens: apply `effects.scanlines` in `GoldenSceneRenderer.swift`;
+- [X] FX-018-T09 [US3] RenderGoldens: apply `effects.scanlines` in `GoldenSceneRenderer.swift`;
   `ScanlinesSceneGoldenTests` (intensity 0 and off render exactly as no chain; a scanline scene saved and reloaded
   renders the same picture with dark rows exactly at c mod p < t); update `EffectChainSceneTests` if it lists the order
-  (FX-018-S1, S4)
+  (FX-018-S1, S4) — Verified 2026-11-15: RenderGoldens suite 128 tests, 0 failures (1 on-demand skip), 39 s wall incl. build; ScanlinesSceneGoldenTests 2/2 (intensity 1 lines exactly black at the predicted rows/columns, all other pixels equal to the plain frame); EffectChainSceneTests with Scanlines in the order
 - [ ] FX-018-T10 [US1] [US3] App setting: `ScanlinesSetting` (five keys, "absent or malformed → default, out of range →
   nearest bound", lowering spacing lowers a larger thickness), `AppCoordinator+Scanlines.swift`, the compositor pushes
   in `AppCoordinator.swift`, the UI-test reset, scene and preset apply (`SceneAutosaveCapture`,
