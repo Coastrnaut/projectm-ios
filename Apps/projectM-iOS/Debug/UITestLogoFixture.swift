@@ -46,17 +46,24 @@ enum UITestLogoFixture {
     }
 }
 
-/// The visualizer's DEBUG media probes: the slideshow's (while Photo is shown) and the logo's.
+/// The visualizer's DEBUG media probes: the slideshow's (while Photo is shown), the logo's and the clock's (MED-011).
 struct MediaProbes: View {
     let coordinator: AppCoordinator
 
     var body: some View {
         if showsSlideshow { SlideshowProbe(slideshow: slideshow) }
+        overlayProbes
+    }
+
+    /// The logo's and the clock's probes (MED-010, MED-011), split out for the type-check budget.
+    @ViewBuilder private var overlayProbes: some View {
         LogoProbe(logo: logo)
+        ClockProbe(clock: clock)
     }
 
     private var slideshow: SlideshowCoordinator { coordinator.slideshow }
     private var logo: LogoCoordinator { coordinator.logo }
+    private var clock: ClockOverlayCoordinator { coordinator.clock }
     private var showsSlideshow: Bool {
         guard case .some = coordinator.photoVisual else { return false }
         return true

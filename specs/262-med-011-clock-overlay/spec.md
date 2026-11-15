@@ -67,8 +67,8 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Is the clock part of scenes? → A: No. It is a device preference (backed up with FILE-005,
   erased with Settings by FILE-011), not scene content; a later row can add a scene field.
 - Q: How do VoiceOver users read the time? → A: The drawn clock adds no accessibility element (the
-  system status bar already speaks the time); the Settings controls are labelled and the Show Clock
-  row's value says the current format.
+  system status bar already speaks the time); the Settings controls are standard labelled toggles and
+  pickers, so VoiceOver reads each one's state (on/off, the chosen format and placement).
 
 - Q: Should the clock's digits keep a fixed width so it does not shift sideways as the time changes? → A: Yes, by
   default: the clock's default font is Menlo (fixed-width digits, a system font already offered by
