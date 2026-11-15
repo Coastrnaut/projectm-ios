@@ -382,6 +382,14 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
+    /// UIX-006: gesture shortcuts on the visualization (Settings → Gesture shortcuts; off by default). Edits are
+    /// refused while the scene is locked.
+    @ObservationIgnored private(set) lazy var gestureShortcuts: GestureShortcutsSetting = makeGestureShortcutsSetting(defaults: defaults)
+    /// UIX-006-R7: runs resolved gesture shortcuts through the existing controls' paths.
+    @ObservationIgnored private(set) lazy var gestureShortcutPerformer: GestureShortcutPerformer = makeGestureShortcutPerformer()
+    /// UIX-006: the last action a gesture shortcut ran and how many ran (tests and the DEBUG probe, contract G5).
+    var lastGestureShortcut: GestureAction = .none
+    var gestureShortcutCount = 0
     /// OUT-005: the safe-area guides preference (Settings → Safe-area guides; off by default; device only).
     @ObservationIgnored private(set) lazy var safeAreaGuides = SafeAreaGuideSetting(defaults: defaults)
     /// ACC-009: the one-handed layout preference (Settings → One-handed layout; Off by default; iPhone only).
@@ -673,6 +681,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         OSCSendCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-005: Send OSC off, no destination
         OSCDiscoveryCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-011: discovery off
+        OSCCueSyncCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-012: cue sync off
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -767,6 +776,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         connectMIDIFeedback()   // MIDI-009
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
+        osc.cueSync = OSCCueSyncCoordinator(osc: osc, show: show, defaults: defaults)   // OSC-012 (after connectShow: chains cueStarted)
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif

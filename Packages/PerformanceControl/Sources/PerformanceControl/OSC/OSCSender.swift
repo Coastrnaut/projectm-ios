@@ -6,6 +6,7 @@
 // * `configure(destination:)` is the whole on/off: a destination means "send now" (the app passes nil unless
 //   Send OSC, the OSC network switch, the foreground and the allow list all agree). nil closes the transport at
 //   once: the transport drops sends it has queued but not run, and no message is made afterwards (R5).
+// * OSC-012 (ADR-0102): `postCue` sends peer cue sync's `/projectm/cue` under the same gate and cap.
 // * `post` encodes one event with `OSCEncoder` only when active and its kind is chosen, then applies the 60/s cap
 //   (R9). All state sits under one lock; the transport call is a hand-off to its own queue.
 import Synchronization
@@ -143,6 +144,23 @@ public final class OSCSender: Sendable {
             let message: OSCMessage = OSCSendMessages.message(for: event, includeSceneNames: s.includeSceneNames)
             // Under the lock, so a send never overtakes a concurrent configure(nil); `send` only enqueues.
             transport.send(OSCEncoder.encode(message))
+            return .sent
+        }
+    }
+    /// OSC-012 (ADR-0102): one `/projectm/cue` message to the configured destination, inside the 60/s cap. The kind
+    /// choices do not apply (the cue sync role controls it).
+    @discardableResult
+    public func postCue(_ cue: OSCCueSyncMessage) -> OSCSendOutcome {
+        let now: UInt64 = clock.now()
+        let transport: any OSCSendTransport = self.transport
+        return lock.withLock { s -> OSCSendOutcome in
+            guard s.destination != nil else { return .inactive }
+            guard s.cap.admit(now: now) else {
+                s.counters.dropped += 1
+                return .rateLimited
+            }
+            s.counters.sent += 1
+            transport.send(OSCEncoder.encode(cue.oscMessage))
             return .sent
         }
     }

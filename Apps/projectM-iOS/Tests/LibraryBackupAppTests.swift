@@ -37,6 +37,7 @@ final class LibraryBackupAppTests: XCTestCase {
                ParameterShelf.pinsKey,   // UIX-004-R10
                RecordingCountdownSetting.key,   // REC-007-R8
                SceneHUDSetting.key,   // UIX-013-R11
+               GestureShortcutsSetting.key,   // UIX-006-R9
                OneHandedSetting.key,   // ACC-009-R9
                OneHandedSetting.leftHandedKey,   // ACC-010-R7
                RecordingTimedStopSetting.key,   // REC-008-R9
@@ -49,6 +50,7 @@ final class LibraryBackupAppTests: XCTestCase {
             + OSCPeersCoordinator.allKeys   // OSC-008-R10
             + OSCSendCoordinator.allKeys   // OSC-005-R12 (excluded: this device's network)
             + OSCDiscoveryCoordinator.allKeys   // OSC-011-R10 (excluded: this device's network)
+            + OSCCueSyncCoordinator.allKeys   // OSC-012-R12 (excluded: this device's network)
             + HapticBeatCoordinator.allKeys   // ACC-007-R8
             + MotionModulationCoordinator.allKeys   // CAM-011-R12
             + FaceTrackingCoordinator.allKeys   // CAM-009-R3 (excluded: consent never travels)
@@ -76,7 +78,8 @@ final class LibraryBackupAppTests: XCTestCase {
                        .union(FaceTrackingCoordinator.allKeys)   // CAM-009-R3
                        .union(HandTrackingCoordinator.allKeys)   // CAM-010-R3
                        .union(OSCSendCoordinator.allKeys)   // OSC-005-R12
-                       .union(OSCDiscoveryCoordinator.allKeys))   // OSC-011-R10
+                       .union(OSCDiscoveryCoordinator.allKeys)   // OSC-011-R10
+                       .union(OSCCueSyncCoordinator.allKeys))   // OSC-012-R12
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

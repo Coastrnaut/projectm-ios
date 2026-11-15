@@ -404,6 +404,14 @@ network) send control messages to the app. It is off until you turn it on.
   receiver" off or leaving the app stops looking and announcing at once. Only the two switches are
   stored, on your device only: they are not included in a library backup and are removed when you
   erase Settings.
+- "Cue Sync" (Settings › OSC › Cue Sync, Off unless you choose Lead or Follow) keeps two devices with
+  the same show on the same cue. On Lead, while "Send OSC" is sending to a device you approved, the app
+  also sends that device the current cue's identifier, a counter, how long the cue has run and a random
+  number chosen each time the app starts: three times when the cue changes and then once every 2 seconds.
+  On Follow, the app moves its own show to the cue that an approved device sends; it changes nothing
+  else. Both need "Approved Devices" on. No scene name, label, note, setting or anything about you or
+  your device is sent. Only the choice (Off, Lead or Follow) is stored, on your device only: it is not
+  included in a library backup and is removed when you erase Settings.
 - If the app closed unexpectedly (a crash, or it was ended while open on screen), it turns "OSC
   receiver" off when it starts again and does not listen until you turn it on yourself. The camera is
   never turned back on by itself either.

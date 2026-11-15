@@ -14,21 +14,22 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 16,
+   "audited": 15,
    "implementing": 2,
-   "integrated": 61
+   "integrated": 61,
+   "unit_passed": 1
   },
   "P3": {
    "audited": 4,
-   "implementing": 1,
-   "integrated": 4
+   "integrated": 5
   }
  },
  "by_state": {
-  "audited": 22,
-  "implementing": 3,
-  "integrated": 300,
-  "skipped_existing": 1
+  "audited": 21,
+  "implementing": 2,
+  "integrated": 301,
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -49,7 +50,6 @@
    "FX-016",
    "FX-017",
    "FX-018",
-   "OSC-012",
    "OUT-008",
    "QA-011",
    "QA-012",
@@ -64,7 +64,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "25 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
+   "24 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
   ]
  },
  "features": {
@@ -1110,13 +1110,13 @@
   },
   "FX-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FX-007": {
    "attempts": 0,
@@ -1811,12 +1811,12 @@
   "OSC-012": {
    "attempts": 0,
    "branch": "feature/osc-012",
-   "branch_sha": null,
+   "branch_sha": "c28bfbd930248cb691ca24fee1e835683ed7e41e",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "f14fda0379b2d3984f6fe803881a087f430926bc",
    "priority": "P3",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "OUT-001": {
    "attempts": 0,
@@ -3031,12 +3031,12 @@
   "UIX-006": {
    "attempts": 0,
    "branch": "feature/uix-006",
-   "branch_sha": null,
+   "branch_sha": "ca08b9c3391324e86b2ad5b0e3f091e295e9baaf",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "UIX-007": {
    "attempts": 0,
@@ -4136,6 +4136,11 @@
    "sha": "111924d017993b3a08426e2902526315da9e2926"
   },
   {
+   "branch": "feature/osc-012",
+   "id": "OSC-012",
+   "sha": "f14fda0379b2d3984f6fe803881a087f430926bc"
+  },
+  {
    "branch": "feature/out-001",
    "id": "OUT-001",
    "sha": "dfd5757fccd46237db48dd55ce788f447a09b3c9"
@@ -4856,5 +4861,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T05:48:15Z"
+ "updated": "2026-11-15T06:08:05Z"
 }

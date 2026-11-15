@@ -121,6 +121,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   # OSC-005 (Send OSC)
                 "settings.osc.send.kinds", "settings.osc.send.sceneNames",
                 "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   # OSC-011 (Nearby Devices switches)
+                "settings.osc.cueSync.role",   # OSC-012 (Cue Sync role: off, lead, follow; absent = off)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)
@@ -143,6 +144,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.customWidth", "settings.recording.customHeight",   # REC-014-R7 (custom size)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.visualizer.sceneHUD",   # UIX-013-R11 (scene performance HUD; off by default)
+                "settings.gestures.shortcuts",   # UIX-006-R9 (gesture shortcuts switch and mapping; off by default)
                 "settings.visualizer.guides", "settings.visualizer.guides.actionSafe",   # OUT-005-R6 (safe-area guides; off)
                 "settings.visualizer.guides.titleSafe", "settings.visualizer.guides.centreCross",
                 "settings.controls.oneHanded",   # ACC-009-R9 (one-handed layout; Off by default)

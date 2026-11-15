@@ -132,6 +132,7 @@ public enum LibrarySettingsPolicy {
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
         "settings.visualizer.sceneHUD",   // UIX-013-R11: a preference (Bool); erased with Settings
+        "settings.gestures.shortcuts",   // UIX-006-R9: a preference (JSON: switch and mapping); erased with Settings
         "settings.visualizer.guides", "settings.visualizer.guides.actionSafe",   // OUT-005-R6: preferences; erased with Settings
         "settings.visualizer.guides.titleSafe", "settings.visualizer.guides.centreCross",
         "settings.controls.oneHanded",   // ACC-009-R9: a preference ("left"/"right"); erased with Settings
@@ -149,6 +150,7 @@ public enum LibrarySettingsPolicy {
         "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   // OSC-005-R12: this device's
         "settings.osc.send.kinds", "settings.osc.send.sceneNames",                         // network output setup
         "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   // OSC-011-R10: this device's network
+        "settings.osc.cueSync.role",   // OSC-012-R12: this device's network role (lead or follow a peer)
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
         "settings.show.quantizeCues",   // SHOW-003: a performance timing choice of this device
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
