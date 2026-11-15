@@ -5,8 +5,9 @@
 // lives: the state pair (`rg32Float`, U and V, N × N with N = 128 in the app) and the 16 × 16 health image
 // (`rgba32Float`); plus one shared staging buffer (N² × 8 bytes) the seed is written into and three shared health
 // buffers. A reload fills the staging buffer on the CPU (`ReactionDiffusionSeed.fill`) and blits it into the state, so
-// the GPU starts bit-identical to the reference; if the previous seeding blit has not completed yet, the reload waits
-// for a later frame (nothing waits). Per planned step: `iterations` full-grid triangles of `vis_rd_iterate` (the
+// the GPU starts bit-identical to the reference. Nothing waits: an earlier command buffer still in flight may copy the
+// newer seed (or a mix) into the state it then iterates, but that state is overwritten by this reload's own blit, which
+// is encoded after the CPU finished writing, so every reload's result is exact. Per planned step: `iterations` full-grid triangles of `vis_rd_iterate` (the
 // injection on the first), each reading texels exactly; then the health pass and its copy into a free health buffer,
 // then the display (palette × t × scale, channels ≤ 0.8, opaque). Pipelines come from the noise field generator's
 // library (its module constant includes `ReactionDiffusionShader`) through PERF-009's archive: no new compile site
@@ -43,7 +44,6 @@ public final class ReactionDiffusionPass {
     private let staging: MTLBuffer
     private var stateIndex = 0
     private var pendingSeed: (pattern: ReactionDiffusionPattern, seed: Int)?
-    private var seedReader: MTLCommandBuffer?
 
     private let iteratePipeline: MTLRenderPipelineState
     private let healthPipeline: MTLRenderPipelineState
@@ -209,11 +209,9 @@ public final class ReactionDiffusionPass {
         uniforms[15] = ReactionDiffusion.displayHigh
     }
 
-    /// Writes the pending seed into the staging buffer and blits it into the state (skipped while the previous seeding
-    /// blit is still in flight: the seed stays pending).
+    /// Writes the pending seed into the staging buffer and blits it into the state.
     private func encodeSeed(commandBuffer: MTLCommandBuffer) {
         guard let seed = pendingSeed else { return }
-        if let reader = seedReader, reader.status != .completed, reader.status != .error { return }
         let n: Int = gridSize
         let cells = staging.contents().bindMemory(to: SIMD2<Float>.self, capacity: n * n)
         ReactionDiffusionSeed.fill(pattern: seed.pattern, seed: seed.seed, gridSize: n, into: cells)
@@ -225,7 +223,6 @@ public final class ReactionDiffusionPass {
                   destinationLevel: 0, destinationOrigin: MTLOrigin(x: 0, y: 0, z: 0))
         blit.endEncoding()
         stateIndex = 0
-        seedReader = commandBuffer
         pendingSeed = nil
         reloads += 1
     }
