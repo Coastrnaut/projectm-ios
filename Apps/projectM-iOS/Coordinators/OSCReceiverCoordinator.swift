@@ -17,6 +17,8 @@
 //   MIDI-003 uses (then MOD-002 and the ACC-012 clamp). Live values are memory only; turning OSC off forgets them.
 // * OSC-008 (specs/200-osc-008-peer-allowlist): `peers` is Approved Devices; its blocked list and count are read on the
 //   same gated refresh.
+// * OSC-004 (specs/274-osc-004-osc-learn): `learn` is OSC learn on OSC Routes; every refresh tells it whether the
+//   receiver still listens (learn ends when it stops). `dispatcher` lets it arm the one-shot capture.
 // The test value feeds nothing that renders (OSC-001-R7). The networking itself lives in
 // PerformanceControl's OSCTransport/ folder (FR-068 amendment, ADR-0008).
 import Foundation
@@ -41,6 +43,8 @@ final class OSCReceiverCoordinator {
     var routes: OSCRoutesCoordinator?
     /// OSC-008: Approved Devices (nil in tests that do not need it).
     var peers: OSCPeersCoordinator?
+    /// OSC-004: OSC learn (nil in tests that do not need it).
+    var learn: OSCLearnCoordinator?
     /// OSC-003: messages to addresses that are not on the route list, since launch.
     private(set) var unknownAddressCount = 0
 
@@ -89,6 +93,9 @@ final class OSCReceiverCoordinator {
         }
         apply()
     }
+
+    /// OSC-004: the receiver's dispatcher (learn arms its capture).
+    var dispatcher: OSCDispatcher { receiver.dispatcher }
 
     /// OSC-008: the receiver's peer allowlist, checked per datagram.
     var peerAllowlist: OSCPeerAllowlist { receiver.peerAllowlist }
@@ -144,6 +151,7 @@ final class OSCReceiverCoordinator {
             applyLiveValues(live)
         }
         if PermissionCatalog.state(localNetwork: state) != nil { onLocalNetworkDecided?() }
+        learn?.receiverStateChanged()   // OSC-004-R9
     }
 
     // MARK: Listener badge (OSC-007; specs/038-osc-007-osc-network-access-switch, contract)
