@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T01:39:56Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T01:42:30Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,10 +10,10 @@
 | State | Features |
 |---|---|
 | audited | 59 |
-| implementing | 2 |
+| implementing | 1 |
 | built | 2 |
 | unit_passed | 1 |
-| integrated | 261 |
+| integrated | 262 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,14 +21,14 @@
 | Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 5 | 1 | 1 | 0 | 144 | 0 |
-| P2 | 43 | 1 | 1 | 1 | 33 | 0 |
+| P1 | 5 | 1 | 0 | 1 | 144 | 0 |
+| P2 | 43 | 0 | 2 | 0 | 34 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 64 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 63 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -172,6 +172,7 @@ The physical-device suite may **not** start:
 | MOD-013 | Modulation serialization | `d08b5103b0ef` | `feature/mod-013` |
 | MOD-014 | Modulation feedback prevention | `3b3a60649025` | `feature/mod-014` |
 | MOD-015 | Envelope follower bank | `17a05dd0` | `feature/mod-015` |
+| MOD-016 | Random walk modulator | `4944142fb1d1` | `feature/mod-016` |
 | MOD-017 | Quantized parameter changes | `2c4ca2fd` | `feature/mod-017` |
 | OSC-001 | OSC receiver | `13d9883531b9` | `feature/osc-001` |
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
@@ -1879,7 +1880,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_VisualGenerators.log`)
 - `post-merge (conflicts with ANL-013 resolved): ParameterGraph 208 + projectM-iOSTests 912`: pass at `17a05dd0` (log `.autonomous/logs/integration/batch48/app-tests.log`)
 
-### MOD-016 Random walk modulator (unit_passed)
+### MOD-016 Random walk modulator (integrated)
 - `python3 scripts/check_compliance.py`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/sim-test_ANGLERendering.log`)
@@ -1893,6 +1894,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_VisualGenerators.log`)
+- `swift test ParameterGraph (247), SceneFormat (198); postmerge projectM-iOSTests 1143`: pass at `4944142fb1d1` (log `.autonomous/logs/integration/batch91/app-tests.log`)
 
 ### MOD-017 Quantized parameter changes (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0eb277448742` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-017/20261114T152305/compliance.log`)
@@ -2933,6 +2935,13 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_ShowControl.log`)
 - `post-merge batch90: ShowControl 146, Compositor 1027, PresetLibrary 349, LibraryBackup 87, projectM-iOSTests 1142, UI 9 (keyframes, fixture preview, left-handed 2, one-handed 3, preset versions, noise editor after test fix)`: pass at `2310995d` (log `.autonomous/logs/integration/batch90/app-tests.log`)
+
+### SHOW-010 Beat grid (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `af23b55a3944` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-010/20261114T204005/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `af23b55a3944` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-010/20261114T204005/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `af23b55a3944` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-010/20261114T204005/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `af23b55a3944` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-010/20261114T204005/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `af23b55a3944` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-010/20261114T204005/swift-test_ShowControl.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
