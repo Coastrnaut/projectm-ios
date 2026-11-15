@@ -113,6 +113,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.vignette.centerX", "settings.vignette.centerY",
                 "settings.pixelSort.enabled", "settings.pixelSort.threshold",   # FX-011-R10
                 "settings.pixelSort.span", "settings.pixelSort.direction",
+                "settings.filmGrain.enabled", "settings.filmGrain.opacity", "settings.filmGrain.size",   # FX-017-R10
+                "settings.filmGrain.color", "settings.filmGrain.seed", "settings.filmGrain.animated",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11

@@ -80,6 +80,7 @@ final class EffectChainSetting {
         case .lensDistortion: "Lens distortion"   // FX-016
         case .pixelSort: "Pixel sort"   // FX-011
         case .vignette: "Vignette"   // FX-015
+        case .filmGrain: "Film grain"   // FX-017
         }
     }
 

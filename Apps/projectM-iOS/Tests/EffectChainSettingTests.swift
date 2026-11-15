@@ -27,13 +27,13 @@ final class EffectChainSettingTests: XCTestCase {
             chain.onChange = { (order: OutputEffectOrder) -> Void in reported.append(order) }
             chain.order = colorFirst
             XCTAssertEqual(defaults.string(forKey: EffectChainSetting.orderKey),
-                           "fx.grade,fx.trails,fx.chromatic,fx.directionalBlur,fx.radialBlur,fx.echo,fx.mosaic,fx.edgeOutline,fx.lensDistortion,fx.pixelSort,fx.vignette")   // FX-006, FX-007, FX-008 appended
+                           "fx.grade,fx.trails,fx.chromatic,fx.directionalBlur,fx.radialBlur,fx.echo,fx.mosaic,fx.edgeOutline,fx.lensDistortion,fx.pixelSort,fx.vignette,fx.filmGrain")   // FX-006, FX-007, FX-008 appended
             XCTAssertEqual(EffectChainSetting(defaults: defaults).order, colorFirst, "kept across a relaunch")
             chain.order = .standard
             XCTAssertNil(defaults.object(forKey: EffectChainSetting.orderKey))
             XCTAssertEqual(reported, [colorFirst, .standard])
             XCTAssertEqual(EffectChainSetting.summary(colorFirst),
-                           "Color \u{2192} Trails \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Radial blur \u{2192} Echo \u{2192} Mosaic \u{2192} Edge outline \u{2192} Lens distortion \u{2192} Pixel sort \u{2192} Vignette")
+                           "Color \u{2192} Trails \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Radial blur \u{2192} Echo \u{2192} Mosaic \u{2192} Edge outline \u{2192} Lens distortion \u{2192} Pixel sort \u{2192} Vignette \u{2192} Film grain")
         }
     }
 

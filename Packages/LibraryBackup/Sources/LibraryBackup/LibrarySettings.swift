@@ -110,6 +110,8 @@ public enum LibrarySettingsPolicy {
         "settings.vignette.centerX", "settings.vignette.centerY",
         "settings.pixelSort.enabled", "settings.pixelSort.threshold", "settings.pixelSort.span",   // FX-011-R10
         "settings.pixelSort.direction",
+        "settings.filmGrain.enabled", "settings.filmGrain.opacity", "settings.filmGrain.size",   // FX-017-R10
+        "settings.filmGrain.color", "settings.filmGrain.seed", "settings.filmGrain.animated",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9

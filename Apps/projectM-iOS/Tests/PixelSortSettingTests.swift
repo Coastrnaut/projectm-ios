@@ -77,7 +77,8 @@ final class PixelSortSettingTests: XCTestCase {
         XCTAssertEqual(EffectChainSetting.name(.pixelSort), "Pixel sort")
         let order: [OutputEffectKind] = OutputEffectOrder.standard.effects
         XCTAssertEqual(order.firstIndex(of: .pixelSort), (order.firstIndex(of: .lensDistortion) ?? 0) + 1)
-        XCTAssertEqual(order.last, .vignette, "Vignette stays last")
+        XCTAssertEqual(order.firstIndex(of: .vignette), order.count - 2, "Vignette follows, then FX-017's film grain last")
+        XCTAssertEqual(order.last, .filmGrain)
     }
 
     func testPixelSortSceneAndPresetRoundTripThroughTheAppPaths() {
