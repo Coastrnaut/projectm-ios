@@ -13,7 +13,8 @@ extension AppCoordinator {
     /// The chain as the user set it.
     var liveEffectSettings: SceneEffectSettings {
         SceneEffectSettings(order: effectChain.order, grade: colorGrade.grade, gradeEnabled: colorGrade.isEnabled,
-                            trails: motionFeedback.feedback, chromatic: chromaticSplit.split)   // FX-006
+                            trails: motionFeedback.feedback, chromatic: chromaticSplit.split,
+                            directionalBlur: directionalBlur.blur)   // FX-006, FX-007
     }
 
     /// Wires the setting to the visuals (called once from init).
@@ -40,7 +41,8 @@ extension AppCoordinator {
     /// Applies the preset called `name` (order, Color and Trails).
     func applyEffectPreset(named name: String) {
         guard let preset = effectChain.presets.preset(named: name) else { return }
-        SceneAutosaveCapture.applyEffects(preset.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit)
+        SceneAutosaveCapture.applyEffects(preset.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
+                                          directionalBlur: directionalBlur)
         announcer.announce("Applied effect preset " + preset.name, kind: .parameter)
     }
 }

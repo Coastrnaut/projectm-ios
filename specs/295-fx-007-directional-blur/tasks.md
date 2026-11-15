@@ -53,29 +53,29 @@ trip, app and UI tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 3
 
 ## Phase 5: App (P2)
 
-- [ ] FX-007-T11 [US1] `DirectionalBlurSetting` in `Apps/projectM-iOS/Coordinators/DirectionalBlurSetting.swift` (keys
+- [X] FX-007-T11 [US1] `DirectionalBlurSetting` in `Apps/projectM-iOS/Coordinators/DirectionalBlurSetting.swift` (keys
   `settings.directionalBlur.enabled`, `.radius`, `.angle`; written only when changed; clamped on read) and
   `AppCoordinator+DirectionalBlur.swift`; wire in `AppCoordinator.swift` (init, connect, the four hosts, UI-test
   reset), `AppCoordinator+EffectChain.swift`, `AppCoordinator+SceneHistory.swift`, `SceneAutosaveCapture.swift`
-  (FX-007-R1, R10)
-- [ ] FX-007-T12 [US1] `DirectionalBlurSection` in `Apps/projectM-iOS/Views/DirectionalBlurSection.swift` (toggle, ACC-005
+  (FX-007-R1, R10) — Verified 2026-11-15: DirectionalBlurSettingTests 5/5 on the own iOS 27.2 simulator; app unit tests 1302, 0 failures
+- [X] FX-007-T12 [US1] `DirectionalBlurSection` in `Apps/projectM-iOS/Views/DirectionalBlurSection.swift` (toggle, ACC-005
   Radius and Angle sliders) added beside the Chromatic split section in `SettingsView.swift`; Effect order row and
   name in `EffectChainView.swift` and `EffectChainSetting.swift`; section id in `UITestSettingsSection.swift`
-  (FX-007-R9)
-- [ ] FX-007-T13 [US1] Keys in `LibrarySettingsPolicy.includedKeys` (`LibrarySettings.swift`), `ALLOWED_KEYS`
-  (`scripts/run_device_tests.py`), `LibraryBackupAppTests` and `LibraryEraseAppTests` key lists (FX-007-R10)
-- [ ] FX-007-T14 [US1] `DirectionalBlurSettingTests` in `Apps/projectM-iOS/Tests/` (defaults, persistence, clamp,
+  (FX-007-R9) — Verified 2026-11-15: DirectionalBlurUITests (18.8 s) and EffectChainUITests (row present) pass on the own simulator; type-check run shows no FX-007 warning
+- [X] FX-007-T13 [US1] Keys in `LibrarySettingsPolicy.includedKeys` (`LibrarySettings.swift`), `ALLOWED_KEYS`
+  (`scripts/run_device_tests.py`), `LibraryBackupAppTests` and `LibraryEraseAppTests` key lists (FX-007-R10) — Verified 2026-11-15: LibraryBackupAppTests, LibraryEraseAppTests, SettingsTests pass; LibraryBackup package 88 pass; scripts 186 OK
+- [X] FX-007-T14 [US1] `DirectionalBlurSettingTests` in `Apps/projectM-iOS/Tests/` (defaults, persistence, clamp,
   readouts, slider steps, keys backed up, scene and preset round trip through the app paths, a real host's
   compositor) and the updated `EffectChainSettingTests`; run `LibraryBackupAppTests`, `LibraryEraseAppTests`,
-  `SettingsTests`
-- [ ] FX-007-T15 [US1] `DirectionalBlurUITests` in `Apps/projectM-iOS/UITests/` (off by default, turn on, readouts,
-  drag Radius to 2.0%; under 30 s) and the Effect order row check in `EffectChainUITests` (FX-007-S7)
+  `SettingsTests` — Verified 2026-11-15: DirectionalBlurSettingTests 5/5, EffectChainSettingTests, ChromaticSplitSettingTests, LibraryBackupAppTests, LibraryEraseAppTests, SettingsTests pass (33 tests)
+- [X] FX-007-T15 [US1] `DirectionalBlurUITests` in `Apps/projectM-iOS/UITests/` (off by default, turn on, readouts,
+  drag Radius to 2.0%; under 30 s) and the Effect order row check in `EffectChainUITests` (FX-007-S7) — Verified 2026-11-15: DirectionalBlurUITests 1/1 (18.8 s), EffectChainUITests 1/1 (13.5 s)
 
 ## Phase 6: Polish
 
-- [ ] FX-007-T16 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`,
+- [X] FX-007-T16 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`,
   `check_status_events`, `test_scripts`, `check_privacy_manifest`, `check_network_symbols`), type-check budget, test
-  report `docs/test-reports/directional-blur.md`, spec status
+  report `docs/test-reports/directional-blur.md`, spec status — Verified 2026-11-15: all six repo checks OK, check_privacy_manifest and check_network_symbols OK on the Debug app; docs/test-reports/directional-blur.md
 - [ ] FX-007-T17 {device} On D1 open Photo, turn on Directional blur at 2% and 45°: the streak looks right and the
   frame rate stays at the visual's normal rate (FX-007-S8)
 
