@@ -10,7 +10,8 @@
 //   foreground and with the scene connected — the same rules as the Camera visual, without a
 //   sensor. The decoded image is kept while paused; `content` changes it (a background decode).
 // * `imageState` mirrors the layer's state and is handed to the coordinator; the view's
-//   accessibility value names it (R15).
+//   accessibility value names it (R15); MED-008-R12: an animated photo with its frame count. The layer plays animations
+//   itself (specs/257-med-008-animated-images), with Reduce flashing from the frame context and Reduce Motion from MED-007.
 // * Per frame this file allocates nothing: the band scratch is preallocated and the audio context is
 //   a view of it. This repeats CameraVisualHost's loop on purpose (plan, Complexity Tracking).
 import AudioCore
@@ -112,11 +113,12 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
         }
     }
 
-    /// The VoiceOver value of the visual (R15).
-    static func accessibilityValue(_ state: ImageLayerState) -> String {
+    /// The VoiceOver value of the visual (R15). MED-008-R12: an animation names its frame count (`frames` > 1).
+    static func accessibilityValue(_ state: ImageLayerState, frames: Int = 0) -> String {
         switch state {
         case .empty: "No photo"
         case .loading: "Loading"
+        case .ready(let width, let height) where frames > 1: "Animated photo \(width) × \(height), \(frames) frames"
         case .ready(let width, let height): "Photo \(width) × \(height)"
         case .failed: "Couldn't load the photo"
         }
@@ -192,7 +194,7 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
     private func updateAccessibility() {
         view.accessibilityLabel = "Photo visualization"
         view.accessibilityIdentifier = "photoVisual"
-        view.accessibilityValue = Self.accessibilityValue(imageState)
+        view.accessibilityValue = Self.accessibilityValue(imageState, frames: photo.animationFrameCount)
     }
 
     // MARK: - Pause (FR-046), presentation (PERF-011), background and scene

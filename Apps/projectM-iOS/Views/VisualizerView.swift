@@ -681,7 +681,7 @@ struct VisualizerView: View {
                 .ignoresSafeArea()
                 .accessibilityElement()
                 .accessibilityLabel("Photo visualization")
-                .accessibilityValue(PhotoVisualHost.accessibilityValue(coordinator.photoState))   // MED-001-R15
+                .accessibilityValue(PhotoVisualHost.accessibilityValue(coordinator.photoState, frames: photo.photo.animationFrameCount))   // MED-001-R15, MED-008-R12
                 .accessibilityIdentifier("photoVisual")
         } else if coordinator.showsVideoVisual, let video = coordinator.videoVisual {
             VisualSlotHost(visual: video.view, external: coordinator.externalDisplay)   // OUT-001: like Photo

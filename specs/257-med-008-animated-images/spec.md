@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MED-008-T01-T11 verified on the Mac: Compositor model, import and GPU read-back acceptance tests, app tests and photo/slideshow UI tests on a private iOS 27.2 simulator; T12 open `{device}`)
 
 **Input**: User description: "Implement MED-008 (Animated image support) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Decode local animated images with frame timing limits." Acceptance, verbatim:

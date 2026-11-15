@@ -457,7 +457,8 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         return drawnFrame
     }
 
-    /// MED-008: the held picture is an animation that plays (more than one frame, Reduce Motion off).
+    /// MED-008: the held picture is an animation that plays (more than one frame, Reduce Motion off). Render side: it
+    /// reflects the picture taken by the last `render` or `renderDependencies`.
     public var isAnimating: Bool {
         guard let animation = heldAnimation else { return false }
         return animation.frameCount > 1 && !reduceMotion
