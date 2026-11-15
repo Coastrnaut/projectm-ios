@@ -7,8 +7,18 @@
 // the camera stops (CAM-001-R9). Pictures are never written or sent by any provider; the only analysis is
 // CAM-008's on-device person mask, in memory, while the user chose it (ADR-0063).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
+import CoreVideo
 import Metal
 import os
+
+/// CAM-009 (research CAM-009-D2, contract face-sources F4): something besides the layer that looks at the camera's
+/// pictures on the device (the app's opt-in face analysis). `offer` is called on the camera's thread for every stored
+/// picture and must return at once (it decides itself whether to analyse, and never keeps the picture beyond its
+/// analysis); `reset` is called on the main thread when the camera stops or switches.
+public protocol CameraPictureAnalyzing: AnyObject, Sendable {
+    func offer(_ pixels: CVPixelBuffer, rotation: CameraRotation, position: CameraPosition)
+    func reset()
+}
 
 /// One camera picture: a read-only `.bgra8Unorm_srgb` texture (sampling decodes to linear light).
 public struct CameraFrame {
@@ -101,6 +111,9 @@ public protocol CameraFrameProvider: AnyObject {
     /// sets it; the camera's thread reads it). Nil: no masking. Pictures offered are never kept by the masker
     /// beyond the analysis; masks stay in memory.
     var personMasker: PersonMasker? { get set }
+    /// CAM-009 (contract F4): the analyzer the provider also offers its pictures to (main thread sets it; the camera's
+    /// thread reads it). Nil: none.
+    var pictureAnalyzer: (any CameraPictureAnalyzing)? { get set }
 }
 
 extension CameraFrameProvider {
@@ -136,6 +149,11 @@ extension CameraFrameProvider {
     public func setWhiteBalanceLocked(_ locked: Bool) {}
     /// CAM-008: a provider that offers no pictures to a masker.
     public var personMasker: PersonMasker? {
+        get { nil }
+        set {}
+    }
+    /// CAM-009: a provider that offers no pictures to an analyzer.
+    public var pictureAnalyzer: (any CameraPictureAnalyzing)? {
         get { nil }
         set {}
     }

@@ -81,6 +81,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",   # CAM-007
                 "settings.camera.lens",   # CAM-003
                 "settings.camera.personMask",   # CAM-008
+                "settings.camera.faceTracking", "settings.camera.faceTrackingConsent",   # CAM-009-R3
                 "settings.visual.colorBlindSafePalette",   # ACC-003-R13
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8

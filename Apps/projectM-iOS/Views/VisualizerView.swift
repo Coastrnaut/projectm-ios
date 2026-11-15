@@ -180,7 +180,7 @@ struct VisualizerView: View {
                                  onShown: { () -> Void in coordinator.announceRecoveryOffer() })
         let indicator: CameraIndicator = coordinator.cameraIndicator
         if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
-            CameraIndicatorBadge(indicator: indicator) { () -> Void in coordinator.stopCamera() }
+            CameraIndicatorBadge(indicator: indicator, faceTracking: coordinator.cameraFaceTrackingShown) { () -> Void in coordinator.stopCamera() }   // CAM-009
                 .transition(.opacity)
         }
         if coordinator.externalDisplay.blackoutPhase != .live {   // OUT-010-R9: never hidden with the controls
@@ -269,7 +269,7 @@ struct VisualizerView: View {
     private var performanceOverlay: some View {
         let overlay = PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                          renderHealth: { coordinator.renderHealthOverlayLine },
-                                         stageLines: { () -> [String] in coordinator.frameStageLines() },
+                                         stageLines: { () -> [String] in coordinator.frameStageLines() + coordinator.faceTrackingOverlayLines },   // CAM-009
                                          stereoLine: { () -> String? in coordinator.stereoOverlayLine })   // ANL-013
         return VStack { HStack { Spacer(); overlay }; Spacer() }
             .padding(.top, 2)
@@ -525,6 +525,7 @@ struct VisualizerView: View {
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
                      cameraWhiteBalance: coordinator.cameraWhiteBalanceChoice,   // CAM-006
                      cameraPersonMask: coordinator.cameraPersonMaskChoice,   // CAM-008
+                     cameraFaceTracking: coordinator.faceTracking,   // CAM-009
                      cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008

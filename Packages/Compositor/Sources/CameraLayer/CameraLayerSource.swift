@@ -78,6 +78,7 @@ public final class CameraLayerSource: LayerSource {
         held = nil
         drawnPicture = nil
         personMasker?.reset()   // CAM-008-R7
+        provider.pictureAnalyzer?.reset()   // CAM-009: values back to neutral
         uploadedMaskSerial = nil
         provider.stop()
     }

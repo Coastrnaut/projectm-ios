@@ -38,7 +38,10 @@ struct CameraIndicator: Equatable {
 /// The badge: camera symbol, "Camera on" and a Stop camera button (CAM-012-R3).
 struct CameraIndicatorBadge: View {
     let indicator: CameraIndicator
+    /// CAM-009-R13: face tracking analyses the pictures; the badge says so.
+    var faceTracking = false
     let onStop: () -> Void
+    static let faceTrackingLabel = "Face tracking"
     @Environment(\.statusAppearance) private var appearance
 
     var body: some View {
@@ -51,6 +54,7 @@ struct CameraIndicatorBadge: View {
                 .accessibilityLabel(indicator.label)
                 .accessibilityValue(indicator.accessibilityValue)
                 .accessibilityIdentifier("cameraIndicatorStatus")
+            if faceTracking { faceTrackingLabel }
             Button(action: onStop) {
                 Label(CameraIndicator.stopTitle, systemImage: "stop.fill")
                     .font(.footnote.bold())
@@ -68,5 +72,12 @@ struct CameraIndicatorBadge: View {
         .statusBadgeBackground(Capsule())   // ACC-003-R9
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("cameraIndicator")
+    }
+
+    private var faceTrackingLabel: some View {
+        Label(Self.faceTrackingLabel, systemImage: "face.dashed")
+            .font(.footnote)
+            .accessibilityLabel(Self.faceTrackingLabel)
+            .accessibilityIdentifier("cameraFaceTrackingStatus")
     }
 }

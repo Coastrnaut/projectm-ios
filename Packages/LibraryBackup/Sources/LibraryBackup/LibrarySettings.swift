@@ -142,6 +142,7 @@ public enum LibrarySettingsPolicy {
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
         "settings.show.rotation",   // SHOW-013: a performance choice of this device (auto scene rotation)
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
+        "settings.camera.faceTracking", "settings.camera.faceTrackingConsent",   // CAM-009-R3: likewise (face tracking)
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
         "settings.recording.aspect", "settings.recording.customWidth",   // REC-014-R7: sizes depend on this device's
