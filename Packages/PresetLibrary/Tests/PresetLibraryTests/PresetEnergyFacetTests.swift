@@ -166,7 +166,7 @@ final class PresetEnergyFacetTests: XCTestCase {
         var saves = await store.saveCount
         XCTAssertEqual(saves, 0)
         await gate.open()
-        for _ in 0..<200 where await store.saveCount == 0 { await Task.yield() }
+        for _ in 0..<500 where await store.saveCount == 0 { try await Task.sleep(for: .milliseconds(10)) }   // up to 5 s (CI)
         saves = await store.saveCount
         XCTAssertEqual(saves, 1)   // one write for both records
         XCTAssertEqual(PresetMotionIndex.openRepairing(directory: dir).index.entries.count, 2)

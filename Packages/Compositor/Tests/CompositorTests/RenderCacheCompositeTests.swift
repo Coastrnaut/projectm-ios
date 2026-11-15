@@ -223,11 +223,16 @@ final class RenderCacheCompositeTests: XCTestCase {
         XCTAssertEqual(fitted[0].w, 0, "top-left is a bar")
 
         // A new photo: rendered once it is loaded; the old picture is never shown again.
+        // Counted before the change: on a fast runner the new photo may load before the next frame (CI run
+        // c035898f), so that frame shows either the transparent fallback or the new photo, never the old one.
+        let before = layer.renderCount
         layer.content = .file(try photo("red.png", ImageFixtures.RGBA(r: 255, g: 0, b: 0, a: 255), width: 64, height: 48))
         try rig.frame()
-        assertAll(try rig.pixels(), equal: .zero, tolerance: 0, "while loading: the transparent fallback, not the old photo")
+        let loading = try rig.pixels()
+        let transparent = loading.allSatisfy { (p: Pixel) -> Bool in p == .zero }
+        let red = loading.allSatisfy { (p: Pixel) -> Bool in abs(p.x - 1) <= 2.0 / 255 && p.y <= 2.0 / 255 && p.z <= 2.0 / 255 && abs(p.w - 1) <= 2.0 / 255 }
+        XCTAssertTrue(transparent || red, "while loading: the transparent fallback or the new photo, never the old picture")
         layer.waitUntilLoaded()
-        let before = layer.renderCount
         try rig.frames(3)
         XCTAssertEqual(layer.renderCount, before + 1, "the new photo renders exactly once")
         assertAll(try rig.pixels(), equal: Pixel(1, 0, 0, 1), tolerance: 2.0 / 255, "and shows")
