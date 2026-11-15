@@ -149,14 +149,16 @@ final class AppSettings {
     static let logoPlacementKey = LogoStore.placementKey
     /// MED-011: the clock overlay's settings (written by ClockOverlayStore).
     static let clockOverlayKey = ClockOverlayStore.key
+    /// MED-012: the countdown overlay's settings (written by CountdownOverlayStore).
+    static let countdownOverlayKey = CountdownOverlayStore.key
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
-                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
-                          ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, MED-011, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
+                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
+                          ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, MED-011, MED-012, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
