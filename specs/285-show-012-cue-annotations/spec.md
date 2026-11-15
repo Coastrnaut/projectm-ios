@@ -117,6 +117,8 @@ the transport readout, captions, cue announcements and OSC send show or carry ex
 - A note with only spaces and line breaks is no note.
 - Tabs, NUL and other control characters are removed; emoji and combining marks count as one character each.
 - Removing a cue removes its note; moving a cue keeps it.
+- A show whose notes push `show.json` past its 1 MiB limit (only possible with pathological text) fails to save with
+  the existing "The show could not be saved." message; the edit stays for the session (research SHOW-012-D4).
 
 ## Requirements *(mandatory)*
 
@@ -130,8 +132,8 @@ the transport readout, captions, cue announcements and OSC send show or carry ex
   non-text value is dropped (counted warning); the show is never refused because of a note.
 - **SHOW-012-R4**: The note MUST survive save/load, the FILE-005 backup and its exact restore byte for byte.
 - **SHOW-012-R5**: The show editor MUST show a note line (indicator and the first line, at most 60 characters) on a cue with a note, and
-  offer Note… (Add Note… / Edit Note…) in the cue's More… dialog, context menu and VoiceOver actions, opening a note editor with a character count
-  and Save/Cancel.
+  offer Note… (Add Note… / Edit Note…) in the cue's More… dialog, context menu and VoiceOver actions, opening a note editor with a character count,
+  Save/Cancel and Remove Note (on a cue that has one).
 - **SHOW-012-R6**: Saving a note MUST save the show at once and MUST NOT apply a scene, move the position or restart a
   countdown.
 - **SHOW-012-R7**: While the performance lock is on, note edits MUST be refused (lock message) and the Note… action
