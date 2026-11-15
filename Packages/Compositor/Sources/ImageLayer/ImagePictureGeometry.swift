@@ -6,7 +6,9 @@
 // rotation. Fill covers the output and crops the overflow equally on both sides (visible ≤ 1); fit
 // shows the whole image and letterboxes (visible ≥ 1 on one axis: coordinates outside 0…1 are not
 // part of the image and are drawn transparent). CMP-006 adds stretch and pixelAccurate and an anchor;
-// the arithmetic is the compositor's `LayerFitPlacement`.
+// the arithmetic is the compositor's `LayerFitPlacement`. MED-007 (research MED-007-D1, D2): with a Ken Burns crop the
+// crop rectangle is the fitted content (`init(_:crop:)`), and image coordinates outside the crop (fit bars) are
+// transparent (`minX…maxY`; the whole image without a crop).
 
 import Compositor
 
@@ -21,6 +23,11 @@ public struct ImagePictureGeometry: Sendable, Equatable {
     /// Image coordinate of the output's top-left corner.
     public var offsetX: Float
     public var offsetY: Float
+    /// MED-007: the part of the image that may be drawn (image coordinates; 0…1 without a crop).
+    public var minX: Float = 0
+    public var minY: Float = 0
+    public var maxX: Float = 1
+    public var maxY: Float = 1
 
     public static let identity = ImagePictureGeometry(visibleWidth: 1, visibleHeight: 1, offsetX: 0, offsetY: 0)
 
@@ -45,6 +52,33 @@ public struct ImagePictureGeometry: Sendable, Equatable {
         visibleHeight = Float(placement.visibleHeight)
         offsetX = Float(placement.offsetX)
         offsetY = Float(placement.offsetY)
+    }
+
+    /// MED-007: a placement computed for the crop's size (content = the crop), mapped back into image coordinates:
+    /// visible' = visible · size, offset' = origin + offset · size; only the crop may be drawn.
+    public init(_ placement: LayerFitPlacement, crop: KenBurnsRect) {
+        let vw: Double = placement.visibleWidth * crop.width
+        let vh: Double = placement.visibleHeight * crop.height
+        let ox: Double = crop.x + placement.offsetX * crop.width
+        let oy: Double = crop.y + placement.offsetY * crop.height
+        visibleWidth = Float(vw)
+        visibleHeight = Float(vh)
+        offsetX = Float(ox)
+        offsetY = Float(oy)
+        minX = Float(crop.x)
+        minY = Float(crop.y)
+        maxX = Float(crop.x + crop.width)
+        maxY = Float(crop.y + crop.height)
+    }
+
+    /// MED-007: the crop's shape as an integer content size for `LayerFitPlacement` (fill, fit and stretch read only
+    /// the ratio): the crop's image pixels × 4096, so rounding never changes the shape visibly (pixel-accurate is drawn
+    /// as fit, research MED-007-D1).
+    public static func cropContentSize(_ crop: KenBurnsRect, imageWidth: Int, imageHeight: Int) -> (width: Int, height: Int) {
+        let scale: Double = 4096
+        let w: Double = (crop.width * Double(max(imageWidth, 1)) * scale).rounded()
+        let h: Double = (crop.height * Double(max(imageHeight, 1)) * scale).rounded()
+        return (max(1, Int(w)), max(1, Int(h)))
     }
 
     /// The image coordinate shown at output point (`x`, `y`); outside 0…1 means "no image here".
