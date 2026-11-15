@@ -374,6 +374,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
+    /// ACC-009: the one-handed layout preference (Settings → One-handed layout; Off by default; iPhone only).
+    @ObservationIgnored private(set) lazy var oneHanded = OneHandedSetting(defaults: defaults)
     /// SHOW-006: cue rehearsal (session only; device-only panel).
     @ObservationIgnored private(set) lazy var cueRehearsal: CueRehearsalCoordinator = makeCueRehearsal()
     /// SHOW-007: the show timeline transport (Play/Pause over SHOW-005's Hold, seek, scrub, Loop).

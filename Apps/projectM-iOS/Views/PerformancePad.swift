@@ -15,6 +15,9 @@
 // The pad is drawn on the device only (R11).
 // SHOW-005-R8: the cue readout shows "Hold" while the performer's Hold is on (VoiceOver ", hold on") and offers a
 // VoiceOver action to turn it on or off; no fifth target (research SHOW-005-D7).
+// ACC-009-R7: with the one-handed layout active, the four targets sit at `OneHandedLayout`'s pad frames in the thumb
+// zone (the same layout the one-handed cluster computes) and the readouts in its readout strip; the pad still reports
+// the bar or columns' edges, which VisualizerView uses only while one-handed is off.
 import PerformanceControl
 import PresentationLifecycle
 import ShowControl
@@ -65,6 +68,10 @@ struct PerformancePadLayer: View {
     let external: ExternalDisplayCoordinator
     /// SHOW-002-R9: the timed advance's countdown for the cue readout (nil in previews).
     var advance: ShowAutoAdvanceCoordinator? = nil
+    /// ACC-009-R7: the holding hand while the one-handed layout is active (nil: bar or columns).
+    var oneHanded: OneHandedHand? = nil
+    /// ACC-009: the critical actions the one-handed layout places now (contract C2's `displayed`).
+    var oneHandedActions: [CriticalAction] = []
     /// SHOW-005: turns the performer's Hold on or off (announced by AppCoordinator); nil in previews.
     var onSetHold: ((Bool) -> Void)? = nil
     /// The edges the pad uses (UIX-005-R4, research UIX-005-D3).
@@ -73,6 +80,11 @@ struct PerformancePadLayer: View {
     @Environment(\.verticalSizeClass) private var verticalClass
     @State private var area: CGRect = .zero
     @State private var barHeight: CGFloat = 0
+    /// ACC-009: the one-handed layout's base side and readout strip (the cluster layer uses the same metrics).
+    @ScaledMetric(relativeTo: .title3) private var scaledBase: CGFloat = 44
+    @ScaledMetric(relativeTo: .footnote) private var readoutHeight: CGFloat = 44
+    /// ACC-009: the layer's own size (layout space), as the one-handed cluster measures it.
+    @State private var size: CGSize = .zero
 
     private var layout: PerformanceLayout {
         let regular: Bool = horizontalClass == .regular && verticalClass == .regular
@@ -86,6 +98,8 @@ struct PerformancePadLayer: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .onGeometryChange(for: CGRect.self) { (proxy: GeometryProxy) -> CGRect in proxy.frame(in: .global) }
                 action: { (frame: CGRect) in area = frame }
+            .onGeometryChange(for: CGSize.self) { (proxy: GeometryProxy) -> CGSize in proxy.size }
+                action: { (new: CGSize) in size = new }
             .onChange(of: reserved, initial: true) { (_: PerformanceLayout.Insets, new: PerformanceLayout.Insets) in
                 onReservedInsets(EdgeInsets(top: new.top, leading: new.leading, bottom: new.bottom, trailing: new.trailing))
             }
@@ -97,9 +111,51 @@ struct PerformancePadLayer: View {
     }
 
     @ViewBuilder private var arranged: some View {
-        switch layout.arrangement {
-        case .sideColumns: columns
-        case .bottomBar, .bottomGrid: bar
+        if let hand = oneHanded {
+            oneHandedArrangement(hand)
+        } else {
+            switch layout.arrangement {
+            case .sideColumns: columns
+            case .bottomBar, .bottomGrid: bar
+            }
+        }
+    }
+
+    // MARK: One-handed (ACC-009-R7)
+
+    private func oneHandedLayout(_ hand: OneHandedHand) -> OneHandedLayout {
+        let regular: Bool = horizontalClass == .regular && verticalClass == .regular
+        return OneHandedLayout.forArea(CGRect(origin: .zero, size: size), hand: hand, scaledBase: scaledBase, padOn: true, regular: regular,
+                                       actions: oneHandedActions, readoutHeight: readoutHeight)
+    }
+
+    private func oneHandedArrangement(_ hand: OneHandedHand) -> some View {
+        let layout: OneHandedLayout = oneHandedLayout(hand)
+        let aside: OneHandedLayout.Rect = layout.asideRect
+        return ZStack(alignment: .topLeading) {
+            ForEach(CriticalAction.allCases.filter { (action: CriticalAction) -> Bool in action.isPadAction }, id: \.self) {
+                (action: CriticalAction) in
+                if let rect = layout.frame(of: action) {
+                    padTarget(action).position(x: rect.midX, y: rect.midY)
+                }
+            }
+            HStack(alignment: .bottom, spacing: 8) {
+                cueReadout
+                Spacer(minLength: 0)
+                tempoReadout
+            }
+            .frame(width: max(0, aside.width - 2 * OneHandedLayout.margin), height: max(0, aside.height), alignment: .bottom)
+            .position(x: aside.midX, y: aside.midY)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder private func padTarget(_ action: CriticalAction) -> some View {
+        switch action {
+        case .cuePrevious: previousTarget
+        case .cueNext: nextTarget
+        case .tapTempo: tapTarget
+        default: blackoutTarget
         }
     }
 

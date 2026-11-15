@@ -419,6 +419,9 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
     func testControlsStandard() throws { try run("controls", .standard) }
     func testControlsAX3() throws { try run("controls", .ax3) }
     func testControlsAX5() throws { try run("controls", .ax5) }
+    func testOneHandedControlsStandard() throws { try run("oneHandedControls", .standard) }   // ACC-009-R10
+    func testOneHandedControlsAX3() throws { try run("oneHandedControls", .ax3) }
+    func testOneHandedControlsAX5() throws { try run("oneHandedControls", .ax5) }
     func testParameterShelfStandard() throws { try run("parameterShelf", .standard) }
     func testParameterShelfAX3() throws { try run("parameterShelf", .ax3) }
     func testParameterShelfAX5() throws { try run("parameterShelf", .ax5) }
