@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T04:30:24Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T04:32:56Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 34 |
-| implementing | 4 |
-| unit_passed | 1 |
-| integrated | 286 |
+| audited | 33 |
+| implementing | 2 |
+| built | 3 |
+| integrated | 287 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 25 | 3 | 1 | 50 | 0 |
-| P3 | 7 | 1 | 0 | 1 | 0 |
+| P2 | 24 | 2 | 2 | 51 | 0 |
+| P3 | 7 | 0 | 1 | 1 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 39 features are not implemented yet (first: CAM-010, FX-005, FX-006, FX-007, FX-008)
+- 38 features are not implemented yet (first: CAM-010, FX-005, FX-006, FX-007, FX-008)
 
 ## Integrated
 
@@ -185,6 +185,7 @@ The physical-device suite may **not** start:
 | OSC-002 | OSC message parser | `3b3a60649025` | `feature/osc-002` |
 | OSC-003 | OSC parameter routes | `ca21d525` | `feature/osc-003` |
 | OSC-004 | OSC learn | `24af20e28a43` | `feature/osc-004` |
+| OSC-006 | OSC bundles | `71b5865e84f4` | `feature/osc-006` |
 | OSC-007 | OSC network access switch | `ade4dfec39a5` | `feature/osc-007` |
 | OSC-008 | OSC peer allowlist | `1cc452b0` | `feature/osc-008` |
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
@@ -2066,11 +2067,12 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `0ef1840e2a52` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-004/20261114T225905/swift-test_PerformanceControl.log`)
 - `swift test PerformanceControl 304 (OSC-004 + MIDI-010 together), LibraryBackup 87; postmerge projectM-iOSTests 1225 + OSCLearn/MIDIClock UI tests 2`: pass at `24af20e28a43` (log `.autonomous/logs/integration/batch110/app-tests.log`)
 
-### OSC-006 OSC bundles (unit_passed)
+### OSC-006 OSC bundles (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d7e3756a8e55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-006/20261114T232207/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d7e3756a8e55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-006/20261114T232207/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `d7e3756a8e55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-006/20261114T232207/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `d7e3756a8e55` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-006/20261114T232207/swift-test_PerformanceControl.log`)
+- `swift test PerformanceControl 314; postmerge projectM-iOSTests 1236 (no UI changes)`: pass at `71b5865e84f4` (log `.autonomous/logs/integration/batch114/app-tests.log`)
 
 ### OSC-007 OSC network access switch (integrated)
 - `python3 scripts/check_compliance.py`: pass at `30fe777ae19d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-007/20261113T120523/compliance.log`)
