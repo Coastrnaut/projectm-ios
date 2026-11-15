@@ -57,6 +57,29 @@ answer is the conservative option.
   every output value is a weighted average (weights sum to 1) of input values or transparent black. FX-019's flash
   guard still judges the shown frame. Applied to the Edge Cases.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Is Lens distortion a global setting or a per-scene value? → A: Both, like FX-006 to FX-014: a global setting the
+  visuals use, which a scene or effect-chain preset with an `fx.lensDistortion` entry overwrites when opened; a scene
+  without one leaves it alone. Applied to FX-016-R9, R10.
+- Q: How are the values stored? → A: Settings `settings.lensDistortion.enabled` (a real Bool, absent → off),
+  `settings.lensDistortion.strength` (a number, absent or unreadable → +0.3, NaN → +0.3, out of range → nearest bound)
+  and `settings.lensDistortion.zoomToFill` (a real Bool, absent or unreadable → on), each written only when changed. In
+  a scene entry: `strength` (−1…1) and `zoomToFill` (0 or 1; ≥ 0.5 reads as on, like FX-014's `mode`). Applied to
+  FX-016-R9, R10.
+- Q: What does the Strength control show and say? → A: The readout is a signed whole percent ("+30%", "0%", "-30%");
+  VoiceOver says "Strength" and ACC-005's percent value ("30 percent", "-30 percent"), one percent per swipe; the
+  footer explains that positive values bulge (barrel) and negative values pinch (pincushion). Applied to FX-016-R8.
+- Q: Does the Zoom to fill switch stay visible at negative strength? → A: Yes; it is shown whenever the effect is on
+  and the footer says it only changes barrel (positive) values, so the stored choice survives a trip through zero.
+  Applied to FX-016-R8.
+- Q: What counts as "inside the picture" for a sample that lands between the last pixel centre and the frame's edge?
+  → A: The picture is the rectangle from the left/top edge (0) to the right/bottom edge (width, height) in pixel units;
+  a sample inside it, including the half-pixel border band, is interpolated with its taps clamped to the edge pixels; a
+  sample beyond it is outside (transparent black, barrel with zoom off only). Applied to FX-016-R4, R5.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bend the picture like a lens (Priority: P1)
@@ -130,8 +153,9 @@ the same warp back when the scene or preset is opened.
 - **FX-016-R3**: For an output pixel centre at offset d from the frame's middle, r = |d| ÷ half diagonal and the sample
   is taken at the middle + d × (1 + k r²) ÷ z, with k = 0.3 × strength and z = 1 + k when zoom is on and k > 0,
   otherwise z = 1. The radial mapping r ↦ r (1 + k r²) ÷ z is strictly increasing on 0…1 for every allowed strength.
-- **FX-016-R4**: With zoom on, every sample lies inside the picture for every strength and frame size; with zoom off a
-  pincushion warp still lies inside, and a barrel sample outside the picture gives transparent black.
+- **FX-016-R4**: The picture is the rectangle 0…width × 0…height in pixel units. With zoom on, every sample lies inside
+  it for every strength and frame size; with zoom off a pincushion warp still lies inside, and a barrel sample outside
+  it gives transparent black.
 - **FX-016-R5**: A sample inside the picture is the bilinear interpolation of the four nearest pixels, each clamped to the
   frame; a sample exactly on a pixel centre is that pixel, bit for bit. No read ever falls outside the picture and, for
   finite input, every output value is finite.
@@ -141,9 +165,10 @@ the same warp back when the scene or preset is opened.
 - **FX-016-R7**: Lens distortion is an FX-020 reorderable output effect (`fx.lensDistortion`), appended after Edge
   outline in the standard order. Its position is honoured; the flash guard and the tone map always run after it.
 - **FX-016-R8**: Settings has a "Lens distortion" section: a toggle and, while on, a Strength slider with ACC-005 spoken
-  values (signed percent, 1 % per swipe), a Zoom to fill switch and help text. The Effect order screen lists it with its
+  values (signed percent, readout "+30%", 1 % per swipe), a Zoom to fill switch (shown whenever the effect is on) and
+  help text. The Effect order screen lists it with its
   own switch.
-- **FX-016-R9**: The values are saved on the device, restored at launch, included in library backups, erased with the
+- **FX-016-R9**: The values (`settings.lensDistortion.enabled`, `.strength`, `.zoomToFill`) are saved on the device, restored at launch, included in library backups, erased with the
   other settings, checked on read, and removed by the UI-test reset.
 - **FX-016-R10**: Scenes and effect-chain presets store the effect as an `fx.lensDistortion` entry in FX-020's `effects`
   list, written only while it is on; out-of-range values are clamped and reported; scenes without it encode
