@@ -60,6 +60,7 @@ interaction); each answer is the conservative, local-first option.
 - Q: Does sending follow the PERF-010 recovery that turns OSC off after an abnormal exit? → A: Yes, automatically: recovery turns `settings.osc.enabled` off, which stops sending (OSC-005-R4). Send OSC itself keeps its stored value.
 - Q: Does the visualizer badge change? → A: No. Sending only runs while the receiver switch is on, so the existing OSC badge with Stop is already shown; its Stop turns the switch off, which also stops sending.
 - Q: Should a send failure retry? → A: No automatic retry beyond what the system does for an open UDP flow. A failed or refused connection shows the status; toggling Send OSC tries again (as OSC-001-R3 for the listener).
+- Q: Are the sent and dropped counts stored, and is each message announced? → A: Counts are memory only, since launch, and never stored or exported; messages are never announced to VoiceOver (traffic is not an event), the status line is an ordinary accessible label and a refused address is shown under its field.
 
 ## User Scenarios & Testing *(mandatory)*
 
