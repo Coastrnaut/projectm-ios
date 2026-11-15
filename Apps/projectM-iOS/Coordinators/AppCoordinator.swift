@@ -167,6 +167,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     var showPresetBrowser = false
     /// The preset library finished loading (feature 002).
     private(set) var libraryReady = false
+    /// PRE-006: the recent presets over their stored history.
+    private static func makeRecentPresets(defaults: UserDefaults) -> RecentPresetsCoordinator {
+        let store: RecentPresetsStore = RecentPresetsStore(defaults: defaults)
+        return RecentPresetsCoordinator(store: store)
+    }
+
     /// The full-library purchase (feature 002 US2): StoreKit, or a fixed fake in UI tests.
     let entitlements: any EntitlementProviding
     var showSettings = false {
@@ -469,11 +475,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         self.defaults = defaults
         self.memoryPressure = memoryPressure ?? .shared
         self.externalDisplay = externalDisplay ?? .shared
-        if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") { Self.resetForUITests(defaults) }
-        // FILE-005-R6, R7: a pending restore (or an interrupted one) finishes before any store reads the library.
-        LibraryBackupCoordinator.finishPendingRestore(defaults: defaults)
-        Self.reconcileMediaFolders(defaults: defaults)   // FILE-008-R7, R8: after the restore, before the stores read
-        settings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
+        Self.prepareStoredState(defaults: defaults)   // UI-test reset, FILE-005 restore, FILE-008 reconcile
+        let settings: AppSettings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
+        self.settings = settings
         inputTrim = InputTrimSetting(defaults: defaults)
         channelSelection = ChannelSelectionSetting(defaults: defaults)
         noiseGate = NoiseGateSetting(defaults: defaults)
@@ -481,195 +485,375 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         parameterShelf = ParameterShelf(defaults: defaults)   // UIX-004
         playbackBalance = PlaybackBalanceSetting(defaults: defaults)   // AUD-010
         latencyOffset = LatencyOffsetSetting(defaults: defaults)
-        colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
-        motionFeedback = MotionFeedbackSetting(defaults: defaults)   // FX-009
-        effectChain = EffectChainSetting(defaults: defaults)   // FX-020
-        chromaticSplit = ChromaticSplitSetting(defaults: defaults)   // FX-006
-        directionalBlur = DirectionalBlurSetting(defaults: defaults)   // FX-007
-        radialBlur = RadialBlurSetting(defaults: defaults)   // FX-008
-        echoFeedback = EchoSetting(defaults: defaults)   // FX-010
-        mosaic = MosaicSetting(defaults: defaults)   // FX-012
-        edgeOutline = EdgeOutlineSetting(defaults: defaults)   // FX-014
-        lensDistortion = LensDistortionSetting(defaults: defaults)   // FX-016
-        vignette = VignetteSetting(defaults: defaults)   // FX-015
-        pixelSort = PixelSortSetting(defaults: defaults)   // FX-011
-        scanlines = ScanlinesSetting(defaults: defaults)   // FX-018
-        filmGrain = FilmGrainSetting(defaults: defaults)   // FX-017
+        let effects: EffectSettings = EffectSettings(defaults: defaults)   // FX-003 to FX-020, read in the same order
+        colorGrade = effects.colorGrade
+        motionFeedback = effects.motionFeedback
+        effectChain = effects.chain
+        chromaticSplit = effects.chromaticSplit
+        directionalBlur = effects.directionalBlur
+        radialBlur = effects.radialBlur
+        echoFeedback = effects.echo
+        mosaic = effects.mosaic
+        edgeOutline = effects.edgeOutline
+        lensDistortion = effects.lensDistortion
+        vignette = effects.vignette
+        pixelSort = effects.pixelSort
+        scanlines = effects.scanlines
+        filmGrain = effects.filmGrain
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
-        let recovery = SessionRecoveryCoordinator(defaults: defaults, suppressed: SessionRecoveryCoordinator.harnessSuppresses())
-        let holdsScene = recovery.prepare(settings: settings)
+        let recovery: SessionRecoveryCoordinator = SessionRecoveryCoordinator(
+            defaults: defaults, suppressed: SessionRecoveryCoordinator.harnessSuppresses())
+        let holdsScene: Bool = recovery.prepare(settings: settings)
         self.recovery = recovery
-        let guide = GuidedFirstSceneCoordinator(defaults: defaults, suppressed: GuidedFirstScenePolicy.harnessSuppresses())
+        let guide: GuidedFirstSceneCoordinator = GuidedFirstSceneCoordinator(
+            defaults: defaults, suppressed: GuidedFirstScenePolicy.harnessSuppresses())
         self.guide = guide
-        let oscRoutable: [ParameterDescriptor] = OSCRoutesCoordinator.routable()   // OSC-003: the allowlist's targets
-        let oscReceiver: OSCReceiver = .system(store: OSCRoutesCoordinator.makeStore(routable: oscRoutable),
-                                               routes: OSCRoutesCoordinator.initialRoutes(routable: oscRoutable, defaults: defaults))
-        #if DEBUG
-        let fakeOSC: OSCReceiver? = UITestFakeOSC.receiverIfRequested(store: oscReceiver.store, routable: oscRoutable, defaults: defaults)   // OSC-004
-        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? fakeOSC ?? oscReceiver)
-        #else
-        osc = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
-        #endif
-        let oscCoordinator: OSCReceiverCoordinator = osc
-        osc.routes = OSCRoutesCoordinator(routable: oscRoutable, defaults: defaults) { [weak oscCoordinator] (routes: [OSCRoute]) -> Void in
-            oscCoordinator?.setRoutes(routes)
-        }
-        // UIX-015-R2: OSC already on means iOS has already asked for local network access, and so
-        // does a listener seen listening or denied.
-        let explainers = PermissionExplainerCoordinator(defaults: defaults)
-        if settings.oscEnabled { explainers.markExplained(.localNetwork) }
-        osc.onLocalNetworkDecided = { [weak explainers] () -> Void in explainers?.markExplained(.localNetwork) }
-        self.explainers = explainers
-        let midiAnnouncer: AccessibilityAnnouncer = statusEvents.announcer   // MIDI-001-R11: the shared path
-        let announceMIDI: @MainActor (String) -> Void = { (text: String) -> Void in midiAnnouncer.announce(text, kind: .midi) }
-        #if DEBUG
-        midi = MIDIDiscoveryCoordinator(settings: settings, discovery: UITestFakeMIDI.discoveryIfRequested() ?? .system(),
-                                        announce: announceMIDI)
-        #else
-        midi = MIDIDiscoveryCoordinator(settings: settings, announce: announceMIDI)
-        #endif
-        #if DEBUG
-        let midiInputCoordinator = MIDIInputCoordinator(service: UITestFakeMIDI.inputServiceIfRequested() ?? .system(), discovery: midi)
-        #else
-        let midiInputCoordinator = MIDIInputCoordinator(service: .system(), discovery: midi)
-        #endif
-        let midiMonitorCoordinator = MIDIMonitorCoordinator(input: midiInputCoordinator, discovery: midi)
-        midi.monitor = midiMonitorCoordinator   // MIDI-002-R15
-        midiInput = midiInputCoordinator
-        midiMonitor = midiMonitorCoordinator
-        let midiMappingCoordinator = MIDIMappingCoordinator(registry: MIDIMappingCoordinator.visualRegistry(),
-                                                            applied: MIDIMappingCoordinator.appliedIDs, input: midiInputCoordinator,
-                                                            discovery: midi, defaults: defaults, announce: announceMIDI)
-        midi.mappings = midiMappingCoordinator   // MIDI-003-R10
-        midiMappings = midiMappingCoordinator
-        photos = PhotoCoordinator.makeDefault(defaults: defaults)
-        slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
-        kenBurns = KenBurnsCoordinator.makeDefault(defaults: defaults)   // MED-007
-        logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
-        clock = ClockOverlayCoordinator.makeForApp(defaults: defaults)   // MED-011
-        countdown = CountdownOverlayCoordinator.makeForApp(defaults: defaults)   // MED-012
-        palettes = PaletteCoordinator.makeDefault()   // UIX-011 (after FILE-005's pending restore and FILE-011's erase)
-        macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
-        videos = VideoCoordinator.makeDefault(defaults: defaults)
-        texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
+        let osc: OSCReceiverCoordinator = Self.makeOSC(settings: settings, defaults: defaults)
+        self.osc = osc
+        explainers = Self.makeExplainers(settings: settings, osc: osc, defaults: defaults)
+        let midiStack: MIDIStack = Self.makeMIDI(settings: settings, defaults: defaults, announcer: statusEvents.announcer)
+        midi = midiStack.discovery
+        midiInput = midiStack.input
+        midiMonitor = midiStack.monitor
+        midiMappings = midiStack.mappings
+        let media: MediaStores = MediaStores(defaults: defaults, settings: settings)
+        photos = media.photos
+        slideshow = media.slideshow
+        kenBurns = media.kenBurns
+        logo = media.logo
+        clock = media.clock
+        countdown = media.countdown
+        palettes = media.palettes
+        macros = media.macros
+        videos = media.videos
+        texts = media.texts
         // SCN-002: the last committed scene wins over the settings (research SCN-002-D2).
-        let sceneAutosave = SceneAutosaveCoordinator.makeDefault(defaults: defaults)
-        let stored = StoredMediaAvailability(photos: photos.knownIDs, videos: videos.knownIDs)   // FILE-008-R5
-        if holdsScene {
-            recovery.hold(recovery.decision.isCrashLoop ? nil : sceneAutosave?.holdCommittedScene(assets: stored))
-        } else if let values = sceneAutosave?.restore(assets: stored) {
-            SceneAutosaveCapture.apply(values, to: settings)
-            SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
-                                              chromatic: chromaticSplit, directionalBlur: directionalBlur,
-                                              radialBlur: radialBlur, echo: echoFeedback,
-                                              mosaic: mosaic, edgeOutline: edgeOutline,
-                                              lensDistortion: lensDistortion, vignette: vignette,
-                                              pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)   // FX-020, FX-006 to FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018, FX-017
-            layers.restore(values.layerComposites)   // CMP-015-R5
-            if let text = values.text { texts.spec = text }
-            videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
-            videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
-            if let restore = values.slideshow {   // MED-006-R12, MED-007-R10 (in init: no method call on self yet)
-                slideshow.restore(restore.value)
-                kenBurns.restore(restore.kenBurns)
-            }
-            if let scene = values.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
-            macros.restore(values.macros)   // MOD-010: restored, not applied
-            palettes.restore(values.paletteID)   // UIX-011
-        }
+        let sceneAutosave: SceneAutosaveCoordinator? = SceneAutosaveCoordinator.makeDefault(defaults: defaults)
+        Self.restoreScene(from: sceneAutosave, holdsScene: holdsScene, recovery: recovery, settings: settings,
+                          effects: effects, media: media, layers: layers)
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
         EngineInstanceLedger.coordinators += 1   // UIX-008-D9: this init creates the one CaptureManager
         sceneRepair = SceneRepairCoordinator(registry: try? SceneArchiveService.appRegistry())   // SCN-012
         #if DEBUG
-        UITestPhotoFixture.seedIfRequested(photos, slideshow: slideshow)   // MED-001, MED-006 (pickers cannot be automated)
-        UITestVideoFixture.seedIfRequested(videos)   // MED-002: VideoLayerUITests
-        UITestTextFixture.seedIfRequested(texts)     // MED-009: TextOverlayUITests
-        UITestLogoFixture.seedIfRequested(logo)      // MED-010: LogoOverlayUITests
-        UITestMacroFixture.seedIfRequested(macros)   // MOD-010: ParameterMacroUITests
+        Self.seedMediaFixtures(media)   // MED-001, MED-002, MED-006, MED-009, MED-010, MOD-010
         #endif
         let initialScreen: Screen = defaults.bool(forKey: Self.noticeKey) ? .chooser : .notice
         screen = initialScreen
         // UIX-001-R1: a pending tutorial is offered again (not over PERF-010's offer).
         if initialScreen == .chooser { guide.presentAtLaunchIfDue(recoveryPending: recovery.offer == .pending) }
-        microphone = MicrophoneSource(backend: AVMicrophoneBackend())
-        let inAppPlayback = InAppPlaybackSource(backend: AVInAppPlaybackBackend())
+        let microphone: MicrophoneSource = MicrophoneSource(backend: AVMicrophoneBackend())
+        self.microphone = microphone
+        let inAppPlayback: InAppPlaybackSource = InAppPlaybackSource(backend: AVInAppPlaybackBackend())
         self.inAppPlayback = inAppPlayback
         Self.connect(playbackBalance, to: inAppPlayback)   // AUD-010
         audioLibrary = AudioLibraryCoordinator.makeDefault()
-        var sources: [any AudioSource] = [
-            ScreenCaptureSource.makeDefault(),
-            microphone,
-            inAppPlayback,
-        ]
         #if DEBUG
+        let made: (manager: CaptureManager, fakes: [UITestFakeSource]) = Self.makeManager(microphone: microphone, inAppPlayback: inAppPlayback)
+        let manager: CaptureManager = made.manager
+        #else
+        let manager: CaptureManager = Self.makeManager(microphone: microphone, inAppPlayback: inAppPlayback)
+        #endif
+        self.manager = manager
+        transport = PlaybackTransport(manager: manager, source: inAppPlayback)
+        let lifecycle: LifecycleObserver = LifecycleObserver()
+        self.lifecycle = lifecycle
+        let tempo: TempoCoordinator = Self.makeTempo(defaults: defaults)
+        self.tempo = tempo
+        let midiClock: MIDIClockCoordinator = MIDIClockCoordinator(input: midiStack.input, tempo: tempo, defaults: defaults)   // MIDI-010
+        self.midiClock = midiClock
+        midiStack.discovery.clock = midiClock
+        #if DEBUG
+        Self.applyTempoScript(to: tempo, defaults: defaults)   // ANL-006 D7
+        #endif
+        // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
+        let presetStack: PresetStack = Self.makePresetStack(defaults: defaults, settings: settings, loader: presetLoader)
+        presets = presetStack.presets
+        userPresets = presetStack.userPresets
+        entitlements = Self.makeEntitlements()
+        #if DEBUG
+        fakeSource = made.fakes.first
+        #endif
+        connectLifecycle(lifecycle)
+        _ = powerProfile   // PERF-008-R6: the stored profile is active before any visual starts
+        connectAfterInit(defaults: defaults)
+    }
+
+    // AppCoordinator.init is split into typed steps (2026-11-14, again 2026-11-15) to keep each body
+    // under the type-check budget that Xcode 26 on CI enforces: the factories below run at the same
+    // points and in the same order as the code they replaced; the wiring that needs every stored
+    // property set runs in connectLifecycle(_:) and connectAfterInit(defaults:).
+
+    /// `-uitestResetNotice`, then FILE-005-R6, R7: a pending restore (or an interrupted one) finishes
+    /// before any store reads the library; FILE-008-R7, R8: media folders are reconciled after it.
+    private static func prepareStoredState(defaults: UserDefaults) {
+        if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") { resetForUITests(defaults) }
+        LibraryBackupCoordinator.finishPendingRestore(defaults: defaults)
+        reconcileMediaFolders(defaults: defaults)
+    }
+
+    /// The compositor effects' settings (FX-003 to FX-020), created in the order `init` always used.
+    private struct EffectSettings {
+        let colorGrade: ColorGradeSetting
+        let motionFeedback: MotionFeedbackSetting
+        let chain: EffectChainSetting
+        let chromaticSplit: ChromaticSplitSetting
+        let directionalBlur: DirectionalBlurSetting
+        let radialBlur: RadialBlurSetting
+        let echo: EchoSetting
+        let mosaic: MosaicSetting
+        let edgeOutline: EdgeOutlineSetting
+        let lensDistortion: LensDistortionSetting
+        let vignette: VignetteSetting
+        let pixelSort: PixelSortSetting
+        let scanlines: ScanlinesSetting
+        let filmGrain: FilmGrainSetting
+
+        @MainActor
+        init(defaults: UserDefaults) {
+            colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
+            motionFeedback = MotionFeedbackSetting(defaults: defaults)   // FX-009
+            chain = EffectChainSetting(defaults: defaults)   // FX-020
+            chromaticSplit = ChromaticSplitSetting(defaults: defaults)   // FX-006
+            directionalBlur = DirectionalBlurSetting(defaults: defaults)   // FX-007
+            radialBlur = RadialBlurSetting(defaults: defaults)   // FX-008
+            echo = EchoSetting(defaults: defaults)   // FX-010
+            mosaic = MosaicSetting(defaults: defaults)   // FX-012
+            edgeOutline = EdgeOutlineSetting(defaults: defaults)   // FX-014
+            lensDistortion = LensDistortionSetting(defaults: defaults)   // FX-016
+            vignette = VignetteSetting(defaults: defaults)   // FX-015
+            pixelSort = PixelSortSetting(defaults: defaults)   // FX-011
+            scanlines = ScanlinesSetting(defaults: defaults)   // FX-018
+            filmGrain = FilmGrainSetting(defaults: defaults)   // FX-017
+        }
+
+        /// FX-020, FX-006 to FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018, FX-017.
+        @MainActor
+        func apply(_ values: [SceneEffectEntry]?) {
+            SceneAutosaveCapture.applyEffects(values, chain: chain, grade: colorGrade, trails: motionFeedback,
+                                              chromatic: chromaticSplit, directionalBlur: directionalBlur,
+                                              radialBlur: radialBlur, echo: echo,
+                                              mosaic: mosaic, edgeOutline: edgeOutline,
+                                              lensDistortion: lensDistortion, vignette: vignette,
+                                              pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)
+        }
+    }
+
+    /// The OSC receiver (OSC-001) with its OSC-003 routes, made before anything can open a listener.
+    private static func makeOSC(settings: AppSettings, defaults: UserDefaults) -> OSCReceiverCoordinator {
+        let oscRoutable: [ParameterDescriptor] = OSCRoutesCoordinator.routable()   // OSC-003: the allowlist's targets
+        let oscReceiver: OSCReceiver = .system(store: OSCRoutesCoordinator.makeStore(routable: oscRoutable),
+                                               routes: OSCRoutesCoordinator.initialRoutes(routable: oscRoutable, defaults: defaults))
+        #if DEBUG
+        let fakeOSC: OSCReceiver? = UITestFakeOSC.receiverIfRequested(store: oscReceiver.store, routable: oscRoutable, defaults: defaults)   // OSC-004
+        let receiver: OSCReceiver = UITestOSCFailure.receiverIfRequested() ?? fakeOSC ?? oscReceiver
+        let osc: OSCReceiverCoordinator = OSCReceiverCoordinator(settings: settings, receiver: receiver)
+        #else
+        let osc: OSCReceiverCoordinator = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
+        #endif
+        osc.routes = OSCRoutesCoordinator(routable: oscRoutable, defaults: defaults) { [weak osc] (routes: [OSCRoute]) -> Void in
+            osc?.setRoutes(routes)
+        }
+        return osc
+    }
+
+    /// UIX-015-R2: OSC already on means iOS has already asked for local network access, and so does a
+    /// listener seen listening or denied.
+    private static func makeExplainers(settings: AppSettings, osc: OSCReceiverCoordinator,
+                                       defaults: UserDefaults) -> PermissionExplainerCoordinator {
+        let explainers: PermissionExplainerCoordinator = PermissionExplainerCoordinator(defaults: defaults)
+        if settings.oscEnabled { explainers.markExplained(.localNetwork) }
+        osc.onLocalNetworkDecided = { [weak explainers] () -> Void in explainers?.markExplained(.localNetwork) }
+        return explainers
+    }
+
+    /// MIDI-001 discovery, MIDI-002 input and monitor, MIDI-003 mappings, linked to each other.
+    private struct MIDIStack {
+        let discovery: MIDIDiscoveryCoordinator
+        let input: MIDIInputCoordinator
+        let monitor: MIDIMonitorCoordinator
+        let mappings: MIDIMappingCoordinator
+    }
+
+    private static func makeMIDI(settings: AppSettings, defaults: UserDefaults, announcer: AccessibilityAnnouncer) -> MIDIStack {
+        let midiAnnouncer: AccessibilityAnnouncer = announcer   // MIDI-001-R11: the shared path
+        let announceMIDI: @MainActor (String) -> Void = { (text: String) -> Void in midiAnnouncer.announce(text, kind: .midi) }
+        #if DEBUG
+        let midi: MIDIDiscoveryCoordinator = MIDIDiscoveryCoordinator(
+            settings: settings, discovery: UITestFakeMIDI.discoveryIfRequested() ?? .system(), announce: announceMIDI)
+        let input: MIDIInputCoordinator = MIDIInputCoordinator(service: UITestFakeMIDI.inputServiceIfRequested() ?? .system(), discovery: midi)
+        #else
+        let midi: MIDIDiscoveryCoordinator = MIDIDiscoveryCoordinator(settings: settings, announce: announceMIDI)
+        let input: MIDIInputCoordinator = MIDIInputCoordinator(service: .system(), discovery: midi)
+        #endif
+        let monitor: MIDIMonitorCoordinator = MIDIMonitorCoordinator(input: input, discovery: midi)
+        midi.monitor = monitor   // MIDI-002-R15
+        let mappings: MIDIMappingCoordinator = MIDIMappingCoordinator(
+            registry: MIDIMappingCoordinator.visualRegistry(), applied: MIDIMappingCoordinator.appliedIDs, input: input,
+            discovery: midi, defaults: defaults, announce: announceMIDI)
+        midi.mappings = mappings   // MIDI-003-R10
+        return MIDIStack(discovery: midi, input: input, monitor: monitor, mappings: mappings)
+    }
+
+    /// The imported media and overlay stores, created in the order `init` always used.
+    private struct MediaStores {
+        let photos: PhotoCoordinator
+        let slideshow: SlideshowCoordinator
+        let kenBurns: KenBurnsCoordinator
+        let logo: LogoCoordinator
+        let clock: ClockOverlayCoordinator
+        let countdown: CountdownOverlayCoordinator
+        let palettes: PaletteCoordinator
+        let macros: MacroCoordinator
+        let videos: VideoCoordinator
+        let texts: TextOverlayCoordinator
+
+        @MainActor
+        init(defaults: UserDefaults, settings: AppSettings) {
+            photos = PhotoCoordinator.makeDefault(defaults: defaults)
+            slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
+            kenBurns = KenBurnsCoordinator.makeDefault(defaults: defaults)   // MED-007
+            logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
+            clock = ClockOverlayCoordinator.makeForApp(defaults: defaults)   // MED-011
+            countdown = CountdownOverlayCoordinator.makeForApp(defaults: defaults)   // MED-012
+            palettes = PaletteCoordinator.makeDefault()   // UIX-011 (after FILE-005's pending restore and FILE-011's erase)
+            macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
+            videos = VideoCoordinator.makeDefault(defaults: defaults)
+            texts = TextOverlayCoordinator.makeDefault(defaults: defaults)
+        }
+    }
+
+    /// SCN-002: holds the committed scene for PERF-010's offer, or restores it over the settings
+    /// (in init: no method call on self yet).
+    private static func restoreScene(from sceneAutosave: SceneAutosaveCoordinator?, holdsScene: Bool,
+                                     recovery: SessionRecoveryCoordinator, settings: AppSettings,
+                                     effects: EffectSettings, media: MediaStores, layers: LayerInspectorCoordinator) {
+        let stored: StoredMediaAvailability = StoredMediaAvailability(photos: media.photos.knownIDs, videos: media.videos.knownIDs)   // FILE-008-R5
+        if holdsScene {
+            recovery.hold(recovery.decision.isCrashLoop ? nil : sceneAutosave?.holdCommittedScene(assets: stored))
+            return
+        }
+        guard let values = sceneAutosave?.restore(assets: stored) else { return }
+        SceneAutosaveCapture.apply(values, to: settings)
+        effects.apply(values.effects)
+        layers.restore(values.layerComposites)   // CMP-015-R5
+        if let text = values.text { media.texts.spec = text }
+        media.videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
+        media.videos.restoreSpeed(storeID: values.videoStoreID, speedPercent: values.videoSpeedPercent)   // MED-004-R7
+        if let restore = values.slideshow {   // MED-006-R12, MED-007-R10
+            media.slideshow.restore(restore.value)
+            media.kenBurns.restore(restore.kenBurns)
+        }
+        if let scene = values.logo { media.logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
+        media.macros.restore(values.macros)   // MOD-010: restored, not applied
+        media.palettes.restore(values.paletteID)   // UIX-011
+    }
+
+    #if DEBUG
+    /// The media pickers cannot be automated: UI tests seed the stores instead.
+    private static func seedMediaFixtures(_ media: MediaStores) {
+        UITestPhotoFixture.seedIfRequested(media.photos, slideshow: media.slideshow)   // MED-001, MED-006
+        UITestVideoFixture.seedIfRequested(media.videos)   // MED-002: VideoLayerUITests
+        UITestTextFixture.seedIfRequested(media.texts)     // MED-009: TextOverlayUITests
+        UITestLogoFixture.seedIfRequested(media.logo)      // MED-010: LogoOverlayUITests
+        UITestMacroFixture.seedIfRequested(media.macros)   // MOD-010: ParameterMacroUITests
+    }
+    #endif
+
+    /// The capture manager over the three sources. Latency stages (T062, T114); the analysis tap
+    /// feeds the native visual's bands (VIS-001-R14); AUD-015-R3 background configuration.
+    #if DEBUG
+    private static func makeManager(microphone: MicrophoneSource,
+                                    inAppPlayback: InAppPlaybackSource) -> (manager: CaptureManager, fakes: [UITestFakeSource]) {
+        var sources: [any AudioSource] = [ScreenCaptureSource.makeDefault(), microphone, inAppPlayback]
         // StatusUITests (T093): a scriptable fake replaces one mode's real source.
-        let fakes = UITestFakeSource.fromLaunchArguments()   // AUD-012: one or more modes
+        let fakes: [UITestFakeSource] = UITestFakeSource.fromLaunchArguments()   // AUD-012: one or more modes
         for fake in fakes {
-            sources.removeAll { $0.mode == fake.mode }
+            sources.removeAll { (source: any AudioSource) -> Bool in source.mode == fake.mode }
             sources.append(fake)
         }
-        #endif
-        // Latency stages (T062, T114); the analysis tap feeds the native visual's bands (VIS-001-R14).
-        let manager = CaptureManager(sources: sources, signposts: DiagnosticsLog.pipeline,
-                                     analysisTapCapacityFrames: NormalizedPCMRing.analysisTapDefaultCapacityFrames)
-        self.manager = manager
-        manager.backgroundConfiguration = Self.backgroundConfiguration(infoDictionary: Bundle.main.infoDictionary)   // AUD-015-R3
-        transport = PlaybackTransport(manager: manager, source: inAppPlayback)
-        let lifecycle = LifecycleObserver()
-        self.lifecycle = lifecycle
-        var tempoClock: () -> UInt64 = { MonotonicClock.nowNanoseconds() }
+        return (manager: makeManager(sources: sources), fakes: fakes)
+    }
+    #else
+    private static func makeManager(microphone: MicrophoneSource, inAppPlayback: InAppPlaybackSource) -> CaptureManager {
+        makeManager(sources: [ScreenCaptureSource.makeDefault(), microphone, inAppPlayback])
+    }
+    #endif
+
+    private static func makeManager(sources: [any AudioSource]) -> CaptureManager {
+        let manager: CaptureManager = CaptureManager(sources: sources, signposts: DiagnosticsLog.pipeline,
+                                                     analysisTapCapacityFrames: NormalizedPCMRing.analysisTapDefaultCapacityFrames)
+        manager.backgroundConfiguration = backgroundConfiguration(infoDictionary: Bundle.main.infoDictionary)   // AUD-015-R3
+        return manager
+    }
+
+    /// SHOW-011: tap tempo on the monotonic clock.
+    private static func makeTempo(defaults: UserDefaults) -> TempoCoordinator {
+        var tempoClock: () -> UInt64 = { () -> UInt64 in MonotonicClock.nowNanoseconds() }
         #if DEBUG
         // TapTempoUITests: `-uitestTapInterval <ms>` spaces every tap exactly (SHOW-011 research D6).
         if let step = defaults.string(forKey: "uitestTapInterval").flatMap(Double.init) {
             tempoClock = TempoCoordinator.syntheticClock(stepMilliseconds: step)
         }
         #endif
-        tempo = TempoCoordinator(clock: tempoClock)
-        midiClock = MIDIClockCoordinator(input: midiInput, tempo: tempo, defaults: defaults)   // MIDI-010
-        midi.clock = midiClock
-        #if DEBUG
-        // TempoConfidenceUITests: `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` (ANL-006 D7).
+        return TempoCoordinator(clock: tempoClock)
+    }
+
+    #if DEBUG
+    /// TempoConfidenceUITests: `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` (ANL-006 D7).
+    private static func applyTempoScript(to tempo: TempoCoordinator, defaults: UserDefaults) {
         if let script = defaults.string(forKey: "uitestTempoEstimate").flatMap(TempoCoordinator.estimateScript) {
             tempo.estimateScript = script
         }
-        #endif
-        // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
-        presets = Self.makePresets(defaults: defaults, settings: settings, loader: presetLoader)
-        presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
-        userPresets = UserPresetsCoordinator.makeDefault()
-        userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
-        presets.overrides = Self.makeOverrides(presets: presets, loader: presetLoader)   // PRE-016
-        userPresets.integrity = LibraryIntegrityCoordinator(presets: presets, userPresets: userPresets)   // PRE-018
+    }
+    #endif
+
+    /// Feature 002's preset coordinator with PRE-006 recents, PRE-012 user presets, PRE-016 overrides
+    /// and PRE-018 integrity, connected in the order `init` always used.
+    private struct PresetStack {
+        let presets: PresetCoordinator
+        let userPresets: UserPresetsCoordinator
+    }
+
+    private static func makePresetStack(defaults: UserDefaults, settings: AppSettings, loader: RendererPresetLoader) -> PresetStack {
+        let presets: PresetCoordinator = makePresets(defaults: defaults, settings: settings, loader: loader)
+        presets.recent = makeRecentPresets(defaults: defaults)   // PRE-006
+        let userPresets: UserPresetsCoordinator = UserPresetsCoordinator.makeDefault()
+        userPresets.connect(presets: presets, loader: loader)   // PRE-012
+        let overrides: PresetOverridesCoordinator = makeOverrides(presets: presets, loader: loader)
+        presets.overrides = overrides   // PRE-016
+        let integrity: LibraryIntegrityCoordinator = LibraryIntegrityCoordinator(presets: presets, userPresets: userPresets)
+        userPresets.integrity = integrity   // PRE-018
+        return PresetStack(presets: presets, userPresets: userPresets)
+    }
+
+    /// The full-library purchase (feature 002 US2): StoreKit, or a fixed fake in tests and device runs.
+    private static func makeEntitlements() -> any EntitlementProviding {
         #if DEBUG || PROJECTM_AUTOMATION
-        entitlements = AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
+        return AutomationRunner.entitlementsOverride() ?? FakeEntitlements.fromLaunchArguments() ?? LibraryStore()
         #else
-        entitlements = LibraryStore()
+        return LibraryStore()
         #endif
-        #if DEBUG
-        fakeSource = fakes.first
-        #endif
-        // Background/foreground/lock/unlock go through LifecycleCoordinator (T099): it suspends the
-        // visualization and forwards to CaptureManager's per-adapter matrix.
+    }
+
+    /// Background/foreground/lock/unlock go through LifecycleCoordinator (T099): it suspends the
+    /// visualization and forwards to CaptureManager's per-adapter matrix (first step after every
+    /// stored property is set).
+    private func connectLifecycle(_ lifecycle: LifecycleObserver) {
         presentation.register(tempo)   // SHOW-011: the tempo analysis stops with the presentation
-        presentation.onTransition = { report in
+        presentation.onTransition = { (report: PresentationTransitionReport) -> Void in
             DiagnosticsLog.presentationTransition(canPresent: report.canPresent, registered: report.registered,
                                                   activeBefore: report.activeBefore, activeAfter: report.activeAfter)
         }
-        let lifecycleCoordinator = LifecycleCoordinator(manager: manager, visualization: self, presentation: presentation)
+        let lifecycleCoordinator: LifecycleCoordinator = LifecycleCoordinator(manager: manager, visualization: self,
+                                                                              presentation: presentation)
         self.lifecycleCoordinator = lifecycleCoordinator
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
-        _ = powerProfile   // PERF-008-R6: the stored profile is active before any visual starts
-        connectAfterInit(defaults: defaults)
     }
-
-    // AppCoordinator.init is split in three (2026-11-14) to keep each body under the 300 ms
-    // type-check budget that Xcode 26 on CI enforces: the UI-test reset and the wiring that runs
-    // once every stored property is set moved out unchanged, called at the same points.
 
     /// The preset coordinator with its stores in `Application Support/PresetCollections` (split from `init` for the
     /// type-check budget).
@@ -699,7 +883,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         nativeVisual?.externalValues = hostExternalValues
     }
 
+    /// (Split into steps for the type-check budget; the keys and files are removed in the same order.)
     private static func resetForUITests(_ defaults: UserDefaults) {
+        resetAppKeysForUITests(defaults)
+        resetEffectKeysForUITests(defaults)
+        resetControlKeysForUITests(defaults)
+        resetFilesForUITests(defaults)
+    }
+
+    /// The notice, presets, settings and audio analysis keys.
+    private static func resetAppKeysForUITests(_ defaults: UserDefaults) {
         defaults.removeObject(forKey: Self.noticeKey)
         defaults.removeObject(forKey: FavoritesStore.favoritesKey)
         defaults.removeObject(forKey: FavoritesStore.lastPresetKey)
@@ -713,6 +906,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         defaults.removeObject(forKey: RecordingAudioSetting.includeMicrophoneKey)   // REC-004: off
         defaults.removeObject(forKey: ParameterShelf.pinsKey)   // UIX-004: no pins
         LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
+    }
+
+    /// FX-003 to FX-020, the camera trackers and the noise editor.
+    private static func resetEffectKeysForUITests(_ defaults: UserDefaults) {
         ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
         FaceTrackingCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // CAM-009: off, no consent
@@ -730,6 +927,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         PixelSortSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-011: off
         ScanlinesSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-018: off
         FilmGrainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-017: off
+    }
+
+    /// MIDI and OSC.
+    private static func resetControlKeysForUITests(_ defaults: UserDefaults) {
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
@@ -737,6 +938,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         OSCSendCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-005: Send OSC off, no destination
         OSCDiscoveryCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-011: discovery off
         OSCCueSyncCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-012: cue sync off
+    }
+
+    /// The stored folders (presets, media, scenes, shows, palettes) and the first-launch states.
+    private static func resetFilesForUITests(_ defaults: UserDefaults) {
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
