@@ -56,6 +56,12 @@ local-first option.
   picture, and plays only on request.
 - Q: Pacing and chunking? → A: The run can be stepped one frame at a time or in chunks of any size; the result
   is the same as one pass because everything is a function of the frame index. Tests prove it.
+- Q: Where does a run execute, and what does the editor show meanwhile? → A: Off the main thread, with its own
+  renderer and layer (nothing shared with the still preview); the button reads "Rendering…" and is disabled
+  until the frames are ready. A 120-frame run of 128 × 128 pixels should finish in about a second; no wall-clock
+  assertion is made in tests.
+- Q: Which fixture seeds can an author pick? → A: 1…99 with a stepper (default 1). Each seed is a different
+  REC-013 fixture (different noise hits), so a seed change shows how robust a binding is to the music.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -120,6 +126,8 @@ arrays exactly; GPU tests render the frame sequence twice and compare checksums.
 - **SHD-012-R6**: The Noise editor MUST offer a fixture preview: binding choice, fixture seed, Play fixture /
   Stop, a looping picture, a frame slider and a summary (frames, bound range, run digest).
 - **SHD-012-R7**: The loop MUST respect Reduce Motion (no auto-play) and draw with Reduce flashing on.
+- **SHD-012-R9**: A run MUST NOT block the interface: it renders off the main thread and the editor shows that it
+  is rendering; changing a setting or leaving the editor stops a loop.
 - **SHD-012-R8**: The trajectory part MUST be plain Swift that builds on Linux.
 
 ### Key Entities
