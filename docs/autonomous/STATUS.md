@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T07:44:44Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T07:54:21Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,21 @@
 
 | State | Features |
 |---|---|
-| audited | 14 |
-| implementing | 2 |
+| audited | 13 |
+| implementing | 1 |
+| built | 1 |
+| unit_passed | 1 |
 | integrated | 309 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 151 | 0 |
-| P2 | 8 | 2 | 69 | 0 |
-| P3 | 4 | 0 | 5 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 0 | 0 | 151 | 0 |
+| P2 | 7 | 1 | 1 | 1 | 69 | 0 |
+| P3 | 4 | 0 | 0 | 0 | 5 | 0 |
 
 ## Final device gate
 
@@ -3540,6 +3542,20 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/swift-test_VisualGenerators.log`)
 - `post-merge batch70: SceneFormat 184, VisualGenerators 249, LibraryBackup 80, projectM-iOSTests 1031, UI 4 (palette picker, colour-blind controls)`: pass at `99cce200` (log `.autonomous/logs/integration/batch70/app-tests.log`)
+
+### UIX-012 Touch color sampler (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `885c55bf95ce` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-012/20261115T024853/swift-test_ShowControl.log`)
 
 ### UIX-013 Scene performance HUD (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/compliance.log`)

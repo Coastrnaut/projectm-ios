@@ -58,6 +58,9 @@ CHECKED = [
     "Coordinators/MIDISceneActionPerformer.swift",     # MIDI-007-R10: "not found" on the .midi lane
     "Views/MIDISceneAssignView.swift",                 # MIDI-007-R10
     "Views/MIDIMappingsView.swift",                    # MIDI-003-R11
+    "Coordinators/ColorSamplerCoordinator.swift",      # UIX-012-R8: results on the parameter lane
+    "Coordinators/AppCoordinator+ColorSampler.swift",  # UIX-012-R8
+    "Views/ColorSamplingViews.swift",                  # UIX-012-R8
     "Views/MIDIMappingOptionsView.swift",              # MIDI-004-R8: curve and Invert announce through the announcer
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",
