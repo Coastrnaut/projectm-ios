@@ -40,10 +40,12 @@ finish. Logs go to `.autonomous/logs-uix-008/`.
   own `SceneHistory<SceneDocument>` (standard limits), `undo`/`redo`, `isDirty`, `save`/`replace`/`reload`.
 - [ ] UIX-008-T07 [US1] Tests `Apps/projectM-iOS/Tests/SceneDocumentEditorTests.swift`: two editors on two
   scenes (edits isolated, undo isolated, two files equal each editor's bytes, `sceneNames` lists both), lock
-  refusal, conflict then replace and reload, missing scene.
+  refusal, conflict then replace and reload, missing scene, and UIX-008-R12: the stored file (what the main
+  window reads) is unchanged by unsaved edits.
 - [ ] UIX-008-T08 [US1] Create `Apps/projectM-iOS/Views/SceneEditorWindowView.swift` per contract W3 (preview,
   name field, ACC-005 opacity sliders, Undo/Redo/Save with keyboard shortcuts, dirty marker, conflict alert, W6
-  DEBUG probe); body split into small properties.
+  DEBUG probe); every control has a VoiceOver label and value and scales with Dynamic Type (UIX-008-R11, FR-070);
+  body split into small properties.
 - [ ] UIX-008-T09 [US1] Add the editor `WindowGroup(for: SceneEditorWindowID.self)` to
   `Apps/projectM-iOS/ProjectMApp.swift` and "Open in New Window" (`sceneFolderOpenWindow`, gated on
   `supportsMultipleWindows`) to `Apps/projectM-iOS/Views/SceneFoldersView.swift`.
@@ -61,8 +63,8 @@ finish. Logs go to `.autonomous/logs-uix-008/`.
 
 ## Phase 5: User Story 3 - Safe saving (P2)
 
-- [ ] UIX-008-T12 [US3] Covered by T05-T07 (lock, conflict, missing); verify the UI test of T13 shows the dirty
-  marker clear after Save.
+- [ ] UIX-008-T12 [US3] Verify the safe-saving paths (UIX-008-R9, Story 3) through T07's lock, conflict and missing
+  tests and the dirty marker clearing after Save in T13's UI test.
 
 ## Phase 6: Polish and verification
 
