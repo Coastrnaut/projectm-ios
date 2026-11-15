@@ -1,5 +1,6 @@
 // OSC-001-T17: the OSC receiver in the app with a fake transport (OSC-001-R1 to R3, R16;
 // contracts/osc-receiver.md C6). No networking.
+// OSC-006-T07: a scheduled bundle changes the parameter at its time tag, through the coordinator.
 import PerformanceControl
 import Synchronization
 import XCTest
@@ -38,6 +39,35 @@ private final class LatestTransport: Sendable {
     private let transport = Mutex<ImmediateTransport?>(nil)
     func set(_ t: ImmediateTransport) { transport.withLock { $0 = t } }
     func get() -> ImmediateTransport? { transport.withLock { $0 } }
+}
+
+/// OSC-006: a fake monotonic clock, the wall clock tied to it, and wake-ups that run when the clock reaches them.
+private final class FakeBundleTime: Sendable {
+    static let base = OSCTimeTag(seconds: 3_950_000_000, fraction: 0)
+    private let nanoseconds = Mutex<UInt64>(1_000_000_000)
+    private let pending = Mutex<[(at: UInt64, work: @Sendable () -> Void)]>([])
+
+    var now: UInt64 { nanoseconds.withLock { $0 } }
+    var clock: OSCMonotonicClock { OSCMonotonicClock(now: { [self] () -> UInt64 in now }) }
+    var wallClock: OSCWallClock { OSCWallClock(now: { [self] () -> OSCTimeTag in Self.base.adding(nanoseconds: Int64(now)) }) }
+    var scheduler: OSCFlushScheduler {
+        OSCFlushScheduler(schedule: { [self] (delay: UInt64, work: @escaping @Sendable () -> Void) in
+            pending.withLock { $0.append((now + delay, work)) }
+        })
+    }
+
+    func tag(inMilliseconds offset: UInt64) -> OSCTimeTag { Self.base.adding(nanoseconds: Int64(now + offset * 1_000_000)) }
+
+    func advance(byMilliseconds delta: UInt64) {
+        let target = now + delta * 1_000_000
+        nanoseconds.withLock { $0 = target }
+        let due = pending.withLock { (queue: inout [(at: UInt64, work: @Sendable () -> Void)]) -> [@Sendable () -> Void] in
+            let ready = queue.filter { $0.at <= target }.map { $0.work }
+            queue.removeAll { $0.at <= target }
+            return ready
+        }
+        for work in due { work() }
+    }
 }
 
 @MainActor
@@ -116,6 +146,43 @@ final class OSCReceiverCoordinatorTests: XCTestCase {
         for _ in 0..<100 where osc.testValue != 0.25 { await Task.yield() }
         XCTAssertEqual(osc.testValue, 0.25)
         XCTAssertEqual(OSCReceiverCoordinator.testValueText(0.25), "0.25")
+    }
+
+    /// OSC-006-T07: a bundle tagged 50 ms ahead leaves the parameter unchanged until the clock reaches its time, then
+    /// the coordinator shows the new value; one pending when OSC is turned off never applies.
+    func testScheduledBundleChangesTheParameterAtItsTime() async throws {
+        let (settings, cleanup) = try makeSettings()
+        defer { cleanup() }
+        let latest = LatestTransport()
+        let log = TransportLog()
+        let time = FakeBundleTime()
+        let receiver = OSCReceiver(clock: time.clock, scheduler: time.scheduler, wallClock: time.wallClock, makeTransport: {
+            let t = ImmediateTransport(log: log)
+            latest.set(t)
+            return t
+        })
+        let osc = OSCReceiverCoordinator(settings: settings, receiver: receiver)
+        osc.setEnabled(true)
+        let transport = try XCTUnwrap(latest.get())
+        func bundle(_ value: Float, inMilliseconds offset: UInt64) -> [UInt8] {
+            let message = OSCMessage(address: OSCReceiverCatalog.testAddress, arguments: [.float(value)])
+            return OSCEncoder.encode(OSCPacket.bundle(OSCBundle(timeTag: time.tag(inMilliseconds: offset), elements: [.message(message)])))
+        }
+        transport.send(.datagram(bundle(0.5, inMilliseconds: 50)))
+        XCTAssertEqual(receiver.dispatcher.pendingScheduledCount, 1)
+        time.advance(byMilliseconds: 49)
+        try await Task.sleep(nanoseconds: 50_000_000)          // let any refresh run: still nothing applied
+        XCTAssertEqual(osc.testValue, 0, "not before its time tag")
+        time.advance(byMilliseconds: 1)
+        XCTAssertEqual(receiver.testValue, 0.5, "applied on the receiving side at exactly its time")
+        for _ in 0..<100 where osc.testValue != 0.5 { try await Task.sleep(nanoseconds: 10_000_000) }
+        XCTAssertEqual(osc.testValue, 0.5, "the coordinator shows it on its gated refresh")
+
+        transport.send(.datagram(bundle(0.9, inMilliseconds: 50)))
+        osc.setEnabled(false)                                  // OSC-006-R10: the switch clears the queue
+        XCTAssertEqual(receiver.dispatcher.pendingScheduledCount, 0)
+        time.advance(byMilliseconds: 100)
+        XCTAssertEqual(receiver.testValue, 0.5, "a cue scheduled before the switch went off never applies")
     }
 
     /// OSC-009-T08 (OSC-009-R11, S4 one-pending part): a flood of 10,000 datagrams delivered on the

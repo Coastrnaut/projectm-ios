@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented (OSC-006-T11 {device} open)
 
 **Input**: User description: "Implement roadmap row OSC-006 (OSC bundles) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Apply timestamped OSC bundles in order with

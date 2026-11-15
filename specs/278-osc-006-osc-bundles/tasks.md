@@ -22,7 +22,7 @@ Tasks are ticked only when verified, with " — Verified 2026-11-14: <how>".
 
 - [X] OSC-006-T05 [US1] Acceptance tests in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCBundleScheduleTests.swift`: two bundles in reverse order (t+20 ms, t+10 ms) apply in timestamp order at their ticks; equal tags keep arrival order; immediate applies at once; nested ordering (S1, S2). — Verified 2026-11-14: OSCBundleScheduleTests.testTwoScheduledEventsExecuteInTimestampOrderAtTheirTicks (received t+20 then t+10: nothing at receipt, 0.25 at exactly t+10, 0.75 at exactly t+20, observed order [0.25, 0.75]), testEqualTagsKeepArrivalOrderAndImmediateAppliesAtOnce, testNestedBundlesUseTheLaterOfTheirOwnAndTheEnclosingTag pass.
 - [X] OSC-006-T06 [US1] Loopback integration in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCLoopbackIntegrationTests.swift`: a bundle 200 ms ahead over real UDP is pending at receipt and applies no earlier than its due time, within 1 s after it (S4). — Verified 2026-11-14: OSCLoopbackIntegrationTests.testScheduledBundleAppliesAtItsTimeOverLoopback passes on the macOS host (not skipped, 0.203 s: applied no earlier than due, within the 1 s ceiling, `scheduled` = 1).
-- [ ] OSC-006-T07 [US1] App test in `Apps/projectM-iOS/Tests/OSCReceiverCoordinatorTests.swift`: through the coordinator, a scheduled bundle changes the parameter only when the clock reaches its time.
+- [X] OSC-006-T07 [US1] App test in `Apps/projectM-iOS/Tests/OSCReceiverCoordinatorTests.swift`: through the coordinator, a scheduled bundle changes the parameter only when the clock reaches its time. — Verified 2026-11-14: OSCReceiverCoordinatorTests.testScheduledBundleChangesTheParameterAtItsTime passes on "OSC6 iPhone 17" (iOS 27.2, 0.064 s): unchanged at t+49 ms, 0.5 at t+50 ms and on the coordinator's refresh; a cue pending when OSC is turned off never applies. OSCReceiverCoordinator, LibraryBackupApp, Settings, OSCLearnCoordinator and OSCNetworkAccess tests: 29 pass.
 
 ## Phase 4: User Story 2 - Late and bogus timing is handled safely (P2)
 
@@ -31,7 +31,7 @@ Tasks are ticked only when verified, with " — Verified 2026-11-14: <how>".
 
 ## Phase 5: Polish
 
-- [ ] OSC-006-T10 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), the whole PerformanceControl and ImportFuzz OSC suites, Linux-safe build (no stdio globals), type-check budget.
+- [X] OSC-006-T10 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), the whole PerformanceControl and ImportFuzz OSC suites, Linux-safe build (no stdio globals), type-check budget. — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; PerformanceControl 314 and ImportFuzz OSC 3 tests pass; no type-check warning in any OSC-006 file (package and app built with the 300/150 ms flags); no stdio globals, only `Date` (Linux Foundation) added.
 - [ ] OSC-006-T11 {device} D1 with a LAN sender whose clock is network-synced: a bundle 500 ms ahead changes the test value about half a second later; one 30 s ahead never applies (quickstart step 3).
 
 ## Analysis (speckit-analyze, 2026-11-14)
