@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-017-T01-T16 verified on the Mac and an own iOS 27.2 simulator; T17 `{device}` open)
 
 **Input**: User description: "Implement FX-017 (Film grain) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Overlay deterministic seeded grain with optional temporal variation." Acceptance, verbatim: "Fixed
