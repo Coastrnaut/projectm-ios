@@ -94,6 +94,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.feedback.enabled", "settings.feedback.halfLife",   # FX-009-R11 (Trails, off by default)
                 "settings.noiseEditor.values",   # SHD-006-R7 (Noise editor values, absent at defaults)
                 "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   # FX-020-R8, R10
+                "settings.chromatic.enabled", "settings.chromatic.amount", "settings.chromatic.angle",   # FX-006-R9
+                "settings.chromatic.radial",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
