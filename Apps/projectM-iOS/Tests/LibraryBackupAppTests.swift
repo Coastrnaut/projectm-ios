@@ -31,6 +31,7 @@ final class LibraryBackupAppTests: XCTestCase {
         let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys + EffectChainSetting.allKeys
             + ChromaticSplitSetting.allKeys   // FX-006
             + DirectionalBlurSetting.allKeys   // FX-007
+            + RadialBlurSetting.allKeys   // FX-008
             + NoiseEditorStore.allKeys   // SHD-006-R7
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, TextOverlayStore.key,

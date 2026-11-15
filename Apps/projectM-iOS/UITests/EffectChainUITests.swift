@@ -42,6 +42,7 @@ final class EffectChainUITests: XCTestCase {
         XCTAssertTrue(trails.exists)
         XCTAssertTrue(app.switches["effectChain.row.fx.chromatic"].exists, "FX-006: Chromatic split is a row")
         XCTAssertTrue(app.switches["effectChain.row.fx.directionalBlur"].exists, "FX-007: Directional blur is a row")
+        XCTAssertTrue(app.switches["effectChain.row.fx.radialBlur"].exists, "FX-008: Radial blur is a row")
         handle.press(forDuration: 0.5, thenDragTo: trails)
         app.buttons["effectChain.edit"].tap()
         app.navigationBars.buttons.element(boundBy: 0).tap()
