@@ -184,6 +184,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored let sceneCompare = SceneCompareCoordinator()
     /// REC-002: render selected snapshots to PNG files (AppCoordinator+SnapshotBatch.swift).
     @ObservationIgnored let snapshotBatch = SnapshotBatchExportCoordinator()
+    /// REC-013: deterministic offline video export (AppCoordinator+OfflineExport.swift).
+    @ObservationIgnored let offlineExport = OfflineExportCoordinator()
     /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
     let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
@@ -376,6 +378,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var showTransport: ShowTransportCoordinator = makeShowTransport(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
+    /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
+    @ObservationIgnored private(set) lazy var hapticBeat = HapticBeatCoordinator(
+        defaults: defaults, tempo: tempo, clamp: { [unowned self] () -> SafetyClamp in self.settings.safetyClamp })
     /// OUT-004: the external display's output correction (Settings › External Display).
     @ObservationIgnored private(set) lazy var externalOutput = ExternalOutputSetting(defaults: defaults, external: externalDisplay)
     /// REC-008: the recording length (Settings → Stop recording after; Off by default).
@@ -547,10 +552,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         #endif
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
-        presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
-                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
-                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
-                                    smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()))   // PRE-008
+        presets = Self.makePresets(defaults: defaults, settings: settings, loader: presetLoader)
         presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
@@ -583,6 +585,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     // AppCoordinator.init is split in three (2026-11-14) to keep each body under the 300 ms
     // type-check budget that Xcode 26 on CI enforces: the UI-test reset and the wiring that runs
     // once every stored property is set moved out unchanged, called at the same points.
+
+    /// The preset coordinator with its stores in `Application Support/PresetCollections` (split from `init` for the
+    /// type-check budget).
+    private static func makePresets(defaults: UserDefaults, settings: AppSettings, loader: any PresetLoading) -> PresetCoordinator {
+        PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: loader,
+                          collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
+                          tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
+                          smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()),   // PRE-008
+                          notes: PresetNoteStore(directory: PresetNoteStore.defaultDirectory()))   // PRE-011
+    }
 
     /// PRE-016: the overrides store (beside the tags, so `-uitestResetNotice` removes it), handed to the
     /// loader (applied on load) and to the coordinator (the Adjust Parameters sheet).
@@ -638,6 +650,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// The end of init, after every stored property is set: callbacks, observers and the first loads.
     private func connectAfterInit(defaults: UserDefaults) {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
+        _ = hapticBeat   // ACC-007-R7: a stored "on" installs the tempo observer before any visual starts
         osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
@@ -693,6 +706,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectSceneLock()   // SCN-015
         connectSceneCompare()   // SCN-009 (after the snapshots, the history and the lock)
         connectSnapshotBatch()   // REC-002 (after the snapshots and Compare)
+        connectOfflineExport()   // REC-013
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5

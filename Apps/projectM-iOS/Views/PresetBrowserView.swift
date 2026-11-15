@@ -84,6 +84,7 @@ struct PresetBrowserView: View {
                 }
             }
             .collectionsAlert(presets)
+            .modifier(PresetNotesNoticeAlert(presets: presets))   // PRE-011-R2
             // PRE-003-R6: saved tags set aside or repaired, said once.
             .alert("Preset tags", isPresented: Binding(get: { presets.tagsNotice != nil },
                                                        set: { (shown: Bool) in if !shown { presets.dismissTagsNotice() } })) {
@@ -286,6 +287,8 @@ struct PresetRow: View {
     @State private var tagging = false
     /// PRE-016: the Adjust Parameters sheet.
     @State private var adjusting = false
+    /// PRE-011: the Note sheet.
+    @State private var noting = false
     /// PRE-015: duplicating and editing; absent outside the browser.
     @Environment(UserPresetsCoordinator.self) private var userPresets: UserPresetsCoordinator?
     @State private var editing: UserPreset?
@@ -332,6 +335,7 @@ struct PresetRow: View {
             .accessibilityIdentifier("preset:\(preset.name)")
             .accessibilityAction(named: "Add to Collection") { addingToCollection = true }
             .accessibilityAction(named: "Tags") { tagging = true }   // PRE-003-R11
+            .accessibilityAction(named: "Note") { noting = true }   // PRE-011-R3
             // ACC-004-R3: favoriting without finding the separate star.
             .accessibilityAction(named: favoriteAction) {
                 presets.toggleFavoriteAnnounced(preset)
@@ -389,6 +393,7 @@ struct PresetRow: View {
         .contextMenu { menuItems(editable: editable) }
         .sheet(isPresented: $addingToCollection) { AddToCollectionSheet(presets: presets, preset: preset) }
         .sheet(isPresented: $tagging) { PresetTagsView(presets: presets, preset: preset) }
+        .sheet(isPresented: $noting) { PresetNoteView(presets: presets, preset: preset) }   // PRE-011
         .modifier(PresetOverridesSheet(isPresented: $adjusting, presets: presets, preset: preset))   // PRE-016
         .sheet(item: $editing) { record in
             if let userPresets { UserPresetEditorView(preset: record, userPresets: userPresets) }
@@ -408,6 +413,7 @@ struct PresetRow: View {
                 tagLine   // PRE-003
             }
             Spacer()
+            noteIndicator   // PRE-011-R4
             if presets.isFlagged(preset) {
                 // ACC-002-R7: a symbol and words, never color alone.
                 Label("May flash", systemImage: "exclamationmark.triangle")
@@ -437,6 +443,8 @@ struct PresetRow: View {
         Button { addingToCollection = true } label: { Label("Add to Collection…", systemImage: "folder.badge.plus") }
         Button { tagging = true } label: { Label("Tags…", systemImage: "tag") }
             .accessibilityIdentifier("presetTagsAction")
+        Button { noting = true } label: { Label("Note…", systemImage: "note.text") }   // PRE-011-R3
+            .accessibilityIdentifier("presetNoteAction")
         if PresetOverridesSheet.canAdjust(preset, presets: presets) {   // PRE-016-R12
             Button { adjusting = true } label: { Label("Adjust Parameters…", systemImage: "slider.horizontal.3") }
                 .accessibilityIdentifier("adjustPresetParameters")
@@ -529,6 +537,16 @@ struct PresetRow: View {
     }
 
     /// PRE-003: "Calm · Slow" under the author line when the preset has tags (VoiceOver hears them in the row label).
+    /// PRE-011-R4: a symbol when the preset has a note (the row label says ", has note").
+    @ViewBuilder private var noteIndicator: some View {
+        if presets.hasNote(preset) {
+            Image(systemName: "note.text")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+                .accessibilityIdentifier("presetNoteIndicator:\(preset.name)")
+        }
+    }
+
     @ViewBuilder private var tagLine: some View {
         let list: [String] = presets.tags(of: preset)
         if !list.isEmpty {

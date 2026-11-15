@@ -50,6 +50,7 @@ final class PresetIntegrityTests: XCTestCase {
             favorites: ["user/clean", "user/gone-favorite", "included/a.milk"],
             tags: ["user/gone-tag", "user/broken"],
             overrides: ["user/gone-adjusted", "user/held"],
+            notes: ["user/gone-noted", "user/clean"],   // PRE-011-R8
             collections: [.init(id: "C1", name: "Party", presetIDs: ["user/held", "user/gone-collected", "included/a.milk"])],
             recents: ["user/gone-recent", "user/lost"])
         let library = UserPresetLibrary(directory: directory)
@@ -63,8 +64,8 @@ final class PresetIntegrityTests: XCTestCase {
         let broken = try await brokenLibrary()
         let report = PresetIntegrityScanner.scan(inventory: await broken.library.integrityInventory(), references: broken.references,
                                                  isBuiltIn: Self.builtIn)
-        XCTAssertEqual(report.issues.count, 8, report.issues.map(\.id).joined(separator: "\n"))
-        XCTAssertEqual(Set(report.issues.map(\.id)).count, 8, "each issue once")
+        XCTAssertEqual(report.issues.count, 9, report.issues.map(\.id).joined(separator: "\n"))
+        XCTAssertEqual(Set(report.issues.map(\.id)).count, 9, "each issue once")
         XCTAssertFalse(report.incomplete)
         XCTAssertEqual(report.presetsChecked, 4, "quarantined records are not read")
 
@@ -91,7 +92,7 @@ final class PresetIntegrityTests: XCTestCase {
 
         let dangling = report.issues(of: .danglingReference)
         let byStore: [PresetReferenceStore: String] = Dictionary(uniqueKeysWithValues: dangling.map { ($0.store!, $0.presetID) })
-        XCTAssertEqual(byStore, [.favorites: "user/gone-favorite", .tags: "user/gone-tag", .overrides: "user/gone-adjusted",
+        XCTAssertEqual(byStore, [.favorites: "user/gone-favorite", .tags: "user/gone-tag", .overrides: "user/gone-adjusted", .notes: "user/gone-noted",
                                  .collections: "user/gone-collected", .recents: "user/gone-recent"])
         XCTAssertTrue(dangling.allSatisfy { $0.actions == [.removeReference] && $0.isSafe })
         let collection = try XCTUnwrap(dangling.first { $0.store == .collections })
@@ -99,7 +100,8 @@ final class PresetIntegrityTests: XCTestCase {
         XCTAssertEqual(collection.title(of: .removeReference), "Remove from Collection")
         XCTAssertEqual(collection.title, "“Party” names a preset that no longer exists")
         XCTAssertEqual(dangling.first { $0.store == .favorites }?.title(of: .removeReference), "Remove from Favorites")
-        XCTAssertEqual(report.summary, "Found 8 problems.")
+        XCTAssertEqual(report.summary, "Found 9 problems.")
+        XCTAssertEqual(dangling.first { $0.store == .notes }?.title(of: .removeReference), "Remove Note")
 
         // Applying the safe fixes (the stores without those IDs) resolves every dangling reference; the
         // other three stay until the user acts.
@@ -108,6 +110,7 @@ final class PresetIntegrityTests: XCTestCase {
         fixed.favorites.removeAll { gone.contains($0) }
         fixed.tags.removeAll { gone.contains($0) }
         fixed.overrides.removeAll { gone.contains($0) }
+        fixed.notes.removeAll { gone.contains($0) }
         fixed.collections[0].presetIDs.removeAll { gone.contains($0) }
         fixed.recents = RecentPresetHistory(ids: fixed.recents).removing(gone).ids
         let again = PresetIntegrityScanner.scan(inventory: await broken.library.integrityInventory(), references: fixed,

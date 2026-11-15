@@ -11,6 +11,7 @@
 //   preset-tags         → canonical PresetTagsFile bytes (PRE-003); absent when there are none
 //   preset-overrides    → canonical PresetOverridesFile bytes (PRE-016); absent when there are none
 //   smart-collections   → canonical PresetSmartCollectionsFile bytes (PRE-008); absent when there are none
+//   preset-notes        → canonical PresetNotesFile bytes (PRE-011); absent when there are none
 //   palettes            → canonical PaletteFile bytes (UIX-011); absent when there are no user palettes
 //   setting/<key>       → the typed value's canonical JSON (favorites and the last preset included)
 //   photo/<name>        → the file's bytes
@@ -43,6 +44,9 @@ public struct LibraryRecords: Sendable, Equatable, CustomStringConvertible {
         }
         if let overrides = contents.presetOverrides, !overrides.isEmpty, let bytes = try? PresetOverridesFile.encode(overrides) {
             map["preset-overrides"] = PortableSHA256.hex(bytes)
+        }
+        if let notes = contents.presetNotes, !notes.isEmpty, let bytes = try? PresetNotesFile.encode(notes) {
+            map["preset-notes"] = PortableSHA256.hex(bytes)
         }
         if let smart = contents.smartCollections, !smart.isEmpty, let bytes = try? PresetSmartCollectionsFile(smartCollections: smart).encode() {
             map["smart-collections"] = PortableSHA256.hex(bytes)

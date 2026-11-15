@@ -140,6 +140,15 @@ final class PresetCoordinator {
     var smartVersion = 0
     @ObservationIgnored let smartStore: PresetSmartCollectionStore
 
+    /// PRE-011: bumped on every note change so views refresh.
+    var notesVersion = 0
+    /// PRE-011-R2: why the last note change was refused or not saved (shown in the note editor).
+    var notesMessage: String?
+    /// PRE-011-R2: set once when the saved notes were set aside or repaired.
+    var notesNotice: String?
+    /// PRE-011: the user's private preset notes. Never read by any diagnostics path (PRE-011-R6).
+    @ObservationIgnored let noteStore: PresetNoteStore
+
     /// PRE-003: bumped on every tag change so views refresh.
     var tagsVersion = 0
     /// PRE-003-R8: the browser's selected tag chips (AND), in memory only.
@@ -172,8 +181,11 @@ final class PresetCoordinator {
     @ObservationIgnored private var scopeAnnouncer: ((String) -> Void)?
 
     init(store: FavoritesStore, settings: AppSettings, loader: any PresetLoading, collections: PresetCollectionStore,
-         tags: PresetTagStore? = nil, smart: PresetSmartCollectionStore? = nil) {
+         tags: PresetTagStore? = nil, smart: PresetSmartCollectionStore? = nil, notes: PresetNoteStore? = nil) {
         self.store = store
+        noteStore = notes ?? PresetNoteStore(directory: FileManager.default.temporaryDirectory
+            .appendingPathComponent("PresetNotes-\(UUID().uuidString)", isDirectory: true))   // PRE-011: tests without notes
+        notesNotice = Self.notesNoticeText(noteStore.loadNotice)
         smartStore = smart ?? PresetSmartCollectionStore(directory: FileManager.default.temporaryDirectory
             .appendingPathComponent("PresetSmart-\(UUID().uuidString)", isDirectory: true))   // PRE-008: tests without smart collections
         collectionStore = collections
@@ -297,7 +309,7 @@ final class PresetCoordinator {
     /// ACC-002-R7: a row's VoiceOver label, with ", may flash" for a flagged preset.
     func rowLabel(_ preset: IndexedPreset, locked: Bool) -> String {
         "\(preset.name), by \(preset.author)\(locked ? ", locked" : "")\(preset == current ? ", current preset" : "")"
-            + (isFlagged(preset) ? ", \(Self.mayFlashLabel)" : "") + tagsLabelSuffix(preset)
+            + (isFlagged(preset) ? ", \(Self.mayFlashLabel)" : "") + tagsLabelSuffix(preset) + noteLabelSuffix(preset)
             + (preset == audition?.showing ? Self.previewingLabel : "")   // PRE-010-R3
     }
 

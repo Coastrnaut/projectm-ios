@@ -42,7 +42,8 @@ final class LibraryBackupAppTests: XCTestCase {
                PowerProfileSetting.key]   // PERF-008
             + RecordingQualitySetting.aspectKeys   // REC-014-R7 (excluded: this device's screen and memory)
             + RecentPresetsStore.allKeys   // PRE-006-R7
-            + OSCPeersCoordinator.allKeys)   // OSC-008-R10
+            + OSCPeersCoordinator.allKeys   // OSC-008-R10
+            + HapticBeatCoordinator.allKeys)   // ACC-007-R8
         let included = Set(LibrarySettingsPolicy.includedKeys)
         let excluded = Set(LibrarySettingsPolicy.excludedKeys)
         XCTAssertEqual(included.subtracting(appKeys), [], "every included key is a key the app stores")

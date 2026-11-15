@@ -271,6 +271,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         } else {
             presets?.pruneTags(preset.id)   // PRE-003-R7: its tags go with it
             presets?.overrides?.prune(preset.id)   // PRE-016-R16: and its adjustments
+            presets?.pruneNote(preset.id)   // PRE-011-R8: and its note
         }
         await refresh()
     }

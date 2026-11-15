@@ -68,7 +68,7 @@ public enum PresetIntegrityScanner {
             return true
         }
         let flat: [(PresetReferenceStore, [String])] = [(.favorites, references.favorites), (.tags, references.tags),
-                                                        (.overrides, references.overrides)]
+                                                        (.overrides, references.overrides), (.notes, references.notes)]
         outer: for (store, ids) in flat {
             for id in ids where !visit(id, store) { break outer }
         }

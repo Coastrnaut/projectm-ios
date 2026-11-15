@@ -29,8 +29,9 @@ public final class TempoSubscriptionReader: @unchecked Sendable {
         scratch.deallocate()
     }
 
-    /// Takes everything published since the last poll; returns the current estimate.
-    public func poll() -> TempoEstimate? {
+    /// Takes everything published since the last poll; returns the current estimate. `onEvent` sees each
+    /// drained event in ID order (ACC-007: haptic beat pulses), on the caller's thread.
+    public func poll(onEvent: ((AnalysisEvent) -> Void)? = nil) -> TempoEstimate? {
         // Items apply in ID order, so a frame read before a session marker cannot bring back the
         // tempo the marker cleared (IDs are the bus's publication order, ANL-016-R4).
         var frame = subscription.latestFrame(into: scratch, capacity: AnalysisSubscription.maximumBands)
@@ -40,6 +41,7 @@ public final class TempoSubscriptionReader: @unchecked Sendable {
                 frame = nil
             }
             tracker.observe(event)
+            onEvent?(event)
         }
         if let frame { tracker.observe(frame) }
         return tracker.estimate
