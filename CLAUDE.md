@@ -140,6 +140,21 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   Mode on): D1 iPhone 15 `iPhone15,4` iOS 27.0.1 (reference), D2 iPad Pro M5 `iPad17,3`
   iPadOS 27.2, D3 iPad A16 `iPad15,7` iPadOS 26.5.
 
+## Autonomous roadmap run: status (2026-11-15)
+
+- **Every implementation row of `docs/FEATURE_ROADMAP_AUTONOMOUS.md` is integrated** (324 integrated, 1 skipped as
+  existing); `scripts/autonomous/orchestrator.py next` reports the run finished. QA-011 is `awaiting_final_device`.
+- **Open, owner present:** the final device stage. Run the scripted matrix on D1, D2 and D3
+  (`python3 scripts/run_device_matrix.py --device D1`, then `verify` the record; same for D2, D3), then the 13
+  sessions B01-B13 in `docs/test-reports/qa-011/owner-checklist.md` (247 open `{device}`/`{owner}` tasks, about
+  28 h of hands-on time). Watch `autorun-sc009` first: on the simulator it stalls at "In-App Playback ·
+  Interrupted" and writes no report (cause not found; `docs/test-reports/final-device-matrix.md`).
+- **Release evidence:** `python3 scripts/release_manifest.py build` writes `docs/release/evidence-manifest.json`
+  for HEAD; `verify` rechecks every hash. Committed for commit a59818dd: release not ready (no device records yet).
+  Rebuild it after the device records are committed (QA-012-T08).
+- Since 2026-11-15 the fault-injection tests are `#if DEBUG`, so the Compositor and ANGLERendering test bundles
+  build in Release for the GPU benches.
+
 ## Moving to the Mac Studio (2026-11-12)
 
 Development is moving from the first project Mac to the owner's Mac Studio. `SETUP.md` is the
