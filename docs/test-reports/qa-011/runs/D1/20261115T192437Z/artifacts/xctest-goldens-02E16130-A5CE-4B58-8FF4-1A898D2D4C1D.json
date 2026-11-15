@@ -1,0 +1,240 @@
+{
+  "cycles" : 6,
+  "dwells" : [
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 0,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 294912,
+      "checkedOutTextures" : 3,
+      "cycle" : 0,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 0,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 1,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 294912,
+      "checkedOutTextures" : 3,
+      "cycle" : 1,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 1,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 2,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 294912,
+      "checkedOutTextures" : 3,
+      "cycle" : 2,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 2,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 3,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 294912,
+      "checkedOutTextures" : 3,
+      "cycle" : 3,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 3,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 4,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 294912,
+      "checkedOutTextures" : 3,
+      "cycle" : 4,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 4,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 5,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 294912,
+      "checkedOutTextures" : 3,
+      "cycle" : 5,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 196608,
+      "checkedOutTextures" : 2,
+      "cycle" : 5,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    }
+  ],
+  "errorCount" : 0,
+  "errors" : [
+
+  ],
+  "frames" : 540,
+  "height" : 96,
+  "memorySource" : "deviceAllocatedSize",
+  "name" : "qa006-leak-deviceTexturePerCycle",
+  "platform" : "iOS",
+  "release" : {
+    "checkedOutTextures" : 0,
+    "liveObjects" : 0
+  },
+  "samples" : [
+    {
+      "cycle" : 0,
+      "frames" : 90,
+      "memoryEndBytes" : 7323648,
+      "memoryHighWaterBytes" : 7782400,
+      "poolLiveBytes" : 589824,
+      "poolMisses" : 6,
+      "processFootprintBytes" : 133449688
+    },
+    {
+      "cycle" : 1,
+      "frames" : 90,
+      "memoryEndBytes" : 7438336,
+      "memoryHighWaterBytes" : 7897088,
+      "poolLiveBytes" : 589824,
+      "poolMisses" : 6,
+      "processFootprintBytes" : 133564376
+    },
+    {
+      "cycle" : 2,
+      "frames" : 90,
+      "memoryEndBytes" : 7553024,
+      "memoryHighWaterBytes" : 8011776,
+      "poolLiveBytes" : 589824,
+      "poolMisses" : 6,
+      "processFootprintBytes" : 133597144
+    },
+    {
+      "cycle" : 3,
+      "frames" : 90,
+      "memoryEndBytes" : 7667712,
+      "memoryHighWaterBytes" : 8126464,
+      "poolLiveBytes" : 589824,
+      "poolMisses" : 6,
+      "processFootprintBytes" : 134023128
+    },
+    {
+      "cycle" : 4,
+      "frames" : 90,
+      "memoryEndBytes" : 7782400,
+      "memoryHighWaterBytes" : 8241152,
+      "poolLiveBytes" : 589824,
+      "poolMisses" : 6,
+      "processFootprintBytes" : 134121432
+    },
+    {
+      "cycle" : 5,
+      "frames" : 90,
+      "memoryEndBytes" : 7897088,
+      "memoryHighWaterBytes" : 8355840,
+      "poolLiveBytes" : 589824,
+      "poolMisses" : 6,
+      "processFootprintBytes" : 134252504
+    }
+  ],
+  "settings" : {
+    "cutEvery" : "3",
+    "dwellFrames" : "30",
+    "frameIntervalNanoseconds" : "16666667",
+    "leak" : "deviceTexturePerCycle",
+    "reduceFlashing" : "on",
+    "renderCaching" : "on",
+    "scenes" : "photo-gradient,spectrum-circular,material-plasma",
+    "seed" : "6006",
+    "transitionSeconds" : "0.25"
+  },
+  "simulatedSeconds" : 9.00000018,
+  "switches" : 17,
+  "tolerance" : {
+    "boundFloorBytes" : 2097152,
+    "boundFraction" : 0.1,
+    "maxLiveScenesAtDwellEnd" : 1,
+    "minimumMeasuredCycles" : 3,
+    "slopeFloorBytes" : 65536,
+    "slopeFraction" : 0.005,
+    "warmUpCycles" : 2
+  },
+  "verdict" : {
+    "baselineMismatches" : [
+
+    ],
+    "boundBytes" : 9994240,
+    "errorCount" : 0,
+    "failedRules" : [
+      "memorySlope"
+    ],
+    "maxMeasuredHighWaterBytes" : 8355840,
+    "measuredCycles" : 4,
+    "outcome" : "fail",
+    "slopeBytesPerCycle" : 114688,
+    "slopeLimitBytesPerCycle" : 65536,
+    "warmUpHighWaterBytes" : 7897088
+  },
+  "wallSeconds" : 1.3082839250564575,
+  "width" : 128
+}

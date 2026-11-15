@@ -1,0 +1,197 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "1a9a1724869813ac82890fa16b434b93ac6ff54b",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3246643,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T192437Z/logs/xctest-goldens.log",
+          "sha256": "2d24b26902db62a15dfe35029481c4ed820051928b3afb0ee150f4cf858903a4"
+        },
+        {
+          "bytes": 532849,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T192437Z/xcresult/xctest-goldens.xcresult",
+          "sha256": "780a0786c4ffa6670f17ddb1771905b3929ecda798c38de548ec5aae6922c123"
+        },
+        {
+          "bytes": 5516,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T192437Z/artifacts/xctest-goldens-02E16130-A5CE-4B58-8FF4-1A898D2D4C1D.json",
+          "sha256": "4e3d6c4e25a930b0565eaba3590d42de86a48b168f6826da4151734ddd45ca23"
+        },
+        {
+          "bytes": 6408,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T192437Z/artifacts/xctest-goldens-09F7A6A6-B271-431C-B1B3-6565C03F4BD2.json",
+          "sha256": "6ce6713f95c11fbc93cebda3ef65eb15cc5570b7b57bf7dd6b75313b1802d9d9"
+        },
+        {
+          "bytes": 24613,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T192437Z/artifacts/xctest-goldens-6D55665B-4D83-46A1-AB15-EE56FE2B2A7B.json",
+          "sha256": "bded25238e3e33449da0f82440b9771ddedba1d276399cb2ec94136dd2260350"
+        }
+      ],
+      "closes": [
+        "QA-003-T17"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T192437Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T192437Z/xcresult/xctest-goldens.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:RenderGoldensDeviceTests",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 0 failures, 3 skipped; exit 65; QA-006 qa006-scene-soak [iOS, deviceAllocatedSize]: pass; cycles measured 10; slope 0 B/cycle (limit 65536); high-water 7880704 (warm-up 7880704, bound 9977856) / QA-006 qa006-scene-soak cycle 0: high-water 7782400, end 7766016, pool live 786432, misses 8, footprint 128026584 / QA-006 qa006-scene-soak cycle 1: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 128403416 / QA-006 qa006-scene-soak cycle 2: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 128665560 / QA-006 qa006-scene-soak cycle 3: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 128944088 / QA-006 qa006-scene-soak cycle 4: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 129222616",
+      "durationSeconds": 88.4,
+      "id": "xctest-goldens",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "fail",
+      "title": "RenderGoldens suite on the device GPU (goldens report pending without a device golden class; short soak included)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 297020,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T192437Z/logs/xctest-soak-600.log",
+          "sha256": "9d62776a7f215b1f9ba966bc1bda49460bb8c0234bb7e26679aa555256d975a5"
+        },
+        {
+          "bytes": 58447,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T192437Z/xcresult/xctest-soak-600.xcresult",
+          "sha256": "ce9763e32ab553477f815d959450da7add7dacdaf8e3df7abdd6bad36b723644"
+        },
+        {
+          "bytes": 235220,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T192437Z/artifacts/xctest-soak-600-9BA66BC4-A210-448A-A0A4-DE062BE08059.json",
+          "sha256": "64f5e770069adbfca7ebcb78099ca63d68231bb8791286afd1f3be6d675d39b5"
+        }
+      ],
+      "closes": [
+        "QA-006-T13"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_QA006_SOAK_SECONDS=600",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T192437Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T192437Z/xcresult/xctest-soak-600.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "1200",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:RenderGoldensDeviceTests/RenderSoakTests/testOnDemandLongSoak",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 0 failures, 0 skipped; QA-006 qa006-scene-soak-600s [iOS, deviceAllocatedSize]: pass; cycles measured 190; slope 0 B/cycle (limit 65536); high-water 2375680 (warm-up 2375680, bound 44 / QA-006 qa006-scene-soak-600s cycle 0: high-water 2277376, end 2260992, pool live 786432, misses 8, footprint 63653728 / QA-006 qa006-scene-soak-600s cycle 1: high-water 2375680, end 2260992, pool live 786432, misses 8, footprint 64243552 / QA-006 qa006-scene-soak-600s cycle 2: high-water 2375680, end 2260992, pool live 786432, misses 8, footprint 64718688 / QA-006 qa006-scene-soak-600s cycle 3: high-water 2375680, end 2260992, pool live 786432, misses 8, footprint 65144672 / QA-006 qa006-scene-soak-600s cycle 4: high-water 2375680, end 2260992, pool live 786432, misses 8, footprint 65570656",
+      "durationSeconds": 101.8,
+      "id": "xctest-soak-600",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "QA-006 long scene soak, 600 s simulated"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-15T19:27:48Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "e0701c1345ecf97d39a9f3f37b9615a0eae6d45a7ab92e1c29c14e5e87544eba",
+  "runId": "20261115T192437Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-15T19:24:37Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 1,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}

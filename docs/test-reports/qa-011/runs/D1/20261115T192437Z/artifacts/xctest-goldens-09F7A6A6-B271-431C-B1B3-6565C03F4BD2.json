@@ -1,0 +1,250 @@
+{
+  "cycles" : 6,
+  "dwells" : [
+    {
+      "checkedOutBytes" : 311296,
+      "checkedOutTextures" : 3,
+      "cycle" : 0,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 409600,
+      "checkedOutTextures" : 4,
+      "cycle" : 0,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 311296,
+      "checkedOutTextures" : 3,
+      "cycle" : 0,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 425984,
+      "checkedOutTextures" : 4,
+      "cycle" : 1,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 524288,
+      "checkedOutTextures" : 5,
+      "cycle" : 1,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 425984,
+      "checkedOutTextures" : 4,
+      "cycle" : 1,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 540672,
+      "checkedOutTextures" : 5,
+      "cycle" : 2,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 638976,
+      "checkedOutTextures" : 6,
+      "cycle" : 2,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 540672,
+      "checkedOutTextures" : 5,
+      "cycle" : 2,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 655360,
+      "checkedOutTextures" : 6,
+      "cycle" : 3,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 753664,
+      "checkedOutTextures" : 7,
+      "cycle" : 3,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 655360,
+      "checkedOutTextures" : 6,
+      "cycle" : 3,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 770048,
+      "checkedOutTextures" : 7,
+      "cycle" : 4,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 868352,
+      "checkedOutTextures" : 8,
+      "cycle" : 4,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 770048,
+      "checkedOutTextures" : 7,
+      "cycle" : 4,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    },
+    {
+      "checkedOutBytes" : 884736,
+      "checkedOutTextures" : 8,
+      "cycle" : 5,
+      "liveScenes" : 1,
+      "scene" : "photo-gradient"
+    },
+    {
+      "checkedOutBytes" : 983040,
+      "checkedOutTextures" : 9,
+      "cycle" : 5,
+      "liveScenes" : 1,
+      "scene" : "spectrum-circular"
+    },
+    {
+      "checkedOutBytes" : 884736,
+      "checkedOutTextures" : 8,
+      "cycle" : 5,
+      "liveScenes" : 1,
+      "scene" : "material-plasma"
+    }
+  ],
+  "errorCount" : 0,
+  "errors" : [
+
+  ],
+  "frames" : 540,
+  "height" : 96,
+  "memorySource" : "deviceAllocatedSize",
+  "name" : "qa006-leak-pooledTexturePerCycle",
+  "platform" : "iOS",
+  "release" : {
+    "checkedOutTextures" : 6,
+    "liveObjects" : 0
+  },
+  "samples" : [
+    {
+      "cycle" : 0,
+      "frames" : 90,
+      "memoryEndBytes" : 7585792,
+      "memoryHighWaterBytes" : 8044544,
+      "poolLiveBytes" : 704512,
+      "poolMisses" : 7,
+      "processFootprintBytes" : 134399960
+    },
+    {
+      "cycle" : 1,
+      "frames" : 90,
+      "memoryEndBytes" : 7700480,
+      "memoryHighWaterBytes" : 8159232,
+      "poolLiveBytes" : 819200,
+      "poolMisses" : 8,
+      "processFootprintBytes" : 134809560
+    },
+    {
+      "cycle" : 2,
+      "frames" : 90,
+      "memoryEndBytes" : 7815168,
+      "memoryHighWaterBytes" : 8273920,
+      "poolLiveBytes" : 933888,
+      "poolMisses" : 9,
+      "processFootprintBytes" : 134957016
+    },
+    {
+      "cycle" : 3,
+      "frames" : 90,
+      "memoryEndBytes" : 7929856,
+      "memoryHighWaterBytes" : 8388608,
+      "poolLiveBytes" : 1048576,
+      "poolMisses" : 10,
+      "processFootprintBytes" : 135088088
+    },
+    {
+      "cycle" : 4,
+      "frames" : 90,
+      "memoryEndBytes" : 8044544,
+      "memoryHighWaterBytes" : 8503296,
+      "poolLiveBytes" : 1163264,
+      "poolMisses" : 11,
+      "processFootprintBytes" : 134957016
+    },
+    {
+      "cycle" : 5,
+      "frames" : 90,
+      "memoryEndBytes" : 8159232,
+      "memoryHighWaterBytes" : 8617984,
+      "poolLiveBytes" : 1277952,
+      "poolMisses" : 12,
+      "processFootprintBytes" : 135399384
+    }
+  ],
+  "settings" : {
+    "cutEvery" : "3",
+    "dwellFrames" : "30",
+    "frameIntervalNanoseconds" : "16666667",
+    "leak" : "pooledTexturePerCycle",
+    "reduceFlashing" : "on",
+    "renderCaching" : "on",
+    "scenes" : "photo-gradient,spectrum-circular,material-plasma",
+    "seed" : "6006",
+    "transitionSeconds" : "0.25"
+  },
+  "simulatedSeconds" : 9.00000018,
+  "switches" : 17,
+  "tolerance" : {
+    "boundFloorBytes" : 2097152,
+    "boundFraction" : 0.1,
+    "maxLiveScenesAtDwellEnd" : 1,
+    "minimumMeasuredCycles" : 3,
+    "slopeFloorBytes" : 65536,
+    "slopeFraction" : 0.005,
+    "warmUpCycles" : 2
+  },
+  "verdict" : {
+    "baselineMismatches" : [
+      "photo-gradient cycle 3: 6 textures \/ 655360 B checked out, baseline 5 \/ 540672 B",
+      "spectrum-circular cycle 3: 7 textures \/ 753664 B checked out, baseline 6 \/ 638976 B",
+      "material-plasma cycle 3: 6 textures \/ 655360 B checked out, baseline 5 \/ 540672 B",
+      "photo-gradient cycle 4: 7 textures \/ 770048 B checked out, baseline 5 \/ 540672 B",
+      "spectrum-circular cycle 4: 8 textures \/ 868352 B checked out, baseline 6 \/ 638976 B",
+      "material-plasma cycle 4: 7 textures \/ 770048 B checked out, baseline 5 \/ 540672 B",
+      "photo-gradient cycle 5: 8 textures \/ 884736 B checked out, baseline 5 \/ 540672 B",
+      "spectrum-circular cycle 5: 9 textures \/ 983040 B checked out, baseline 6 \/ 638976 B",
+      "material-plasma cycle 5: 8 textures \/ 884736 B checked out, baseline 5 \/ 540672 B"
+    ],
+    "boundBytes" : 10256384,
+    "errorCount" : 0,
+    "failedRules" : [
+      "memorySlope",
+      "poolBaseline",
+      "releaseNotEmpty"
+    ],
+    "maxMeasuredHighWaterBytes" : 8617984,
+    "measuredCycles" : 4,
+    "outcome" : "fail",
+    "slopeBytesPerCycle" : 114688,
+    "slopeLimitBytesPerCycle" : 65536,
+    "warmUpHighWaterBytes" : 8159232
+  },
+  "wallSeconds" : 1.2964439392089844,
+  "width" : 128
+}

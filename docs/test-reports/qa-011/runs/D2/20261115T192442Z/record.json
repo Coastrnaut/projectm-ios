@@ -1,0 +1,183 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "1a9a1724869813ac82890fa16b434b93ac6ff54b",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3184908,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261115T192442Z/logs/xctest-materials.log",
+          "sha256": "303728c11a42ba5da9187a363027bdc3029517822ea962a4864709c45c7dedec"
+        },
+        {
+          "bytes": 385369,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261115T192442Z/xcresult/xctest-materials.xcresult",
+          "sha256": "4eb03b0e1265492cb4e6242c13c0961453555ef4b2f9b410e1a23befb3175acf"
+        }
+      ],
+      "closes": [
+        "SHD-004-T20"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261115T192442Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261115T192442Z/xcresult/xctest-materials.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:MaterialsDeviceTests/MaterialVariantSwitchTests",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "5 tests, 0 failures, 0 skipped",
+      "durationSeconds": 63.7,
+      "id": "xctest-materials",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "SHD-004 material variants on the device GPU family (Detailed needs family 9; Standard fallback with the notice)"
+    },
+    {
+      "artifacts": [],
+      "closes": [],
+      "commands": [],
+      "detail": "ANGLERenderingTests/ProjectMLayerTests, ANGLERenderingTests/ClientBufferSpikeTests: no app-hosted device bundle (DeviceTests.yml)",
+      "durationSeconds": 0.0,
+      "id": "xctest-angle-layer",
+      "kind": "xctest",
+      "partOf": [
+        "CMP-001-T20"
+      ],
+      "status": "not-run",
+      "title": "CMP-001 ProjectMLayerTests and the client-buffer spike tests on the device"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 3330592,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261115T192442Z/logs/bench-shd002.log",
+          "sha256": "959b4b5a5eb297bfa08225b3216f71b5e0f9186fbd2bf175256534b181f4fca5"
+        },
+        {
+          "bytes": 260132,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261115T192442Z/xcresult/bench-shd002.xcresult",
+          "sha256": "e2e635d0635ea0fb69390cac0c39c919c12d6097cc25451c8624d684af01d27b"
+        }
+      ],
+      "closes": [
+        "SHD-002-T24"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_SHD002_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261115T192442Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261115T192442Z/xcresult/bench-shd002.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:GeneratorGraphDeviceTests/GraphCostBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "2 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D2/20261115T192442Z/xcresult/bench-shd002.xcresult / SHD002_BENCH device Apple M5 GPU: 12-node graph median 2.227999999831809 ms, max 2.7468333332762995 ms; Noise Flow median 0.9168749998025305 ms, max 0.918791666 / Build/qa-011/D2/20261115T192442Z/xcresult/bench-shd002.xcresult",
+      "durationSeconds": 129.0,
+      "id": "bench-shd002",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "SHD-002 12-node graph GPU cost (SHD002_BENCH)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-15T19:27:57Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D2",
+  "recordSha256": "6c6ed88882f0afdad7b9eb225bad7232718a0b37ad1cb4bb7762e2f66761c6db",
+  "runId": "20261115T192442Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-15T19:24:42Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 0,
+    "not-run": 1,
+    "pass": 2,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "A8C56656-AA51-5F6B-8C3C-FC8EFD709F9C",
+    "kind": "device",
+    "name": "iPad77",
+    "osBuild": "24B119",
+    "osVersion": "27.2",
+    "productType": "iPad17,3",
+    "state": "connected",
+    "udid": "00008142-001640823C22401C"
+  }
+}

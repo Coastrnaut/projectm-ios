@@ -1,0 +1,82 @@
+{
+  "build" : "2",
+  "device" : "iPad17,3",
+  "finishedAt" : "2026-11-15T19:15:11Z",
+  "fpsTimerOff" : [
+    43.998680039592138,
+    59.998200054002922,
+    59.99624023560775,
+    59.998200054002922,
+    59.998200054002922
+  ],
+  "fpsTimerOn" : [
+    59.998200053989279,
+    59.995755300321512,
+    59.997600095988581,
+    59.997600096002216,
+    59.997600095988581
+  ],
+  "frameDrops" : {
+    "outputs" : [
+      {
+        "output" : "device",
+        "skipped" : 0,
+        "stale" : 0,
+        "submitted" : 301
+      }
+    ]
+  },
+  "frameTimings" : {
+    "budget" : {
+      "clearShare" : 0.69999999999999996,
+      "cpuEstimateMs" : 4.2967499999999994,
+      "deadlineMs" : 16.666666666666668,
+      "flaggedPasses" : [
+
+      ],
+      "framesPerSecond" : 60,
+      "thresholdMs" : 13.333333333333336,
+      "thresholdShare" : 0.80000000000000004
+    },
+    "rejectedSamples" : 0,
+    "stages" : [
+      {
+        "cpuMedianMs" : 0.0071250000000000003,
+        "cpuP95Ms" : 0.008749999999999999,
+        "name" : "audio",
+        "samples" : 120
+      },
+      {
+        "cpuMedianMs" : 3.8626455000000002,
+        "cpuP95Ms" : 3.9961249999999997,
+        "name" : "render",
+        "samples" : 120
+      },
+      {
+        "cpuMedianMs" : 0.19777050000000002,
+        "cpuP95Ms" : 0.21133299999999999,
+        "name" : "output",
+        "samples" : 120
+      },
+      {
+        "cpuMedianMs" : 0.073936999999999989,
+        "cpuP95Ms" : 0.080542000000000002,
+        "name" : "present",
+        "samples" : 120
+      }
+    ],
+    "windowFrames" : 120
+  },
+  "lines" : [
+    "stages ms (median\/p95)",
+    "audio 0.01\/0.01",
+    "render 3.86\/4.00",
+    "output 0.20\/0.21",
+    "present 0.07\/0.08",
+    "gpu unavailable",
+    "budget 16.67 ms @60 fps, limit 13.33 ms (80%)",
+    "estimate cpu 4.30 ms, gpu unavailable"
+  ],
+  "systemVersion" : "27.2",
+  "visual" : "projectM"
+}

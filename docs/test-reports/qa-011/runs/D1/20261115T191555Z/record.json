@@ -1,0 +1,457 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "1a9a1724869813ac82890fa16b434b93ac6ff54b",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3647554,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T191555Z/logs/xctest-goldens.log",
+          "sha256": "109b8ec932d3253a2318a0338e73afd0a6366b2da802687c18660951db0d9380"
+        },
+        {
+          "bytes": 1758539,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T191555Z/xcresult/xctest-goldens.xcresult",
+          "sha256": "9ae2241e6290973533c9e592f48f5c898e8284899451a96fbeb5e75eb17f9494"
+        }
+      ],
+      "closes": [
+        "QA-003-T17"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T191555Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T191555Z/xcresult/xctest-goldens.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 0 failures, 16 skipped; exit 65; Packages/Compositor/Tests/CompositorTests/LayerBlendCompositeTests.swift:394: -[CompositorDeviceTests.LayerBlendComposit / Packages/Compositor/Tests/CompositorTests/LayerColorKeyCompositeTests.swift:292: -[CompositorDeviceTests.LayerColorKeyCo / Packages/Compositor/Tests/CompositorTests/LayerFitCompositeTests.swift:294: -[CompositorDeviceTests.LayerFitCompositeTes / Packages/Compositor/Tests/CompositorTests/LayerGradientCompositeTests.swift:282: -[CompositorDeviceTests.LayerGradientCo / Packages/Compositor/Tests/CompositorTests/LayerGroupCompositeTests.swift:412: -[CompositorDeviceTests.LayerGroupComposit / Packages/Compositor/Tests/CompositorTests/LayerLumaKeyCompositeTests.swift:336: -[CompositorDeviceTests.LayerLumaKeyComp",
+      "durationSeconds": 122.9,
+      "id": "xctest-goldens",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "fail",
+      "title": "RenderGoldens suite on the device GPU (goldens report pending without a device golden class; short soak included)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 272652,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T191555Z/logs/xctest-soak-600.log",
+          "sha256": "851a100e378e73d9ff0050be2aab83543ca697bef30017cc26ee833ce0355671"
+        },
+        {
+          "bytes": 49098,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T191555Z/xcresult/xctest-soak-600.xcresult",
+          "sha256": "ae13049780a29baf26cf3e12cb9161431acefa1162839359c1f096aef423f3d1"
+        }
+      ],
+      "closes": [
+        "QA-006-T13"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_QA006_SOAK_SECONDS=600",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T191555Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T191555Z/xcresult/xctest-soak-600.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "1200",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:RenderGoldensDeviceTests/RenderSoakTests/testOnDemandLongSoak",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 1 failures, 0 skipped; exit 65",
+      "durationSeconds": 17.7,
+      "id": "xctest-soak-600",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "fail",
+      "title": "QA-006 long scene soak, 600 s simulated"
+    },
+    {
+      "artifacts": [],
+      "closes": [],
+      "commands": [],
+      "detail": "ANGLERenderingTests/ProjectMLayerTests, ANGLERenderingTests/ClientBufferSpikeTests: no app-hosted device bundle (DeviceTests.yml)",
+      "durationSeconds": 0.0,
+      "id": "xctest-angle-layer",
+      "kind": "xctest",
+      "partOf": [
+        "CMP-001-T20"
+      ],
+      "status": "not-run",
+      "title": "CMP-001 ProjectMLayerTests and the client-buffer spike tests on the device"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 3327844,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T191555Z/logs/bench-shd002.log",
+          "sha256": "ef5862643533afaa0a209340fac8831c155ad6f0298e567f056a7e23f121a970"
+        },
+        {
+          "bytes": 263096,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T191555Z/xcresult/bench-shd002.xcresult",
+          "sha256": "754776e53f202a90cebf9244f94b1e2df375323a9178e48342443d08ed242eaf"
+        }
+      ],
+      "closes": [
+        "SHD-002-T24"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_SHD002_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T191555Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T191555Z/xcresult/bench-shd002.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:GeneratorGraphDeviceTests/GraphCostBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "2 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D1/20261115T191555Z/xcresult/bench-shd002.xcresult / SHD002_BENCH device Apple A16 GPU: 12-node graph median 9.436291642487049 ms, max 9.734999999636784 ms; Noise Flow median 4.903666645986959 ms, max 4.9211666628 / Build/qa-011/D1/20261115T191555Z/xcresult/bench-shd002.xcresult",
+      "durationSeconds": 155.9,
+      "id": "bench-shd002",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "SHD-002 12-node graph GPU cost (SHD002_BENCH)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 264509,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T191555Z/logs/bench-cmp008.log",
+          "sha256": "94be4b1db0604a1b05e96c7915269b6ecbeb569546ca402e5ef75b123a4002a8"
+        },
+        {
+          "bytes": 45891,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp008.xcresult",
+          "sha256": "1dbec0d158b8f1efc07a5742294556b10ba4e4e63d568603b36d4ea222513df5"
+        }
+      ],
+      "closes": [
+        "CMP-008-T19"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_CMP008_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T191555Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp008.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:CompositorDeviceTests/LayerGradientCompositeTests/testGradientGPUTimeBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp008.xcresult / CMP-008 GPU time per frame, 1920 × 1080 (ms): | case | median | p95 | / CMP-008 bench: | no gradient | 3.019 | 3.406 | / CMP-008 bench: | linear, 5 stops | 5.082 | 5.211 | / CMP-008 bench: | radial, 8 stops | 6.609 | 6.747 |",
+      "durationSeconds": 23.8,
+      "id": "bench-cmp008",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "CMP-008 full-screen gradient layer GPU time (CMP008_BENCH)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 148814,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T191555Z/logs/bench-cmp009.log",
+          "sha256": "4e93ea139ade2c027278aa7be8e23cdad5742638d497874b4175c180f622eabf"
+        },
+        {
+          "bytes": 38189,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp009.xcresult",
+          "sha256": "317f0ab1fa44edead4e86fa61266232a05bb0dcb8c2e9e89480392a2ba2fea62"
+        }
+      ],
+      "closes": [
+        "CMP-009-T19"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_CMP009_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T191555Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp009.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:CompositorDeviceTests/LayerLumaKeyCompositeTests/testLumaKeyGPUTimeBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp009.xcresult / CMP-009 GPU time per frame, 1920 × 1080 (ms): | case | median | p95 | / CMP-009 bench: | no key | 3.246 | 3.496 | / CMP-009 bench: | black key | 4.830 | 5.030 | / CMP-009 bench: | black key × circle × radial | 4.663 | 6.405 |",
+      "durationSeconds": 16.8,
+      "id": "bench-cmp009",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "CMP-009 full-screen luma-keyed layer GPU time (CMP009_BENCH)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 146347,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T191555Z/logs/bench-cmp010.log",
+          "sha256": "b89c8c3183e4be592cbddb7810dba6cd43cc21ddc4a0a095f07e448c7df12320"
+        },
+        {
+          "bytes": 37958,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp010.xcresult",
+          "sha256": "a5d5aff53b36c1b31edbb5c609838c715d406f34437363f074692e2d4961d62d"
+        }
+      ],
+      "closes": [
+        "CMP-010-T19"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_CMP010_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T191555Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp010.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:CompositorDeviceTests/LayerColorKeyCompositeTests/testColorKeyGPUTimeBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D1/20261115T191555Z/xcresult/bench-cmp010.xcresult / CMP-010 GPU time per frame, 1920 × 1080 (ms): | case | median | p95 | / CMP-010 bench: | no key | 3.306 | 4.095 | / CMP-010 bench: | green key | 5.524 | 5.611 | / CMP-010 bench: | green key × black key | 5.632 | 7.023 |",
+      "durationSeconds": 16.4,
+      "id": "bench-cmp010",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "CMP-010 full-screen colour-keyed layer GPU time (CMP010_BENCH)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 146477,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T191555Z/logs/bench-expression.log",
+          "sha256": "fcc73935021140cccdc234b5d2684d63f98dd32287c4ebc9174222b88611782c"
+        },
+        {
+          "bytes": 37861,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T191555Z/xcresult/bench-expression.xcresult",
+          "sha256": "33445b2b5e8d53e67712aa03f46998a0d15d2ac24508deee2bbdc272409d549f"
+        }
+      ],
+      "closes": [
+        "SHD-010-T13"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_PARAMETER_EXPRESSION_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T191555Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T191555Z/xcresult/bench-expression.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:ExpressionDeviceTests/ExpressionCompileWorkTests/testInformationalHostCost",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "1 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D1/20261115T191555Z/xcresult/bench-expression.xcresult / SHD-010 bench add: 16 formulas, cost 2032/frame, 3309 ns/frame, 1.63 ns/unit (sink 128000.0) / SHD-010 bench sin: 8 formulas, cost 2008/frame, 2172 ns/frame, 1.08 ns/unit (sink 423.6) / SHD-010 bench pow: 9 formulas, cost 2007/frame, 3487 ns/frame, 1.74 ns/unit (sink 4631199.1) / SHD-010 bench bandMean (128 bands): 12 formulas, cost 2028/frame, 1363 ns/frame, 0.67 ns/unit (sink 34000.0)",
+      "durationSeconds": 10.2,
+      "id": "bench-expression",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "SHD-010 per-frame expression cost, Release (PARAMETER_EXPRESSION_BENCH)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-15T19:22:06Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "adcf5cfa04ace78e1f343604a16978558b3f96d9c235a0b8d5d2eb911fdc7768",
+  "runId": "20261115T191555Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-15T19:15:55Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 2,
+    "not-run": 1,
+    "pass": 5,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}

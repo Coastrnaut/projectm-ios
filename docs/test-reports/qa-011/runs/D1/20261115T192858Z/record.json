@@ -1,0 +1,135 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "1a9a1724869813ac82890fa16b434b93ac6ff54b",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3243874,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261115T192858Z/logs/xctest-goldens.log",
+          "sha256": "b1bd299388bd4730a3f37da17474ee1c15856c8381155be4496bfcd144a7e29b"
+        },
+        {
+          "bytes": 533011,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261115T192858Z/xcresult/xctest-goldens.xcresult",
+          "sha256": "7c4fd16762ee983acfc69a217ed0395c9009203a0ee945004d2b81ba40913caf"
+        },
+        {
+          "bytes": 5516,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T192858Z/artifacts/xctest-goldens-37B4F8CF-9C0A-4BEC-84FF-2BF67203D6A7.json",
+          "sha256": "43c61f45e1bc0992a795cd22e45a541b53f21bb8d2fd03b37bd71d14930a8ec5"
+        },
+        {
+          "bytes": 6408,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T192858Z/artifacts/xctest-goldens-CC1E09D8-548C-4C40-8C3F-518E92E94F5A.json",
+          "sha256": "470cc38cad7adbe06e9a5e861b382322b35fd2312a1685de4cf5b60ef27b3049"
+        },
+        {
+          "bytes": 24613,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T192858Z/artifacts/xctest-goldens-F03C8C14-5B0C-4860-811D-4B593AAE7761.json",
+          "sha256": "db1952f433215ac4108b2fd980842761b41618285396d97e3e2139a06e56b012"
+        }
+      ],
+      "closes": [
+        "QA-003-T17"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261115T192858Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261115T192858Z/xcresult/xctest-goldens.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:RenderGoldensDeviceTests",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "12 tests, 0 failures, 3 skipped; QA-006 qa006-scene-soak [iOS, deviceAllocatedSize]: pass; cycles measured 10; slope 0 B/cycle (limit 65536); high-water 7880704 (warm-up 7880704, bound 9977856) / QA-006 qa006-scene-soak cycle 0: high-water 7782400, end 7766016, pool live 786432, misses 8, footprint 123996096 / QA-006 qa006-scene-soak cycle 1: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 124389312 / QA-006 qa006-scene-soak cycle 2: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 124684224 / QA-006 qa006-scene-soak cycle 3: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 124962752 / QA-006 qa006-scene-soak cycle 4: high-water 7880704, end 7766016, pool live 786432, misses 8, footprint 125241280",
+      "durationSeconds": 108.4,
+      "id": "xctest-goldens",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "RenderGoldens suite on the device GPU (goldens report pending without a device golden class; short soak included)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-15T19:30:48Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "24a4835ac2b2d9d4068bf54b985a4905461de27ec26e6f00006a675dfc07b642",
+  "runId": "20261115T192858Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-15T19:28:58Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 0,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}
