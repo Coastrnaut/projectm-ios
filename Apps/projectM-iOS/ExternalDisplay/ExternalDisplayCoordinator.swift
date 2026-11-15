@@ -37,6 +37,11 @@
 //   `pixelBudget` are pushed with the correction to every external slot, which sets its visual's
 //   display scale (pixels only, never the scene's coordinates). Deferred while a recording holds the
 //   placement, so the recording's picture size never changes.
+// * OUT-006 (spec specs/261-out-006-output-mirroring, contract C2): the output mode (Same scene or Clean
+//   output). `place()` and the mode's setter evaluate `OutputLayerRouting` for the effective target and
+//   report a change of `routesSceneOverlays` (AppCoordinator hides MED-010's logo layers while it is
+//   false). A mode change never moves the visual and never touches the audio source; it applies live,
+//   also while a recording holds the placement (one render: the recording shows what the output shows).
 import OSLog
 import PresentationLifecycle
 import SwiftUI
@@ -129,6 +134,16 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     private(set) var isRehearsing = false
     /// A settled real external display is connected.
     private(set) var hasExternalDisplay = false
+
+    // OUT-006: output mode.
+    /// The user's choice for the external output (ExternalOutputSetting sets it); applied inside the call.
+    @ObservationIgnored var outputMode: ExternalOutputMode = .default {
+        didSet { if outputMode != oldValue { routeSceneOverlays() } }
+    }
+    /// Scene overlay layers (MED-010's logo) are drawn where the visual is shown now (OUT-006-R2, R3).
+    @ObservationIgnored private(set) var routesSceneOverlays = true
+    /// Called inside the change, only when `routesSceneOverlays` changes (AppCoordinator: the logo layers).
+    @ObservationIgnored var onSceneOverlaysChange: ((Bool) -> Void)?
 
     /// `connectSettle` 0 (the default): a connect moves the visual inside the call (OUT-001-R6 tests).
     init(connectSettle: Double = 0, scheduleSettle: SettleScheduler? = nil) {
@@ -353,6 +368,26 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
                                                     pixelAspect: par)
     }
 
+    // MARK: - Output mode (OUT-006)
+
+    private func routeSceneOverlays() {
+        let routes: Bool = OutputLayerRouting.routesSceneOverlays(target: effectiveTarget, mode: outputMode)
+        guard routes != routesSceneOverlays else { return }
+        routesSceneOverlays = routes
+        log.info("scene overlays: \(routes ? "shown" : "left out (clean output)", privacy: .public)")
+        onSceneOverlaysChange?(routes)
+    }
+
+    /// "mode=<sameScene|clean> target=<device|external> overlays=<shown|hidden> externalViews=<n>" (tests,
+    /// DEBUG probe): `externalViews` counts the views in external slots (only the visual, OUT-006-R4).
+    var outputModeSummary: String {
+        let live = externalSlots.values.compactMap { (w: WeakSlot) -> VisualSlotView? in w.slot }
+        let views: Int = live.reduce(0) { (sum: Int, slot: VisualSlotView) -> Int in sum + slot.subviews.count }
+        let where_: String = showsVisualExternally ? "external" : "device"
+        let overlays: String = routesSceneOverlays ? "shown" : "hidden"
+        return "mode=" + outputMode.rawValue + " target=" + where_ + " overlays=" + overlays + " externalViews=\(views)"
+    }
+
     // MARK: - Output blackout (OUT-010)
 
     /// The user wants the output black (the control offers Restore).
@@ -432,6 +467,7 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
             showsVisualExternally = external
             log.info("visualization target: \(external ? "external display" : "device", privacy: .public)")
         }
+        routeSceneOverlays()   // OUT-006: before the visual moves, so its first frame there is right
         for slot in externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }) where slot !== targetSlot {
             slot.removeVisuals()
         }

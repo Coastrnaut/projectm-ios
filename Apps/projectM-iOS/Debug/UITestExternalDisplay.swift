@@ -14,6 +14,8 @@
 // ("fit=… shape=… par=… frame=W×H bars=…", or "none" while the visual is on the device).
 // OUT-003-T08: the hidden `externalResolution` probe reads the visual's resolved output on the fake display
 // ("mode=… scale=… drawable=W×H clamped=…", or "none" while the visual is on the device).
+// OUT-006-T09: the hidden `externalOutputMode` probe reads the output mode's routing
+// ("mode=… target=… overlays=… externalViews=…").
 #if DEBUG
 import PresentationLifecycle
 import SwiftUI
@@ -84,6 +86,11 @@ struct UITestExternalDisplayPanel: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("externalResolution")
                     .accessibilityValue(resolution)
+                let mode: String = coordinator.outputModeSummary
+                Text(mode)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalOutputMode")
+                    .accessibilityValue(mode)
             }
         }
         .font(.caption2)
