@@ -29,6 +29,9 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
   * PRE-011-R6 (private preset notes): no diagnostics source (Packages/Diagnostics, Apps/CaptureLab, the
     app's automation reports and the PERF-012 performance report sources; NOTES_PRIVATE_SOURCES) may name
     the notes store (`PresetNote…`, `noteStore`, `notes.json`), so notes can never reach a diagnostics export.
+  * SHOW-012-R11 (private cue notes): only the show model (Packages/ShowControl), the show editor views, ShowCoordinator
+    and test sources may name a cue's note (`operatorNote`, `ShowCueNote`; CUE_NOTES_ALLOWED), so no output, HUD, OSC,
+    caption, diagnostics or report source can read it.
   * Research R-16: no entitlements or background modes in project.yml, in any YAML key form
     (plain, quoted, or flow style; ADR-0001 owner ruling 13). YAML comments are ignored.
   * ADR-0001 Decision 6, the one entitlement exception: project.yml may set
@@ -160,6 +163,28 @@ NOTES_PRIVATE_SOURCES = [
 ]
 
 
+# SHOW-012-R11 (research SHOW-012-D6): the private cue note may be named only here (and in test sources).
+CUE_NOTE = re.compile(r"\boperatorNote\b|\bShowCueNote\b")
+CUE_NOTES_ALLOWED = [
+    ROOT / "Packages" / "ShowControl",
+    ROOT / "Apps" / "projectM-iOS" / "Coordinators" / "ShowCoordinator.swift",
+    ROOT / "Apps" / "projectM-iOS" / "Views" / "ShowEditorView.swift",
+    ROOT / "Apps" / "projectM-iOS" / "Views" / "CueNoteView.swift",
+]
+TEST_FOLDER_NAMES = {"Tests", "UITests"}
+
+
+def is_cue_note_allowed(path: Path) -> bool:
+    resolved = path.resolve()
+    if TEST_FOLDER_NAMES.intersection(resolved.parts):
+        return True
+    for root in CUE_NOTES_ALLOWED:
+        root = root.resolve()
+        if resolved == root or root in resolved.parents:
+            return True
+    return False
+
+
 def is_notes_private_source(path: Path) -> bool:
     resolved = path.resolve()
     for root in NOTES_PRIVATE_SOURCES:
@@ -249,6 +274,9 @@ def check_file(path: Path) -> list[str]:
     if NOTES_STORE.search(text) and is_notes_private_source(path):
         found.append(f"{path}: preset notes in a diagnostics source (PRE-011-R6): notes must never reach "
                      "a diagnostics export")
+    if CUE_NOTE.search(text) and not is_cue_note_allowed(path):
+        found.append(f"{path}: private cue note outside the show editor (SHOW-012-R11): notes must never reach "
+                     "live output, OSC, captions, diagnostics or reports")
     if SCK_IMPORT.search(text):
         try:
             path.resolve().relative_to(SCK_ALLOWED.resolve())

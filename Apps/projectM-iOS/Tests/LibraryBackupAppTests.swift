@@ -61,7 +61,7 @@ final class LibraryBackupAppTests: XCTestCase {
         XCTAssertEqual(appKeys.subtracting(included).subtracting(excluded), [], "every app key is included or deliberately left out")
         XCTAssertEqual(appKeys.intersection(excluded),
                        Set<String>([AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, RecordingAudioSetting.includeMicrophoneKey,
-                        VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey,   // MED-004, REC-004-R3
+                        VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey, VideoStore.reverseKey,   // MED-004, MED-005, REC-004-R3
                         RecentPresetsStore.historyKey,   // PRE-006-R7: history never travels
                         SceneLock.key,   // SCN-015: the lock is session state of this device
                         OSCPeersCoordinator.enabledKey, OSCPeersCoordinator.approvedKey,   // OSC-008-R10: this device's network

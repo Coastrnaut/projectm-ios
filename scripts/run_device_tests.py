@@ -154,6 +154,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "settings.video.loop",   # MED-003 (the stored video's loop region)
                 "settings.video.speed",  # MED-004 (the stored video's playback speed)
+                "settings.video.reverse",  # MED-005 (reverse playback of the stored video)
                 "guide.firstScene",   # UIX-001
                 "permission.explained.camera", "permission.explained.localNetwork",   # UIX-015 (a yes each)
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",

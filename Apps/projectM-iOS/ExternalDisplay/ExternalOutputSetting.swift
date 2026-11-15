@@ -19,6 +19,8 @@
 // OUT-009 (spec specs/268-out-009-output-color-calibration, contract C4): the display calibration, one more device-local
 // value with the same rules: `settings.externalDisplay.calibration` ("gamma,red,green,blue"); the identity removes it, a
 // missing or malformed value reads as the identity and out-of-range values are clamped. Applied live.
+// OUT-014 (spec specs/288-out-014-output-profile-export, contract C2): `profiles` exports and imports these transforms
+// as a local `.pmoutput` file (ExternalOutputSetting+Profile.swift); no key of its own.
 import Compositor
 import FrameRecording
 import Foundation
@@ -42,6 +44,8 @@ final class ExternalOutputSetting {
     @ObservationIgnored private let defaults: UserDefaults
     /// OUT-012: the rehearsal row reads and drives the coordinator's rehearsal flag.
     @ObservationIgnored private(set) weak var external: ExternalDisplayCoordinator?
+    /// OUT-014: the output profile file's export and import.
+    @ObservationIgnored let profiles = OutputProfileCoordinator()
 
     var fit: ExternalOutputFit {
         didSet { store(fit.rawValue, Self.fitKey) }

@@ -21,10 +21,16 @@
 // MED-004: `playbackSpeed` scales the clock's steps (video time = presentation time × speed) and the
 // pipeline's pre-roll lead; a change never stops, starts or seeks the decoder and keeps the held
 // picture (the timeline is video time, so queued pictures stay valid; research MED-004-D4).
+// MED-005 (reverse, research MED-005-D5): `reverse` on a file starts a background cache build
+// (`VideoReverseDriver`); forward plays meanwhile. The first frame that finds the cache ready (try-lock) stops the
+// forward decoder and shows cached pictures picked by `VideoReverseTimeline` from the same clock (speed, region),
+// starting at the shown picture. Off, a failed build or new content restart the forward decoder at the shown picture;
+// suspend drops the cache and resume rebuilds it.
 // Not Sendable: the compositor's thread (the main thread in the app) sets `content`, renders and
 // suspends; `onStateChange` is called on the main actor.
 import CameraLayer
 import Foundation
+import ImageLayer
 
 /// What the video layer plays.
 public enum VideoLayerContent: Sendable, Equatable {
@@ -77,6 +83,66 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
     public private(set) var maxWrapLatenessNanoseconds: Int64 = 0
     /// MED-003: the first picture after a restart (region edit, resume) is not a wrap.
     private var restarted = false
+    // MED-005: reverse playback.
+    private let reverseSlot = VideoReverseStateSlot()
+    private var reverseDriver: VideoReverseDriver?
+    private var reverseCache: VideoReverseCache<MTLTexture>?
+    /// Playback time and shown media time when the cache started playing.
+    private var reverseBase: Int64 = 0
+    private var reverseStart: Int64?
+    /// The last reversed picture, shown until forward decoding delivers one after reverse ends.
+    private var reverseHold: (texture: MTLTexture, rotation: CameraRotation)?
+    /// MED-005: the cached picture shown last (nil when none).
+    public private(set) var reverseShownIndex: Int?
+    /// MED-005: the active cache's peak accounted bytes (0 before one played).
+    public private(set) var reversePeakBytes = 0
+    /// MED-005: limits and budget read when a build starts.
+    public var reverseLimits: VideoReverseLimits = .standard
+    public var reverseBudgetBytes: Int = AnimatedFrameBudget.current
+
+    /// MED-005: play the file backwards from a cache (a supported clip; otherwise forward with the reason).
+    public var reverse = false {
+        didSet { if reverse != oldValue { restartReverse(resumeForward: true) } }
+    }
+
+    /// MED-005: the reverse state (takes the slot's lock; not for the render path).
+    public var reverseState: VideoReverseState { reverseSlot.lock.withLockUnchecked { $0.state } }
+
+    /// MED-005: called on the main actor after every reverse state change.
+    public var onReverseStateChange: (@MainActor @Sendable (VideoReverseState) -> Void)? {
+        get { reverseSlot.lock.withLockUnchecked { $0.handler } }
+        set { reverseSlot.lock.withLockUnchecked { $0.handler = newValue } }
+    }
+
+    /// MED-005 tests: waits until the current build ended (true when there is none).
+    @discardableResult
+    public func waitUntilReverseBuilt(timeout: Double = 10) -> Bool { reverseDriver?.waitUntilFinished(timeout: timeout) ?? true }
+
+    /// Drops any cache or build, resumes forward decoding at the shown picture when a cache was playing (and
+    /// `resumeForward`), and starts a new build when reverse is on for a file.
+    private func restartReverse(resumeForward: Bool) {
+        reverseDriver?.cancel()
+        reverseDriver = nil
+        let wasPlaying: Bool = reverseCache != nil
+        reverseCache = nil
+        reverseShownIndex = nil
+        if wasPlaying, resumeForward, let pipeline, !suspended {
+            restarted = true
+            pipeline.start(atNanoseconds: clock.playbackNanoseconds, region: loopRegion, mediaStartNanoseconds: shownMediaNanoseconds)
+        }
+        guard reverse, case .file(let url) = content else {
+            _ = reverseSlot.begin(.off)
+            return
+        }
+        let generation: UInt64 = reverseSlot.begin(.preparing)
+        guard !suspended else { return }
+        let slot = reverseSlot
+        reverseDriver = VideoReverseDriver(url: url, device: device, limits: reverseLimits, budgetBytes: reverseBudgetBytes) {
+            (state: VideoReverseState) -> Void in
+            slot.report(state, generation: generation)
+        }
+    }
+
     /// MED-003: the opened video's duration (nil until it opened; takes the slot's lock).
     public var mediaDurationNanoseconds: Int64? { slot.lock.withLockUnchecked { $0.durationNanoseconds } }
 
@@ -89,6 +155,11 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
                 held = nil
                 shownPresentationNanoseconds = nil
                 shownMediaNanoseconds = nil
+            }
+            if reverseCache != nil {   // MED-005: the reverse timeline restarts at the shown picture
+                reverseBase = clock.playbackNanoseconds
+                reverseStart = shownMediaNanoseconds
+                return
             }
             guard let pipeline, !suspended else { return }
             restarted = true
@@ -141,6 +212,8 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
             pipeline?.stop()
             pipeline = nil
             held = nil
+            reverseCache = nil   // MED-005: rebuilt below for the new file
+            reverseHold = nil
             shownPresentationNanoseconds = nil
             shownMediaNanoseconds = nil
             clock.reset()
@@ -152,6 +225,7 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
                 return s.generation
             }
             slot.notify()
+            defer { restartReverse(resumeForward: false) }   // MED-005
             guard case .file(let url) = content else { return }
             let slot = self.slot, device = self.device
             pipeline = VideoDecodePipeline<AVVideoFrameReader>(capacity: capacity, onEvent: { (event: VideoPipelineEvent) in
@@ -171,7 +245,9 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
         suspended = true
         pipeline?.stop()
         held = nil
+        reverseHold = nil
         clock.forgetPresentation()
+        restartReverse(resumeForward: false)   // MED-005-R9: the cache is released; resume rebuilds it
     }
 
     /// Restarts decoding at the playback time it stopped at.
@@ -181,6 +257,7 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
         clock.forgetPresentation()
         restarted = true
         pipeline?.start(atNanoseconds: clock.playbackNanoseconds, region: loopRegion, mediaStartNanoseconds: shownMediaNanoseconds)
+        if reverse { restartReverse(resumeForward: false) }   // MED-005-R9
     }
 
     public func prepare(picture: LayerPictureDescriptor, device: MTLDevice) throws(LayerSourceError) {
@@ -224,6 +301,25 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
             throw .notReady
         }
         let playback = clock.advance(to: frame.presentationTimeNanoseconds)
+        if reverseCache == nil, let driver = reverseDriver, let cache = driver.readyCache() {   // MED-005: try-lock only
+            pipeline.stop()
+            held = nil
+            reverseCache = cache
+            reverseBase = playback
+            reverseStart = shownMediaNanoseconds
+            reversePeakBytes = cache.peakBytes
+        }
+        if let cache = reverseCache {
+            let index: Int = cache.timeline.index(elapsedNanoseconds: playback - reverseBase, region: loopRegion,
+                                                  startMediaNanoseconds: reverseStart)
+            let texture: MTLTexture = cache.pictures[index]
+            try draw(texture, rotation: cache.info.rotation, into: picture, commandBuffer: commandBuffer)
+            reverseHold = (texture, cache.info.rotation)
+            reverseShownIndex = index
+            shownPresentationNanoseconds = playback
+            shownMediaNanoseconds = cache.timeline.mediaNanoseconds[index]
+            return
+        }
         if let newest = pipeline.take(upTo: playback) {
             if restarted {
                 restarted = false
@@ -234,10 +330,22 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
                 maxWrapLatenessNanoseconds = max(maxWrapLatenessNanoseconds, lateness)
             }
             held = newest
+            reverseHold = nil
         }
-        guard let shown = held, let renderPipeline, let sampler else { throw .notReady }
-        let texture = shown.frame.texture
-        let geometry = VideoPictureGeometry(pictureWidth: texture.width, pictureHeight: texture.height, rotation: shown.frame.rotation,
+        guard let shown = held else {
+            if let hold = reverseHold { try draw(hold.texture, rotation: hold.rotation, into: picture, commandBuffer: commandBuffer); return }
+            throw .notReady
+        }
+        try draw(shown.frame.texture, rotation: shown.frame.rotation, into: picture, commandBuffer: commandBuffer)
+        shownPresentationNanoseconds = shown.presentationNanoseconds
+        shownMediaNanoseconds = shown.mediaNanoseconds
+    }
+
+    /// Draws `texture` with the fit and rotation (both directions) and counts the frame.
+    private func draw(_ texture: MTLTexture, rotation: CameraRotation, into picture: MTLTexture,
+                      commandBuffer: MTLCommandBuffer) throws(LayerSourceError) {
+        guard let renderPipeline, let sampler else { throw .notReady }
+        let geometry = VideoPictureGeometry(pictureWidth: texture.width, pictureHeight: texture.height, rotation: rotation,
                                             outputWidth: picture.width, outputHeight: picture.height, fit: fit ?? .default)
         var uniforms = VideoUniforms(geometry: geometry, outputWidth: picture.width, outputHeight: picture.height)
         let pass = MTLRenderPassDescriptor()
@@ -254,8 +362,6 @@ public final class VideoLayerSource: LayerSource, LayerFitting {
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         framesShown += 1
-        shownPresentationNanoseconds = shown.presentationNanoseconds
-        shownMediaNanoseconds = shown.mediaNanoseconds
     }
 
     static let shaderSource = """
