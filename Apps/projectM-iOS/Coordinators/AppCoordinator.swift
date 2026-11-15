@@ -820,13 +820,19 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private static func makePresetStack(defaults: UserDefaults, settings: AppSettings, loader: RendererPresetLoader) -> PresetStack {
         let presets: PresetCoordinator = makePresets(defaults: defaults, settings: settings, loader: loader)
         presets.recent = makeRecentPresets(defaults: defaults)   // PRE-006
+        let userPresets: UserPresetsCoordinator = makeUserPresets(presets: presets, loader: loader)
+        return PresetStack(presets: presets, userPresets: userPresets)
+    }
+
+    /// PRE-012 user presets, then PRE-016 overrides on the coordinator, then PRE-018 integrity.
+    private static func makeUserPresets(presets: PresetCoordinator, loader: RendererPresetLoader) -> UserPresetsCoordinator {
         let userPresets: UserPresetsCoordinator = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: loader)   // PRE-012
         let overrides: PresetOverridesCoordinator = makeOverrides(presets: presets, loader: loader)
         presets.overrides = overrides   // PRE-016
         let integrity: LibraryIntegrityCoordinator = LibraryIntegrityCoordinator(presets: presets, userPresets: userPresets)
         userPresets.integrity = integrity   // PRE-018
-        return PresetStack(presets: presets, userPresets: userPresets)
+        return userPresets
     }
 
     /// The full-library purchase (feature 002 US2): StoreKit, or a fixed fake in tests and device runs.
