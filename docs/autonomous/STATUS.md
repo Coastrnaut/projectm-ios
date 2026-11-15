@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T04:07:30Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T04:10:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 38 |
-| implementing | 3 |
-| unit_passed | 1 |
-| integrated | 283 |
+| audited | 36 |
+| implementing | 4 |
+| built | 1 |
+| integrated | 284 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 29 | 2 | 1 | 47 | 0 |
+| P2 | 27 | 3 | 1 | 48 | 0 |
 | P3 | 7 | 1 | 0 | 1 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 42 features are not implemented yet (first: CAM-010, FX-005, FX-006, FX-007, FX-008)
+- 41 features are not implemented yet (first: CAM-010, FX-005, FX-006, FX-007, FX-008)
 
 ## Integrated
 
@@ -276,6 +276,7 @@ The physical-device suite may **not** start:
 | SHD-004 | Shader variant switching | `3b813137` | `feature/shd-004` |
 | SHD-005 | Gradient editor | `5d186c3c` | `feature/shd-005` |
 | SHD-006 | Noise editor | `fd57c72f` | `feature/shd-006` |
+| SHD-007 | Particle emitter editor | `8936ea3c8871` | `feature/shd-007` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
 | SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
@@ -3024,7 +3025,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/swift-test_ShowControl.log`)
 - `post-merge batch87: ShowControl 135, Compositor 1018, RenderGoldens 87, LibraryBackup 86, validate_docs, projectM-iOSTests 1127, UI 9 (one-handed 3, noise editor, show timeline, performance layout 4)`: pass at `fd57c72f` (log `.autonomous/logs/integration/batch87/app-tests.log`)
 
-### SHD-007 Particle emitter editor (unit_passed)
+### SHD-007 Particle emitter editor (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/script-tests.log`)
@@ -3043,6 +3044,7 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225921/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225921/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225921/swift-test_VisualGenerators.log`)
+- `swift test VisualGenerators 326, LibraryBackup 87; gate rerun after submodule init; postmerge projectM-iOSTests 1229 + ParticleEmitterEditorUITests 1`: pass at `8936ea3c8871` (log `.autonomous/logs/integration/batch111/app-tests.log`)
 
 ### SHD-009 Expression mapping DSL (integrated)
 - `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)
