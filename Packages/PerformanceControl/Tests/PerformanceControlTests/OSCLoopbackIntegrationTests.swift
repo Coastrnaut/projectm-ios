@@ -2,6 +2,7 @@
 // "Valid OSC float packet updates test value and disable closes listener."
 // OSC-002-T11: a bundle holding the test message over the same listener (OSC-002-S4).
 // OSC-008-T08: the peer allowlist over the same listener: the real transport hands on the sender's host.
+// OSC-004-T05: learn over the same listener captures one address from a real datagram burst.
 //
 // macOS host and simulator only (the listener needs the Network framework; Linux compiles this out).
 // Deterministic: expectations with generous ceilings, no wall-clock assertions. The sender is the
@@ -143,6 +144,28 @@ final class OSCLoopbackIntegrationTests: XCTestCase {
         wait(for: [changed], timeout: 5)
         XCTAssertEqual(receiver.testValue, expected, "counters: \(receiver.counters)")
         observation.cancel()
+        stopAndWaitOff(receiver)
+    }
+
+    func testLearnCapturesOneAddressFromARealLoopbackBurst() throws {
+        let receiver = OSCReceiver.system()
+        let port = try listen(receiver, port: 0)
+        let learned = expectation(description: "one address learned")
+        let captured = Mutex<[String]>([])
+        receiver.dispatcher.armLearn { (address: String) -> Void in
+            captured.withLock { $0.append(address) }
+            learned.fulfill()
+        }
+        send(OSCEncoder.encode(OSCMessage(address: "/projectm/test", arguments: [.float(0.5)])), to: port)   // not learnable
+        send(OSCEncoder.encode(OSCMessage(address: "/lan/fader1", arguments: [.float(0.5)])), to: port)
+        send(OSCEncoder.encode(OSCMessage(address: "/lan/fader2", arguments: [.float(0.5)])), to: port)
+        wait(for: [learned], timeout: 5)
+        let done = expectation(description: "the burst was handled")
+        done.assertForOverFulfill = false
+        receiver.onActivity { if receiver.counters.received >= 3 { done.fulfill() } }
+        if receiver.counters.received >= 3 { done.fulfill() }
+        wait(for: [done], timeout: 5)
+        XCTAssertEqual(captured.withLock { $0 }, ["/lan/fader1"], "exactly one address, the first learnable one")
         stopAndWaitOff(receiver)
     }
 }
