@@ -8,17 +8,17 @@ when verified, with " — Verified 2026-11-14: <how>".
 
 ## Phase 1: Setup
 
-- [ ] OSC-010-T01 Audit OSC-003/004/008 routes, aliases and peers, the REC-012/PERF-012 share path and the SHD-003/MOD-001 descriptors; record the baseline in `specs/282-osc-010-osc-schema-export/spec.md`.
+- [X] OSC-010-T01 Audit OSC-003/004/008 routes, aliases and peers, the REC-012/PERF-012 share path and the SHD-003/MOD-001 descriptors; record the baseline in `specs/282-osc-010-osc-schema-export/spec.md`. — Verified 2026-11-14: spec.md "Baseline" table (route table, descriptors, REC-012/PERF-012 share path, network keys to exclude).
 
 ## Phase 2: Foundational (package)
 
-- [ ] OSC-010-T02 `OSCSchemaRow`, `OSCSchemaExport.rows`, `document`, `fileName`, `utcStamp` (Foundation-free; header `| Address | Parameter ID | Name | Arguments | Input | Value range | Unit | Origin | Enabled |`; `|` escaped as `\|`) in `Packages/PerformanceControl/Sources/PerformanceControl/OSC/OSCSchemaExport.swift` (R2-R4; contract C1).
+- [X] OSC-010-T02 `OSCSchemaRow`, `OSCSchemaExport.rows`, `document`, `fileName`, `utcStamp` (Foundation-free; header `| Address | Parameter ID | Name | Arguments | Input | Value range | Unit | Origin | Enabled |`; `|` escaped as `\|`) in `Packages/PerformanceControl/Sources/PerformanceControl/OSC/OSCSchemaExport.swift` (R2-R4; contract C1). — Verified 2026-11-14: built with `swift test --package-path Packages/PerformanceControl`; no Foundation import in the file.
 
 ## Phase 3: User Story 1 - Document the routes (P2)
 
 **Independent test**: build the document from a seeded table and compare it with the table.
 
-- [ ] OSC-010-T03 [US1] Tests in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCSchemaExportTests.swift`: each table address appears exactly once and the (address, ID) set equals the table's including a user alias; ranges and units equal the descriptors; a disabled route says `off`; same instant and version → identical bytes; the UTC stamp of known instants; escaping (S1, S2).
+- [X] OSC-010-T03 [US1] Tests in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCSchemaExportTests.swift`: each table address appears exactly once and the (address, ID) set equals the table's including a user alias; ranges and units equal the descriptors; a disabled route says `off`; same instant and version → identical bytes; the UTC stamp of known instants; escaping (S1, S2). — Verified 2026-11-14: OSCSchemaExportTests (6) pass on the macOS host in 0.002 s: each of the 5 table addresses once, (address, ID) set equals the table's including `/fader/1=effect.bloom.radius`, ranges/units equal the descriptors, byte-identical builds, UTC stamps incl. 2000-02-29 and before 1970.
 
 ## Phase 4: User Story 2 - Nothing private (P2)
 
