@@ -1,5 +1,6 @@
 // MIDIMappingOptionsView.swift — one MIDI mapping's curve, inversion and 14-bit switch (MIDI-004-R7, R8;
 // specs/140-midi-004-cc-scaling, contract C4.3; MIDI-005-R6, specs/266-midi-005-14-bit-controls).
+// MIDI-009-R12 (specs/269-midi-009-midi-feedback): the "Send feedback" switch.
 // Opened from the "Curve" row under a mapped parameter in MIDI Mappings: a curve picker (Linear, Ease in, Ease out,
 // Logarithmic; "Custom" only for another stored curve), an Invert switch, the 14-bit switch (CC 0–31 only), a static
 // preview drawn from the same position function the values use, and the unreadable-curve notice. Changes save at once and are
@@ -22,6 +23,7 @@ struct MIDIMappingOptionsView: View {
                 if mappings.canUseHighResolution(for: parameter) {
                     MIDIHighResolutionSection(mappings: mappings, parameter: parameter, options: options)
                 }
+                MIDIFeedbackSection(mappings: mappings, parameter: parameter, options: options)
                 MIDICurvePreviewSection(options: options)
             } else {
                 Text("Not mapped").accessibilityIdentifier("midiOptionsNotMapped")
@@ -106,6 +108,28 @@ private struct MIDIHighResolutionSection: View {
                 .accessibilityIdentifier("midiHighResolution")
         } footer: {
             Text("For controls that send a fine value on a second controller (32 higher). The setting then moves in 16,384 steps instead of 128. Learn turns this on when it sees both.")
+        }
+    }
+}
+
+/// MIDI-009-R12: the "Send feedback" switch.
+private struct MIDIFeedbackSection: View {
+    var mappings: MIDIMappingCoordinator
+    let parameter: ParameterID
+    let options: MIDIMappingOptions
+
+    private var enabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { () -> Bool in options.feedback },
+            set: { (value: Bool) -> Void in mappings.setFeedback(value, for: parameter) })
+    }
+
+    var body: some View {
+        Section {
+            Toggle("Send feedback", isOn: enabled)
+                .accessibilityIdentifier("midiFeedback")
+        } footer: {
+            Text("Sends this setting's value back to the controller, so its lights or motor faders follow changes made on screen, by scenes or by OSC. Only to controllers you are listening to; never more than 30 updates a second.")
         }
     }
 }

@@ -27,6 +27,9 @@
 //   lines among the note lines). A CC is either a button or a parameter control: learning one frees the other.
 // * MIDI-005 (specs/266-midi-005-14-bit-controls): a mapping on CC 0–31 may be 14-bit (`;hires=1`): CC n and CC n+32
 //   combine through `highResolutionPairs`; learn detection and the switch live in `MIDIMappingCoordinator+HighResolution.swift`.
+// * MIDI-009 (specs/269-midi-009-midi-feedback): a mapping with `;fb=1` sends its parameter's base value back to paired
+//   controllers on each input tick, bounded and loop-free (`MIDIFeedbackEngine`); `receive` drops echoes first and reports
+//   applied values; the rest lives in `MIDIMappingCoordinator+Feedback.swift`.
 // * MIDI-012 (specs/171-midi-012-profiles, contract P2): lines no list reads (unknown kinds, unreadable `cc:` lines) are
 //   kept after the known lines (`otherLines`, MIDI-012-R7). `replaceLines` writes a profile's lines verbatim and is one
 //   Undo step; Undo is a snapshot of the stored lines, restored verbatim (research MIDI-012-D6).
@@ -104,9 +107,9 @@ final class MIDIMappingCoordinator {
     @ObservationIgnored var lastLossCount: Int = 0
 
     @ObservationIgnored let learnable: [ParameterDescriptor]
-    @ObservationIgnored private let registry: ParameterRegistry
+    @ObservationIgnored let registry: ParameterRegistry
     @ObservationIgnored let input: MIDIInputCoordinator
-    @ObservationIgnored private let discovery: MIDIDiscoveryCoordinator
+    @ObservationIgnored let discovery: MIDIDiscoveryCoordinator
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored let announce: @MainActor (String) -> Void
     @ObservationIgnored let clock: @MainActor () -> UInt64
@@ -127,6 +130,13 @@ final class MIDIMappingCoordinator {
     /// MIDI-005: 14-bit pair state (memory only) and the learn watch for a fine controller.
     @ObservationIgnored var highResolutionPairs = MIDIHighResolutionTracker()
     @ObservationIgnored var highResolutionWatch = MIDIHighResolutionLearnWatch<ParameterID>()
+    /// MIDI-009: the feedback engine (memory only), the output (nil: no feedback), the parameters' base values, and the
+    /// bindings and destinations at the last tick.
+    @ObservationIgnored var feedback = MIDIFeedbackEngine()
+    @ObservationIgnored var feedbackOutput: (any MIDIFeedbackOutput)?
+    @ObservationIgnored var feedbackValues: @MainActor () -> [ParameterID: Double] = { () -> [ParameterID: Double] in [:] }
+    @ObservationIgnored var feedbackBindings = MIDIBindingList()
+    @ObservationIgnored var feedbackDestinations: Set<MIDIEndpointID> = []
 
     init(registry: ParameterRegistry, applied: Set<ParameterID>, input: MIDIInputCoordinator,
          discovery: MIDIDiscoveryCoordinator, defaults: UserDefaults,
@@ -151,6 +161,7 @@ final class MIDIMappingCoordinator {
         sceneBindings = MIDISceneBindingList(storageLines: lines)   // MIDI-007-R7
         lastSources = input.listedSources
         input.addStateObserver { [weak self] () -> Void in self?.inputStateChanged() }
+        input.addTickObserver { [weak self] () -> Void in self?.feedbackTick() }   // MIDI-009
         updateClient()
     }
 
@@ -462,7 +473,9 @@ final class MIDIMappingCoordinator {
     // MARK: Receiving
 
     /// The input client's handler (one display tick's batch).
-    func receive(_ incoming: [MIDIEvent]) {
+    func receive(_ received: [MIDIEvent]) {
+        guard !received.isEmpty else { return }
+        let incoming: [MIDIEvent] = filterFeedbackEchoes(received)   // MIDI-009-R8: a device's echo of our feedback
         guard !incoming.isEmpty else { return }
         let batch: [MIDIEvent] = receiveSceneLearn(incoming)   // MIDI-007: a scene learn consumes its message
         guard !batch.isEmpty else { return }
@@ -491,6 +504,7 @@ final class MIDIMappingCoordinator {
                                                                      tracker: &highResolutionPairs)
         updates.merge(later) { (_: Double, newer: Double) -> Double in newer }
         guard !updates.isEmpty else { return }
+        noteFeedbackApplied(updates)   // MIDI-009-R7: the controller shows these values; no echo
         var merged: [ParameterID: Double] = liveValues
         merged.merge(updates) { (_: Double, newer: Double) -> Double in newer }
         let bound: Set<ParameterID> = Set(bindings.bindings.map { (binding: MIDIControlBinding) -> ParameterID in binding.target })

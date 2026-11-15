@@ -22,6 +22,7 @@ extension MIDIMappingCoordinator {
         _ = sceneSession.cancel()
         endLearning()
         input.discardPending()   // MIDI-013-R3
+        absorbFeedback()   // MIDI-009-R10: pending feedback dropped, nothing sent until a value changes
         let commands: [MIDINoteCommand] = noteRouter.panic(bindings: noteBindings)
         if !commands.isEmpty { performNotes(commands) }
         lastMessage = Self.panicText + "."

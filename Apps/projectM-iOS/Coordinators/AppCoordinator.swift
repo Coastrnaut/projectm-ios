@@ -737,6 +737,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectOfflineExport()   // REC-013
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
+        connectMIDIFeedback()   // MIDI-009
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
