@@ -93,7 +93,8 @@ output shows the dot plus 3 dimmer copies at its previous positions, each dimmer
 **Acceptance Scenarios**:
 
 1. **Given** Echo on with N echoes, **When** a dot moves across a black frame, **Then** N copies trail it at the
-   expected delays, the k-th copy weighted by the fade to the power k.
+   expected delays, the k-th copy weighted by the fade to the power k (all scaled together when their sum would exceed
+   1), so each copy is dimmer than the one before by the fade.
 2. **Given** the values set, **When** the app is relaunched, **Then** the same values are applied.
 
 ---
@@ -164,7 +165,7 @@ echo back when the scene or preset is opened.
 - **FX-010-R2**: With Echo active, each output pixel is the brighter, per channel, of the current picture and the sum
   of the echoes, where echo k (k = 1…N) is the k-th most recent stored frame scaled by its weight; echo weights are
   fade^k, scaled down together when their sum exceeds the weight cap (1), so the sum never exceeds it.
-- **FX-010-R3**: Echo count 1…4 (default 3; VoiceOver step 1); delay 10…500 ms (default 100 ms; step 10 ms); fade
+- **FX-010-R3**: Echo count 1…4 on the slider (default 3; VoiceOver step 1; a stored 0 means off); delay 10…500 ms (default 100 ms; step 10 ms); fade
   0.1…0.9 (default 0.6; step 0.05).
 - **FX-010-R4**: The count is capped at 4 everywhere: values above 4 read as 4, and the GPU loop's bound is the cap
   constant.
@@ -174,7 +175,8 @@ echo back when the scene or preset is opened.
 - **FX-010-R6**: The history is a ring of exactly 4 pictures at the history size (half the output per direction,
   rounded to a multiple of 16 pixels, at least 16, longer side at most 960 pixels), allocated once when Echo turns on,
   kept for every change of count, delay and fade, replaced only when the history size changes, and returned to the
-  pool when Echo turns off or the visual is released. Nothing is allocated per frame.
+  pool when Echo turns off or the visual is released. Like FX-006/FX-007, the pass also holds one output picture at
+  the output size while active (not part of the history bound). Nothing is allocated per frame.
 - **FX-010-R7**: The history's memory never exceeds 4 × 960 × 960 × 8 bytes (29,491,200 bytes) of picture data; the
   test bound is 4 × the device's allocation size of one picture at the current history size.
 - **FX-010-R8**: Echo is active only when on, the count is at least 1 and the weight cap is above 0; otherwise no pass
