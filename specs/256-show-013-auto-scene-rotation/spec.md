@@ -44,6 +44,16 @@ local-first option.
 - Q: What happens while the show plays on its timeline (SHOW-002/SHOW-007)? → A: Rotation pauses while a timed cue's countdown runs unheld, and while the timed advance's other holds apply (pause, blackout, repair report, app in background, Hold). When the pause ends the interval restarts. The show's timeline always wins.
 - Q: Which settings are stored? → A: The mode, interval, bar count, collection and disabled scenes, in one UserDefaults key `settings.show.rotation` (a device performance choice like SHOW-007's Loop: excluded from backups, erased with Settings, cleared by the UI-test reset). Rotation on/off is session state: off at every launch, so a launch never starts switching scenes by itself (as SHOW-001 never reapplies a cue at launch).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered with the recommended option (owner rules 4 and 9).
+
+- Q: Where does the seed come from? → A: A new session seed is drawn from the system generator each time rotation is turned on, and the step count restarts at 0; tests and the DEBUG UI-test argument inject a fixed seed. The seed is never stored (nothing about rotation history persists).
+- Q: Which cue is used for a scene that appears in several cues? → A: Its first cue, exactly as Scene Folders' Go to Cue (`goToScene`) does.
+- Q: Are SHOW-005 skipped cues excluded? → A: No. Skip governs Next and Previous; Go to still reaches a skipped cue, and rotation uses Go to. Rotation's own toggles decide what rotates.
+- Q: What if a timer switch is waiting for the beat (SHOW-003) when the performer steps? → A: The quantizer's rules apply unchanged (a timed request never cancels or replaces a manual one); whichever step moves the show rearms rotation.
+- Q: Is there a performance-pad or MIDI control for rotation? → A: Not in this row. Settings is the only control; the cue path's announcements say each switch, and the status line says what rotation waits for.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Rotate scenes on a timer (Priority: P1) — MVP
