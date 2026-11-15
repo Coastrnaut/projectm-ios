@@ -19,7 +19,8 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   `referencePixel`/`reference` (contract C2); plain Swift (Linux)
 - [ ] FX-006-T03 [P] `ChromaticSplitModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamp and wrap,
   zero/disabled inactive, linear and radial vectors, fade (border ring zero, full beyond the band), every sample in
-  bounds at the maximum, reference zero identity and whole-pixel shift (FX-006-R3, R4, R12)
+  bounds at the maximum, reference zero identity and whole-pixel shift, alpha = max of the samples, a non-finite own pixel or
+  neighbour (weight 0) never spreads, frames under 3 px pass through (FX-006-R3, R4, R6, R12)
 - [ ] FX-006-T04 `OutputEffectKind.chromatic` (`fx.chromatic`, appended) in
   `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-006-R7)
 
@@ -53,7 +54,7 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 - [ ] FX-006-T11 [US1] `ChromaticSplitSetting` (four keys) in `Apps/projectM-iOS/Coordinators/ChromaticSplitSetting.swift`
   and `AppCoordinator+ChromaticSplit.swift`; wire into `AppCoordinator.swift` (init, the four compositor creations,
-  scene apply), `liveEffectSettings`, `SceneAutosaveCapture.applyEffects` (FX-006-R1, R9)
+  scene apply), `AppCoordinator+SceneHistory.swift` and `+EffectChain.swift` (undo/redo, presets), `liveEffectSettings`, `SceneAutosaveCapture.applyEffects` (FX-006-R1, R9)
 - [ ] FX-006-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005 `LibrarySettingsPolicy.includedKeys`,
   the UI-test reset, `LibraryBackupAppTests` `appKeys` (FX-006-R9)
 - [ ] FX-006-T13 [US1] `ChromaticSplitSection` (toggle, ACC-005 Amount and Angle sliders, Radial switch, help) in

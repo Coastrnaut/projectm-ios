@@ -164,8 +164,7 @@ effect-chain preset, and gets the same split back when the scene or preset is op
 
 - **FX-006-R1**: Chromatic split (on/off, off by default) applies to the compositor-backed visuals (Camera, Photo,
   Video, Text) on every output of a frame: screen, external display, recording and still capture.
-- **FX-006-R2**: With the split active, each output pixel takes its green (and the rest of its own value) from its
-  own position, its red from the position offset by −v and its blue from the position offset by +v, where v is the
+- **FX-006-R2**: With the split active, each output pixel takes its green from its own position (alpha per FX-006-R6), its red from the position offset by −v and its blue from the position offset by +v, where v is the
   split vector; red therefore appears moved by +v and blue by −v. Fractional positions are filtered between the four
   nearest pixels; a filter weight of exactly zero never mixes in the neighbour.
 - **FX-006-R3**: The split vector is Amount × the frame's shorter side, in the direction of Angle (0° = red moves
