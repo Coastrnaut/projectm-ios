@@ -1291,7 +1291,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
 /// OUT-009 (specs/268, contract C3): a display calibration receiver that accepts only when its host installed
 /// `onDisplayCalibrationChange` (the compositor hosts do: their output pass applies it). The native spectra draw
 /// straight into the drawable with no shared final pass, so they leave it unset (not covered, OUT-009-R3).
-final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
+final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver, OutputWarpReceiver {
     override class var layerClass: AnyClass { CAMetalLayer.self }
     var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
     var onLayout: (() -> Void)?
@@ -1300,6 +1300,12 @@ final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
     }
     var onDisplayCalibrationChange: ((DisplayCalibration) -> Void)?
     var acceptsDisplayCalibration: Bool { onDisplayCalibrationChange != nil }
+    /// OUT-008: likewise for the grid warp (the compositor hosts' screen pass draws it; the native spectra do not).
+    var outputWarp: OutputWarpMesh = .none {
+        didSet { if outputWarp != oldValue { onOutputWarpChange?(outputWarp) } }
+    }
+    var onOutputWarpChange: ((OutputWarpMesh) -> Void)?
+    var acceptsOutputWarp: Bool { onOutputWarpChange != nil }
 
     init(device: MTLDevice) {
         super.init(frame: .zero)

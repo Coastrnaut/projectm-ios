@@ -365,6 +365,9 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         view.onDisplayCalibrationChange = { [weak self] (c: DisplayCalibration) -> Void in   // OUT-009: the screen pass
             self?.compositor.displayCalibration = c
         }
+        view.onOutputWarpChange = { [weak self] (w: OutputWarpMesh) -> Void in   // OUT-008: the screen pass
+            self?.compositor.outputWarp = w
+        }
         camera.provider.onStateChange = { [weak self] state in
             MainActor.assumeIsolated { self?.feedStateChanged(state) }
         }

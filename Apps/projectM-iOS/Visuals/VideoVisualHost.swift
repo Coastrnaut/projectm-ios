@@ -225,6 +225,9 @@ final class VideoVisualHost: PresentationBoundResource, CompositorVisualHost {
         view.onDisplayCalibrationChange = { [weak self] (c: DisplayCalibration) -> Void in   // OUT-009: the screen pass
             self?.compositor.displayCalibration = c
         }
+        view.onOutputWarpChange = { [weak self] (w: OutputWarpMesh) -> Void in   // OUT-008: the screen pass
+            self?.compositor.outputWarp = w
+        }
         video.onStateChange = { [weak self] (state: VideoLayerState) in self?.videoStateChanged(state) }
         observeSystem()
         updateAccessibility()

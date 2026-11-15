@@ -325,6 +325,7 @@ enum CompositorShaders {
         e = clamp(cal.gain.rgb * pow(max(e, float3(0.0)), float3(cal.params.x)), 0.0, 1.0);
         return float4(cmp_decode(e.r), cmp_decode(e.g), cmp_decode(e.b), t.a);
     }
+    \(GridWarpPass.source)
     """
 
     /// FX-002 (contracts/tone-map.md in specs/122, research FX-002-D1; ADR-0047): the output tone map, the same

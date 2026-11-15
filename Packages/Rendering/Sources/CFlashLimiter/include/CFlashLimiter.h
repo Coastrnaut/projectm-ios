@@ -40,8 +40,15 @@ void PMFlashLimiterFinish(PMFlashLimiter *_Nonnull limiter, unsigned int targetF
 void PMFlashLimiterSetCalibration(PMFlashLimiter *_Nonnull limiter, int enabled, float exponent, float red, float green,
                                   float blue);
 /// Draws the output step of the last Finish once more into `targetFramebuffer` from the current envelope state (no
-/// update): calibrated when `calibrated` is non-zero and a calibration is enabled, else uncalibrated (REC-001 reads).
-void PMFlashLimiterDrawOutput(PMFlashLimiter *_Nonnull limiter, unsigned int targetFramebuffer, int calibrated);
+/// update): for the display (calibrated and warped, as far as set) when `display` is non-zero, else the plain content
+/// (REC-001 reads).
+void PMFlashLimiterDrawOutput(PMFlashLimiter *_Nonnull limiter, unsigned int targetFramebuffer, int display);
+/// OUT-008 (specs/309-out-008-grid-warp, contract C3): the external display's grid warp, drawn by the display output
+/// step: `columns` × `rows` control points (2…9 each; `points` holds x, y pairs row by row, picture-relative, y down),
+/// with guide lines when `guides` is non-zero. Out-of-range sizes or NULL points turn it off (the default). Kept until
+/// changed (a new size or Reset keeps it).
+void PMFlashLimiterSetWarp(PMFlashLimiter *_Nonnull limiter, int columns, int rows, const float *_Nullable points,
+                           int guides);
 /// The gain applied by the last Finish (tests; reads back one texel, so it waits for the GPU).
 float PMFlashLimiterLastGain(PMFlashLimiter *_Nonnull limiter);
 unsigned int PMFlashLimiterSceneFramebuffer(PMFlashLimiter *_Nonnull limiter);

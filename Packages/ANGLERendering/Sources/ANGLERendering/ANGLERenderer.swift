@@ -36,6 +36,9 @@
 //   the external display slot gives it the display calibration (the device slot the identity). Each frame passes
 //   it to the FX-019 pass, whose output step applies it after the envelope's gain. A REC-001 capture is read from an
 //   uncalibrated redraw of that step (same envelope state), then the calibrated step is drawn again for the display.
+// * OUT-008 (specs/309-out-008-grid-warp, contract C3): the view is also an `OutputWarpReceiver`; each frame passes its
+//   mesh to the FX-019 pass (only when it changed), whose display output step draws through it. A REC-001 capture is read
+//   from the plain (uncalibrated, unwarped) redraw of that step, as for OUT-009.
 // * OUT-013 (specs/281-out-013-frame-pacing, contract C3): the display link is the one of the screen that shows the view
 //   (`ScreenDisplayLink`, rebuilt when the view moves to another screen). Each display-link tick (`pacedTick`) polls the
 //   frame fences (zero timeout), asks `outputPacing` for a slot (at most 2 frames in flight; a full output drops the
@@ -107,6 +110,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public let supportsReduceFlashing = true
     /// OUT-009: the calibration the next frames apply (the view's, set by the slot that holds it).
     public var displayCalibration: DisplayCalibration { layerView.displayCalibration }
+    /// OUT-008: the grid warp the next frames draw (the view's, set by the slot that holds it).
+    public var outputWarp: OutputWarpMesh { layerView.outputWarp }
+    /// OUT-008: the mesh last handed to `warpLimiter` (set again only when either changes).
+    private var appliedWarp: OutputWarpMesh = .none
+    private var warpLimiter: OpaquePointer?
     private var flashLimiter: OpaquePointer?
 
     private let layerView: MetalLayerView
@@ -332,6 +340,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                 timer?.begin(.output)
                 var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
                 applyCalibration(to: limiter)   // OUT-009
+        applyWarp(to: limiter)   // OUT-008
                 PMFlashLimiterFinish(limiter, 0, &parameters)
                 limitedFrame = limiter
                 timer?.end(.output)
@@ -344,8 +353,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         timer?.end(.render)   // no-op when the output pass already ended it
         if let handler = pendingCapture {   // REC-001: the frame as shown, before the swap
             pendingCapture = nil
-            let calibrated: OpaquePointer? = layerView.displayCalibration.isIdentity ? nil : limitedFrame
-            if let calibrated { PMFlashLimiterDrawOutput(calibrated, 0, 0) }   // OUT-009: content, not the display's
+            let forDisplay: Bool = !layerView.displayCalibration.isIdentity || layerView.outputWarp.isActive   // OUT-009, OUT-008
+            let calibrated: OpaquePointer? = forDisplay ? limitedFrame : nil
+            if let calibrated { PMFlashLimiterDrawOutput(calibrated, 0, 0) }   // OUT-009, OUT-008: content, not the display's
             let pixels = readPixels()
             if let calibrated {
                 eglMakeCurrent(display, surface, surface, context)
@@ -565,6 +575,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         frameFences.drain()   // OUT-013: no frame of a released surface stays in flight
         if let flashLimiter {
             PMFlashLimiterDestroy(flashLimiter)   // recreated on the next limited frame
+            warpLimiter = nil   // OUT-008: the next limiter gets the mesh again
             self.flashLimiter = nil
         }
         if let surface { eglDestroySurface(display, surface) }
@@ -651,6 +662,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         PMANGLEClearFramebuffer(framebuffer, value, value, value)
         var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
         applyCalibration(to: limiter)   // OUT-009
+        applyWarp(to: limiter)   // OUT-008
         PMFlashLimiterFinish(limiter, 0, &parameters)
         return PMFlashLimiterLastGain(limiter)
     }
@@ -659,6 +671,19 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     private func applyCalibration(to limiter: OpaquePointer) {
         let c: DisplayCalibration = layerView.displayCalibration
         PMFlashLimiterSetCalibration(limiter, c.isIdentity ? 0 : 1, Float(c.exponent), Float(c.red), Float(c.green), Float(c.blue))
+    }
+
+    /// OUT-008: the view's mesh into the pass (copied only when the mesh or the limiter changed; `.none` turns it off).
+    private func applyWarp(to limiter: OpaquePointer) {
+        let mesh: OutputWarpMesh = layerView.outputWarp
+        guard mesh != appliedWarp || limiter != warpLimiter else { return }
+        appliedWarp = mesh
+        warpLimiter = limiter
+        guard mesh.isActive else { return PMFlashLimiterSetWarp(limiter, 0, 0, nil, 0) }
+        let points: [Float] = mesh.flattened
+        points.withUnsafeBufferPointer { (buffer: UnsafeBufferPointer<Float>) -> Void in
+            PMFlashLimiterSetWarp(limiter, Int32(mesh.columns), Int32(mesh.rows), buffer.baseAddress, mesh.showsGuides ? 1 : 0)
+        }
     }
 
     /// Reads back the default framebuffer of the current surface as RGBA bytes (tests).
@@ -674,9 +699,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
 
 /// A CAMetalLayer-backed view that reports layout and window changes. OUT-009: it carries the display calibration
 /// its slot gives it (applied by the renderer's pass from the next frame).
-final class MetalLayerView: UIView, DisplayCalibrationReceiver {
+final class MetalLayerView: UIView, DisplayCalibrationReceiver, OutputWarpReceiver {
     var displayCalibration: DisplayCalibration = .identity
     var acceptsDisplayCalibration: Bool { true }
+    var outputWarp: OutputWarpMesh = .none   // OUT-008: drawn by the renderer's pass from the next frame
+    var acceptsOutputWarp: Bool { true }
     override class var layerClass: AnyClass { CAMetalLayer.self }
     var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
     var onLayout: (() -> Void)?

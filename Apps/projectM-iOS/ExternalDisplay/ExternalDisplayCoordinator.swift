@@ -49,6 +49,9 @@
 // * OUT-009 (spec specs/268-out-009-output-color-calibration, contract C4): the display calibration is pushed to
 //   every external slot inside the set and to each newly connected slot, never deferred by the hold; the slot hands
 //   it to the held visual's view (calibrated final pass on projectM and compositor visuals; native spectra not).
+// * OUT-008 (spec specs/309-out-008-grid-warp, contract C4): the grid warp and the editor's guides flag are pushed to
+//   every external slot inside the set and to each newly connected slot, never deferred by the hold (no geometry
+//   changes; recordings are content); the slot hands the mesh to the held visual's view.
 // * OUT-011 (spec specs/275-out-011-output-diagnostics, contract C2): `outputDiagnostics` is built at every read from the
 //   routed (else first) settled display's live slot and its screen, or is `.disconnected`. Nothing is stored, so an
 //   unplugged display can never show stale values; the disconnect removes the routing entry and the slot in its call.
@@ -166,6 +169,14 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     /// The last connected external display's shape (width ÷ height with its pixel aspect).
     @ObservationIgnored private(set) var lastExternalAspect: Double?
 
+    // OUT-008: grid warp.
+    /// The user's mesh (ExternalOutputSetting sets it; always valid); applied to every external slot inside the call.
+    @ObservationIgnored var gridWarp: GridWarp = .identity {
+        didSet { if gridWarp != oldValue { pushGridWarp() } }
+    }
+    /// The grid-warp editor is open: the display draws guide lines along the grid.
+    private(set) var isEditingGridWarp = false
+
     // OUT-009: display calibration.
     /// The user's calibration (ExternalOutputSetting sets it); applied to every external slot inside the call,
     /// never deferred by a recording hold (it changes no geometry and recordings are uncalibrated).
@@ -235,6 +246,7 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         slot.pixelBudget = pixelBudget
         slot.cornerPin = cornerPin   // OUT-007
         slot.calibration = displayCalibration   // OUT-009
+        slot.outputWarp = outputWarpMesh   // OUT-008
         slot.showsCalibrationCard = isCalibrating
         slot.onGeometryChange = { [weak self] (geometry: ExternalDisplayGeometry) in self?.externalResized(id: id, geometry: geometry) }
         log.info("external display connected: \(geometry.width, privacy: .public) × \(geometry.height, privacy: .public) @\(geometry.scale, privacy: .public), foreground \(foreground, privacy: .public)")
@@ -446,6 +458,40 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         let kind: String = pin.isIdentity ? "identity" : "custom"
         let card: String = slot.isCalibrationCardShown ? "shown" : "hidden"
         return "pin=" + kind + " card=" + card + " corners=" + pin.stored
+    }
+
+    // MARK: - Grid warp (OUT-008)
+
+    /// What external slots draw: `.none` for the identity without guides.
+    var outputWarpMesh: OutputWarpMesh { gridWarp.outputMesh(showsGuides: isEditingGridWarp) }
+
+    func beginGridWarpEditing() {
+        isEditingGridWarp = true
+        pushGridWarp()
+    }
+
+    func endGridWarpEditing() {
+        guard isEditingGridWarp else { return }
+        isEditingGridWarp = false
+        pushGridWarp()
+    }
+
+    private func pushGridWarp() {
+        let mesh: OutputWarpMesh = outputWarpMesh
+        for slot in externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }) { slot.outputWarp = mesh }
+        log.info("grid warp: \(self.gridWarp.isIdentity ? "identity" : "custom", privacy: .public), guides \(self.isEditingGridWarp, privacy: .public)")
+    }
+
+    /// "warp=<identity|custom> grid=<C>x<R> guides=<on|off> applied=<yes|no|unsupported|none>" for the external slot
+    /// holding the visual ("none" when it is not on an external display) (tests, DEBUG probe; no user data).
+    var gridWarpSummary: String {
+        let kind: String = gridWarp.isIdentity ? "identity" : "custom"
+        let holding: VisualSlotView? = (visual?.superview as? VisualSlotView).flatMap { (s: VisualSlotView) -> VisualSlotView? in
+            s.role == .external ? s : nil
+        }
+        let applied: String = holding?.warpState ?? "none"
+        let size: String = String(gridWarp.columns) + "x" + String(gridWarp.rows)
+        return "warp=" + kind + " grid=" + size + " guides=" + (isEditingGridWarp ? "on" : "off") + " applied=" + applied
     }
 
     // MARK: - Display calibration (OUT-009)
