@@ -20,7 +20,8 @@ Format: `[ID] [P?] [Story] Description`. `{device}` = needs a physical device an
   `CompositorShaders.source`; `Compositor.outputWarp` hook in `composite(into:)` (C2).
 - [ ] OUT-008-T04 [US1] `GridWarpOutputTests.swift` on the real compositor: `.none` = no pass and identical bytes; a
   forced identity mesh byte-exact on `bgra8Unorm_srgb`; an affine and a curved warp match an independent CPU reference
-  (OUT-008-S2); uncovered pixels black; `encodeOutput` unwarped (OUT-008-S1, S4).
+  (OUT-008-S2); uncovered pixels black; guides on the identity draw white lines only on grid lines; `encodeOutput` unwarped
+  (OUT-008-S1, S4).
 - [ ] OUT-008-T05 [US1] FX-019 warp step in `Packages/Rendering/Sources/CFlashLimiter/` (`PMFlashLimiterSetWarp`, warp
   program, display flag) and `ANGLERenderer` (receiver, per-frame mesh, unwarped REC-001 capture) (C3).
 - [ ] OUT-008-T06 [US1] `GridWarpGLTests.swift` (ANGLERendering, simulator): identity mesh exact, a warp moves a known
@@ -43,7 +44,9 @@ Format: `[ID] [P?] [Story] Description`. `{device}` = needs a physical device an
 
 - [ ] OUT-008-T12 `GridWarpAppTests.swift`: external slot hands the mesh to a receiver, the device slot never;
   unsupported receivers reported; persistence (absent, stored, malformed, invalid → identity); key in
-  `ExternalOutputSetting.keys`; profile apply. Also run `LibraryBackupAppTests`, `LibraryEraseAppTests`,
+  `ExternalOutputSetting.keys`; profile apply; corner pin and grid warp applied together on one slot (OUT-008-R6);
+  a mesh change applies inside the call while a recording holds the placement (OUT-008-R11); the rehearsal preview
+  slot never takes a mesh (OUT-008-R8). Also run `LibraryBackupAppTests`, `LibraryEraseAppTests`,
   `OutputProfileAppTests`, `CornerPinAppTests`, `DisplayCalibrationAppTests`.
 - [ ] OUT-008-T13 `GridWarpUITests.swift` (< 30 s) with the fake external display: open editor → guides on, nudge
   moves a point, Reset → identity, Done → guides off, mesh kept; plus `CornerPinUITests` and `DisplayCalibrationUITests`.
@@ -56,3 +59,10 @@ Format: `[ID] [P?] [Story] Description`. `{device}` = needs a physical device an
 ## Dependencies
 
 T01 → T02; T01 → T09; T03 → T04; T03 → T05 → T06; T01 + T03 + T05 → T07 → T08 → T10 → T11 → T12 → T13 → T14 → T15.
+
+## Analysis (speckit-analyze, 2026-11-15)
+
+Coverage after fixes: R1-R3 → T01/T02; R4 → T01/T02 (edits), T08 (stored), T09 (import), T10 (editor reason); R5 →
+T10/T13; R6 → T12 (added); R7 → T04, T06; R8 → T04, T06, T12 (rehearsal added); R9 → T08/T12; R10 → T09; R11 → T12
+(added); R12 → T11/T13. S1 → T04/T06; S2 → T04; S3 → T02; S4 → T04/T06; S5 → T09/T12. No constitution conflict, no
+duplicate or ambiguous requirement left. Fixes applied: T04 gains the guides check; T12 gains R6, R8 and R11 checks.
