@@ -1212,6 +1212,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
         case .tunnel: .tunnel(pace: settings.tunnelPace)   // VIS-015
         case .spectrumWaterfall: .waterfall   // VIS-020
+        case .fluidInk: .fluidInk   // VIS-011
         default: .circular
         }
     }

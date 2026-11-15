@@ -27,9 +27,9 @@ marks work the Mac cannot finish.
 
 ## Phase 5: US4 Choose it (P2)
 
-- [ ] VIS-011-T09 [US4] `VisualChoice.fluidInk` ("Fluid Ink", native, no Bars), host style `.fluidInk` (in place with noise-field modes, drains onsets into `enqueueImpulse`, accessibility value "Ink from sudden sounds, Glow …"), coordinator and snapshot mapping, scene capture as no layer, Settings description in Apps/projectM-iOS/Coordinators/AppSettings.swift, AppCoordinator.swift, SnapshotBatchJob.swift, SceneAutosaveCapture.swift, ShowSceneSnapshot.swift, Visuals/NativeSpectrumHost.swift, Views/SettingsView.swift
-- [ ] VIS-011-T10 [P] [US4] App tests (choice persists, host builds the fluid mode, onsets reach the generator, in-place switches, accessibility value, no scene layer) in Apps/projectM-iOS/Tests/FluidInkAppTests.swift; SettingsTests, LibraryBackupAppTests, CameraVisualTests pass
-- [ ] VIS-011-T11 [P] [US4] UI test (≤ 30 s): choose Fluid Ink, value names it, Bars hidden in Apps/projectM-iOS/UITests/FluidInkUITests.swift
+- [X] VIS-011-T09 [US4] `VisualChoice.fluidInk` ("Fluid Ink", native, no Bars), host style `.fluidInk` (in place with noise-field modes, drains onsets into `enqueueImpulse`, accessibility value "Ink from sudden sounds, Glow …"), coordinator and snapshot mapping, scene capture as no layer, Settings description in Apps/projectM-iOS/Coordinators/AppSettings.swift, AppCoordinator.swift, SnapshotBatchJob.swift, SceneAutosaveCapture.swift, ShowSceneSnapshot.swift, Visuals/NativeSpectrumHost.swift, Views/SettingsView.swift (and the offline export's event feed in Visuals/OfflineSceneRenderer.swift) — Verified 2026-11-14: build-for-testing on "VIS11 iPhone 17" with the type-check flags (no warning in a line this feature changed); FluidInkAppTests 3/3
+- [X] VIS-011-T10 [P] [US4] App tests (choice persists, host builds the fluid mode, onsets reach the generator, in-place switches, accessibility value, no scene layer) in Apps/projectM-iOS/Tests/FluidInkAppTests.swift; SettingsTests, LibraryBackupAppTests, CameraVisualTests pass — Verified 2026-11-14: FluidInkAppTests 3/3; CameraVisualTests, LibraryBackupAppTests 5, ParticleFountainAppTests, SettingsTests 9, TunnelAppTests, WaterfallAppTests: 32 passed (2.0 s) on the iOS 27.2 simulator
+- [X] VIS-011-T11 [P] [US4] UI test (≤ 30 s): choose Fluid Ink, value names it, Bars hidden in Apps/projectM-iOS/UITests/FluidInkUITests.swift — Verified 2026-11-14: FluidInkUITests passed in 20.1 s on "VIS11 iPhone 17"
 
 ## Phase 6: Polish
 

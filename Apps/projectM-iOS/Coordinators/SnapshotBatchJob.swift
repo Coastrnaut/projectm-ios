@@ -156,6 +156,7 @@ enum SnapshotBatchPlanner {
         case .kaleidoscope: return .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
         case .tunnel: return .tunnel(pace: settings.tunnelPace)   // VIS-015
         case .spectrumWaterfall: return .waterfall   // VIS-020
+        case .fluidInk: return .fluidInk   // VIS-011
         default: return .circular
         }
     }
