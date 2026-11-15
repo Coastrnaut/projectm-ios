@@ -18,7 +18,7 @@ import Foundation
 #if canImport(Metal) && !VISUAL_NO_METAL
 /// The shader sources this module builds pipelines from through the archive (part of the archive's key).
 public enum NativeShaderSources {
-    public static var visualGenerators: [String] { [FlatShapePass.shaderSource] }
+    public static var visualGenerators: [String] { [FlatShapePass.shaderSource, NoiseFieldGenerator.shaderSource] }   // VIS-013
 }
 
 import LocalPortability

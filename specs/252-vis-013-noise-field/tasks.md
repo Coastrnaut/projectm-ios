@@ -4,18 +4,18 @@
 
 ## Phase 1: Shared noise (VIS-013-R2)
 
-- [ ] VIS-013-T01 Move SHD-006's CPU noise core to `Packages/VisualGenerators/Sources/VisualGenerators/SeededNoise.swift` with `SeededNoiseShader.functions`; make `NoiseTextureReference` call it (VIS-013-D1).
-- [ ] VIS-013-T02 [P] `SeededNoiseTests` (VisualGenerators): hash and fBm values pinned, seed changes values, Linux shape.
-- [ ] VIS-013-T03 [P] `SharedNoiseSourceTests` (ProceduralMaterialsTests): the material literal contains `SeededNoiseShader.functions`; `MaterialNoiseTests` digests and `NoiseTextureReferenceTests` still pass.
+- [X] VIS-013-T01 Move SHD-006's CPU noise core to `Packages/VisualGenerators/Sources/VisualGenerators/SeededNoise.swift` with `SeededNoiseShader.functions`; make `NoiseTextureReference` call it (VIS-013-D1). — Verified 2026-11-14: swift test ProceduralMaterialsTests 66 passed (MaterialNoiseTests digests unchanged)
+- [X] VIS-013-T02 [P] `SeededNoiseTests` (VisualGenerators): hash and fBm values pinned, seed changes values, Linux shape. — Verified 2026-11-14: swift test --filter SeededNoise (4 passed, host and -DVISUAL_NO_METAL shape)
+- [X] VIS-013-T03 [P] `SharedNoiseSourceTests` (ProceduralMaterialsTests): the material literal contains `SeededNoiseShader.functions`; `MaterialNoiseTests` digests and `NoiseTextureReferenceTests` still pass. — Verified 2026-11-14: swift test --filter ProceduralMaterialsTests (66 passed incl. SharedNoiseSourceTests, MaterialNoiseTests)
 
 ## Phase 2: User Story 1 + 2 - the field (VIS-013-R1, R3, R5-R8)
 
-- [ ] VIS-013-T04 `NoiseFieldConfiguration` and `NoiseFieldDrive` (pure Swift) per data-model.md.
-- [ ] VIS-013-T05 `NoiseFieldFlashAreas` (8 × 8 samples → 17 areas, preallocated).
-- [ ] VIS-013-T06 `NoiseFieldGenerator` (Metal fragment pass through `NativePipelineArchive`).
-- [ ] VIS-013-T07 [P] `NoiseFieldDriveTests`: silence and full bands settle to S2's values, brightness ≤ 0.8, smoothing on frame time, drift bounded and never backwards, Reduce Motion halves drift and band warp, non-finite bands.
-- [ ] VIS-013-T08 [P] `NoiseFieldFlashTests`: bursts alternating with silence stay within the transition budget in all 17 areas, Reduce flashing on and off (S3).
-- [ ] VIS-013-T09 `NoiseFieldRenderTests` (GPU): same seed/settings/clock/fixture bands twice → identical bytes; per-GPU digest; different seed differs in > 10 % of pixels; GPU vs CPU mirror within 0.02 at sample points; more octaves → more high-frequency energy (S1, S4).
+- [X] VIS-013-T04 `NoiseFieldConfiguration` and `NoiseFieldDrive` (pure Swift) per data-model.md. — Verified 2026-11-14: NoiseFieldDriveTests 5 passed (host and Linux shape)
+- [X] VIS-013-T05 `NoiseFieldFlashAreas` (8 × 8 samples → 17 areas, preallocated). — Verified 2026-11-14: NoiseFieldFlashTests 2 passed
+- [X] VIS-013-T06 `NoiseFieldGenerator` (Metal fragment pass through `NativePipelineArchive`). — Verified 2026-11-14: NoiseFieldRenderTests 3 passed on the host GPU
+- [X] VIS-013-T07 [P] `NoiseFieldDriveTests`: silence and full bands settle to S2's values, brightness ≤ 0.8, smoothing on frame time, drift bounded and never backwards, Reduce Motion halves drift and band warp, non-finite bands. — Verified 2026-11-14: NoiseFieldDriveTests 5 passed
+- [X] VIS-013-T08 [P] `NoiseFieldFlashTests`: bursts alternating with silence stay within the transition budget in all 17 areas, Reduce flashing on and off (S3). — Verified 2026-11-14: NoiseFieldFlashTests (worst 1 transition per window, limits 4/6)
+- [X] VIS-013-T09 `NoiseFieldRenderTests` (GPU): same seed/settings/clock/fixture bands twice → identical bytes; per-GPU digest; different seed differs in > 10 % of pixels; GPU vs CPU mirror within 0.02 at sample points; more octaves → more high-frequency energy (S1, S4). — Verified 2026-11-14: NoiseFieldRenderTests 3 passed; digest recorded for Apple M5 Max
 - [ ] VIS-013-T10 `NoiseFieldGoldenTests` + goldens (macOS host, iOS Simulator) (S5).
 
 ## Phase 3: User Story 3 - the app (VIS-013-R4, R9, R11, R12)
