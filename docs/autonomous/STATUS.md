@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T14:32:14Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T14:37:27Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,24 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 3 |
-| implementing | 2 |
-| unit_passed | 1 |
-| integrated | 319 |
+| implementing | 1 |
+| built | 1 |
+| integrated | 320 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
 | P2 | 0 | 0 | 0 | 79 | 0 |
-| P3 | 1 | 2 | 1 | 5 | 0 |
+| P3 | 1 | 1 | 1 | 6 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 6 features are not implemented yet (first: FX-011, FX-017, FX-018, OUT-008, QA-011)
+- 5 features are not implemented yet (first: FX-011, FX-017, FX-018, QA-011, QA-012)
 
 ## Integrated
 
@@ -212,6 +212,7 @@ The physical-device suite may **not** start:
 | OUT-005 | Safe-area guides | `2279477acc0a` | `feature/out-005` |
 | OUT-006 | Output mirroring toggle | `eeb64861aa81` | `feature/out-006` |
 | OUT-007 | Corner-pin warp | `e097e3500ac0` | `feature/out-007` |
+| OUT-008 | Grid warp | `f5160474` | `feature/out-008` |
 | OUT-009 | Output color calibration | `9808cd43ea6d` | `feature/out-009` |
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
 | OUT-011 | Output connection diagnostics | `6dfc93d47185` | `feature/out-011` |
@@ -2443,7 +2444,7 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/sim-test_Rendering.log`)
 - `swift test PresentationLifecycle 109, LibraryBackup 87; postmerge projectM-iOSTests 1196 + CornerPinUITests 1; ExternalOutputModeUITests timed out once under load, 2/2 reruns pass`: pass at `e097e3500ac0` (log `.autonomous/logs/integration/batch103b-2/app-tests.log`)
 
-### OUT-008 Grid warp (unit_passed)
+### OUT-008 Grid warp (integrated)
 - `python3 scripts/check_compliance.py`: pass at `26b51db943e1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-008/20261115T065310/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `26b51db943e1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-008/20261115T065310/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `26b51db943e1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-008/20261115T065310/script-tests.log`)
@@ -2463,6 +2464,8 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `26b51db943e1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-008/20261115T065605/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `26b51db943e1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-008/20261115T065605/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `26b51db943e1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-008/20261115T065605/swift-test_ShowControl.log`)
+- `swift test PresentationLifecycle 128, Compositor 1224, LibraryBackup 88; test_scripts OK`: pass at `f5160474`
+- `postmerge batch146: projectM-iOSTests 1378, GridWarp/CornerPin/DisplayCalibration UI tests 3`: pass at `f5160474` (log `.autonomous/logs/integration/batch146.txt`)
 
 ### OUT-009 Output color calibration (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a5ea892238ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-009/20261114T224116/compliance.log`)
