@@ -119,6 +119,8 @@ struct SettingsView: View {
     var powerProfile: PowerProfileSetting? = nil
     /// ACC-007: haptic beat pulses (nil hides the section, e.g. in previews).
     var hapticBeat: HapticBeatCoordinator? = nil
+    /// SHOW-013: auto scene rotation (nil hides the section, e.g. in previews).
+    var sceneRotation: SceneRotationCoordinator? = nil
     /// PERF-012: Export performance report (Settings → Performance).
     var performanceReport: PerformanceReportExport? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
@@ -592,6 +594,7 @@ struct SettingsView: View {
             }
             .id("show")
             QuantizeCueStepsSection(quantizer: settings.showCueQuantizer).id("quantizeCues")   // SHOW-003-R1
+            if let sceneRotation { SceneRotationSection(rotation: sceneRotation, show: show).id("sceneRotation") }   // SHOW-013-R7
         }
         if let openGuide {   // UIX-001-R8
             Section {
