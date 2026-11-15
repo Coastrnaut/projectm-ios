@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T07:21:10Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T07:22:59Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 16 |
+| audited | 15 |
 | implementing | 2 |
+| unit_passed | 1 |
 | integrated | 307 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 151 | 0 |
-| P2 | 10 | 2 | 67 | 0 |
-| P3 | 4 | 0 | 5 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 0 | 151 | 0 |
+| P2 | 9 | 2 | 1 | 67 | 0 |
+| P3 | 4 | 0 | 0 | 5 | 0 |
 
 ## Final device gate
 
@@ -3504,6 +3505,10 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `21fb80d34973` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-009/20261114T162829/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `21fb80d34973` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-009/20261114T162829/swift-test_VisualGenerators.log`)
 - `post-merge batch63/63b/63c: PerformanceControl 257, ShowControl 110, ParameterGraph 226, LibraryBackup 77, projectM-iOSTests 1000, UI 6 (quantized cue steps, parameter search, show cues, auto advance, linear spectrum)`: pass at `1a6916ee` (log `.autonomous/logs/integration/batch63b/app-tests.log`)
+
+### UIX-010 Batch parameter reset (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `2a6835e4ad0c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-010/20261115T022253/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `2a6835e4ad0c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-010/20261115T022253/docs.log`)
 
 ### UIX-011 Color palette picker (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6eab7ccbf468` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-011/20261114T172335/compliance.log`)
