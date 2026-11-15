@@ -152,6 +152,7 @@ enum SnapshotBatchPlanner {
         case .mandala: return .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)
         case .particleFountain: return .particleFountain(gravity: settings.particleGravity)
         case .particleOrbit: return .particleOrbit(radius: settings.particleOrbitRadius)
+        case .noiseField: return .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         default: return .circular
         }
     }

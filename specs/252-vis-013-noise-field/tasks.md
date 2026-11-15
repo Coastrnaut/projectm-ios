@@ -20,9 +20,9 @@
 
 ## Phase 3: User Story 3 - the app (VIS-013-R4, R9, R11, R12)
 
-- [ ] VIS-013-T11 Visual choice `noiseField`, three keys, Settings section (Frequency, Octaves, Seed + New Seed), host style and generator, accessibility value, scene capture as no layer; keys in `ALLOWED_KEYS`, FILE-005 policy, UI-test reset.
-- [ ] VIS-013-T12 [P] `NoiseFieldAppTests` (settings persist and fall back, style mapping, value text, New Seed deterministic, keys in lists) and existing list tests updated; `LibraryBackupAppTests` passes.
-- [ ] VIS-013-T13 [P] `NoiseFieldUITests`: choose Noise Field, controls offered, Bars not, choose High, value "High frequency…", source started once (< 30 s).
+- [X] VIS-013-T11 Visual choice `noiseField`, three keys, Settings section (Frequency, Octaves, Seed + New Seed), host style and generator, accessibility value, scene capture as no layer; keys in `ALLOWED_KEYS`, FILE-005 policy, UI-test reset. — Verified 2026-11-14: xcodebuild build-for-testing (VIS13 iPhone 17, type-check flags: no warning in touched code); NoiseFieldAppTests 5 passed
+- [X] VIS-013-T12 [P] `NoiseFieldAppTests` (settings persist and fall back, style mapping, value text, New Seed deterministic, keys in lists) and existing list tests updated; `LibraryBackupAppTests` passes. — Verified 2026-11-14: xcodebuild test-without-building: NoiseFieldAppTests, SettingsTests, CameraVisualTests, LibraryBackupAppTests, ParticleOrbitAppTests, NoiseEditorTests, WarmStartCacheTests (39 passed)
+- [X] VIS-013-T13 [P] `NoiseFieldUITests`: choose Noise Field, controls offered, Bars not, choose High, value "High frequency…", source started once (< 30 s). — Verified 2026-11-14: NoiseFieldUITests passed in 21.8 s on VIS13 iPhone 17
 
 ## Phase 4: Polish
 
