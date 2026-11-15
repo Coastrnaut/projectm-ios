@@ -82,7 +82,7 @@ final class RadialBlurSettingTests: XCTestCase {
             radial.isEnabled = true
             radial.strength = 0.15
             radial.focusX = 0.3
-            chain.order = OutputEffectOrder([.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline])
+            chain.order = OutputEffectOrder([.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline, .vignette])
             let live = SceneEffectSettings(order: chain.order, grade: grade.grade, gradeEnabled: grade.isEnabled,
                                            trails: trails.feedback, radialBlur: radial.blur)
             let written: [SceneEffectEntry]? = SceneAutosaveCapture.effects(live, carry: nil)
@@ -94,7 +94,7 @@ final class RadialBlurSettingTests: XCTestCase {
             radial.strength = 0.02
             SceneAutosaveCapture.applyEffects(written, chain: chain, grade: grade, trails: trails, radialBlur: radial)
             XCTAssertEqual(radial.blur, RadialBlur(isEnabled: true, strength: 0.15, focusX: 0.3))
-            XCTAssertEqual(chain.order.effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline])
+            XCTAssertEqual(chain.order.effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic, .edgeOutline, .vignette])
             radial.isEnabled = false
             let preset = chain.presets.preset(named: "Zoom")
             SceneAutosaveCapture.applyEffects(preset?.effects, chain: chain, grade: grade, trails: trails, radialBlur: radial)
