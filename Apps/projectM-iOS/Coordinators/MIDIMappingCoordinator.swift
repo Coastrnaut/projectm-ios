@@ -25,6 +25,8 @@
 //   Selecting a scene never saves: only learn, delete, Undo and the mode picker write the mappings (MIDI-007-R3).
 // * MIDI-008 (specs/157-midi-008-transport): trigger bindings may also be CC buttons and real-time sources (`ccbtn:`, `rt:`
 //   lines among the note lines). A CC is either a button or a parameter control: learning one frees the other.
+// * MIDI-005 (specs/266-midi-005-14-bit-controls): a mapping on CC 0–31 may be 14-bit (`;hires=1`): CC n and CC n+32
+//   combine through `highResolutionPairs`; learn detection and the switch live in `MIDIMappingCoordinator+HighResolution.swift`.
 // * MIDI-012 (specs/171-midi-012-profiles, contract P2): lines no list reads (unknown kinds, unreadable `cc:` lines) are
 //   kept after the known lines (`otherLines`, MIDI-012-R7). `replaceLines` writes a profile's lines verbatim and is one
 //   Undo step; Undo is a snapshot of the stored lines, restored verbatim (research MIDI-012-D6).
@@ -122,6 +124,9 @@ final class MIDIMappingCoordinator {
     /// MIDI-012: the Profiles section's coordinator (nil in tests that do not need it).
     @ObservationIgnored var profiles: MIDIProfilesCoordinator?
     @ObservationIgnored private var isClientRegistered = false
+    /// MIDI-005: 14-bit pair state (memory only) and the learn watch for a fine controller.
+    @ObservationIgnored var highResolutionPairs = MIDIHighResolutionTracker()
+    @ObservationIgnored var highResolutionWatch = MIDIHighResolutionLearnWatch<ParameterID>()
 
     init(registry: ParameterRegistry, applied: Set<ParameterID>, input: MIDIInputCoordinator,
          discovery: MIDIDiscoveryCoordinator, defaults: UserDefaults,
@@ -349,7 +354,7 @@ final class MIDIMappingCoordinator {
     }
 
     /// Saves changed options; false when nothing changed. Live values wait for the next message.
-    private func updateOptions(_ options: MIDIMappingOptions, for target: ParameterID) -> Bool {
+    func updateOptions(_ options: MIDIMappingOptions, for target: ParameterID) -> Bool {
         guard self.options(for: target) != options else { return false }
         bindings.setOptions(options, for: target)
         save()
@@ -463,22 +468,27 @@ final class MIDIMappingCoordinator {
         guard !batch.isEmpty else { return }
         let noteLearned: Int? = receiveNotes(batch)   // MIDI-006: note learn and triggers
         routeScenes(batch, skipping: noteLearned)   // MIDI-007: the note learning press selects nothing
+        detectHighResolution(in: batch[...])   // MIDI-005: a fine controller after an earlier learn
         var updates: [ParameterID: Double] = [:]
         var rest: ArraySlice<MIDIEvent> = batch[...]
         if session.isLearning, let outcome = session.handle(batch, now: clock()) {
             switch outcome {
             case let .bound(key, target, eventIndex):
                 let before: [MIDIEvent] = Array(batch[..<eventIndex])
-                updates = MIDIBindingValues.values(for: before, bindings: bindings, registry: registry)   // old bindings
+                updates = MIDIBindingValues.values(for: before, bindings: bindings, registry: registry,
+                                                   tracker: &highResolutionPairs)   // old bindings
                 rest = batch[(eventIndex + 1)...]
                 bind(key, to: target)
+                armHighResolutionWatch(key, target: target)   // MIDI-005-R5
+                detectHighResolution(in: rest)
             case .timedOut:
                 finishTimedOut()
             case .cancelled:
                 break
             }
         }
-        let later: [ParameterID: Double] = MIDIBindingValues.values(for: Array(rest), bindings: bindings, registry: registry)
+        let later: [ParameterID: Double] = MIDIBindingValues.values(for: Array(rest), bindings: bindings, registry: registry,
+                                                                     tracker: &highResolutionPairs)
         updates.merge(later) { (_: Double, newer: Double) -> Double in newer }
         guard !updates.isEmpty else { return }
         var merged: [ParameterID: Double] = liveValues
