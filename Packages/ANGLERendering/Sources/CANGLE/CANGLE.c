@@ -193,3 +193,37 @@ void PMANGLEBindFramebuffer(unsigned int framebuffer) {
         bind(GL_FRAMEBUFFER, framebuffer);
     }
 }
+
+// OUT-013: frame fences (GL ES 3.0 sync objects; values from GLES3/gl3.h at the pinned ANGLE commit).
+#define PM_GL_SYNC_GPU_COMMANDS_COMPLETE 0x9117
+#define PM_GL_SYNC_FLUSH_COMMANDS_BIT 0x00000001
+#define PM_GL_ALREADY_SIGNALED 0x911A
+#define PM_GL_TIMEOUT_EXPIRED 0x911B
+#define PM_GL_CONDITION_SATISFIED 0x911C
+
+void *PMANGLEFenceInsert(void) {
+    typedef void *(*FenceSync)(unsigned int, unsigned int);
+    FenceSync fenceSync = (FenceSync)eglGetProcAddress("glFenceSync");
+    return fenceSync ? fenceSync(PM_GL_SYNC_GPU_COMMANDS_COMPLETE, 0) : 0;
+}
+
+int PMANGLEFencePoll(void *fence) {
+    typedef unsigned int (*ClientWaitSync)(void *, unsigned int, uint64_t);
+    ClientWaitSync wait = (ClientWaitSync)eglGetProcAddress("glClientWaitSync");
+    if (!wait) {
+        return -1;
+    }
+    unsigned int result = wait(fence, PM_GL_SYNC_FLUSH_COMMANDS_BIT, 0);
+    if (result == PM_GL_ALREADY_SIGNALED || result == PM_GL_CONDITION_SATISFIED) {
+        return 1;
+    }
+    return result == PM_GL_TIMEOUT_EXPIRED ? 0 : -1;
+}
+
+void PMANGLEFenceDelete(void *fence) {
+    typedef void (*DeleteSync)(void *);
+    DeleteSync deleteSync = (DeleteSync)eglGetProcAddress("glDeleteSync");
+    if (deleteSync) {
+        deleteSync(fence);
+    }
+}
