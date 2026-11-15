@@ -10,12 +10,12 @@
 
 ## Phase 2: User Stories 2 + 3 - step caps and finiteness on the CPU (R3 to R5; S1, S2)
 
-- [ ] VIS-017-T04 [US2] [US3] `SignedDistanceSceneTests` (`Packages/VisualGenerators/Tests/VisualGeneratorsTests/SignedDistanceSceneTests.swift`): caps ordered and ≤ 128; over a 64 × 48 ray grid plus grazing rays every march ≤ its cap, the High grid reaches more steps than the Low cap; misses take 0 steps; every primitive is hit somewhere; extreme poses (NaN, ±inf, huge) give finite colours in 0…1; drive bounds (radius, spin, brightness, angle wrap, Reduce Motion half, time backwards, long gap). Runs in the Linux shape.
+- [ ] VIS-017-T04 [US2] [US3] `SignedDistanceSceneTests` (`Packages/VisualGenerators/Tests/VisualGeneratorsTests/SignedDistanceSceneTests.swift`): caps ordered and ≤ 128; over a 64 × 48 ray grid plus grazing rays every march ≤ its cap, the High grid reaches more steps than the Low cap; misses take 0 steps; every primitive lies inside the bounding sphere for any pose (scene distance at radius 2 ≥ 0); every primitive is hit somewhere; extreme poses (NaN, ±inf, huge) give finite colours in 0…1; drive bounds (radius, spin, brightness, angle wrap, Reduce Motion half, time backwards, long gap). Runs in the Linux shape.
 
 ## Phase 3: User Story 1 + 4 - the picture on Metal and its safety (R1, R6, R7, R9, R12; S2 to S4)
 
 - [ ] VIS-017-T05 [US1] Mode `.signedDistance` in `NoiseFieldGenerator` (pipeline, drive, flash sampling, SDF uniform block, entry points `vis_sdf_fragment` and test-only `vis_sdf_steps_fragment`, restart) and `NoiseFieldFlashAreas.sampleSignedDistance`.
-- [ ] VIS-017-T06 [US1] [US2] [US3] `SignedDistanceRenderTests` (GPU): per preset the step-count render's maximum ≤ cap and High > Low cap; a rgba16Float render with extreme bands and time is finite and in 0…1; two renders identical; CPU mirror and GPU agree on hit/miss at sample points away from silhouettes; quality change in place.
+- [ ] VIS-017-T06 [US1] [US2] [US3] `SignedDistanceRenderTests` (GPU): per preset the step-count render's maximum ≤ cap and High > Low cap; a rgba16Float render with extreme bands and time is finite and in 0…1; two renders identical; CPU mirror and GPU agree on hit/miss at sample points away from silhouettes; quality change in place; entering the mode and a loop restart reset the pose.
 - [ ] VIS-017-T07 [US4] `SignedDistanceFlashTests`: bass bursts alternating with silence stay within the transition budget in all 17 areas, Reduce flashing on and off; sample colours ≤ 0.8.
 - [ ] VIS-017-T08 [US1] `SignedDistanceGoldenTests` + goldens in `Packages/RenderGoldens` (macOS host, iOS Simulator); README entry.
 
@@ -37,3 +37,13 @@ T01, T02 → T03 → T04; T03 → T05 → T06, T07, T08, T09 → T10, T11; all �
 ## Implementation strategy
 
 MVP = T01-T04 (the acceptance proven on the CPU mirror), then the GPU proof (T05-T08), then the app (T09-T11).
+
+## Analyze notes (speckit-analyze, 2026-11-15)
+
+- Coverage: R1 T05; R2 T01, T04; R3-R5 T01, T04, T06; R6 T02, T04; R7 T07; R8, R10, R11 T09-T11; R9 T08; R12 T12.
+  S1 T04, T06; S2 T04, T06; S3 T06, T08; S4 T07; S5 T10, T11; S6 T12. No constitution conflict (no new compile site,
+  no dependency, no networking, nothing reaches projectM).
+- Fix applied (coverage): US1 scenario 2 ("the whole scene stays inside its bounding volume") had no explicit
+  assertion; T04 now checks the scene distance on the bounding sphere for extreme poses.
+- Fix applied (coverage): the edge case "switching to and from the other noise-field modes starts from the initial
+  pose" is asserted in T06 (restart and re-entry reset the drive) and T10 (in-place host switch).
