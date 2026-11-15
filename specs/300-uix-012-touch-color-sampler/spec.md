@@ -41,6 +41,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: When is sampling unavailable? → A: When there is nothing to sample on the device: no visual, the visual shown only on the external display (OUT-001), the output blacked out (OUT-010), paused, or the scene locked (SCN-015's refusal). The eyedropper then reports why and does not enter sampling mode.
 - Q: How does sampling work when Settings is a sheet? → A: The sheet closes, a banner over the preview says "Tap the picture to pick <name>" with Cancel; after a sample or Cancel, Settings reopens. In the iPad split editor the editor stays open and the user taps the scaled preview.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does sampling mode end after one sample? → A: Yes. A written sample (or an unchanged colour) ends sampling mode and returns to Settings; a rejected tap or a failed read keeps it, so the user can try again.
+- Q: Which output pixel does a point on a pixel boundary pick? → A: The pixel that contains it: floor of the continuous pixel coordinate, with the far edge (exactly the picture's width or height) clamped to the last pixel. Tests use pixel centres and boundaries.
+- Q: In which space are the announced and displayed percentages? → A: sRGB-encoded (the values colour pickers show), rounded to whole percents; the stored value keeps full precision in the target's space.
+- Q: Do other visualizer gestures work during sampling? → A: No. Taps on the preview sample; the tap-to-toggle controls, double-tap focus and gesture shortcuts are off until sampling ends. The emergency blackout stays reachable (it is above the sampling layer).
+- Q: Is sampling offered when Reduce flashing is limiting the frame? → A: Yes; the sample is the frame as shown, after the FX-019 guard (what the user sees).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pick a colour from the picture (Priority: P1) — MVP
@@ -91,7 +101,8 @@ is the pixel under my finger in the full-size output.
 - **UIX-012-R5**: The pixel is read from the next frame the shown visual presents, through REC-001's capture source, without blocking rendering; at most one sample request is in flight.
 - **UIX-012-R6**: The read value is converted to straight linear RGB in 0…1 (halves: clamp, unpremultiply; 8-bit sRGB: decode), then to the target's space (linear for `ParameterColor`, sRGB-encoded for `TextColor`); the target's alpha is kept.
 - **UIX-012-R7**: The write is one undo step named "Sample <name>"; edits before it stay their own steps; an unchanged colour records nothing.
-- **UIX-012-R8**: VoiceOver announces the result on the parameter lane ("<name> set to red R%, green G%, blue B%") or the refusal; the eyedropper's accessibility value is the target's current colour in the same words; sampling mode has an escape action that cancels.
+- **UIX-012-R8**: VoiceOver announces the result on the parameter lane ("<name> set to red R%, green G%, blue B%", sRGB-encoded whole percents) or the refusal; the eyedropper's accessibility value is the target's current colour in the same words; sampling mode has an escape action that cancels.
+- **UIX-012-R11**: Sampling mode ends after a written (or unchanged) sample and on Cancel; a rejected tap or failed read keeps it. While it is on, the visualizer's own tap, double-tap and gesture shortcuts do not act.
 - **UIX-012-R9**: A failed or late capture (1 s) reports "Couldn't read the picture. Try again." and keeps sampling mode.
 - **UIX-012-R10**: Nothing is stored beyond the target's own value; no new settings keys, no network, no files.
 
