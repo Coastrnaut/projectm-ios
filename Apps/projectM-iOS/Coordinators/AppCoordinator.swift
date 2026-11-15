@@ -545,10 +545,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         #endif
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
-        presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
-                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
-                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
-                                    smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()))   // PRE-008
+        presets = Self.makePresets(defaults: defaults, settings: settings, loader: presetLoader)
         presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
@@ -581,6 +578,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     // AppCoordinator.init is split in three (2026-11-14) to keep each body under the 300 ms
     // type-check budget that Xcode 26 on CI enforces: the UI-test reset and the wiring that runs
     // once every stored property is set moved out unchanged, called at the same points.
+
+    /// The preset coordinator with its stores in `Application Support/PresetCollections` (split from `init` for the
+    /// type-check budget).
+    private static func makePresets(defaults: UserDefaults, settings: AppSettings, loader: any PresetLoading) -> PresetCoordinator {
+        PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: loader,
+                          collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
+                          tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
+                          smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()),   // PRE-008
+                          notes: PresetNoteStore(directory: PresetNoteStore.defaultDirectory()))   // PRE-011
+    }
 
     /// PRE-016: the overrides store (beside the tags, so `-uitestResetNotice` removes it), handed to the
     /// loader (applied on load) and to the coordinator (the Adjust Parameters sheet).

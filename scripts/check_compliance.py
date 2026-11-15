@@ -20,6 +20,9 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
     VideoLayerSource.swift, added by MED-002 / ADR-0022) or from
     URLs, data, files or dynamic libraries anywhere, and binary archives outside BINARY_ARCHIVE_ALLOWED
     (one file: PERF-009's warm-start pipeline archive of the app's own shaders, ADR-0062).
+  * PRE-011-R6 (private preset notes): no diagnostics source (Packages/Diagnostics, Apps/CaptureLab, the
+    app's automation reports and the PERF-012 performance report sources; NOTES_PRIVATE_SOURCES) may name
+    the notes store (`PresetNote…`, `noteStore`, `notes.json`), so notes can never reach a diagnostics export.
   * Research R-16: no entitlements or background modes in project.yml, in any YAML key form
     (plain, quoted, or flow style; ADR-0001 owner ruling 13). YAML comments are ignored.
   * ADR-0001 Decision 6, the one entitlement exception: project.yml may set
@@ -123,6 +126,28 @@ METAL_SOURCE_ALLOWED = frozenset({
 })
 # Swift multi-line and single-line literals (raw #"..."# included); Objective-C @"..." keeps its @.
 STRING_LITERAL = re.compile(r'#*"""[\s\S]*?"""#*|#+"[^\n]*?"#+|"(?:\\.|[^"\\\n])*"')
+# PRE-011-R6 (contract C2): sources that write diagnostics or automation reports must never name the notes store.
+NOTES_STORE = re.compile(r"\bPresetNote\w*|\bnoteStore\b|\bnotes\.json\b|\bnotePresetIDs\b")
+NOTES_PRIVATE_SOURCES = [
+    ROOT / "Packages" / "Diagnostics",
+    ROOT / "Apps" / "CaptureLab",
+    ROOT / "Apps" / "projectM-iOS" / "Automation",
+    ROOT / "Apps" / "projectM-iOS" / "Coordinators" / "AppCoordinator+PerformanceReport.swift",
+    ROOT / "Apps" / "projectM-iOS" / "Coordinators" / "PerformanceReportBuilder.swift",
+    ROOT / "Apps" / "projectM-iOS" / "Coordinators" / "PerformanceReportExport.swift",
+    ROOT / "Apps" / "projectM-iOS" / "Coordinators" / "PerformanceStateRecorder.swift",
+]
+
+
+def is_notes_private_source(path: Path) -> bool:
+    resolved = path.resolve()
+    for root in NOTES_PRIVATE_SOURCES:
+        root = root.resolve()
+        if resolved == root or root in resolved.parents:
+            return True
+    return False
+
+
 SCK_IMPORT = re.compile(swift_import("ScreenCaptureKit") + r"|<ScreenCaptureKit/")
 
 # A YAML mapping key starts a line (optionally as a `- ` list item) or follows `{` or `,` in
@@ -199,6 +224,9 @@ def check_file(path: Path) -> list[str]:
         except ValueError:
             found.append(f"{path}: networking API (FR-068): Network framework used outside "
                          "PerformanceControl/OSCTransport/")
+    if NOTES_STORE.search(text) and is_notes_private_source(path):
+        found.append(f"{path}: preset notes in a diagnostics source (PRE-011-R6): notes must never reach "
+                     "a diagnostics export")
     if SCK_IMPORT.search(text):
         try:
             path.resolve().relative_to(SCK_ALLOWED.resolve())
