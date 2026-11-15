@@ -69,7 +69,9 @@ public enum LibraryErasePolicy {
                                                        "settings.recording.customHeight"]
     /// OUT-004-R8: the external display's output correction (display hardware: not backed up, erased with Settings).
     public static let externalDisplayKeys: [String] = ["settings.externalDisplay.fit", "settings.externalDisplay.shape",
-                                                       "settings.externalDisplay.pixelAspect"]
+                                                       "settings.externalDisplay.pixelAspect",
+                                                       "settings.externalDisplay.resolution",   // OUT-003-R7
+                                                       "settings.externalDisplay.resolutionPercent"]
     /// UIX-007-R7: the iPad split editor's width (this device's screen: not backed up, erased with Settings).
     public static let splitEditorWidthKey = "settings.splitEditor.width"
 
