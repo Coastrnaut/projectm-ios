@@ -12,8 +12,9 @@ files in `VisualGenerators`:
 - `FluidInk.swift` (pure Swift, every platform): constants (`FluidInk`), the impulse model (`FluidImpulse`, strength
   mapping, seeded splats), the fixed-step clock and impulse queue (`FluidStepScheduler`: anchor, 1/60 s steps, ≤ 4 per
   frame, stall skip, 16-entry queue, ≤ 2 impulses / 1.5 strength per step, Reduce Motion spacing), the global ink
-  bound for the envelope (`FluidInkBound`), and the reference solver (`FluidInkSolver`, any grid size, fixed storage,
-  same passes and arithmetic as the shaders, non-finite guard, health statistics).
+  bound for the envelope (`FluidInkBound`) and the health record (`FluidInkHealth`). The reference solver
+  (`FluidInkSolver`, any grid size, fixed storage, same passes and arithmetic as the shaders, non-finite guard, health
+  statistics) is in its own target `VisualFluidReference` (tests only; compiled with `-O` so Debug runs stay short).
 - `FluidInkPass.swift` (Metal): the fixed textures (made once), the pass pipelines built from the noise field
   generator's library through PERF-009's archive, per-step encoding, the display pass, and the health image with its
   non-blocking readback.
@@ -67,7 +68,9 @@ Post-design re-check: no violation; no ADR needed.
 
 ```text
 Packages/VisualGenerators/Sources/VisualGenerators/
-  FluidInk.swift                  # NEW: constants, impulses, scheduler, bound, reference solver
+  FluidInk.swift                  # NEW: constants, impulses, scheduler, bound, health
+Packages/VisualGenerators/Sources/VisualFluidReference/
+  FluidInkSolver.swift            # NEW target (tests only, -O): the CPU reference solver
   FluidInkPass.swift              # NEW: textures, pipelines, step/display encoding, health readback; FluidInkShader
   NoiseFieldConfiguration.swift   # + fluidInk
   NoiseFieldGenerator.swift       # + mode .fluid, shader source, enqueueImpulse

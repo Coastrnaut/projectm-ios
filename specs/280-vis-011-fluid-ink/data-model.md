@@ -11,5 +11,5 @@
 - **FluidInkBound**: M (rgb), reset → 0; `step(splats:)`.
 - **FluidInkSolver** (reference): N, velocity (2N²), ink (3N²), scratch; `step(splats:speedCap:)`, `reset()`,
   `health` (maxSpeed, maxInk, kineticEnergy, nonFiniteResets).
-- **FluidInkPass** (GPU): textures [velocity ×2, pressure ×2, divergence, ink ×2, health], newest indices, needsReset,
+- **FluidInkPass** (GPU): textures [velocity ×2 `rg32Float`, pressure ×2 `r32Float`, divergence `r32Float`, ink ×2 `rgba32Float`, health 16² `rgba32Float`; 1.06 MiB at 128²], newest indices, needsReset,
   health buffers ×3 and their command buffers, resets counter.

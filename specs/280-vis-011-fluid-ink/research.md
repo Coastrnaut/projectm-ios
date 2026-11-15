@@ -9,9 +9,9 @@
 
 ## D2 Grid and formats
 - Decision: 128 × 128 on every device; velocity `rg32Float`, pressure `r32Float`, divergence `r32Float`, ink
-  `rgba16Float`, health 16 × 16 `rgba32Float`. All fields read with `read()` and manual bilinear interpolation.
+  `rgba32Float` (so the ink matches the reference solver too), health 16 × 16 `rgba32Float`. All fields read with `read()` and manual bilinear interpolation.
 - Rationale: 32-bit float filtering is not guaranteed on every iOS GPU; manual bilinear matches the reference solver.
-  The memory (~0.8 MiB) and time are small, and one grid gives one look and one golden per platform class.
+  The memory (1.06 MiB) and time are small, and one grid gives one look and one golden per platform class.
 - Alternatives: 64² on compact devices (different look, extra goldens); half-float velocity (precision of the
   projection).
 
@@ -41,6 +41,8 @@
   area (lags, non-deterministic gain).
 
 ## D7 Tests within budget
-- CPU stability at 32² for 60 s at 60 Hz (3 600 steps; ~0.5 s Debug); GPU stability for 60 s at 60 Hz with health
-  readback every 60 frames, at 128² (3 600 steps of 26 passes, batched into command buffers of 60 frames). Long sweeps
+- The reference solver lives in its own target `VisualFluidReference`, compiled with `-O` even in Debug (a local path
+  package may use unsafeFlags, as Packages/Rendering): in plain Debug the 60 s run took 10 s, optimized 0.2 s.
+- CPU stability at 32² for 60 s at 60 Hz (3 600 steps; 0.2 s); GPU stability for 60 s at 60 Hz with health
+  readback every 60 frames, at 128² (3 600 steps of up to 26 passes; health read twice a second; about 2.5 s on the host). Long sweeps
   (several minutes, Reduce Motion, 30/60/120 fps) behind `VIS011_LONG=1`.
