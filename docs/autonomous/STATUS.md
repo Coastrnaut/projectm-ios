@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T00:32:05Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T00:37:41Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,8 +11,8 @@
 |---|---|
 | audited | 67 |
 | implementing | 2 |
-| unit_passed | 3 |
-| integrated | 253 |
+| unit_passed | 1 |
+| integrated | 255 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -20,14 +20,14 @@
 | Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 8 | 1 | 1 | 141 | 0 |
-| P2 | 48 | 1 | 2 | 28 | 0 |
+| P1 | 8 | 1 | 0 | 142 | 0 |
+| P2 | 48 | 1 | 1 | 29 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 72 features are not implemented yet (first: ACC-009, ACC-010, CAM-009, CAM-010, CAM-011)
+- 70 features are not implemented yet (first: ACC-010, CAM-009, CAM-010, CAM-011, FX-005)
 
 ## Integrated
 
@@ -41,6 +41,7 @@ The physical-device suite may **not** start:
 | ACC-006 | Dynamic Type inspector | `bb1439c7` | `feature/acc-006` |
 | ACC-007 | Haptic beat feedback | `03829784` | `feature/acc-007` |
 | ACC-008 | High contrast overlay | `89d78f88` | `feature/acc-008` |
+| ACC-009 | One-handed performance mode | `cd31ef8e` | `feature/acc-009` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
 | ACC-012 | Sensory safety profile | `0b822ef5` | `feature/acc-012` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
@@ -255,6 +256,7 @@ The physical-device suite may **not** start:
 | SHD-003 | Shader parameter metadata | `510cb12a` | `feature/shd-003` |
 | SHD-004 | Shader variant switching | `3b813137` | `feature/shd-004` |
 | SHD-005 | Gradient editor | `5d186c3c` | `feature/shd-005` |
+| SHD-006 | Noise editor | `fd57c72f` | `feature/shd-006` |
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
 | SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
@@ -372,7 +374,7 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `6b23f3bd600a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-008/20261114T042852/docs.log`)
 - `post-merge: projectM-iOSTests 556 + OverlayContrast/AccessibilityScreens/VoiceOverParameter UI tests 10`: pass at `89d78f88` (log `.autonomous/logs/integration/acc-008/app-tests.log`)
 
-### ACC-009 One-handed performance mode (unit_passed)
+### ACC-009 One-handed performance mode (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2ab4693e8557` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-009/20261114T192641/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `2ab4693e8557` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-009/20261114T192641/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `2ab4693e8557` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-009/20261114T192641/script-tests.log`)
@@ -380,6 +382,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `2ab4693e8557` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-009/20261114T192641/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `2ab4693e8557` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-009/20261114T192641/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `2ab4693e8557` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-009/20261114T192641/swift-test_ShowControl.log`)
+- `post-merge batch87: ShowControl 135, Compositor 1018, RenderGoldens 87, LibraryBackup 86, validate_docs, projectM-iOSTests 1127, UI 9 (one-handed 3, noise editor, show timeline, performance layout 4)`: pass at `fd57c72f` (log `.autonomous/logs/integration/batch87/app-tests.log`)
 
 ### ACC-011 Captioned status events (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/compliance.log`)
@@ -2748,7 +2751,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `8c516784eda1` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-005/20261114T184415/swift-test_VisualGenerators.log`)
 - `post-merge batch81: VisualGenerators 260, Compositor 991, SceneFormat 195, projectM-iOSTests 1097, UI 2 (palette gradient editor, palette picker)`: pass at `5d186c3c` (log `.autonomous/logs/integration/batch81/app-tests.log`)
 
-### SHD-006 Noise editor (unit_passed)
+### SHD-006 Noise editor (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/script-tests.log`)
@@ -2761,6 +2764,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/swift-test_ShowControl.log`)
+- `post-merge batch87: ShowControl 135, Compositor 1018, RenderGoldens 87, LibraryBackup 86, validate_docs, projectM-iOSTests 1127, UI 9 (one-handed 3, noise editor, show timeline, performance layout 4)`: pass at `fd57c72f` (log `.autonomous/logs/integration/batch87/app-tests.log`)
 
 ### SHD-009 Expression mapping DSL (integrated)
 - `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)
