@@ -3,6 +3,8 @@
 // Six sliders (temperature, lift, gamma, gain, saturation and FX-004's hue) with readouts, ACC-005's `.accessibleParameter`
 // (VoiceOver label, spoken value, one step per swipe), a footer naming the graded visuals, and "Reset to neutral"
 // (disabled at neutral). Each row is its own small view; strings come from `ColorGradeSetting`'s typed readouts.
+// FX-005 (specs/292-fx-005-contrast-curves, FX-005-R9): a segmented "Contrast" picker (Linear, S-curve, Filmic) and,
+// while a curve is chosen, a "Contrast strength" slider (percent, 5% per VoiceOver swipe).
 import Compositor
 import SwiftUI
 
@@ -24,7 +26,11 @@ enum ColorGradeParameterSpecs {
     /// FX-004-R9: 10 degrees per VoiceOver swipe (36 steps), spoken "plus 30 degrees".
     static let hue = AccessibleParameterSpec(id: "colorHueSlider", label: "Hue", range: ColorGrade.hueRange,
                                              step: ColorGrade.hueStep * 10, unit: .signedDegrees)
-    static var all: [AccessibleParameterSpec] { [temperature, lift, gamma, gain, saturation, hue] }
+    /// FX-005-R9: 5% per VoiceOver swipe (20 steps).
+    static let contrastStrength = AccessibleParameterSpec(id: "colorContrastStrengthSlider", label: "Contrast strength",
+                                                          range: ContrastCurve.strengthRange, step: ContrastCurve.strengthStep * 5,
+                                                          unit: .percent(decimals: 0))
+    static var all: [AccessibleParameterSpec] { [temperature, lift, gamma, gain, saturation, hue, contrastStrength] }
 }
 
 struct ColorGradeSection: View {
@@ -54,6 +60,7 @@ struct ColorGradeSection: View {
                           text: ColorGradeSetting.saturationText(setting.saturation), target: Self.target(setting, \.saturation))
             ColorGradeRow(spec: ColorGradeParameterSpecs.hue, value: $setting.hue,
                           text: ColorGradeSetting.hueText(setting.hue), target: Self.target(setting, \.hue))
+            ColorContrastRows(setting: setting)   // FX-005
             ColorGradeResetButton(setting: setting)
         } header: {
             Text(Self.header)
@@ -96,5 +103,34 @@ private struct ColorGradeResetButton: View {
         Button(ColorGradeSection.resetTitle) { setting.resetToNeutral() }
             .disabled(neutral)
             .accessibilityIdentifier("colorResetButton")
+    }
+}
+
+/// FX-005-R9: the contrast preset picker and, while a curve is chosen, its strength slider.
+private struct ColorContrastRows: View {
+    @Bindable var setting: ColorGradeSetting
+
+    static let title = "Contrast"
+
+    var body: some View {
+        picker
+        if setting.contrast != .linear { strength }
+    }
+
+    private var picker: some View {
+        Picker(Self.title, selection: $setting.contrast) {
+            ForEach(ContrastCurve.allCases, id: \.self) { (curve: ContrastCurve) in
+                Text(curve.displayName).tag(curve)
+            }
+        }
+        .pickerStyle(.segmented)
+        .accessibilityLabel(Self.title)
+        .accessibilityIdentifier("colorContrastPicker")
+    }
+
+    private var strength: some View {
+        ColorGradeRow(spec: ColorGradeParameterSpecs.contrastStrength, value: $setting.contrastStrength,
+                      text: ColorGradeSetting.contrastStrengthText(setting.contrastStrength),
+                      target: ColorGradeSection.target(setting, \.contrastStrength))
     }
 }

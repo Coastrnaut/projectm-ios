@@ -12,6 +12,9 @@
 // research FX-003-D10); Standard leaves the grade unchanged. The flash guard measures the graded output either way.
 // FX-020 (specs/142-fx-020-effect-chains, research FX-020-D9): an on/off switch, `settings.colorGrade.enabled` (Bool,
 // absent → on); off makes `effectiveGrade` neutral and keeps the values. Removed with the others by the reset.
+// FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): `settings.colorGrade.contrast` (String preset name;
+// absent, not a string or unknown → Linear) and `settings.colorGrade.contrastStrength` (Double 0…1, absent → 0.5),
+// stored, reset and backed up like the others; ACC-012 does not cap the curve (white stays white).
 import Compositor
 import FlashSafety
 import Foundation
@@ -27,7 +30,10 @@ final class ColorGradeSetting {
     static let saturationKey = "settings.colorGrade.saturation"
     static let hueKey = "settings.colorGrade.hue"   // FX-004-R8
     static let enabledKey = "settings.colorGrade.enabled"   // FX-020-R8
-    static let allKeys: [String] = [temperatureKey, liftKey, gammaKey, gainKey, saturationKey, hueKey, enabledKey]
+    static let contrastKey = "settings.colorGrade.contrast"   // FX-005-R8
+    static let contrastStrengthKey = "settings.colorGrade.contrastStrength"   // FX-005-R8
+    static let allKeys: [String] = [temperatureKey, liftKey, gammaKey, gainKey, saturationKey, hueKey, enabledKey,
+                                    contrastKey, contrastStrengthKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// Called after every change with the new (valid) grade.
@@ -58,6 +64,20 @@ final class ColorGradeSetting {
         didSet { store(\.hue, ColorGrade.hueRange, 0, Self.hueKey) }
     }
 
+    /// FX-005: the contrast preset (Linear = off).
+    var contrast: ContrastCurve {
+        didSet {
+            guard contrast != oldValue else { return }
+            defaults.set(contrast.rawValue, forKey: Self.contrastKey)
+            onChange?(grade)
+        }
+    }
+
+    /// FX-005: 0…1 (default 0.5).
+    var contrastStrength: Double {
+        didSet { store(\.contrastStrength, ContrastCurve.strengthRange, ContrastCurve.defaultStrength, Self.contrastStrengthKey) }
+    }
+
     /// FX-020: Color on (the default) or off (neutral output, values kept).
     var isEnabled: Bool {
         didSet {
@@ -81,11 +101,15 @@ final class ColorGradeSetting {
         gain = valid.gain
         saturation = valid.saturation
         hue = valid.hue
+        contrast = ContrastCurve(storedName: defaults.object(forKey: Self.contrastKey) as? String)   // FX-005
+        let storedStrength: Double = Self.read(defaults, Self.contrastStrengthKey, ContrastCurve.defaultStrength)
+        contrastStrength = ColorGrade.clamp(storedStrength, to: ContrastCurve.strengthRange, neutral: ContrastCurve.defaultStrength)
     }
 
     /// The grade the compositor applies.
     var grade: ColorGrade {
-        ColorGrade(temperature: temperature, lift: lift, gamma: gamma, gain: gain, saturation: saturation, hue: hue)
+        ColorGrade(temperature: temperature, lift: lift, gamma: gamma, gain: gain, saturation: saturation, hue: hue,
+                   contrast: contrast, contrastStrength: contrastStrength)
     }
 
     var isNeutral: Bool { grade.isNeutral }
@@ -116,6 +140,8 @@ final class ColorGradeSetting {
         gain = neutral.gain
         saturation = neutral.saturation
         hue = neutral.hue
+        contrast = neutral.contrast   // FX-005
+        contrastStrength = neutral.contrastStrength
         isEnabled = true
         for key in Self.allKeys { defaults.removeObject(forKey: key) }
         onChange?(grade)
@@ -175,6 +201,12 @@ final class ColorGradeSetting {
 
     /// "100%".
     static func saturationText(_ value: Double) -> String {
+        let percent: Int = Int((value * 100).rounded())
+        return String(percent) + "%"
+    }
+
+    /// FX-005: "50%".
+    static func contrastStrengthText(_ value: Double) -> String {
         let percent: Int = Int((value * 100).rounded())
         return String(percent) + "%"
     }
