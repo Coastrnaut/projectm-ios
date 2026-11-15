@@ -457,7 +457,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let oscReceiver: OSCReceiver = .system(store: OSCRoutesCoordinator.makeStore(routable: oscRoutable),
                                                routes: OSCRoutesCoordinator.initialRoutes(routable: oscRoutable, defaults: defaults))
         #if DEBUG
-        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? oscReceiver)
+        let fakeOSC: OSCReceiver? = UITestFakeOSC.receiverIfRequested(store: oscReceiver.store, routable: oscRoutable, defaults: defaults)   // OSC-004
+        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? fakeOSC ?? oscReceiver)
         #else
         osc = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
         #endif
@@ -686,6 +687,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
         _ = hapticBeat   // ACC-007-R7: a stored "on" installs the tempo observer before any visual starts
         osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
+        if let routes = osc.routes {   // OSC-004: learn on OSC Routes, announced on the .osc lane
+            let announcer: AccessibilityAnnouncer = statusEvents.announcer
+            osc.learn = OSCLearnCoordinator(osc: osc, routes: routes) { (text: String) -> Void in announcer.announce(text, kind: .osc) }
+        }
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010

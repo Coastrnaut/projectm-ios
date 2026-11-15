@@ -2,6 +2,7 @@
 // contracts/osc-routes.md R3). Opened from the OSC section in Settings: one row per allowlisted address with its
 // target and an on/off toggle, the user's aliases (swipe to delete) and a small form to add one. Small views so
 // each body stays under CI's type-check budget. Values are never shown or announced here.
+// OSC-004: OSC learn's section comes first; leaving the screen cancels learn.
 import ParameterGraph
 import PerformanceControl
 import SwiftUI
@@ -10,13 +11,17 @@ struct OSCRoutesView: View {
     var routes: OSCRoutesCoordinator
     /// Messages to addresses not on the list since launch.
     var unknownCount: Int
+    /// OSC-004 (nil in previews and tests that do not need it).
+    var learn: OSCLearnCoordinator?
 
     var body: some View {
         List {
+            if let learn { OSCLearnSection(learn: learn) }
             OSCRoutesListSection(routes: routes, unknownCount: unknownCount)
             OSCRouteAliasSection(routes: routes)
         }
         .navigationTitle("OSC Routes")
+        .onDisappear { learn?.leave() }
     }
 }
 

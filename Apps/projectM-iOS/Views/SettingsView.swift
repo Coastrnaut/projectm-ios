@@ -886,7 +886,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("oscRateLimited")
             }
             if let routes = osc.routes {   // OSC-003-R10
-                NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
+                NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount, learn: osc.learn) }
                     .accessibilityIdentifier("oscRoutesLink")
             }
             if let peers = osc.peers {   // OSC-008-R9
