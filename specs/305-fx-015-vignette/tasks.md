@@ -49,10 +49,10 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   `SceneEffectChain.swift`; tests for round trip, clamping and old scenes byte-identical in
   `Packages/SceneFormat/Tests/SceneFormatTests/VignetteSceneEntryTests.swift`; the source-safety list names the new
   file (FX-015-R10, S5) — Verified 2026-11-15: SceneFormat suite 220 tests, 0 failures (2.4 s), incl. VignetteSceneEntryTests 2/2 and SceneSourceSafetyTests
-- [ ] FX-015-T09 [US3] RenderGoldens: apply `effects.vignette` in `GoldenSceneRenderer.swift`;
+- [X] FX-015-T09 [US3] RenderGoldens: apply `effects.vignette` in `GoldenSceneRenderer.swift`;
   `VignetteSceneGoldenTests` (intensity 0 and off render exactly as no chain; a vignette scene saved and reloaded
   renders the same picture, darker at the corners, centre unchanged); update `EffectChainSceneTests` if it lists the
-  order (FX-015-S1, S5)
+  order (FX-015-S1, S5) — Verified 2026-11-15: RenderGoldens suite 115 tests, 0 failures (1 on-demand skip), 33.9 s wall incl. build; VignetteSceneGoldenTests 2/2
 - [ ] FX-015-T10 [US1] [US3] App setting: `VignetteSetting` (five keys, "absent or malformed → default, out of range →
   nearest bound"), `AppCoordinator+Vignette.swift`, the compositor pushes in `AppCoordinator.swift`, the UI-test
   reset, scene and preset apply (`SceneAutosaveCapture`, `AppCoordinator+EffectChain`, `+SceneHistory`), keys in
