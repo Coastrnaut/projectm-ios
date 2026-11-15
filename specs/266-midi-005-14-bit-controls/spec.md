@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MIDI-005-T01-T13 verified on the Mac; device task T14 `{device}` open)
 
 **Input**: User description: "Implement MIDI-005 (MIDI 14-bit controls) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Combine paired high/low-resolution controller messages when supported." Acceptance, verbatim: "Test
