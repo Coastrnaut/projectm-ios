@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (SHOW-012-T01-T13 verified on the Mac, simulator "SHOW12 iPhone 17", iOS 27.2; no
+device claim; T14 `{device}` open). ShowControl 173 tests (ShowCueNoteTests 10), LibraryBackupCueNoteTests 1,
+CueNoteAcceptanceTests 3, CueNoteUITests 1 (20.9 s), script tests 181.
 
 **Input**: Roadmap row SHOW-012 (P2, size S, depends on SHOW-001, integrated). Observable behavior, verbatim: "Attach
 private operator notes to cues." Acceptance, verbatim: "Notes survive export and do not appear in live output."

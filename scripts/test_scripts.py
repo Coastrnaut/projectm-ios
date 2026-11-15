@@ -383,6 +383,32 @@ class ComplianceNotesPrivacyTests(unittest.TestCase):
             self.assertTrue(source.exists(), source)
 
 
+class ComplianceCueNotesPrivacyTests(unittest.TestCase):
+    """SHOW-012-R11: a source outside the show editor that names a cue's note fails; the editor and tests pass."""
+
+    def test_cue_notes_outside_the_editor_are_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            hud = Path(d) / "SceneHUD.swift"
+            hud.write_text("let line = cue.operatorNote ?? \"\"\n", encoding="utf-8")
+            comment = Path(d) / "Comment.swift"
+            comment.write_text("// never reads operatorNote\nlet x = 1\n", encoding="utf-8")
+            tests = Path(d) / "Tests"
+            tests.mkdir()
+            test = tests / "NoteTests.swift"
+            test.write_text("let n = ShowCueNote.maximumCharacters\n", encoding="utf-8")
+            self.assertIn("private cue note", "\n".join(check_compliance.check_file(hud)))
+            self.assertEqual(check_compliance.check_file(comment), [])
+            self.assertEqual(check_compliance.check_file(test), [])
+            editor = check_compliance.ROOT / "Apps" / "projectM-iOS" / "Views" / "ShowEditorView.swift"
+            self.assertTrue(check_compliance.is_cue_note_allowed(editor))
+            osc = check_compliance.ROOT / "Apps" / "projectM-iOS" / "Coordinators" / "OSCSendCoordinator.swift"
+            self.assertFalse(check_compliance.is_cue_note_allowed(osc))
+
+    def test_the_allowed_sources_exist(self):
+        for source in check_compliance.CUE_NOTES_ALLOWED:
+            self.assertTrue(source.exists(), source)
+
+
 class ComplianceOSCExceptionTests(unittest.TestCase):
     """FR-068 as amended 2026-11-12: the Network framework only in the OSC transport folder."""
 

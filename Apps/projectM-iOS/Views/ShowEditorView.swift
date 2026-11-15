@@ -23,6 +23,9 @@
 // Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while locked). Trailing:
 // Delete and Skip. Eight leading actions had pushed MIDI to x = 475 on a 402 pt iPhone, where it could not be tapped.
 // SHOW-008-R8: Keyframe Tracks… opens `ShowKeyframeTracksView` (tracks along the show timeline).
+// SHOW-012-R5, R7, R8: Add Note… / Edit Note… per cue (context menu, the leading swipe's More… dialog, VoiceOver action;
+// hidden while locked) opens `CueNoteView`; a cue with a private note shows its first line under the label (note icon) and
+// VoiceOver reads ", note <text>". Operator UI only: the note never reaches live output.
 import SceneFormat
 import ShowControl
 import ShowStorage
@@ -41,6 +44,7 @@ struct ShowEditorView: View {
     @State private var editingTransition: ShowCue?
     @State private var editingDwell: ShowCue?   // SHOW-002
     @State private var editingOverride: ShowCue?   // SHOW-004
+    @State private var editingNote: ShowCue?   // SHOW-012
     /// The cue whose More… dialog is open (show editor fix: the edit swipe actions moved there).
     @State private var moreCue: ShowCue?
     /// SCN-011: the template gallery (catalog read when it opens).
@@ -104,7 +108,20 @@ struct ShowEditorView: View {
                             titleVisibility: .visible, presenting: moreCue) { (cue: ShowCue) in
             moreDialogActions(cue)
         }
+        .sheet(isPresented: Binding(get: { editingNote != nil }, set: { if !$0 { editingNote = nil } })) {
+            noteSheet
+        }
     }
+
+    /// SHOW-012: the Note sheet for the chosen cue.
+    @ViewBuilder private var noteSheet: some View {
+        if let cue = editingNote {
+            CueNoteView(show: show, cueID: cue.id, dismiss: { () -> Void in editingNote = nil })
+        }
+    }
+
+    /// SHOW-012: "Add Note…" or "Edit Note…".
+    private static func noteActionTitle(_ cue: ShowCue) -> String { cue.operatorNote == nil ? "Add Note" : "Edit Note" }
 
     /// The editor's list (its own property since SCN-011, 2026-11-14: with the template sheet `body` took 316 ms to
     /// type-check, past the 300 ms budget).
@@ -260,6 +277,10 @@ struct ShowEditorView: View {
                 if cue.skipped {   // SHOW-005
                     Text("Skipped").font(.caption).foregroundStyle(.secondary)
                 }
+                if let note = cue.operatorNote {   // SHOW-012
+                    Label(ShowCueNote.preview(note), systemImage: "note.text").font(.caption).foregroundStyle(.secondary)
+                        .accessibilityIdentifier("showCueNoteLine")
+                }
                 if missing {
                     Label("Scene missing", systemImage: "exclamationmark.triangle").font(.caption).foregroundStyle(.orange)
                 }
@@ -288,6 +309,7 @@ struct ShowEditorView: View {
         }
         if let dwell = cue.dwell { value += ", advances after \(dwell.spokenText)" }   // SHOW-002
         if cue.skipped { value += ", skipped" }   // SHOW-005
+        if let note = cue.operatorNote { value += ", note \(note)" }   // SHOW-012-R8: the operator's own screen reader
         let selectedTraits: AccessibilityTraits = active ? .isSelected : []
         return content
             .accessibilityElement(children: .ignore)
@@ -318,6 +340,7 @@ struct ShowEditorView: View {
         Button("Transition Into This Cue…") { editingOverride = cue }   // SHOW-004
         Button("Advance After…") { editingDwell = cue }   // SHOW-002
         Button(cue.skipped ? "Don't Skip Cue" : "Skip Cue") { show.setSkipped(cue.id, !cue.skipped) }   // SHOW-005
+        Button(Self.noteActionTitle(cue) + "…") { editingNote = cue }   // SHOW-012
         Button("Delete", role: .destructive) { show.remove(cue.id) }
     }
 
@@ -358,6 +381,8 @@ struct ShowEditorView: View {
             .accessibilityIdentifier("showCueTransitionOverride")
         Button("Advance After…") { editingDwell = cue }   // SHOW-002
             .accessibilityIdentifier("showCueDwell")
+        Button(Self.noteActionTitle(cue) + "…") { editingNote = cue }   // SHOW-012
+            .accessibilityIdentifier("showCueNote")
         Button("Cancel", role: .cancel) { moreCue = nil }
     }
 
@@ -388,6 +413,7 @@ struct ShowEditorView: View {
         Button("Transition") { editingTransition = cue }   // SCN-007
         Button("Transition Into This Cue") { editingOverride = cue }   // SHOW-004
         Button("Advance After") { editingDwell = cue }   // SHOW-002
+        Button(Self.noteActionTitle(cue)) { editingNote = cue }   // SHOW-012
         Button(cue.skipped ? "Don't Skip Cue" : "Skip Cue") { show.setSkipped(cue.id, !cue.skipped) }   // SHOW-005
         // ACC-004-R3: reordering without Edit mode's drag handles.
         Button("Move Up") { move(number - 1, by: -1) }

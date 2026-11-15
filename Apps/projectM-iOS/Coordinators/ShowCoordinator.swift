@@ -49,6 +49,8 @@
 //   one step path once with the destination coming in as a cut (it lands on the target state; Reduce flashing still
 //   widens the cut). Never quantized, allowed while locked (a performance action). `timedGo(to:)` is Loop's wrap: a timed
 //   Go to, quantized like SHOW-002's advance.
+// * SHOW-012: a cue may carry a private operator note (`note` in `show.json`). `setOperatorNote` is an edit (refused while
+//   locked), saves at once and applies nothing; a duplicate keeps the note. Nothing here posts, announces or applies it.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -498,7 +500,8 @@ final class ShowCoordinator {
             inserted = try list.insert(sceneID: copy.id, label: ShowCueList.copyLabel(cue.label), after: cue.id,
                                        transition: cue.transition, dwell: cue.dwell,   // SCN-007-R8, SHOW-002-R14
                                        transitionOverride: cue.transitionOverride,   // SHOW-004-R7
-                                       skipped: cue.skipped)   // SHOW-005-R9
+                                       skipped: cue.skipped,   // SHOW-005-R9
+                                       operatorNote: cue.operatorNote)   // SHOW-012-R10
         } catch {
             editorMessage = error.description   // the copy's file is removed by the next save (unreferenced)
             return nil
@@ -595,6 +598,22 @@ final class ShowCoordinator {
     func setSkipped(_ cueID: UUID, _ skipped: Bool) -> Bool {
         if refusedByLock() { return false }
         guard (try? list.setSkipped(cueID, skipped)) != nil else { return false }
+        save()
+        return true
+    }
+
+    /// SHOW-012-R6, R7: sets (empty or nil removes) a cue's private note and saves; an edit (refused while locked). Never
+    /// applies a scene, moves the position or restarts a countdown; never announced. False with an editor message when the
+    /// note is too long.
+    @discardableResult
+    func setOperatorNote(_ cueID: UUID, to text: String?) -> Bool {
+        if refusedByLock() { return false }
+        do throws(ShowEditError) {
+            try list.setOperatorNote(cueID, to: text)
+        } catch {
+            editorMessage = error.description
+            return false
+        }
         save()
         return true
     }
