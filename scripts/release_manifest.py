@@ -152,12 +152,14 @@ def open_device_tasks(root: Path) -> dict:
     if not path.exists():
         return {"inventory": None, "open": None}
     data = json.loads(path.read_text(encoding="utf-8"))
-    tasks = data.get("tasks", [])
+    # Waived (⛔) and optional tasks do not hold a release; inventories without a status count every task as open.
+    tasks = [t for t in data.get("tasks", []) if t.get("status", "open") == "open"]
     by_cat: dict[str, int] = {}
     for t in tasks:
         by_cat[t.get("category", "?")] = by_cat.get(t.get("category", "?"), 0) + 1
     return {"inventory": INVENTORY.as_posix(), "inventorySha256": sha256_file(path), "open": len(tasks),
-            "byCategory": dict(sorted(by_cat.items()))}
+            "byCategory": dict(sorted(by_cat.items())),
+            "notCounted": len(data.get("tasks", [])) - len(tasks)}
 
 
 def gaps_for(features: list[dict], devices: dict, tasks: dict) -> list[str]:

@@ -2422,9 +2422,11 @@ class ReleaseManifestTests(unittest.TestCase):
     def test_open_device_tasks_from_the_inventory_are_a_gap(self):
         root = self.tree()
         (root / "docs/test-reports/qa-011/device-inventory.json").write_text(json.dumps(
-            {"tasks": [{"category": "a"}, {"category": "b"}, {"category": "b"}]}))
+            {"tasks": [{"category": "a"}, {"category": "b", "status": "open"}, {"category": "b"},
+                       {"category": "b", "status": "waived"}, {"category": "a", "status": "optional"}]}))
         m = rmf.build(root, None, use_git=False)
         self.assertEqual(m["openDeviceTasks"]["byCategory"], {"a": 1, "b": 2})
+        self.assertEqual(m["openDeviceTasks"]["notCounted"], 2, "waived and optional tasks do not hold a release")
         self.assertIn("3 open {device}/{owner} tasks (QA-011 inventory)", m["gaps"])
 
 
