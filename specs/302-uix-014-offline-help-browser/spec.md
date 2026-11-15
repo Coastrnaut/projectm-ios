@@ -39,6 +39,15 @@ interaction); each answer is the conservative, local-first option.
 - Q: Are compatibility claims allowed? → A: No. Articles describe what the app does and shows, never that a named music app works with System/App Capture (CLAUDE.md, FR-031). A test rejects the names of common music services.
 - Q: Is anything remembered? → A: No. Help stores nothing (no search history, no last article), so it adds no setting and no UserDefaults key.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Which Markdown does an article use? → A: A small fixed subset: headings of levels 1 to 3, paragraphs, "- " bullets, "1. " numbered items, and **bold** or *italic* inside a line. Each article starts with exactly one level-1 heading equal to its index title. A test fails any article using other syntax (tables, images, links, code blocks, HTML).
+- Q: In what order are articles listed? → A: Index order, starting with "Getting started and audio sources" and ending with "Privacy"; search keeps that order.
+- Q: How fast must an article open? → A: At once, with no loading state: every article is under 400 words and is read and parsed from the bundle when opened; a unit test parses all articles well within its 10 s budget.
+- Q: Is Help offered in the iPad split editor's Settings too? → A: Yes. It is part of Settings wherever Settings shows, and is not affected by the scene lock (it changes nothing).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Read help without a connection (Priority: P1) — MVP
@@ -94,7 +103,7 @@ cutting text.
 - **UIX-014-R1**: The app MUST bundle a help index and one short article per topic for the eleven topics in Clarifications, readable with no network connection.
 - **UIX-014-R2**: Settings MUST have a Help section with a "Help" row that opens a list of all articles in index order.
 - **UIX-014-R3**: The Help list MUST offer a search field filtering by title and keywords (case- and accent-insensitive substring); an empty result MUST say "No help articles match".
-- **UIX-014-R4**: Opening an article MUST show its title and its text, rendered from the bundled file with headings, paragraphs, bulleted and numbered lists, and bold or italic emphasis.
+- **UIX-014-R4**: Opening an article MUST show its text, rendered from the bundled file in the Markdown subset of Clarifications (headings 1-3, paragraphs, bulleted and numbered items, bold or italic emphasis); its first line MUST be a level-1 heading equal to the index title.
 - **UIX-014-R5**: Articles MUST contain no web address, e-mail address or link; no part of an article may open or load anything outside the app.
 - **UIX-014-R6**: The help feature MUST use no networking API and no web view (FR-068); the built-app network scan (FILE-012) MUST stay clean.
 - **UIX-014-R7**: Headings MUST carry the accessibility heading trait, and all article text MUST use Dynamic Type text styles.
