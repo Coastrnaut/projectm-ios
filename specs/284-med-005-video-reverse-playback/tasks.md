@@ -46,7 +46,7 @@ about 1-2 s, a UI test under 30 s, no wall-clock assertions (injected presentati
 
 ## Phase 6: Polish
 
-- [ ] MED-005-T18 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), type-check budget, privacy manifest and network symbols on the Debug app
+- [ ] MED-005-T18 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), type-check budget, privacy manifest and network symbols on the Debug app; the Linux shape of the package (`swift build -Xswiftc -DCOMPOSITOR_NO_METAL`, MED-005-R10); and that `VideoLayer` still imports no audio or capture module (MED-005-R8)
 - [ ] MED-005-T19 Report docs/test-reports/video-reverse-playback.md and spec status
 - [ ] MED-005-T20 {device} On D1 and D3: a 30 s 1080p clip reverses after preparation within the device class budget (Xcode memory gauge), and a 2-minute clip shows the 30-second message while playing forward
 

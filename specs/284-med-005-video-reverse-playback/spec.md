@@ -225,7 +225,7 @@ records its peak.
   within the budget (32 / 64 / 128 MB).
 - **MED-005-S4**: Reverse survives a relaunch, and is cleared by Remove Video and a new video.
 - **MED-005-S5**: The Reverse switch can be turned on in Settings and reaches the player within
-  a few frames on the simulator fixture.
+  5 s on the simulator fixture (a ceiling, not a timing assertion).
 
 ## Assumptions
 
