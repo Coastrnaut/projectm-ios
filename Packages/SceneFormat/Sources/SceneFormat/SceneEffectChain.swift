@@ -86,9 +86,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var directionalBlur: DirectionalBlur?
     /// FX-008 (ADR-0107): `isEnabled` is the entry's flag.
     public var radialBlur: RadialBlur?
+    /// FX-010 (ADR-0108): `isEnabled` is the entry's flag; the weight cap is not stored (ACC-012 sets it live).
+    public var echo: EchoFeedback?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
-                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil) {
+                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil,
+                echo: EchoFeedback? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
@@ -96,6 +99,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
         self.chromatic = chromatic
         self.directionalBlur = directionalBlur
         self.radialBlur = radialBlur
+        self.echo = echo
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -126,6 +130,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
         SceneEffectParameter(name: "focusX", range: RadialBlur.focusRange, fallback: RadialBlur.defaultFocus),
         SceneEffectParameter(name: "focusY", range: RadialBlur.focusRange, fallback: RadialBlur.defaultFocus),
     ]
+    /// FX-010: `count` echoes (0…4, rounded; above 4 is clamped and reported), `delay` in seconds, `decay` per echo.
+    static let echoParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "count", range: 0...Double(EchoFeedback.cap), fallback: Double(EchoFeedback.defaultCount)),
+        SceneEffectParameter(name: "delay", range: EchoFeedback.delayRange, fallback: EchoFeedback.defaultDelay),
+        SceneEffectParameter(name: "decay", range: EchoFeedback.decayRange, fallback: EchoFeedback.defaultDecay),
+    ]
 
     /// Standard order, Trails off (or absent), Color on and neutral (or absent): nothing to save (research FX-020-D7).
     public var isDefault: Bool {
@@ -134,7 +144,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
         let blurOff: Bool = !(directionalBlur?.isEnabled ?? false)   // FX-007
         let radialBlurOff: Bool = !(radialBlur?.isEnabled ?? false)   // FX-008
+        let echoOff: Bool = !(echo?.isEnabled ?? false)   // FX-010
         return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && radialBlurOff
+            && echoOff
     }
 
     // MARK: Reading
@@ -172,6 +184,10 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .radialBlur:   // FX-008
                     let v = values(entry, radialBlurParameters, path, &issues)
                     settings.radialBlur = RadialBlur(isEnabled: entry.enabled, strength: v[0], focusX: v[1], focusY: v[2])
+                case .echo:   // FX-010
+                    let v = values(entry, echoParameters, path, &issues)
+                    settings.echo = EchoFeedback(isEnabled: entry.enabled, count: EchoFeedback.clampCount(v[0]),
+                                                 delaySeconds: v[1], decay: v[2])
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -260,6 +276,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.parameters["strength"] = .double(r.strength)
             entry.parameters["focusX"] = .double(r.focusX)
             entry.parameters["focusY"] = .double(r.focusY)
+        case .echo:   // FX-010
+            guard let e = echo else { return stored }
+            entry.enabled = e.isEnabled
+            entry.parameters["count"] = .double(Double(e.count))
+            entry.parameters["delay"] = .double(e.delaySeconds)
+            entry.parameters["decay"] = .double(e.decay)
         }
         return entry
     }
