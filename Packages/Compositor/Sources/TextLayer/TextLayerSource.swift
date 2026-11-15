@@ -35,7 +35,8 @@ import Metal
 import os
 
 public final class TextLayerSource: LayerSource, LayerRenderCaching {
-    public let layerName = "text"
+    /// "text" for MED-009's Text visual, "clock" for MED-011's clock overlay (diagnostics only).
+    public let layerName: String
     public let fallback = LayerFallback.transparent
     public let device: MTLDevice
     private let work = DispatchQueue(label: "MED-009 text rasterization", qos: .userInitiated)
@@ -51,8 +52,12 @@ public final class TextLayerSource: LayerSource, LayerRenderCaching {
     /// CMP-013: frames that drew the text (render calls that succeeded).
     public private(set) var renderCount = 0
 
-    public init(device: MTLDevice) {
+    /// MED-011: rasterizations started (diagnostics, tests): one per changed spec or picture size.
+    public private(set) var rasterizationCount = 0
+
+    public init(device: MTLDevice, name: String = "text") {
         self.device = device
+        self.layerName = name
     }
 
     /// Called on the main actor after every state change.
@@ -98,6 +103,7 @@ public final class TextLayerSource: LayerSource, LayerRenderCaching {
         }
         slot.notify()
         guard !empty, let size = pictureSize else { return }
+        rasterizationCount += 1
         let slot = self.slot, device = self.device
         work.async {
             let upload = Self.rasterize(spec, width: size.width, height: size.height, device: device)
