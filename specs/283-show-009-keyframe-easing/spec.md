@@ -46,6 +46,12 @@ Three questions, each answered with the recommended option (owner rules 4 and 9)
 - Q: How does the editor present five modes? → A: The SHOW-008 segmented picker with five short names (Linear, Stepped, Hold, Ease, Cubic), each a VoiceOver button by name, plus a one-line description of the chosen mode under it, so the difference between Stepped and Hold is visible where it is chosen.
 - Q: Does an unknown `easing` value raise a load warning? → A: No. It is a forward-compatible hint from a newer build; the keyframe loads with its `interpolation` curve and nothing is counted. An unknown `interpolation` with no known `easing` still drops the keyframe with SHOW-008's counted warning.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- Coverage: R1 → T02, T05; R2 → T02, T05; R3 → T05; R4 → T03, T06; R5 → T04, T05; R6 → T08, T09, T10; R7 → T07; R8 → T11, T12. S1 → T05; S2 → T05; S3 → T06; S4 → T05; S5 → T07, T10. No constitution conflict, no critical or high finding.
+- Fix applied (medium): the edge cases "Cubic key followed by a Hold key" and "peak key" had no test; T06 now covers both.
+- Noted (low): SHOW-008's documents call the old curve "Hold"; this spec's Clarifications record that it is now named Stepped with the same behavior and the same stored name, so SHOW-008's documents stay correct about stored bytes.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose how a value moves between keyframes (Priority: P1) — MVP

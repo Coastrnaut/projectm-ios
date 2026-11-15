@@ -23,7 +23,7 @@ Tests are required (roadmap acceptance, owner rule 7 budgets). `{device}` tasks 
 
 ## Phase 4: User Story 2 — Smooth multi-key motion (P1)
 
-- [ ] SHOW-009-T06 [P] [US2] Package tests E4 (three-key Cubic vs closed-form Hermite, non-zero slope at the inner key) and E5 (dense sample never leaves a segment's key range) in Packages/ShowControl/Tests/ShowControlTests/ShowKeyframeEasingTests.swift
+- [ ] SHOW-009-T06 [P] [US2] Package tests E4 (three-key Cubic vs closed-form Hermite, non-zero slope at the inner key) and E5 (dense sample never leaves a segment's key range), and the edge cases "Cubic key followed by a Hold key" (the segment holds) and "peak key" (zero slope) in Packages/ShowControl/Tests/ShowControlTests/ShowKeyframeEasingTests.swift
 - [ ] SHOW-009-T07 [US2] App acceptance test E7 (a playing show on `ShowManualClock` applies the Cubic midpoint and holds before a Hold key; exact at keys) in Apps/projectM-iOS/Tests/ShowKeyframeEasingAcceptanceTests.swift
 
 ## Phase 5: User Story 3 — Pick the curve in the editor (P2)
