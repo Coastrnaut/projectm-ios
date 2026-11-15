@@ -6,7 +6,7 @@
 2. Read `mapping = (clock.now(), wallClock.now())` once.
 3. For each message, depth-first: effective tag = max over its enclosing bundles' tags; `due = nil` when the
    effective tag is "immediately", else `mapping.due(tag)`; assign the next sequence number.
-4. Classify: due ≤ now + 0 → late by `now − due`: ≤ tolerance → apply now; ≤ max lateness → apply now and count
+4. Classify: `due ≤ now` → late by `now − due`: ≤ tolerance → apply now; ≤ max lateness → apply now and count
    `lateApplied`; else `.dropped(.tooLate)` and count `lateDropped`. `due − now > horizon` →
    `.dropped(.beyondHorizon)`. Otherwise future.
 5. Apply-now messages in (due, sequence) order through `apply(message:)`.

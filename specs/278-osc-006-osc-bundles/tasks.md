@@ -34,6 +34,12 @@ Tasks are ticked only when verified, with " — Verified 2026-11-14: <how>".
 - [ ] OSC-006-T10 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), the whole PerformanceControl and ImportFuzz OSC suites, Linux-safe build (no stdio globals), type-check budget.
 - [ ] OSC-006-T11 {device} D1 with a LAN sender whose clock is network-synced: a bundle 500 ms ahead changes the test value about half a second later; one 30 s ahead never applies (quickstart step 3).
 
+## Analysis (speckit-analyze, 2026-11-14)
+
+Every requirement maps to a task: R1, R3-R5 → T05; R2, R12 → T02, T03; R6-R9, R11 → T08; R10 → T04, T08; S4 → T06.
+Fixed: the contract's late test was written `due ≤ now + 0` (now `due ≤ now`); R9 names the per-target limiter, so
+T08 also checks a scheduled message is coalesced like an immediate one. No constitution conflict.
+
 ## Dependencies
 
 T02 → T03 → T04 → T05-T09 → T10. T11 needs a device and a person.
