@@ -33,18 +33,23 @@ extension AppCoordinator {
     static let showMissingMediaNote = "the scene's photo or video is no longer stored; the current one is shown."
 
     /// The look a new cue captures (Camera records the visual chosen before it).
+    /// (Arguments built in typed steps for the type-check budget.)
     var showLook: ShowLook {
-        ShowLook(visual: ShowSceneSnapshot.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera),
-                 bars: settings.circularSpectrumBars, orientation: settings.linearSpectrumOrientation,
-                 spacing: settings.linearSpectrumSpacing, glowEnabled: settings.glowEnabled,
-                 glowIntensity: settings.glowIntensity, glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
-                 text: texts.spec, photoID: photos.photo?.id, videoID: videos.video?.id,
-                 videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
-                 videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
-                 slideshow: slideshow.sceneValue,   // MED-006
-                 kenBurns: kenBurns.sceneValue,   // MED-007
-                 logo: logo.sceneLogo,   // MED-010
-                 countdownSeconds: countdown.settings.startsFromCues ? countdown.settings.durationSeconds : nil)   // MED-012-R8
+        let visual: VisualChoice = ShowSceneSnapshot.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
+        let photoID: UUID? = photos.photo?.id
+        let videoID: UUID? = videos.video?.id
+        var look: ShowLook = ShowLook(visual: visual, bars: settings.circularSpectrumBars,
+                                      orientation: settings.linearSpectrumOrientation, spacing: settings.linearSpectrumSpacing,
+                                      glowEnabled: settings.glowEnabled, glowIntensity: settings.glowIntensity,
+                                      glowRadius: settings.glowRadius, glowThreshold: settings.glowThreshold,
+                                      text: texts.spec, photoID: photoID, videoID: videoID)
+        look.videoLoop = SceneVideoLoopBridge.scene(videos.loopRegion)   // MED-003
+        look.videoSpeedPercent = videos.sceneSpeedPercent   // MED-004
+        look.slideshow = slideshow.sceneValue   // MED-006
+        look.kenBurns = kenBurns.sceneValue   // MED-007
+        look.logo = logo.sceneLogo   // MED-010
+        look.countdownSeconds = countdown.settings.startsFromCues ? countdown.settings.durationSeconds : nil   // MED-012-R8
+        return look
     }
 
     /// Wires the show to this coordinator (called once at the end of init).

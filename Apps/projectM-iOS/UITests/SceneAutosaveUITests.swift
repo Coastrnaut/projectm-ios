@@ -56,7 +56,7 @@ final class SceneAutosaveUITests: XCTestCase {
         // Edit 1, committed: Circular Spectrum (commits at once), 16 bars, Settings closed (commits).
         openSettings()
         app.visualRow("Circular Spectrum").tap()
-        XCTAssertTrue(bars.appears(within: 5))
+        XCTAssertTrue(app.reveal(bars), "the Bars picker below the visual rows")
         bars.buttons["16"].tap()
         XCTAssertTrue(bars.buttons["16"].isSelected)
         closeSettings()
@@ -66,7 +66,7 @@ final class SceneAutosaveUITests: XCTestCase {
 
         // Edit 2, not committed: 32 bars with Settings still open, then the app is killed.
         openSettings()
-        XCTAssertTrue(bars.appears(within: 5))
+        XCTAssertTrue(app.reveal(bars), "the Bars picker below the visual rows")
         bars.buttons["32"].tap()
         XCTAssertTrue(bars.buttons["32"].isSelected)
         app.terminate()
@@ -76,7 +76,7 @@ final class SceneAutosaveUITests: XCTestCase {
         XCTAssertTrue(poll(10) { self.probe.hasPrefix("restored=main committed=0 pending=0 events=0") },
                       "the committed scene was restored from the main file: \(probe)")
         openSettings()
-        XCTAssertTrue(bars.appears(within: 5))
+        XCTAssertTrue(app.reveal(bars), "the Bars picker below the visual rows")
         XCTAssertTrue(bars.buttons["16"].isSelected, "the last committed bar count (edit 1) is restored intact")
         XCTAssertFalse(bars.buttons["32"].isSelected, "the uncommitted edit 2 is not")
         closeSettings()
