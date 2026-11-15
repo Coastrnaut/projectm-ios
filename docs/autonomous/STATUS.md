@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T06:56:02Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T07:03:48Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 18 |
+| audited | 17 |
 | implementing | 1 |
-| unit_passed | 1 |
-| integrated | 305 |
+| built | 1 |
+| integrated | 306 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 12 | 1 | 1 | 65 | 0 |
+| P2 | 11 | 1 | 1 | 66 | 0 |
 | P3 | 4 | 0 | 0 | 5 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 20 features are not implemented yet (first: FX-008, FX-010, FX-011, FX-012, FX-013)
+- 19 features are not implemented yet (first: FX-008, FX-010, FX-011, FX-012, FX-013)
 
 ## Integrated
 
@@ -317,6 +317,7 @@ The physical-device suite may **not** start:
 | UIX-005 | Performance control layout | `19ea9810` | `feature/uix-005` |
 | UIX-006 | Touch gesture mapping | `9725b921ba0b` | `feature/uix-006` |
 | UIX-007 | Split preview/editor | `c801a438` | `feature/uix-007` |
+| UIX-008 | Multiwindow document editing | `2c280ac072e7` | `feature/uix-008` |
 | UIX-009 | Parameter search | `7a3ef2bf` | `feature/uix-009` |
 | UIX-011 | Color palette picker | `99cce200` | `feature/uix-011` |
 | UIX-013 | Scene performance HUD | `89ef6bce` | `feature/uix-013` |
@@ -3458,9 +3459,10 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `397a3934fef8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T155436/swift-test_ShowControl.log`)
 - `post-merge batch57: VisualGenerators 245, RenderGoldens 82, ShowControl 110, LibraryBackup 77, projectM-iOSTests 980, UI ParticleOrbit/ParticleFountain/LayerInspector/VisualizerUITests 7 of 8 (compact-width row test fails, pre-existing from UIX-005/SCN-015 controls; fix/compact-controls in progress). SplitEditorUITests (iPad) pending`: pass at `cd89f309` (log `.autonomous/logs/integration/batch57/app-tests.log`)
 
-### UIX-008 Multiwindow document editing (unit_passed)
+### UIX-008 Multiwindow document editing (integrated)
 - `python3 scripts/check_compliance.py`: pass at `754f5d3a59b3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-008/20261115T015547/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `754f5d3a59b3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-008/20261115T015547/docs.log`)
+- `ADR-index conflict resolved; compliance, docs OK; postmerge projectM-iOSTests 1311 (OUT-001 plist test updated for multiple scenes) + 9 UI tests on iPhone (SceneFolders, ExternalDisplay, EmergencyBlackout, ShowTimeline, ColorGrade) + SceneEditorWindow/SceneFolders on iPad`: pass at `2c280ac072e7` (log `.autonomous/logs/integration/batch132b/app-tests.log`)
 
 ### UIX-009 Parameter search (integrated)
 - `python3 scripts/check_compliance.py`: pass at `21fb80d34973` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-009/20261114T162829/compliance.log`)
