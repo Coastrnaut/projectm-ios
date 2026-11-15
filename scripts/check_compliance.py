@@ -11,6 +11,11 @@ Enforces, for source under Apps/ and Packages/ (Vendor/ is upstream and excluded
   * FR-068 (amended 2026-11-12): no networking APIs (URLSession, CFNetwork, sockets, WebKit)
     anywhere; the Network framework only inside
     Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport/ (local OSC, off by default).
+  * OSC-011 (ADR-0100, local peer discovery): `NWBrowser` only in OSCTransport/NetworkOSCPeerBrowser.swift and
+    `NWListener.Service` only in OSCTransport/NetworkDatagramTransport.swift; the browser file must browse exactly
+    `.bonjour(type: OSCDiscovery.serviceType, domain: OSCDiscovery.domain)` and name no host, address, URL or
+    other endpoint; the only Bonjour service type written anywhere in Swift sources is `_projectm-osc._udp`, and
+    project.yml's `NSBonjourServices` lists exactly that type (no relay, no other discovery).
   * SHD-011 / ADR-0024 (user-authored shader policy): untrusted content must never run as native code
     or make a library load, so these are forbidden everywhere (matched on code with comments and
     string literals removed): loading bundles or libraries other than the main bundle; script
@@ -82,6 +87,20 @@ NETWORK_FRAMEWORK = re.compile(r"\bimport\s+Network\b|\bNW(Connection|Listener|B
                                r"ConnectionGroup|PathMonitor|Endpoint|Parameters)\b")
 OSC_ALLOWED = (ROOT / "Packages" / "PerformanceControl" / "Sources" / "PerformanceControl"
                / "OSCTransport")
+# OSC-011 (ADR-0100): local-link Bonjour discovery is reviewed in two files only, for one service type.
+DISCOVERY_SERVICE_TYPE = "_projectm-osc._udp"
+DISCOVERY_RULES: list[tuple[re.Pattern[str], str]] = [
+    (re.compile(r"\bNWBrowser\b"), "NetworkOSCPeerBrowser.swift"),
+    (re.compile(r"\bNWListener\s*\.\s*Service\b"), "NetworkDatagramTransport.swift"),
+]
+DISCOVERY_BROWSER_FILE = "NetworkOSCPeerBrowser.swift"
+DISCOVERY_DESCRIPTOR = ".bonjour(type: OSCDiscovery.serviceType, domain: OSCDiscovery.domain)"
+# In the browser file: no host names, URLs, literal addresses or other endpoint kinds (no relay, no fixed host).
+DISCOVERY_FORBIDDEN = re.compile(
+    r"NWEndpoint\s*\.\s*(?:Host|hostPort|url|opaque)\b|\.url\s*\(|\bURL\s*\(|\bhost\s*:\s*\.?name\b|"
+    r"\.name\s*\(|\bbonjourWithTXTRecord\b|\bDNSService\w*|\bNSNetService\w*|"
+    r"\"[^\"\n]*(?:\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|[A-Za-z0-9-]+\.(?:com|net|org|io|dev|app|cloud)\b)[^\"\n]*\"")
+BONJOUR_TYPE_LITERAL = re.compile(r"\"(_[A-Za-z0-9-]+\._(?:udp|tcp))\.?\"")
 # SHD-011 / ADR-0024: code-execution rules, matched after comments and string literals are removed
 # (safety tests list forbidden names in strings). Contract:
 # specs/050-shd-011-user-authored-shader-policy/contracts/compliance-rules.md.
@@ -226,6 +245,7 @@ def check_file(path: Path) -> list[str]:
         except ValueError:
             found.append(f"{path}: networking API (FR-068): Network framework used outside "
                          "PerformanceControl/OSCTransport/")
+    found += check_discovery(path, text)
     if NOTES_STORE.search(text) and is_notes_private_source(path):
         found.append(f"{path}: preset notes in a diagnostics source (PRE-011-R6): notes must never reach "
                      "a diagnostics export")
@@ -234,6 +254,55 @@ def check_file(path: Path) -> list[str]:
             path.resolve().relative_to(SCK_ALLOWED.resolve())
         except ValueError:
             found.append(f"{path}: ScreenCaptureKit imported outside CaptureKit/ScreenCapture/ (Constitution VI)")
+    return found
+
+
+def check_discovery(path: Path, text: str) -> list[str]:
+    """OSC-011 (ADR-0100) on code with comments removed (string literals kept for the type check)."""
+    found: list[str] = []
+    in_transport = True
+    try:
+        path.resolve().relative_to(OSC_ALLOWED.resolve())
+    except ValueError:
+        in_transport = False
+    code = strip_strings(text)
+    for rx, allowed_name in DISCOVERY_RULES:
+        if rx.search(code) and not (in_transport and path.name == allowed_name):
+            found.append(f"{path}: local discovery (OSC-011, ADR-0100): {rx.pattern} only in "
+                         f"OSCTransport/{allowed_name}")
+    for m in BONJOUR_TYPE_LITERAL.finditer(text):
+        if m.group(1) != DISCOVERY_SERVICE_TYPE:
+            found.append(f"{path}: local discovery (OSC-011, ADR-0100): Bonjour type {m.group(1)} is not "
+                         f"{DISCOVERY_SERVICE_TYPE}")
+    if in_transport and path.name == DISCOVERY_BROWSER_FILE:
+        if DISCOVERY_FORBIDDEN.search(text):
+            found.append(f"{path}: local discovery (OSC-011, ADR-0100): a host name, address, URL or other "
+                         "endpoint in the browser")
+        if DISCOVERY_DESCRIPTOR not in code or code.count(".bonjour") != 1:
+            found.append(f"{path}: local discovery (OSC-011, ADR-0100): the browser must browse exactly "
+                         f"{DISCOVERY_DESCRIPTOR}")
+    return found
+
+
+def check_bonjour_services(text: str, path: Path) -> list[str]:
+    """OSC-011-R11: NSBonjourServices, when present, lists exactly the app's one type (block or flow style)."""
+    found: list[str] = []
+    for m in re.finditer(r"^([ \t]*)NSBonjourServices[ \t]*:[ \t]*(.*)$", text, flags=re.M):
+        indent, rest = m.group(1), m.group(2).strip()
+        if rest:
+            items = [i.strip().strip("'\"") for i in rest.strip("[]").split(",") if i.strip()]
+        else:
+            items = []
+            for line in text[m.end():].split("\n")[1:]:
+                if not line.strip():
+                    continue
+                item = re.match(rf"^{indent}[ \t]*-[ \t]*(.+?)[ \t]*$", line)
+                if not item or len(line) - len(line.lstrip()) < len(indent):
+                    break
+                items.append(item.group(1).strip("'\""))
+        if items != [DISCOVERY_SERVICE_TYPE]:
+            found.append(f"{path}: NSBonjourServices must be exactly [{DISCOVERY_SERVICE_TYPE}] "
+                         f"(OSC-011-R11, ADR-0100; found {items})")
     return found
 
 
@@ -288,6 +357,7 @@ def check_project_yml(path: Path) -> list[str]:
         if value != ALLOWED_CODE_SIGN_ENTITLEMENTS:
             found.append(f"{path}: '{m.group(2)}' must be {ALLOWED_CODE_SIGN_ENTITLEMENTS} "
                          f"(found '{value}'; ADR-0001 Decision 6)")
+    found += check_bonjour_services(text, path)
     if len(CODE_SIGN_TOKEN.findall(text)) > len(keys):
         found.append(f"{path}: CODE_SIGN_ENTITLEMENTS in a form this check cannot verify "
                      f"(ADR-0001 Decision 6)")

@@ -65,5 +65,6 @@
 | [0081](0081-on-device-face-landmarks.md) | Face landmark emitters run only after explicit consent, on the device, from pictures the camera already captures; only eight scalars, memory only | Accepted 2026-11-14 (CAM-009; owner rule 4) |
 | [0087](0087-on-device-hand-pose.md) | Hand pose modulation runs only after its own consent, on the device; nine scalars, memory only; the Camera visual evaluates bindings for its ring (closes CAM-009-D8) | Accepted 2026-11-14 (CAM-010; owner rule 4) |
 | [0088](0088-osc-send-outbound.md) | OSC send is an opt-in UDP flow to one literal local address (amends OSC-001-R19 and the network symbol scan) | Accepted 2026-11-14 (OSC-005; owner rule 4) |
+| [0100](0100-osc-local-peer-discovery.md) | Local peer discovery uses opt-in Bonjour on the local link only (amends the network symbol scan and compliance rules) | Accepted 2026-11-15 (OSC-011; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

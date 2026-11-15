@@ -15,7 +15,10 @@ symbols and the library each comes from). It fails on:
   listener-side allowlist. The outbound pair `NWConnection(host:port:using:)` and `NWConnection.send`
   passes only in an image that also defines the DEBUG-only `OSCLoopbackSender` or the reviewed OSC-005
   sender `NetworkOSCSender` (ADR-0088: opt-in, literal local addresses only, also in Release); `--release`
-  fails when any image defines the DEBUG loopback sender.
+  fails when any image defines the DEBUG loopback sender;
+* OSC-011 (ADR-0100): Bonjour browsing (`NWBrowser`), announcing (`NWListener.Service`, `NWListener.service`) and the
+  browser's resolution flow (`NWConnection(to:using:)`, `currentPath`, `NWPath.remoteEndpoint`, `NWProtocolIP`) pass
+  only in an image that also defines the reviewed browser `NetworkOSCPeerBrowser`; everywhere else they fail.
 
 StoreKit linkage is reported as allowed: purchase and restore requests are made by iOS's store service.
 What this scan cannot see (system daemons, URL-taking Foundation APIs) is listed in
@@ -79,6 +82,19 @@ LISTENER_SIDE_APIS = [re.compile(p) for p in (
     r"^NWConnection\.(State|ContentContext)(\.|$)",
     r"^NWConnection\.(receiveMessage|receive|start|cancel|forceCancel|stateUpdateHandler|endpoint|state)\b",
 )]
+# OSC-011 (ADR-0100): local-link Bonjour discovery and announcing, only next to the reviewed browser. Checked before
+# the listener-side rules, so `NWListener.Service` and `NWListener.service` no longer pass as plain listener APIs.
+DISCOVERY_APIS = [re.compile(p) for p in (
+    r"^NWBrowser(\.|$)",
+    r"^NWListener\.Service(\.|$)",
+    r"^NWListener\.service\b",
+    r"^NWConnection\.(__allocating_init|init)\(to:using:\)",
+    r"^NWConnection\.currentPath\b",
+    r"^NWPath$",
+    r"^NWPath\.remoteEndpoint\b",
+    r"^NWParameters\.ProtocolStack\.internetProtocol\b",
+    r"^NWProtocolIP(\.|$)",
+)]
 # Outbound APIs used only by the DEBUG loopback sender (OSC-001-T14, R19).
 DEBUG_LOOPBACK_APIS = [re.compile(p) for p in (
     r"^NWConnection\.(__allocating_init|init)\(host:port:using:\)",
@@ -89,6 +105,8 @@ OSC_TRANSPORT_MARKER = "NetworkDatagramTransport"
 # OSC-005 (ADR-0088): the reviewed, opt-in sender to one literal local address; allowed in Release.
 REVIEWED_SENDER_MARKER = "NetworkOSCSender"
 LOOPBACK_SENDER_MARKER = "OSCLoopbackSender"
+# OSC-011 (ADR-0100): the reviewed local-link Bonjour browser.
+DISCOVERY_MARKER = "NetworkOSCPeerBrowser"
 DESCRIPTOR_PREFIX = re.compile(r"^.*? for (?=\S)")
 
 
@@ -140,8 +158,9 @@ def network_api_name(demangled: str) -> str:
     name = demangled.strip()
     if " for " in name:
         name = DESCRIPTOR_PREFIX.sub("", name, count=1)
-    if name.startswith("static "):
-        name = name[len("static "):]
+    for prefix in ("dispatch thunk of ", "static "):
+        if name.startswith(prefix):
+            name = name[len(prefix):]
     return name
 
 
@@ -160,7 +179,8 @@ def classify_library(path: str, image_has_osc: bool) -> tuple[str, bool] | None:
 
 
 def classify_import(symbol: str, library: str, demangled: str, image_has_osc: bool,
-                    image_has_loopback: bool, image_has_sender: bool = False) -> tuple[str, bool] | None:
+                    image_has_loopback: bool, image_has_sender: bool = False,
+                    image_has_discovery: bool = False) -> tuple[str, bool] | None:
     """(rule, allowed) for an imported symbol that matters, else None."""
     bare = symbol[1:] if symbol.startswith("_") else symbol
     bare = bare.split("$", 1)[0] if not bare.startswith("$s") else bare
@@ -175,6 +195,10 @@ def classify_import(symbol: str, library: str, demangled: str, image_has_osc: bo
         if not image_has_osc:
             return ("Network.framework symbol outside the OSC transport's image", False)
         api = network_api_name(demangled or symbol)
+        if any(rule.search(api) for rule in DISCOVERY_APIS):
+            if image_has_discovery:
+                return ("allowed: reviewed local-link Bonjour discovery (OSC-011, ADR-0100)", True)
+            return ("Bonjour browsing or announcing outside the reviewed browser's image (ADR-0100)", False)
         if any(rule.search(api) for rule in LISTENER_SIDE_APIS):
             return ("allowed: OSC listener-side Network API", True)
         if any(rule.search(api) for rule in DEBUG_LOOPBACK_APIS):
@@ -193,13 +217,14 @@ def evaluate_image(image: str, arch: str, libraries: list[str], imports: list[tu
     has_osc = any(OSC_TRANSPORT_MARKER in name for name in defined)
     has_loopback = any(LOOPBACK_SENDER_MARKER in name for name in defined)
     has_sender = has_osc and any(REVIEWED_SENDER_MARKER in name for name in defined)
+    has_discovery = has_osc and any(DISCOVERY_MARKER in name for name in defined)
     findings: list[Finding] = []
     for path in libraries:
         verdict = classify_library(path, has_osc)
         if verdict:
             findings.append(Finding(image, arch, "library", library_name(path), verdict[0], verdict[1]))
     for symbol, library in imports:
-        verdict = classify_import(symbol, library, demangled.get(symbol, ""), has_osc, has_loopback, has_sender)
+        verdict = classify_import(symbol, library, demangled.get(symbol, ""), has_osc, has_loopback, has_sender, has_discovery)
         if verdict:
             findings.append(Finding(image, arch, "symbol", demangled.get(symbol) or symbol, verdict[0], verdict[1]))
     return findings
