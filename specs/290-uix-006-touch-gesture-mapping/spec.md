@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (UIX-006-T01-T13 verified on the Mac, simulator "UIX6 iPhone 17", iOS 27.2; no
+device claim; T14 `{device}` open). GestureShortcutTests 8 (pure); GestureShortcutsAppTests 3; GestureShortcutsUITests 1
+(21 s).
 
 **Input**: Roadmap row UIX-006 (P2, size M, depends on SHOW-001, integrated). Observable behavior, verbatim:
 "Assign supported gestures to safe performance actions." Acceptance, verbatim: "Gesture conflicts have explicit

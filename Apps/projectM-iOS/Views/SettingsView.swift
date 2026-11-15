@@ -96,6 +96,7 @@ struct SettingsView: View {
     var recordingCountdown: RecordingCountdownSetting?
     /// UIX-013: the scene performance HUD switch (nil hides the row, e.g. in previews).
     var sceneHUD: SceneHUDSetting? = nil
+    var gestureShortcuts: GestureShortcutsSetting? = nil   // UIX-006
     /// OUT-005: the safe-area guides (nil hides the section, e.g. in previews).
     var safeAreaGuides: SafeAreaGuideSetting? = nil
     /// ACC-009: the one-handed layout (nil hides the section, e.g. in previews; iPhone only).
@@ -589,6 +590,7 @@ struct SettingsView: View {
         }
         .id("performance")
         if let sceneHUD { SceneHUDSection(setting: sceneHUD).id("sceneHUD") }   // UIX-013-R1
+        if let gestureShortcuts { GestureShortcutsSection(setting: gestureShortcuts, locked: settings.sceneLock.isLocked).id("gestureShortcuts") }   // UIX-006
         if let safeAreaGuides { SafeAreaGuidesSection(setting: safeAreaGuides).id("safeAreaGuides") }   // OUT-005-R7
         if let oneHanded { HandednessSections(setting: oneHanded) }   // ACC-010-R1 (all devices), ACC-009-R1 (iPhone)
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1

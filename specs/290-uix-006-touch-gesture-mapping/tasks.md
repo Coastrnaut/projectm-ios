@@ -11,22 +11,22 @@
 
 ## Phase 2: App (US1, US3)
 
-- [ ] UIX-006-T04 `GestureShortcutsSetting` (key `settings.gestures.shortcuts`, lock-refused writes, UI-test reset) and `AppCoordinator.gestureShortcuts` (R8, R9)
-- [ ] UIX-006-T05 `AppCoordinator+GestureShortcuts.swift`: `performGestureShortcut`, `handleGestureShortcut` (G3; R7)
-- [ ] UIX-006-T06 Recogniser + representable on `visualizerTapArea`, attached only while on and VoiceOver off; DEBUG probe (G5; R5, R6, R11; the one-finger tap path is checked by T10's controls assertion)
-- [ ] UIX-006-T07 Settings › Performance › Gesture shortcuts section with lock note and VoiceOver note (G4; R8)
-- [ ] UIX-006-T08 Key lists: `ALLOWED_KEYS` (`scripts/run_device_tests.py`), FILE-005 `includedKeys`, `LibraryBackupAppTests` app keys (R9)
+- [X] UIX-006-T04 `GestureShortcutsSetting` (key `settings.gestures.shortcuts`, lock-refused writes, UI-test reset) and `AppCoordinator.gestureShortcuts` (R8, R9) — Verified 2026-11-15: GestureShortcutsAppTests.testMappingPersists and testAppCoordinatorResolvesQuietlyAndHonoursSwitchVoiceOverAndLock pass
+- [X] UIX-006-T05 `AppCoordinator+GestureShortcuts.swift`: `performGestureShortcut`, `handleGestureShortcut` (G3; R7) — Verified 2026-11-15: GestureShortcutsAppTests.testEachActionRunsItsControlsPath and the coordinator test pass
+- [X] UIX-006-T06 Recogniser + representable on `visualizerTapArea`, attached only while on and VoiceOver off; DEBUG probe (G5; R5, R6, R11; the one-finger tap path is checked by T10's controls assertion) — Verified 2026-11-15: GestureShortcutsUITests (two-finger tap fires once, the controls' tap does not also fire) passes on UIX6 iPhone 17
+- [X] UIX-006-T07 Settings › Performance › Gesture shortcuts section with lock note and VoiceOver note (G4; R8) — Verified 2026-11-15: GestureShortcutsUITests drives the switch and the picker; the lock disables it (coordinator test: edits refused)
+- [X] UIX-006-T08 Key lists: `ALLOWED_KEYS` (`scripts/run_device_tests.py`), FILE-005 `includedKeys`, `LibraryBackupAppTests` app keys (R9) — Verified 2026-11-15: LibraryBackupAppTests (all) and LibraryBackup package (88 tests) pass
 
 ## Phase 3: Tests
 
-- [ ] UIX-006-T09 `GestureShortcutsAppTests`: each action runs its coordinator path (Next cue advances the show, Next preset changes the preset, Tap tempo records a tap, HUD toggles), controls stay hidden, master off / VoiceOver nothing, lock refuses edits but not actions, mapping persists across a new setting instance (S3, S4)
-- [ ] UIX-006-T10 `GestureShortcutsUITests`: map two-finger tap to Next preset in Settings, two-finger tap changes the preset without toggling the controls; set it to None, nothing changes (S5; < 30 s)
-- [ ] UIX-006-T11 Regression: `LibraryBackupAppTests`, `SettingsTests`, `SceneHUDAppTests`, `PerformanceLockAcceptanceTests`; PerformanceControl package suite
-- [ ] UIX-006-T12 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget
+- [X] UIX-006-T09 `GestureShortcutsAppTests`: each action runs its coordinator path (Next cue advances the show, Next preset changes the preset, Tap tempo records a tap, HUD toggles), controls stay hidden, master off / VoiceOver nothing, lock refuses edits but not actions, mapping persists across a new setting instance (S3, S4) — Verified 2026-11-15: GestureShortcutsAppTests 3 tests pass (0.07 s)
+- [X] UIX-006-T10 `GestureShortcutsUITests`: map two-finger tap to Next preset in Settings, two-finger tap changes the preset without toggling the controls; set it to None, nothing changes (S5; < 30 s) — Verified 2026-11-15: GestureShortcutsUITests 1 test passes in 21.0 s on UIX6 iPhone 17 (iOS 27.2)
+- [X] UIX-006-T11 Regression: `LibraryBackupAppTests`, `SettingsTests`, `SceneHUDAppTests`, `PerformanceLockAcceptanceTests`; PerformanceControl package suite — Verified 2026-11-15: 30 unit tests (GestureShortcutsAppTests, LibraryBackupAppTests, SettingsTests, SceneHUDAppTests, PerformanceLockAcceptanceTests, LibraryEraseAppTests) and SceneHUDUITests 3 pass; PerformanceControl 345 tests pass
+- [X] UIX-006-T12 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget — Verified 2026-11-15: six repo checks exit 0; check_privacy_manifest and check_network_symbols OK on the Debug app; type-check: no new function over 300 ms; one expression (first AppCoordinator member use in GestureShortcutViews.swift) at ~260 ms, the same per-file cost existing files show in the same build (OneHandedControls.swift, UITestMemoryPanel.swift)
 
 ## Phase 4: Close
 
-- [ ] UIX-006-T13 Spec Status line updated with the verified test counts and the open {device} task
+- [X] UIX-006-T13 Spec Status line updated with the verified test counts and the open {device} task — Verified 2026-11-15: spec Status line
 - [ ] UIX-006-T14 {device} On D1 and D2: quickstart device steps 1-6 (S6)
 
 ## Dependencies

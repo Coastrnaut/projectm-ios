@@ -135,6 +135,7 @@ struct VisualizerView: View {
     @ViewBuilder private var tapLayers: some View {
         tapArea
         CameraFocusLayer(coordinator: coordinator)   // CAM-005-R5, R6
+        GestureShortcutProbe(coordinator: coordinator)   // UIX-006 contract G5 (DEBUG probe)
     }
 
     /// A full-screen tap target above the renderer (the renderer's UIView takes no taps).
@@ -144,6 +145,7 @@ struct VisualizerView: View {
             .ignoresSafeArea()
             .onTapGesture { () -> Void in coordinator.toggleControls() }
             .modifier(CameraFocusGesture(coordinator: coordinator))   // CAM-005-R1, R7: double-tap alongside the single tap
+            .modifier(GestureShortcutAttachment(coordinator: coordinator))   // UIX-006: multi-finger shortcuts (switch on, no VoiceOver)
             .accessibilityIdentifier("visualizerTapArea")
             .accessibilityLabel("Visualization")
             .accessibilityHint("Shows or hides the controls")
@@ -516,6 +518,7 @@ struct VisualizerView: View {
                      recordingQuality: coordinator.recordingQuality,   // REC-005
                      recordingCountdown: coordinator.recordingCountdown,   // REC-007
                      sceneHUD: coordinator.sceneHUD,   // UIX-013
+                     gestureShortcuts: coordinator.gestureShortcuts,   // UIX-006
                      safeAreaGuides: coordinator.safeAreaGuides,   // OUT-005
                      oneHanded: coordinator.oneHanded,   // ACC-009
                      externalOutput: coordinator.externalOutput,   // OUT-004
