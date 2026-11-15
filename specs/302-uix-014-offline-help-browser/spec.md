@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (UIX-014-T01-T11 verified on the Mac: app unit and UI tests on a private iOS 27.2 simulator, built-app network scan; T12 is a `{device}` Airplane Mode check on D1, open; no ADR)
 
 **Input**: User description: "Implement UIX-014 (Offline help browser) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Bundle concise local explanations for modes and controls." Acceptance, verbatim:
