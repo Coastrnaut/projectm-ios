@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T03:12:17Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T03:15:24Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 47 |
+| audited | 46 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 275 |
+| built | 1 |
+| integrated | 276 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 1 | 0 | 150 | 0 |
-| P2 | 36 | 1 | 1 | 41 | 0 |
+| P2 | 35 | 1 | 1 | 42 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 50 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 49 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -153,6 +153,7 @@ The physical-device suite may **not** start:
 | MIDI-002 | MIDI input monitor | `c7cd1169` | `feature/midi-002` |
 | MIDI-003 | MIDI learn | `d6ec9dc5e426` | `feature/midi-003` |
 | MIDI-004 | MIDI CC scaling | `6ac0c21c` | `None` |
+| MIDI-005 | MIDI 14-bit controls | `1fe57ef32ec9` | `feature/midi-005` |
 | MIDI-006 | MIDI note triggers | `4bad23aa` | `None` |
 | MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
 | MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
@@ -1663,13 +1664,14 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `baadcbe1ee17` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-004/20261114T070939/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
-### MIDI-005 MIDI 14-bit controls (unit_passed)
+### MIDI-005 MIDI 14-bit controls (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/autonomous-tests.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/swift-test_PerformanceControl.log`)
+- `swift test PerformanceControl 271; postmerge projectM-iOSTests 1201 + MIDIHighResolution/MIDICCScaling UI tests 2`: pass at `1fe57ef32ec9` (log `.autonomous/logs/integration/batch104/app-tests.log`)
 
 ### MIDI-006 MIDI note triggers (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc7e11f8e2cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-006/20261114T084721/compliance.log`)

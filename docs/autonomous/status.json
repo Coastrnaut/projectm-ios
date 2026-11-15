@@ -15,21 +15,21 @@
    "integrated": 150
   },
   "P2": {
-   "audited": 36,
+   "audited": 35,
+   "built": 1,
    "implementing": 1,
-   "integrated": 41,
-   "unit_passed": 1
+   "integrated": 42
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 47,
+  "audited": 46,
+  "built": 1,
   "implementing": 2,
-  "integrated": 275,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 276,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -54,7 +54,6 @@
    "FX-018",
    "MED-005",
    "MED-012",
-   "MIDI-005",
    "MIDI-009",
    "MIDI-010",
    "OSC-004",
@@ -90,7 +89,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "50 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "49 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -1397,12 +1396,12 @@
   "MED-012": {
    "attempts": 0,
    "branch": "feature/med-012",
-   "branch_sha": null,
+   "branch_sha": "fb7c4a7e7899e26926b39fffaa800786e5df6c01",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "MED-013": {
    "attempts": 0,
@@ -1469,10 +1468,10 @@
    "branch": "feature/midi-005",
    "branch_sha": "d48019e95b6558368c77c1a8fc232464879c43da",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "1fe57ef32ec9f87fb07d25beee2f8fb9f3248294",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MIDI-006": {
    "attempts": 0,
@@ -1926,13 +1925,13 @@
   },
   "OUT-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/out-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OUT-010": {
    "attempts": 0,
@@ -3957,6 +3956,11 @@
    "sha": "6ac0c21c"
   },
   {
+   "branch": "feature/midi-005",
+   "id": "MIDI-005",
+   "sha": "1fe57ef32ec9f87fb07d25beee2f8fb9f3248294"
+  },
+  {
    "branch": null,
    "id": "MIDI-006",
    "sha": "4bad23aa"
@@ -4757,5 +4761,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:12:17Z"
+ "updated": "2026-11-15T03:15:24Z"
 }
