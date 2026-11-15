@@ -26,6 +26,11 @@ public struct MIDIControlBinding: Sendable, Hashable {
 
     static let controlChangeTag: String = "cc"
 
+    /// MIDI-005: the 14-bit flag on a coarse controller (0–31); a flag on another controller has no effect.
+    public var isHighResolution: Bool {
+        options.highResolution && key.kind == .controlChange && MIDIHighResolution.isCoarseController(key.number)
+    }
+
     /// `cc:0:7=effect.bloom.intensity`
     public var storageLine: String {
         let channel: String = String(key.channel)
