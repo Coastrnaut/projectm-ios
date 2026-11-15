@@ -70,8 +70,10 @@ LOCK_CAPACITY: dict[str, int] = {
     # 2026-11-15: 13 of the last 25 rows are FX effects, each locking Compositor and Rendering (the output pass,
     # CompositorShaders, the effect chain). Two at a time halves the serial time; more would mostly trade time for
     # conflicts in the shared shader and chain files.
-    "Packages/Compositor": 2,
-    "Packages/Rendering": 2,
+    "Packages/Compositor": 3,
+    "Packages/Rendering": 3,
+    # 2026-11-15 (later): raised to 3 for the last two small FX rows (film grain, scanlines). Every FX merge so far
+    # resolved its shared-list conflicts cleanly by keeping both sides, and seven agent slots stood empty.
 }
 
 

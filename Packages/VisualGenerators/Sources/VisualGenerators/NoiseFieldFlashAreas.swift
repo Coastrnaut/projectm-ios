@@ -135,6 +135,20 @@ public final class NoiseFieldFlashAreas {
         }
     }
 
+    /// VIS-019: evaluates the 64 samples of the cymatic lines for `frame` from the CPU mirror (`CymaticField.shade`); values
+    /// hold each sample's line intensity. `paletteStops` holds 16 colours.
+    public func sampleCymatic(frame: CymaticFrame, paletteStops: UnsafePointer<LinearColor>, width: Int, height: Int) {
+        let w: Int = max(width, 1), h: Int = max(height, 1)
+        for row in 0..<Self.gridSide {
+            for column in 0..<Self.gridSide {
+                let k: Int = row * Self.gridSide + column
+                let q: SIMD2<Float> = CymaticField.plate(pixel: Self.samplePoint(column: column, row: row, width: w, height: h), width: w, height: h)
+                values[k] = CymaticField.line(CymaticField.blended(at: q, weights: frame.weights), width: frame.width)
+                colors[k] = CymaticField.shade(q, frame: frame, stops: paletteStops)
+            }
+        }
+    }
+
     /// VIS-020: the 64 samples of the waterfall are the cells' mean colours (exact mean of the texels each shows) ×
     /// `brightness`; values hold the cells' luminance at brightness 1.
     public func loadWaterfall(_ cells: WaterfallFlashCells, history: SpectrumWaterfallHistory, brightness: Float) {

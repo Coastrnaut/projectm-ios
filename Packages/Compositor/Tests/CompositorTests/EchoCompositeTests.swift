@@ -256,13 +256,13 @@ final class EchoCompositeTests: XCTestCase {
             previousIDs = ids
             previousHistorySize = (hs.width, hs.height)
             let descriptor = try XCTUnwrap(LayerPictureDescriptor(width: hs.width, height: hs.height)).textureDescriptor()
-            // Bytes are measured on the Mac host and on devices only: the iOS Simulator does not report texture memory
-            // faithfully (allocatedSize is 0 on the Mac Studio's iOS 27.2 simulator and whole 16 KB pages on CI's;
-            // CI run 43693864935). Count, sizes, reuse and allocation frames are checked everywhere.
-            if Self.measuresTextureBytes {
-                let bound: Int = EchoFeedback.cap * rig.device.heapTextureSizeAndAlign(descriptor: descriptor).size
-                XCTAssertLessThanOrEqual(c.echoHistoryBytes, bound, "frame \(k): total allocatedSize under the bound")
-            }
+            // Rounded up to whole 16 KB memory pages: virtual GPUs give each small texture at least one page
+            // (65536 against a heap estimate of 32768 for four on CI's macOS VM and its simulators; CI runs
+            // 43693864935, 43705327413). The Mac Studio's iOS 27.2 simulator reports 0, which the bound also allows.
+            let page: Int = 16_384
+            let perTexture: Int = rig.device.heapTextureSizeAndAlign(descriptor: descriptor).size
+            let bound: Int = EchoFeedback.cap * ((perTexture + page - 1) / page * page)
+            XCTAssertLessThanOrEqual(c.echoHistoryBytes, bound, "frame \(k): total allocatedSize under the bound")
             XCTAssertLessThanOrEqual(EchoFeedback.historyBytes(width: w, height: h), EchoFeedback.historyBytesBound)
             maxBytes = max(maxBytes, c.echoHistoryBytes)
             if c.echoAllocations != lastAllocations {
