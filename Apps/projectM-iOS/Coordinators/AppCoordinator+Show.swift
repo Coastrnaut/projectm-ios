@@ -42,6 +42,7 @@ extension AppCoordinator {
                  videoLoop: SceneVideoLoopBridge.scene(videos.loopRegion),   // MED-003
                  videoSpeedPercent: videos.sceneSpeedPercent,   // MED-004
                  slideshow: slideshow.sceneValue,   // MED-006
+                 kenBurns: kenBurns.sceneValue,   // MED-007
                  logo: logo.sceneLogo)   // MED-010
     }
 
@@ -130,7 +131,7 @@ extension AppCoordinator {
         Self.set(apply, settings: settings, texts: texts)
         videos.restoreLoop(storeID: apply.videoStoreID, loop: apply.videoLoop)   // MED-003-R8
         videos.restoreSpeed(storeID: apply.videoStoreID, speedPercent: apply.videoSpeedPercent)   // MED-004-R7
-        if let restore = apply.slideshow { slideshow.restore(restore.value) }   // MED-006-R12
+        if let restore = apply.slideshow { restorePhotoMotion(restore) }   // MED-006-R12, MED-007-R10
         if let scene = apply.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
         sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
         resetTrailsHistory()   // FX-009-R5: a cue's scene (and UIX-002's switcher) starts without trails

@@ -70,6 +70,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "recentPresets", "settings.recentPresets.enabled",   # PRE-006-R9 (preset IDs only; ADR-0055)
                 "settings.performanceOverlay", "settings.reduceFlashing",
                 "settings.photo.slideshow",   # MED-006
+                "settings.photo.kenBurns",   # MED-007
                 "settings.logo.id",   # MED-010
                 "settings.logo.placement",   # MED-010
                 "settings.presetScope", "notice.photosensitivityAcknowledged",

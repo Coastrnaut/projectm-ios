@@ -28,6 +28,13 @@
 // adopted synchronously (ready at once, no load of this layer's own). `decodeStored` and `makeLayerTexture` are the
 // two halves of a load, so the scheduler can decode off the main thread and upload inside its graphics gate;
 // `loadsStarted` counts the loads this layer started itself.
+// MED-007 (specs/251-med-007-ken-burns, contract K2; research MED-007-D1 to D6): `kenBurns` pans and zooms the picture
+// from a start to an end crop rectangle. The crop is the content the fit places (pixel-accurate drawn as fit), and
+// outside it is transparent. A `KenBurnsPlayhead` counts the frame clock's durations from the first drawn frame of the
+// held picture (restarted by a new picture or a new movement), so the first frame shows exactly the start rectangle
+// and the frame reaching the duration exactly the end. `reduceMotion` holds the start. While moving, the layer
+// declares a time dependency (never cached); holding, it is still again, its parameter generation changing with the
+// fit, the movement, the duration and Reduce Motion.
 import Foundation
 
 /// What the photo layer shows.
@@ -59,8 +66,31 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     /// CMP-006: the stack entry's fit (set by the compositor; nil: `mode` at the centre). Shown from
     /// the next frame; the image is not reloaded.
     public var fit: LayerFit? {
-        didSet { if fit != oldValue { fitGeneration &+= 1 } }   // CMP-013: a parameter change
+        didSet { if fit != oldValue { parameterGeneration &+= 1 } }   // CMP-013: a parameter change
     }
+    /// MED-007: the pan and zoom (nil: none). A different movement restarts from its start rectangle.
+    public var kenBurns: KenBurnsMotion? {
+        didSet {
+            guard kenBurns != oldValue else { return }
+            parameterGeneration &+= 1
+            playhead.restart()
+        }
+    }
+    /// MED-007-R8: the movement's duration when set (the slideshow's dwell); nil: the movement's own. A change keeps
+    /// the elapsed time.
+    public var kenBurnsDurationNanoseconds: UInt64? {
+        didSet { if kenBurnsDurationNanoseconds != oldValue { parameterGeneration &+= 1 } }
+    }
+    /// MED-007-R7: Reduce Motion holds the start rectangle.
+    public var reduceMotion = false {
+        didSet {
+            guard reduceMotion != oldValue else { return }
+            parameterGeneration &+= 1
+            playhead.restart()
+        }
+    }
+    /// MED-007: elapsed time of the movement (render side).
+    public private(set) var playhead = KenBurnsPlayhead()
     private let decoder: any ImageDecoding
     private let limits: ImageImportLimits
     private let loads = DispatchQueue(label: "MED-001 image load", qos: .userInitiated)
@@ -69,9 +99,10 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     private var sampler: MTLSamplerState?
     /// The texture drawn last frame (render side only).
     private var held: MTLTexture?
-    /// CMP-013: the load generation of `held`, and the fit's generation.
+    /// CMP-013: the load generation of `held`, and the generation of the parameters drawn with (fit; MED-007's
+    /// movement, duration and Reduce Motion).
     private var heldGeneration: UInt64 = 0
-    private var fitGeneration: UInt64 = 0
+    private var parameterGeneration: UInt64 = 0
     /// Frames that showed the image (diagnostics, tests), including frames whose picture was reused.
     public private(set) var framesShown = 0
     /// CMP-013: frames that drew the image (render calls that succeeded).
@@ -112,6 +143,7 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
                 return s.generation
             }
             heldGeneration = generation   // CMP-013: the dropped image's key never matches again
+            playhead.restart()   // MED-007-R5: a new picture starts at the start rectangle
             // MED-006-R9: a slide decoded ahead by `preload` is adopted now, so the next frame draws it.
             if case .file(let url) = content, slot.adoptPrepared(url, generation: generation) {
                 slot.notify()
@@ -286,9 +318,7 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
                        audio: LayerAudioContext) throws(LayerSourceError) {
         takeNewest()
         guard let image = held, let pipeline, let sampler else { throw .notReady }
-        let placement = LayerFitPlacement(contentWidth: image.width, contentHeight: image.height, outputWidth: picture.width,
-                                          outputHeight: picture.height, fit: fit ?? LayerFit(mode: mode))
-        let geometry = ImagePictureGeometry(placement)
+        let geometry: ImagePictureGeometry = pictureGeometry(image: image, picture: picture, frame: frame)
         var uniforms = ImageUniforms(geometry: geometry, outputWidth: picture.width, outputHeight: picture.height)
         let pass = MTLRenderPassDescriptor()
         pass.colorAttachments[0].texture = picture
@@ -307,18 +337,58 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         renderCount += 1
     }
 
+    /// Where the image lands this frame: the fit, and with Ken Burns the crop of this frame (advancing the playhead).
+    private func pictureGeometry(image: MTLTexture, picture: MTLTexture, frame: LayerFrameContext) -> ImagePictureGeometry {
+        let chosen: LayerFit = fit ?? LayerFit(mode: mode)
+        guard let crop = kenBurnsCrop(frame: frame) else {
+            let placement = LayerFitPlacement(contentWidth: image.width, contentHeight: image.height, outputWidth: picture.width,
+                                              outputHeight: picture.height, fit: chosen)
+            return ImagePictureGeometry(placement)
+        }
+        let size: (width: Int, height: Int) = ImagePictureGeometry.cropContentSize(crop, imageWidth: image.width, imageHeight: image.height)
+        let cropFit: LayerFit = chosen.mode == .pixelAccurate ? LayerFit(mode: .fit, anchor: chosen.anchor) : chosen
+        let placement = LayerFitPlacement(contentWidth: size.width, contentHeight: size.height, outputWidth: picture.width,
+                                          outputHeight: picture.height, fit: cropFit)
+        return ImagePictureGeometry(placement, crop: crop)
+    }
+
+    /// MED-007: the movement's duration (the override, else the movement's own).
+    private var kenBurnsLimit: UInt64 {
+        kenBurnsDurationNanoseconds ?? kenBurns?.durationNanoseconds ?? 0
+    }
+
+    /// MED-007: this frame's crop (nil without Ken Burns). Reduce Motion: the start; otherwise the playhead advances.
+    private func kenBurnsCrop(frame: LayerFrameContext) -> KenBurnsRect? {
+        guard let motion = kenBurns else { return nil }
+        if reduceMotion { return motion.start }
+        let limit: UInt64 = kenBurnsLimit
+        let elapsed: UInt64 = playhead.advance(frameDuration: frame.frameDuration, limit: limit)
+        return motion.crop(elapsedNanoseconds: elapsed, durationNanoseconds: limit)
+    }
+
+    /// MED-007: the picture changes from frame to frame (running, not reduced, not yet at the end).
+    public var isKenBurnsMoving: Bool {
+        guard let motion = kenBurns, !reduceMotion, !motion.isStill else { return false }
+        return !playhead.isFinished(limit: kenBurnsLimit)
+    }
+
     /// The newest loaded image, when the slot's lock is free this instant (otherwise the held one stays).
     private func takeNewest() {
         if let newest: (MTLTexture?, UInt64) = slot.lock.withLockIfAvailableUnchecked({ ($0.texture, $0.generation) }) {
+            if newest.1 != heldGeneration || newest.0 !== held { playhead.restart() }   // MED-007-R5
             held = newest.0
             heldGeneration = newest.1
         }
     }
 
-    /// CMP-013: still; the held image's load generation and the fit generation.
+    /// CMP-013: still (the held image's load generation and the parameter generation), except while a Ken Burns
+    /// movement runs (MED-007-R6: time).
     public var renderDependencies: LayerRenderDependencies {
         takeNewest()
-        return .still(content: heldGeneration, parameters: fitGeneration)
+        if isKenBurnsMoving {
+            return LayerRenderDependencies(time: true, contentGeneration: heldGeneration, parameterGeneration: parameterGeneration)
+        }
+        return .still(content: heldGeneration, parameters: parameterGeneration)
     }
 
     public func renderReused(frame: LayerFrameContext) { framesShown += 1 }
@@ -337,6 +407,7 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     }
 
     struct ImgUniforms {
+        float4 bounds;   // MED-007: the drawable part of the image (min x, min y, max x, max y)
         float2 visible;
         float2 offset;
         float2 outputSize;
@@ -344,12 +415,13 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
 
     // Output point (0...1, top-left) -> image coordinate (ImagePictureGeometry.textureCoordinate).
     // The texture is sRGB and holds premultiplied texels (PremultipliedSRGB), so the sample is linear
-    // premultiplied light; colour is clamped to [0, alpha]. Outside the image (fit mode) nothing is drawn.
+    // premultiplied light; colour is clamped to [0, alpha]. Outside the image (fit mode), or outside a Ken Burns crop
+    // (MED-007), nothing is drawn.
     fragment float4 img_picture(ImgOut in [[stage_in]], texture2d<float> image [[texture(0)]],
                                 sampler s [[sampler(0)]], constant ImgUniforms &u [[buffer(0)]]) {
         float2 p = in.position.xy / u.outputSize;
         float2 t = u.offset + p * u.visible;
-        if (any(t < 0.0) || any(t > 1.0)) { return float4(0.0); }
+        if (any(t < u.bounds.xy) || any(t > u.bounds.zw)) { return float4(0.0); }
         float4 c = image.sample(s, t);
         float a = clamp(c.a, 0.0, 1.0);
         return float4(clamp(c.rgb, float3(0.0), float3(a)), a);
@@ -445,13 +517,15 @@ final class ImageLoadSlot: Sendable {
     }
 }
 
-/// Matches `ImgUniforms` in the shader (24 bytes).
+/// Matches `ImgUniforms` in the shader (48 bytes: a float4, three float2, padding).
 struct ImageUniforms {
+    var bounds: SIMD4<Float>
     var visible: SIMD2<Float>
     var offset: SIMD2<Float>
     var outputSize: SIMD2<Float>
 
     init(geometry: ImagePictureGeometry, outputWidth: Int, outputHeight: Int) {
+        bounds = SIMD4(geometry.minX, geometry.minY, geometry.maxX, geometry.maxY)
         visible = SIMD2(geometry.visibleWidth, geometry.visibleHeight)
         offset = SIMD2(geometry.offsetX, geometry.offsetY)
         outputSize = SIMD2(Float(max(outputWidth, 1)), Float(max(outputHeight, 1)))
