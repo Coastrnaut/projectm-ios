@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (ACC-010-T01–T12 verified on the Mac: ShowControl package tests on the host, app unit tests and UI tests on a private iOS 27.2 iPhone 17 simulator. Open: ACC-010-T13 `{device}` check on D1 and D2. Simulator results are UI evidence only.)
 
 **Input**: User description: "Implement ACC-010 (Left-handed layout) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Mirror performance controls without mirroring rendered output."
