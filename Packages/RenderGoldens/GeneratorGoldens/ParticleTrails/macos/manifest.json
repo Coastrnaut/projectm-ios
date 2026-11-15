@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "particle-trails-128x96-f0.png",
+      "fileSHA256" : "02a18f25bace0409506bbe90d4e6cf528d6464b6968ae83f2beb535d88246754",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "fbcdfbaacad8285acb2b945f6cdd630cb88f348e68a13ada1abbd6703fd854f8",
+      "scene" : "particle-trails",
+      "width" : 128
+    },
+    {
+      "file" : "particle-trails-256x192-f0.png",
+      "fileSHA256" : "82bd81d02175515d32abced5b589954bead2a26ae58acc7db356b054ce1b276a",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "0c844634a8e3e4226838ae27e360a547b8883a7efffd3aaf93957fe1dcaf5d2d",
+      "scene" : "particle-trails",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}

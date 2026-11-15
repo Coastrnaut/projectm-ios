@@ -349,6 +349,7 @@ struct SettingsView: View {
                 if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
                 if settings.visual == .particleFountain { particleFountainOptions }   // VIS-008-R10
                 if settings.visual == .particleOrbit { particleOrbitOptions }   // VIS-009-R10
+                if settings.visual == .particleFountain || settings.visual == .particleOrbit { particleTrailsOptions }   // VIS-010-R9
                 if settings.visual == .noiseField { NoiseFieldOptions(settings: settings) }   // VIS-013-R9
                 if settings.visual == .kaleidoscope { KaleidoscopeOptions(settings: settings) }   // VIS-014-R9
                 if settings.visual == .tunnel { TunnelOptions(settings: settings) }   // VIS-015-R9
@@ -425,6 +426,16 @@ struct SettingsView: View {
         .segmentedUnlessAccessibilitySize()   // ACC-006-R1
         .accessibilityLabel("Radius")
         .accessibilityIdentifier("particleOrbitRadiusPicker")
+    }
+
+    /// VIS-010-R9: the particle visuals' trails.
+    private var particleTrailsOptions: some View {
+        Picker("Trails", selection: $settings.particleTrails) {
+            ForEach(ParticleTrailSetting.allCases, id: \.self) { (trails: ParticleTrailSetting) in Text(trails.title).tag(trails) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Trails")
+        .accessibilityIdentifier("particleTrailsPicker")
     }
 
     /// VIS-008-R10: the particle fountain's gravity (SHD-007: the emitter's gravity replaces it when the emitter is on).
