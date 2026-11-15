@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (OUT-014-T01-T12 verified on the Mac host and the iOS 27.2 simulator; T13 `{device}` open)
 
 **Input**: User description: "Implement OUT-014 (Output profile export) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Save and restore display transforms as local files." Acceptance, verbatim:

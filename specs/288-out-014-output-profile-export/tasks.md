@@ -17,26 +17,26 @@
 
 **Independent test**: custom settings + stand-in display → exported document holds every value and the class; no identifiers.
 
-- [ ] OUT-014-T04 [US1] `ExternalDisplayCoordinator.outputDisplayClass` (OUT-011 readings + the slot's screen pixel aspect) in Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift
-- [ ] OUT-014-T05 [US1] `ExternalOutputSetting.outputProfile(display:)` and `apply(_:)`; `profiles` coordinator property in Apps/projectM-iOS/ExternalDisplay/ExternalOutputSetting+Profile.swift and Apps/projectM-iOS/ExternalDisplay/ExternalOutputSetting.swift
-- [ ] OUT-014-T06 [US1] `OutputProfileCoordinator` export (temporary file, file mover, removal on every outcome, DEBUG simulation) in Apps/projectM-iOS/Coordinators/OutputProfileCoordinator.swift
-- [ ] OUT-014-T07 [US1] Rows "Export output profile…", "Import output profile…", status line, mover/importer, confirmation dialog in Apps/projectM-iOS/Views/OutputProfileRows.swift; add to Apps/projectM-iOS/Views/ExternalDisplaySection.swift
+- [X] OUT-014-T04 [US1] `ExternalDisplayCoordinator.outputDisplayClass` (OUT-011 readings + the slot's screen pixel aspect) in Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift — Verified 2026-11-15: OutputProfileAppTests (the class is read from the 1920 × 1080 and 1280 × 720 stand-ins; the file carries 1920)
+- [X] OUT-014-T05 [US1] `ExternalOutputSetting.outputProfile(display:)` and `apply(_:)`; `profiles` coordinator property in Apps/projectM-iOS/ExternalDisplay/ExternalOutputSetting+Profile.swift and Apps/projectM-iOS/ExternalDisplay/ExternalOutputSetting.swift — Verified 2026-11-15: OutputProfileAppTests.testRoundTripOnTheSameDisplayClassReproducesTheOutputWithoutAWarning (every setting equal after apply; keys persisted)
+- [X] OUT-014-T06 [US1] `OutputProfileCoordinator` export (temporary file, file mover, removal on every outcome, DEBUG simulation) in Apps/projectM-iOS/Coordinators/OutputProfileCoordinator.swift — Verified 2026-11-15: OutputProfileAppTests (mover requested, temporary folder removed on cancel and success); UI test export in simulation
+- [X] OUT-014-T07 [US1] Rows "Export output profile…", "Import output profile…", status line, mover/importer, confirmation dialog in Apps/projectM-iOS/Views/OutputProfileRows.swift; add to Apps/projectM-iOS/Views/ExternalDisplaySection.swift — Verified 2026-11-15: OutputProfileUITests taps both rows and reads `outputProfileMessage`; build with type-check warnings flags shows none in the new code
 
 ## Phase 4: User Story 2 — import on the same / different class (P1)
 
 **Independent test**: export, reset, import on the stand-in: values, `sublayerTransform` and calibration equal the originals; different class warns.
 
-- [ ] OUT-014-T08 [US2] Import: security-scoped read of at most 16 KB + 1, decode, match, apply or hold as pending; Apply Anyway / Cancel in Apps/projectM-iOS/Coordinators/OutputProfileCoordinator.swift
-- [ ] OUT-014-T09 [US2] App acceptance tests (round trip on the stand-in without warning; 1280 × 720 stand-in warns, Cancel changes nothing, Apply Anyway applies; no display connected applies with the "could not be checked" message (OUT-014-R9); export then cancel leaves no temporary file (OUT-014-R4); calibration ranges equal `DisplayCalibration`'s; leak test: no device name, identifierForVendor, display id, UUID, IPv4 or MAC in the file; no new UserDefaults keys) in Apps/projectM-iOS/Tests/OutputProfileAppTests.swift
+- [X] OUT-014-T08 [US2] Import: security-scoped read of at most 16 KB + 1, decode, match, apply or hold as pending; Apply Anyway / Cancel in Apps/projectM-iOS/Coordinators/OutputProfileCoordinator.swift — Verified 2026-11-15: OutputProfileAppTests 6/6 pass on iOS 27.2 simulator (0.11 s): same class applies, different class pending → Cancel / Apply Anyway, unknown applies unchecked
+- [X] OUT-014-T09 [US2] App acceptance tests (round trip on the stand-in without warning; 1280 × 720 stand-in warns, Cancel changes nothing, Apply Anyway applies; no display connected applies with the "could not be checked" message (OUT-014-R9); export then cancel leaves no temporary file (OUT-014-R4); calibration ranges equal `DisplayCalibration`'s; leak test: no device name, identifierForVendor, display id, UUID, IPv4 or MAC in the file; no new UserDefaults keys) in Apps/projectM-iOS/Tests/OutputProfileAppTests.swift — Verified 2026-11-15: OutputProfileAppTests 6/6 pass (round trip: `sublayerTransform` and slot calibration equal; 1280 × 720 warns; leak test; ranges equal DisplayCalibration; only `settings.externalDisplay.*` keys written)
 
 ## Phase 5: User Story 3 — bad files (P2)
 
-- [ ] OUT-014-T10 [US3] App test: an invalid document through the coordinator leaves every setting and the external slot unchanged and shows the reason, in Apps/projectM-iOS/Tests/OutputProfileAppTests.swift
+- [X] OUT-014-T10 [US3] App test: an invalid document through the coordinator leaves every setting and the external slot unchanged and shows the reason, in Apps/projectM-iOS/Tests/OutputProfileAppTests.swift — Verified 2026-11-15: OutputProfileAppTests.testInvalidFilesChangeNothing (bow tie, calibration out of range, truncated, empty: setting and slot unchanged)
 
 ## Phase 6: Polish
 
-- [ ] OUT-014-T11 UI test with `-uitestOutputProfileSimulation` and the fake display: export, reset calibration in its editor, import, `externalCalibration` probe shows the exported values, message "Applied output profile." (under 30 s) in Apps/projectM-iOS/UITests/OutputProfileUITests.swift
-- [ ] OUT-014-T12 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), type-check budget, privacy manifest and network symbols on the Debug app, `LibraryBackupAppTests` and `SettingsTests`; delete the simulator and derived data
+- [X] OUT-014-T11 UI test with `-uitestOutputProfileSimulation` and the fake display: export, reset calibration in its editor, import, `externalCalibration` probe shows the exported values, message "Applied output profile." (under 30 s) in Apps/projectM-iOS/UITests/OutputProfileUITests.swift — Verified 2026-11-15: OutputProfileUITests 1/1 pass in 29.3 s warm (54.9 s on the first run, which booted the simulator)
+- [X] OUT-014-T12 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), type-check budget, privacy manifest and network symbols on the Debug app, `LibraryBackupAppTests` and `SettingsTests`; delete the simulator and derived data — Verified 2026-11-15: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; LibraryBackupAppTests, SettingsTests, CornerPinAppTests, DisplayCalibrationAppTests, OutputDiagnosticsAppTests 22/22 pass; no new UserDefaults keys; simulator and derived data deleted
 - [ ] OUT-014-T13 {device} On D1 with a projector: export, reset, import reproduces the pin and calibration with no warning; another display warns (quickstart B)
 
 ## Dependencies
