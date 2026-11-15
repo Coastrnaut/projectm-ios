@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-14T23:57:57Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T00:05:19Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,18 +10,20 @@
 | State | Features |
 |---|---|
 | audited | 69 |
-| implementing | 5 |
+| implementing | 3 |
+| built | 1 |
+| unit_passed | 1 |
 | integrated | 251 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 9 | 2 | 140 | 0 |
-| P2 | 49 | 3 | 27 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 9 | 2 | 0 | 0 | 140 | 0 |
+| P2 | 49 | 1 | 1 | 1 | 27 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -2193,6 +2195,15 @@ None.
 - `python3 scripts/test_scripts.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `e9ec9e9eeee3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-010/20261114T105402/autonomous-tests.log`)
 - `post-merge: projectM-iOSTests 793 + UI 14 (audition, preset library, settings, external display, cue transitions, stage overlay)`: pass at `a653f631` (log `.autonomous/logs/integration/batch22/app-tests.log`)
+
+### PRE-011 Preset notes (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `8a093668941d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-011/20261114T190306/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `8a093668941d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-011/20261114T190306/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `8a093668941d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-011/20261114T190306/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `8a093668941d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-011/20261114T190306/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `8a093668941d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-011/20261114T190306/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `8a093668941d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-011/20261114T190306/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PresetLibrary`: pass at `8a093668941d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-011/20261114T190306/swift-test_PresetLibrary.log`)
 
 ### PRE-012 Preset import validation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `6d4ada96b86c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-012/20261112T182006/compliance.log`)
