@@ -43,6 +43,15 @@ interaction); each answer is the conservative, local-first option.
 - Q: What happens while the scene is locked? → A: The reset changes nothing and records nothing; the scene lock's usual refusal ("Scene locked. Unlock the scene to edit.") is reported and announced.
 - Q: Are quantized changes (MOD-017) honoured? → A: No. A reset is written at once, so the one undo step holds all values; queuing some values for the next beat would split the reset across steps.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does "Reset to Defaults" ask for confirmation first? → A: No. The reset is one undo step, so Undo is the safety net; a confirmation would add a tap to every reset without protecting anything Undo does not.
+- Q: Where is Undo after a reset in the parameter list? → A: The parameter list shows the SCN-010 Undo and Redo buttons in its own toolbar (toolbar items exist only on the screen that declares them), so the reset is undone where it was made.
+- Q: What happens to selection mode after a reset? → A: A reset that changed values (or was refused) ends selection mode and clears the selection; "Already at defaults" keeps the selection so the user can adjust it.
+- Q: Which values count as "already at default"? → A: A value equal to the descriptor's declared default as the write target reads it back (the same comparison SCN-008 recall uses); such parameters are not written and are not counted in the label or announcement.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Reset several parameters in one step (Priority: P1) — MVP
@@ -104,6 +113,7 @@ values.
 - **UIX-010-R7**: While the scene is locked (SCN-015), a reset MUST change nothing, add no undo step, and report the lock's refusal.
 - **UIX-010-R8**: Accessibility: each selectable row MUST be one VoiceOver element with the toggle trait and a selected/not selected value; the reset button's label MUST include the count ("Reset 3 parameters to defaults"); the result MUST be announced on the parameter lane ("Reset 3 parameters").
 - **UIX-010-R9**: The reset MUST be written immediately (not queued by MOD-017 quantization), so all values belong to the one undo step.
+- **UIX-010-R10**: The parameter list MUST show Undo and Redo, and a reset that changed values or was refused MUST end selection mode; no confirmation is asked before a reset.
 
 ### Key Entities
 
@@ -117,7 +127,7 @@ values.
 - **UIX-010-S1**: After resetting N changed parameters, exactly one undo step was added, and one Undo restores all N previous values (tested for N = 2 and N = 4).
 - **UIX-010-S2**: Unselected parameters and modulation bindings are unchanged by a reset in every test.
 - **UIX-010-S3**: Resetting parameters already at default, or while the scene is locked, adds zero undo steps.
-- **UIX-010-S4**: A user resets two parameters and undoes it in at most six taps from the parameter list (Select, two ticks, Reset, back, Undo).
+- **UIX-010-S4**: A user resets two parameters and undoes it in at most five taps from the parameter list (Select, two ticks, Reset, Undo).
 
 ## Assumptions
 
