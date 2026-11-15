@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-010-T01-T11 verified on the Mac, simulator "SHOW10 iPhone 17", iOS 27.2;
+T12 `{device}` open; no device claim). ShowControl 154 tests (1.3 s; 8 new in `BeatGridTests`, the roadmap acceptance);
+app `ShowBeatGridAcceptanceTests` 4 (0.04 s); `ShowBeatGridUITests` 1 (11.7–13.4 s).
 
 **Input**: Roadmap row SHOW-010 (P1, depends on ANL-005 and SHOW-007, both integrated). Observable behavior, verbatim:
 "Display beat and bar positions using manual or estimated BPM." Acceptance, verbatim: "120 BPM test renders beat ticks
