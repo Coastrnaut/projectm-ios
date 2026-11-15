@@ -109,7 +109,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
     @ObservationIgnored var integrity: LibraryIntegrityCoordinator?
     @ObservationIgnored private let provingPeriod: Duration
     @ObservationIgnored private let announce: @MainActor (String) -> Void
-    @ObservationIgnored private weak var presets: PresetCoordinator?
+    @ObservationIgnored private(set) weak var presets: PresetCoordinator?   // PRE-017: read by +Versions
     @ObservationIgnored private var presentedFrames: @MainActor () -> Int = { 0 }
     @ObservationIgnored private var provingID: String?
     @ObservationIgnored private var provingTask: Task<Void, Never>?
@@ -520,7 +520,7 @@ final class UserPresetsCoordinator: UserPresetGuarding {
         updateDigest()
     }
 
-    private func speak(_ text: String) {
+    func speak(_ text: String) {   // PRE-017: also used by UserPresetsCoordinator+Versions
         if let announceLibrary { announceLibrary(text) } else { announce(text) }
     }
 

@@ -292,6 +292,8 @@ struct PresetRow: View {
     /// PRE-015: duplicating and editing; absent outside the browser.
     @Environment(UserPresetsCoordinator.self) private var userPresets: UserPresetsCoordinator?
     @State private var editing: UserPreset?
+    /// PRE-017: the Versions sheet.
+    @State private var versioning: UserPreset?
 
     private var isBundled: Bool { preset.source != PresetLibrary.userSource }
 
@@ -310,6 +312,11 @@ struct PresetRow: View {
     }
 
     private var editAction: () -> Void { { edit() } }
+
+    /// PRE-017-R8: the same presets as Edit.
+    private func showVersions() {
+        versioning = userPresets?.editableRecord(for: preset)
+    }
 
     /// PRE-010-R1: nil where the row is not in the browser or the preset cannot be previewed.
     private var previewAction: (() -> Void)? {
@@ -343,6 +350,7 @@ struct PresetRow: View {
             .modifier(CollectionMoveActions(presets: presets, preset: preset, collection: collection))
             .modifier(UserPresetActions(user: user))
             .modifier(CopyActions(duplicate: duplicateAction, edit: editable ? editAction : nil))
+            .modifier(VersionsAction(open: editable ? { showVersions() } : nil))   // PRE-017-R8
             .modifier(PreviewAction(preview: previewAction))   // PRE-010-R1
             .modifier(PresetCompareAccessibilityAction(compare: compareAction))   // PRE-009-R1
             Button {
@@ -397,6 +405,9 @@ struct PresetRow: View {
         .modifier(PresetOverridesSheet(isPresented: $adjusting, presets: presets, preset: preset))   // PRE-016
         .sheet(item: $editing) { record in
             if let userPresets { UserPresetEditorView(preset: record, userPresets: userPresets) }
+        }
+        .sheet(item: $versioning) { record in   // PRE-017
+            if let userPresets { UserPresetVersionsView(preset: record, userPresets: userPresets) }
         }
     }
 
@@ -456,6 +467,8 @@ struct PresetRow: View {
         if editable {
             Button(action: edit) { Label("Edit", systemImage: "pencil") }
                 .accessibilityIdentifier("editUserPreset")
+            Button(action: showVersions) { Label("Versions…", systemImage: "clock.arrow.circlepath") }   // PRE-017-R8
+                .accessibilityIdentifier("userPresetVersions")
         }
         if let user {
             Button(action: user.info) { Label("Information", systemImage: "info.circle") }
@@ -487,6 +500,15 @@ struct PresetRow: View {
             } else {
                 content
             }
+        }
+    }
+
+    /// PRE-017-R8: the VoiceOver action "Versions".
+    private struct VersionsAction: ViewModifier {
+        let open: (() -> Void)?
+
+        func body(content: Content) -> some View {
+            if let open { content.accessibilityAction(named: "Versions", open) } else { content }
         }
     }
 

@@ -13,6 +13,8 @@
 // * SHOW-006: `makeCueRehearsal` reads the live values and the safety settings (never writes them), SCN-006's stored
 //   pictures, and announces on the cue lane.
 // * SHOW-007: `showTransport` (made at launch) adds Play/Pause over the Hold, seek, scrub and Loop.
+// * SHOW-008: `showKeyframes` (made at launch) samples the keyframe tracks; its output reaches the native host as a live
+//   layer under MIDI/OSC values (`hostExternalValues`) and, for Visual Colour, as a one-colour palette.
 // * The buttons in the controls restart the controls' hide delay; the keyboard shortcuts do not show
 //   the controls.
 import FlashSafety
@@ -58,6 +60,7 @@ extension AppCoordinator {
         connectCueTransitions()   // SCN-007
         _ = showAutoAdvance   // SHOW-002: hooks into the show's step path now
         _ = showTransport   // SHOW-007: Loop reaches the timed advance from launch
+        _ = showKeyframes   // SHOW-008: tracks are sampled from launch
         show.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }
@@ -199,6 +202,50 @@ extension AppCoordinator {
         let transport = ShowTransportCoordinator(show: show, driver: showAutoAdvance, defaults: defaults)
         transport.setHold = { [weak self] (held: Bool) -> Void in self?.setShowHold(held) }   // SHOW-005's announcements
         return transport
+    }
+
+    // MARK: Keyframe tracks (SHOW-008)
+
+    func makeShowKeyframes() -> ShowKeyframeCoordinator {
+        let keyframes = ShowKeyframeCoordinator(show: show, transport: showTransport)
+        show.keyframes = keyframes   // the show editor's Keyframe Tracks… link
+        keyframes.apply = { [weak self] (_: ShowTrackOutput) -> Void in self?.showTrackOutputChanged() }
+        keyframes.currentValue = { [weak self] (target: ShowKeyframeTarget) -> ShowKeyframeValue in
+            self?.manualTrackValue(target) ?? .color(.white)
+        }
+        return keyframes
+    }
+
+    /// R5: the tracks' numbers with MIDI/OSC live values on top (the performer's hands win).
+    var hostExternalValues: [ParameterID: Double] {
+        let live: [ParameterID: Double] = externalLiveValues.merged
+        return showKeyframes.output.numbers(overlaidBy: live)
+    }
+
+    func showTrackOutputChanged() {
+        nativeVisual?.externalValues = hostExternalValues
+        nativeVisual?.palette = effectiveSpectrumPalette   // R7
+    }
+
+    /// The manual value a new keyframe takes on a track without keyframes (white for Visual Colour).
+    func manualTrackValue(_ target: ShowKeyframeTarget) -> ShowKeyframeValue {
+        let glow: BloomParameters = settings.glowParameters
+        switch target.id {
+        case VisualParameterIDs.bloomIntensity: return .number(Double(glow.intensity))
+        case VisualParameterIDs.bloomRadius: return .number(Double(glow.radius))
+        case VisualParameterIDs.bloomThreshold: return .number(Double(glow.threshold))
+        case VisualParameterIDs.bloomKnee: return .number(Double(glow.knee))
+        default: return .color(.white)
+        }
+    }
+
+    /// R7: one opaque colour for every bar (sRGB decoded to linear light); nil without a colour or when ACC-003's
+    /// colour-blind-safe palette is on (it wins).
+    static func trackPalette(_ color: ShowKeyframeColor?, colorBlindSafe: Bool) -> VisualPalette? {
+        guard let color, !colorBlindSafe else { return nil }
+        let linear = LinearColor(red: Float(ShowKeyframeColor.decode(color.red)), green: Float(ShowKeyframeColor.decode(color.green)),
+                                 blue: Float(ShowKeyframeColor.decode(color.blue)), alpha: 1)
+        return .custom(PaletteRamp(stops: [linear], blended: false))
     }
 
     // MARK: Controls and keys
