@@ -52,26 +52,26 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 5: App (US1, US3)
 
-- [ ] FX-012-T11 [US1] `MosaicSetting` (three keys) in `Apps/projectM-iOS/Coordinators/MosaicSetting.swift` and
+- [X] FX-012-T11 [US1] `MosaicSetting` (three keys) in `Apps/projectM-iOS/Coordinators/MosaicSetting.swift` and
   `AppCoordinator+Mosaic.swift`; wire into `AppCoordinator.swift` (init, the four compositor creations, scene apply,
-  reset), `+SceneHistory`, `+EffectChain`, `SceneAutosaveCapture.applyEffects` (FX-012-R1, R9)
-- [ ] FX-012-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005 `LibrarySettingsPolicy.includedKeys`,
-  the UI-test reset, `LibraryBackupAppTests` and `LibraryEraseAppTests` `appKeys` (FX-012-R9)
-- [ ] FX-012-T13 [US1] `MosaicSection` (toggle, ACC-005 Block size slider, Square/Hexagon picker, help) in
+  reset), `+SceneHistory`, `+EffectChain`, `SceneAutosaveCapture.applyEffects` (FX-012-R1, R9) — Verified 2026-11-15: app unit tests 1321/1321 on the own simulator (MosaicSettingTests 5/5)
+- [X] FX-012-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005 `LibrarySettingsPolicy.includedKeys`,
+  the UI-test reset, `LibraryBackupAppTests` and `LibraryEraseAppTests` `appKeys` (FX-012-R9) — Verified 2026-11-15: LibraryBackupAppTests, LibraryEraseAppTests, MosaicSettingTests.testMosaicKeysAreBackedUpErasedAndNamed, SettingsTests pass; test_scripts OK
+- [X] FX-012-T13 [US1] `MosaicSection` (toggle, ACC-005 Block size slider, Square/Hexagon picker, help) in
   `Apps/projectM-iOS/Views/MosaicSection.swift`, one line in `SettingsView.swift`, the section ID in
   `UITestSettingsSection.swift`; Effect order row and name in `EffectChainView.swift`/`EffectChainSetting.swift`
-  (FX-012-R8)
-- [ ] FX-012-T14 [US1] App tests `MosaicSettingTests` (persistence, clamp, slider, keys, scene/preset round trip,
+  (FX-012-R8) — Verified 2026-11-15: MosaicUITests and EffectChainUITests (row fx.mosaic) pass on the own simulator
+- [X] FX-012-T14 [US1] App tests `MosaicSettingTests` (persistence, clamp, slider, keys, scene/preset round trip,
   compositor push) and `EffectChainSettingTests`, `ChromaticSplitSettingTests`, `SettingsTests`,
-  `LibraryBackupAppTests`, `LibraryEraseAppTests` pass
-- [ ] FX-012-T15 [US1] UI test `MosaicUITests` (find, turn on, move Block size, switch to Hexagon) under 30 s
-  (FX-012-S6)
+  `LibraryBackupAppTests`, `LibraryEraseAppTests` pass — Verified 2026-11-15: MosaicSettingTests 5/5, EffectChainSettingTests, ChromaticSplitSettingTests, SettingsTests, LibraryBackupAppTests, LibraryEraseAppTests pass (full app suite 1321)
+- [X] FX-012-T15 [US1] UI test `MosaicUITests` (find, turn on, move Block size, switch to Hexagon) under 30 s
+  (FX-012-S6) — Verified 2026-11-15: MosaicUITests 1/1 (20.1 s, 16.4 s)
 
 ## Phase 6: Polish
 
-- [ ] FX-012-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
-  privacy manifest and network symbols on the Debug app, type-check budget
-- [ ] FX-012-T17 Test report in `docs/test-reports/mosaic-pixelation.md`; spec status
+- [X] FX-012-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
+  privacy manifest and network symbols on the Debug app, type-check budget — Verified 2026-11-15: all repo checks OK, 186 script tests, privacy manifest and network symbols OK; no FX-012 type-check warnings
+- [X] FX-012-T17 Test report in `docs/test-reports/mosaic-pixelation.md`; spec status — Verified 2026-11-15: docs/test-reports/mosaic-pixelation.md
 - [ ] FX-012-T18 {device} On D1: Photo visual, Mosaic at 8 and 64 in both shapes, blocks flat and discrete, frame rate
   with and without recorded (FX-012-S7)
 

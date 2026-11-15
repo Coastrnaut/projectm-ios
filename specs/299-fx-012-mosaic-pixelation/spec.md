@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-012-T01-T17 verified on the Mac and an own iOS 27.2 simulator; T18 `{device}` open)
 
 **Input**: User description: "Implement FX-012 (Mosaic pixelation) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Reduce spatial resolution into square or hexagonal blocks." Acceptance, verbatim: "Block size one
@@ -78,6 +78,12 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   hexagon tests compare only pixels whose four neighbours share the cell (ties at borders may round differently on
   the GPU), as in S3/S4. Finding A3: no settings key may contain "focus", "exposure" or "whitebalance" (CAM-005 and
   siblings); the `settings.mosaic.*` keys do not.
+
+### Session 2026-11-15 (speckit-implement)
+
+- Q: Where do the `fx.mosaic` read and write rules live? → A: In a new `SceneEffectChain+Mosaic.swift` (one case per
+  switch in `SceneEffectChain.swift`), to keep edits to the shared file small while FX-010 adds its own kind; the
+  scene module's source-safety list names the new file. Applied to FX-012-R10.
 
 ## User Scenarios & Testing *(mandatory)*
 

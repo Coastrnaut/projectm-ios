@@ -100,6 +100,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.directionalBlur.angle",
                 "settings.radialBlur.enabled", "settings.radialBlur.strength", "settings.radialBlur.centerX",   # FX-008-R9
                 "settings.radialBlur.centerY",
+                "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   # FX-012-R9
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
