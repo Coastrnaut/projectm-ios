@@ -32,3 +32,11 @@
 ## Dependencies
 
 T01 → T02, T03, T04-T06; T04-T06 → T07-T10; T06 → T11 → T12, T13; all → T14. T15 needs a device.
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- Coverage: every R1-R13 maps to a task (R2 T01-T03; R1, R3, R5-R8 T04-T09; R10 T10; R4, R9, R11, R12 T11-T13;
+  R13 T03, T14). S1-S7 each have a test task. No constitution conflict.
+- Fix applied: the unknown-GPU path of T09 prints the digest and skips only the digest comparison (the
+  twice-rendered equality and seed checks still run), matching spec Clarifications Q5.
+- Fix applied: edge case "time going backwards" and "frame gap > 1 s" are asserted in T07.
