@@ -35,8 +35,8 @@ Tests are requested by the spec (acceptance fixture, goldens, UI test). `{device
 
 ## Phase 6: Polish
 
-- [ ] VIS-010-T15 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), Linux shape build, type-check budget, privacy manifest and network symbols on the Debug app
-- [ ] VIS-010-T16 {device} D1: Particle Fountain and Particle Orbit with Trails Short/Long; streaks fade, frame rate unchanged within noise, no flashing with Reduce flashing
+- [X] VIS-010-T15 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), Linux shape build, type-check budget, privacy manifest and network symbols on the Debug app — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; Linux shape (-DVISUAL_NO_METAL) builds and its 7 CPU trail tests pass; LibraryBackup 87/87; type-check warnings only in files this feature does not touch (SettingsView:294 pre-existing)
+- [ ] VIS-010-T16 {device} (open: needs D1 and a person) D1: Particle Fountain and Particle Orbit with Trails Short/Long; streaks fade, frame rate unchanged within noise, no flashing with Reduce flashing
 
 ## Dependencies
 
