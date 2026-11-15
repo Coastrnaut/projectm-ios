@@ -344,6 +344,15 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         return head + " frame=\(width)x\(height) bars=" + p.bars.rawValue
     }
 
+    /// OUT-005-R4 (contract C5): the physical shape (width ÷ height, with the resolved pixel aspect) of the
+    /// external display showing the visual; nil when the visual is not on an external display.
+    var externalScreenAspect: Double? {
+        guard let slot = visual?.superview as? VisualSlotView, slot.role == .external else { return nil }
+        let par: Double = slot.correction.pixelAspect.resolved(screen: slot.screenPixelAspect)
+        return SafeAreaGuideGeometry.externalAspect(width: Double(slot.bounds.width), height: Double(slot.bounds.height),
+                                                    pixelAspect: par)
+    }
+
     // MARK: - Output blackout (OUT-010)
 
     /// The user wants the output black (the control offers Restore).

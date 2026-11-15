@@ -376,6 +376,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
+    /// OUT-005: the safe-area guides preference (Settings → Safe-area guides; off by default; device only).
+    @ObservationIgnored private(set) lazy var safeAreaGuides = SafeAreaGuideSetting(defaults: defaults)
     /// ACC-009: the one-handed layout preference (Settings → One-handed layout; Off by default; iPhone only).
     @ObservationIgnored private(set) lazy var oneHanded = OneHandedSetting(defaults: defaults)
     /// SHOW-006: cue rehearsal (session only; device-only panel).
@@ -384,6 +386,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var showTransport: ShowTransportCoordinator = makeShowTransport(defaults: defaults)
     /// SHOW-008: keyframe tracks along the show timeline (a live layer under MIDI/OSC values; Visual Colour).
     @ObservationIgnored private(set) lazy var showKeyframes: ShowKeyframeCoordinator = makeShowKeyframes()
+    /// SHOW-013: auto scene rotation (session on/off; settings in `settings.show.rotation`).
+    @ObservationIgnored private(set) lazy var sceneRotation: SceneRotationCoordinator = makeSceneRotation(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// CAM-011: device tilt and shake as modulation sources (Settings › Motion; the sensor runs only while used).

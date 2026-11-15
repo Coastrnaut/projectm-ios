@@ -92,6 +92,8 @@ struct SettingsView: View {
     var recordingCountdown: RecordingCountdownSetting?
     /// UIX-013: the scene performance HUD switch (nil hides the row, e.g. in previews).
     var sceneHUD: SceneHUDSetting? = nil
+    /// OUT-005: the safe-area guides (nil hides the section, e.g. in previews).
+    var safeAreaGuides: SafeAreaGuideSetting? = nil
     /// ACC-009: the one-handed layout (nil hides the section, e.g. in previews; iPhone only).
     var oneHanded: OneHandedSetting? = nil
     /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
@@ -117,6 +119,8 @@ struct SettingsView: View {
     var powerProfile: PowerProfileSetting? = nil
     /// ACC-007: haptic beat pulses (nil hides the section, e.g. in previews).
     var hapticBeat: HapticBeatCoordinator? = nil
+    /// SHOW-013: auto scene rotation (nil hides the section, e.g. in previews).
+    var sceneRotation: SceneRotationCoordinator? = nil
     /// PERF-012: Export performance report (Settings → Performance).
     var performanceReport: PerformanceReportExport? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
@@ -556,6 +560,7 @@ struct SettingsView: View {
         }
         .id("performance")
         if let sceneHUD { SceneHUDSection(setting: sceneHUD).id("sceneHUD") }   // UIX-013-R1
+        if let safeAreaGuides { SafeAreaGuidesSection(setting: safeAreaGuides).id("safeAreaGuides") }   // OUT-005-R7
         if let oneHanded { HandednessSections(setting: oneHanded) }   // ACC-010-R1 (all devices), ACC-009-R1 (iPhone)
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
         if let layerInspector { MotionModulationSection(coordinator: layerInspector.motionModulation).id("motion") }   // CAM-011 (the app coordinator)
@@ -590,6 +595,7 @@ struct SettingsView: View {
             }
             .id("show")
             QuantizeCueStepsSection(quantizer: settings.showCueQuantizer).id("quantizeCues")   // SHOW-003-R1
+            if let sceneRotation { SceneRotationSection(rotation: sceneRotation, show: show).id("sceneRotation") }   // SHOW-013-R7
         }
         if let openGuide {   // UIX-001-R8
             Section {

@@ -121,6 +121,8 @@ public enum LibrarySettingsPolicy {
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
         "settings.visualizer.sceneHUD",   // UIX-013-R11: a preference (Bool); erased with Settings
+        "settings.visualizer.guides", "settings.visualizer.guides.actionSafe",   // OUT-005-R6: preferences; erased with Settings
+        "settings.visualizer.guides.titleSafe", "settings.visualizer.guides.centreCross",
         "settings.controls.oneHanded",   // ACC-009-R9: a preference ("left"/"right"); erased with Settings
         "settings.controls.leftHanded",   // ACC-010-R7: a preference (Bool); erased with Settings
         "settings.recording.timedStop",   // REC-008-R9: a preference (off, 10, 30, 60, 300); erased with Settings
@@ -135,6 +137,7 @@ public enum LibrarySettingsPolicy {
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
         "settings.show.quantizeCues",   // SHOW-003: a performance timing choice of this device
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
+        "settings.show.rotation",   // SHOW-013: a performance choice of this device (auto scene rotation)
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder

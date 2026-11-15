@@ -112,6 +112,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.modulation.quantize",  # MOD-017 (quantize mode; absent = off)
                 "settings.show.quantizeCues",  # SHOW-003 (cue step quantize mode; absent = off)
                 "settings.show.loop",  # SHOW-007 (Loop the show timeline; absent = off)
+                "settings.show.rotation",  # SHOW-013 (auto scene rotation choices; absent = defaults)
                 "settings.inputTrim.decibels",   # AUD-008-R6 (analysis-only input trim)
                 "settings.analysisChannel.mode",   # AUD-009-R6 (analysis-only channel selection)
                 "settings.playbackBalance.position",   # AUD-010-R7 (In-App Playback monitoring balance)
@@ -125,6 +126,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.customWidth", "settings.recording.customHeight",   # REC-014-R7 (custom size)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.visualizer.sceneHUD",   # UIX-013-R11 (scene performance HUD; off by default)
+                "settings.visualizer.guides", "settings.visualizer.guides.actionSafe",   # OUT-005-R6 (safe-area guides; off)
+                "settings.visualizer.guides.titleSafe", "settings.visualizer.guides.centreCross",
                 "settings.controls.oneHanded",   # ACC-009-R9 (one-handed layout; Off by default)
                 "settings.controls.leftHanded",   # ACC-010-R7 (left-handed controls; off by default)
                 "settings.performance.powerProfile",   # PERF-008-R6 (power profile; Standard by default)
