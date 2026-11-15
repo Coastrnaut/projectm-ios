@@ -400,6 +400,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var motionModulation: MotionModulationCoordinator = makeMotionModulation(defaults: defaults)
     /// CAM-009: opt-in face tracking on the Camera visual's pictures (Settings › Camera; consent first).
     @ObservationIgnored private(set) lazy var faceTracking: FaceTrackingCoordinator = makeFaceTracking(defaults: defaults)
+    /// CAM-010: opt-in hand tracking on the same pictures (Settings › Camera; its own consent).
+    @ObservationIgnored private(set) lazy var handTracking: HandTrackingCoordinator = makeHandTracking(defaults: defaults)
     /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
     @ObservationIgnored private(set) lazy var hapticBeat = HapticBeatCoordinator(
         defaults: defaults, tempo: tempo, clamp: { [unowned self] () -> SafetyClamp in self.settings.safetyClamp })
@@ -662,6 +664,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
         FaceTrackingCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // CAM-009: off, no consent
+        HandTrackingCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // CAM-010: off, no consent
         NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
@@ -1251,6 +1254,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             connectLFOs(host)   // MOD-007
             connectMotion(host)   // CAM-011
             faceTracking.connect(native: host)   // CAM-009
+            handTracking.connect(native: host)   // CAM-010
             connectStereoPhase(host)   // ANL-013
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
@@ -1295,7 +1299,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in self?.cameraWhiteBalance = state }   // CAM-006
             cameraWhiteBalance = host.cameraWhiteBalance
             observePersonMask(of: host)   // CAM-008
-            faceTracking.connect(camera: host)   // CAM-009: the same pictures, only behind the consent gate
+            connectCameraAnalysis(host)   // CAM-009, CAM-010: the same pictures, only behind each consent gate; the ring's bindings
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1538,7 +1542,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.mirrored = settings.cameraMirrored
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
         host.personMask = settings.cameraPersonMask   // CAM-008-R1: from the next frame
-        faceTracking.analyzer.mirrored = host.mirrored   // CAM-009: x follows the shown picture
+        mirrorCameraAnalysis(host.mirrored)   // CAM-009, CAM-010: x follows the shown picture
         host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
 
@@ -2018,6 +2022,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         warmStart.sceneBecame(active: active)   // PERF-009-R6: write the pipeline archive back
         motionModulation.setAppActive(active)   // CAM-011-R8: no motion sensor outside the foreground
         if active { faceTracking.refreshPermission() }   // CAM-009-R5: access changed in iOS Settings
+        if active { handTracking.refreshPermission() }   // CAM-010-R5
         if active { countdown.appBecameActive() }   // MED-012-R4: a countdown that ended in the background finishes once
         updateIdleTimer()
     }

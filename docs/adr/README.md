@@ -63,5 +63,6 @@
 | [0066](0066-noise-field-shared-seeded-noise.md) | The noise field compiles a module-constant shader built from SHD-006's shared seeded noise (tenth reviewed Metal compile site) | Accepted 2026-11-14 (VIS-013; owner rule 4) |
 | [0080](0080-midi-feedback-output.md) | MIDI feedback sends bounded control changes to paired local destinations (opt-in per mapping; amends ADR-0038) | Accepted 2026-11-14 (MIDI-009; owner rule 4) |
 | [0081](0081-on-device-face-landmarks.md) | Face landmark emitters run only after explicit consent, on the device, from pictures the camera already captures; only eight scalars, memory only | Accepted 2026-11-14 (CAM-009; owner rule 4) |
+| [0087](0087-on-device-hand-pose.md) | Hand pose modulation runs only after its own consent, on the device; nine scalars, memory only; the Camera visual evaluates bindings for its ring (closes CAM-009-D8) | Accepted 2026-11-14 (CAM-010; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

@@ -91,6 +91,11 @@ final class ExpressionRejectionTests: XCTestCase {
         XCTAssertEqual(Self.error(for: "audio.face.mouth * 2")?.reason, .unknownIdentifier("audio.face.mouth"))
     }
 
+    /// CAM-010-R8: hand sources likewise.
+    func testHandSourcesAreNotFormulaNames() {
+        XCTAssertEqual(Self.error(for: "audio.hand.pinch + 1")?.reason, .unknownIdentifier("audio.hand.pinch"))
+    }
+
     func testErrorCarriesPositionAndReason() {
         let error = Self.error(for: "1 +\n  audio.bass")
         XCTAssertEqual(error?.position, SourcePosition(line: 2, column: 3))

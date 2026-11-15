@@ -20,6 +20,25 @@ public protocol CameraPictureAnalyzing: AnyObject, Sendable {
     func reset()
 }
 
+/// CAM-010 (research CAM-010-D2, contract hand-sources H4): several analyzers behind the provider's one slot (face and
+/// hand analysis). The list is fixed at creation; `offer` and `reset` go to each member in order, and each member
+/// decides itself whether to analyse.
+public final class CameraPictureAnalyzerGroup: CameraPictureAnalyzing {
+    public let analyzers: [any CameraPictureAnalyzing]
+
+    public init(_ analyzers: [any CameraPictureAnalyzing]) {
+        self.analyzers = analyzers
+    }
+
+    public func offer(_ pixels: CVPixelBuffer, rotation: CameraRotation, position: CameraPosition) {
+        for analyzer in analyzers { analyzer.offer(pixels, rotation: rotation, position: position) }
+    }
+
+    public func reset() {
+        for analyzer in analyzers { analyzer.reset() }
+    }
+}
+
 /// One camera picture: a read-only `.bgra8Unorm_srgb` texture (sampling decodes to linear light).
 public struct CameraFrame {
     public let texture: MTLTexture

@@ -40,5 +40,19 @@ final class CameraPictureAnalyzerTests: XCTestCase {
         stub.deliverNextPicture()
         XCTAssertEqual(analyzer.offers, 2, "nothing after stop")
     }
+
+    /// CAM-010-T04 (contract H4): a group behind the one slot offers each picture to every member and resets them all.
+    func testGroupForwardsOffersAndResetsToEveryMember() throws {
+        guard let device = MTLCreateSystemDefaultDevice() else { throw XCTSkip("No Metal device") }
+        let stub = StubCameraFrameProvider(device: device, scenario: .granted)
+        let layer = CameraLayerSource(provider: stub)
+        let face = CountingAnalyzer(), hand = CountingAnalyzer()
+        stub.pictureAnalyzer = CameraPictureAnalyzerGroup([face, hand])
+        layer.start()
+        stub.deliverNextPicture()
+        XCTAssertEqual([face.offers, hand.offers], [2, 2])
+        layer.stop()
+        XCTAssertEqual([face.resets, hand.resets], [1, 1])
+    }
 }
 #endif
