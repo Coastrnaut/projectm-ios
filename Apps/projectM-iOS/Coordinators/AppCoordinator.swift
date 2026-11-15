@@ -476,6 +476,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         self.memoryPressure = memoryPressure ?? .shared
         self.externalDisplay = externalDisplay ?? .shared
         Self.prepareStoredState(defaults: defaults)   // UI-test reset, FILE-005 restore, FILE-008 reconcile
+        #if DEBUG
+        Self.applyUITestDefaults(defaults)   // QA-011 device acceptance: typed settings from a launch argument
+        #endif
         let settings: AppSettings = AppSettings(defaults: defaults, systemReduceMotion: Self.currentSystemReduceMotion())
         self.settings = settings
         inputTrim = InputTrimSetting(defaults: defaults)
@@ -2276,6 +2279,24 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
 
     #if DEBUG
+    #if DEBUG
+    /// QA-011 device acceptance: `-uitestDefaults <json object>` writes typed values (numbers, Bools, strings) to
+    /// UserDefaults before any setting is read. Launch arguments alone arrive as strings, which the settings that
+    /// read `NSNumber` ignore. The keys the previous launch wrote are removed first, so one test's settings never
+    /// leak into the next (their list is kept under `uitest.defaults.keys`).
+    static func applyUITestDefaults(_ defaults: UserDefaults) {
+        let listKey = "uitest.defaults.keys"
+        for key in defaults.stringArray(forKey: listKey) ?? [] { defaults.removeObject(forKey: key) }
+        defaults.removeObject(forKey: listKey)
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let i = arguments.firstIndex(of: "-uitestDefaults"), i + 1 < arguments.count,
+              let data = arguments[i + 1].data(using: .utf8),
+              let values = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return }
+        for (key, value) in values { defaults.set(value, forKey: key) }
+        defaults.set(Array(values.keys), forKey: listKey)
+    }
+    #endif
+
     static let reduceMotionArgument = "-uitestReduceMotion"
     /// The UI-test override (contract C2); while set, the real setting is ignored.
     static var reduceMotionOverride: Bool? = {

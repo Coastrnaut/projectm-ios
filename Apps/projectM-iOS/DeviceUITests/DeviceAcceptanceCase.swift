@@ -20,6 +20,10 @@ struct ScreenStats: Codable {
 @MainActor
 class DeviceAcceptanceCase: XCTestCase {
     let app = XCUIApplication()
+    /// The sampled size (width, height) of the last screenshot.
+    var lastSize: (Int, Int) = (0, 0)
+    /// Screenshot sampling: every `sampleStep`-th pixel (8 by default; 2 for thin features such as scanlines).
+    var sampleStep: Int = 8
 
     /// D1's QA-010 floor (thresholds.json version 2: fps1sP5 ≥ 55 on D1 and D2).
     static let minimumFPS: Double = 55
@@ -55,12 +59,18 @@ class DeviceAcceptanceCase: XCTestCase {
     func launch(visual: String, settings: [String: Any] = [:], extra: [String] = [],
                 orientation: UIDeviceOrientation = .portrait, music: Bool = true) {
         XCUIDevice.shared.orientation = orientation
-        var args: [String] = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "NO",
-                              "-settings.visual", visual, "-settings.performanceOverlay", "<true/>"]
+        // `-uitestResetNotice` clears the app's settings, media and committed scene first: otherwise launch restores
+        // the last committed scene (SCN-002) and its effect values replace the test's settings.
+        var args: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "NO"]
         if music { args += ["-uitestImportAudio", "music-fixture.m4a", "-uitestPlayImported", "YES"] }
-        for (key, value) in settings.sorted(by: { $0.key < $1.key }) {
-            args += ["-\(key)", Self.plist(value)]
-        }
+        // Typed values through `-uitestDefaults` (plain launch arguments arrive as strings, which settings that
+        // read NSNumber ignore).
+        var values: [String: Any] = settings
+        values["settings.visual"] = visual
+        values["settings.performanceOverlay"] = true
+        let json = (try? JSONSerialization.data(withJSONObject: values, options: [.sortedKeys]))
+            .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        args += ["-uitestDefaults", json]
         app.launchArguments = args + extra
         app.launch()
         XCTAssertTrue(wait(15) { self.app.staticTexts["sourceStarts"].exists }, "the source started")
@@ -70,6 +80,8 @@ class DeviceAcceptanceCase: XCTestCase {
             XCTAssertTrue(wait(12) { overlay.label.contains("Active audio") }, "music is playing: \(overlay.label.prefix(120))")
         }
         pause(2)   // the visual's first frames and the music settle
+        // The controls show after launch and hide after 5 s without interaction; screenshots need them hidden.
+        _ = wait(8) { !self.app.otherElements["controls"].exists }
     }
 
     // MARK: Waiting
@@ -134,7 +146,8 @@ class DeviceAcceptanceCase: XCTestCase {
         attachment.name = "\(task) \(label)"
         attachment.lifetime = .keepAlways
         add(attachment)
-        let pixels = Self.rgba(shot.image, step: 8)
+        let pixels = Self.rgba(shot.image, step: sampleStep)
+        lastSize = ((shot.image.cgImage?.width ?? 0) / sampleStep, (shot.image.cgImage?.height ?? 0) / sampleStep)
         let stats = Self.stats(pixels)
         report(task, label, ["meanLuma": stats.meanLuma, "nonBlack": stats.nonBlack, "meanSaturation": stats.meanSaturation])
         return (stats, pixels)
@@ -146,6 +159,32 @@ class DeviceAcceptanceCase: XCTestCase {
         var sum = 0
         for i in 0..<a.count where i % 4 != 3 { sum += abs(Int(a[i]) - Int(b[i])) }
         return Double(sum) / Double(a.count / 4 * 3) / 255
+    }
+
+    /// A part of the picture away from the performance overlay (top leading, its counters change every second),
+    /// the visual's centred spectrum, the status pill and the eye button: where a still photo must stay still.
+    var stillRegion: (Double, Double, Double, Double) {
+        lastSize.0 > lastSize.1 ? (0.78, 0.12, 0.18, 0.25) : (0.04, 0.72, 0.25, 0.10)
+    }
+
+    /// Mean change between two sampled screenshots inside `stillRegion`.
+    func stillChange(_ a: [UInt8], _ b: [UInt8]) -> Double {
+        let (w, h) = lastSize
+        guard w > 0, h > 0 else { return Self.change(a, b) }
+        let r = stillRegion
+        func crop(_ p: [UInt8]) -> [UInt8] {
+            var out: [UInt8] = []
+            let x0 = Int(r.0 * Double(w)), y0 = Int(r.1 * Double(h))
+            let x1 = min(w, x0 + Int(r.2 * Double(w))), y1 = min(h, y0 + Int(r.3 * Double(h)))
+            for y in y0..<y1 { for x in x0..<x1 { let i = (y * w + x) * 4; if i + 4 <= p.count { out += p[i..<(i + 4)] } } }
+            return out
+        }
+        return Self.change(crop(a), crop(b))
+    }
+
+    /// Statistics of `stillRegion` (the photo alone).
+    func stillStats(_ p: [UInt8]) -> ScreenStats {
+        Self.region(p, width: lastSize.0, height: lastSize.1, stillRegion)
     }
 
     /// The visual is drawing: non-black content, and it moves between two screenshots 1 s apart.

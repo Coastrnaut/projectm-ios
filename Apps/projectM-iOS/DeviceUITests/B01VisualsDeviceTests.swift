@@ -129,22 +129,32 @@ final class B01NativeVisualDeviceTests: DeviceAcceptanceCase {
 @MainActor
 final class B01PhotoEffectDeviceTests: DeviceAcceptanceCase {
     private func photo(_ settings: [String: Any] = [:], extra: [String] = []) {
-        launch(visual: "photo", settings: settings, extra: ["-uitestSeedPhoto", "solid"] + extra)
+        launch(visual: "photo", settings: settings, extra: ["-uitestSeedPhoto", "pattern"] + extra)
     }
+
+    /// The photo region without effects (pattern fixture), for "the effect changes the picture".
+    private var basePixels: [UInt8] = []
 
     /// The Photo visual's frame rate without effects, for "unchanged within noise".
     private func baseline(_ task: String) -> Double {
         photo()
         let fps = assertFrameRate(task, "photo, no effect", seconds: 6)
+        basePixels = screen(task, "photo, no effect").1
         app.terminate()
         return fps
     }
 
-    private func effectCheck(_ task: String, _ label: String, _ settings: [String: Any], base: Double) {
+    /// Frame rate within noise of off, and proof the effect is on: the still photo region differs from no effect.
+    private func effectCheck(_ task: String, _ label: String, _ settings: [String: Any], base: Double, minimumChange: Double = 0.01) {
         photo(settings)
         let fps = assertFrameRate(task, label, seconds: 6)
-        screen(task, label)
+        let pixels = screen(task, label).1
+        let applied = stillChange(basePixels, pixels)
+        report(task, label, ["changeFromOff": applied])
         XCTAssertGreaterThanOrEqual(fps, base - Self.effectToleranceFPS, "\(task) \(label): frame rate within noise of off")
+        if !basePixels.isEmpty {
+            XCTAssertGreaterThan(applied, minimumChange, "\(task) \(label): the effect changes the picture")
+        }
         app.terminate()
     }
 
@@ -153,16 +163,21 @@ final class B01PhotoEffectDeviceTests: DeviceAcceptanceCase {
         let task = "FX-003-T22"
         photo()
         let base = assertFrameRate(task, "neutral", seconds: 6)
-        let (neutral, _) = screen(task, "neutral")
+        let (_, neutralPixels) = screen(task, "neutral")
+        let neutral = stillStats(neutralPixels)
         app.terminate()
         photo(["settings.colorGrade.temperature": 0.5, "settings.colorGrade.gain": 1.5, "settings.colorGrade.saturation": 0.0])
         let fps = assertFrameRate(task, "graded", seconds: 6)
-        let (grey, _) = screen(task, "warm, gain 1.5, saturation 0")
+        let (_, greyPixels) = screen(task, "warm, gain 1.5, saturation 0")
+        let grey = stillStats(greyPixels)
+        report(task, "photo region", ["neutralSaturation": neutral.meanSaturation, "gradedSaturation": grey.meanSaturation])
         XCTAssertLessThan(grey.meanSaturation, 0.05, "\(task): saturation 0 gives grey")
         XCTAssertGreaterThanOrEqual(fps, base - Self.effectToleranceFPS)
         app.terminate()
         photo()
-        let (reset, _) = screen(task, "reset")
+        assertFrameRate(task, "reset", seconds: 6)   // as every other step: the launch controls have hidden by then
+        let (_, resetPixels) = screen(task, "reset")
+        let reset = stillStats(resetPixels)
         XCTAssertEqual(reset.meanLuma, neutral.meanLuma, accuracy: 0.02, "\(task): reset matches neutral")
     }
 
@@ -207,8 +222,10 @@ final class B01PhotoEffectDeviceTests: DeviceAcceptanceCase {
         let base = baseline(task)
         for shape in ["square", "hexagon"] {
             for size in [8, 64] {
+                // 8 px blocks line up with the pattern's 8 px checkerboard, so they change it only a little.
                 effectCheck(task, "\(shape) \(size)", ["settings.mosaic.enabled": true, "settings.mosaic.shape": shape,
-                                                      "settings.mosaic.size": Double(size)], base: base)
+                                                      "settings.mosaic.size": Double(size)], base: base,
+                            minimumChange: size == 8 ? 0.003 : 0.01)
             }
         }
     }
@@ -221,37 +238,51 @@ final class B01PhotoEffectDeviceTests: DeviceAcceptanceCase {
                "settings.colorGrade.posterizeDither": true])
         let fps = assertFrameRate(task, "6 levels, dither", seconds: 6)
         let (_, a) = screen(task, "still a"); pause(1); let (_, b) = screen(task, "still b")
-        let shimmer = Self.change(a, b)
+        let shimmer = stillChange(a, b)
         report(task, "shimmer", ["change": shimmer])
         XCTAssertGreaterThanOrEqual(fps, base - 1, "\(task): within 1 fps of off")
         XCTAssertLessThan(shimmer, 0.01, "\(task): no shimmer on a still picture")
     }
 
     /// FX-015-T15: Vignette 100 %, softness 10 % and 90 %, centre moved: edges darker, the middle unchanged.
+    /// Regions avoid the overlay (top leading) and the photo visual's centred spectrum: "middle" is just below the
+    /// spectrum (inside the clear core at softness 10 %), "edge" the bottom-leading corner.
     func testFX015VignetteCentreUnchanged() {
         let task = "FX-015-T15"
+        let middle: (Double, Double, Double, Double) = (0.42, 0.66, 0.16, 0.03)
+        let edge: (Double, Double, Double, Double) = (0.0, 0.955, 0.04, 0.035)   // the very corner: outside the core even at softness 10 %
         photo()
         let base = assertFrameRate(task, "off", seconds: 6)
         let (_, offPixels) = screen(task, "off")
+        let offMiddle = Self.region(offPixels, width: lastSize.0, height: lastSize.1, middle)
+        let offEdge = Self.region(offPixels, width: lastSize.0, height: lastSize.1, edge)
         app.terminate()
-        let shot = XCUIScreen.main.screenshot().image.cgImage
-        let w = (shot?.width ?? 8) / 8, h = (shot?.height ?? 8) / 8
-        let offCentre = Self.region(offPixels, width: w, height: h, (0.4, 0.4, 0.2, 0.2))
         for softness in [0.1, 0.9] {
             photo(["settings.vignette.enabled": true, "settings.vignette.intensity": 1.0, "settings.vignette.softness": softness])
             let fps = assertFrameRate(task, "softness \(softness)", seconds: 6)
             let (_, p) = screen(task, "softness \(softness)")
-            let centre = Self.region(p, width: w, height: h, (0.4, 0.4, 0.2, 0.2))
-            let corner = Self.region(p, width: w, height: h, (0, 0, 0.1, 0.1))
-            report(task, "softness \(softness)", ["centreLuma": centre.meanLuma, "offCentreLuma": offCentre.meanLuma,
-                                                  "cornerLuma": corner.meanLuma])
-            XCTAssertEqual(centre.meanLuma, offCentre.meanLuma, accuracy: 0.03, "\(task): the middle is unchanged")
-            XCTAssertLessThan(corner.meanLuma, centre.meanLuma, "\(task): the edges darken")
+            let mid = Self.region(p, width: lastSize.0, height: lastSize.1, middle)
+            let corner = Self.region(p, width: lastSize.0, height: lastSize.1, edge)
+            report(task, "softness \(softness)", ["middleLuma": mid.meanLuma, "offMiddleLuma": offMiddle.meanLuma,
+                                                  "edgeLuma": corner.meanLuma, "offEdgeLuma": offEdge.meanLuma])
+            if softness < 0.5 {
+                XCTAssertEqual(mid.meanLuma, offMiddle.meanLuma, accuracy: 0.03, "\(task): the middle is unchanged")
+            }
+            XCTAssertLessThan(corner.meanLuma, offEdge.meanLuma - 0.05, "\(task): the edges darken")
             XCTAssertGreaterThanOrEqual(fps, base - Self.effectToleranceFPS)
             app.terminate()
         }
-        effectCheck(task, "centre moved", ["settings.vignette.enabled": true, "settings.vignette.intensity": 1.0,
-                                           "settings.vignette.centerX": 0.3, "settings.vignette.centerY": 0.3], base: base)
+        // Centre moved up and leading: the far (bottom trailing) corner darkens more than with the centre in the middle.
+        let far: (Double, Double, Double, Double) = (0.94, 0.955, 0.04, 0.035)
+        let offFar = Self.region(offPixels, width: lastSize.0, height: lastSize.1, far)
+        photo(["settings.vignette.enabled": true, "settings.vignette.intensity": 1.0,
+               "settings.vignette.centerX": 0.3, "settings.vignette.centerY": 0.3])
+        let fps = assertFrameRate(task, "centre moved", seconds: 6)
+        let (_, moved) = screen(task, "centre moved")
+        let movedFar = Self.region(moved, width: lastSize.0, height: lastSize.1, far)
+        report(task, "centre moved", ["farCornerLuma": movedFar.meanLuma, "offFarCornerLuma": offFar.meanLuma])
+        XCTAssertLessThan(movedFar.meanLuma, offFar.meanLuma - 0.05, "\(task): the far corner darkens with the centre moved")
+        XCTAssertGreaterThanOrEqual(fps, base - Self.effectToleranceFPS)
     }
 
     /// FX-017-T17: Film grain at 100 %, sizes 1-3, colour and monochrome; Vary over time moves, Reduce Motion is still.
@@ -268,11 +299,11 @@ final class B01PhotoEffectDeviceTests: DeviceAcceptanceCase {
                                     "settings.filmGrain.animated": true]
         photo(grain)
         let (_, a) = screen(task, "vary a"); pause(1); let (_, b) = screen(task, "vary b")
-        let varying = Self.change(a, b)
+        let varying = stillChange(a, b)
         app.terminate()
         photo(grain, extra: ["-uitestReduceMotion", "YES"])
         let (_, c) = screen(task, "reduce motion a"); pause(1); let (_, d) = screen(task, "reduce motion b")
-        let still = Self.change(c, d)
+        let still = stillChange(c, d)
         report(task, "grain motion", ["vary": varying, "reduceMotion": still])
         XCTAssertGreaterThan(varying, still, "\(task): Vary over time moves; Reduce Motion holds it")
         XCTAssertLessThan(still, 0.01, "\(task): still with Reduce Motion")
@@ -281,6 +312,7 @@ final class B01PhotoEffectDeviceTests: DeviceAcceptanceCase {
     /// FX-018-T16: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations; frame rate with and without.
     func testFX018Scanlines() {
         let task = "FX-018-T16"
+        sampleStep = 1   // 1-pixel lines: any coarser sampling can fall between them (aliasing)
         let base = baseline(task)
         for spacing in [2, 3, 16] {
             effectCheck(task, "spacing \(spacing)", ["settings.scanlines.enabled": true, "settings.scanlines.intensity": 1.0,
@@ -292,7 +324,8 @@ final class B01PhotoEffectDeviceTests: DeviceAcceptanceCase {
         pause(2)
         assertFrameRate(task, "landscape spacing 3", seconds: 6)
         let (_, a) = screen(task, "landscape a"); pause(1); let (_, b) = screen(task, "landscape b")
-        report(task, "crawl", ["change": Self.change(a, b)])
-        XCTAssertLessThan(Self.change(a, b), 0.01, "\(task): no crawl or flicker on a still picture")
+        let crawl = stillChange(a, b)
+        report(task, "crawl", ["change": crawl])
+        XCTAssertLessThan(crawl, 0.01, "\(task): no crawl or flicker on a still picture")
     }
 }
