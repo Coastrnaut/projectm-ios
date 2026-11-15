@@ -19,7 +19,7 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   (32 bytes), `weight`, `factor`, `reference` (contract C2); plain Swift (Linux)
 - [ ] FX-015-T03 [P] `VignetteModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; inactive cases;
   zero intensity is identity at centre and corners; the centre pixel exact at any intensity and softness (clear
-  core); weight monotonic along centre→corner rays; centre control moves the brightest pixel; finite outputs for
+  core); weight monotonic along centre→corner rays; centre control moves the unchanged region; finite outputs for
   finite and HDR input (FX-015-R2 to R5, R12)
 - [ ] FX-015-T04 `OutputEffectKind.vignette` (`fx.vignette`, appended last) in
   `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-015-R7)
@@ -38,7 +38,8 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   `Packages/Compositor/Tests/CompositorTests/`: off and intensity 0 (several softness and centre values)
   bit-identical on random content with no picture held, centre and corners included; on a uniform picture the
   centre pixel is exact at intensities 0.3 and 1, brightness never rises centre→corner and corners are darker;
-  moving the centre moves the brightest pixel; GPU ≈ reference; HDR input gives finite output; order and pool
+  moving the centre moves the unchanged region (S3); GPU = reference within 2⁻⁹ relative (exact where the
+  factor is 1); HDR input gives finite output; order and pool
   (FX-015-S1 to S4)
 
 ## Phase 4: User Story 3 — scenes and the chain (P2)

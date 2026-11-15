@@ -59,6 +59,15 @@ answer is the conservative option.
 - Q: What does zero intensity do? → A: Intensity is 0…100 % (default 50 %). At zero (or off) no pass runs: every
   output pixel is bit-identical to the output without this feature. Applied to FX-015-R4.
 
+### Session 2026-11-15 (speckit-analyze)
+
+- Finding A1 (ambiguity): with a clear core, a uniform picture has many equally bright pixels, so "the brightest point"
+  in S3 was not testable as a single pixel; S3 and US1 scenario 2 now name the unchanged region's centre and the edge
+  comparison. Finding A2 (underspecified): T07's "GPU ≈ reference" now names research D5's tolerance (2⁻⁹ relative,
+  exact where the factor is 1). Finding A3 (coverage): the `settings.vignette.*` keys are not in `AppSettings.allKeys`
+  (their own store writes them, like FX-012's), so `SettingsTests.testOnlyTheSettingsKeysAreWritten` needs no change;
+  T12 still runs `SettingsTests`. No constitution conflicts; every requirement has a task.
+
 ### Session 2026-11-15 (speckit-clarify)
 
 Five questions, each answered by Claude with the recommended option (owner rule 4).
@@ -97,8 +106,8 @@ falls monotonically from the centre to every corner, and moving the centre moves
 1. **Given** Vignette on at intensity 50 % and softness 50 %, **When** a uniform picture is shown, **Then** the pixel at
    the centre keeps its exact value and brightness never rises along any line from the centre to a corner, and the
    corners are darker than the centre.
-2. **Given** the centre moved to (0.25, 0.5), **When** a uniform picture is shown, **Then** the brightest region is
-   around a quarter of the width from the left, and the right edge is darker than the left edge.
+2. **Given** the centre moved to (0.25, 0.5), **When** a uniform picture is shown, **Then** the unchanged bright
+   region is centred a quarter of the width from the left, and the right edge is darker than the left edge.
 3. **Given** the values set, **When** the app is relaunched, **Then** the same values are applied.
 
 ---
@@ -194,7 +203,9 @@ vignette back when the scene or preset is opened.
 - **FX-015-S2**: At any intensity and softness, the centre pixel keeps its exact value; on a uniform picture the
   brightness never rises from the centre to each corner, and the corners are darker than the centre for any intensity
   above 0.
-- **FX-015-S3**: Moving the centre moves the brightest point of a uniform picture to the pixel nearest the new centre.
+- **FX-015-S3**: Moving the centre moves the bright region: on a uniform picture the pixel nearest the new centre is
+  exactly unchanged, the unchanged (clear-core) pixels are centred within 1 pixel of the new centre, and with the
+  centre left of the middle the left edge is brighter than the right edge.
 - **FX-015-S4**: The GPU output equals the software reference within half-float rounding, and every output is finite
   for finite input, HDR values included.
 - **FX-015-S5**: A scene and a preset with Vignette round-trip to the same values and picture; a scene from before the
