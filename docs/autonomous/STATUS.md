@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T07:14:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T07:21:10Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 16 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 306 |
+| integrated | 307 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 10 | 2 | 1 | 66 | 0 |
-| P3 | 4 | 0 | 0 | 5 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 151 | 0 |
+| P2 | 10 | 2 | 67 | 0 |
+| P3 | 4 | 0 | 5 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 19 features are not implemented yet (first: FX-008, FX-010, FX-011, FX-012, FX-013)
+- 18 features are not implemented yet (first: FX-010, FX-011, FX-012, FX-013, FX-014)
 
 ## Integrated
 
@@ -139,6 +138,7 @@ The physical-device suite may **not** start:
 | FX-005 | Contrast curves | `7bcd5c34fee8` | `feature/fx-005` |
 | FX-006 | Chromatic split | `3bb0b347faf5` | `feature/fx-006` |
 | FX-007 | Directional blur | `735bf65d0b5c` | `feature/fx-007` |
+| FX-008 | Radial blur | `292f2a8e72e5` | `feature/fx-008` |
 | FX-009 | Motion feedback | `6ac0c21c` | `feature/fx-009` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | FX-020 | Effect chain presets | `4bad23aa` | `None` |
@@ -1552,7 +1552,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_ShowControl.log`)
 - `swift test Compositor 1134, SceneFormat 211, LibraryBackup 88, RenderGoldens 107; postmerge projectM-iOSTests 1302 + DirectionalBlur/EffectChain UI tests 2`: pass at `735bf65d0b5c` (log `.autonomous/logs/integration/batch131/app-tests.log`)
 
-### FX-008 Radial blur (unit_passed)
+### FX-008 Radial blur (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4d289e1e64da` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-008/20261115T020057/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `4d289e1e64da` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-008/20261115T020057/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `4d289e1e64da` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-008/20261115T020057/script-tests.log`)
@@ -1575,6 +1575,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `af2387ba78ea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-008/20261115T021053/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `af2387ba78ea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-008/20261115T021053/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `af2387ba78ea` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-008/20261115T021053/swift-test_ShowControl.log`)
+- `24-file conflict with FX-007 resolved by its agent (both blurs kept); regate pass; swift test Compositor 1146, SceneFormat 213, LibraryBackup 88, RenderGoldens 109; postmerge projectM-iOSTests 1316 + RadialBlur/DirectionalBlur/EffectChain UI tests 3`: pass at `292f2a8e72e5` (log `.autonomous/logs/integration/batch133/app-tests.log`)
 
 ### FX-009 Motion feedback (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/compliance.log`)
