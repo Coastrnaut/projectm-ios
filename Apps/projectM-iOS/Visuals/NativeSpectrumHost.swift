@@ -90,6 +90,7 @@
 //   signal. Its level goes to the bloom (Reduced: fewer taps, coarser glow; Minimal: no glow pass) and its fade weight
 //   multiplies the glow intensity after the ACC-012 clamp, so the FX-019 limiter models the glow actually drawn. With
 //   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
+import ANGLERendering
 import AnalysisFeatures
 import AudioCore
 import Compositor
@@ -151,7 +152,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// ANL-013: called on the main actor when the warning is raised or cleared (cleared on start and stop).
     var onPhaseWarningChange: (@MainActor (Bool) -> Void)?
     private var lastLinkTimestamp: CFTimeInterval?
-    private var displayLink: CADisplayLink?
+    private var displayLink: ScreenDisplayLink?   // OUT-013: the screen that shows the view
+    /// OUT-013: this visual's frames in flight and drops (contract C4).
+    let outputPacing = MetalOutputPacing()
     private var paused = true
     private(set) var isSuspended = false
     private var meter = FrameRateMeter()
@@ -599,6 +602,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         samples.initialize(repeating: 0, count: WaveformFrameBuffer.capacity)
         view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
+        view.onWindowChange = { [weak self] in self?.followScreen() }   // OUT-013
         observeFrameRatePressure()
         applyGlow()
         applyLissajousPersistence()   // VIS-004-R9
@@ -970,6 +974,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
         updateLoop()
     }
 
+    /// OUT-013: the view joined a window, maybe on another screen; the frame link follows it.
+    private func followScreen() {
+        displayLink?.follow(view)
+    }
+
     private func updateLoop() {
         let run = !paused && !isSuspended
         if run, displayLink == nil {
@@ -989,10 +998,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             setPhaseInverted(false)   // ANL-013: and its warning
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
-            let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
-            link.preferredFrameRateRange = quality.frameRateRange
-            link.add(to: .main, forMode: .common)
-            displayLink = link
+            displayLink = ScreenDisplayLink(view: view, target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)),
+                                            range: quality.frameRateRange)
         } else if !run, let link = displayLink {
             link.invalidate()
             displayLink = nil
@@ -1099,7 +1106,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
         lastLinkTimestamp = link.timestamp
         let smoothedBands = smoother.update(target: bands, count: bandCount, frameInterval: interval, generation: bandSession)
         timer?.end(.audio)   // the drawable wait is not audio work; the modulation below is (accumulated)
-        guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
+        guard outputPacing.begin() else { return }   // OUT-013: a full output drops the tick (counted), never waits
+        guard let drawable = outputPacing.nextDrawable(from: layer, refreshInterval: link.targetTimestamp - link.timestamp) else { return }
+        guard let commands = queue.makeCommandBuffer() else { return outputPacing.abandon() }
         timer?.begin(.audio)
         let context: VisualFrameContext = frameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                                        frameDuration: link.targetTimestamp - link.timestamp)
@@ -1140,7 +1149,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             drawn = generator.encode(into: target, commandBuffer: commands, bands: input, context: context)
         }
         timer?.end(.render)
-        guard drawn else { return }
+        guard drawn else { return outputPacing.abandon() }
         encodeCaptureIfPending(target, commands: commands)   // REC-001; nothing without a request
         if videoRecording != nil { timer?.begin(.encode) }
         // REC-003: the drawn drawable (glow included) copied into the recording's pixel buffer.
@@ -1151,6 +1160,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         timer?.end(.encode)
         timer?.begin(.present)
         frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
+        outputPacing.track(commands)   // OUT-013: the slot returns when the GPU completes the frame
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)
@@ -1213,6 +1223,7 @@ final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
         metalLayer.pixelFormat = .bgra8Unorm_srgb
         metalLayer.framebufferOnly = true
         metalLayer.isOpaque = true
+        MetalOutputPacing.configure(metalLayer)   // OUT-013-R6
         isOpaque = true
         backgroundColor = .black
         isUserInteractionEnabled = false
@@ -1228,6 +1239,14 @@ final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
     override func layoutSubviews() {
         super.layoutSubviews()
         onLayout?()
+    }
+
+    /// OUT-013: the host's frame link follows the screen of the window this view joins.
+    var onWindowChange: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onWindowChange?()
     }
 }
 
