@@ -5,9 +5,10 @@ Checked in order; the first failure is the result:
 1. count < 3 → `tooFewPoints`; count > 32 → `tooManyPoints`.
 2. any coordinate non-finite or outside 0…1 → `outOfRange(i)`.
 3. |pᵢ − pᵢ₊₁| ≤ 1e-6 (wrapping) → `duplicatePoint(i)`.
-4. |area| ≤ 1e-4 → `tooSmall`.
-5. any non-adjacent edge pair intersecting or touching, or any adjacent pair overlapping collinearly →
-   `crossesItself`.
+4. any non-adjacent edge pair intersecting or touching, or any adjacent pair overlapping collinearly →
+   `crossesItself` (checked before the area: a symmetric bow-tie has signed area 0 and must be reported as
+   crossing).
+5. |area| ≤ 1e-4 → `tooSmall`.
 
 ## P2 Scene form (`composite.mask`)
 `{"shape": "path", "points": [{"x", "y"}…], "feather", "inverted", "transform"}`; every field written;

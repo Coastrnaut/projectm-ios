@@ -5,19 +5,19 @@
 
 ## Phase 1: Setup
 
-- [ ] SHD-008-T01 Create simulator "SHD8 iPhone 17" (iOS 27.2), run `xcodegen generate`, confirm the `Build` symlink and preset submodules in the worktree; count PosterBoard reports
+- [X] SHD-008-T01 Create simulator "SHD8 iPhone 17" (iOS 27.2), run `xcodegen generate`, confirm the `Build` symlink and preset submodules in the worktree; count PosterBoard reports — Verified 2026-11-14: simulator SHD8 iPhone 17 (iOS 27.2) created, `xcodegen generate`, `Build` symlink present, preset submodules initialised (depth 1); PosterBoard reports before: 32
 
 ## Phase 2: Foundational (blocks all stories)
 
-- [ ] SHD-008-T02 `VectorPath.swift` in `Packages/VisualGenerators/Sources/VisualGenerators/`: `VectorPoint`, `VectorPath` ("3…32 points", "0…1", duplicate ≤ 1e-6, area ≤ 1e-4 too small, crossing rules of contract P1), `VectorPathIssue` with messages, signed area, even-odd `contains`, ear-clipping triangulation, `sample(r1, r2, r3)`, `default` diamond, Codable `{"points"}` (SHD-008-R1, R2)
-- [ ] SHD-008-T03 [P] `VectorPathTests.swift` in `Packages/VisualGenerators/Tests/VisualGeneratorsTests/`: bow-tie, 5-point figure-8, touching vertex, collinear overlap (non-adjacent and adjacent spike) rejected; convex and concave (L, arrow) accepted; too small; duplicate consecutive and wrapping duplicate; out of range and non-finite; count limits; Codable round trip exact; samples inside (SHD-008-S2)
+- [X] SHD-008-T02 `VectorPath.swift` in `Packages/VisualGenerators/Sources/VisualGenerators/`: `VectorPoint`, `VectorPath` ("3…32 points", "0…1", duplicate ≤ 1e-6, area ≤ 1e-4 too small, crossing rules of contract P1), `VectorPathIssue` with messages, signed area, even-odd `contains`, ear-clipping triangulation, `sample(r1, r2, r3)`, `default` diamond, Codable `{"points"}` (SHD-008-R1, R2) — Verified 2026-11-14: `swift build` of VisualGenerators; `VectorPathTests` pass (crossing is checked before the area so a symmetric bow-tie, area 0, reports "crosses itself"; contract P1 updated)
+- [X] SHD-008-T03 [P] `VectorPathTests.swift` in `Packages/VisualGenerators/Tests/VisualGeneratorsTests/`: bow-tie, 5-point figure-8, touching vertex, collinear overlap (non-adjacent and adjacent spike) rejected; convex and concave (L, arrow) accepted; too small; duplicate consecutive and wrapping duplicate; out of range and non-finite; count limits; Codable round trip exact; samples inside (SHD-008-S2) — Verified 2026-11-14: `swift test --filter VectorPath` in VisualGenerators: `VectorPathTests` 5 tests pass in 0.004 s (bow-tie, 5-point figure-8, touching vertex, collinear overlap, adjacent spike rejected; square, arrow, L accepted; area, duplicate, range, count rules; exact JSON round trip; 2000 samples inside the L, none in its notch)
 
 ## Phase 3: User Story 1 - Draw a valid closed path (P1) 🎯 MVP
 
 **Goal**: an editing model that refuses invalid edits, and its editor screen. **Independent test**: `VectorPathDraftTests`, `VectorPathEditorUITests`.
 
-- [ ] SHD-008-T04 [US1] `VectorPathDraft.swift` in VisualGenerators: add, move, nudge, delete, undo last point, close, start over; refuse-and-keep-last-valid after closing; `closeIssue` message while drawing (SHD-008-R3)
-- [ ] SHD-008-T05 [P] [US1] `VectorPathDraftTests.swift`: bow-tie draft cannot close with "crosses itself"; triangle closes; a move across an edge after closing is refused and the path unchanged; deleting from a triangle refused; cap refused
+- [X] SHD-008-T04 [US1] `VectorPathDraft.swift` in VisualGenerators: add, move, nudge, delete, undo last point, close, start over; refuse-and-keep-last-valid after closing; `closeIssue` message while drawing (SHD-008-R3) — Verified 2026-11-14: `VectorPathDraft.swift` builds; `VectorPathDraftTests` pass
+- [X] SHD-008-T05 [P] [US1] `VectorPathDraftTests.swift`: bow-tie draft cannot close with "crosses itself"; triangle closes; a move across an edge after closing is refused and the path unchanged; deleting from a triangle refused; cap refused — Verified 2026-11-14: `VectorPathDraftTests` 3 tests pass in 0.001 s (kept in `VectorPathTests.swift`): bow-tie draft cannot close ("The path crosses itself."), triangle closes, a closed move across the opposite edge is refused with the square kept, nudge applies, deleting from a triangle refused, start over keeps the committed path, duplicate tap and the 32-point cap refused
 - [ ] SHD-008-T06 [US1] `Apps/projectM-iOS/Views/VectorPathEditorView.swift`: canvas with tap-to-add, draggable 44 pt handles, VoiceOver element per point with Move left/right/up/down and Delete point actions, nudge row, Close path, Delete point, Start over, inline message (identifiers of contract P5), announcements through `AccessibilityAnnouncer` (SHD-008-R4)
 
 ## Phase 4: User Story 2 - Use a path as a layer mask (P1)
