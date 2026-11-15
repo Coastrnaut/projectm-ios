@@ -1,7 +1,8 @@
-// MIDIMappingOptionsView.swift — one MIDI mapping's curve and inversion (MIDI-004-R7, R8; specs/140-midi-004-cc-scaling,
-// contract C4.3). Opened from the "Curve" row under a mapped parameter in MIDI Mappings: a curve picker (Linear, Ease
-// in, Ease out, Logarithmic; "Custom" only for another stored curve), an Invert switch, a static preview drawn from
-// the same position function the values use, and the unreadable-curve notice. Changes save at once and are
+// MIDIMappingOptionsView.swift — one MIDI mapping's curve, inversion and 14-bit switch (MIDI-004-R7, R8;
+// specs/140-midi-004-cc-scaling, contract C4.3; MIDI-005-R6, specs/266-midi-005-14-bit-controls).
+// Opened from the "Curve" row under a mapped parameter in MIDI Mappings: a curve picker (Linear, Ease in, Ease out,
+// Logarithmic; "Custom" only for another stored curve), an Invert switch, the 14-bit switch (CC 0–31 only), a static
+// preview drawn from the same position function the values use, and the unreadable-curve notice. Changes save at once and are
 // announced by the coordinator through the shared announcer (never posted here). No animation. Small views so each
 // body stays under CI's type-check budget.
 import ParameterGraph
@@ -18,6 +19,9 @@ struct MIDIMappingOptionsView: View {
             if let options = mappings.options(for: parameter) {
                 MIDICurvePickerSection(mappings: mappings, parameter: parameter, options: options)
                 MIDIInvertSection(mappings: mappings, parameter: parameter, options: options)
+                if mappings.canUseHighResolution(for: parameter) {
+                    MIDIHighResolutionSection(mappings: mappings, parameter: parameter, options: options)
+                }
                 MIDICurvePreviewSection(options: options)
             } else {
                 Text("Not mapped").accessibilityIdentifier("midiOptionsNotMapped")
@@ -80,6 +84,28 @@ private struct MIDIInvertSection: View {
                 .accessibilityIdentifier("midiInvert")
         } footer: {
             Text("Inverted, the control's lowest position gives the maximum and its highest the minimum. Changes apply the next time the control moves.")
+        }
+    }
+}
+
+/// MIDI-005-R6: the "14-bit control" switch, only for mappings on CC 0–31.
+private struct MIDIHighResolutionSection: View {
+    var mappings: MIDIMappingCoordinator
+    let parameter: ParameterID
+    let options: MIDIMappingOptions
+
+    private var enabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { () -> Bool in options.highResolution },
+            set: { (value: Bool) -> Void in mappings.setHighResolution(value, for: parameter) })
+    }
+
+    var body: some View {
+        Section {
+            Toggle("14-bit control", isOn: enabled)
+                .accessibilityIdentifier("midiHighResolution")
+        } footer: {
+            Text("For controls that send a fine value on a second controller (32 higher). The setting then moves in 16,384 steps instead of 128. Learn turns this on when it sees both.")
         }
     }
 }

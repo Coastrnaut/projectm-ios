@@ -30,18 +30,55 @@ public enum MIDIBindingValues {
         return min(max(value, minimum), maximum)
     }
 
-    /// The newest value per bound target in `batch`, ignoring the event at `skipping` (MIDI-003-R7).
+    /// The newest value per bound target in `batch`, ignoring the event at `skipping` (MIDI-003-R7). 14-bit
+    /// mappings use a fresh pair state (callers that keep state across batches use the `tracker:` variant).
     public static func values(for batch: [MIDIEvent], bindings: MIDIBindingList, registry: ParameterRegistry,
                               skipping skipped: Int? = nil) -> [ParameterID: Double] {
+        var tracker = MIDIHighResolutionTracker()
+        return values(for: batch, bindings: bindings, registry: registry, skipping: skipped, tracker: &tracker)
+    }
+
+    /// The same with pair state kept across batches (MIDI-005 contract H3): a control change bound 14-bit is the
+    /// coarse part; controller 32–63 whose coarse controller (same channel) is bound 14-bit is the fine part for that
+    /// binding, and still drives its own binding if it has one. The skipped event feeds nothing.
+    public static func values(for batch: [MIDIEvent], bindings: MIDIBindingList, registry: ParameterRegistry,
+                              skipping skipped: Int? = nil,
+                              tracker: inout MIDIHighResolutionTracker) -> [ParameterID: Double] {
         guard !bindings.isEmpty else { return [:] }
         var result: [ParameterID: Double] = [:]
         for (index, event) in batch.enumerated() where index != skipped {
+            if event.kind == .controlChange {
+                if let pair = fineBinding(for: event, in: bindings),
+                   let normalized = tracker.fine(channel: event.channel, controller: pair.key.number,
+                                                 value: UInt8(truncatingIfNeeded: event.value)) {
+                    apply(normalized, binding: pair, registry: registry, into: &result)
+                }
+                if let binding = bindings.binding(forKey: event.controlKey), binding.isHighResolution {
+                    let coarse: Double? = tracker.coarse(channel: event.channel, controller: event.number,
+                                                         value: UInt8(truncatingIfNeeded: min(event.value, 127)))
+                    if let coarse { apply(coarse, binding: binding, registry: registry, into: &result) }
+                    continue
+                }
+            }
             guard let normalized = event.normalizedValue,
-                  let binding = bindings.binding(forKey: event.controlKey),
-                  let descriptor = registry.descriptor(for: binding.target),
-                  let value = value(normalized: normalized, for: descriptor, options: binding.options) else { continue }
-            result[binding.target] = value
+                  let binding = bindings.binding(forKey: event.controlKey) else { continue }
+            apply(normalized, binding: binding, registry: registry, into: &result)
         }
         return result
+    }
+
+    /// The 14-bit binding whose fine controller `event` is; nil when there is none.
+    private static func fineBinding(for event: MIDIEvent, in bindings: MIDIBindingList) -> MIDIControlBinding? {
+        guard let coarse = MIDIHighResolution.coarseController(for: event.number) else { return nil }
+        let key = MIDIControlKey(kind: .controlChange, channel: event.channel, number: coarse)
+        guard let binding = bindings.binding(forKey: key), binding.isHighResolution else { return nil }
+        return binding
+    }
+
+    private static func apply(_ normalized: Double, binding: MIDIControlBinding, registry: ParameterRegistry,
+                              into result: inout [ParameterID: Double]) {
+        guard let descriptor = registry.descriptor(for: binding.target),
+              let value = value(normalized: normalized, for: descriptor, options: binding.options) else { return }
+        result[binding.target] = value
     }
 }

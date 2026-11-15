@@ -7,8 +7,9 @@
 //   curve. Inverting before the curve makes inverted(v) equal normal(127 − v): the knob runs the other way and
 //   the curve keeps its shape relative to the parameter (research D1). Both ends are exact for every curve.
 // * Stored segments after the parameter ID: `curve=<MOD-004 text form>` (only when not linear, or unreadable
-//   text that is kept), `invert=1` (only when inverted), then unknown segments verbatim in their original
-//   order. A default binding writes no segment, so its line is exactly MIDI-003's (research D2).
+//   text that is kept), `invert=1` (only when inverted), MIDI-005's `hires=1` (only when 14-bit), then unknown
+//   segments verbatim in their original order. A default binding writes no segment, so its line is exactly
+//   MIDI-003's (research D2).
 // * Unreadable curve text (does not parse, or fails MOD-004 validation) acts as linear, is kept verbatim and
 //   flagged for the MIDI Mappings screen (research D3).
 import ParameterGraph
@@ -46,10 +47,14 @@ public enum MIDICurvePreset: String, Sendable, Hashable, CaseIterable {
 public struct MIDIMappingOptions: Sendable, Hashable {
     public static let curveKey: String = "curve"
     public static let invertKey: String = "invert"
+    /// MIDI-005: `hires=1` marks a 14-bit mapping (coarse CC n with fine CC n+32).
+    public static let highResolutionKey: String = "hires"
 
     /// Always valid (an unreadable stored curve reads `.linear`).
     public private(set) var curve: MappingCurve
     public var inverted: Bool
+    /// MIDI-005-R7: coarse and fine controllers combine into a 14-bit value (effective only on controllers 0–31).
+    public var highResolution: Bool
     /// The stored text after `curve=` when it could not be used; written back unchanged.
     public private(set) var unreadableCurveText: String?
     /// Unknown `;` segments, verbatim, in order.
@@ -57,9 +62,10 @@ public struct MIDIMappingOptions: Sendable, Hashable {
 
     public static let `default` = MIDIMappingOptions()
 
-    public init(curve: MappingCurve = .linear, inverted: Bool = false) {
+    public init(curve: MappingCurve = .linear, inverted: Bool = false, highResolution: Bool = false) {
         self.curve = curve.isValid ? curve : .linear
         self.inverted = inverted
+        self.highResolution = highResolution
         self.unreadableCurveText = nil
         self.extraSegments = []
     }
@@ -70,6 +76,7 @@ public struct MIDIMappingOptions: Sendable, Hashable {
         self.init()
         var sawCurve: Bool = false
         var sawInvert: Bool = false
+        var sawHighResolution: Bool = false
         for raw in segments {
             let segment: String = String(raw)
             if segment.isEmpty { continue }
@@ -82,6 +89,9 @@ public struct MIDIMappingOptions: Sendable, Hashable {
             } else if parts.count == 2, key == Self.invertKey {
                 if !sawInvert { inverted = value == "1" }
                 sawInvert = true
+            } else if parts.count == 2, key == Self.highResolutionKey {
+                if !sawHighResolution { highResolution = value == "1" }
+                sawHighResolution = true
             } else {
                 extraSegments.append(segment)
             }
@@ -106,6 +116,7 @@ public struct MIDIMappingOptions: Sendable, Hashable {
             result.append(Self.curveKey + "=" + curve.textForm)
         }
         if inverted { result.append(Self.invertKey + "=1") }
+        if highResolution { result.append(Self.highResolutionKey + "=1") }
         result.append(contentsOf: extraSegments)
         return result
     }
@@ -118,21 +129,23 @@ public struct MIDIMappingOptions: Sendable, Hashable {
 
     public var hasUnreadableCurve: Bool { unreadableCurveText != nil }
 
-    /// Linear, not inverted, nothing kept.
+    /// Linear, not inverted, 7-bit, nothing kept.
     public var isDefault: Bool { segments.isEmpty }
 
     /// The curve's preset; nil for another curve (Custom). An unreadable curve is `.linear`.
     public var preset: MIDICurvePreset? { MIDICurvePreset.preset(for: curve) }
 
-    /// "Linear", "Ease in, inverted", "Custom", "Linear (curve not readable)".
+    /// "Linear", "Ease in, inverted", "Custom", "Linear (curve not readable)", "Linear, 14-bit" (MIDI-005-R10).
     public var summary: String {
-        let name: String
+        var name: String
         if hasUnreadableCurve {
             name = "Linear (curve not readable)"
         } else {
             name = preset?.title ?? "Custom"
         }
-        return inverted ? name + ", inverted" : name
+        if inverted { name += ", inverted" }
+        if highResolution { name += ", 14-bit" }
+        return name
     }
 
     /// The shaped 0…1 position for a normalized control value (contract C1): clamp, invert, curve.
