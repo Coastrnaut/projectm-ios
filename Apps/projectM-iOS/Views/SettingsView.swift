@@ -569,6 +569,7 @@ struct SettingsView: View {
         if let layerInspector { RadialBlurSection(setting: layerInspector.radialBlur).id("radialBlur") }   // FX-008-R8
         if let layerInspector { EchoSection(setting: layerInspector.echoFeedback).id("echo") }   // FX-010-R12
         if let layerInspector { MosaicSection(setting: layerInspector.mosaic).id("mosaic") }   // FX-012-R8
+        if let layerInspector { EdgeOutlineSection(setting: layerInspector.edgeOutline).id("edgeOutline") }   // FX-014-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
     }
 
@@ -648,6 +649,7 @@ struct SettingsView: View {
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
         if let external = externalOutput?.external { OutputDiagnosticsSection(external: external).id("outputDiagnostics") }   // OUT-011-R1
+        HelpSection().id("help")   // UIX-014-R2: bundled offline help
         Section {
             NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013, REC-010
                 StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia,

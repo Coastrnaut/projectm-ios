@@ -76,6 +76,7 @@ final class EffectChainSetting {
         case .radialBlur: "Radial blur"   // FX-008
         case .echo: "Echo"   // FX-010
         case .mosaic: "Mosaic"   // FX-012
+        case .edgeOutline: "Edge outline"   // FX-014
         }
     }
 

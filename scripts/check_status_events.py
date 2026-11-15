@@ -61,6 +61,7 @@ CHECKED = [
     "Coordinators/ColorSamplerCoordinator.swift",      # UIX-012-R8: results on the parameter lane
     "Coordinators/AppCoordinator+ColorSampler.swift",  # UIX-012-R8
     "Views/ColorSamplingViews.swift",                  # UIX-012-R8
+    "Views/HelpBrowserView.swift",                     # UIX-014: posts no announcements
     "Views/MIDIMappingOptionsView.swift",              # MIDI-004-R8: curve and Invert announce through the announcer
     "Views/CaptureResultPanels.swift",
     "Views/StatusCaptionView.swift",

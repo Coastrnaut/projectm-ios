@@ -45,6 +45,12 @@ final class MovingDotLayer: LayerSource {
 }
 
 final class EchoCompositeTests: XCTestCase {
+    #if targetEnvironment(simulator)
+    static let measuresTextureBytes = false
+    #else
+    static let measuresTextureBytes = true
+    #endif
+
     private static let start: UInt64 = 1_000_000_000
     /// 62.5 ms frames: exact in binary, so the schedule is exact.
     private static func time(_ k: Int) -> UInt64 { start + UInt64(k) * 62_500_000 }
@@ -250,8 +256,13 @@ final class EchoCompositeTests: XCTestCase {
             previousIDs = ids
             previousHistorySize = (hs.width, hs.height)
             let descriptor = try XCTUnwrap(LayerPictureDescriptor(width: hs.width, height: hs.height)).textureDescriptor()
-            let bound: Int = EchoFeedback.cap * rig.device.heapTextureSizeAndAlign(descriptor: descriptor).size
-            XCTAssertLessThanOrEqual(c.echoHistoryBytes, bound, "frame \(k): total allocatedSize under the bound")
+            // Bytes are measured on the Mac host and on devices only: the iOS Simulator does not report texture memory
+            // faithfully (allocatedSize is 0 on the Mac Studio's iOS 27.2 simulator and whole 16 KB pages on CI's;
+            // CI run 43693864935). Count, sizes, reuse and allocation frames are checked everywhere.
+            if Self.measuresTextureBytes {
+                let bound: Int = EchoFeedback.cap * rig.device.heapTextureSizeAndAlign(descriptor: descriptor).size
+                XCTAssertLessThanOrEqual(c.echoHistoryBytes, bound, "frame \(k): total allocatedSize under the bound")
+            }
             XCTAssertLessThanOrEqual(EchoFeedback.historyBytes(width: w, height: h), EchoFeedback.historyBytesBound)
             maxBytes = max(maxBytes, c.echoHistoryBytes)
             if c.echoAllocations != lastAllocations {
@@ -261,7 +272,7 @@ final class EchoCompositeTests: XCTestCase {
         }
         // Allocations only when turning on (0, 510) and when a size changed (200: output picture only; 300, 450).
         XCTAssertEqual(allocationFrames, [0, 200, 300, 450, 510], "nothing allocated on steady frames")
-        XCTAssertGreaterThan(maxBytes, 0)
+        if Self.measuresTextureBytes { XCTAssertGreaterThan(maxBytes, 0) }
         c.echoFeedback = .off
         XCTAssertFalse(c.holdsEchoPictures, "turning it off returns every picture")
     }

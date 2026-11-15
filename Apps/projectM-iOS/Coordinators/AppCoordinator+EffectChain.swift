@@ -15,7 +15,8 @@ extension AppCoordinator {
         SceneEffectSettings(order: effectChain.order, grade: colorGrade.grade, gradeEnabled: colorGrade.isEnabled,
                             trails: motionFeedback.feedback, chromatic: chromaticSplit.split,
                             directionalBlur: directionalBlur.blur, radialBlur: radialBlur.blur,
-                            echo: echoFeedback.feedback, mosaic: mosaic.mosaic)   // FX-006, FX-007, FX-008, FX-010, FX-012
+                            echo: echoFeedback.feedback, mosaic: mosaic.mosaic,
+                            edgeOutline: edgeOutline.outline)   // FX-006, FX-007, FX-008, FX-010, FX-012, FX-014
     }
 
     /// Wires the setting to the visuals (called once from init).
@@ -44,7 +45,8 @@ extension AppCoordinator {
         guard let preset = effectChain.presets.preset(named: name) else { return }
         SceneAutosaveCapture.applyEffects(preset.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
                                           directionalBlur: directionalBlur, radialBlur: radialBlur,
-                                          echo: echoFeedback, mosaic: mosaic)   // FX-007, FX-008, FX-010, FX-012
+                                          echo: echoFeedback, mosaic: mosaic,
+                                          edgeOutline: edgeOutline)   // FX-007, FX-008, FX-010, FX-012, FX-014
         announcer.announce("Applied effect preset " + preset.name, kind: .parameter)
     }
 }
