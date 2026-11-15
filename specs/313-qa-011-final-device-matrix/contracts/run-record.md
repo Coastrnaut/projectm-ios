@@ -20,7 +20,7 @@ and `record.json.sha256` (`<hex>  record.json`). `run-id` = UTC `YYYYMMDDTHHMMSS
               "raw": ["Authority=…", "TeamIdentifier=…"]},
   "host": {"xcode": "Xcode 27.2 Build version 27B52", "macOS": "27.2"},
   "startedAt": "…Z", "finishedAt": "…Z",
-  "cases": [{"id": "autorun-perf001", "kind": "autorun", "status": "pass", "durationSeconds": 61.2,
+  "cases": [{"id": "autorun-perf001", "kind": "autorun", "title": "…", "partOf": [], "status": "pass", "durationSeconds": 61.2,
              "closes": ["PERF-001-T16"], "commands": [["xcrun", "devicectl", "…"]],
              "detail": "…", "artifacts": [{"path": "…", "bytes": 1234, "sha256": "…", "kind": "file" | "folder",
              "committed": true}]}],

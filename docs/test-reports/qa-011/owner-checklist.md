@@ -8,7 +8,7 @@ Rules for every session: nothing here is done by an agent. Simulator results are
 
 ## Session 0: the scripted matrix (category a)
 
-Preparation for each device: connect the cable, unlock it, set Auto-Lock to Never (Settings › Display & Brightness), keep it unlocked and on power. The main session runs (D1, then D2, then D3):
+Preparation for each device: connect the cable, unlock it, set Auto-Lock to Never (Settings › Display & Brightness), keep it unlocked and on power. The run starts with a fresh install (an empty container), so on D1 and D3 stay at the device for `autorun-sc009`: iOS asks once for microphone access; tap Allow. Nothing else needs a person. The main session runs (D1, then D2, then D3):
 
 ```bash
 python3 scripts/verify_environment.py

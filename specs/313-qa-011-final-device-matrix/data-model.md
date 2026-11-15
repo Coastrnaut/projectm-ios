@@ -14,6 +14,7 @@
 | `session` | string? | owner session ID for `b`; `MATRIX` for `a`; null for `c` and waived |
 | `devices` | [D1/D2/D3] | sorted |
 | `devicesInferred` | bool | true when no device was named |
+| `estimatedMinutes` | int | (5 + minutes the step names) × devices; 0 when in no session |
 | `matrixCases` | [string] | cases that close it (`a`) or cover a scripted part (`b`) |
 | `text` | string | full step text (continuation lines joined with one space) |
 

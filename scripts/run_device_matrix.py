@@ -69,7 +69,7 @@ CASES: list[dict] = [
     case("warmstart-perf009", "warmstart", "PERF-009 cold and warm launches (10 each), medians",
          ["PERF-009-T16"], 600, repeat=10),
     case("autorun-sc009", "autorun", "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
-         ["AUD-014-T32"], 600, mode="sc009", prefix="automation-sc009", wait=540),
+         ["AUD-014-T32"], 600, mode="sc009", prefix="automation-sc009", wait=540, permission="microphone"),
     case("thresholds", "thresholds", "QA-010 judge over the pulled perf001 and sc015 reports (plus any PERF-012 "
          "export given with --perf012-report)", ["QA-010-T12"], 120),
     case("xctest-goldens", "xctest", "RenderGoldens suite on the device GPU (goldens report pending without a "
@@ -438,6 +438,13 @@ class Runner:
 
     def case_autorun(self, c: dict, result: dict) -> None:
         result["commands"].append(["PROJECTM_AUTORUN=" + c["mode"], "launch", rdt.BUNDLE])
+        if c.get("permission"):
+            if self.target.simulator:   # a rehearsal grants it; on a device a person taps Allow once
+                rdt.run(["xcrun", "simctl", "privacy", self.target.identifier, "grant", c["permission"], rdt.BUNDLE],
+                        check=False)
+            else:
+                print(f">>> {self.target.label}: the fresh install asks for {c['permission']} access during this "
+                      f"case; tap Allow on the device (one tap; the case waits up to {c['wait']} s)", flush=True)
         report = rdt.run_mode(self.target, c["mode"], c["prefix"], c["wait"])
         if self.dry_run:
             result["status"] = "skipped"

@@ -102,6 +102,9 @@ checklist.
 - The app-hosted XCTest suite replaces the measurement build, so it runs after the automation cases.
 - An artifact that is a folder (an `.xcresult`) gets one hash over its sorted file list and contents.
 - No previous run exists for a dry run: nothing is written.
+- QA-011's own `{device}` tasks (the device runs) are not listed in the inventory they are built from.
+- A fresh install resets the microphone permission: the `sc009` case needs one Allow tap on D1 and D3 (the
+  runner prints when; a rehearsal grants it with `simctl privacy`).
 
 ## Requirements *(mandatory)*
 
@@ -226,3 +229,13 @@ local-first option.
 - Q: Does this feature run anything on D1-D3? → A: No. Agents never touch the devices (owner rule; CLAUDE.md).
   The device runs are open tasks `{device}` for the owner's final device stage, driven by the main session; only
   the dry run and a simulator rehearsal (marked not evidence) are run here.
+
+### Session 2026-11-15 (speckit-analyze)
+
+- Q: Is AUD-014-T32 (`sc009`) still category (a) when the fresh install asks for the microphone? → A: Yes, with
+  one documented tap: the run must start from an empty container (otherwise `sc015.json` and `perf009.json` would
+  mix earlier samples), so iOS asks once for microphone access during `autorun-sc009`; the runner prints when, the
+  case waits up to 540 s, and the checklist's Session 0 says to stay at D1 and D3 for it. Nothing else in the
+  matrix needs a person.
+- Q: Does the inventory list QA-011's own device-run tasks? → A: No; they are the matrix itself (excluded by the
+  spec directory name).
