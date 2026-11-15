@@ -28,6 +28,19 @@ blackout), OUT-012 (output rehearsal), REC-014 (export size cap per device class
 | Scene space | Compositor layers, crops, text layout and the scene document are normalised to the picture (0…1) or derived from the picture by fractions; projectM's viewport is the drawable. | Must stay identical when the pixel count changes. |
 | Fake display | DEBUG `-uitestExternalDisplay`: an off-screen 1920 × 1080 point window at display scale 1, with `externalPlacement` probe. | No probe of the drawable's pixel size. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: Which resolution choices are offered? → A: Native (default: the screen's own pixels, as before this feature), 1080p, 720p and Custom (a percentage of native, 50…100 % in 5 % steps, default 75 %). Rejected: 4K and other upscaled sizes (never more pixels than the screen), free pixel entry (error-prone on stage), and below 50 % (visibly blurry; FR-049's thermal scale can still go lower) (OUT-003-R1).
+- Q: How is the resolution applied without touching the scene? → A: As the rendering scale of the visual's view while it is in an external slot: the slot overrides the display scale the visual reads, so every visual (projectM on ANGLE, the compositor, native, Camera, Photo, Video, Text) sets its drawable to bounds × that scale × FR-049's render scale. The view's bounds, centre and OUT-004 transform (all in points) stay as they are, so scene-space quantities, which are normalised to the picture, are unchanged. The override is removed when the visual leaves the external slot. No render pass, texture or renderer is added or restarted (OUT-003-R2, R4, R6).
+- Q: What do 1080p and 720p mean on a screen that is not 16:9, or is portrait? → A: A box: the long side at most 1920 (1280) and the short side at most 1080 (720) pixels, keeping the screen's shape (one uniform scale). A screen already inside the box renders natively; nothing is ever upscaled (OUT-003-R1, R3).
+- Q: What is the safe pixel budget? → A: REC-014's per-device-class cap (`RecordingOutputCap.device`): devices under 6 GB of memory 2560 px side and 2560 × 1440 pixels, others 4096 px side and 3840 × 2160 pixels. The resolved scale is the smallest of native, the choice and the budget; when the budget is the limit the result says "clamped". The resolution arithmetic takes the budget as two numbers, so it stays pure Swift (OUT-003-R3).
+- Q: How are the choice stored and observed? → A: Two device-local UserDefaults keys, `settings.externalDisplay.resolution` (`native`, `1080p`, `720p`, `custom`) and `settings.externalDisplay.resolutionPercent` (integer 50…100); absent or unknown reads the default and nothing is stored until changed. Like OUT-004's keys they describe the user's display hardware, so they are excluded from the library backup (erased with Settings), listed in the device test allow-list and removed by `-uitestResetNotice`. The resolved output ("mode=… scale=… drawable=W×H clamped=yes|no") is logged under `ExternalDisplay` (sizes only) and exposed to the DEBUG fake display panel as the hidden `externalResolution` probe. The OUT-012 rehearsal (shape preview) is unaffected (OUT-003-R5, R7).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A 4K screen without overloading the phone (Priority: P1)
