@@ -23,7 +23,7 @@
   by more than 2 %, the window is cut to those 24. Jitter cannot trigger it (a 24-pulse fit's error is ≈ 0.1 % at
   300 BPM with ±1 ms). A 120 → 140 step settles within ~2 beats.
 - **MIDI-010-D6 Loss, transport and phase.** Lost after 0.5 s without a pulse (at 20 BPM a pulse is 125 ms, so four
-  missing pulses) or on Stop; pulses after Stop are ignored until Start/Continue. Start: next pulse is position 0.
+  missing pulses) or on Stop; after Stop the clock does not set the tempo until Start/Continue; pulses meanwhile keep the measurement warm but do not move the position. Start: next pulse is position 0.
   Song Position (sixteenths × 6 pulses) before Continue: the next pulse is that position; Continue without it: the
   position continues. Anchor: the fitted time of the latest pulse whose position is a multiple of 24 (fitted, so
   jitter does not move the grid). No Start/Continue seen: no anchor (BPM only). Range 20–300 BPM with 0.1 allowance.

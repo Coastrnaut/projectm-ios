@@ -204,11 +204,17 @@ public struct TempoConfidenceIndicator: Sendable {
 /// What the tempo readout shows: a manual tempo wins over every analysis state (ANL-006-R7, R8).
 public enum TempoReadout: Sendable, Hashable {
     case manual(bpm: Double)
+    /// MIDI-010: a locked external MIDI clock sets the tempo.
+    case midiClock(bpm: Double)
     case stable(bpm: Double)
     case uncertain(bpm: Double)
     case searching
 
     public init(snapshot: TempoSnapshot, indicator: TempoConfidenceIndicator) {
+        if snapshot.origin == .midiClock, let bpm = snapshot.bpm {
+            self = .midiClock(bpm: bpm)
+            return
+        }
         if snapshot.origin == .manual, let bpm = snapshot.bpm {
             self = .manual(bpm: bpm)
             return
@@ -227,7 +233,7 @@ public enum TempoReadout: Sendable, Hashable {
     /// The BPM shown, if any.
     public var bpm: Double? {
         switch self {
-        case .manual(let bpm), .stable(let bpm), .uncertain(let bpm): bpm
+        case .manual(let bpm), .midiClock(let bpm), .stable(let bpm), .uncertain(let bpm): bpm
         case .searching: nil
         }
     }
