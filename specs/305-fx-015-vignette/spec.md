@@ -59,6 +59,26 @@ answer is the conservative option.
 - Q: What does zero intensity do? → A: Intensity is 0…100 % (default 50 %). At zero (or off) no pass runs: every
   output pixel is bit-identical to the output without this feature. Applied to FX-015-R4.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Is the darkening factor applied to linear light or to the encoded (sRGB) value? → A: To the linear premultiplied
+  composite, where every output effect works; a factor in linear light is how lens falloff behaves, and the tone map
+  and display encoding run after it as for every other effect. Applied to FX-015-R3.
+- Q: How are the centre coordinates measured? → A: As continuous fractions of the frame: 0 is the left (top) edge and
+  1 the right (bottom) edge, so the centre in pixels is (centerX × W, centerY × H) and pixel centres sit at
+  (x + ½, y + ½). At 0.5 this is the frame's exact middle on any size, the same point as FX-008's default focus.
+  Applied to FX-015-R3.
+- Q: Is Vignette a global setting or a per-scene value? → A: Both, like FX-006 to FX-012: a global setting the visuals
+  use, which a scene or effect-chain preset with an `fx.vignette` entry overwrites when opened; a scene without one
+  leaves it alone. Applied to FX-015-R9, R10.
+- Q: Do the sensory safety profile or Reduce flashing limit the vignette? → A: No cap: it only darkens and never adds
+  brightness; the flash guard still judges the shown frame. Applied to the Assumptions.
+- Q: What do the sliders show and VoiceOver say? → A: Intensity and Softness as whole percentages ("50 %", spoken
+  "50 percent"), Center X and Center Y as two-decimal fractions ("0.50"), each through ACC-005's accessible slider
+  with the steps of FX-015-R2. Applied to FX-015-R8.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Frame the picture (Priority: P1)
@@ -132,7 +152,8 @@ vignette back when the scene or preset is opened.
 - **FX-015-R3**: For the pixel centre P, with C the centre in pixels and (W, H) the frame size, the distance is
   d = |((P − C) ÷ (W ÷ 2, H ÷ 2))| ÷ √2; with inner = 1 − softness, t = clamp((d − inner) ÷ softness, 0, 1) and the
   weight w = t² × (3 − 2t); the output colour is the input colour × (1 − intensity × w) and the output alpha is the
-  input alpha.
+  input alpha. P and C are in pixels: pixel (x, y) has centre (x + ½, y + ½) and C = (centerX × W, centerY × H). The
+  factor applies to the linear premultiplied composite, before the flash guard and the tone map.
 - **FX-015-R4**: The vignette is active only when on, intensity is above zero and the frame is at least 2 × 2;
   otherwise no pass runs and the output is bit-identical to the output before this feature. Where w = 0 (every pixel
   within distance 1 − softness of the centre, the centre always) the pixel is exactly unchanged at any intensity.
@@ -143,7 +164,8 @@ vignette back when the scene or preset is opened.
   (after Mosaic, and after FX-014's Edge outline once both are merged). Its position is honoured; the flash guard and
   the tone map always run after it.
 - **FX-015-R8**: Settings has a "Vignette" section: an on/off toggle, Intensity, Softness, Center X and Center Y
-  sliders with ACC-005 spoken values, and help text. The Effect order screen lists it with its own on/off switch.
+  sliders with ACC-005 spoken values (Intensity and Softness "50 %", spoken "50 percent"; Center X and Y "0.50"), and
+  help text. The Effect order screen lists it with its own on/off switch.
 - **FX-015-R9**: The values are saved on the device, restored at launch, included in library backups, erased with the
   other settings, checked on read, and removed by the UI-test reset.
 - **FX-015-R10**: Scenes and effect-chain presets store Vignette as an `fx.vignette` entry (`intensity`, `softness`,
