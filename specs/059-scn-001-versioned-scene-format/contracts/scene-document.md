@@ -144,6 +144,11 @@ optional fields: `duty` (square duty cycle 0.05…0.95, default 0.5; written for
 0…1, default 0; written when not 0). Out-of-range values are `invalidLFO`; an older app reports the new shapes as
 `unknownLFO` and keeps the entry.
 
+MOD-016 (specs/253-mod-016-random-walk/contracts/random-walk.md): the shape `randomWalk` (smooth seeded motion from one
+cycle's random target to the next, reusing `rate`, `phase`, `amplitude`, `center`, `sync` and `seed`) and one optional
+field, `smoothness` (0…1, default 1; written for a random walk when not 1). An out-of-range or ill-typed smoothness is
+`invalidLFO`; an older app reports the shape as `unknownLFO` and keeps the entry.
+
 ### Macros (MOD-010, optional top-level `macros`)
 
 `[{"name": "Glow sweep", "value": 0.5, "targets": [{"parameter": "effect.bloom.intensity", "curve": "easeIn:2.0",
