@@ -237,9 +237,10 @@ targets:
               public.filename-extension: [pmscene]
         # OUT-001 (research OUT-001-D1, ADR-0023): a connected display gets a visualization-only window
         # instead of the system's mirror. Only the external display role is configured; the application
-        # role stays with SwiftUI's window group, and multiple windows stay off.
+        # role stays with SwiftUI's window groups. UIX-008 (ADR-0105): multiple windows are on, so iPadOS can open
+        # scene editor windows; one main window performs (PerformanceWindowGate).
         UIApplicationSceneManifest:
-          UIApplicationSupportsMultipleScenes: false
+          UIApplicationSupportsMultipleScenes: true
           UISceneConfigurations:
             UIWindowSceneSessionRoleExternalDisplayNonInteractive:
               - UISceneConfigurationName: External display

@@ -2,6 +2,8 @@
 
 - **Status**: Accepted 2026-11-13 (decided by Claude under the owner's best-judgement rule, owner
   rule 4). Physical-display checks are open `{device}` tasks (OUT-001-T15 to T18).
+- **Amended by**: ADR-0105 (UIX-008, 2026-11-15): multiple windows are on for scene editor windows; the external
+  display role configuration and the accessory on the main window are unchanged
 - **Feature**: OUT-001 (`specs/049-out-001-external-display-scene`)
 - **Constitution**: I (public APIs), VI (modular boundaries), X (evidence); photosensitive safety
   (ADR-0011, ADR-0013 decision 6)

@@ -68,6 +68,7 @@
 | [0100](0100-osc-local-peer-discovery.md) | Local peer discovery uses opt-in Bonjour on the local link only (amends the network symbol scan and compliance rules) | Accepted 2026-11-15 (OSC-011; owner rule 4) |
 | [0102](0102-osc-peer-cue-sync.md) | Peer cue sync adds one bounded `/projectm/cue` message to the reviewed OSC sender (amends ADR-0088 decision 4) | Accepted 2026-11-15 (OSC-012; owner rule 4) |
 | [0104](0104-chromatic-split.md) | The chromatic split is its own output pass, third in the effect chain, faded to zero at the frame border (amends ADR-0054) | Accepted 2026-11-15 (FX-006; owner rule 4) |
+| [0105](0105-multiwindow-scene-editor.md) | Multiple windows edit saved scenes; one window performs (amends ADR-0023's single window) | Accepted 2026-11-15 (UIX-008; owner rule 4) |
 | [0106](0106-directional-blur.md) | The directional blur is its own output pass with a fixed 16-tap kernel, fourth in the effect chain (amends ADR-0104) | Accepted 2026-11-15 (FX-007; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
