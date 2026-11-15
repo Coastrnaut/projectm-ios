@@ -16,8 +16,7 @@
   "P2": {
    "audited": 13,
    "implementing": 2,
-   "integrated": 63,
-   "unit_passed": 1
+   "integrated": 64
   },
   "P3": {
    "audited": 4,
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 19,
   "implementing": 2,
-  "integrated": 303,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 304,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -37,7 +35,6 @@
   "implementation_complete": false,
   "infeasible": [],
   "pending": [
-   "FX-006",
    "FX-007",
    "FX-008",
    "FX-010",
@@ -62,7 +59,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "22 features are not implemented yet (first: FX-006, FX-007, FX-008, FX-010, FX-011)"
+   "21 features are not implemented yet (first: FX-007, FX-008, FX-010, FX-011, FX-012)"
   ]
  },
  "features": {
@@ -1111,10 +1108,10 @@
    "branch": "feature/fx-006",
    "branch_sha": "6555c1f92b661a8c6741737b05378e70cb5c8f11",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "3bb0b347faf58c20091397414425dfed5b2bd599",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "FX-007": {
    "attempts": 0,
@@ -3849,6 +3846,11 @@
    "sha": "7bcd5c34fee82d588a0019a0150d9f85f9e51f0c"
   },
   {
+   "branch": "feature/fx-006",
+   "id": "FX-006",
+   "sha": "3bb0b347faf58c20091397414425dfed5b2bd599"
+  },
+  {
    "branch": "feature/fx-009",
    "id": "FX-009",
    "sha": "6ac0c21c"
@@ -4869,5 +4871,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T06:26:09Z"
+ "updated": "2026-11-15T06:31:09Z"
 }
