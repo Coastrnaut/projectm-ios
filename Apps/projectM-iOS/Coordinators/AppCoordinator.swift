@@ -288,6 +288,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     var performanceLayout = AppCoordinator.startsInPerformanceLayout
     /// UIX-007-R7: the iPad split editor's remembered width (SplitEditorSetting.swift).
     @ObservationIgnored private(set) lazy var splitEditor = SplitEditorSetting(defaults: defaults)
+    /// UIX-008: scene editor windows (one editor per saved scene) and the one performing main window (ADR-0105).
+    @ObservationIgnored private(set) lazy var sceneEditors = SceneEditorWindowRouter(library: show)
+    @ObservationIgnored let performanceWindows = PerformanceWindowClaim()
     /// SCN-007, XFADE: the cues' resolved transitions, blended out on the shown compositor visual.
     @ObservationIgnored let cueTransitions = CueTransitionStage()
     /// UIX-002: the quick scene switcher's overlay state (AppCoordinator+SceneSwitcher.swift).
@@ -538,6 +541,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         self.sceneAutosave = sceneAutosave
         show = ShowCoordinator.makeDefault()   // SHOW-001
+        EngineInstanceLedger.coordinators += 1   // UIX-008-D9: this init creates the one CaptureManager
         sceneRepair = SceneRepairCoordinator(registry: try? SceneArchiveService.appRegistry())   // SCN-012
         #if DEBUG
         UITestPhotoFixture.seedIfRequested(photos, slideshow: slideshow)   // MED-001, MED-006 (pickers cannot be automated)
@@ -1038,6 +1042,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     private func prepareRenderer() {
         guard renderer == nil else { return }
+        EngineInstanceLedger.renderers += 1   // UIX-008-D9
         do {
             renderer = try ANGLERenderer.make()
         } catch {

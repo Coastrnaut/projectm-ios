@@ -535,6 +535,14 @@ final class ShowCoordinator {
         }
     }
 
+    /// UIX-008: an editor window saved `document` (ShowCoordinator+SceneEditing): the library's name cache and the
+    /// scene's preview follow the file. Nothing is applied.
+    func editedSceneSaved(_ document: SceneDocument) {
+        sceneNames[document.id] = document.name
+        unreadableScenes.remove(document.id)
+        sceneFilesChanged([document.id])   // SCN-006
+    }
+
     static func message(for error: ShowSceneEditError) -> String {
         switch error {
         case .unreadable: sceneUnreadableMessage
