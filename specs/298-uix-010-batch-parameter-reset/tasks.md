@@ -8,7 +8,7 @@
 
 ## Phase 2: User Story 1 — reset several in one step (P1, MVP)
 
-- [ ] UIX-010-T02 [US1] Acceptance tests in `Apps/projectM-iOS/Tests/ParameterBatchResetTests.swift` with the real catalog, real AppSettings targets and a real `SceneHistoryCoordinator`: N = 4 and N = 2 changed parameters reset → all at default and exactly one new undo step ("Reset 4 Parameters"); one Undo restores every previous value; Redo resets again; unselected parameters and the bindings input unchanged; an earlier edit stays its own step (S1, S2; R3-R5)
+- [ ] UIX-010-T02 [US1] Acceptance tests in `Apps/projectM-iOS/Tests/ParameterBatchResetTests.swift` with the real catalog, real AppSettings targets and a real `SceneHistoryCoordinator`: N = 4 and N = 2 changed parameters reset → all at default and exactly one new undo step ("Reset 4 Parameters"); one Undo restores every previous value; Redo resets again; unselected parameters and the bindings input unchanged; an earlier edit stays its own step; a selection with one value already at default counts only the changed ones in the label; with MOD-017 quantization on, a discrete reset is still written at once inside the one step (S1, S2; R3-R5, R9)
 - [ ] UIX-010-T03 [US1] Selection mode in `Apps/projectM-iOS/Views/ParameterSearchView.swift` and `Apps/projectM-iOS/Views/ParameterResetSelectionViews.swift`: Select/Done (`parameterReset.select`), toggle rows (`parameterResetToggle.<id>`, toggle trait, "Selected"/"Not selected"), read-only rows disabled, a bottom bar with the counted reset button (`parameterReset.reset`) and status (`parameterReset.status`), Undo/Redo in the toolbar; announce on the `.parameter` lane; end selection mode after a reset or refusal (R1, R8, R10)
 - [ ] UIX-010-T04 [US1] Pass `history` and `announcer` from `Apps/projectM-iOS/Views/SettingsView.swift` into `ParameterSearchLinkSection` (one line)
 - [ ] UIX-010-T05 [US1] UI test `Apps/projectM-iOS/UITests/ParameterBatchResetUITests.swift`: launched with bars 16 and horizontal orientation, select Bars and Orientation, Reset, values read 64 and Vertical, Undo once, values read 16 and Horizontal; under 30 s (S4)
@@ -34,3 +34,8 @@ T01 → T02, T03 → T04 → T05; T06 and T07 after T01 (T06's view part after T
 ## Parallel opportunities
 
 T02, T06's unit tests and T07 are one file written after T01; T03/T04 can proceed alongside them.
+
+## speckit-analyze (2026-11-15)
+
+Coverage: R1→T03/T05, R2→T06, R3→T02, R4→T02, R5→T02/T05, R6→T07, R7→T07, R8→T03/T10, R9→T01/T02, R10→T03/T05; S1→T02, S2→T02, S3→T07, S4→T05.
+Findings applied: (1) MEDIUM: R9 (no quantization) had no test → added to T02. (2) MEDIUM: the edge case "some selected already at default" had no assertion → added to T02. (3) LOW: the edge case "rows hidden by a query stay selected" is covered by construction (the selection is a set of IDs independent of the visible rows); no separate test. No constitution conflict, no critical issue.
