@@ -1,6 +1,7 @@
 // Task T103: settings defaults and persistence (FR-048, FR-072, FR-065) and the bundled license
 // manifest (FR-067).
 import PerformanceControl
+import VisualGenerators
 import XCTest
 @testable import projectM_iOS
 
@@ -83,6 +84,7 @@ final class SettingsTests: XCTestCase {
         settings.starfieldDensity = 1200        // VIS-016-R8
         settings.signedDistanceQuality = .high  // VIS-017-R8
         settings.cymaticBands = .low            // VIS-019-R10
+        settings.tessellation = TessellationSettings(tiling: .square, tiles: 9, symmetry: 4, mirror: true, palette: .ice)   // VIS-018-R10
         settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
@@ -167,7 +169,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel, .spectrumWaterfall, .fluidInk, .reactionDiffusion, .starfield, .signedDistance, .cymatic])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013, VIS-014, VIS-015, VIS-020, VIS-011, VIS-012, VIS-019
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel, .spectrumWaterfall, .fluidInk, .reactionDiffusion, .starfield, .signedDistance, .cymatic, .tessellation])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013, VIS-014, VIS-015, VIS-020, VIS-011, VIS-012, VIS-019
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

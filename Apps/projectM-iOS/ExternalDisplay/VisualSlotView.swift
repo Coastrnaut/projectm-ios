@@ -25,6 +25,10 @@
 // when it is a `DisplayCalibrationReceiver` (projectM's ANGLE view, a compositor host's view), whose renderer applies
 // it in its final pass. The device slot, and a visual leaving any slot, get the identity.
 // OUT-011 (spec specs/275-out-011-output-diagnostics, contract C2): `standInReadings` for the DEBUG fake display.
+// OUT-008 (spec specs/309-out-008-grid-warp, contract C4; research OUT-008-D1): like OUT-009's calibration, an external
+// slot hands its grid warp mesh to the held visual's view when it is an `OutputWarpReceiver` (its final pass draws it,
+// inside the picture as OUT-004 placed it; the corner pin then maps the whole slot). The device slot, and a visual
+// leaving any slot, get `.none`.
 import Compositor
 import PresentationLifecycle
 import SwiftUI
@@ -76,6 +80,10 @@ final class VisualSlotView: UIView {
         }
     }
     private let card = CornerPinCardLayer()
+    /// OUT-008: the grid warp mesh (handed to held receivers on external slots only).
+    var outputWarp: OutputWarpMesh = .none {
+        didSet { if outputWarp != oldValue { applyWarp() } }
+    }
     /// OUT-009: the display calibration (applied to held receivers on external slots only).
     var calibration: DisplayCalibration = .identity {
         didSet { if calibration != oldValue { applyCalibration() } }
@@ -132,6 +140,7 @@ final class VisualSlotView: UIView {
         for view in subviews { lay(view) }
         applyResolution()
         applyCalibration()
+        applyWarp()   // OUT-008
     }
 
     /// OUT-009: the calibration each held receiver applies here (the identity on the device).
@@ -143,6 +152,29 @@ final class VisualSlotView: UIView {
             guard let receiver = view as? DisplayCalibrationReceiver, receiver.displayCalibration != value else { continue }
             receiver.displayCalibration = value
         }
+    }
+
+    /// OUT-008: the mesh each held receiver draws here (`.none` on the device).
+    private func applyWarp() {
+        let value: OutputWarpMesh = role == .external ? outputWarp : .none
+        for view in subviews {
+            guard let receiver = view as? OutputWarpReceiver, receiver.outputWarp != value else { continue }
+            receiver.outputWarp = value
+        }
+    }
+
+    private static func removeWarp(_ view: UIView) {
+        guard let receiver = view as? OutputWarpReceiver, receiver.outputWarp != .none else { return }
+        receiver.outputWarp = .none
+    }
+
+    /// OUT-008 (tests, DEBUG probe): "yes" when the held visual draws this slot's active mesh, "unsupported" when it
+    /// cannot, "no" otherwise; nil without a visual.
+    var warpState: String? {
+        guard let view = subviews.first else { return nil }
+        guard let receiver = view as? OutputWarpReceiver, receiver.acceptsOutputWarp else { return "unsupported" }
+        let value: OutputWarpMesh = role == .external ? outputWarp : .none
+        return value.isActive && receiver.outputWarp == value ? "yes" : "no"
     }
 
     private static func removeCalibration(_ view: UIView) {
@@ -259,6 +291,7 @@ final class VisualSlotView: UIView {
         for view in subviews where view !== visual {
             Self.removeScale(view)
             Self.removeCalibration(view)   // OUT-009
+            Self.removeWarp(view)   // OUT-008
             view.removeFromSuperview()
         }
         let moved = visual.superview !== self
@@ -271,6 +304,7 @@ final class VisualSlotView: UIView {
         lay(visual)
         applyResolution()   // OUT-003: the external scale, or none on the device
         applyCalibration()   // OUT-009: the display's calibration, or the identity on the device
+        applyWarp()   // OUT-008: the display's mesh, or none on the device
         syncCoverFrame()
         visual.setNeedsLayout()
         return moved
@@ -341,6 +375,7 @@ final class VisualSlotView: UIView {
         for view in subviews {
             Self.removeScale(view)   // OUT-003: a visual leaving the external slot renders at its next host's scale
             Self.removeCalibration(view)   // OUT-009: and uncalibrated
+            Self.removeWarp(view)   // OUT-008: and unwarped
             view.removeFromSuperview()
         }
         resolvedOutput = nil

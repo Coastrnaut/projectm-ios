@@ -1,0 +1,84 @@
+# Tasks: OUT-008 Grid Warp
+
+**Input**: spec.md, plan.md, research.md, data-model.md, contracts/grid-warp.md, quickstart.md
+**Tests**: included (owner rule 7 budgets: unit ≤ 10 s, package suite < 1 min, UI test < 30 s).
+
+Format: `[ID] [P?] [Story] Description`. `{device}` = needs a physical device and a person.
+
+## Phase 1: Foundational model (blocks every story)
+
+- [X] OUT-008-T01 [US2] `GridWarp` in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/GridWarp.swift`:
+  size, identity, Catmull-Rom surface, validator (research OUT-008-D4), clamped/refused edits, resampling, codec (C1). — Verified 2026-11-15: GridWarpTests (below).
+- [X] OUT-008-T02 [US2] `GridWarpTests.swift`: each rule with an example, identity reproduction, affine exactness,
+  fuzzed meshes (accepted ⇒ every drawn triangle positive and the outline simple; refused ⇒ a rule fails), codec round
+  trip and malformed values, edits refused keep the mesh, resampling (OUT-008-S3). — Verified 2026-11-15: `swift test --package-path
+  Packages/PresentationLifecycle` 127 tests, 0 failures (GridWarpTests 7, 1.7 s; package 2.2 s).
+
+## Phase 2: Output passes (US1, P1)
+
+- [X] OUT-008-T03 [US1] `OutputWarpMesh` and `OutputWarpReceiver` in `Packages/Compositor/Sources/Compositor/OutputWarp.swift`;
+  `GridWarpPass.swift` (MSL vertex surface from `vertex_id`, bilinear fragment, guides) spliced into
+  `CompositorShaders.source`; `Compositor.outputWarp` hook in `composite(into:)` (C2). — Verified 2026-11-15: GridWarpOutputTests (T04).
+- [X] OUT-008-T04 [US1] `GridWarpOutputTests.swift` on the real compositor: `.none` = no pass and identical bytes; a
+  forced identity mesh byte-exact on `bgra8Unorm_srgb`; an affine and a curved warp match an independent CPU reference
+  (OUT-008-S2); uncovered pixels black; guides on the identity draw white lines only on grid lines; `encodeOutput` unwarped
+  (OUT-008-S1, S4). — Verified 2026-11-15: `swift test --package-path Packages/Compositor` 767 tests, 0 failures
+  (10 skipped as before), 47.8 s; GridWarpOutputTests 4 tests 0.74 s on the host GPU; a flipped-sampling mutation
+  fails all four.
+- [X] OUT-008-T05 [US1] FX-019 warp step in `Packages/Rendering/Sources/CFlashLimiter/` (`PMFlashLimiterSetWarp`, warp
+  program, display flag) and `ANGLERenderer` (receiver, per-frame mesh, unwarped REC-001 capture) (C3). — Verified 2026-11-15: GridWarpGLTests (T06); ANGLERendering suite 84 tests, 0 failures, 36 s.
+- [X] OUT-008-T06 [US1] `GridWarpGLTests.swift` (ANGLERendering, simulator): identity mesh exact, a warp moves a known
+  frame as the reference says, capture unwarped. — Verified 2026-11-15: `xcodebuild -scheme ANGLERendering
+  test` on "OUT08 iPhone 17" (iOS 27.2 simulator): GridWarpGLTests 3 tests, 0 failures, 3.9 s (identity 3 × 3 and 9 × 9
+  byte-exact; half-size mesh ≥ 99 % within 5/255; guides). Simulator, not device evidence.
+
+## Phase 3: App wiring and editor (US1, US3, US4)
+
+- [X] OUT-008-T07 [US1] `VisualSlotView.outputWarp` / `warpState`, receiver conformance of `NativeSpectrumLayerView`
+  and the compositor hosts' hooks (Camera, Photo, Video, Text), `ExternalDisplayCoordinator.gridWarp`, editing flag and
+  `gridWarpSummary`, launch apply in `AppCoordinator+ExternalDisplay.swift` (C4). — Verified 2026-11-15: GridWarpAppTests (T12) on the iOS 27.2 simulator.
+- [X] OUT-008-T08 [US4] `ExternalOutputSetting.gridWarp` and key; key lists (`run_device_tests.py` ALLOWED_KEYS,
+  `LibrarySettings` excluded keys, `LibraryErasePolicy.externalDisplayKeys`); UI-test reset via `ExternalOutputSetting.keys`. — Verified 2026-11-15: GridWarpAppTests, LibraryBackupAppTests, LibraryEraseAppTests,
+  SettingsTests (app, simulator); `swift test` LibraryBackup 88 tests, 0 failures; `test_scripts.py` 186 tests OK.
+- [X] OUT-008-T09 [US4] OUT-014 optional `gridWarp` field in `OutputProfile.swift` and `ExternalOutputSetting+Profile.swift`
+  with package tests (round trip, absent = identity, invalid refused) (C5). — Verified 2026-11-15: OutputProfileTests (PresentationLifecycle 128 tests, 0 failures),
+  GridWarpAppTests profile round trip, OutputProfileAppTests.
+- [X] OUT-008-T10 [US3] `GridWarpEditorView.swift` (canvas, handles, size picker, point picker, nudges, Reset, reason,
+  announcer, DEBUG probe) and the "Grid warp…" row in `ExternalDisplaySection.swift`; help text. — Verified 2026-11-15: GridWarpUITests (T13) drives it; no type-check warning over 300 ms
+  (bodies) / 150 ms (expressions) in the touched files with `-warn-long-*` flags.
+- [X] OUT-008-T11 [US1] DEBUG probe `externalGridWarp` in `Debug/UITestExternalDisplay.swift`. — Verified 2026-11-15: read by GridWarpUITests (T13).
+
+## Phase 4: App verification
+
+- [X] OUT-008-T12 `GridWarpAppTests.swift`: external slot hands the mesh to a receiver, the device slot never;
+  unsupported receivers reported; persistence (absent, stored, malformed, invalid → identity); key in
+  `ExternalOutputSetting.keys`; profile apply; corner pin and grid warp applied together on one slot (OUT-008-R6);
+  a mesh change applies inside the call while a recording holds the placement (OUT-008-R11); the rehearsal preview
+  slot never takes a mesh (OUT-008-R8). Also run `LibraryBackupAppTests`, `LibraryEraseAppTests`,
+  `OutputProfileAppTests`, `CornerPinAppTests`, `DisplayCalibrationAppTests`. — Verified 2026-11-15: `xcodebuild test-without-building` on "OUT08 iPhone 17":
+  45 tests, 0 failures, 2.7 s (GridWarpAppTests 2, CornerPinAppTests, DisplayCalibrationAppTests, LibraryBackupAppTests,
+  LibraryEraseAppTests, OutputProfileAppTests, SettingsTests, ExternalDisplayCoordinatorTests, ExternalRehearsalTests).
+- [X] OUT-008-T13 `GridWarpUITests.swift` (< 30 s) with the fake external display: open editor → guides on, nudge
+  moves a point, Reset → identity, Done → guides off, mesh kept; plus `CornerPinUITests` and `DisplayCalibrationUITests`. — Verified 2026-11-15: "OUT08 iPhone 17": GridWarpUITests passed (17.9 s),
+  DisplayCalibrationUITests passed (20.5 s), CornerPinUITests passed (19.6 s) on a rerun alone (the first run timed out
+  waiting for the app to idle while the host's load average was about 60 from other agents' builds),
+  ExternalDisplayUITests 3 passed, OutputProfileUITests 1 passed. Simulator, not device evidence.
+- [X] OUT-008-T14 Repo checks (`test_scripts.py`, `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`,
+  `check_permission_catalog.py`, `check_status_events.py`), type-check budget of new SwiftUI, privacy manifest and
+  network-symbol checks on the Debug app; PosterBoard counts. — Verified 2026-11-15: all six repo checks OK (`test_scripts.py` 186 tests);
+  `check_privacy_manifest.py` and `check_network_symbols.py` OK on the Debug simulator app; Compositor builds in the
+  Linux shape (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`, with tests); PosterBoard reports
+  25 before and 25 after.
+- [ ] OUT-008-T15 {device} D1 with a projector on a curved surface: guides aligned with a 5 × 5 grid, identity shows no
+  change, a recording made meanwhile is unwarped, a native spectrum shown unwarped (last stage).
+
+## Dependencies
+
+T01 → T02; T01 → T09; T03 → T04; T03 → T05 → T06; T01 + T03 + T05 → T07 → T08 → T10 → T11 → T12 → T13 → T14 → T15.
+
+## Analysis (speckit-analyze, 2026-11-15)
+
+Coverage after fixes: R1-R3 → T01/T02; R4 → T01/T02 (edits), T08 (stored), T09 (import), T10 (editor reason); R5 →
+T10/T13; R6 → T12 (added); R7 → T04, T06; R8 → T04, T06, T12 (rehearsal added); R9 → T08/T12; R10 → T09; R11 → T12
+(added); R12 → T11/T13. S1 → T04/T06; S2 → T04; S3 → T02; S4 → T04/T06; S5 → T09/T12. No constitution conflict, no
+duplicate or ambiguous requirement left. Fixes applied: T04 gains the guides check; T12 gains R6, R8 and R11 checks.

@@ -11,6 +11,9 @@
 //   are refused, never clamped: a clamped calibration would not reproduce the original (OUT-014-D2).
 // * The calibration ranges mirror Compositor's `DisplayCalibration.gammaRange` and `trimRange` (this package cannot
 //   depend on Compositor); an app test asserts they are equal.
+// * OUT-008 (spec specs/309-out-008-grid-warp, contract C5): an optional `settings.gridWarp` ({columns, rows, points})
+//   carries a non-identity grid warp; absent reads as the identity, and any invalid mesh (`GridWarp.isValid`) refuses
+//   the import. The format version is unchanged: older files have no such field.
 // * Same display class (spec Clarifications): same native pixel size, the screen's pixel aspect within 0.005 and, when
 //   both report one, the same gamut. The refresh rate is recorded but not compared.
 import Foundation
@@ -149,10 +152,13 @@ public struct OutputProfile: Equatable, Sendable {
     public var cornerPin: CornerPin
     public var calibration: Calibration
     public var display: OutputDisplayClass?
+    /// OUT-008: the grid warp (the identity when the file has none).
+    public var gridWarp: GridWarp
 
     public init(fit: ExternalOutputFit = .fit, shape: ExternalOutputShape = .display, pixelAspect: ExternalPixelAspect = .automatic,
                 resolution: ExternalOutputResolution = .native, outputMode: ExternalOutputMode = .default,
-                cornerPin: CornerPin = .identity, calibration: Calibration = .identity, display: OutputDisplayClass? = nil) {
+                cornerPin: CornerPin = .identity, calibration: Calibration = .identity, display: OutputDisplayClass? = nil,
+                gridWarp: GridWarp = .identity) {
         self.fit = fit
         self.shape = shape
         self.pixelAspect = pixelAspect
@@ -161,6 +167,7 @@ public struct OutputProfile: Equatable, Sendable {
         self.cornerPin = cornerPin
         self.calibration = calibration
         self.display = display
+        self.gridWarp = gridWarp
     }
 }
 
@@ -201,6 +208,7 @@ public enum OutputProfileDocument {
     private static let settingsKeys: Set<String> = ["fit", "shape", "pixelAspect", "resolution", "resolutionPercent",
                                                     "outputMode", "cornerPin", "calibration"]
     private static let calibrationKeys: Set<String> = ["gamma", "red", "green", "blue"]
+    private static let gridWarpKeys: Set<String> = ["columns", "rows", "points"]   // OUT-008
     private static let pointKeys: Set<String> = ["x", "y"]
     private static let displayKeys: Set<String> = ["nativeWidth", "nativeHeight", "pixelAspect", "refreshRate", "gamut"]
     private static let requiredDisplayKeys: Set<String> = ["nativeWidth", "nativeHeight", "pixelAspect"]
@@ -217,6 +225,12 @@ public enum OutputProfileDocument {
         let blue: Double
     }
 
+    private struct GridWarpBody: Codable {   // OUT-008
+        let columns: Int
+        let rows: Int
+        let points: [Point]
+    }
+
     private struct Settings: Codable {
         let fit: String
         let shape: String
@@ -226,6 +240,7 @@ public enum OutputProfileDocument {
         let outputMode: String
         let cornerPin: [Point]
         let calibration: CalibrationBody
+        let gridWarp: GridWarpBody?   // OUT-008: written only when not the identity
     }
 
     private struct Display: Codable {
@@ -252,7 +267,8 @@ public enum OutputProfileDocument {
         let settings = Settings(fit: profile.fit.rawValue, shape: profile.shape.rawValue, pixelAspect: profile.pixelAspect.rawValue,
                                 resolution: profile.resolution.mode.rawValue, resolutionPercent: profile.resolution.percent,
                                 outputMode: profile.outputMode.rawValue, cornerPin: points,
-                                calibration: CalibrationBody(gamma: c.gamma, red: c.red, green: c.green, blue: c.blue))
+                                calibration: CalibrationBody(gamma: c.gamma, red: c.red, green: c.green, blue: c.blue),
+                                gridWarp: Self.body(profile.gridWarp))
         let display: Display? = profile.display.map { (d: OutputDisplayClass) -> Display in
             Display(nativeWidth: d.nativeWidth, nativeHeight: d.nativeHeight, pixelAspect: d.pixelAspect,
                     refreshRate: d.refreshRate, gamut: d.gamut?.rawValue)
@@ -260,6 +276,13 @@ public enum OutputProfileDocument {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .prettyPrinted, .withoutEscapingSlashes]
         return (try? encoder.encode(Body(format: format, version: version, settings: settings, display: display))) ?? Data()
+    }
+
+    /// OUT-008: nil for the identity.
+    private static func body(_ warp: GridWarp) -> GridWarpBody? {
+        guard !warp.isIdentity else { return nil }
+        let points: [Point] = warp.points.map { (p: GridWarpPoint) -> Point in Point(x: p.x, y: p.y) }
+        return GridWarpBody(columns: warp.columns, rows: warp.rows, points: points)
     }
 
     // MARK: Decode
@@ -288,7 +311,7 @@ public enum OutputProfileDocument {
 
     private static func checkNested(_ top: [String: Any]) throws(OutputProfileImportError) {
         guard let settings = top["settings"] as? [String: Any] else { throw .invalidValue("settings") }
-        try checkKeys(settings, allowed: settingsKeys, required: settingsKeys, path: "settings.")
+        try checkKeys(settings, allowed: settingsKeys.union(["gridWarp"]), required: settingsKeys, path: "settings.")
         guard let percent = Self.number(settings["resolutionPercent"]), percent == percent.rounded() else {
             throw .invalidValue("settings.resolutionPercent")   // a whole number (JSONDecoder's error has no path here)
         }
@@ -298,6 +321,15 @@ public enum OutputProfileDocument {
         for (index, corner) in corners.enumerated() {
             guard let point = corner as? [String: Any] else { throw .invalidValue("settings.cornerPin") }
             try checkKeys(point, allowed: pointKeys, required: pointKeys, path: "settings.cornerPin[" + String(index) + "].")
+        }
+        if let warp = settings["gridWarp"] {   // OUT-008
+            guard let fields = warp as? [String: Any] else { throw .invalidValue("settings.gridWarp") }
+            try checkKeys(fields, allowed: gridWarpKeys, required: gridWarpKeys, path: "settings.gridWarp.")
+            guard let points = fields["points"] as? [Any] else { throw .invalidValue("settings.gridWarp") }
+            for (index, point) in points.enumerated() {
+                guard let fields = point as? [String: Any] else { throw .invalidValue("settings.gridWarp") }
+                try checkKeys(fields, allowed: pointKeys, required: pointKeys, path: "settings.gridWarp.points[" + String(index) + "].")
+            }
         }
         if let display = top["display"] {
             guard let fields = display as? [String: Any] else { throw .invalidValue("display") }
@@ -354,6 +386,12 @@ public enum OutputProfileDocument {
         let c: CalibrationBody = s.calibration
         let calibration = OutputProfile.Calibration(gamma: c.gamma, red: c.red, green: c.green, blue: c.blue)
         if let field = calibration.invalidField { throw .invalidValue("settings.calibration." + field) }
+        var warp: GridWarp = .identity   // OUT-008
+        if let g = s.gridWarp {
+            let points: [GridWarpPoint] = g.points.map { (p: Point) -> GridWarpPoint in GridWarpPoint(x: p.x, y: p.y) }
+            guard let valid = GridWarp(columns: g.columns, rows: g.rows, points: points) else { throw .invalidValue("settings.gridWarp") }
+            warp = valid
+        }
         var display: OutputDisplayClass?
         if let d = body.display {
             var gamut: OutputReadings.Gamut?
@@ -368,6 +406,6 @@ public enum OutputProfileDocument {
         }
         return OutputProfile(fit: fit, shape: shape, pixelAspect: aspect,
                              resolution: ExternalOutputResolution(mode: mode, percent: s.resolutionPercent),
-                             outputMode: outputMode, cornerPin: pin, calibration: calibration, display: display)
+                             outputMode: outputMode, cornerPin: pin, calibration: calibration, display: display, gridWarp: warp)
     }
 }

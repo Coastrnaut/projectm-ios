@@ -20,6 +20,8 @@
 // ("pin=… card=… corners=…", or "none" without a display).
 // OUT-009-T12: the hidden `externalCalibration` probe reads the display calibration and whether the visual on the fake
 // display applies it ("cal=… applied=… values=…").
+// OUT-008-T11: the hidden `externalGridWarp` probe reads the grid warp and whether the visual on the fake display draws
+// it ("warp=… grid=CxR guides=… applied=…").
 // OUT-011-T08: the fake sets stand-in screen readings (its window sits on the device's own screen, whose values would be
 // wrong; research OUT-011-D4), "ext+720" connects a 1280 × 720 stand-in, and the hidden `externalDiagnostics` probe reads
 // `OutputDiagnostics.summary` ("disconnected" or "connected native=… pt=…@… fps=… drawable=…").
@@ -119,6 +121,11 @@ struct UITestExternalDisplayPanel: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("externalCalibration")
                     .accessibilityValue(calibration)
+                let warp: String = coordinator.gridWarpSummary   // OUT-008
+                Text(warp)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalGridWarp")
+                    .accessibilityValue(warp)
                 let diagnostics: String = coordinator.outputDiagnostics.summary   // OUT-011
                 Text(diagnostics)
                     .opacity(0.01)

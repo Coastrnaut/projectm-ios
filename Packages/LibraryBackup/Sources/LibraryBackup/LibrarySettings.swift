@@ -129,6 +129,8 @@ public enum LibrarySettingsPolicy {
         "settings.starfield.speed", "settings.starfield.density",   // VIS-016-R8
         "settings.signedDistance.quality",   // VIS-017-R8
         "settings.cymatic.bands",   // VIS-019-R10
+        "settings.tessellation.tiling", "settings.tessellation.tiles", "settings.tessellation.symmetry",   // VIS-018-R10
+        "settings.tessellation.mirror", "settings.tessellation.palette",
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",
@@ -184,6 +186,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.outputMode",   // OUT-006-R7: likewise
         "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
         "settings.externalDisplay.calibration",   // OUT-009-R9: likewise (one display's colour response)
+        "settings.externalDisplay.gridWarp",   // OUT-008-R9: likewise (one projector's surface)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed", "settings.video.reverse",   // MED-005
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device

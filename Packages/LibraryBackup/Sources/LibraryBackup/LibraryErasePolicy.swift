@@ -75,7 +75,8 @@ public enum LibraryErasePolicy {
                                                        "settings.externalDisplay.resolutionPercent",
                                                        "settings.externalDisplay.outputMode",   // OUT-006-R7
                                                        "settings.externalDisplay.cornerPin",   // OUT-007-R9
-                                                       "settings.externalDisplay.calibration"]   // OUT-009-R9
+                                                       "settings.externalDisplay.calibration",   // OUT-009-R9
+                                                       "settings.externalDisplay.gridWarp"]   // OUT-008-R9
     /// UIX-007-R7: the iPad split editor's width (this device's screen: not backed up, erased with Settings).
     public static let splitEditorWidthKey = "settings.splitEditor.width"
 

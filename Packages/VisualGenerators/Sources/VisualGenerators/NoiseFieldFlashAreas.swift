@@ -7,7 +7,9 @@
 // kept. VIS-014: with the kaleidoscope on, each sample point is folded first, exactly as the shader does. VIS-015: the
 // tunnel's samples come from `TunnelMapping` (palette at its texture × light × brightness, as its shader). VIS-020: the
 // waterfall's samples are `WaterfallFlashCells`' exact cell means. VIS-017: the SDF shapes' samples come from
-// `SignedDistanceScene.shade` (the same bounded march as the shader).
+// `SignedDistanceScene.shade` (the same bounded march as the shader). VIS-018: the tessellation's samples are the tile at
+// each point (`TessellationLattice`, the shader's tile function) at its area mean: colour × light × brightness × the
+// lit fraction (1 − inset)² (the seams are dark).
 // `levels(gain:transfer:into:)` gives each tile the mean of its four samples after the downstream stages, and
 // the whole frame the mean of all 64. Exact at the sample points; the field is smooth at these scales. All storage is
 // allocated in `init`; ≤ 64 × 3 × 6 noise evaluations per frame. Pure Swift (every platform). Not Sendable.
@@ -145,6 +147,31 @@ public final class NoiseFieldFlashAreas {
                 let q: SIMD2<Float> = CymaticField.plate(pixel: Self.samplePoint(column: column, row: row, width: w, height: h), width: w, height: h)
                 values[k] = CymaticField.line(CymaticField.blended(at: q, weights: frame.weights), width: frame.width)
                 colors[k] = CymaticField.shade(q, frame: frame, stops: paletteStops)
+            }
+        }
+    }
+
+    /// VIS-018: evaluates the 64 samples of the tessellation for this frame; values hold each sample's luminance at
+    /// gain 1. `paletteStops` holds 16 colours.
+    public func sampleTessellation(settings: TessellationSettings, frame: TessellationFrame, paletteStops: UnsafePointer<LinearColor>,
+                                   width: Int, height: Int) {
+        let placement = TessellationPlacement(width: width, height: height, tiles: settings.tiles, tiling: settings.tiling)
+        let origin: SIMD2<Float> = placement.origin
+        let f: TessellationFrame = frame.sanitized()
+        let lit: Float = (1 - f.inset) * (1 - f.inset) * f.brightness
+        for row in 0..<Self.gridSide {
+            for column in 0..<Self.gridSide {
+                let k: Int = row * Self.gridSide + column
+                let pixel: SIMD2<Float> = Self.samplePoint(column: column, row: row, width: placement.width, height: placement.height)
+                let cell: TessellationCell = placement.cell(pixel: pixel)
+                let look: (t: Float, light: Float) = TessellationLattice.tileLook(offset: cell.centre - origin, order: settings.symmetry,
+                                                                                  mirror: settings.mirror, drift: f.drift, light: f.light)
+                let base: LinearColor = SignedDistanceScene.paletteColor(look.t, stops: paletteStops)
+                let scale: Float = look.light * lit
+                let c = LinearColor(red: min(max(base.red * scale, 0), 1), green: min(max(base.green * scale, 0), 1),
+                                    blue: min(max(base.blue * scale, 0), 1), alpha: 1)
+                values[k] = c.relativeLuminance
+                colors[k] = c
             }
         }
     }
