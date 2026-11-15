@@ -75,7 +75,7 @@ public enum ShaderMetadataError: Error, Sendable, Equatable, CustomStringConvert
         case let .duplicateCaseID(d, p, c): return "\(d): \(p) key \"cases\" repeats case ID \"\(c)\""
         case let .defaultNotACase(d, p, v): return "\(d): \(p) key \"default\" value \"\(v)\" is not a case ID"
         case let .duplicateParameterID(d, id): return "\(d): parameter \"\(id)\" is declared twice (key \"id\")"
-        case let .parameterCount(d, n): return "\(d): key \"parameters\" has \(n) parameters (1 to 8 allowed)"
+        case let .parameterCount(d, n): return "\(d): key \"parameters\" has \(n) parameters (1 to 16 allowed)"
         case let .slotMismatch(d, id, s, p): return "\(d): parameter \"\(id)\" key \"slot\" is \(s) but its position is \(p)"
         case let .missingRequiredParameter(d, id): return "\(d): required parameter \"\(id)\" is missing (key \"parameters\")"
         case let .undeclaredSlotRead(d, f, s): return "\(d): \(f) reads slot \(s), which no parameter declares (key \"slot\")"

@@ -13,8 +13,12 @@ final class MaterialCatalogTests: XCTestCase {
         "material.gradient.audioReactivity": (0, 1, 0.25),
         "material.plasma.scale": (0.5, 8, 2), "material.plasma.speed": (0, 1, 0.12), "material.plasma.brightness": (0, 1, 0.45),
         "material.plasma.saturation": (0, 1, 0.6), "material.plasma.audioReactivity": (0, 1, 0.25),
-        "material.noiseFlow.scale": (1, 16, 4), "material.noiseFlow.speed": (0, 1, 0.08), "material.noiseFlow.octaves": (1, 5, 3),
+        "material.noiseFlow.scale": (1, 16, 4), "material.noiseFlow.speed": (0, 1, 0.08), "material.noiseFlow.octaves": (1, 8, 3),
         "material.noiseFlow.brightness": (0, 1, 0.6), "material.noiseFlow.audioReactivity": (0, 1, 0.25),
+        // SHD-006: the noise editor's parameters.
+        "material.noiseFlow.seed": (0, 65535, 0), "material.noiseFlow.lacunarity": (1.5, 3.5, 2.03),
+        "material.noiseFlow.gain": (0.2, 0.8, 0.5), "material.noiseFlow.warpAmount": (0, 4, 0.8),
+        "material.noiseFlow.warpFrequency": (0.25, 4, 1),
         "material.tunnel.ringDensity": (2, 24, 8), "material.tunnel.speed": (-1, 1, 0.1), "material.tunnel.contrast": (0, 1, 0.35),
         "material.tunnel.brightness": (0, 1, 0.4), "material.tunnel.audioReactivity": (0, 1, 0.25),
         "material.starfield.density": (0.05, 1, 0.35), "material.starfield.speed": (0, 1, 0.1),
@@ -47,7 +51,7 @@ final class MaterialCatalogTests: XCTestCase {
     func testRegistryValidates() throws {
         XCTAssertEqual(ParameterRegistry.validate(Catalog.descriptors, retiredIDs: Catalog.retiredIDs), [])
         let registry = try Catalog.makeRegistry()
-        XCTAssertEqual(registry.count, 29, "SHD-001's 28 plus SHD-003's material.gradient.shape")
+        XCTAssertEqual(registry.count, 34, "SHD-001's 28, SHD-003's material.gradient.shape and SHD-006's five noise parameters")
         XCTAssertEqual(registry.groups.map(\.id), Catalog.materials.map(\.id))
     }
 
