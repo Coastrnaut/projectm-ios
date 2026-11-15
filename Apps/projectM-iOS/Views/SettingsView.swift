@@ -759,6 +759,7 @@ struct SettingsView: View {
                 .disabled(videos.isImporting)
                 .accessibilityIdentifier("chooseVideoFromFiles")
             VideoSpeedControls(videos: videos)   // MED-004
+            VideoReverseControls(videos: videos)   // MED-005
             VideoLoopControls(videos: videos, endCoalescing: { [history] () -> Void in history?.endCoalescing() })   // MED-003
             if videos.video != nil {
                 Button("Remove Video", role: .destructive) { videos.remove() }
@@ -773,7 +774,7 @@ struct SettingsView: View {
         } header: {
             Text("Video")
         } footer: {
-            Text("H.264 or HEVC, up to 4K, 60 frames per second and 500 MB. The video is copied into the app on this device without its sound, location or other details, and is never uploaded. It plays without sound; the music comes from your chosen source. Speed changes only the video, never the music. Loop in and Loop out repeat only that part. Remove Video deletes the copy.")
+            Text("H.264 or HEVC, up to 4K, 60 frames per second and 500 MB. The video is copied into the app on this device without its sound, location or other details, and is never uploaded. It plays without sound; the music comes from your chosen source. Speed and Reverse change only the video, never the music; Reverse works for clips up to 30 seconds and 1080p. Loop in and Loop out repeat only that part. Remove Video deletes the copy.")
         }
         .onChange(of: pickedVideo) { _, item in
             guard let item else { return }

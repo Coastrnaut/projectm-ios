@@ -112,7 +112,8 @@ let package = Package(
         .target(name: "GeneratorGraph", dependencies: ["Compositor"]),
         .target(name: "MediaSniffing"),
         .target(name: "ImageLayer", dependencies: ["Compositor", "MediaSniffing"]),
-        .target(name: "VideoLayer", dependencies: ["Compositor", "CameraLayer", "MediaSniffing"]),
+        // MED-005: reverse playback budgets its picture cache with MED-008's AnimatedFrameBudget (ImageLayer).
+        .target(name: "VideoLayer", dependencies: ["Compositor", "CameraLayer", "MediaSniffing", "ImageLayer"]),
         .target(name: "GeneratorGraphImport", dependencies: ["GeneratorGraph"]),
         .target(name: "TextLayer", dependencies: ["Compositor"]),
         // SHD-012: REC-013's offline analysis core (VisualBandFeed) drives MOD-002 bindings and a material's motion.

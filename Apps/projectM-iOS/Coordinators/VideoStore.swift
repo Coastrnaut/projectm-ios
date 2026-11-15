@@ -21,6 +21,8 @@
 // MED-004 (research MED-004-D5): the stored video's playback speed is `settings.video.speed` =
 // `{id, percent}` (1× is no key), read only for the stored video's id and a percent in the safe set;
 // anything else is removed. Remove Video and a new current video remove it, like the loop.
+// MED-005 (research MED-005-D6): reverse playback of the stored video is `settings.video.reverse` = `{id}` (no key:
+// forward), read only for the stored video's id; anything else is removed. Remove Video and a new current video remove it.
 // FILE-008 (ADR-0043): the folder is content-addressed like the photo's (`ContentAddressedMediaFolder`):
 // one `<sha256>.mov` payload per content plus `references.json`; the sanitized copy has zeroed header
 // times (`MovieHeaderTimes`), so importing the same movie again adds a reference, not a file. Making a
@@ -42,6 +44,8 @@ struct VideoStore: @unchecked Sendable {
     static let loopKey = "settings.video.loop"
     /// MED-004: the stored video's playback speed.
     static let speedKey = "settings.video.speed"
+    /// MED-005: reverse playback of the stored video.
+    static let reverseKey = "settings.video.reverse"
     static let fileExtension = "mov"
 
     let directory: URL
@@ -149,6 +153,7 @@ struct VideoStore: @unchecked Sendable {
         if previous?.id != video.id {
             defaults.removeObject(forKey: Self.loopKey)    // MED-003: a new video plays whole
             defaults.removeObject(forKey: Self.speedKey)   // MED-004: and at 1×
+            defaults.removeObject(forKey: Self.reverseKey)   // MED-005: and forward
         }
         if let previous, previous.id != video.id, !folder.sharesPayload(previous.id, video.id) {
             try? folder.releaseSharing(payloadOf: previous.id, keeping: [video.id])
@@ -172,6 +177,7 @@ struct VideoStore: @unchecked Sendable {
         defaults.removeObject(forKey: Self.idKey)
         defaults.removeObject(forKey: Self.loopKey)   // MED-003
         defaults.removeObject(forKey: Self.speedKey)  // MED-004
+        defaults.removeObject(forKey: Self.reverseKey)   // MED-005
     }
 
     // MARK: FILE-008 launch (research FILE-008-D5)
@@ -230,6 +236,27 @@ struct VideoStore: @unchecked Sendable {
         }
         let value: [String: Any] = ["id": id.uuidString, "percent": speed.percent]
         defaults.set(value, forKey: Self.speedKey)
+    }
+
+    // MARK: Reverse (MED-005-R7)
+
+    /// True when reverse playback is saved for the video `id`. A value for another video or a malformed one is removed.
+    func isReversed(_ id: UUID) -> Bool {
+        guard let stored = defaults.object(forKey: Self.reverseKey) else { return false }
+        guard let value = stored as? [String: Any], let raw = value["id"] as? String, raw == id.uuidString else {
+            defaults.removeObject(forKey: Self.reverseKey)
+            return false
+        }
+        return true
+    }
+
+    /// Saves reverse playback for the video `id`; false removes the key (forward).
+    func setReversed(_ reversed: Bool, for id: UUID) {
+        guard reversed else {
+            defaults.removeObject(forKey: Self.reverseKey)
+            return
+        }
+        defaults.set(["id": id.uuidString], forKey: Self.reverseKey)
     }
 
     /// The only place the picked URL is touched: its size is checked, then it is copied once into

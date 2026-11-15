@@ -113,6 +113,25 @@ final class VideoVisualHost: PresentationBoundResource, CompositorVisualHost {
         set { video.playbackSpeed = newValue }
     }
 
+    /// MED-005: reverse playback from the layer's cache (an unsupported clip plays forward).
+    var reverse: Bool {
+        get { video.reverse }
+        set { video.reverse = newValue }
+    }
+
+    /// MED-005: the layer's reverse state, on the main actor.
+    var onReverseStateChange: ((VideoReverseState) -> Void)? {
+        didSet {
+            video.onReverseStateChange = { @MainActor [weak self] (state: VideoReverseState) -> Void in self?.onReverseStateChange?(state) }
+        }
+    }
+
+    /// MED-005 diagnostics: "<state> <cached index|none>".
+    func reverseProbe() -> String {
+        let index: String = video.reverseShownIndex.map { (i: Int) -> String in String(i) } ?? "none"
+        return video.reverseState.probeName + " " + index
+    }
+
     /// MED-004 diagnostics: "<percent> ratio=<x.xxx>" (video time over presentation time since the last
     /// speed change; "ratio=none" before any counted step).
     func speedProbe() -> String {
