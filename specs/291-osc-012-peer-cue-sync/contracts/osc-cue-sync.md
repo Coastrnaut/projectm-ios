@@ -38,4 +38,4 @@ else `.sent`. Kind choices do not apply.
 Picker "Cue sync" (`oscCueSyncRole`: Off/Lead/Follow), status line (`oscCueSyncStatus`), counts
 (`oscCueSyncCounts`). Lead: active iff Lead, allow list on, Send OSC active (`activeDestination` non-nil) and the
 show has an active cue. Follow: tap installed iff Follow; applies iff allow list on. Timed advance held while
-following with the receiver on.
+following is active (Follow, allow list on, receiver listening).

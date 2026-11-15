@@ -24,7 +24,7 @@
 - [ ] OSC-012-T09 [US1] App coordinator `OSCCueSyncCoordinator` (role key, leader timer chained onto `show.cueStarted`, follower inbox drain and `stepNow(.go(id))`, status texts) in Apps/projectM-iOS/Coordinators/OSCCueSyncCoordinator.swift
 - [ ] OSC-012-T10 [US1] Wire it: `OSCReceiverCoordinator.cueSync` (+ `conditionsChanged` from `apply`), `OSCSendCoordinator.postCue`, creation in AppCoordinator.connectAfterInit, timed-advance hold in AppCoordinator+Show `makeShowAutoAdvance`
 - [ ] OSC-012-T11 [US1] Cue Sync screen and Settings › OSC row in Apps/projectM-iOS/Views/OSCCueSyncView.swift and Apps/projectM-iOS/Views/SettingsView.swift
-- [ ] OSC-012-T12 [US1] App tests: follower's show steps to the cue; already on it → no re-apply; leader posts `/projectm/cue` through a fake send transport; timed advance held while following in Apps/projectM-iOS/Tests/OSCCueSyncCoordinatorTests.swift
+- [ ] OSC-012-T12 [US1] App tests: follower's show steps to the cue; already on it → no re-apply; leader posts `/projectm/cue` through a fake send transport; timed advance held while following; following works while the scene is locked and changes no setting (R11); status texts (R14) in Apps/projectM-iOS/Tests/OSCCueSyncCoordinatorTests.swift
 
 ## Phase 4: User Story 2 - Packet loss recovers without infinite retransmission (P3)
 
@@ -32,7 +32,7 @@
 
 ## Phase 5: User Story 3 - Only approved, newest, known cues (P3)
 
-- [ ] OSC-012-T14 [P] [US3] Follower tests: duplicates, reordering, new session, unknown cue reported once, unapproved ignored, malformed ignored in OSCCueSyncTests.swift
+- [ ] OSC-012-T14 [P] [US3] Follower tests: duplicates, reordering, new session, unknown cue reported once, unapproved ignored, malformed ignored; inbox keeps at most 8 and asks for one hop until taken (R13) in OSCCueSyncTests.swift
 - [ ] OSC-012-T15 [P] [US3] Receiver tap test with a fake transport: unapproved host dropped before the tap; approved host tapped; no tap → unknown address in OSCCueSyncTests.swift
 - [ ] OSC-012-T16 [US3] App test: unknown cue reported and not applied; allow list off → nothing applied, in OSCCueSyncCoordinatorTests.swift
 

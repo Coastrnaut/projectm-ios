@@ -119,7 +119,7 @@ leader is applied on the follower; with real UDP on 127.0.0.1 the same holds thr
 - **OSC-012-R7**: A follower MUST apply only a message newer than the last accepted (same session and greater seq, or a different session); older and duplicate messages are ignored. Malformed messages (types other than `s i i i`, a cue ID empty or over 64 bytes, a negative seq or offset) are ignored and counted.
 - **OSC-012-R8**: A follower MUST go to the received cue at once through SHOW-001's step path (not quantized), unless already on it, and MUST record the cue's start as its own monotonic receipt time minus the offset.
 - **OSC-012-R9**: A cue ID that the follower's show does not have MUST be reported and counted, never applied.
-- **OSC-012-R10**: While following is active the follower's timed advance MUST be held.
+- **OSC-012-R10**: While following is active (Follow chosen, the allow list on and the OSC receiver listening) the follower's timed advance MUST be held.
 - **OSC-012-R11**: Cue sync MUST NOT change settings, edit or delete show material or files, or turn any switch on; the scene/performance lock MUST NOT block following.
 - **OSC-012-R12**: The role MUST be stored on this device only (excluded from backup, removed by the Settings erase and the UI-test reset); all other sync state MUST stay in memory.
 - **OSC-012-R13**: Traffic MUST NOT schedule main-thread work per message (OSC-009-R11): received cue messages are coalesced into a bounded inbox with at most one pending hop.
@@ -145,4 +145,4 @@ leader is applied on the follower; with real UDP on 127.0.0.1 the same holds thr
 - Both devices hold the same show (same cue IDs), copied by scene pack, backup or folder backup. Matching shows by content is out of scope.
 - One follower per leader (OSC-005 has one destination).
 - Local Wi-Fi delay is small next to a cue; no clock offset estimation is attempted.
-- The end-to-end check on two physical devices (OSC-012-T-device task) is `{device}`.
+- The end-to-end check on two physical devices (OSC-012-T22) is `{device}`.
