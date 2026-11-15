@@ -37,7 +37,8 @@ finish. Logs go to `.autonomous/logs-fx-005/`.
   (CPU, Linux shape): each preset at 0.25, 0.5, 1 monotone over a 4,097-point sweep, f(0) = 0 and f(1) = 1 exactly,
   inside 0…1, S-curve keeps 0.18, Filmic ≠ S-curve, greys stay grey through the grade, decoding of old grades.
 - [ ] FX-005-T06 [P] [US1] Write `Packages/Compositor/Tests/CompositorTests/ContrastCurveOutputTests.swift` (GPU):
-  grey ramp plus colours for S-curve and Filmic vs the reference within one 8-bit step / 0.002 half float.
+  grey ramp plus colours for S-curve and Filmic vs the reference within one 8-bit step / 0.002 half float, and the
+  FX-020 Color-before-Trails order gives the same picture as the output-pass order (the curve applies once; R6).
 - [ ] FX-005-T07 [P] [US1] Add `effect.colorGrade.contrast` (enumeration) and `effect.colorGrade.contrastStrength`
   to `Packages/Compositor/Sources/ColorGradeParameters/ColorGradeCatalog.swift` and its tests.
 - [ ] FX-005-T08 [US1] Scene: `contrast` and `contrastStrength` in `fx.grade`
@@ -46,7 +47,8 @@ finish. Logs go to `.autonomous/logs-fx-005/`.
 - [ ] FX-005-T09 [US1] App setting: `settings.colorGrade.contrast` and `settings.colorGrade.contrastStrength` in
   `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (`allKeys`, read rules, reset, readouts),
   `SceneAutosaveCapture.applyEffects`; keys in `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift`
-  and `scripts/run_device_tests.py`; tests in `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`.
+  and `scripts/run_device_tests.py` (the UI-test reset and FILE-011's erase follow `allKeys`); ACC-012's
+  `effective` leaves the curve unchanged; tests in `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`.
 - [ ] FX-005-T10 [US1] Settings → Color: "Contrast" picker and "Contrast strength" `.accessibleParameter` slider in
   `Apps/projectM-iOS/Views/ColorGradeSection.swift`; UI test in `Apps/projectM-iOS/UITests/ColorGradeUITests.swift`.
 
