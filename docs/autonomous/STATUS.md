@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T01:12:48Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T01:18:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 63 |
 | implementing | 1 |
-| unit_passed | 4 |
-| integrated | 257 |
+| integrated | 261 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 7 | 0 | 2 | 142 | 0 |
-| P2 | 45 | 1 | 2 | 31 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 7 | 0 | 144 | 0 |
+| P2 | 45 | 1 | 33 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 68 features are not implemented yet (first: ACC-010, CAM-009, CAM-010, FX-005, FX-006)
+- 64 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -42,6 +41,7 @@ The physical-device suite may **not** start:
 | ACC-007 | Haptic beat feedback | `03829784` | `feature/acc-007` |
 | ACC-008 | High contrast overlay | `89d78f88` | `feature/acc-008` |
 | ACC-009 | One-handed performance mode | `cd31ef8e` | `feature/acc-009` |
+| ACC-010 | Left-handed layout | `2fca67e1` | `feature/acc-010` |
 | ACC-011 | Captioned status events | `92196c47` | `feature/acc-011` |
 | ACC-012 | Sensory safety profile | `0b822ef5` | `feature/acc-012` |
 | ANL-001 | Windowed FFT | `df16f2b90397` | `feature/anl-001` |
@@ -212,6 +212,7 @@ The physical-device suite may **not** start:
 | PRE-014 | Bulk preset export | `a20ba4bafb5e` | `feature/pre-014` |
 | PRE-015 | User preset duplication | `c6cce9988587` | `feature/pre-015` |
 | PRE-016 | Preset parameter overrides | `e4dca4c4` | `feature/pre-016` |
+| PRE-017 | Preset restore points | `f6b79cd0` | `feature/pre-017` |
 | PRE-018 | Preset integrity scanner | `7a07c74e` | `feature/pre-018` |
 | QA-002 | Golden render scenes | `dffa2be908f5` | `feature/qa-002` |
 | QA-003 | Visual diff tolerances | `ae0249ac` | `feature/qa-003` |
@@ -262,6 +263,7 @@ The physical-device suite may **not** start:
 | SHD-009 | Expression mapping DSL | `d84b02f95a85` | `feature/shd-009` |
 | SHD-010 | Expression sandbox budgets | `e906db183292` | `feature/shd-010` |
 | SHD-011 | User-authored shader policy | `26de54ff2c0b` | `feature/shd-011` |
+| SHD-012 | Authoring preview fixture | `c8917b9b` | `feature/shd-012` |
 | SHOW-001 | Manual cue list | `77cf6988ac8e` | `feature/show-001` |
 | SHOW-002 | Timed cue advance | `d294e530` | `feature/show-002` |
 | SHOW-003 | Beat-quantized cue advance | `f8aefa27` | `feature/show-003` |
@@ -269,6 +271,7 @@ The physical-device suite may **not** start:
 | SHOW-005 | Cue hold and skip | `1a2c439a` | `feature/show-005` |
 | SHOW-006 | Cue rehearsal mode | `fda100be` | `feature/show-006` |
 | SHOW-007 | Timeline transport | `0e123e55` | `feature/show-007` |
+| SHOW-008 | Keyframe tracks | `e4ad41bb` | `feature/show-008` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
@@ -386,7 +389,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `2ab4693e8557` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-009/20261114T192641/swift-test_ShowControl.log`)
 - `post-merge batch87: ShowControl 135, Compositor 1018, RenderGoldens 87, LibraryBackup 86, validate_docs, projectM-iOSTests 1127, UI 9 (one-handed 3, noise editor, show timeline, performance layout 4)`: pass at `fd57c72f` (log `.autonomous/logs/integration/batch87/app-tests.log`)
 
-### ACC-010 Left-handed layout (unit_passed)
+### ACC-010 Left-handed layout (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d57f7531204f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-010/20261114T200941/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d57f7531204f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-010/20261114T200941/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `d57f7531204f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-010/20261114T200941/script-tests.log`)
@@ -394,6 +397,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `d57f7531204f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-010/20261114T200941/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `d57f7531204f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-010/20261114T200941/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `d57f7531204f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-010/20261114T200941/swift-test_ShowControl.log`)
+- `post-merge batch90: ShowControl 146, Compositor 1027, PresetLibrary 349, LibraryBackup 87, projectM-iOSTests 1142, UI 9 (keyframes, fixture preview, left-handed 2, one-handed 3, preset versions, noise editor after test fix)`: pass at `2310995d` (log `.autonomous/logs/integration/batch90/app-tests.log`)
 
 ### ACC-011 Captioned status events (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2b76f6f1015b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/ACC-011/20261114T003341/compliance.log`)
@@ -2305,12 +2309,13 @@ None.
 - `swift test --package-path Packages/PresetLibrary`: pass at `3bb694ab053e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-016/20261114T123919/swift-test_PresetLibrary.log`)
 - `post-merge: projectM-iOSTests 872 + UI 9 (beat rings, preset overrides, preset library, glow)`: pass at `e4dca4c4` (log `.autonomous/logs/integration/batch37/app-tests.log`)
 
-### PRE-017 Preset restore points (unit_passed)
+### PRE-017 Preset restore points (integrated)
 - `python3 scripts/check_compliance.py`: pass at `97116ffcbbbd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-017/20261114T201114/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `97116ffcbbbd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-017/20261114T201114/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `97116ffcbbbd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-017/20261114T201114/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `97116ffcbbbd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-017/20261114T201114/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresetLibrary`: pass at `97116ffcbbbd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-017/20261114T201114/swift-test_PresetLibrary.log`)
+- `post-merge batch90: ShowControl 146, Compositor 1027, PresetLibrary 349, LibraryBackup 87, projectM-iOSTests 1142, UI 9 (keyframes, fixture preview, left-handed 2, one-handed 3, preset versions, noise editor after test fix)`: pass at `2310995d` (log `.autonomous/logs/integration/batch90/app-tests.log`)
 
 ### PRE-018 Preset integrity scanner (integrated)
 - `python3 scripts/check_compliance.py`: pass at `653a3ca8caff` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PRE-018/20261114T143904/compliance.log`)
@@ -2832,7 +2837,7 @@ None.
 - `swift test --package-path Packages/Compositor`: pass at `e19f0be39822` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-011/20261113T133733/swift-test_Compositor.log`)
 - `post-merge: check_compliance OK with the new code-execution rules over the whole repository; Compositor scheme on iPhone 17 sim incl. GeneratorGraphImportTests`: pass at `26de54ff2c0b` (log `.autonomous/logs/integration/shd-011/compositor-sim.log`)
 
-### SHD-012 Authoring preview fixture (unit_passed)
+### SHD-012 Authoring preview fixture (integrated)
 - `python3 scripts/check_compliance.py`: pass at `1616509ed3ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-012/20261114T200554/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `1616509ed3ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-012/20261114T200554/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1616509ed3ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-012/20261114T200554/sim-test_ANGLERendering.log`)
@@ -2843,6 +2848,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `1616509ed3ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-012/20261114T200554/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `1616509ed3ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-012/20261114T200554/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `1616509ed3ba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-012/20261114T200554/swift-test_ShowControl.log`)
+- `post-merge batch90: ShowControl 146, Compositor 1027, PresetLibrary 349, LibraryBackup 87, projectM-iOSTests 1142, UI 9 (keyframes, fixture preview, left-handed 2, one-handed 3, preset versions, noise editor after test fix)`: pass at `2310995d` (log `.autonomous/logs/integration/batch90/app-tests.log`)
 
 ### SHOW-001 Manual cue list (integrated)
 - `python3 scripts/check_compliance.py`: pass at `07c6e6d736f0` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-001/20261113T171409/compliance.log`)
@@ -2903,12 +2909,13 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `532c35165ceb` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-007/20261114T191237/swift-test_ShowControl.log`)
 - `post-merge batch86/86b: ShowControl 128, LibraryBackup 86, projectM-iOSTests 1118, UI 3 (show timeline, cue hold/skip, auto advance)`: pass at `2ae941b3` (log `.autonomous/logs/integration/batch86b/app-tests.log`)
 
-### SHOW-008 Keyframe tracks (unit_passed)
+### SHOW-008 Keyframe tracks (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_ShowControl.log`)
+- `post-merge batch90: ShowControl 146, Compositor 1027, PresetLibrary 349, LibraryBackup 87, projectM-iOSTests 1142, UI 9 (keyframes, fixture preview, left-handed 2, one-handed 3, preset versions, noise editor after test fix)`: pass at `2310995d` (log `.autonomous/logs/integration/batch90/app-tests.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
