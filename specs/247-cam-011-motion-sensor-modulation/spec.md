@@ -118,8 +118,8 @@ brings it to 50 %.
 - **CAM-011-R10**: Motion data MUST stay on the device: never stored, sent or logged; calibration is held for the session only. No permission prompt is added.
 - **CAM-011-R11**: Without motion sensors, attitude sources MUST read 0.5 and shake 0, and Settings MUST explain the absence and disable its controls.
 - **CAM-011-R12**: The range MUST be stored under `settings.motion.range` (absent or unknown → Medium), backed up and erased with the other settings and reset by the UI-test reset.
-- **CAM-011-R14**: Calibrate MUST post one polite announcement, and the Settings readout MUST expose each value as an accessibility element, refreshing at most 10 times a second.
 - **CAM-011-R13**: Per-sample processing and per-frame reads MUST NOT allocate; the changed package MUST keep building on Linux, with the sensor API only in the app.
+- **CAM-011-R14**: Calibrate MUST post one polite announcement, and the Settings readout MUST expose each value as an accessibility element, refreshing at most 10 times a second.
 
 ### Key Entities
 
