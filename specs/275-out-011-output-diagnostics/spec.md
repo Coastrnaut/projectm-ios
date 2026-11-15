@@ -46,6 +46,24 @@ interaction); each answer is the conservative, local-first option.
   `.disconnected` inside the disconnect call, and a reconnect reads the new screen.
 - Q: What if iOS does not report a value? → A: The row says "Not available". Nothing is estimated or guessed.
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: How are values formatted? → A: Fixed, unlocalised-number formats so tests and VoiceOver agree: native resolution
+  "1920 × 1080 px"; points "1920 × 1080 pt @1x" (scale with up to two decimals, trailing zeros dropped); refresh
+  "60 Hz"; gamut "sRGB" or "Display P3"; EDR "1.0× potential, 1.0× current" (one decimal); mirroring "Extended" or
+  "Mirrored"; drawable "1920 × 1080 px"; overscan "Scale", "Inset bounds" or "None"; pixel aspect "1.00" (two
+  decimals); output "Same scene" or "Clean output" (the OUT-006 picker titles).
+- Q: Should the panel be shown while a connection is still settling (OUT-002's 0.3 s)? → A: No: it reports not
+  connected until the connection settles, so the panel agrees with where the visual is and never shows a display
+  the app does not use.
+- Q: Is "Copy diagnostics" offered, and how? → A: Yes, only while connected, copying plain text to the general
+  pasteboard with the local-only option (no Universal Clipboard), no expiry needed; nothing is stored or exported
+  otherwise. It is the conservative, local-first way to hand numbers to a technician.
+- Q: How does the DEBUG stand-in report screen values, since its window sits on the device's own screen? → A: The
+  stand-in slot carries stand-in screen readings (like OUT-012's stand-in pixel aspect): native size = its window
+  size at scale 1, 60 Hz, sRGB, EDR not reported, extended, overscan None. A second button connects a 1280 × 720
+  stand-in. Real scenes always read their own screen; DEBUG only.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See what the connected display reports (Priority: P1)
@@ -119,6 +137,7 @@ The VJ copies the diagnostics as text to paste into a message to the venue's tec
   no value of any earlier display.
 - **OUT-011-R6**: The section MUST update when a display connects or disconnects while it is open, and refresh
   changing values (EDR headroom) at least once a second while open.
+- **OUT-011-R6a**: Values MUST use the formats recorded in Clarifications (session speckit-clarify).
 - **OUT-011-R7**: Each row MUST be one accessibility element whose label is the row's name and whose value is its
   value (VoiceOver).
 - **OUT-011-R8**: "Copy diagnostics" (shown only while connected) MUST copy the rows as text to the local
