@@ -207,6 +207,11 @@ private final class OfflineFrameRenderer {
             c.reduceMotion = job.reduceMotion
             orbit.configuration = c
             orbit.restartLoop()
+        } else if let field = generator as? NoiseFieldGenerator {   // VIS-013: its own seed setting; drift from 0
+            var c = field.configuration
+            c.reduceMotion = job.reduceMotion
+            field.configuration = c
+            field.restartLoop()
         } else if let mandala = generator as? MandalaGenerator {
             var c = mandala.configuration
             c.reduceMotion = job.reduceMotion

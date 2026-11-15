@@ -90,6 +90,10 @@ struct VisualizerView: View {
             visual
                 .splitOutputScaled()
                 .accessibilityIgnoresInvertColors()   // ACC-003-R10: Smart Invert leaves the visualization alone
+            // OUT-005-R1: device only, above the visual and scaled with it; never in the visual's view or output.
+            SafeAreaGuidesLayer(setting: coordinator.safeAreaGuides, external: coordinator.externalDisplay,
+                                output: coordinator.externalOutput)
+                .splitOutputScaled()
         }
     }
 
@@ -509,6 +513,7 @@ struct VisualizerView: View {
                      recordingQuality: coordinator.recordingQuality,   // REC-005
                      recordingCountdown: coordinator.recordingCountdown,   // REC-007
                      sceneHUD: coordinator.sceneHUD,   // UIX-013
+                     safeAreaGuides: coordinator.safeAreaGuides,   // OUT-005
                      oneHanded: coordinator.oneHanded,   // ACC-009
                      externalOutput: coordinator.externalOutput,   // OUT-004
                      recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
@@ -522,6 +527,7 @@ struct VisualizerView: View {
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
                      hapticBeat: coordinator.hapticBeat,   // ACC-007
+                     sceneRotation: coordinator.sceneRotation,   // SHOW-013
                      performanceReport: coordinator.performanceReport,   // PERF-012
                      announcer: coordinator.announcer)   // ACC-005-R7
             .environment(\.parameterShelf, coordinator.parameterShelf)   // UIX-004-R1: Pin to Shelf in Inspect
@@ -615,6 +621,9 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.particleGravity) { coordinator.visualSettingsChanged() }   // VIS-008
         .onChange(of: coordinator.settings.particleOrbitRadius) { coordinator.visualSettingsChanged() }   // VIS-009
+        .onChange(of: coordinator.settings.noiseFieldFrequency) { coordinator.visualSettingsChanged() }   // VIS-013
+        .onChange(of: coordinator.settings.noiseFieldOctaves) { coordinator.visualSettingsChanged() }   // VIS-013
+        .onChange(of: coordinator.settings.noiseFieldSeed) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 

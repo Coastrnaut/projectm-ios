@@ -35,6 +35,9 @@
 //   `settings.particleFountain.gravity` (`low`/`medium`/`high`; anything else → medium). Glow is shared; Bars does not apply.
 // * Particle orbit (VIS-009-R10): `settings.visual` may also be `particleOrbit`; its radius, key
 //   `settings.particleOrbit.radius` (`small`/`medium`/`large`; anything else → medium). Glow is shared; Bars does not apply.
+// * Noise field (VIS-013-R9): `settings.visual` may also be `noiseField`; keys `settings.noiseField.frequency`
+//   (`low`/`medium`/`high`; anything else → medium), `settings.noiseField.octaves` (Int 1…6; anything else → 4) and
+//   `settings.noiseField.seed` (Int 0…65535; absent or outside → 1301). Glow is shared; Bars does not apply.
 // * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
 //   `settings.spectrum.attack` (0, 25, 50 or 100) and `settings.spectrum.release` (0, 100, 250 or
 //   500), Int milliseconds; anything else → 0 (Instant, today's look).
@@ -65,7 +68,7 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
+// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, VIS-013-R9 the three noise field keys, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
 // `settings.visual.colorBlindSafePalette`).
 // * Sensory safety (ACC-012-R8): the profile and its custom limits, four `settings.sensorySafety.*` keys owned by
 //   `SensorySafetySetting`; `safetyClamp` combines them with Reduce flashing (stricter wins, ADR-0049).
@@ -104,6 +107,9 @@ final class AppSettings {
     static let mandalaPetalKey = "settings.mandala.petal"
     static let particleGravityKey = "settings.particleFountain.gravity"   // VIS-008
     static let particleOrbitRadiusKey = "settings.particleOrbit.radius"   // VIS-009
+    static let noiseFieldFrequencyKey = "settings.noiseField.frequency"   // VIS-013
+    static let noiseFieldOctavesKey = "settings.noiseField.octaves"   // VIS-013
+    static let noiseFieldSeedKey = "settings.noiseField.seed"   // VIS-013
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
@@ -138,11 +144,11 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
-                          ShowTransportCoordinator.loopKey] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017, SHOW-003, SHOW-007
+                          ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -312,6 +318,27 @@ final class AppSettings {
     /// VIS-009: the particle orbit's radius (Medium by default); the manual value of `visual.particleOrbit.radius`.
     var particleOrbitRadius: ParticleOrbitRadius {
         didSet { defaults.set(particleOrbitRadius.rawValue, forKey: Self.particleOrbitRadiusKey) }
+    }
+
+    /// VIS-013: the noise field's frequency (Medium by default).
+    var noiseFieldFrequency: NoiseFieldFrequency {
+        didSet { defaults.set(noiseFieldFrequency.rawValue, forKey: Self.noiseFieldFrequencyKey) }
+    }
+
+    /// VIS-013: the noise field's octaves (1…6, 4 by default).
+    var noiseFieldOctaves: Int {
+        didSet {
+            if !NoiseFieldConfiguration.octaveRange.contains(noiseFieldOctaves) { noiseFieldOctaves = NoiseFieldConfiguration.defaultOctaves }
+            defaults.set(noiseFieldOctaves, forKey: Self.noiseFieldOctavesKey)
+        }
+    }
+
+    /// VIS-013: the noise field's seed (0…65535, 1301 by default).
+    var noiseFieldSeed: Int {
+        didSet {
+            if !NoiseFieldConfiguration.seedRange.contains(noiseFieldSeed) { noiseFieldSeed = NoiseFieldConfiguration.defaultSeed }
+            defaults.set(noiseFieldSeed, forKey: Self.noiseFieldSeedKey)
+        }
     }
 
     /// VIS-007: the mandala's rotational symmetry N (6 by default; only `MandalaConfiguration.supportedSymmetries`).
@@ -484,6 +511,11 @@ final class AppSettings {
         mandalaPetal = defaults.string(forKey: Self.mandalaPetalKey).flatMap(MandalaPetalStyle.init(rawValue:)) ?? .petal
         particleGravity = defaults.string(forKey: Self.particleGravityKey).flatMap(ParticleGravity.init(rawValue:)) ?? .medium   // VIS-008
         particleOrbitRadius = defaults.string(forKey: Self.particleOrbitRadiusKey).flatMap(ParticleOrbitRadius.init(rawValue:)) ?? .medium   // VIS-009
+        noiseFieldFrequency = defaults.string(forKey: Self.noiseFieldFrequencyKey).flatMap(NoiseFieldFrequency.init(rawValue:)) ?? .medium   // VIS-013
+        noiseFieldOctaves = Self.storedInt(defaults, Self.noiseFieldOctavesKey, in: NoiseFieldConfiguration.octaveRange,
+                                           fallback: NoiseFieldConfiguration.defaultOctaves)
+        noiseFieldSeed = Self.storedInt(defaults, Self.noiseFieldSeedKey, in: NoiseFieldConfiguration.seedRange,
+                                        fallback: NoiseFieldConfiguration.defaultSeed)
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
@@ -552,6 +584,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case particleFountain
     /// The native particle orbit (VIS-009).
     case particleOrbit
+    /// The native noise field (VIS-013).
+    case noiseField
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -573,6 +607,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .mandala: "Mandala"
         case .particleFountain: "Particle Fountain"
         case .particleOrbit: "Particle Orbit"
+        case .noiseField: "Noise Field"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -583,7 +618,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     /// Drawn by the native spectrum host instead of projectM.
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
-        || self == .particleOrbit }
+        || self == .particleOrbit || self == .noiseField }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum }
@@ -750,5 +785,34 @@ enum ParticleOrbitRadius: String, CaseIterable, Sendable {
         case .medium: 0.5
         case .large: 0.65
         }
+    }
+}
+
+/// VIS-013-R4, R9: the noise field's frequency; `cells` is the number of noise cells across the shorter side.
+enum NoiseFieldFrequency: String, CaseIterable, Sendable {
+    case low, medium, high
+
+    var title: String {
+        switch self {
+        case .low: "Low"
+        case .medium: "Medium"
+        case .high: "High"
+        }
+    }
+
+    var cells: Double {
+        switch self {
+        case .low: 2
+        case .medium: 4
+        case .high: 8
+        }
+    }
+}
+
+extension AppSettings {
+    /// VIS-013: an Int stored under `key` when present and in `range`, else `fallback` (absent reads `fallback`, not 0).
+    static func storedInt(_ defaults: UserDefaults, _ key: String, in range: ClosedRange<Int>, fallback: Int) -> Int {
+        guard let value = defaults.object(forKey: key) as? Int, range.contains(value) else { return fallback }
+        return value
     }
 }

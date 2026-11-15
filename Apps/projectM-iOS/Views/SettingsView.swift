@@ -92,6 +92,8 @@ struct SettingsView: View {
     var recordingCountdown: RecordingCountdownSetting?
     /// UIX-013: the scene performance HUD switch (nil hides the row, e.g. in previews).
     var sceneHUD: SceneHUDSetting? = nil
+    /// OUT-005: the safe-area guides (nil hides the section, e.g. in previews).
+    var safeAreaGuides: SafeAreaGuideSetting? = nil
     /// ACC-009: the one-handed layout (nil hides the section, e.g. in previews; iPhone only).
     var oneHanded: OneHandedSetting? = nil
     /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
@@ -117,6 +119,8 @@ struct SettingsView: View {
     var powerProfile: PowerProfileSetting? = nil
     /// ACC-007: haptic beat pulses (nil hides the section, e.g. in previews).
     var hapticBeat: HapticBeatCoordinator? = nil
+    /// SHOW-013: auto scene rotation (nil hides the section, e.g. in previews).
+    var sceneRotation: SceneRotationCoordinator? = nil
     /// PERF-012: Export performance report (Settings → Performance).
     var performanceReport: PerformanceReportExport? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
@@ -339,6 +343,7 @@ struct SettingsView: View {
                 if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
                 if settings.visual == .particleFountain { particleFountainOptions }   // VIS-008-R10
                 if settings.visual == .particleOrbit { particleOrbitOptions }   // VIS-009-R10
+                if settings.visual == .noiseField { NoiseFieldOptions(settings: settings) }   // VIS-013-R9
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }
@@ -377,7 +382,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("nativeVisualUnavailableFooter")
             } else {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Particle Fountain throws a burst of particles up from the bottom on each onset, a sudden new sound: stronger onsets throw more; they arc under gravity, slow down and fade; with Reduce Motion there are fewer and they move more slowly. Particle Orbit circles particles around the centre: the ring swells with the bass and the centre pulses on each beat; with Reduce Motion they turn at half speed and swell more gently. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
+                    Text("projectM plays presets. Circular Spectrum draws one bar per frequency band, low to high, clockwise from the top. Linear Spectrum draws them side by side, low to high, with caps that mark recent peaks. Oscilloscope draws the sound's waveform, held still when the sound repeats. Lissajous plots the left channel against the right: mono sound is a straight line, wide stereo fills the space; Mid/Side turns it so mono is vertical. Radial Waveform wraps the waveform around a ring: louder sound pushes it out and pulls it in, silence is a still circle. Beat Rings sends a ring out from the centre on each beat that grows and fades; with Reduce flashing on, at most three rings start per second. Mandala repeats a petal around the centre 3 to 12 times, optionally mirrored, shaped by the low, mid and high sound and turning slowly (half as fast with Reduce Motion). Particle Fountain throws a burst of particles up from the bottom on each onset, a sudden new sound: stronger onsets throw more; they arc under gravity, slow down and fade; with Reduce Motion there are fewer and they move more slowly. Particle Orbit circles particles around the centre: the ring swells with the bass and the centre pulses on each beat; with Reduce Motion they turn at half speed and swell more gently. Noise Field draws soft layered clouds of colour from a seed: the same seed and settings always give the same pattern; Frequency sets how coarse it is, Octaves how much fine detail; bass makes it swirl and loudness brightens it gently; with Reduce Motion it drifts and swirls half as much. Camera shows your rear or front camera behind a circular spectrum, only while it is on screen; the picture is never sent. Photo shows a picture you choose behind a circular spectrum. Video plays a video you choose, without its sound, behind a circular spectrum. Text shows your own words over a circular spectrum.")
                     if settings.visual.isNative {
                         if glowUnavailable {
                             Text(AppCoordinator.glowUnavailableMessage)
@@ -554,6 +559,7 @@ struct SettingsView: View {
         }
         .id("performance")
         if let sceneHUD { SceneHUDSection(setting: sceneHUD).id("sceneHUD") }   // UIX-013-R1
+        if let safeAreaGuides { SafeAreaGuidesSection(setting: safeAreaGuides).id("safeAreaGuides") }   // OUT-005-R7
         if let oneHanded { HandednessSections(setting: oneHanded) }   // ACC-010-R1 (all devices), ACC-009-R1 (iPhone)
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
         if let layerInspector { MotionModulationSection(coordinator: layerInspector.motionModulation).id("motion") }   // CAM-011 (the app coordinator)
@@ -588,6 +594,7 @@ struct SettingsView: View {
             }
             .id("show")
             QuantizeCueStepsSection(quantizer: settings.showCueQuantizer).id("quantizeCues")   // SHOW-003-R1
+            if let sceneRotation { SceneRotationSection(rotation: sceneRotation, show: show).id("sceneRotation") }   // SHOW-013-R7
         }
         if let openGuide {   // UIX-001-R8
             Section {

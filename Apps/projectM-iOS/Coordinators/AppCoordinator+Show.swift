@@ -62,6 +62,7 @@ extension AppCoordinator {
         _ = showAutoAdvance   // SHOW-002: hooks into the show's step path now
         _ = showTransport   // SHOW-007: Loop reaches the timed advance from launch
         _ = showKeyframes   // SHOW-008: tracks are sampled from launch
+        _ = sceneRotation   // SHOW-013: chained onto `cueStarted` after SHOW-002's driver
         show.availability = { [weak self] () -> StoredMediaAvailability in
             self?.storedMediaAvailability ?? StoredMediaAvailability(photos: [], videos: [])
         }

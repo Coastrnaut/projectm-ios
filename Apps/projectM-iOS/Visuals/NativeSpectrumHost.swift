@@ -65,6 +65,8 @@
 //   stamped with the frame's time. After the modulation step each frame, `driveParticleOrbit` hands the generator
 //   its base radius and bass through `ParticleOrbitRadiusDrive` (unbound: the Radius setting and the kick envelope;
 //   bound: the modulator's value and no bass). Radius changes only its configuration; `reduceMotion` slows it (R9).
+// * Noise field (VIS-013): reads the frame's bands (ANL-002) like the spectra; frequency, octaves and seed change only its
+//   configuration; `reduceMotion` halves its drift and band warp (R8).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -214,16 +216,18 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// The palette the current generator draws with (tests).
-    var generatorPalette: VisualPalette? {
-        (generator as? CircularSpectrumGenerator)?.configuration.palette
-            ?? (generator as? LinearSpectrumGenerator)?.configuration.palette
-            ?? (generator as? OscilloscopeGenerator)?.configuration.palette
-            ?? (generator as? LissajousGenerator)?.configuration.palette
-            ?? (generator as? RadialWaveformGenerator)?.configuration.palette
-            ?? (generator as? BeatRingGenerator)?.configuration.palette
-            ?? (generator as? MandalaGenerator)?.configuration.palette
-            ?? (generator as? ParticleFountainGenerator)?.configuration.palette
-            ?? (generator as? ParticleOrbitGenerator)?.configuration.palette
+    var generatorPalette: VisualPalette? {   // statements, not one `??` chain (CI's type-check budget)
+        if let g = generator as? CircularSpectrumGenerator { return g.configuration.palette }
+        if let g = generator as? LinearSpectrumGenerator { return g.configuration.palette }
+        if let g = generator as? OscilloscopeGenerator { return g.configuration.palette }
+        if let g = generator as? LissajousGenerator { return g.configuration.palette }
+        if let g = generator as? RadialWaveformGenerator { return g.configuration.palette }
+        if let g = generator as? BeatRingGenerator { return g.configuration.palette }
+        if let g = generator as? MandalaGenerator { return g.configuration.palette }
+        if let g = generator as? ParticleFountainGenerator { return g.configuration.palette }
+        if let g = generator as? ParticleOrbitGenerator { return g.configuration.palette }
+        if let g = generator as? NoiseFieldGenerator { return g.configuration.palette }   // VIS-013
+        return nil
     }
 
     private func applyPalette() {
@@ -263,8 +267,15 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = orbit.configuration
             configuration.palette = palette
             orbit.configuration = configuration
+        } else if let field = generator as? NoiseFieldGenerator {   // VIS-013
+            var configuration = field.configuration
+            configuration.palette = palette
+            field.configuration = configuration
         }
     }
+
+    /// VIS-013: the noise field's generator (tests; nil for another visual).
+    var noiseFieldGenerator: NoiseFieldGenerator? { generator as? NoiseFieldGenerator }
 
     /// VIS-009: the particle orbit's generator (tests; nil for another visual).
     var particleOrbitGenerator: ParticleOrbitGenerator? { generator as? ParticleOrbitGenerator }
@@ -291,6 +302,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = orbit.configuration   // VIS-009-R9: half speed, smaller pulse, slower radius
             configuration.reduceMotion = reduceMotion
             orbit.configuration = configuration
+        }
+        if let field = generator as? NoiseFieldGenerator, field.configuration.reduceMotion != reduceMotion {
+            var configuration = field.configuration   // VIS-013-R8: half drift, half band warp
+            configuration.reduceMotion = reduceMotion
+            field.configuration = configuration
         }
         guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
         var configuration = mandala.configuration
@@ -497,6 +513,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                        configuration: ParticleOrbitConfiguration(radius: radius.value))
             generator.barCount = barCount
             return generator
+        case let .noiseField(frequency, octaves, seed):   // VIS-013
+            let generator = try NoiseFieldGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                    configuration: NoiseFieldConfiguration(frequency: frequency.cells, octaves: octaves, seed: seed))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -572,6 +593,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = orbit.configuration   // VIS-009: the base radius, eased in by the simulation
             configuration.radius = radius.value
             orbit.configuration = configuration
+        } else if case let .noiseField(frequency, octaves, seed) = newStyle, let field = generator as? NoiseFieldGenerator {
+            var configuration = field.configuration   // VIS-013: in place, from the next frame
+            configuration.frequency = frequency.cells
+            configuration.octaves = octaves
+            configuration.seed = seed
+            field.configuration = configuration
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -790,6 +817,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
         case let .particleFountain(gravity): return "\(gravity.title) gravity, \(glow)"   // VIS-008-R12
         case let .particleOrbit(radius): return "\(radius.title) radius, \(glow)"   // VIS-009-R12
+        case let .noiseField(frequency, octaves, seed):   // VIS-013-R12
+            return "\(frequency.title) frequency, \(octaves) octaves, seed \(seed), \(glow)"
         }
     }
 
@@ -1136,6 +1165,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case particleFountain(gravity: ParticleGravity)
     /// VIS-009: the particle orbit.
     case particleOrbit(radius: ParticleOrbitRadius)
+    /// VIS-013: the noise field.
+    case noiseField(frequency: NoiseFieldFrequency, octaves: Int, seed: Int)
 
     /// VIS-006, VIS-008, VIS-009: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1164,6 +1195,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .mandala: VisualChoice.mandala.title
         case .particleFountain: VisualChoice.particleFountain.title
         case .particleOrbit: VisualChoice.particleOrbit.title
+        case .noiseField: VisualChoice.noiseField.title
         }
     }
 
@@ -1178,6 +1210,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .mandala: "mandala"
         case .particleFountain: "particleFountain"
         case .particleOrbit: "particleOrbit"
+        case .noiseField: "noiseField"
         }
     }
 }

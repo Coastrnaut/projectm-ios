@@ -44,6 +44,7 @@ final class LibraryBackupAppTests: XCTestCase {
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9
                PowerProfileSetting.key]   // PERF-008
             + RecordingQualitySetting.aspectKeys   // REC-014-R7 (excluded: this device's screen and memory)
+            + SafeAreaGuideSetting.allKeys   // OUT-005-R6
             + RecentPresetsStore.allKeys   // PRE-006-R7
             + OSCPeersCoordinator.allKeys   // OSC-008-R10
             + HapticBeatCoordinator.allKeys   // ACC-007-R8
@@ -62,6 +63,7 @@ final class LibraryBackupAppTests: XCTestCase {
                         ParameterQuantizer.key,   // MOD-017: a performance timing choice of this device
                         ShowCueQuantizer.key,   // SHOW-003: a performance timing choice of this device
                         ShowTransportCoordinator.loopKey,   // SHOW-007: a performance choice of this device
+                        SceneRotationCoordinator.key,   // SHOW-013: a performance choice of this device
                         SplitEditorSetting.key])   // UIX-007-R7
                        .union(RecordingQualitySetting.aspectKeys)   // REC-014-R7
                        .union(ExternalOutputSetting.keys))   // OUT-004-R8, OUT-003-R7

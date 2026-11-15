@@ -5,6 +5,7 @@
 // ProceduralMaterialShaders.swift operation for operation: the lattice hash is integer arithmetic (identical on CPU
 // and GPU), the interpolation is Float. Nothing here uses a random number source, the clock or device state, so the
 // same settings always give the same values. Plain Swift; builds on Linux.
+import VisualGenerators
 
 /// Noise Flow's noise settings as the shader reads them (clamped the same way).
 public struct NoiseTextureSettings: Sendable, Equatable {
@@ -38,58 +39,28 @@ public struct NoiseTextureSettings: Sendable, Equatable {
 }
 
 public enum NoiseTextureReference {
+    // VIS-013-R2: the core lives in VisualGenerators' `SeededNoise` (shared with the native Noise Field); these
+    // forward to it so the material's API and values are unchanged.
+
     /// The 32-bit finalizer ("lowbias32").
-    public static func mix(_ value: UInt32) -> UInt32 {
-        var h: UInt32 = value
-        h ^= h >> 16
-        h = h &* 0x7FEB_352D
-        h ^= h >> 15
-        h = h &* 0x846C_A68B
-        h ^= h >> 16
-        return h
-    }
+    public static func mix(_ value: UInt32) -> UInt32 { SeededNoise.mix(value) }
 
     /// The hash key of one octave of one field (0 = noise, 1/2 = warp x/y).
     public static func key(seed: UInt32, octave: Int, field: UInt32) -> UInt32 {
-        seed | (UInt32(octave) << 16) | (field << 19)
+        SeededNoise.key(seed: seed, octave: octave, field: field)
     }
 
     /// `mat_nhash`: 0…1 (24-bit) for a lattice cell; cells wrap every 4096 per axis.
     public static func hash(cellX: Int32, cellY: Int32, key: UInt32) -> Float {
-        var h: UInt32 = (UInt32(bitPattern: cellX) & 4095) | ((UInt32(bitPattern: cellY) & 4095) << 12)
-        h ^= key &* 0x9E37_79B9
-        return Float(mix(h) >> 8) * (1.0 / 16_777_216.0)
+        SeededNoise.hash(cellX: cellX, cellY: cellY, key: key)
     }
 
     /// `mat_snoise`: smooth value noise.
-    public static func noise(_ q: SIMD2<Float>, key: UInt32) -> Float {
-        let i: SIMD2<Float> = SIMD2(q.x.rounded(.down), q.y.rounded(.down))
-        let f: SIMD2<Float> = q - i
-        let w: SIMD2<Float> = f * f * (SIMD2<Float>(repeating: 3) - 2 * f)
-        let cx: Int32 = Int32(i.x)
-        let cy: Int32 = Int32(i.y)
-        let a: Float = hash(cellX: cx, cellY: cy, key: key)
-        let b: Float = hash(cellX: cx &+ 1, cellY: cy, key: key)
-        let d: Float = hash(cellX: cx, cellY: cy &+ 1, key: key)
-        let e: Float = hash(cellX: cx &+ 1, cellY: cy &+ 1, key: key)
-        let top: Float = a + (b - a) * w.x
-        let bottom: Float = d + (e - d) * w.x
-        return top + (bottom - top) * w.y
-    }
+    public static func noise(_ q: SIMD2<Float>, key: UInt32) -> Float { SeededNoise.noise(q, key: key) }
 
     /// `mat_sfbm`: normalised fBm.
     public static func fbm(_ point: SIMD2<Float>, settings s: NoiseTextureSettings, octaves: Int, field: UInt32) -> Float {
-        var q: SIMD2<Float> = point
-        var sum: Float = 0
-        var amplitude: Float = 1
-        var norm: Float = 0
-        for octave in 0..<min(max(octaves, 1), 8) {
-            sum += amplitude * noise(q, key: key(seed: s.seed, octave: octave, field: field))
-            norm += amplitude
-            q = q * s.lacunarity + SIMD2<Float>(17.1, 9.2)
-            amplitude *= s.gain
-        }
-        return sum / max(norm, 1e-4)
+        SeededNoise.fbm(point, octaves: octaves, lacunarity: s.lacunarity, gain: s.gain, seed: s.seed, field: field)
     }
 
     /// The noise value n (0…1) at domain point `q` (= point · scale + drift). `lite` is the Low cost variant (no warp,
