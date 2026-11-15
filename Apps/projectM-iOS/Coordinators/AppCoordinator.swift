@@ -642,6 +642,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
+        #if DEBUG
+        // LibraryCheckUITests (PRE-018): the broken files are written right after the reset, in `init`, before anything
+        // can open the user preset store (the renderer's pending-trial run may open it before the library task).
+        UITestBrokenLibraryFixture.seedFilesIfRequested()
+        #endif
         if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
         if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
         if let scenes = try? SceneAutosaveStore.defaultDirectory() { try? FileManager.default.removeItem(at: scenes) }   // SCN-002: no scene
@@ -1046,9 +1051,6 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 presetLoader.library = library
                 // PRE-012: the imported presets are read first (a preset that ended the last launch
                 // is quarantined there), so the library never lists one that must not play.
-                #if DEBUG
-                UITestBrokenLibraryFixture.seedFilesIfRequested()   // LibraryCheckUITests (PRE-018)
-                #endif
                 await userPresets.load()
                 await userPresets.prepare(library: library, bundle: .main)
                 presets.attach(library)
