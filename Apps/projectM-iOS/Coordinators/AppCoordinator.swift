@@ -260,6 +260,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let logo: LogoCoordinator
     /// MED-011: the clock overlay's settings, its ticking and the compositor visuals' clock layers.
     let clock: ClockOverlayCoordinator
+    /// MED-012: the countdown overlay's settings, its timer and the compositor visuals' countdown layers.
+    let countdown: CountdownOverlayCoordinator
     /// UIX-011: palettes and the scene's palette link.
     let palettes: PaletteCoordinator
     /// MOD-010: the current scene's parameter macros (Settings › Macros).
@@ -494,6 +496,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         kenBurns = KenBurnsCoordinator.makeDefault(defaults: defaults)   // MED-007
         logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
         clock = ClockOverlayCoordinator.makeForApp(defaults: defaults)   // MED-011
+        countdown = CountdownOverlayCoordinator.makeForApp(defaults: defaults)   // MED-012
         palettes = PaletteCoordinator.makeDefault()   // UIX-011 (after FILE-005's pending restore and FILE-011's erase)
         macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
         videos = VideoCoordinator.makeDefault(defaults: defaults)
@@ -744,6 +747,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectStatusEvents()   // ACC-011
         connectExternalDisplay()   // OUT-002
         libraryBackup.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .library) }   // FILE-005-R12
+        countdown.announce = { [weak self] (text: String) in self?.announcer.announce(text, kind: .countdown) }   // MED-012-R4
         loadLibrary()
         loadAudioLibrary()
         #if DEBUG || PROJECTM_AUTOMATION
@@ -1280,6 +1284,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             cameraVisual = host
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
             clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
+            countdown.attach(to: host.compositor)   // MED-012-R7: the countdown above the clock
             cameraNoticeDismissed = false   // UIX-015-R7: a new attempt
         } catch {
             markNativeVisualUnavailable(error)
@@ -1322,6 +1327,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             applyLayerState(to: host.compositor)   // CMP-015
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
             clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
+            countdown.attach(to: host.compositor)   // MED-012-R7: the countdown above the clock
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1377,6 +1383,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             applyLayerState(to: host.compositor)   // CMP-015
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
             clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
+            countdown.attach(to: host.compositor)   // MED-012-R7: the countdown above the clock
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1428,6 +1435,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             applyLayerState(to: host.compositor)   // CMP-015
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
             clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
+            countdown.attach(to: host.compositor)   // MED-012-R7: the countdown above the clock
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1988,6 +1996,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midi.sceneBecame(active: active)   // MIDI-001-R7: no discovery outside the foreground
         warmStart.sceneBecame(active: active)   // PERF-009-R6: write the pipeline archive back
         motionModulation.setAppActive(active)   // CAM-011-R8: no motion sensor outside the foreground
+        if active { countdown.appBecameActive() }   // MED-012-R4: a countdown that ended in the background finishes once
         updateIdleTimer()
     }
 

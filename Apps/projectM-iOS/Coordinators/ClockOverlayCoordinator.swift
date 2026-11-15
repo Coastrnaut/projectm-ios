@@ -36,7 +36,7 @@ final class ClockOverlayCoordinator {
     @ObservationIgnored let source: any ClockSource
     @ObservationIgnored private let locale: Locale
     @ObservationIgnored private var text: ClockText
-    @ObservationIgnored private var layers: [WeakClockLayer] = []
+    @ObservationIgnored private let layers = OverlayTextLayers(kind: .clock)   // shared with MED-012's countdown
     @ObservationIgnored private var ticker: Task<Void, Never>?
 
     init(store: ClockOverlayStore?, source: any ClockSource = SystemClockSource(), locale: Locale = .autoupdatingCurrent) {
@@ -96,13 +96,11 @@ final class ClockOverlayCoordinator {
         updateTicker()
     }
 
-    private func push(_ spec: TextOverlaySpec) {
-        for layer in liveLayers() { layer.spec = spec }
-    }
+    private func push(_ spec: TextOverlaySpec) { layers.push(spec) }
 
     /// Runs the one-per-second task while shown and a layer is live.
     private func updateTicker() {
-        let run = settings.isShown && !liveLayers().isEmpty
+        let run = settings.isShown && !layers.isEmpty
         if run, ticker == nil {
             ticker = Task { @MainActor [weak self] in
                 while !Task.isCancelled {
@@ -119,7 +117,7 @@ final class ClockOverlayCoordinator {
 
     /// One tick of the task; false (and the task is dropped) when nothing needs the clock any more.
     private func keepTicking() -> Bool {
-        guard settings.isShown, !liveLayers().isEmpty else {
+        guard settings.isShown, !layers.isEmpty else {
             ticker = nil
             return false
         }
@@ -136,44 +134,12 @@ final class ClockOverlayCoordinator {
     /// refused it.
     @discardableResult
     func attach(to compositor: Compositor) -> TextLayerSource? {
-        let layer = TextLayerSource(device: compositor.device, name: "clock")
         tick()   // the current time for the layers already attached and this one
-        layer.spec = settings.spec(for: settings.isShown ? currentText : nil)
-        guard compositor.attachClock(layer) else { return nil }
-        layers = layers.filter { (box: WeakClockLayer) -> Bool in box.layer != nil } + [WeakClockLayer(layer)]
+        guard let layer = layers.attach(to: compositor, spec: settings.spec(for: settings.isShown ? currentText : nil)) else { return nil }
         updateTicker()
         return layer
     }
 
     /// Frames in which any live clock layer showed the clock (DEBUG probe, tests).
-    var framesShown: Int { liveLayers().reduce(0) { (sum: Int, layer: TextLayerSource) -> Int in sum + layer.framesShown } }
-
-    private func liveLayers() -> [TextLayerSource] { layers.compactMap { (box: WeakClockLayer) -> TextLayerSource? in box.layer } }
-}
-
-/// A weakly held clock layer (the compositor owns it).
-private struct WeakClockLayer {
-    weak var layer: TextLayerSource?
-    init(_ layer: TextLayerSource) { self.layer = layer }
-}
-
-extension Compositor {
-    /// MED-011-R6 (research MED-011-D4): adds `layer` as the top `.clock` entry of the applied stack, like MED-010's
-    /// `attachLogo`. Kept entries keep their layers and state; false when no stack is applied, a clock is already
-    /// there or the stack refuses it.
-    @discardableResult
-    func attachClock(_ layer: TextLayerSource) -> Bool {
-        guard var stack = appliedStack,
-              !stack.entries.contains(where: { (entry: LayerStackEntry) -> Bool in entry.descriptor.kind == .clock }) else { return false }
-        do {
-            try stack.add(LayerDescriptor(kind: .clock))
-            try apply(stack) { (entry: LayerStackEntry) throws(LayerSourceError) -> any LayerSource in
-                guard entry.descriptor.kind == .clock else { throw .notReady }
-                return layer
-            }
-        } catch {
-            return false
-        }
-        return true
-    }
+    var framesShown: Int { layers.framesShown }
 }

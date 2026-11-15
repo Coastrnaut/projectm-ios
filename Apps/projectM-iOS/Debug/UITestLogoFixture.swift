@@ -59,6 +59,7 @@ struct MediaProbes: View {
     @ViewBuilder private var overlayProbes: some View {
         LogoProbe(logo: logo)
         ClockProbe(clock: clock)
+        CountdownProbe(countdown: coordinator.countdown)   // MED-012
     }
 
     private var slideshow: SlideshowCoordinator { coordinator.slideshow }
