@@ -17,8 +17,7 @@
   "P2": {
    "audited": 34,
    "implementing": 2,
-   "integrated": 42,
-   "unit_passed": 1
+   "integrated": 43
   },
   "P3": {
    "audited": 9
@@ -27,9 +26,8 @@
  "by_state": {
   "audited": 45,
   "implementing": 3,
-  "integrated": 276,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "integrated": 277,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -53,7 +51,6 @@
    "FX-017",
    "FX-018",
    "MED-005",
-   "MED-012",
    "MIDI-009",
    "MIDI-010",
    "OSC-004",
@@ -89,7 +86,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "49 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "48 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -1398,10 +1395,10 @@
    "branch": "feature/med-012",
    "branch_sha": "bd402e8ddc4e413f92778e6f6cdf57bcb918f3d9",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "3f55e40312794c39b9195ad7ec0687a77d4eb4da",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-013": {
    "attempts": 0,
@@ -3926,6 +3923,11 @@
    "sha": "12cfdd4372a55015b79061196ad4b671ff427b9f"
   },
   {
+   "branch": "feature/med-012",
+   "id": "MED-012",
+   "sha": "3f55e40312794c39b9195ad7ec0687a77d4eb4da"
+  },
+  {
    "branch": "feature/med-013",
    "id": "MED-013",
    "sha": "52fabb13"
@@ -4761,5 +4763,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:16:33Z"
+ "updated": "2026-11-15T03:20:12Z"
 }

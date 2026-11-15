@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T03:16:33Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T03:20:12Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 45 |
 | implementing | 3 |
-| unit_passed | 1 |
-| integrated | 276 |
+| integrated | 277 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 0 | 1 | 0 | 150 | 0 |
-| P2 | 34 | 2 | 1 | 42 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 0 | 1 | 150 | 0 |
+| P2 | 34 | 2 | 43 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 49 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 48 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -147,6 +146,7 @@ The physical-device suite may **not** start:
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-010 | Logo overlay | `6ac0c21c` | `feature/med-010` |
 | MED-011 | Clock overlay | `12cfdd4372a5` | `feature/med-011` |
+| MED-012 | Countdown overlay | `3f55e4031279` | `feature/med-012` |
 | MED-013 | Media asset relinking | `52fabb13` | `feature/med-013` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
@@ -1605,7 +1605,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/swift-test_ShowControl.log`)
 - `swift test Compositor 1060, LibraryBackup 87; postmerge projectM-iOSTests 1185 + Clock/Logo UI tests 2`: pass at `12cfdd4372a5` (log `.autonomous/logs/integration/batch100/app-tests.log`)
 
-### MED-012 Countdown overlay (unit_passed)
+### MED-012 Countdown overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/script-tests.log`)
@@ -1618,6 +1618,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_ShowControl.log`)
+- `swift test Compositor 1069, SceneFormat 203, LibraryBackup 87; postmerge projectM-iOSTests 1204 + Countdown/Clock UI tests 2`: pass at `3f55e4031279` (log `.autonomous/logs/integration/batch105/app-tests.log`)
 
 ### MED-013 Media asset relinking (integrated)
 - `python3 scripts/check_compliance.py`: pass at `3e9e52be2928` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-013/20261114T094349/compliance.log`)
