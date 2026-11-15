@@ -4,13 +4,13 @@
 
 ## Phase 1: Foundational - model (VIS-017-R2 to R6)
 
-- [ ] VIS-017-T01 `SignedDistanceQuality`, `SignedDistanceSettings`, `SignedDistanceScene` (constants, primitives, scene distance, bounded march, normals, shading, CPU mirror of one pixel) and `SignedDistanceShader` (MSL text, same operations) in `Packages/VisualGenerators/Sources/VisualGenerators/SignedDistanceScene.swift`.
-- [ ] VIS-017-T02 `SignedDistanceDrive` and `SignedDistancePose` (swell, spin, angle, brightness on the injected clock; Reduce Motion; sanitizing) in `SignedDistanceDrive.swift`.
-- [ ] VIS-017-T03 `NoiseFieldConfiguration.signedDistance` (+ factory, `clamped()` turns the other modes off) in `NoiseFieldConfiguration.swift`.
+- [X] VIS-017-T01 `SignedDistanceQuality`, `SignedDistanceSettings`, `SignedDistanceScene` (constants, primitives, scene distance, bounded march, normals, shading, CPU mirror of one pixel) and `SignedDistanceShader` (MSL text, same operations) in `Packages/VisualGenerators/Sources/VisualGenerators/SignedDistanceScene.swift`. — Verified 2026-11-15: swift test --filter SignedDistanceSceneTests 7 passed (0.21 s host; 0.20 s in the -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE Linux shape)
+- [X] VIS-017-T02 `SignedDistanceDrive` and `SignedDistancePose` (swell, spin, angle, brightness on the injected clock; Reduce Motion; sanitizing) in `SignedDistanceDrive.swift`. — Verified 2026-11-15: swift test --filter SignedDistanceSceneTests 7 passed (0.21 s host; 0.20 s in the -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE Linux shape)
+- [X] VIS-017-T03 `NoiseFieldConfiguration.signedDistance` (+ factory, `clamped()` turns the other modes off) in `NoiseFieldConfiguration.swift`. — Verified 2026-11-15: swift test --filter SignedDistanceSceneTests 7 passed (0.21 s host; 0.20 s in the -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE Linux shape)
 
 ## Phase 2: User Stories 2 + 3 - step caps and finiteness on the CPU (R3 to R5; S1, S2)
 
-- [ ] VIS-017-T04 [US2] [US3] `SignedDistanceSceneTests` (`Packages/VisualGenerators/Tests/VisualGeneratorsTests/SignedDistanceSceneTests.swift`): caps ordered and ≤ 128; over a 64 × 48 ray grid plus grazing rays every march ≤ its cap, the High grid reaches more steps than the Low cap; misses take 0 steps; every primitive lies inside the bounding sphere for any pose (scene distance at radius 2 ≥ 0); every primitive is hit somewhere; extreme poses (NaN, ±inf, huge) give finite colours in 0…1; drive bounds (radius, spin, brightness, angle wrap, Reduce Motion half, time backwards, long gap). Runs in the Linux shape.
+- [X] VIS-017-T04 [US2] [US3] `SignedDistanceSceneTests` (`Packages/VisualGenerators/Tests/VisualGeneratorsTests/SignedDistanceSceneTests.swift`): caps ordered and ≤ 128; over a 64 × 48 ray grid plus grazing rays every march ≤ its cap, the High grid reaches more steps than the Low cap; misses take 0 steps; every primitive lies inside the bounding sphere for any pose (scene distance at radius 2 ≥ 0); every primitive is hit somewhere; extreme poses (NaN, ±inf, huge) give finite colours in 0…1; drive bounds (radius, spin, brightness, angle wrap, Reduce Motion half, time backwards, long gap). Runs in the Linux shape. — Verified 2026-11-15: swift test --filter SignedDistanceSceneTests 7 passed (0.21 s host; 0.20 s in the -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE Linux shape)
 
 ## Phase 3: User Story 1 + 4 - the picture on Metal and its safety (R1, R6, R7, R9, R12; S2 to S4)
 
