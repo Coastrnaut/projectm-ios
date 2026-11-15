@@ -6,12 +6,13 @@
 //   controls can hide while it is open and the badge stays.
 // * `SceneLockSection`: Settings' first section: a "Lock scene" switch; turning it off asks first (R2).
 // * `SceneLockNote`: the one-line note on edit screens ("Scene locked. Unlock the scene to edit.").
+// * SHOW-015: the same lock is the performance lock (collections, Scene Folders, Storage erase and restore).
 // * Every unlock goes through the "Unlock scene?" confirmation; locking needs none.
 import SwiftUI
 
 extension SceneLock {
     static let unlockTitle = "Unlock scene?"
-    static let unlockMessage = "Visual settings, snapshots, macros, the show's cues and undo can be edited again."
+    static let unlockMessage = "Visual settings, snapshots, macros, the show's cues, scene folders and preset collections can be edited, deleted and reordered again, and Erase and Restore are available."
 }
 
 struct SceneLockBadge: View {
@@ -68,8 +69,8 @@ struct SceneLockSection: View {
             Text("Scene lock")
         } footer: {
             Text(lock.isLocked
-                 ? "Scene locked. Visual settings, layers, snapshots, macros, the show's cues and undo can't be changed. Cues, blackout, tap tempo and presets still work."
-                 : "Locks the scene for a performance: edits are refused, while cues, blackout, tap tempo and presets keep working.")
+                 ? "Scene locked. Visual settings, layers, snapshots, macros, the show's cues and undo can't be changed, and scene folders and preset collections can't be deleted or reordered; Erase and Restore are off. Cues, blackout, tap tempo, presets and Reduce flashing still work."
+                 : "Locks the scene for a performance: edits, deletes and reorders are refused, while cues, blackout, tap tempo, presets and Reduce flashing keep working.")
         }
         .id("sceneLock")
     }

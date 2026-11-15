@@ -104,6 +104,7 @@ public enum LibrarySettingsPolicy {
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   // VIS-013-R9
         "settings.kaleidoscope.wedges",   // VIS-014-R9
+        "settings.tunnel.pace",   // VIS-015-R9
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",
@@ -118,6 +119,7 @@ public enum LibrarySettingsPolicy {
         photoKey, slideshowKey, "settings.text.overlay",
         "settings.photo.kenBurns",   // MED-007-R9: a preference (the photo's pan and zoom); erased with Settings
         logoKey, logoPlacementKey,   // MED-010
+        "settings.clock.overlay",   // MED-011-R9: a preference (shown, format, placement); erased with Settings
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
         "settings.visualizer.sceneHUD",   // UIX-013-R11: a preference (Bool); erased with Settings

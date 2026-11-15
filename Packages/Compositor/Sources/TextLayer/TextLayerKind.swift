@@ -7,3 +7,9 @@ extension LayerKind {
     /// feed the same layer changing strings.
     public static let text = LayerKind("text", maximumInstances: 1)
 }
+
+extension LayerKind {
+    /// MED-011: the clock overlay, a MED-009 text layer fed the formatted local time, on top of a compositor
+    /// visual's stack. One per stack.
+    public static let clock = LayerKind("clock", maximumInstances: 1)
+}

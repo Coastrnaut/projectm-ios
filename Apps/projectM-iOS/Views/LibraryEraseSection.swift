@@ -14,6 +14,7 @@ struct LibraryEraseSection: View {
             Button("Erase Data…", role: .destructive) { model.openSheet() }
                 .disabled(!model.canStart)
                 .accessibilityIdentifier("libraryEraseButton")
+            if model.isLocked { SceneLockNote() }   // SHOW-015-R3
             if model.pending == nil && model.isRestorePending() {
                 Text(LibraryEraseCoordinator.restorePendingNote).font(.footnote).accessibilityIdentifier("libraryEraseRestoreNote")
             }

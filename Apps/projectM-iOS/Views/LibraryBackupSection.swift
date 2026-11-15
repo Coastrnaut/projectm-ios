@@ -37,8 +37,9 @@ struct LibraryBackupSection: View {
                 .disabled(model.isWorking)
                 .accessibilityIdentifier("libraryBackupButton")
             Button("Restore from Backup…") { if model.restoreTapped() { model.showPicker = true } }
-                .disabled(model.isWorking || model.isRestorePending || model.erase.pending != nil)   // FILE-011: not while an erase waits
+                .disabled(model.isWorking || model.isRestorePending || model.erase.pending != nil || model.isRestoreLocked)   // FILE-011; SHOW-015-R3
                 .accessibilityIdentifier("libraryRestoreButton")
+            if model.isRestoreLocked { SceneLockNote() }   // SHOW-015-R3
             if model.isWorking {
                 ProgressView().accessibilityLabel("Working")
             }

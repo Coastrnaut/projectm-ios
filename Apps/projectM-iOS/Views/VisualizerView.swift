@@ -490,6 +490,7 @@ struct VisualizerView: View {
                      slideshow: coordinator.slideshow,   // MED-006
                      kenBurns: coordinator.kenBurns,   // MED-007
                      logo: coordinator.logo,   // MED-010
+                     clock: coordinator.clock,   // MED-011
                      videos: coordinator.videos, texts: coordinator.texts,
                      show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
                      libraryBackup: coordinator.libraryBackup,   // FILE-005
@@ -625,6 +626,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.noiseFieldOctaves) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.noiseFieldSeed) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.kaleidoscopeWedges) { coordinator.visualSettingsChanged() }   // VIS-014
+        .onChange(of: coordinator.settings.tunnelPace) { coordinator.visualSettingsChanged() }   // VIS-015
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 

@@ -72,6 +72,7 @@ final class SettingsTests: XCTestCase {
         settings.noiseFieldOctaves = 6
         settings.noiseFieldSeed = 7
         settings.kaleidoscopeWedges = 9         // VIS-014-R9
+        settings.tunnelPace = .double           // VIS-015-R9
         settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
@@ -101,7 +102,8 @@ final class SettingsTests: XCTestCase {
                                                                    AppSettings.textOverlayKey,
                                                                    AppSettings.slideshowKey,   // MED-006: SlideshowStore
                                                                    AppSettings.kenBurnsKey,   // MED-007: KenBurnsStore
-                                                                   AppSettings.logoIDKey, AppSettings.logoPlacementKey]), "FR-065")   // MED-010: LogoStore
+                                                                   AppSettings.logoIDKey, AppSettings.logoPlacementKey,   // MED-010: LogoStore
+                                                                   AppSettings.clockOverlayKey]), "FR-065")   // MED-011: ClockOverlayStore
     }
 
     /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.
@@ -153,7 +155,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013, VIS-014
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013, VIS-014, VIS-015
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

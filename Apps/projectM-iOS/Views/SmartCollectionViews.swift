@@ -52,12 +52,16 @@ struct SmartCollectionsSection: View {
         }
         .accessibilityIdentifier("smartCollection:\(collection.name)")
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button { deleting = collection } label: { Label("Delete", systemImage: "trash") }.tint(.red)
+            if !presets.isCollectionEditLocked {   // SHOW-015-R4
+                Button { deleting = collection } label: { Label("Delete", systemImage: "trash") }.tint(.red)
+            }
             Button { editing = collection } label: { Label("Edit Rules", systemImage: "slider.horizontal.3") }
         }
         .contextMenu {
             Button { editing = collection } label: { Label("Edit Rules", systemImage: "slider.horizontal.3") }
-            Button(role: .destructive) { deleting = collection } label: { Label("Delete", systemImage: "trash") }
+            if !presets.isCollectionEditLocked {   // SHOW-015-R4
+                Button(role: .destructive) { deleting = collection } label: { Label("Delete", systemImage: "trash") }
+            }
         }
     }
 }

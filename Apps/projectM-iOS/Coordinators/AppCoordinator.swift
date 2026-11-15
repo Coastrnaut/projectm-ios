@@ -258,6 +258,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let kenBurns: KenBurnsCoordinator
     /// The logo overlay (MED-010): the stored logo, its placement and the compositor visuals' logo layers.
     let logo: LogoCoordinator
+    /// MED-011: the clock overlay's settings, its ticking and the compositor visuals' clock layers.
+    let clock: ClockOverlayCoordinator
     /// UIX-011: palettes and the scene's palette link.
     let palettes: PaletteCoordinator
     /// MOD-010: the current scene's parameter macros (Settings › Macros).
@@ -491,6 +493,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         slideshow = SlideshowCoordinator.makeDefault(defaults: defaults)   // MED-006
         kenBurns = KenBurnsCoordinator.makeDefault(defaults: defaults)   // MED-007
         logo = LogoCoordinator.makeDefault(defaults: defaults)   // MED-010
+        clock = ClockOverlayCoordinator.makeForApp(defaults: defaults)   // MED-011
         palettes = PaletteCoordinator.makeDefault()   // UIX-011 (after FILE-005's pending restore and FILE-011's erase)
         macros = MacroCoordinator.makeDefault(settings: settings)   // MOD-010
         videos = VideoCoordinator.makeDefault(defaults: defaults)
@@ -1189,6 +1192,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .particleOrbit: .particleOrbit(radius: settings.particleOrbitRadius)   // VIS-009
         case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
+        case .tunnel: .tunnel(pace: settings.tunnelPace)   // VIS-015
         default: .circular
         }
     }
@@ -1276,6 +1280,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             cameraVisual = host
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
+            clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
             cameraNoticeDismissed = false   // UIX-015-R7: a new attempt
         } catch {
             markNativeVisualUnavailable(error)
@@ -1317,6 +1322,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             applyKenBurns()   // MED-007
             applyLayerState(to: host.compositor)   // CMP-015
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
+            clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1371,6 +1377,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             videoVisual = host
             applyLayerState(to: host.compositor)   // CMP-015
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
+            clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
         } catch {
             markNativeVisualUnavailable(error)
         }
@@ -1421,6 +1428,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             textVisual = host
             applyLayerState(to: host.compositor)   // CMP-015
             logo.attach(to: host.compositor)   // MED-010-R5: the logo is the top layer
+            clock.attach(to: host.compositor)   // MED-011-R6: the clock above the logo
         } catch {
             markNativeVisualUnavailable(error)
         }

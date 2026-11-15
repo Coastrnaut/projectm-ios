@@ -2,6 +2,8 @@
 // specs/005-pre-007-preset-collections; PRE-007-R1-R3, R7, R15, R18). Create, rename, delete and
 // reorder by hand. Reordering works three ways: Edit mode's drag handles, Move Up / Move Down in
 // each row's menu, and the same two as VoiceOver actions, so no drag is ever required.
+// SHOW-015-R4: while the scene (performance) lock is on, Delete, Edit, drag reorder and Move Up/Down are hidden and
+// the lock note shows; New Collection and Rename stay (additive).
 import PresetLibrary
 import SwiftUI
 
@@ -26,8 +28,12 @@ struct PresetCollectionsView: View {
     @State private var renaming: PresetCollection?
     @State private var deleting: PresetCollection?
 
+    /// SHOW-015-R4.
+    private var locked: Bool { presets.isCollectionEditLocked }
+
     var body: some View {
         List {
+            if locked { Section { SceneLockNote() } }   // SHOW-015-R4
             if let unavailable = presets.collectionsUnavailableText {
                 Text(unavailable)
                     .accessibilityIdentifier("collectionsUnavailable")
@@ -46,7 +52,7 @@ struct PresetCollectionsView: View {
                 ForEach(presets.collections) { collection in
                     row(collection)
                 }
-                .onMove(perform: editMode.isEditing ? { presets.moveCollections(fromOffsets: $0, toOffset: $1) } : nil)
+                .onMove(perform: editMode.isEditing && !locked ? { presets.moveCollections(fromOffsets: $0, toOffset: $1) } : nil)
             }
             SmartCollectionsSection(presets: presets)   // PRE-008
         }
@@ -55,7 +61,7 @@ struct PresetCollectionsView: View {
             ToolbarItem(placement: .confirmationAction) { Button("Done", action: onDone) }
             if presets.collectionsUnavailableText == nil {
                 ToolbarItemGroup(placement: .bottomBar) {
-                    EditButton().disabled(presets.collections.count < 2)
+                    if !locked { EditButton().disabled(presets.collections.count < 2) }   // SHOW-015-R4
                     Spacer()
                     Button {
                         namingNew = true
@@ -74,6 +80,7 @@ struct PresetCollectionsView: View {
             }
         }
         .environment(\.editMode, $editMode)
+        .onChange(of: locked) { if locked { editMode = .inactive } }   // SHOW-015: locking ends Edit mode
         .sheet(isPresented: $namingNew) {
             CollectionNameSheet(presets: presets)
         }
@@ -107,12 +114,14 @@ struct PresetCollectionsView: View {
         }
         .accessibilityIdentifier("collection:\(collection.name)")
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button {
-                deleting = collection
-            } label: {
-                Label("Delete", systemImage: "trash")
+            if !locked {   // SHOW-015-R4
+                Button {
+                    deleting = collection
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+                .tint(.red)
             }
-            .tint(.red)
             Button {
                 renaming = collection
             } label: {
@@ -121,13 +130,22 @@ struct PresetCollectionsView: View {
         }
         .contextMenu {
             Button { renaming = collection } label: { Label("Rename", systemImage: "pencil") }
-            Button { presets.moveCollection(collection.id, by: -1) } label: { Label("Move Up", systemImage: "arrow.up") }
-                .disabled(isFirst)
-            Button { presets.moveCollection(collection.id, by: 1) } label: { Label("Move Down", systemImage: "arrow.down") }
-                .disabled(isLast)
-            Button(role: .destructive) { deleting = collection } label: { Label("Delete", systemImage: "trash") }
+            if !locked { reorderAndDeleteItems(collection, isFirst: isFirst, isLast: isLast) }   // SHOW-015-R4
         }
-        .accessibilityAction(named: "Move Up") { presets.moveCollection(collection.id, by: -1) }
-        .accessibilityAction(named: "Move Down") { presets.moveCollection(collection.id, by: 1) }
+        .accessibilityActions {
+            if !locked {   // SHOW-015-R4
+                Button("Move Up") { presets.moveCollection(collection.id, by: -1) }
+                Button("Move Down") { presets.moveCollection(collection.id, by: 1) }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func reorderAndDeleteItems(_ collection: PresetCollection, isFirst: Bool, isLast: Bool) -> some View {
+        Button { presets.moveCollection(collection.id, by: -1) } label: { Label("Move Up", systemImage: "arrow.up") }
+            .disabled(isFirst)
+        Button { presets.moveCollection(collection.id, by: 1) } label: { Label("Move Down", systemImage: "arrow.down") }
+            .disabled(isLast)
+        Button(role: .destructive) { deleting = collection } label: { Label("Delete", systemImage: "trash") }
     }
 }
