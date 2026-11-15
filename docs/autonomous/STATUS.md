@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T06:17:16Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T06:56:02Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,10 +9,10 @@
 
 | State | Features |
 |---|---|
-| audited | 21 |
+| audited | 18 |
 | implementing | 1 |
 | unit_passed | 1 |
-| integrated | 302 |
+| integrated | 305 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,13 +21,13 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 15 | 1 | 1 | 62 | 0 |
+| P2 | 12 | 1 | 1 | 65 | 0 |
 | P3 | 4 | 0 | 0 | 5 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 23 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
+- 20 features are not implemented yet (first: FX-008, FX-010, FX-011, FX-012, FX-013)
 
 ## Integrated
 
@@ -136,6 +136,9 @@ The physical-device suite may **not** start:
 | FX-002 | Tone mapping | `2e8e134d` | `feature/fx-002` |
 | FX-003 | Color grading | `51dfaa4b` | `feature/fx-003` |
 | FX-004 | Hue shift | `b40a8d8e` | `feature/fx-004` |
+| FX-005 | Contrast curves | `7bcd5c34fee8` | `feature/fx-005` |
+| FX-006 | Chromatic split | `3bb0b347faf5` | `feature/fx-006` |
+| FX-007 | Directional blur | `735bf65d0b5c` | `feature/fx-007` |
 | FX-009 | Motion feedback | `6ac0c21c` | `feature/fx-009` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | FX-020 | Effect chain presets | `4bad23aa` | `None` |
@@ -1503,7 +1506,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `9f10c78caf21` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-004/20261114T055600/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 592 + ColorGrade UI; Settings (4) and reveal suites pass after moving scroll drags off the sliders`: pass at `b40a8d8e` (log `.autonomous/logs/integration/fx-004/final.log`)
 
-### FX-005 Contrast curves (unit_passed)
+### FX-005 Contrast curves (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5d9eee0d062b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-005/20261115T010909/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `5d9eee0d062b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-005/20261115T010909/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `5d9eee0d062b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-005/20261115T010909/script-tests.log`)
@@ -1516,6 +1519,37 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `5d9eee0d062b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-005/20261115T010909/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `5d9eee0d062b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-005/20261115T010909/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `5d9eee0d062b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-005/20261115T010909/swift-test_ShowControl.log`)
+- `swift test Compositor 1108, SceneFormat 207, LibraryBackup 88, RenderGoldens 103; postmerge projectM-iOSTests 1292 + ColorGradeUITests 2`: pass at `7bcd5c34fee8` (log `.autonomous/logs/integration/batch129/app-tests.log`)
+
+### FX-006 Chromatic split (integrated)
+- `python3 scripts/check_compliance.py`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `6555c1f92b66` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-006/20261115T012129/swift-test_ShowControl.log`)
+- `test and ADR-index conflicts with FX-005 resolved; swift test Compositor 1121, SceneFormat 209, LibraryBackup 88, RenderGoldens 105; postmerge projectM-iOSTests 1297 + ChromaticSplit/EffectChain UI tests 2`: pass at `3bb0b347faf5` (log `.autonomous/logs/integration/batch130/app-tests.log`)
+
+### FX-007 Directional blur (integrated)
+- `python3 scripts/check_compliance.py`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `1f341f94b7c5` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-007/20261115T014518/swift-test_ShowControl.log`)
+- `swift test Compositor 1134, SceneFormat 211, LibraryBackup 88, RenderGoldens 107; postmerge projectM-iOSTests 1302 + DirectionalBlur/EffectChain UI tests 2`: pass at `735bf65d0b5c` (log `.autonomous/logs/integration/batch131/app-tests.log`)
 
 ### FX-009 Motion feedback (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/compliance.log`)
@@ -3423,6 +3457,10 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `397a3934fef8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T155436/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `397a3934fef8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-007/20261114T155436/swift-test_ShowControl.log`)
 - `post-merge batch57: VisualGenerators 245, RenderGoldens 82, ShowControl 110, LibraryBackup 77, projectM-iOSTests 980, UI ParticleOrbit/ParticleFountain/LayerInspector/VisualizerUITests 7 of 8 (compact-width row test fails, pre-existing from UIX-005/SCN-015 controls; fix/compact-controls in progress). SplitEditorUITests (iPad) pending`: pass at `cd89f309` (log `.autonomous/logs/integration/batch57/app-tests.log`)
+
+### UIX-008 Multiwindow document editing (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `754f5d3a59b3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-008/20261115T015547/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `754f5d3a59b3` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-008/20261115T015547/docs.log`)
 
 ### UIX-009 Parameter search (integrated)
 - `python3 scripts/check_compliance.py`: pass at `21fb80d34973` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-009/20261114T162829/compliance.log`)

@@ -3,7 +3,8 @@
 //
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
-// unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`) gives that effect's
+// unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
+// `fx.chromatic`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
@@ -79,12 +80,19 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var gradeEnabled: Bool?
     /// `isEnabled` is the entry's flag.
     public var trails: MotionFeedback?
+    /// FX-006 (ADR-0104): `isEnabled` is the entry's flag.
+    public var chromatic: ChromaticSplit?
+    /// FX-007 (ADR-0106): `isEnabled` is the entry's flag.
+    public var directionalBlur: DirectionalBlur?
 
-    public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil) {
+    public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
+                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
         self.trails = trails
+        self.chromatic = chromatic
+        self.directionalBlur = directionalBlur
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -98,12 +106,25 @@ public struct SceneEffectSettings: Sendable, Equatable {
     static let trailsParameters: [SceneEffectParameter] = [
         SceneEffectParameter(name: "halfLife", range: MotionFeedback.halfLifeRange, fallback: MotionFeedback.defaultHalfLife),
     ]
+    /// FX-006: `radial` is 0 or 1 (≥ 0.5 reads as on).
+    static let chromaticParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "amount", range: ChromaticSplit.amountRange, fallback: ChromaticSplit.defaultAmount),
+        SceneEffectParameter(name: "angle", range: ChromaticSplit.angleRange, fallback: ChromaticSplit.defaultAngle),
+        SceneEffectParameter(name: "radial", range: 0...1, fallback: 0),
+    ]
+    /// FX-007: `radius` is a fraction of the shorter side, `angle` the blur axis in degrees.
+    static let directionalBlurParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "radius", range: DirectionalBlur.radiusRange, fallback: DirectionalBlur.defaultRadius),
+        SceneEffectParameter(name: "angle", range: DirectionalBlur.angleRange, fallback: DirectionalBlur.defaultAngle),
+    ]
 
     /// Standard order, Trails off (or absent), Color on and neutral (or absent): nothing to save (research FX-020-D7).
     public var isDefault: Bool {
         let trailsOff: Bool = !(trails?.isEnabled ?? false)
         let gradeNeutral: Bool = grade?.isNeutral ?? true
-        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral
+        let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
+        let blurOff: Bool = !(directionalBlur?.isEnabled ?? false)   // FX-007
+        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff
     }
 
     // MARK: Reading
@@ -132,6 +153,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .trails:
                     let v = values(entry, trailsParameters, path, &issues)
                     settings.trails = MotionFeedback(isEnabled: entry.enabled, halfLifeSeconds: v[0])
+                case .chromatic:   // FX-006
+                    let v = values(entry, chromaticParameters, path, &issues)
+                    settings.chromatic = ChromaticSplit(isEnabled: entry.enabled, amount: v[0], angleDegrees: v[1], isRadial: v[2] >= 0.5)
+                case .directionalBlur:   // FX-007
+                    let v = values(entry, directionalBlurParameters, path, &issues)
+                    settings.directionalBlur = DirectionalBlur(isEnabled: entry.enabled, radius: v[0], angleDegrees: v[1])
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -203,6 +230,17 @@ public struct SceneEffectSettings: Sendable, Equatable {
             guard let t = trails else { return stored }
             entry.enabled = t.isEnabled
             entry.parameters["halfLife"] = .double(t.halfLifeSeconds)
+        case .chromatic:   // FX-006
+            guard let c = chromatic else { return stored }
+            entry.enabled = c.isEnabled
+            entry.parameters["amount"] = .double(c.amount)
+            entry.parameters["angle"] = .double(c.angleDegrees)
+            entry.parameters["radial"] = .double(c.isRadial ? 1 : 0)
+        case .directionalBlur:   // FX-007
+            guard let b = directionalBlur else { return stored }
+            entry.enabled = b.isEnabled
+            entry.parameters["radius"] = .double(b.radius)
+            entry.parameters["angle"] = .double(b.angleDegrees)
         }
         return entry
     }

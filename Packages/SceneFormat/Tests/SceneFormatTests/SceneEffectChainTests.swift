@@ -44,7 +44,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again, document)
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
-        XCTAssertEqual(settings.order.effects, [.grade, .trails])
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur])   // FX-006 appended
         XCTAssertEqual(settings.grade, ColorGrade(gamma: 1.6, saturation: 0.4))
         XCTAssertEqual(settings.trails, MotionFeedback(isEnabled: true, halfLifeSeconds: 0.3))
         XCTAssertFalse(settings.isDefault)
@@ -73,6 +73,34 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(written[0].parameters["future"], .bool(true), "unknown parameter names are kept")
     }
 
+    // MARK: FX-006 chromatic split
+
+    func testChromaticEntryRoundTripsAndIsClamped() throws {
+        let split = ChromaticSplit(isEnabled: true, amount: 0.012, angleDegrees: 135, isRadial: true)
+        let live = SceneEffectSettings(order: OutputEffectOrder([.chromatic, .trails, .grade]), chromatic: split)
+        XCTAssertFalse(live.isDefault)
+        let document = try minimal(live.entries(over: nil))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.encoded(), document.encoded())
+        let settings = try XCTUnwrap(again.effectSettings)
+        XCTAssertEqual(settings.chromatic, split)
+        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade, .directionalBlur])
+        let wild = SceneEffectEntry(kind: "fx.chromatic", enabled: false, parameters: ["amount": .double(1), "angle": .string("up")])
+        let read = SceneEffectSettings.read([trails, grade, wild])
+        XCTAssertEqual(read.settings.chromatic, ChromaticSplit(isEnabled: false, amount: 0.02, angleDegrees: 0))
+        XCTAssertEqual(read.issues.map(\.path), ["$.effects[2].parameters.amount", "$.effects[2].parameters.angle"])
+        XCTAssertFalse(read.settings.isDefault, "the trails and grade entries are on")
+        XCTAssertTrue(SceneEffectSettings(chromatic: ChromaticSplit(isEnabled: false, amount: 0.02)).isDefault,
+                      "a disabled split is the default")
+    }
+
+    func testFX020ListsReadWithTheSplitLastAndUntouched() throws {
+        let settings = SceneEffectSettings.read([grade, trails]).settings
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur])
+        XCTAssertNil(settings.chromatic, "no entry: the current split stays")
+        XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
+    }
+
     // MARK: FX-005 contrast curve (FX-005-R8, S5)
 
     func testContrastRoundTripsAndOldEntriesReadAsLinear() throws {
@@ -98,6 +126,38 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(read.settings.entries(over: [entry])[0].parameters["contrast"], .string("posterize"), "kept as written")
         let wrongType = SceneEffectEntry(kind: "fx.grade", parameters: ["contrast": .integer(2)])
         XCTAssertEqual(SceneEffectSettings.read([wrongType]).issues.map(\.code), [.valueClamped])
+    }
+
+    // MARK: FX-007 directional blur
+
+    func testDirectionalBlurEntryRoundTripsAndIsClamped() throws {
+        let blur = DirectionalBlur(isEnabled: true, radius: 0.012, angleDegrees: 135)
+        let live = SceneEffectSettings(order: OutputEffectOrder([.directionalBlur, .trails, .grade]), directionalBlur: blur)
+        XCTAssertFalse(live.isDefault)
+        let written: [SceneEffectEntry] = live.entries(over: nil)
+        XCTAssertEqual(written.map(\.kind), ["fx.directionalBlur"])
+        XCTAssertEqual(written[0].parameters["radius"], .double(0.012))
+        XCTAssertEqual(written[0].parameters["angle"], .double(135))
+        let document = try minimal(written)
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.encoded(), document.encoded())
+        let settings = try XCTUnwrap(again.effectSettings)
+        XCTAssertEqual(settings.directionalBlur, blur)
+        XCTAssertEqual(settings.order.effects, [.directionalBlur, .trails, .grade, .chromatic])
+        let wild = SceneEffectEntry(kind: "fx.directionalBlur", enabled: false, parameters: ["radius": .double(1), "angle": .string("up")])
+        let read = SceneEffectSettings.read([trails, grade, wild])
+        XCTAssertEqual(read.settings.directionalBlur, DirectionalBlur(isEnabled: false, radius: 0.02, angleDegrees: 0))
+        XCTAssertEqual(read.issues.map(\.path), ["$.effects[2].parameters.radius", "$.effects[2].parameters.angle"])
+        XCTAssertTrue(SceneEffectSettings(directionalBlur: DirectionalBlur(isEnabled: false, radius: 0.02)).isDefault,
+                      "a disabled blur is the default")
+    }
+
+    func testOlderListsReadWithTheBlurLastAndUntouched() throws {
+        let settings = SceneEffectSettings.read([grade, trails]).settings
+        XCTAssertNil(settings.directionalBlur, "no entry: the current blur stays")
+        XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
+        let older = try minimal([grade, trails])
+        XCTAssertEqual(try SceneDocument.decode(older.encoded()).document.encoded(), older.encoded(), "byte-identical")
     }
 
     // MARK: Unknown, repeated and fixed entries

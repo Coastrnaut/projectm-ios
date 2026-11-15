@@ -11,6 +11,10 @@ public enum OutputEffectKind: String, CaseIterable, Sendable, Hashable {
     case trails = "fx.trails"
     /// FX-003 colour grade with FX-004 hue.
     case grade = "fx.grade"
+    /// FX-006 Chromatic split (appended: stored orders without it read with it last; ADR-0104).
+    case chromatic = "fx.chromatic"
+    /// FX-007 Directional blur (appended after the split: stored orders without it read with it last; ADR-0106).
+    case directionalBlur = "fx.directionalBlur"
 }
 
 /// A stage that always runs after every `OutputEffectKind` (FX-020-R2).
@@ -25,8 +29,8 @@ public enum FixedOutputStage: String, CaseIterable, Sendable, Hashable {
 public struct OutputEffectOrder: Sendable, Hashable, CustomStringConvertible {
     public let effects: [OutputEffectKind]
 
-    /// Today's order: Trails, then Color (FX-020-R1).
-    public static let standard = OutputEffectOrder([.trails, .grade])
+    /// Today's order: Trails, then Color (FX-020-R1), then FX-006's Chromatic split, then FX-007's Directional blur.
+    public static let standard = OutputEffectOrder([.trails, .grade, .chromatic, .directionalBlur])
 
     /// Repeats are dropped (the first counts); missing kinds are appended in standard order.
     public init(_ kinds: [OutputEffectKind]) {
@@ -59,7 +63,7 @@ public struct OutputEffectOrder: Sendable, Hashable, CustomStringConvertible {
         return OutputEffectOrder(rest)
     }
 
-    /// `fx.trails,fx.grade` (the app's stored form).
+    /// `fx.trails,fx.grade,fx.chromatic,fx.directionalBlur` (the app's stored form).
     public var storageText: String { effects.map(\.rawValue).joined(separator: ",") }
 
     /// Reads `storageText`; unknown tokens are ignored, so anything reads as a valid order.

@@ -66,11 +66,13 @@ final class EffectChainSetting {
 
     // MARK: - Readouts
 
-    /// "Trails" or "Color".
+    /// "Trails", "Color" or "Chromatic split".
     static func name(_ kind: OutputEffectKind) -> String {
         switch kind {
         case .trails: "Trails"
         case .grade: "Color"
+        case .chromatic: "Chromatic split"   // FX-006
+        case .directionalBlur: "Directional blur"   // FX-007
         }
     }
 
