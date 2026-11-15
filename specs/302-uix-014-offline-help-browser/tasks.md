@@ -14,7 +14,7 @@
 ## Phase 3: User Story 1 — read help without a connection (P1, MVP)
 
 - [ ] UIX-014-T04 [US1] `Apps/projectM-iOS/Views/HelpBrowserView.swift`: `HelpSection` (Settings row `helpLink`), `HelpBrowserView` (list), `HelpArticleView` (blocks as `Text` with text styles, headings with the header trait), unavailable and missing states (R2, R4, R7, R9)
-- [ ] UIX-014-T05 [US1] Add `HelpSection().id("help")` to `SettingsView.tailSections` before Storage (R2, D4)
+- [ ] UIX-014-T05 [US1] Add `HelpSection().id("help")` to `SettingsView.tailSections` before Storage, outside the scene-lock-disabled sections (R2, D4; edge case: scene lock)
 - [ ] UIX-014-T06 [US1] App unit tests `Apps/projectM-iOS/Tests/HelpLibraryTests.swift`: every index entry is in the built bundle and opens through `HelpLibrary.article(for:)` with a level-1 heading equal to its title and body blocks; content rules over every article (no `http://`, `https://`, `www.`, `mailto:`, links, images, tables, code, HTML; no named services; ≤ 400 words); parser cases (headings, paragraphs joined, bullets, numbers, inline emphasis); missing file → nil; source scan of the two help Swift files for networking and web symbols (S1, S2, S4, acceptance)
 
 ## Phase 4: User Story 2 — find the right article (P2)
@@ -44,3 +44,11 @@ T01 (content) and T03 (code) are independent files.
 ## Implementation strategy
 
 MVP is T01-T06 (articles bundled and opened offline); US2 and US3 add search and accessibility checks.
+
+## Analysis (speckit-analyze, 2026-11-15)
+
+Coverage: R1 T01-T02; R2 T04-T05; R3 T07; R4 T03-T04; R5 T01, T06; R6 T06, T10; R7 T04, T09; R8 T01, T06; R9 T03-T04,
+T06; R10 T10. S1 T06, T12; S2 T06, T10; S3 T07-T08; S4 T06. No unmapped requirement, no constitution conflict.
+Fixes applied: the scene-lock edge case is covered by placing Help in `tailSections` (outside the locked
+`sceneEditSections`), stated in T05; T09's large-text launch uses the `UIPreferredContentSizeCategoryName` launch
+argument (no setting written).
