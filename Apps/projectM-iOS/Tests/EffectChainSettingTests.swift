@@ -26,7 +26,7 @@ final class EffectChainSettingTests: XCTestCase {
             var reported: [OutputEffectOrder] = []
             chain.onChange = { (order: OutputEffectOrder) -> Void in reported.append(order) }
             chain.order = colorFirst
-            XCTAssertEqual(defaults.string(forKey: EffectChainSetting.orderKey), "fx.grade,fx.trails,fx.chromatic,fx.directionalBlur")   // FX-006, FX-007 appended
+            XCTAssertEqual(defaults.string(forKey: EffectChainSetting.orderKey), "fx.grade,fx.trails,fx.chromatic,fx.directionalBlur,fx.echo")   // FX-006, FX-007, FX-010 appended
             XCTAssertEqual(EffectChainSetting(defaults: defaults).order, colorFirst, "kept across a relaunch")
             chain.order = .standard
             XCTAssertNil(defaults.object(forKey: EffectChainSetting.orderKey))

@@ -84,15 +84,18 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var chromatic: ChromaticSplit?
     /// FX-007 (ADR-0106): `isEnabled` is the entry's flag.
     public var directionalBlur: DirectionalBlur?
+    /// FX-010 (ADR-0108): `isEnabled` is the entry's flag; the weight cap is not stored (ACC-012 sets it live).
+    public var echo: EchoFeedback?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
-                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil) {
+                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, echo: EchoFeedback? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
         self.trails = trails
         self.chromatic = chromatic
         self.directionalBlur = directionalBlur
+        self.echo = echo
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -117,6 +120,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
         SceneEffectParameter(name: "radius", range: DirectionalBlur.radiusRange, fallback: DirectionalBlur.defaultRadius),
         SceneEffectParameter(name: "angle", range: DirectionalBlur.angleRange, fallback: DirectionalBlur.defaultAngle),
     ]
+    /// FX-010: `count` echoes (0…4, rounded; above 4 is clamped and reported), `delay` in seconds, `decay` per echo.
+    static let echoParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "count", range: 0...Double(EchoFeedback.cap), fallback: Double(EchoFeedback.defaultCount)),
+        SceneEffectParameter(name: "delay", range: EchoFeedback.delayRange, fallback: EchoFeedback.defaultDelay),
+        SceneEffectParameter(name: "decay", range: EchoFeedback.decayRange, fallback: EchoFeedback.defaultDecay),
+    ]
 
     /// Standard order, Trails off (or absent), Color on and neutral (or absent): nothing to save (research FX-020-D7).
     public var isDefault: Bool {
@@ -124,7 +133,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let gradeNeutral: Bool = grade?.isNeutral ?? true
         let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
         let blurOff: Bool = !(directionalBlur?.isEnabled ?? false)   // FX-007
-        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff
+        let echoOff: Bool = !(echo?.isEnabled ?? false)   // FX-010
+        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && echoOff
     }
 
     // MARK: Reading
@@ -159,6 +169,10 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .directionalBlur:   // FX-007
                     let v = values(entry, directionalBlurParameters, path, &issues)
                     settings.directionalBlur = DirectionalBlur(isEnabled: entry.enabled, radius: v[0], angleDegrees: v[1])
+                case .echo:   // FX-010
+                    let v = values(entry, echoParameters, path, &issues)
+                    settings.echo = EchoFeedback(isEnabled: entry.enabled, count: EchoFeedback.clampCount(v[0]),
+                                                 delaySeconds: v[1], decay: v[2])
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -241,6 +255,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.enabled = b.isEnabled
             entry.parameters["radius"] = .double(b.radius)
             entry.parameters["angle"] = .double(b.angleDegrees)
+        case .echo:   // FX-010
+            guard let e = echo else { return stored }
+            entry.enabled = e.isEnabled
+            entry.parameters["count"] = .double(Double(e.count))
+            entry.parameters["delay"] = .double(e.delaySeconds)
+            entry.parameters["decay"] = .double(e.decay)
         }
         return entry
     }

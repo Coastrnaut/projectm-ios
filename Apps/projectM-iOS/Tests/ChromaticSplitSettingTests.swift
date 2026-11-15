@@ -94,7 +94,7 @@ final class ChromaticSplitSettingTests: XCTestCase {
             chromatic.amount = 0.002
             SceneAutosaveCapture.applyEffects(written, chain: chain, grade: grade, trails: trails, chromatic: chromatic)
             XCTAssertEqual(chromatic.split, ChromaticSplit(isEnabled: true, amount: 0.01, angleDegrees: 30))
-            XCTAssertEqual(chain.order.effects, [.chromatic, .trails, .grade, .directionalBlur])
+            XCTAssertEqual(chain.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .echo])
             chromatic.isEnabled = false
             let preset = chain.presets.preset(named: "Fringe")
             SceneAutosaveCapture.applyEffects(preset?.effects, chain: chain, grade: grade, trails: trails, chromatic: chromatic)

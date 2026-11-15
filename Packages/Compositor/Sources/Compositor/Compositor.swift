@@ -101,6 +101,9 @@
 // listed before an active Trails or split is folded into the grade pass right before the first of them.
 // FX-007 (contracts/directional-blur.md in specs/295, ADR-0106): while `directionalBlur` is active, `DirectionalBlurPass`
 // blurs along its axis with 16 taps at its place in `outputEffectOrder`, after the split in the standard order.
+// FX-010 (contracts/echo-feedback.md in specs/297, ADR-0108): while `echoFeedback` is active, `EchoPass` shows up to 4
+// weighted stored frames where they are brighter and stores one half-size frame per delay in a fixed ring of 4; the
+// history empties on the Trails reset triggers. Appended last in the standard order.
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -282,6 +285,9 @@ public final class Compositor {
     private let chromaticPass: ChromaticSplitPass
     /// FX-007: the directional blur pass and its pooled picture.
     private let directionalBlurPass: DirectionalBlurPass
+    /// FX-010: the echo pass, its ring and output picture; whether the history holds graded pictures.
+    private let echoPass: EchoPass
+    private var echoHistoryGraded = false
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -311,6 +317,29 @@ public final class Compositor {
     public var directionalBlurFrames: Int { directionalBlurPass.frames }
     public var holdsDirectionalBlurPicture: Bool { directionalBlurPass.holdsPicture }
 
+    /// FX-010 (ADR-0108): Echo, set between frames (the effective value after ACC-012's cap). Inactive (the default,
+    /// count 0 or a weight cap of 0) adds no pass and holds no picture: output bit-identical to before FX-010. Turning
+    /// it on starts with an empty history; count, delay and fade changes keep it.
+    public var echoFeedback: EchoFeedback = .off {
+        didSet {
+            if !echoFeedback.isActive {
+                echoPass.release(to: texturePool, after: lastCommandBuffer)
+            } else if !oldValue.isActive {
+                echoPass.reset()
+            }
+        }
+    }
+
+    /// FX-010 diagnostics (tests): echo passes drawn, stores made, pictures taken, the ring (0 or 4 pictures), its
+    /// total `allocatedSize`, the stored pictures holding content, and whether any picture is held.
+    public var echoFrames: Int { echoPass.frames }
+    public var echoStores: Int { echoPass.stores }
+    public var echoAllocations: Int { echoPass.allocations }
+    public var echoHistoryTextures: [MTLTexture] { echoPass.history }
+    public var echoHistoryBytes: Int { echoPass.history.reduce(0) { (sum: Int, t: MTLTexture) -> Int in sum + t.allocatedSize } }
+    public var echoValidStores: Int { echoPass.schedule.valid }
+    public var holdsEchoPictures: Bool { echoPass.holdsPictures }
+
     /// FX-020: frames that ran the Color-first grade pass (tests, diagnostics).
     public var gradePassFrames: Int { gradePass.frames }
 
@@ -328,7 +357,10 @@ public final class Compositor {
     }
 
     /// FX-009-R5: the next frame shows the composite only (a scene change); trails then build up from it.
-    public func resetFeedback() { trails.resetPending = true }
+    public func resetFeedback() {
+        trails.resetPending = true
+        echoPass.reset()   // FX-010-R11: Echo's history too
+    }
 
     /// FX-009: frames drawn through the trails pass, reset frames among them, and whether the pair is held (tests).
     public var trailsFrames: Int { trails.frames }
@@ -393,12 +425,14 @@ public final class Compositor {
         }
         library = try CompositorShaders.library(device: device, source: CompositorShaders.source + TrailsPass.source
                                                 + OutputGradePass.source + ChromaticSplitPass.source
-                                                + DirectionalBlurPass.source)   // FX-009, FX-020, FX-006, FX-007
+                                                + DirectionalBlurPass.source
+                                                + EchoPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-010
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
         chromaticPass = try ChromaticSplitPass(device: device, library: library, vertex: fullScreen)   // FX-006
         directionalBlurPass = try DirectionalBlurPass(device: device, library: library, vertex: fullScreen)   // FX-007
+        echoPass = try EchoPass(device: device, library: library, vertex: fullScreen)   // FX-010
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -430,6 +464,7 @@ public final class Compositor {
         gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020
         chromaticPass.release(to: texturePool, after: lastCommandBuffer)   // FX-006
         directionalBlurPass.release(to: texturePool, after: lastCommandBuffer)   // FX-007
+        echoPass.release(to: texturePool, after: lastCommandBuffer)   // FX-010
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -590,6 +625,7 @@ public final class Compositor {
         let next = frameTicks &+ 1   // work from the next tick decides the retry
         invalidateRenderCache()   // CMP-013
         trails.resetPending = true   // FX-009-R5
+        echoPass.reset()   // FX-010-R11
         visualRetry.reset(atTick: next)
         for i in records.indices {
             records[i].retry.reset(atTick: next)
@@ -608,6 +644,7 @@ public final class Compositor {
     public func resetFlashHistory() {
         flashGuard.reset()
         trails.resetPending = true
+        echoPass.reset()   // FX-010-R11
     }
 
     /// FX-002-R7: composite pixels with a NaN or infinite channel that the screen output pass tone-mapped to 0
@@ -634,7 +671,10 @@ public final class Compositor {
         guard let size = LayerPictureDescriptor(width: output.width, height: output.height),
               let outputPipeline = calibrated ? calibratedOutputPipeline(for: output.pixelFormat)
                 : outputPipeline(for: output.pixelFormat) else { return false }
-        if let last = lastOutputFormat, last != output.pixelFormat { trails.resetPending = true }   // FX-009-R5
+        if let last = lastOutputFormat, last != output.pixelFormat {   // FX-009-R5, FX-010-R11
+            trails.resetPending = true
+            echoPass.reset()
+        }
         lastOutputFormat = output.pixelFormat
         lastOutputPassStartNanoseconds = 0
         return encodeFrame(size: size, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
@@ -703,6 +743,7 @@ public final class Compositor {
             if !finished {
                 invalidateRenderCache()
                 trails.resetPending = true
+                echoPass.reset()   // FX-010-R11
             }
         }
         observeFinishedCommandBuffers()
@@ -833,6 +874,7 @@ public final class Compositor {
         var graded = false
         var splitRan = false
         var blurRan = false   // FX-007
+        var echoRan = false   // FX-010
         for kind in outputEffectOrder.effects {
             switch kind {
             case .grade:
@@ -882,6 +924,25 @@ public final class Compositor {
                 pictureAllocations += directionalBlurPass.allocations - taken   // PERF-004
                 shown = blurred
                 blurRan = true
+            case .echo:   // FX-010
+                guard echoFeedback.isActive else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                if graded != echoHistoryGraded {   // stored pictures must match what is stored now
+                    echoPass.reset()
+                    echoHistoryGraded = graded
+                }
+                let taken: Int = echoPass.allocations
+                guard let echoed = echoPass.encode(input: shown, echo: echoFeedback, frameDuration: frame.frameDuration,
+                                                   pool: texturePool, fence: lastCommandBuffer, commandBuffer: commandBuffer) else {
+                    return nil
+                }
+                pictureAllocations += echoPass.allocations - taken   // PERF-004
+                shown = echoed
+                echoRan = true
             }
         }
         if !graded, gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
@@ -889,6 +950,7 @@ public final class Compositor {
         if !blurRan, directionalBlurPass.holdsPicture {   // FX-007
             directionalBlurPass.release(to: texturePool, after: lastCommandBuffer)
         }
+        if !echoRan, echoPass.holdsPictures { echoPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-010
         return shown
     }
 
@@ -1286,6 +1348,7 @@ public final class Compositor {
         outputTransition = pass
         pass.begin(frame, spec: resolved, pool: texturePool, fence: lastCommandBuffer)
         trails.resetPending = true   // FX-009-R5: a transition start clears the trails
+        echoPass.reset()   // FX-010-R11
     }
 
     /// Ends any running transition at once (the live frames alone); its textures go back to the pool.
