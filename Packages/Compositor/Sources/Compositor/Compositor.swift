@@ -106,6 +106,8 @@
 // FX-010 (contracts/echo-feedback.md in specs/297, ADR-0108): while `echoFeedback` is active, `EchoPass` shows up to 4
 // weighted stored frames where they are brighter and stores one half-size frame per delay in a fixed ring of 4; the
 // history empties on the Trails reset triggers. Appended last in the standard order.
+// FX-012 (specs/299-fx-012-mosaic-pixelation, ADR-0110): while `mosaic` is active, `MosaicPass` shows each cell's centre
+// pixel at its place in `outputEffectOrder` (Color folded before it the same way); appended after Echo.
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -292,6 +294,8 @@ public final class Compositor {
     /// FX-010: the echo pass, its ring and output picture; whether the history holds graded pictures.
     private let echoPass: EchoPass
     private var echoHistoryGraded = false
+    /// FX-012: the mosaic pass and its pooled picture.
+    private let mosaicPass: MosaicPass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -352,6 +356,16 @@ public final class Compositor {
     public var echoHistoryBytes: Int { echoPass.history.reduce(0) { (sum: Int, t: MTLTexture) -> Int in sum + t.allocatedSize } }
     public var echoValidStores: Int { echoPass.schedule.valid }
     public var holdsEchoPictures: Bool { echoPass.holdsPictures }
+
+    /// FX-012 (ADR-0110): the mosaic, set between frames. Inactive (the default, or block size 1) adds no pass and
+    /// holds no picture: output bit-identical to before FX-012.
+    public var mosaic: Mosaic = .off {
+        didSet { if !mosaic.isEnabled { mosaicPass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-012: frames drawn through the mosaic pass, and whether its picture is held (tests, diagnostics).
+    public var mosaicFrames: Int { mosaicPass.frames }
+    public var holdsMosaicPicture: Bool { mosaicPass.holdsPicture }
 
     /// FX-020: frames that ran the Color-first grade pass (tests, diagnostics).
     public var gradePassFrames: Int { gradePass.frames }
@@ -440,7 +454,8 @@ public final class Compositor {
                                                 + OutputGradePass.source + ChromaticSplitPass.source
                                                 + DirectionalBlurPass.source
                                                 + RadialBlurPass.source
-                                                + EchoPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010
+                                                + EchoPass.source
+                                                + MosaicPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
@@ -448,6 +463,7 @@ public final class Compositor {
         directionalBlurPass = try DirectionalBlurPass(device: device, library: library, vertex: fullScreen)   // FX-007
         radialBlurPass = try RadialBlurPass(device: device, library: library, vertex: fullScreen)   // FX-008
         echoPass = try EchoPass(device: device, library: library, vertex: fullScreen)   // FX-010
+        mosaicPass = try MosaicPass(device: device, library: library, vertex: fullScreen)   // FX-012
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -481,6 +497,7 @@ public final class Compositor {
         directionalBlurPass.release(to: texturePool, after: lastCommandBuffer)   // FX-007
         radialBlurPass.release(to: texturePool, after: lastCommandBuffer)   // FX-008
         echoPass.release(to: texturePool, after: lastCommandBuffer)   // FX-010
+        mosaicPass.release(to: texturePool, after: lastCommandBuffer)   // FX-012
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -892,6 +909,7 @@ public final class Compositor {
         var blurRan = false   // FX-007
         var radialRan = false   // FX-008
         var echoRan = false   // FX-010
+        var mosaicRan = false   // FX-012
         for kind in outputEffectOrder.effects {
             switch kind {
             case .grade:
@@ -973,6 +991,19 @@ public final class Compositor {
                 pictureAllocations += echoPass.allocations - taken   // PERF-004
                 shown = echoed
                 echoRan = true
+            case .mosaic:   // FX-012
+                guard mosaic.isActive(width: shown.width, height: shown.height) else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                let taken: Int = mosaicPass.allocations
+                guard let tiled = mosaicPass.encode(input: shown, mosaic: mosaic, pool: texturePool,
+                                                    fence: lastCommandBuffer, commandBuffer: commandBuffer) else { return nil }
+                pictureAllocations += mosaicPass.allocations - taken   // PERF-004
+                shown = tiled
+                mosaicRan = true
             }
         }
         if !graded, gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
@@ -982,6 +1013,7 @@ public final class Compositor {
         }
         if !radialRan, radialBlurPass.holdsPicture { radialBlurPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-008
         if !echoRan, echoPass.holdsPictures { echoPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-010
+        if !mosaicRan, mosaicPass.holdsPicture { mosaicPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-012
         return shown
     }
 

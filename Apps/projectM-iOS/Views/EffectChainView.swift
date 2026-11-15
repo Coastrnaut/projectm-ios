@@ -45,7 +45,7 @@ struct EffectChainView: View {
             Button("Save") { save() }
             Button("Cancel", role: .cancel) { presetName = "" }
         } message: {
-            Text("Saves the order and the Color, Trails, Chromatic split, Directional blur, Radial blur and Echo settings.")
+            Text("Saves the order and the Color, Trails, Chromatic split, Directional blur, Radial blur, Echo and Mosaic settings.")
         }
     }
 
@@ -99,6 +99,7 @@ private struct EffectChainRow: View {
         let blur: DirectionalBlurSetting = coordinator.directionalBlur   // FX-007
         let radial: RadialBlurSetting = coordinator.radialBlur
         let echo: EchoSetting = coordinator.echoFeedback   // FX-010
+        let mosaic: MosaicSetting = coordinator.mosaic   // FX-012
         switch kind {
         case .grade:
             return Binding<Bool>(get: { () -> Bool in grade.isEnabled }, set: { (on: Bool) -> Void in grade.isEnabled = on })
@@ -112,6 +113,8 @@ private struct EffectChainRow: View {
             return Binding<Bool>(get: { () -> Bool in radial.isEnabled }, set: { (on: Bool) -> Void in radial.isEnabled = on })
         case .echo:   // FX-010
             return Binding<Bool>(get: { () -> Bool in echo.isEnabled }, set: { (on: Bool) -> Void in echo.isEnabled = on })
+        case .mosaic:   // FX-012
+            return Binding<Bool>(get: { () -> Bool in mosaic.isEnabled }, set: { (on: Bool) -> Void in mosaic.isEnabled = on })
         }
     }
 }
