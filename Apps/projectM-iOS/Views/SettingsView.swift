@@ -573,6 +573,7 @@ struct SettingsView: View {
         if let layerInspector { MosaicSection(setting: layerInspector.mosaic).id("mosaic") }   // FX-012-R8
         if let layerInspector { EdgeOutlineSection(setting: layerInspector.edgeOutline).id("edgeOutline") }   // FX-014-R9
         if let layerInspector { LensDistortionSection(setting: layerInspector.lensDistortion).id("lensDistortion") }   // FX-016-R8
+        if let layerInspector { PixelSortSection(setting: layerInspector.pixelSort).id("pixelSort") }   // FX-011-R9
         if let layerInspector { VignetteSection(setting: layerInspector.vignette).id("vignette") }   // FX-015-R8
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
     }

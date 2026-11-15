@@ -92,7 +92,7 @@ final class DirectionalBlurSettingTests: XCTestCase {
             blur.radius = 0.002
             SceneAutosaveCapture.applyEffects(written, chain: chain, grade: grade, trails: trails, directionalBlur: blur)
             XCTAssertEqual(blur.blur, DirectionalBlur(isEnabled: true, radius: 0.01, angleDegrees: 30))
-            XCTAssertEqual(chain.order.effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .vignette])
+            XCTAssertEqual(chain.order.effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .pixelSort, .vignette])
             blur.isEnabled = false
             let preset = chain.presets.preset(named: "Streak")
             SceneAutosaveCapture.applyEffects(preset?.effects, chain: chain, grade: grade, trails: trails, directionalBlur: blur)
