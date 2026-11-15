@@ -53,6 +53,12 @@ interaction); each answer is the conservative, local-first option.
   user chose (MED-009), not an overlay; Clean never changes which visual is shown or its own layers
   (OUT-006-R2).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Should a mode change wait while a recording holds the placement (OUT-002), as OUT-004 and OUT-003 do? → A: No, it applies live. Those deferrals protect the recording's picture size; the mode changes no size, only whether the logo is drawn, and the user expects the projector to change at once. A recording records the one rendered output, so it shows what the display shows (OUT-006-R5, edge cases).
+- Q: Does the device note or an announcement change with the mode? → A: No announcement (a settings change is not a status event); the device note keeps OUT-001's wording, and Settings' footer explains both options. Keeps ACC-011's status catalogue unchanged (OUT-006-R1).
+- Q: How is "left out" achieved without a second render? → A: The overlay layers stay attached and keep their stored placement; while routed away from the external output they draw nothing (the logo layer's effective opacity is 0). Nothing reloads, so switching back shows the logo from the next frame (OUT-006-R2, R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A clean picture on the projector (Priority: P1)
@@ -124,7 +130,7 @@ identity and session count before and after.
 - **OUT-006-R4**: The app's interface (controls, badges, HUD, guides, performance overlay, captions,
   notes) MUST never appear on an external display in either mode; the external window holds only the
   visual.
-- **OUT-006-R5**: A mode change MUST apply live, inside the change, without moving the visual between
+- **OUT-006-R5**: A mode change MUST apply live (also while a recording holds the placement), inside the change, without moving the visual between
   displays, restarting it, or touching the audio source.
 - **OUT-006-R6**: There MUST be exactly one audio capture and one analysis pipeline in both modes: no
   second capture, no second normalized output or analysis tap, no restart of the source.
