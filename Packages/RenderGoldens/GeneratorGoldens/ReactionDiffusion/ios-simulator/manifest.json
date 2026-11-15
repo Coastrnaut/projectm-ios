@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "reaction-diffusion-128x96-f0.png",
+      "fileSHA256" : "2c7e3882e66480b505195eb12d22422241721403a293a893d79e2f0b008273d1",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "3d7625107549b60a823d02dd46256d15d27a5c84b21be73481164f46469d640d",
+      "scene" : "reaction-diffusion",
+      "width" : 128
+    },
+    {
+      "file" : "reaction-diffusion-256x192-f0.png",
+      "fileSHA256" : "320bf5cf8388ec36c5ca792631c66f45e20d8bdece168e529f22fa2d7b1b813d",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "f5cefe825524740a27073fea2648f6366739519c232d0f4fdfe56f5093903c2c",
+      "scene" : "reaction-diffusion",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

@@ -84,6 +84,12 @@ palette, eight scripted onsets over the first 1.5 s, 60 Hz frames, captured at 2
 `fluidInk: true` (`Tests/RenderGoldensTests/FluidInkGoldenTests.swift`); record with `--filter FluidInkGolden` or
 `-only-testing:RenderGoldensTests/FluidInkGoldenTests`.
 
+`GeneratorGoldens/ReactionDiffusion/<class>/` (VIS-012) holds reaction diffusion's golden:
+`reaction-diffusion-<w>x<h>-f0.png` (Coral, Centre Square, seed 1, Speed 8, the spectrum palette, bass kicks at frames
+20 and 70, 60 Hz frames, captured at 2 s after 960 iterations), through `NoiseFieldGenerator` with `reactionDiffusion`
+set (`Tests/RenderGoldensTests/ReactionDiffusionGoldenTests.swift`); record with `--filter ReactionDiffusionGolden` or
+`-only-testing:RenderGoldensTests/ReactionDiffusionGoldenTests`.
+
 ## Run
 
 ```bash
