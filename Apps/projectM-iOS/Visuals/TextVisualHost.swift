@@ -139,6 +139,9 @@ final class TextVisualHost: PresentationBoundResource, CompositorVisualHost {
         bands.initialize(repeating: 0, count: SpectrumBarCount.maximum)
         view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
+        view.onDisplayCalibrationChange = { [weak self] (c: DisplayCalibration) -> Void in   // OUT-009: the screen pass
+            self?.compositor.displayCalibration = c
+        }
         text.onStateChange = { [weak self] (state: TextLayerState) in self?.textStateChanged(state) }
         observeSystem()
         updateAccessibility()

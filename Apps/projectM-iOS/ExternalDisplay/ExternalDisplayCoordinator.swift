@@ -46,6 +46,10 @@
 //   pushed to every external slot (never the device slot) inside the set and to each newly connected slot.
 //   Neither is deferred by the recording hold: the warp changes no bounds or drawable size, and the recorder
 //   encodes rendered frames, never the composited display (research OUT-007-D5).
+// * OUT-009 (spec specs/268-out-009-output-color-calibration, contract C4): the display calibration is pushed to
+//   every external slot inside the set and to each newly connected slot, never deferred by the hold; the slot hands
+//   it to the held visual's view (calibrated final pass on projectM and compositor visuals; native spectra not).
+import Compositor
 import OSLog
 import PresentationLifecycle
 import SwiftUI
@@ -159,6 +163,13 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     /// The last connected external display's shape (width ÷ height with its pixel aspect).
     @ObservationIgnored private(set) var lastExternalAspect: Double?
 
+    // OUT-009: display calibration.
+    /// The user's calibration (ExternalOutputSetting sets it); applied to every external slot inside the call,
+    /// never deferred by a recording hold (it changes no geometry and recordings are uncalibrated).
+    @ObservationIgnored var displayCalibration: DisplayCalibration = .identity {
+        didSet { if displayCalibration != oldValue { pushCalibration() } }
+    }
+
     /// `connectSettle` 0 (the default): a connect moves the visual inside the call (OUT-001-R6 tests).
     init(connectSettle: Double = 0, scheduleSettle: SettleScheduler? = nil) {
         settle = HotPlugSettle(interval: connectSettle)
@@ -220,6 +231,7 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         slot.resolution = resolution   // OUT-003: likewise
         slot.pixelBudget = pixelBudget
         slot.cornerPin = cornerPin   // OUT-007
+        slot.calibration = displayCalibration   // OUT-009
         slot.showsCalibrationCard = isCalibrating
         slot.onGeometryChange = { [weak self] (geometry: ExternalDisplayGeometry) in self?.externalResized(id: id, geometry: geometry) }
         log.info("external display connected: \(geometry.width, privacy: .public) × \(geometry.height, privacy: .public) @\(geometry.scale, privacy: .public), foreground \(foreground, privacy: .public)")
@@ -431,6 +443,26 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         let kind: String = pin.isIdentity ? "identity" : "custom"
         let card: String = slot.isCalibrationCardShown ? "shown" : "hidden"
         return "pin=" + kind + " card=" + card + " corners=" + pin.stored
+    }
+
+    // MARK: - Display calibration (OUT-009)
+
+    private func pushCalibration() {
+        for slot in externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }) {
+            slot.calibration = displayCalibration
+        }
+        log.info("display calibration: \(self.displayCalibration.isIdentity ? "identity" : "custom", privacy: .public)")
+    }
+
+    /// "cal=<identity|custom> applied=<yes|no|unsupported|none> values=<g,r,g,b>" for the external slot holding the
+    /// visual ("none" when the visual is not on an external display) (tests, DEBUG probe; no user data).
+    var calibrationSummary: String {
+        let kind: String = displayCalibration.isIdentity ? "identity" : "custom"
+        let holding: VisualSlotView? = (visual?.superview as? VisualSlotView).flatMap { (s: VisualSlotView) -> VisualSlotView? in
+            s.role == .external ? s : nil
+        }
+        let applied: String = holding?.calibrationState ?? "none"
+        return "cal=" + kind + " applied=" + applied + " values=" + displayCalibration.stored
     }
 
     // MARK: - Output mode (OUT-006)

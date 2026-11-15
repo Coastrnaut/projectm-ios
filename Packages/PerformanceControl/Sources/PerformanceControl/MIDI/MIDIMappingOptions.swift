@@ -7,7 +7,7 @@
 //   curve. Inverting before the curve makes inverted(v) equal normal(127 − v): the knob runs the other way and
 //   the curve keeps its shape relative to the parameter (research D1). Both ends are exact for every curve.
 // * Stored segments after the parameter ID: `curve=<MOD-004 text form>` (only when not linear, or unreadable
-//   text that is kept), `invert=1` (only when inverted), MIDI-005's `hires=1` (only when 14-bit), then unknown
+//   text that is kept), `invert=1` (only when inverted), MIDI-005's `hires=1` (only when 14-bit), MIDI-009's `fb=1` (feedback), then unknown
 //   segments verbatim in their original order. A default binding writes no segment, so its line is exactly
 //   MIDI-003's (research D2).
 // * Unreadable curve text (does not parse, or fails MOD-004 validation) acts as linear, is kept verbatim and
@@ -49,12 +49,16 @@ public struct MIDIMappingOptions: Sendable, Hashable {
     public static let invertKey: String = "invert"
     /// MIDI-005: `hires=1` marks a 14-bit mapping (coarse CC n with fine CC n+32).
     public static let highResolutionKey: String = "hires"
+    /// MIDI-009: `fb=1` sends the parameter's state back to the controller (specs/269-midi-009-midi-feedback).
+    public static let feedbackKey: String = "fb"
 
     /// Always valid (an unreadable stored curve reads `.linear`).
     public private(set) var curve: MappingCurve
     public var inverted: Bool
     /// MIDI-005-R7: coarse and fine controllers combine into a 14-bit value (effective only on controllers 0–31).
     public var highResolution: Bool
+    /// MIDI-009-R1: send the parameter's base value back to paired controllers.
+    public var feedback: Bool
     /// The stored text after `curve=` when it could not be used; written back unchanged.
     public private(set) var unreadableCurveText: String?
     /// Unknown `;` segments, verbatim, in order.
@@ -62,10 +66,11 @@ public struct MIDIMappingOptions: Sendable, Hashable {
 
     public static let `default` = MIDIMappingOptions()
 
-    public init(curve: MappingCurve = .linear, inverted: Bool = false, highResolution: Bool = false) {
+    public init(curve: MappingCurve = .linear, inverted: Bool = false, highResolution: Bool = false, feedback: Bool = false) {
         self.curve = curve.isValid ? curve : .linear
         self.inverted = inverted
         self.highResolution = highResolution
+        self.feedback = feedback
         self.unreadableCurveText = nil
         self.extraSegments = []
     }
@@ -77,6 +82,7 @@ public struct MIDIMappingOptions: Sendable, Hashable {
         var sawCurve: Bool = false
         var sawInvert: Bool = false
         var sawHighResolution: Bool = false
+        var sawFeedback: Bool = false
         for raw in segments {
             let segment: String = String(raw)
             if segment.isEmpty { continue }
@@ -92,6 +98,9 @@ public struct MIDIMappingOptions: Sendable, Hashable {
             } else if parts.count == 2, key == Self.highResolutionKey {
                 if !sawHighResolution { highResolution = value == "1" }
                 sawHighResolution = true
+            } else if parts.count == 2, key == Self.feedbackKey {
+                if !sawFeedback { feedback = value == "1" }
+                sawFeedback = true
             } else {
                 extraSegments.append(segment)
             }
@@ -117,6 +126,7 @@ public struct MIDIMappingOptions: Sendable, Hashable {
         }
         if inverted { result.append(Self.invertKey + "=1") }
         if highResolution { result.append(Self.highResolutionKey + "=1") }
+        if feedback { result.append(Self.feedbackKey + "=1") }
         result.append(contentsOf: extraSegments)
         return result
     }
@@ -145,6 +155,7 @@ public struct MIDIMappingOptions: Sendable, Hashable {
         }
         if inverted { name += ", inverted" }
         if highResolution { name += ", 14-bit" }
+        if feedback { name += ", feedback" }
         return name
     }
 
