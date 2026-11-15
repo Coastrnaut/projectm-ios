@@ -22,6 +22,7 @@
 // iPhone and at large Dynamic Type. Leading: Go, MIDI (when available) and More…, which opens a dialog with Duplicate
 // Scene, Rename Scene…, Transition…, Transition Into This Cue… and Advance After… (More… hidden while locked). Trailing:
 // Delete and Skip. Eight leading actions had pushed MIDI to x = 475 on a 402 pt iPhone, where it could not be tapped.
+// SHOW-008-R8: Keyframe Tracks… opens `ShowKeyframeTracksView` (tracks along the show timeline).
 import SceneFormat
 import ShowControl
 import ShowStorage
@@ -132,6 +133,7 @@ struct ShowEditorView: View {
                 .accessibilityIdentifier("showAddCurrentScene")
                 addFromTemplateButton   // SCN-011
                 if !show.list.cues.isEmpty { sceneFoldersLink }   // SCN-004
+                if let keyframes = show.keyframes { keyframeTracksLink(keyframes) }   // SHOW-008
             } footer: {
                 Text("Adds a cue that keeps the visual and its settings as they are now. Next and Previous in the controls, or the arrow keys, step through the cues.")
             }
@@ -213,6 +215,16 @@ struct ShowEditorView: View {
             IconTitleRow(title: "Scene Folders", systemImage: "folder")
         }
         .accessibilityIdentifier("showSceneFoldersLink")
+    }
+
+    /// SHOW-008-R8: the keyframe tracks editor.
+    private func keyframeTracksLink(_ keyframes: ShowKeyframeCoordinator) -> some View {
+        NavigationLink {
+            ShowKeyframeTracksView(keyframes: keyframes)
+        } label: {
+            IconTitleRow(title: "Keyframe Tracks", systemImage: "point.topleft.down.to.point.bottomright.curvepath")
+        }
+        .accessibilityIdentifier("showKeyframeTracksLink")
     }
 
     // Split into short parts (2026-11-14): as one function this row took 4.4 s to type-check on

@@ -11,6 +11,7 @@
 // * Play and Pause are SHOW-005's Hold (`setHold`, which announces it); Play at Standby first seeks to 0:00.
 // * Loop (`settings.show.loop`, absent = off) is a device preference: in `AppSettings.allKeys` (UI-test reset, Settings
 //   erase), excluded from backup. The driver reads it through `loops`.
+// * SHOW-008: `positionJumped` runs after every seek that moved the position, so keyframe tracks are sampled at once.
 import Foundation
 import Observation
 import ShowControl
@@ -32,6 +33,8 @@ final class ShowTransportCoordinator {
     @ObservationIgnored private weak var driver: ShowAutoAdvanceCoordinator?
     /// SHOW-005's Hold (AppCoordinator wires `setShowHold`, which announces; tests use the driver directly).
     @ObservationIgnored var setHold: (Bool) -> Void
+    /// SHOW-008-R6: a seek moved the position (the keyframe coordinator samples its tracks once).
+    @ObservationIgnored var positionJumped: () -> Void = { () -> Void in }
 
     init(show: ShowCoordinator, driver: ShowAutoAdvanceCoordinator, defaults: UserDefaults) {
         self.show = show
@@ -102,6 +105,7 @@ final class ShowTransportCoordinator {
             appliedSeeks += 1
             driver.reposition(cueID: cueID, remaining: remaining)
         }
+        if action != .none { positionJumped() }   // SHOW-008
         return action
     }
 

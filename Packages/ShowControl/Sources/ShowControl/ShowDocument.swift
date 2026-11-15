@@ -12,6 +12,8 @@
 // has one; read leniently (contract show-cue-transition-override.md O1-O3). No version bump.
 // SHOW-005: each cue entry may carry an optional `skip` boolean, written (`true`) only when the cue is skipped; absent,
 // null or false = not skipped; another JSON type is dropped with a counted warning (contract show-cue-hold-skip.md K1-K2).
+// SHOW-008: the show may carry an optional `tracks` list (keyframe tracks), written only when non-empty, read leniently
+// with counted warnings (ShowKeyframesDocument.swift; contract show-keyframe-tracks.md K4). No version bump.
 import Foundation
 import ParameterGraph
 
@@ -62,6 +64,10 @@ public enum ShowDecodeWarning: Sendable, Hashable {
     case unknownTransitionOverrideType(cue: String, type: String)
     /// SHOW-005: cue `skip` values that were not booleans were left out (the cue is not skipped).
     case droppedSkipFlags(Int)
+    /// SHOW-008: keyframe tracks that broke a rule (ID, parameter, duplicate, over the limit) were left out.
+    case droppedKeyframeTracks(Int)
+    /// SHOW-008: keyframes that broke a rule (time, value, interpolation, kind, duplicate time, over the limit) were left out.
+    case droppedKeyframes(Int)
 }
 
 public struct ShowDecodeResult: Sendable {
@@ -103,6 +109,7 @@ extension ShowCueList {
         var tagMap = tags
         tagMap.prune(keepingScenes: Set(sceneIDs))
         if !tagMap.isEmpty { file.sceneTags = tagMap.tags.mapValues { (list: [String]) -> LenientTags in .tags(list) } }
+        file.tracks = tracks.stored   // SHOW-008 (contract K4): nil, so not written, without tracks
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
         // Encoding plain strings, ints and arrays cannot fail.
@@ -186,6 +193,14 @@ extension ShowCueList {
                 if repaired.dropped > 0 { warnings.append(.droppedTags(repaired.dropped)) }
             } else if file.sceneTagsUnreadable {
                 warnings.append(.droppedTags(1))
+            }
+            if let stored = file.tracks {   // SHOW-008 (contract K4)
+                let repaired = ShowKeyframeTracks.repaired(stored)
+                list.tracks = repaired.tracks
+                if repaired.droppedTracks > 0 { warnings.append(.droppedKeyframeTracks(repaired.droppedTracks)) }
+                if repaired.droppedKeyframes > 0 { warnings.append(.droppedKeyframes(repaired.droppedKeyframes)) }
+            } else if file.tracksUnreadable {
+                warnings.append(.droppedKeyframeTracks(1))
             }
             return ShowDecodeResult(list: list, warnings: warnings)
         } catch {
@@ -284,9 +299,13 @@ private struct ShowFileV1: Codable {
     var sceneTags: [String: LenientTags]? = nil
     /// SCN-005: `sceneTags` was present but not an object (decoding only).
     var sceneTagsUnreadable = false
+    /// SHOW-008, optional: keyframe tracks; absent = none. Read leniently (contract K4).
+    var tracks: [StoredKeyframeTrack]? = nil
+    /// SHOW-008: `tracks` was present but not a list (decoding only).
+    var tracksUnreadable = false
 
     enum CodingKeys: String, CodingKey {
-        case format, version, id, name, cues, position, folders, sceneFolders, sceneTags
+        case format, version, id, name, cues, position, folders, sceneFolders, sceneTags, tracks
     }
 
     init(format: String, version: Int, id: String, name: String, cues: [Cue], position: String?) {
@@ -315,6 +334,13 @@ private struct ShowFileV1: Codable {
                 sceneTagsUnreadable = true
             }
         }
+        if container.contains(.tracks), try !container.decodeNil(forKey: .tracks) {
+            if let list = try? container.decode([StoredKeyframeTrack].self, forKey: .tracks) {
+                tracks = list
+            } else {
+                tracksUnreadable = true
+            }
+        }
     }
 
     // `position` is written as null at Standby (the synthesized encoder would leave it out).
@@ -329,6 +355,7 @@ private struct ShowFileV1: Codable {
         try container.encodeIfPresent(folders, forKey: .folders)
         try container.encodeIfPresent(sceneFolders, forKey: .sceneFolders)
         try container.encodeIfPresent(sceneTags, forKey: .sceneTags)
+        try container.encodeIfPresent(tracks, forKey: .tracks)
     }
 }
 

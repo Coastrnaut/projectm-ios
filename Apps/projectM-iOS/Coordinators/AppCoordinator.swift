@@ -380,6 +380,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var cueRehearsal: CueRehearsalCoordinator = makeCueRehearsal()
     /// SHOW-007: the show timeline transport (Play/Pause over SHOW-005's Hold, seek, scrub, Loop).
     @ObservationIgnored private(set) lazy var showTransport: ShowTransportCoordinator = makeShowTransport(defaults: defaults)
+    /// SHOW-008: keyframe tracks along the show timeline (a live layer under MIDI/OSC values; Visual Colour).
+    @ObservationIgnored private(set) lazy var showKeyframes: ShowKeyframeCoordinator = makeShowKeyframes()
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// CAM-011: device tilt and shake as modulation sources (Settings › Motion; the sensor runs only while used).
@@ -617,7 +619,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// OSC-003-R5: one live-value path for MIDI and OSC into the native host (then MOD-002 and ACC-012's clamp).
     func pushLiveValues(_ source: ExternalLiveValues.Source, _ values: [ParameterID: Double]) {
         externalLiveValues.update(source, values)
-        nativeVisual?.externalValues = externalLiveValues.merged
+        nativeVisual?.externalValues = hostExternalValues
     }
 
     private static func resetForUITests(_ defaults: UserDefaults) {
@@ -1206,7 +1208,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = effectiveSpectrumPalette        // ACC-003-R13, UIX-011
             host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5, VIS-008-R9, VIS-009-R9: the mandala's turn, the fountain's bursts, the orbit (ACC-001)
-            host.externalValues = externalLiveValues.merged   // MIDI-003, OSC-003: values held while no native visual was shown
+            host.externalValues = hostExternalValues   // MIDI-003, OSC-003, SHOW-008: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
@@ -1777,7 +1779,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     }
 
     /// UIX-011-R8: the scene's palette, unless ACC-003's colour-blind-safe switch is on.
-    var effectiveSpectrumPalette: VisualPalette { palettes.visualPalette(colorBlindSafe: settings.colorBlindSafePalette) }
+    /// SHOW-008-R7: a Visual Colour track paints the visual in one colour (the colour-blind-safe palette still wins).
+    var effectiveSpectrumPalette: VisualPalette {
+        if let track = Self.trackPalette(showKeyframes.output.color, colorBlindSafe: settings.colorBlindSafePalette) { return track }
+        return palettes.visualPalette(colorBlindSafe: settings.colorBlindSafePalette)
+    }
 
     // MARK: - Glow (FX-001)
 
