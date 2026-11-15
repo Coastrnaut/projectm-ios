@@ -38,6 +38,8 @@
 //   which stand-in cameras can focus on a point. Focusing never touches the frame loop or the audio.
 // * CAM-007: `crop` is forwarded to the camera layer the same way; the layer recomputes the fit every
 //   frame from the drawable's size and the picture's rotation, so a device rotation keeps it.
+// * CAM-008: the camera layer gets a `PersonMasker` (CameraVisualHost+PersonMask.swift); its plan
+//   follows heat and power on the same notifications as the frame-rate governor.
 // * CAM-013 (ADR-0017 decisions 11-14): an interruption or a runtime error already clears the picture
 //   (the layer draws only while running). The host keeps a `CameraRecovery` on a monotonic clock:
 //   `retryCamera()` (the notice's Retry) stops and starts the camera at once when the backoff allows,
@@ -304,7 +306,8 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     static func make(device: MTLDevice?, reader: (any NormalizedPCMReader)?, barCount: SpectrumBarCount,
                      position: CameraPosition = .back, mirrored: Bool = false, crop: CameraCrop = .fill,
                      lens: CameraLens = .wide, lenses: (any CameraLensInventory)? = nil,
-                     provider: ((MTLDevice) -> any CameraFrameProvider)? = nil) throws -> CameraVisualHost {
+                     provider: ((MTLDevice) -> any CameraFrameProvider)? = nil,
+                     personMask: CameraPersonMaskMode = .off, segmenter: (any PersonSegmenting)? = nil) throws -> CameraVisualHost {
         guard let device, let queue = device.makeCommandQueue() else { throw VisualGeneratorError.noDevice }
         let transparent = LinearColor(red: 0, green: 0, blue: 0, alpha: 0)
         let generator = try CircularSpectrumGenerator(device: device, pixelFormat: LayerPictureDescriptor.metalPixelFormat,
@@ -317,6 +320,8 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         camera.provider.selectLens(lens)   // CAM-003: likewise for the back lens
         camera.mirrored = mirrored
         camera.crop = crop   // CAM-007
+        camera.personMaskMode = personMask   // CAM-008
+        camera.personMasker = PersonMasker(segmenter: segmenter ?? makePersonSegmenter())
         // CMP-002: the stack, bottom first: the camera (one per stack), then the circular spectrum.
         var stack = LayerStack()
         try stack.add(LayerDescriptor(kind: .camera))
@@ -330,8 +335,10 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
             }
         }
         let analyzer = try LiveBandAnalyzer(barCount: barCount)
-        return CameraVisualHost(device: device, queue: queue, camera: camera, spectrum: spectrum, compositor: compositor,
-                                analyzer: analyzer, reader: reader)
+        let host = CameraVisualHost(device: device, queue: queue, camera: camera, spectrum: spectrum, compositor: compositor,
+                                    analyzer: analyzer, reader: reader)
+        host.updatePersonMaskPlan()   // CAM-008-R6
+        return host
     }
 
     private init(device: MTLDevice, queue: MTLCommandQueue, camera: CameraLayerSource, spectrum: SpectrumLayerSource,
@@ -623,6 +630,7 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     }
 
     private func qualityChanged() {
+        updatePersonMaskPlan()   // CAM-008-R6: heat and power also set the masker's plan
         let quality = QualityGovernor.current()
         guard quality != self.quality else { return }
         self.quality = quality

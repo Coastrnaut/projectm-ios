@@ -102,7 +102,7 @@ public enum LibrarySettingsPolicy {
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
-        "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens",
+        "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",
         "settings.osc.port",
         "settings.osc.disabledRoutes", "settings.osc.aliases",   // OSC-003-R9: route addresses and parameter IDs only
         "settings.midi.mappings",   // MIDI-003-R9: channel, controller and parameter ID per line; erased with Settings

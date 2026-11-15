@@ -80,6 +80,7 @@ final class SettingsTests: XCTestCase {
         settings.cameraCropAnchor = .top
         settings.cameraZoom = 2
         settings.cameraLens = .ultraWide   // CAM-003
+        settings.cameraPersonMask = .person   // CAM-008-R9
         settings.colorBlindSafePalette = true  // ACC-003-R13
         settings.sensorySafety.preset = .custom   // ACC-012-R8: the profile and its three custom keys
         settings.sceneLock.lock()              // SCN-015-R1

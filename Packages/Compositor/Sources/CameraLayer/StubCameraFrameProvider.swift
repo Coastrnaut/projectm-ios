@@ -24,6 +24,7 @@
 // session's setup (every start and camera switch), a lens switch, `stop()` and `fail(_:)` release it
 // first, exactly as the real provider does.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
+import CoreVideo
 import Metal
 
 public final class StubCameraFrameProvider: CameraFrameProvider {
@@ -52,7 +53,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
     public var rotation: CameraRotation {
         didSet {
             latest.setRotation(rotation)
-            if state == .running, let texture { latest.store(texture, position: position) }
+            if state == .running, let texture { deliver(texture) }
         }
     }
     /// CAM-002: the cameras this stand-in device has (`scenario` `.unavailable` means none at all).
@@ -217,7 +218,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         guard state == .interrupted, let texture else { return }
         stopReason = nil
         state = .running
-        latest.store(texture, position: position)
+        deliver(texture)
     }
 
     /// A runtime error (CAM-013: of `reason`, an error kind). The slot closes, as a released session's would.
@@ -268,7 +269,7 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
         case .switched, .fellBackToWide:
             if outcome == .fellBackToWide { lens = .wide }
             latest.clear()   // R8: no picture of the previous lens; the new lens's first picture follows
-            if state == .running, let texture { latest.store(texture, position: position) }
+            if state == .running, let texture { deliver(texture) }
         case .keptPrevious:
             lens = previous   // R6: the previous lens keeps running
         case .noInput:
@@ -382,9 +383,46 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
             return
         }
         latest.open()
-        latest.store(texture, position: position)
+        deliver(texture)
         stopReason = nil
         state = .running
+    }
+
+    /// CAM-008: the masker this stand-in offers its picture to (main thread).
+    public var personMasker: PersonMasker?
+    /// CAM-008: the picture as a CoreVideo buffer for the masker, made once.
+    private var pixelBuffer: CVPixelBuffer?
+
+    /// Stores the picture and (CAM-008) offers it to the masker, as the real camera does per buffer.
+    private func deliver(_ texture: MTLTexture) {
+        guard latest.store(texture, position: position), let personMasker else { return }
+        if pixelBuffer == nil { pixelBuffer = makePixelBuffer() }
+        guard let pixelBuffer else { return }
+        personMasker.offer(pixelBuffer, rotation: rotation, position: position)
+    }
+
+    /// CAM-008 (tests): delivers the same picture again while running, as the next camera frame.
+    public func deliverNextPicture() {
+        if state == .running, let texture { deliver(texture) }
+    }
+
+    private func makePixelBuffer() -> CVPixelBuffer? {
+        var buffer: CVPixelBuffer?
+        guard CVPixelBufferCreate(kCFAllocatorDefault, width, height, kCVPixelFormatType_32BGRA, nil, &buffer) == kCVReturnSuccess,
+              let buffer else { return nil }
+        CVPixelBufferLockBaseAddress(buffer, [])
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        guard let base = CVPixelBufferGetBaseAddress(buffer) else { return nil }
+        let rowBytes: Int = CVPixelBufferGetBytesPerRow(buffer)
+        let bytes = base.assumingMemoryBound(to: UInt8.self)
+        for y in 0..<height {
+            for x in 0..<width {
+                let c: Color = color(x: x, y: y)
+                let i: Int = y * rowBytes + x * 4
+                bytes[i] = c.blue; bytes[i + 1] = c.green; bytes[i + 2] = c.red; bytes[i + 3] = 255
+            }
+        }
+        return buffer
     }
 
     private func makeTexture() -> MTLTexture? {
