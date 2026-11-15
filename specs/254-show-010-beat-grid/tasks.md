@@ -17,15 +17,15 @@ acceptance; owner rule 7 budgets).
 
 **Independent test**: BeatGridTests plus the app acceptance test with a seeded 120 BPM tempo.
 
-- [ ] SHOW-010-T04 [US1] `ShowBeatGridCoordinator` (tempo and tempo-clock closures; placement while playing, kept while paused/Standby, 0 without anchor; `gridTempo()`, `marks(width:inset:)`, `readout()`) in Apps/projectM-iOS/Coordinators/ShowBeatGridCoordinator.swift; lazy `beatGrid` in Apps/projectM-iOS/Coordinators/ShowTransportCoordinator.swift; tempo wiring in Apps/projectM-iOS/Coordinators/AppCoordinator+Show.swift
-- [ ] SHOW-010-T05 [US1] Draw ticks under the thumb in `ShowScrubBar` (Apps/projectM-iOS/Views/ShowBeatGridTicks.swift, Apps/projectM-iOS/Views/ShowTimelineRow.swift); the scrub gesture unchanged
-- [ ] SHOW-010-T06 [US1] App acceptance tests (placement, kept while paused, 0:00 without phase, marks at expected x for 120 BPM (within 0.01 point), no tempo → no marks) in Apps/projectM-iOS/Tests/ShowBeatGridAcceptanceTests.swift
+- [X] SHOW-010-T04 [US1] `ShowBeatGridCoordinator` (tempo and tempo-clock closures; placement while playing, kept while paused/Standby, 0 without anchor; `gridTempo()`, `marks(width:inset:)`, `readout()`) in Apps/projectM-iOS/Coordinators/ShowBeatGridCoordinator.swift; lazy `beatGrid` in Apps/projectM-iOS/Coordinators/ShowTransportCoordinator.swift; tempo wiring in Apps/projectM-iOS/Coordinators/AppCoordinator+Show.swift — Verified 2026-11-14: `ShowBeatGridAcceptanceTests` placement (0.2 s from a tap 0.3 s before 4.0 s), kept while paused, 0:00 without an anchor; app build-for-testing on "SHOW10 iPhone 17" with no new type-check warnings
+- [X] SHOW-010-T05 [US1] Draw ticks under the thumb in `ShowScrubBar` (Apps/projectM-iOS/Views/ShowBeatGridTicks.swift, Apps/projectM-iOS/Views/ShowTimelineRow.swift); the scrub gesture unchanged — Verified 2026-11-14: `ShowBeatGridUITests` probe reports drawn ticks; simulator screenshot shows bar ticks across the 2:30 track; `ShowTimelineUITests` (scrub release seeks into cue 3) still passes
+- [X] SHOW-010-T06 [US1] App acceptance tests (placement, kept while paused, 0:00 without phase, marks at expected x for 120 BPM (within 0.01 point), no tempo → no marks) in Apps/projectM-iOS/Tests/ShowBeatGridAcceptanceTests.swift — Verified 2026-11-14: `ShowBeatGridAcceptanceTests` 4/4 (0.04 s): 41 marks at 14 + i × 6.8 points within 0.01, bars every 4th; no tempo → no marks
 
 ## Phase 4: User Story 2 — Hear the position with VoiceOver (P1)
 
-- [ ] SHOW-010-T07 [US2] Readout `showBeatGridReadout` (visible "Bar B · Beat b · N BPM" / "No tempo", VoiceOver label "Beat grid" and value per G4 at the displayed time) and the DEBUG `-uitestBeatGridProbe` text in Apps/projectM-iOS/Views/ShowTimelineRow.swift
-- [ ] SHOW-010-T08 [US2] Readout tests ("120 BPM, tap tempo, bar 3 beat 2" at 4.5 s; "detected" for an estimate) in Apps/projectM-iOS/Tests/ShowBeatGridAcceptanceTests.swift
-- [ ] SHOW-010-T09 [US2] UI test (< 30 s): timeline seed + `-uitestTempoEstimate 120:0.9` + probe → readout value starts "120 BPM, detected, bar", probe reports ticks, in Apps/projectM-iOS/UITests/ShowBeatGridUITests.swift
+- [X] SHOW-010-T07 [US2] Readout `showBeatGridReadout` (visible "Bar B · Beat b · N BPM" / "No tempo", VoiceOver label "Beat grid" and value per G4 at the displayed time) and the DEBUG `-uitestBeatGridProbe` text in Apps/projectM-iOS/Views/ShowTimelineRow.swift — Verified 2026-11-14: `ShowBeatGridUITests`: readout label "Beat grid", value "120 BPM, detected, bar …"; probe present only with `-uitestBeatGridProbe`
+- [X] SHOW-010-T08 [US2] Readout tests ("120 BPM, tap tempo, bar 3 beat 2" at 4.5 s; "detected" for an estimate) in Apps/projectM-iOS/Tests/ShowBeatGridAcceptanceTests.swift — Verified 2026-11-14: `ShowBeatGridAcceptanceTests`: "120 BPM, tap tempo, bar 3 beat 4" at 4.0 s, "120 BPM, detected, bar 3 beat 2" at 4.5 s, "120 BPM" at Standby, "No tempo" below the floor
+- [X] SHOW-010-T09 [US2] UI test (< 30 s): timeline seed + `-uitestTempoEstimate 120:0.9` + probe → readout value starts "120 BPM, detected, bar", probe reports ticks, in Apps/projectM-iOS/UITests/ShowBeatGridUITests.swift — Verified 2026-11-14: `ShowBeatGridUITests` 1/1 (11.7–13.4 s)
 
 ## Phase 5: Polish
 
