@@ -46,6 +46,9 @@ interaction); each answer is the conservative, local-first option, recommended o
 - Q: What must never be kept or sent? → A: No picture, landmark list, face print or value is stored, logged, put in scenes, diagnostics or performance reports, recorded, or sent. Each picture is released right after its analysis. Saved frames and recordings contain the camera picture exactly as before (CAM-001), never face data. Logs carry no values. The feature adds no network code (CAM-009-R11, R12).
 - Q: How does the user know it is running? → A: While face tracking analyses pictures, the camera badge reads "Camera on · Face tracking" (iOS's own camera indicator also shows). The performance overlay and the performance report show only "Face tracking on/off" (CAM-009-R13).
 - Q: Turning it off? → A: The switch off stops analysis at once: no new analysis starts, a result still in flight is dropped, and all values return to neutral (CAM-009-R2).
+- Q: Does face tracking work with the back camera too? → A: Yes: it analyses whichever camera the Camera visual shows (front or back), since the user chose that camera; a camera switch resets the values to neutral (CAM-009-R6).
+- Q: What does the row show when face detection cannot run (the simulator, or an analysis error)? → A: The switch stays as chosen, no values are produced (sources read neutral) and the row says "Face tracking isn't available right now." An error stops face analysis until the camera visual is opened again (no retry every frame, as CAM-008) (CAM-009-R5).
+- Q: Is the sheet and switch accessible? → A: The switch is a standard toggle labelled "Face tracking" with a hint; the sheet's text is readable by VoiceOver and its two buttons are labelled; confirming posts one polite announcement "Face tracking on" through the AccessibilityAnnouncer lane (CAM-009-R2).
 - Q: Where can face sources drive something today? → A: Like every binding source they feed the native spectrum's modulation. Face values are live only while the camera runs, which today is the Camera visual; when no picture is analysed the sources read their neutral values. A native visual with a camera layer is future work (CMP-015); this feature does not add one (Assumptions).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -108,10 +111,10 @@ scenes, diagnostics and logs for face data; check the built app for network symb
 ### Functional Requirements
 
 - **CAM-009-R1**: Face tracking MUST be off by default and MUST NOT analyse any picture until the user has confirmed the explanation sheet.
-- **CAM-009-R2**: Turning the switch on without stored consent MUST show the sheet; Cancel leaves it off; turning it off MUST stop analysis at once, drop results in flight and return values to neutral.
+- **CAM-009-R2**: Turning the switch on without stored consent MUST show the sheet; Cancel leaves it off; confirming announces "Face tracking on"; turning it off MUST stop analysis at once, drop results in flight and return values to neutral.
 - **CAM-009-R3**: Consent MUST be stored on the device only, excluded from settings backups, removed by Settings erase and by the UI-test reset.
 - **CAM-009-R4**: Face tracking MUST use only pictures the camera already captures for the Camera visual; it MUST NOT open a capture session, start the camera or add a permission or usage description.
-- **CAM-009-R5**: With camera access not granted, no analysis MUST run and the row MUST say "Face tracking needs camera access."
+- **CAM-009-R5**: With camera access not granted, no analysis MUST run and the row MUST say "Face tracking needs camera access."; when face detection cannot run or failed, the row MUST say "Face tracking isn't available right now." and no value is produced.
 - **CAM-009-R6**: The system MUST derive eight scalars from the largest face: present, x, y, size, roll, yaw, mouth, eyes.
 - **CAM-009-R7**: Each value MUST be finite and within 0…1, normalised as in the Clarifications.
 - **CAM-009-R8**: The values MUST be bindable sources `audio.face.<feature>` usable by bindings, layers and threshold triggers, not by expressions, with the people-facing names above.
