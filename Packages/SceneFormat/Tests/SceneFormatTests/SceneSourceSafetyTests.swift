@@ -13,6 +13,7 @@ final class SceneSourceSafetyTests: XCTestCase {
         XCTAssertEqual(names, ["SceneCountdown.swift",   // MED-012
                                "SceneDecoding.swift", "SceneDocument.swift", "SceneEditing.swift",
                                "SceneEffectChain+EdgeOutline.swift",   // FX-014
+                               "SceneEffectChain+LensDistortion.swift",   // FX-016
                                "SceneEffectChain+Mosaic.swift",   // FX-012
                                "SceneEffectChain.swift", "SceneEffectChainPresets.swift",   // FX-020
                                "SceneEncoding.swift", "SceneGroup.swift",   // CMP-011

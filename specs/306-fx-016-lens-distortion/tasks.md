@@ -8,48 +8,48 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 1: Setup
 
-- [ ] FX-016-T01 ADR-0117 (lens distortion pass, bounded radial polynomial k = 0.3 × strength, half-diagonal
+- [X] FX-016-T01 ADR-0117 (lens distortion pass, bounded radial polynomial k = 0.3 × strength, half-diagonal
   normalisation, zoom to fill, clamped bilinear taps with exact centre read, transparent-black fill, chain position) in
-  `docs/adr/0117-lens-distortion.md` and its row in `docs/adr/README.md`
+  `docs/adr/0117-lens-distortion.md` and its row in `docs/adr/README.md` — Verified 2026-11-15: docs/adr/0117-lens-distortion.md and README row; validate_docs OK
 
 ## Phase 2: Foundational
 
-- [ ] FX-016-T02 [P] `LensDistortion` in `Packages/Compositor/Sources/Compositor/LensDistortion.swift`: strength
+- [X] FX-016-T02 [P] `LensDistortion` in `Packages/Compositor/Sources/Compositor/LensDistortion.swift`: strength
   "−1…1, 0.3" (NaN → default, else clamped), zoomToFill "true"; `coefficient` (0.3 × strength), `isActive` (on, k ≠ 0,
   ≥ 2 × 2), `block`, `radialMap`, `sample` (source position, inside flag), `taps`, `referencePixel`, `reference`
-  (contract C2); plain Swift (Linux)
-- [ ] FX-016-T03 [P] `LensDistortionModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; zero strength
+  (contract C2); plain Swift (Linux) — Verified 2026-11-15: LensDistortionModelTests 5/5 on the host
+- [X] FX-016-T03 [P] `LensDistortionModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; zero strength
   maps every pixel centre to itself; dense-grid safety at strength ±1, zoom on and off, at 1:1, 16:9, 9:16, 1:64, 64:1
   and 2 × 2 (every inside sample in 0…W × 0…H, every tap in 0…W − 1 × 0…H − 1, outside only for barrel with zoom off,
   all values finite); radial mapping strictly increasing at every strength step; reference output finite (FX-016-R2 to
-  R6, R12, S2, S3)
-- [ ] FX-016-T04 `OutputEffectKind.lensDistortion` (`fx.lensDistortion`, appended after `edgeOutline`) in
+  R6, R12, S2, S3) — Verified 2026-11-15: swift test --filter LensDistortionModelTests, 5 pass (dense grids at 1:1, 16:9, 9:16, 1:64, 64:1, 2 × 2, 2 × 4096, 4096 × 2; radial map strictly increasing at all 200 strength steps)
+- [X] FX-016-T04 `OutputEffectKind.lensDistortion` (`fx.lensDistortion`, appended after `edgeOutline`) in
   `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update the existing whole-order assertions in
-  `OutputEffectOrderTests` and add a position-based one (FX-016-R7)
+  `OutputEffectOrderTests` and add a position-based one (FX-016-R7) — Verified 2026-11-15: OutputEffectOrderTests 5/5 on the host; position asserts firstIndex(of: .lensDistortion) == 8
 
 ## Phase 3: User Stories 1-2 — the pass (P1)
 
 **Goal**: a bounded barrel/pincushion warp on every compositor output, exact identity at zero, safe corners.
 **Independent test**: GPU tests through the real compositor.
 
-- [ ] FX-016-T05 [US1] `LensDistortionPass` with `cmp_lens_distortion` in
-  `Packages/Compositor/Sources/Compositor/LensDistortionPass.swift` (one pooled picture, released when unused)
-- [ ] FX-016-T06 [US1] `Compositor.swift`: `lensDistortion` property, splice the source at the existing compile site,
+- [X] FX-016-T05 [US1] `LensDistortionPass` with `cmp_lens_distortion` in
+  `Packages/Compositor/Sources/Compositor/LensDistortionPass.swift` (one pooled picture, released when unused) — Verified 2026-11-15: LensDistortionCompositeTests 4/4 on the host (real Metal device)
+- [X] FX-016-T06 [US1] `Compositor.swift`: `lensDistortion` property, splice the source at the existing compile site,
   the `.lensDistortion` case in `encodeOutputEffects` (Color folded before it), release in deinit; add the source to
-  `CompositorShaderSources.archived` in `CompositorShaders.swift` (FX-016-R6, R11, R13)
-- [ ] FX-016-T07 [US1] [US2] `LensDistortionCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and
+  `CompositorShaderSources.archived` in `CompositorShaders.swift` (FX-016-R6, R11, R13) — Verified 2026-11-15: Compositor package on the host: CompositorTests 760 tests, 0 failures (10 skipped), whole package 56.6 s; CompositorPipelineArchiveTests pass
+- [X] FX-016-T07 [US1] [US2] `LensDistortionCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and
   strength 0 bit-identical with no pass and no picture; the pass encoded directly at strength 0 bit-identical (`@testable import Compositor`, as `OutputEffectOrderTests`); ±1 with
   zoom on and off equals the reference within half-float rounding, all finite, middle pixel exact; corners transparent
-  black at +1 with zoom off; order and pool (FX-016-S1, S2, S4)
-- [ ] FX-016-T08 [US1] Existing compositor tests still pass (`EdgeOutlineCompositeTests`, `EffectOrderCompositeTests`,
-  `CompositorPipelineArchiveTests`, the whole Compositor suite)
+  black at +1 with zoom off; order and pool (FX-016-S1, S2, S4) — Verified 2026-11-15: LensDistortionCompositeTests 4/4 (host, 0.5 s): off/strength 0 bit-identical with no pass; pass run at k = 0 bit-identical on 37 × 29, 2 × 2, 3 × 64; ±1 zoom on/off GPU = reference, finite, middle exact, corners black only at barrel with zoom off
+- [X] FX-016-T08 [US1] Existing compositor tests still pass (`EdgeOutlineCompositeTests`, `EffectOrderCompositeTests`,
+  `CompositorPipelineArchiveTests`, the whole Compositor suite) — Verified 2026-11-15: EdgeOutlineCompositeTests, EffectOrderCompositeTests, CompositorPipelineArchiveTests pass in the full host run (760 tests)
 
 ## Phase 4: User Story 3 — chain, scenes, goldens (P2)
 
-- [ ] FX-016-T09 [US3] `SceneEffectSettings.lensDistortion` (property set after `init`) and the `fx.lensDistortion` entry
+- [X] FX-016-T09 [US3] `SceneEffectSettings.lensDistortion` (property set after `init`) and the `fx.lensDistortion` entry
   (read, clamp, write, `isDefault`) in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift` and
   `SceneEffectChain+LensDistortion.swift`; `LensDistortionSceneEntryTests`; whole-order updates in
-  `SceneEffectChainTests`; the new file in `SceneSourceSafetyTests` (FX-016-R10, S6)
+  `SceneEffectChainTests`; the new file in `SceneSourceSafetyTests` (FX-016-R10, S6) — Verified 2026-11-15: SceneFormat 222 tests on the host, 0 failures (LensDistortionSceneEntryTests 2/2, SceneEffectChainTests, SceneSourceSafetyTests)
 - [ ] FX-016-T10 [US3] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the warp;
   `LensDistortionSceneGoldenTests` (off and strength 0 render as no chain; a lens scene round-trips and differs from the
   plain one); `EffectChainSceneTests` order update; existing goldens unchanged (FX-016-S5)

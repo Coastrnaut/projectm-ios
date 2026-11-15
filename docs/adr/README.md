@@ -74,5 +74,6 @@
 | [0108](0108-echo-feedback.md) | Echo feedback keeps a ring of exactly four half-size history pictures, stored once per delay (amends ADR-0106) | Accepted 2026-11-15 (FX-010; owner rule 4) |
 | [0110](0110-mosaic-pixelation.md) | Mosaic pixelation is its own output pass, last in the effect chain (after Echo), showing each cell's centre pixel (amends ADR-0104) | Accepted 2026-11-15 (FX-012; owner rule 4) |
 | [0114](0114-edge-outline.md) | Edge outline is its own output pass, last in the effect chain (after Mosaic): a Sobel mask on linear luminance, overlay keeps unmasked pixels exact (amends ADR-0104) | Accepted 2026-11-15 (FX-014; owner rule 4) |
+| [0117](0117-lens-distortion.md) | Lens distortion is its own output pass after Edge outline: a bounded radial polynomial (k within ±0.3), zoom to fill, clamped bilinear taps, transparent black outside (amends ADR-0104) | Accepted 2026-11-15 (FX-016; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.
