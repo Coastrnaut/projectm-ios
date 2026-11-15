@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T02:52:34Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T02:58:13Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 50 |
+| audited | 49 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 272 |
+| built | 1 |
+| integrated | 273 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 1 | 1 | 1 | 148 | 0 |
-| P2 | 38 | 1 | 0 | 40 | 0 |
+| P1 | 1 | 0 | 1 | 149 | 0 |
+| P2 | 37 | 2 | 0 | 40 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 53 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 52 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -284,6 +284,7 @@ The physical-device suite may **not** start:
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | SHOW-013 | Auto scene rotation | `100b6d662165` | `feature/show-013` |
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
+| SHOW-015 | Performance lock | `6b42bdb5af63` | `feature/show-015` |
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
 | UIX-002 | Quick scene switcher | `20b9cc8a` | `feature/uix-002` |
 | UIX-003 | Context parameter inspector | `7b7a78050ada` | `feature/uix-003` |
@@ -3058,9 +3059,10 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/sim-test_Rendering.log`)
 - `post-merge (batch with SCN-001, REC-012, SHOW-014, FILE-001 on a second iOS 27.2 iPhone 17 simulator): projectM-iOSTests 271 incl. SceneArchiveServiceTests; CaptureShareUITests, EmergencyBlackoutUITests 2, OutputBlackoutUITests; SceneFormat 31 and SceneArchive 18 on host and Linux shape`: pass at `c3886d1cb0bb` (log `.autonomous/logs/integration/batch-scn-rec12-show14-file1/app-tests.log`)
 
-### SHOW-015 Performance lock (unit_passed)
+### SHOW-015 Performance lock (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ee48122e152e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-015/20261114T215044/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `ee48122e152e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-015/20261114T215044/docs.log`)
+- `swift test LibraryBackup 87, PresetLibrary 349; postmerge projectM-iOSTests 1189 + SceneLockUITests; PerformanceLockUITests fixed (hide-controls race), 3/3 reruns pass`: pass at `6b42bdb5af63` (log `.autonomous/logs/integration/batch101b-3/app-tests.log`)
 
 ### UIX-001 Guided first scene (integrated)
 - `python3 scripts/check_compliance.py`: pass at `47115ca78022` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-001/20261113T180131/compliance.log`)
