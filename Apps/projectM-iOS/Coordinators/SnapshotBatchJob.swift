@@ -153,6 +153,7 @@ enum SnapshotBatchPlanner {
         case .particleFountain: return .particleFountain(gravity: settings.particleGravity)
         case .particleOrbit: return .particleOrbit(radius: settings.particleOrbitRadius)
         case .noiseField: return .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
+        case .kaleidoscope: return .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
         default: return .circular
         }
     }

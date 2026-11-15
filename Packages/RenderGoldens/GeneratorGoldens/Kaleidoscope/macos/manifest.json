@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "kaleidoscope-128x96-f0.png",
+      "fileSHA256" : "63b3168ab8d1b6b8baca501511445269ccb106a7ba8314a723de06f0b902ff4e",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "fa6211b28503c2d515313000f21aa76581c8714c6fd2b49aa31ace8240dde7b8",
+      "scene" : "kaleidoscope",
+      "width" : 128
+    },
+    {
+      "file" : "kaleidoscope-256x192-f0.png",
+      "fileSHA256" : "aa561a42efc83cafec01f16df7395032417bdabc6d2df0de794a2fd99162c69a",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "804228a17a065897805f82880e5f70f48c3ed04e86bfc3ff2561e0b0eb33353c",
+      "scene" : "kaleidoscope",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "macos",
+  "recordedGPU" : "Apple M5 Max",
+  "recordedOS" : "27.2"
+}

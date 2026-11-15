@@ -35,6 +35,13 @@
 // and the frame reaching the duration exactly the end. `reduceMotion` holds the start. While moving, the layer
 // declares a time dependency (never cached); holding, it is still again, its parameter generation changing with the
 // fit, the movement, the duration and Reduce Motion.
+// MED-008 (specs/257-med-008-animated-images, contract A2; research MED-008-D5 to D8): a stored animation (APNG, GIF,
+// HEICS, WebP) loads as an `AnimatedPicture` whose frame 0 is the held picture. Each render advances a second playhead
+// (the same frame-time counter, unbounded) and draws the frame `AnimationTimeline.frameIndex` picks (frame 0 under
+// Reduce Motion; the Reduce flashing timeline while the frame context's `reduceFlashing` is on); a frame not decoded yet leaves the last drawn
+// frame on screen and is requested with the one after it. While animating the layer declares a time dependency. The
+// prepared slot (MED-006) carries an animation too; a prewarmed still (PERF-005) is adopted at once and the file is then
+// probed on the load queue, attaching its animation for the same generation.
 import Foundation
 
 /// What the photo layer shows.
@@ -91,6 +98,15 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     }
     /// MED-007: elapsed time of the movement (render side).
     public private(set) var playhead = KenBurnsPlayhead()
+    /// MED-008: elapsed time of the animation (render side; the same counter, never saturating in practice).
+    public private(set) var animationPlayhead = KenBurnsPlayhead()
+    /// MED-008-R8: the decoded-frame budget of each animation this layer loads.
+    public let animationBudgetBytes: Int
+    /// MED-008: the animation of the held picture (render side), and the frame drawn last.
+    private var heldAnimation: AnimatedPicture?
+    private var drawnFrame: MTLTexture?
+    /// MED-008: the animation frame drawn last (diagnostics, tests; 0 for a still).
+    public private(set) var shownFrameIndex = 0
     private let decoder: any ImageDecoding
     private let limits: ImageImportLimits
     private let loads = DispatchQueue(label: "MED-001 image load", qos: .userInitiated)
@@ -120,8 +136,9 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     }
 
     public init(device: MTLDevice, decoder: any ImageDecoding = ImageIODecoder(), limits: ImageImportLimits = .standard,
-                mode: ImageScaleMode = .fill) {
+                mode: ImageScaleMode = .fill, animationBudgetBytes: Int = AnimatedFrameBudget.current) {
         self.device = device
+        self.animationBudgetBytes = animationBudgetBytes
         self.decoder = decoder
         self.limits = limits
         self.mode = mode
@@ -136,9 +153,13 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         didSet {
             guard content != oldValue else { return }
             held = nil
+            heldAnimation = nil
+            drawnFrame = nil
+            animationPlayhead.restart()
             let generation: UInt64 = slot.lock.withLockUnchecked { s in
                 s.generation &+= 1
                 s.texture = nil
+                s.animation = nil
                 s.state = content == .none ? .empty : .loading
                 return s.generation
             }
@@ -158,22 +179,25 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
                 }
                 prewarmedAdoptions += 1
                 slot.notify()
+                attachAnimation(url, generation: generation)   // MED-008-D8
                 return
             }
             slot.notify()
             guard case .file(let url) = content else { return }
             let slot = self.slot, device = self.device, decoder = self.decoder, limits = self.limits
+            let budget: Int = animationBudgetBytes
             slot.lock.withLockUnchecked { $0.loadsStarted += 1 }
             loads.async {
-                let result: Result<MTLTexture, ImageImportError> = slot.takePrepared(url).map {
-                    (texture: MTLTexture) -> Result<MTLTexture, ImageImportError> in .success(texture)
-                } ?? Self.load(url, device: device, decoder: decoder, limits: limits)
+                let result: Result<LoadedPicture, ImageImportError> = slot.takePrepared(url).map {
+                    (picture: LoadedPicture) -> Result<LoadedPicture, ImageImportError> in .success(picture)
+                } ?? Self.load(url, device: device, decoder: decoder, limits: limits, budget: budget)
                 let stored: Bool = slot.lock.withLockUnchecked { s in
                     guard s.generation == generation else { return false }   // a newer content won
                     switch result {
-                    case .success(let texture):
-                        s.texture = texture
-                        s.state = .ready(width: texture.width, height: texture.height)
+                    case .success(let picture):
+                        s.texture = picture.texture
+                        s.animation = picture.animation
+                        s.state = .ready(width: picture.texture.width, height: picture.texture.height)
                     case .failure(let error):
                         s.state = .failed(error)
                     }
@@ -197,12 +221,40 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         }
         guard token != 0 else { return }
         let slot = self.slot, device = self.device, decoder = self.decoder, limits = self.limits
+        let budget: Int = animationBudgetBytes
         loads.async {
-            guard case .success(let texture) = Self.load(url, device: device, decoder: decoder, limits: limits) else { return }
+            guard case .success(let picture) = Self.load(url, device: device, decoder: decoder, limits: limits,
+                                                         budget: budget) else { return }
             slot.lock.withLockUnchecked { s in
-                if s.preparedToken == token, s.preparedURL == url { s.preparedTexture = texture }
+                if s.preparedToken == token, s.preparedURL == url { s.preparedTexture = picture }
             }
         }
+    }
+
+    /// MED-008-D8: after a prewarmed still was adopted, probes the file and attaches its animation (same generation).
+    private func attachAnimation(_ url: URL, generation: UInt64) {
+        let slot = self.slot, device = self.device, limits = self.limits
+        let budget: Int = animationBudgetBytes
+        loads.async {
+            guard let data = try? ImageSanitizer.readBounded(url, limits: limits),
+                  let animation = try? AnimatedPicture.make(data, device: device, budget: budget, limits: limits) else { return }
+            let stored: Bool = slot.lock.withLockUnchecked { s in
+                guard s.generation == generation else { return false }
+                s.texture = animation.frame0
+                s.animation = animation
+                s.state = .ready(width: animation.frame0.width, height: animation.frame0.height)
+                return true
+            }
+            if stored { slot.notify() }
+        }
+    }
+
+    /// MED-008: frames of the held animation (0: a still or nothing). Read under the slot's lock.
+    public var animationFrameCount: Int { slot.lock.withLockUnchecked { $0.animation?.frameCount ?? 0 } }
+
+    /// MED-008: the held animation's frame cache (nil: no animation).
+    public var animationCacheStatistics: AnimatedFrameCacheStatistics? {
+        slot.lock.withLockUnchecked { $0.animation }?.statistics
     }
 
     /// The URL in the prepared slot (tests, diagnostics).
@@ -213,17 +265,28 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         slot.lock.withLockUnchecked { $0.preparedURL == url && $0.preparedTexture != nil }
     }
 
-    /// Tests only: returns when every load started so far has finished.
-    public func waitUntilLoaded() { loads.sync {} }
+    /// Tests only: returns when every load started so far, and every frame decode it requested, has finished.
+    public func waitUntilLoaded() {
+        loads.sync {}
+        let animations: [AnimatedPicture] = slot.lock.withLockUnchecked { s in
+            [s.animation, s.preparedTexture?.animation].compactMap { (a: AnimatedPicture?) -> AnimatedPicture? in a }
+        }
+        for animation in animations { animation.waitUntilIdle() }
+    }
 
-    /// Reads, decodes and uploads one stored copy (background queue).
-    static func load(_ url: URL, device: MTLDevice, decoder: any ImageDecoding,
-                     limits: ImageImportLimits) -> Result<MTLTexture, ImageImportError> {
-        switch decodeStored(url, decoder: decoder, limits: limits) {
-        case .success(let image):
+    /// Reads, decodes and uploads one stored copy (background queue). MED-008: an animation loads as its frame 0 and
+    /// its `AnimatedPicture`.
+    static func load(_ url: URL, device: MTLDevice, decoder: any ImageDecoding, limits: ImageImportLimits,
+                     budget: Int = AnimatedFrameBudget.current) -> Result<LoadedPicture, ImageImportError> {
+        do throws(ImageImportError) {
+            let data = try ImageSanitizer.readBounded(url, limits: limits)
+            if let animation = try AnimatedPicture.make(data, device: device, budget: budget, limits: limits) {
+                return .success(LoadedPicture(texture: animation.frame0, animation: animation))
+            }
+            let image = try decoder.decode(data, limits: limits)
             guard let texture = makeTexture(image, device: device) else { return .failure(.damaged) }
-            return .success(texture)
-        case .failure(let error):
+            return .success(LoadedPicture(texture: texture, animation: nil))
+        } catch {
             return .failure(error)
         }
     }
@@ -257,10 +320,11 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         return total
     }
 
-    static func makeTexture(_ image: DecodedImage, device: MTLDevice) -> MTLTexture? {
+    /// MED-008: `mipmapped` false for animation frames (one level, no GPU blit).
+    static func makeTexture(_ image: DecodedImage, device: MTLDevice, mipmapped: Bool = true) -> MTLTexture? {
         guard image.width >= 1, image.height >= 1, image.pixels.count == image.width * image.height * 4 else { return nil }
         let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .rgba8Unorm_srgb, width: image.width,
-                                                         height: image.height, mipmapped: true)
+                                                         height: image.height, mipmapped: mipmapped)
         d.usage = [.shaderRead]
         d.storageMode = .shared
         guard let texture = device.makeTexture(descriptor: d) else { return nil }
@@ -317,7 +381,8 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     public func render(into picture: MTLTexture, commandBuffer: MTLCommandBuffer, frame: LayerFrameContext,
                        audio: LayerAudioContext) throws(LayerSourceError) {
         takeNewest()
-        guard let image = held, let pipeline, let sampler else { throw .notReady }
+        guard let still = held, let pipeline, let sampler else { throw .notReady }
+        let image: MTLTexture = animationFrame(frame: frame) ?? still
         let geometry: ImagePictureGeometry = pictureGeometry(image: image, picture: picture, frame: frame)
         var uniforms = ImageUniforms(geometry: geometry, outputWidth: picture.width, outputHeight: picture.height)
         let pass = MTLRenderPassDescriptor()
@@ -372,12 +437,47 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
         return !playhead.isFinished(limit: kenBurnsLimit)
     }
 
+    /// MED-008: this frame's animation frame (nil: no animation, or frame 0 is drawn from `held`). Advances the
+    /// animation playhead; a frame not decoded yet keeps the last drawn one and is requested with the one after it.
+    private func animationFrame(frame: LayerFrameContext) -> MTLTexture? {
+        guard let animation = heldAnimation else { return nil }
+        let timeline: AnimationTimeline = animation.timeline(reduceFlashing: frame.reduceFlashing)   // MED-008-R4
+        var index = 0
+        if !reduceMotion {
+            let elapsed: UInt64 = animationPlayhead.advance(frameDuration: frame.frameDuration, limit: .max)
+            index = timeline.frameIndex(elapsedNanoseconds: elapsed)
+        }
+        if let texture = animation.texture(at: index) {
+            drawnFrame = texture
+            shownFrameIndex = index
+        } else {
+            animation.request(index)
+        }
+        animation.request(index + 1 < animation.frameCount ? index + 1 : 0)
+        return drawnFrame
+    }
+
+    /// MED-008: the held picture is an animation that plays (more than one frame, Reduce Motion off). Render side: it
+    /// reflects the picture taken by the last `render` or `renderDependencies`.
+    public var isAnimating: Bool {
+        guard let animation = heldAnimation else { return false }
+        return animation.frameCount > 1 && !reduceMotion
+    }
+
     /// The newest loaded image, when the slot's lock is free this instant (otherwise the held one stays).
     private func takeNewest() {
-        if let newest: (MTLTexture?, UInt64) = slot.lock.withLockIfAvailableUnchecked({ ($0.texture, $0.generation) }) {
-            if newest.1 != heldGeneration || newest.0 !== held { playhead.restart() }   // MED-007-R5
+        if let newest: (MTLTexture?, UInt64, AnimatedPicture?) = slot.lock.withLockIfAvailableUnchecked({
+            ($0.texture, $0.generation, $0.animation)
+        }) {
+            if newest.1 != heldGeneration || newest.0 !== held {
+                playhead.restart()   // MED-007-R5
+                animationPlayhead.restart()   // MED-008: a new picture starts at frame 0
+                drawnFrame = nil
+                shownFrameIndex = 0
+            }
             held = newest.0
             heldGeneration = newest.1
+            heldAnimation = newest.2
         }
     }
 
@@ -385,7 +485,7 @@ public final class ImageLayerSource: LayerSource, LayerFitting, LayerRenderCachi
     /// movement runs (MED-007-R6: time).
     public var renderDependencies: LayerRenderDependencies {
         takeNewest()
-        if isKenBurnsMoving {
+        if isKenBurnsMoving || isAnimating {   // MED-008-R10
             return LayerRenderDependencies(time: true, contentGeneration: heldGeneration, parameterGeneration: parameterGeneration)
         }
         return .still(content: heldGeneration, parameters: parameterGeneration)
@@ -475,9 +575,11 @@ final class ImageLoadSlot: Sendable {
         var texture: MTLTexture?
         var state: ImageLayerState = .empty
         var handler: (@MainActor @Sendable (ImageLayerState) -> Void)?
-        /// MED-006: the slide decoded ahead (`preload`).
+        /// MED-008: the animation of `texture` (nil: a still).
+        var animation: AnimatedPicture?
+        /// MED-006: the slide decoded ahead (`preload`); MED-008: with its animation.
         var preparedURL: URL?
-        var preparedTexture: MTLTexture?
+        var preparedTexture: LoadedPicture?
         var preparedToken: UInt64 = 0
         /// PERF-005: loads started by `content` changes.
         var loadsStarted = 0
@@ -487,17 +589,18 @@ final class ImageLoadSlot: Sendable {
     /// Moves a prepared texture for `url` into the slot under `generation`; false when none is ready.
     func adoptPrepared(_ url: URL, generation: UInt64) -> Bool {
         lock.withLockUnchecked { s in
-            guard s.generation == generation, s.preparedURL == url, let texture = s.preparedTexture else { return false }
-            s.texture = texture
-            s.state = .ready(width: texture.width, height: texture.height)
+            guard s.generation == generation, s.preparedURL == url, let picture = s.preparedTexture else { return false }
+            s.texture = picture.texture
+            s.animation = picture.animation
+            s.state = .ready(width: picture.texture.width, height: picture.texture.height)
             s.preparedURL = nil
             s.preparedTexture = nil
             return true
         }
     }
 
-    /// The prepared texture for `url`, taken out of the prepared slot (load queue).
-    func takePrepared(_ url: URL) -> MTLTexture? {
+    /// The prepared picture for `url`, taken out of the prepared slot (load queue).
+    func takePrepared(_ url: URL) -> LoadedPicture? {
         lock.withLockUnchecked { s in
             guard s.preparedURL == url, let texture = s.preparedTexture else { return nil }
             s.preparedURL = nil
@@ -515,6 +618,12 @@ final class ImageLoadSlot: Sendable {
             handler?(state)
         }
     }
+}
+
+/// A loaded picture: the texture drawn as the still (frame 0 of an animation) and its animation (MED-008).
+struct LoadedPicture: @unchecked Sendable {
+    let texture: MTLTexture
+    let animation: AnimatedPicture?
 }
 
 /// Matches `ImgUniforms` in the shader (48 bytes: a float4, three float2, padding).

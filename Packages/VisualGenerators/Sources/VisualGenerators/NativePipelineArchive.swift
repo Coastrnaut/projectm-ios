@@ -63,11 +63,27 @@ public final class NativePipelineArchive: @unchecked Sendable {
         return "\(device.name)/other"
     }
 
+    /// False on every simulator: there Metal's binary-archive loader can abort the process with the failed
+    /// assertion "Target device architecture is nil" (the iOS 26.5 simulator here, and CI's iOS 26.5 and 27.2
+    /// simulators: runs 43662504217, 43659130790). Pipelines are then created plainly (the PERF-009 fallback);
+    /// devices and the macOS host keep the archive, and the host tests still cover it. Simulator timings are never
+    /// performance evidence, so nothing is lost.
+    public static var archivesSupported: Bool {
+        #if targetEnvironment(simulator)
+        return false
+        #else
+        return true
+        #endif
+    }
+
     /// Opens the stored archive when its key matches; otherwise starts an empty one (a stale or damaged entry is
     /// deleted by the store, a file Metal refuses is deleted here).
     public static func open(device: MTLDevice, store: WarmCacheStore, identity: WarmStartIdentity,
                             sources: [String]) -> NativePipelineArchive {
         let key = key(device: device, identity: identity, sources: sources)
+        guard archivesSupported else {
+            return NativePipelineArchive(device: device, store: store, key: key, outcome: .unsupported, archive: nil, fromDisk: false)
+        }
         let (found, url) = store.lookup(entryName, key: key)
         var outcome = found
         var archive: MTLBinaryArchive?

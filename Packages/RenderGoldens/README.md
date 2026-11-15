@@ -64,6 +64,11 @@ record with `--filter ParticleOrbitGolden` or `-only-testing:RenderGoldensTests/
 captured at 0.5 s), through `NoiseFieldGenerator` (`Tests/RenderGoldensTests/NoiseFieldGoldenTests.swift`); record
 with `--filter NoiseFieldGolden` or `-only-testing:RenderGoldensTests/NoiseFieldGoldenTests`.
 
+`GeneratorGoldens/Kaleidoscope/<class>/` (VIS-014) holds the kaleidoscope's golden: `kaleidoscope-<w>x<h>-f0.png`
+(the same field and fixture folded into 7 wedges, turned by 0.5 s), through `NoiseFieldGenerator` with `wedges: 7`
+(`Tests/RenderGoldensTests/KaleidoscopeGoldenTests.swift`); record with `--filter KaleidoscopeGolden` or
+`-only-testing:RenderGoldensTests/KaleidoscopeGoldenTests`.
+
 ## Run
 
 ```bash
