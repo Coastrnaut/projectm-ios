@@ -6,8 +6,8 @@ Tests are requested by the row's acceptance and the brief. Budgets (owner rule 7
 
 ## Phase 1: Foundational
 
-- [ ] OUT-009-T01 [P] `DisplayCalibration` (ranges, clamping, identity, `exponent`, `apply(encoded:)`, stored codec) and `DisplayCalibrationReceiver` (C1; OUT-009-R1, R2, R9) in Packages/Compositor/Sources/Compositor/DisplayCalibration.swift
-- [ ] OUT-009-T02 [P] Pure tests: identity at the defaults, gain and gamma maths at representative values, clamping of values and output, codec round trip and malformed input (OUT-009-S1, S2) in Packages/Compositor/Tests/CompositorTests/DisplayCalibrationTests.swift
+- [X] OUT-009-T01 [P] `DisplayCalibration` (ranges, clamping, identity, `exponent`, `apply(encoded:)`, stored codec) and `DisplayCalibrationReceiver` (C1; OUT-009-R1, R2, R9) in Packages/Compositor/Sources/Compositor/DisplayCalibration.swift — Verified 2026-11-14: Compositor `swift test --filter DisplayCalibrationTests` (4 pass, 0.001 s)
+- [X] OUT-009-T02 [P] Pure tests: identity at the defaults, gain and gamma maths at representative values, clamping of values and output, codec round trip and malformed input (OUT-009-S1, S2) in Packages/Compositor/Tests/CompositorTests/DisplayCalibrationTests.swift — Verified 2026-11-14: same run, 4 pass
 
 ## Phase 2: User Story 1 - Match a projector's colour (P1)
 
