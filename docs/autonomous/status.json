@@ -12,25 +12,25 @@
   },
   "P1": {
    "audited": 7,
-   "built": 1,
    "integrated": 142,
-   "unit_passed": 1
+   "unit_passed": 2
   },
   "P2": {
-   "audited": 46,
-   "built": 2,
-   "integrated": 31
+   "audited": 45,
+   "implementing": 1,
+   "integrated": 31,
+   "unit_passed": 2
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 64,
-  "built": 3,
+  "audited": 63,
+  "implementing": 1,
   "integrated": 257,
   "skipped_existing": 1,
-  "unit_passed": 1
+  "unit_passed": 4
  },
  "device_gate": {
   "blocked": [],
@@ -206,12 +206,12 @@
   "ACC-010": {
    "attempts": 0,
    "branch": "feature/acc-010",
-   "branch_sha": "1da7f166",
+   "branch_sha": "d57f7531204f74f1d319e5b3ed17c23890081e88",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "ACC-011": {
    "attempts": 0,
@@ -1365,13 +1365,13 @@
   },
   "MED-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/med-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MED-008": {
    "attempts": 0,
@@ -2306,12 +2306,12 @@
   "PRE-017": {
    "attempts": 0,
    "branch": "feature/pre-017",
-   "branch_sha": "f954a058",
+   "branch_sha": "97116ffcbbbdb640fcdded62fed94df0e0b3b385",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "PRE-018": {
    "attempts": 0,
@@ -2866,12 +2866,12 @@
   "SHD-012": {
    "attempts": 0,
    "branch": "feature/shd-012",
-   "branch_sha": "728a64e8",
+   "branch_sha": "1616509ed3ba1ce79094fbda2518b36545da4189",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "SHOW-001": {
    "attempts": 0,
@@ -4686,5 +4686,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T01:07:21Z"
+ "updated": "2026-11-15T01:12:48Z"
 }
