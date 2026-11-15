@@ -108,6 +108,8 @@ public enum LibrarySettingsPolicy {
         "settings.lensDistortion.enabled", "settings.lensDistortion.strength", "settings.lensDistortion.zoomToFill",   // FX-016-R9
         "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   // FX-015-R9
         "settings.vignette.centerX", "settings.vignette.centerY",
+        "settings.pixelSort.enabled", "settings.pixelSort.threshold", "settings.pixelSort.span",   // FX-011-R10
+        "settings.pixelSort.direction",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9
