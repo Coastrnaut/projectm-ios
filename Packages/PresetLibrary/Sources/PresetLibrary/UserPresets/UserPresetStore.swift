@@ -8,6 +8,9 @@
 //   quarantine/<sha256>.milk   copies of quarantined files; nothing that plays presets reads here
 //   trial.json, proving.json   which preset is being tried / first shown (crash-loop protection)
 //   edit.json                  which preset's edited text is being tried (PRE-015-R13)
+//   history.json               PRE-017: earlier versions of edited presets (UserPresetStore+History)
+//   history.unreadable.json    an unreadable version list, set aside
+//   versions/<sha256>.milk     PRE-017: earlier texts, kept while a version names them
 //   staging/                   FILE-003: texts of an archive install before they move into files/;
 //                              exists only during `addAll` (a leftover is removed at load)
 //
@@ -96,6 +99,7 @@ public final class UserPresetStore {
     public private(set) var loadNotice: LoadNotice = .none
 
     private let directory: URL
+    var directoryURL: URL { directory }
     private let indexURL: URL
     private let write: (Data, URL) throws -> Void
     /// Sees every file operation before it is performed (tests, PRE-015-S3).
@@ -105,6 +109,15 @@ public final class UserPresetStore {
     private var migrationBackup: URL?
     /// An unreadable record could not be moved aside: saving would destroy it.
     private var savingBlocked = false
+
+    // PRE-017 (UserPresetStore+History.swift)
+    public internal(set) var versionsAvailability: UserPresetVersionsAvailability = .available
+    var history = UserPresetHistoryFile()
+    var historyLimits: UserPresetVersionLimits = .standard
+    /// An unreadable version list could not be moved aside: writing it would destroy it.
+    var historyBlocked = false
+    /// The record was read as it is (or there is none): only then may the list be checked against it.
+    var indexTrusted: Bool { availability == .available && loadNotice == .none && !savingBlocked }
 
     public init(directory: URL,
                 write: @escaping (Data, URL) throws -> Void = { try $0.write(to: $1, options: .atomic) },
@@ -117,6 +130,7 @@ public final class UserPresetStore {
         let files = FileManager.default
         guard files.fileExists(atPath: indexURL.path) else {
             availability = .available
+            loadHistory()
             return
         }
         do {
@@ -133,6 +147,7 @@ public final class UserPresetStore {
             loadNotice = .unreadableSetAside
             if (try? moveFile(indexURL, to: aside)) == nil { savingBlocked = true }
         }
+        if availability == .available { loadHistory() }
     }
 
     // MARK: - Reading
@@ -331,7 +346,10 @@ public final class UserPresetStore {
     /// Replaces a waiting or playable preset's text (PRE-015-R14). `new` keeps the id and
     /// describes `contents` (hashes, size). Order: new text, record, then the old text is
     /// deleted. If the record cannot be saved the new text is removed and nothing changed.
-    public func replaceContents(_ id: String, with new: UserPreset, contents: Data) throws {
+    /// PRE-017-R1, R4 (research D3): with `replacedAt`, the old text is first kept as a version
+    /// (`versions/`, then `history.json`, both before the record); a failure to keep an intact old text
+    /// refuses the change, and a failed record save puts the list back and removes every file added.
+    public func replaceContents(_ id: String, with new: UserPreset, contents: Data, replacedAt: Date? = nil) throws {
         try requireWritable()
         guard let index = presets.firstIndex(where: { $0.id == id }) else { throw StoreError.unknownPreset }
         let old = presets[index]
@@ -348,14 +366,23 @@ public final class UserPresetStore {
         } catch {
             throw StoreError.saveFailed
         }
+        let kept: KeptVersion?
+        do {
+            kept = try replacedAt.flatMap { (date: Date) throws -> KeptVersion? in try keepVersion(of: old, replacedAt: date) }
+        } catch {
+            if !existed { try? removeFile(at: to) }
+            throw StoreError.saveFailed
+        }
         var draft = presets
         draft[index] = new
         guard save(draft) else {
+            if let kept { undoKeptVersion(kept) }
             if !existed { try? removeFile(at: to) }
             throw StoreError.saveFailed
         }
         presets = draft
         try? removeFile(at: from)   // no record names it any more
+        if let kept { finishKeptVersion(kept) }
     }
 
     /// PRE-018-R7 (MED-013 pattern): writes a waiting or playable preset's stored copy back from bytes
@@ -399,6 +426,7 @@ public final class UserPresetStore {
         let url = fileURL(preset)
         try? removeFile(at: url)
         removeIfEmpty(url.deletingLastPathComponent())
+        removeVersions(of: id)   // PRE-017-R7
     }
 
     /// "<64 lowercase hex>.milk": the only names the store gives texts.
@@ -460,14 +488,14 @@ public final class UserPresetStore {
     }
 
     /// Built from the validated hash only.
-    private func fileURL(_ preset: UserPreset) -> URL {
+    func fileURL(_ preset: UserPreset) -> URL {
         directory.appendingPathComponent(preset.state == .quarantined ? Self.quarantineFolder : Self.filesFolder, isDirectory: true)
             .appendingPathComponent(preset.fileName)
     }
 
     private func recordURL(_ phase: Phase) -> URL { directory.appendingPathComponent(phase.fileName) }
 
-    private func removeIfEmpty(_ folder: URL) {
+    func removeIfEmpty(_ folder: URL) {
         if let items = try? FileManager.default.contentsOfDirectory(atPath: folder.path), items.isEmpty { try? removeFile(at: folder) }
     }
 
@@ -542,11 +570,11 @@ public final class UserPresetStore {
         try perform(.remove, url) { try FileManager.default.removeItem(at: url) }
     }
 
-    private func moveFile(_ from: URL, to: URL) throws {
+    func moveFile(_ from: URL, to: URL) throws {
         try perform(.move, to, also: from) { try FileManager.default.moveItem(at: from, to: to) }
     }
 
-    private func createDirectory(_ url: URL) throws {
+    func createDirectory(_ url: URL) throws {
         guard !FileManager.default.fileExists(atPath: url.path) else { return }
         try perform(.createDirectory, url) { try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true) }
     }

@@ -563,7 +563,15 @@ public actor UserPresetLibrary {
             }
             return store.preset(id: id).map { .saved($0) } ?? .refused(.changedMeanwhile)
         }
+        return await saveContent(bytes, of: preset, name: newName, expectedSHA256: expectedSHA256, store: store)
+    }
 
+    /// PRE-015-R11-R14 with PRE-017-R1: checks `bytes` statically and on the off-screen engine, then stores
+    /// them in place of the preset's text, keeping the replaced text as a version. Shared by `edit` and
+    /// `revert`, so a revert passes exactly the same checks as an edit.
+    private func saveContent(_ bytes: [UInt8], of preset: UserPreset, name newName: String, expectedSHA256: String,
+                             store: UserPresetStore) async -> PresetEditOutcome {
+        let id = preset.id
         let blobHash = ContentHash.gitBlobSHA1Hex(bytes)
         let sha256 = ContentHash.sha256Hex(bytes)
         if context.blockedHashes.contains(blobHash) { return .refused(.blocked) }
@@ -599,13 +607,49 @@ public actor UserPresetLibrary {
         updated.warnings = validation.warnings
         updated.license.linesFound = validation.licenseLines
         updated.provenOnScreen = false
-        updated.modifiedAt = now()
+        let stamp = now()
+        updated.modifiedAt = stamp
         do {
-            try store.replaceContents(id, with: updated, contents: Data(bytes))
+            try store.replaceContents(id, with: updated, contents: Data(bytes), replacedAt: stamp)
         } catch {
             return .refused(.saveFailed)
         }
         return .saved(updated)
+    }
+
+    // MARK: - Restore points (PRE-017-R5, R8)
+
+    /// A preset the user can edit now: playable, not held, not awaiting the unlock.
+    private func editable(_ id: String, in store: UserPresetStore) -> UserPreset? {
+        guard let preset = store.preset(id: id), preset.state == .playable, !held.contains(id), !awaitsUnlock(preset) else { return nil }
+        return preset
+    }
+
+    /// The earlier versions of an editable preset, newest first; empty for any other preset.
+    public func versions(of id: String) -> UserPresetVersionList {
+        guard let store = loaded(), store.availability == .available else { return .empty }
+        guard store.versionsAvailability == .available else { return UserPresetVersionList(versions: [], availability: .newerFormat) }
+        guard editable(id, in: store) != nil else { return .empty }
+        return UserPresetVersionList(versions: store.versions(of: id), availability: .available)
+    }
+
+    /// An earlier text for the read-only Preview (PRE-017-D7); nil when it is missing or damaged.
+    public func versionText(of id: String, sha256: String) -> PresetEditorText? {
+        guard let store = loaded(), editable(id, in: store) != nil, let bytes = store.versionBytes(of: id, sha256: sha256) else { return nil }
+        return PresetEditorText.decode(Data(bytes), sha256: sha256)
+    }
+
+    /// Puts an earlier text back through the edit path (static checks, engine trial, `edit.json`). The text
+    /// it replaces becomes a version, so a revert can be undone. The name is kept. Never throws.
+    public func revert(_ id: String, to sha256: String, expectedSHA256: String) async -> PresetEditOutcome {
+        guard let store = loaded() else { return .refused(.libraryUnavailable) }
+        if case .newerFormat = store.availability { return .refused(.libraryUnavailable) }
+        guard let preset = store.preset(id: id), preset.state == .playable, !held.contains(id) else { return .refused(.notEditable) }
+        if awaitsUnlock(preset) { return .refused(.needsUnlock) }
+        guard preset.sha256 == expectedSHA256 else { return .refused(.changedMeanwhile) }
+        guard let bytes = store.versionBytes(of: id, sha256: sha256) else { return .refused(.versionUnavailable) }
+        if sha256 == preset.sha256 { return .unchanged }
+        return await saveContent(bytes, of: preset, name: preset.name, expectedSHA256: expectedSHA256, store: store)
     }
 
     // MARK: - Archive import (FILE-003)
@@ -689,4 +733,9 @@ public actor UserPresetLibrary {
         }
         return String(String(scalars).trimmingCharacters(in: .whitespaces).prefix(PresetImportLimits.maxDetailCharacters))
     }
+}
+
+extension UserPresetLibrary {
+    /// PRE-017 tests: smaller version bounds.
+    func setVersionLimits(_ limits: UserPresetVersionLimits) { loaded()?.historyLimits = limits }
 }

@@ -136,6 +136,8 @@ public enum PresetEditRefusal: Error, Sendable, Equatable {
     case saveFailed
     /// The preset was changed or removed elsewhere while it was being edited.
     case changedMeanwhile
+    /// PRE-017: the earlier version's text is missing or damaged.
+    case versionUnavailable
 
     public var message: String {
         let n = PresetImportLimits.grouped
@@ -156,6 +158,7 @@ public enum PresetEditRefusal: Error, Sendable, Equatable {
         case .libraryUnavailable: return UserPresetText.newerFormat
         case .saveFailed: return "The change could not be saved. Nothing was changed."
         case .changedMeanwhile: return "The preset was changed or removed while you were editing it."
+        case .versionUnavailable: return "This version could not be read."
         }
     }
 
