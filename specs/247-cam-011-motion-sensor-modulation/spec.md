@@ -46,6 +46,8 @@ interaction); each answer is the conservative, local-first option, recommended o
 - Q: Permission? → A: None is asked: device motion through the motion manager needs no usage description, so the permission catalog and project.yml are unchanged. The privacy policy gains a short "Device motion" section: read only while needed, used only on the device, never stored or sent (CAM-011-R10).
 - Q: When motion is unavailable (no sensors, as in the simulator)? → A: Motion sources read 0.5 for attitude and 0 for shake; Settings › Motion shows "Motion sensors are not available on this device." and disables Calibrate and the range (CAM-011-R11).
 - Q: Where is the setting and what is stored? → A: Settings › Motion (in the performance group, so it stays reachable while a scene is locked): a live readout of the four values, Calibrate, and Range. One UserDefaults key `settings.motion.range` (`narrow`, `medium`, `wide`; absent or unknown → medium; written on change only), a preference backed up with the library settings (FILE-005 included keys), erased with Settings (FILE-011), removed by the UI-test reset (CAM-011-R12).
+- Q: What do motion sources read before the first sample arrives, and after sampling stops? → A: Before the first sample (and while unavailable) attitude reads 0.5 and shake 0; after sampling stops the last values are held, and on restart the smoothing snaps to the first new sample instead of gliding from the held value (CAM-011-R7, R11).
+- Q: Does Calibrate announce itself and is the readout accessible? → A: Yes: Calibrate posts one polite announcement "Motion calibrated" through the AccessibilityAnnouncer lane, and the readout is one accessibility element per value ("Tilt forward 50 percent"); the readout refreshes at most 10 times a second (CAM-011-R14).
 - Q: How is acceptance tested? → A: A package test feeds a synthetic motion stream (sweeps far beyond the range, spikes, NaN and ±∞, rapid shakes, the yaw seam crossed both ways, timestamps that stand still or jump back) and asserts every output is finite and within 0…1, neutral reads 0.5 after calibration, and crossing the seam moves the yaw output by less than 0.01 per sample. An app test drives a parameter through a motion binding with an injected motion source; a short UI test calibrates through the DEBUG stand-in motion source (CAM-011-S1 to S4).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -116,6 +118,7 @@ brings it to 50 %.
 - **CAM-011-R10**: Motion data MUST stay on the device: never stored, sent or logged; calibration is held for the session only. No permission prompt is added.
 - **CAM-011-R11**: Without motion sensors, attitude sources MUST read 0.5 and shake 0, and Settings MUST explain the absence and disable its controls.
 - **CAM-011-R12**: The range MUST be stored under `settings.motion.range` (absent or unknown → Medium), backed up and erased with the other settings and reset by the UI-test reset.
+- **CAM-011-R14**: Calibrate MUST post one polite announcement, and the Settings readout MUST expose each value as an accessibility element, refreshing at most 10 times a second.
 - **CAM-011-R13**: Per-sample processing and per-frame reads MUST NOT allocate; the changed package MUST keep building on Linux, with the sensor API only in the app.
 
 ### Key Entities
