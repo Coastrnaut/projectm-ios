@@ -1,0 +1,73 @@
+{
+  "deviceClass": "D2",
+  "evidence": true,
+  "inputs": [
+    "automation-perf001-2026-11-15T205949Z.json",
+    "performance-perf012-2026-11-15T210231Z.json",
+    "sc015.json"
+  ],
+  "kind": "projectM-iOS.performanceVerdict",
+  "metrics": [
+    {
+      "direction": "min",
+      "limit": 55,
+      "metric": "fps1sP5",
+      "source": "automation-perf001-2026-11-15T205949Z.json",
+      "value": 59.996,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 18.2,
+      "metric": "frameIntervalP50Ms",
+      "source": "performance-perf012-2026-11-15T210231Z.json",
+      "value": 16.7,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 25,
+      "metric": "frameIntervalP95Ms",
+      "source": "performance-perf012-2026-11-15T210231Z.json",
+      "value": 16.7,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 5,
+      "metric": "droppedFramePercent",
+      "source": "automation-perf001-2026-11-15T205949Z.json",
+      "value": 0.0,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 600,
+      "metric": "peakMemoryMB",
+      "source": "performance-perf012-2026-11-15T210231Z.json",
+      "value": 466.093,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 100,
+      "metric": "audioAgeP95Ms",
+      "source": "performance-perf012-2026-11-15T210231Z.json",
+      "value": 81.1,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 2000,
+      "metric": "coldLaunchMs",
+      "source": "sc015.json",
+      "value": 133.802,
+      "verdict": "pass"
+    }
+  ],
+  "model": "iPad17,3",
+  "overall": "pass",
+  "thresholdsSchemaVersion": 1,
+  "thresholdsVersion": 2,
+  "verdictSchemaVersion": 1
+}

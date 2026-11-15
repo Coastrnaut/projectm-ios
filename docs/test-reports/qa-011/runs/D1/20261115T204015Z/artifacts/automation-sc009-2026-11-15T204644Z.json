@@ -1,0 +1,113 @@
+{
+  "build" : "2",
+  "cycleNotes" : [
+    "after cycle 50: screen=chooser state=notStarted mode=microphone"
+  ],
+  "cycles" : 50,
+  "cyclesFinal" : {
+    "activeMode" : "microphone",
+    "screen" : "chooser",
+    "state" : "notStarted"
+  },
+  "device" : "iPhone15,4",
+  "finishedAt" : "2026-11-15T20:46:44Z",
+  "intervalMs" : 200,
+  "lifecycleScripts" : {
+    "inAppPlayback" : [
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "started"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "background"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "foreground"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "lock"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "unlock"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "interruptionBegan"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "interruptionEndedResume"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "routeChangeOldDeviceUnavailable"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "stopped"
+      }
+    ],
+    "microphone" : [
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "started"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "background"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "foreground"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "lock"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "unlock"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "interruptionBegan"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "interruptionEndedResume"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "routeChangeOldDeviceUnavailable"
+      },
+      {
+        "reason" : "",
+        "state" : "notStarted",
+        "step" : "stopped"
+      }
+    ]
+  },
+  "notAutomated" : "System\/App Capture: every start shows the system picker, which needs a person",
+  "systemVersion" : "27.0.1"
+}

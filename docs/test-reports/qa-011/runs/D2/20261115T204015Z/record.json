@@ -1,0 +1,331 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "1d055b69e4fc4bc76f47bc3a581861a61e5c36dd",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": false,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3181,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D2/20261115T204015Z/artifacts/automation-perf001-2026-11-15T204134Z.json",
+          "sha256": "90024c90b7a673c20a4eb67afbee71c93578557a7d0a8cd19b3454013b48c90c"
+        }
+      ],
+      "closes": [
+        "PERF-001-T16",
+        "PERF-002-T13",
+        "QA-010-T12"
+      ],
+      "commands": [
+        [
+          "PROJECTM_AUTORUN=perf001",
+          "launch",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "report automation-perf001-2026-11-15T204134Z.json",
+      "durationSeconds": 79.5,
+      "id": "autorun-perf001",
+      "kind": "autorun",
+      "partOf": [],
+      "status": "pass",
+      "title": "AutomationRunner perf001: per-stage frame timings, 1 s frame-rate windows, PERF-007 drops"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 220,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D2/20261115T204015Z/artifacts/sc015.json",
+          "sha256": "eb23b043ceb4fc035221c01bb9eef80fa448bbb8009536bc104cd4053f578296"
+        }
+      ],
+      "closes": [
+        "QA-010-T12"
+      ],
+      "commands": [],
+      "detail": "11 launches recorded",
+      "durationSeconds": 76.7,
+      "id": "launches-sc015",
+      "kind": "launches",
+      "partOf": [],
+      "status": "pass",
+      "title": "sc015 cold launches (10 recorded) for the QA-010 launch budget"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 2504,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D2/20261115T204015Z/artifacts/performance-perf012-2026-11-15T204424Z.json",
+          "sha256": "4996b94ebe58400876a51bd89847e491fb13e81cce91d445a1e7e282afec1cf3"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "PROJECTM_AUTORUN=perf012",
+          "launch",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "report performance-perf012-2026-11-15T204424Z.json",
+      "durationSeconds": 89.8,
+      "id": "autorun-perf012",
+      "kind": "autorun",
+      "partOf": [
+        "QA-010-T12"
+      ],
+      "status": "pass",
+      "title": "AutomationRunner perf012: a 1-minute overlay session, then the PERF-012 report (frame-interval percentiles, peak memory, audio age) for the QA-010 judge"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 1757,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D2/20261115T204015Z/artifacts/performance-verdict.json",
+          "sha256": "85709a42b1b426f9af7c55f78d7b6b82d966f6f705413e9f2da8e96671e47231"
+        }
+      ],
+      "closes": [
+        "QA-010-T12"
+      ],
+      "commands": [
+        [
+          "check_performance_thresholds",
+          "docs/test-reports/qa-011/runs/D2/20261115T204015Z/artifacts"
+        ]
+      ],
+      "detail": "QA-010 overall pass",
+      "durationSeconds": 0.0,
+      "id": "thresholds",
+      "kind": "thresholds",
+      "partOf": [],
+      "status": "pass",
+      "title": "QA-010 judge over the pulled perf001 and sc015 reports (plus any PERF-012 export given with --perf012-report)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 3373236,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261115T204015Z/logs/xctest-materials.log",
+          "sha256": "cc78979a0cb6e15cfd350621b934806b9ef80e40a515cd35e90d80b4f048c35f"
+        },
+        {
+          "bytes": 398309,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261115T204015Z/xcresult/xctest-materials.xcresult",
+          "sha256": "24163ae1cb6ee9c66d9dcf097bd4f6ed627a23b59558a25d4bec5c54f6ceb816"
+        }
+      ],
+      "closes": [
+        "SHD-004-T20"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261115T204015Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261115T204015Z/xcresult/xctest-materials.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:MaterialsDeviceTests/MaterialVariantSwitchTests",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "5 tests, 0 failures, 0 skipped",
+      "durationSeconds": 50.1,
+      "id": "xctest-materials",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "SHD-004 material variants on the device GPU family (Detailed needs family 9; Standard fallback with the notice)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 294792,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261115T204015Z/logs/xctest-angle-layer.log",
+          "sha256": "bdf1f78e559f40505d46c0603667626f613e745ed926e7a7117b94cec1405521"
+        },
+        {
+          "bytes": 53093,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261115T204015Z/xcresult/xctest-angle-layer.xcresult",
+          "sha256": "f93db77ffccd6ac1353966fd425a8f68a7d2f97563515486c0a7a755574a9b6d"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261115T204015Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261115T204015Z/xcresult/xctest-angle-layer.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:ANGLEDeviceTests/ProjectMLayerTests",
+          "-only-testing:ANGLEDeviceTests/ClientBufferSpikeTests",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "7 tests, 0 failures, 0 skipped",
+      "durationSeconds": 13.5,
+      "id": "xctest-angle-layer",
+      "kind": "xctest",
+      "partOf": [
+        "CMP-001-T20"
+      ],
+      "status": "pass",
+      "title": "CMP-001 ProjectMLayerTests and the client-buffer spike tests on the device"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 3255532,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261115T204015Z/logs/bench-shd002.log",
+          "sha256": "51082dbb212c624620bed52038a955274110d4bc5e3a58b5d2d1a082dd4b07bb"
+        },
+        {
+          "bytes": 243354,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261115T204015Z/xcresult/bench-shd002.xcresult",
+          "sha256": "277fe8c2c8891ece2654dd75abecbd731e50eb9410fb1dd90b854793c3c10808"
+        }
+      ],
+      "closes": [
+        "SHD-002-T24"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_SHD002_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261115T204015Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261115T204015Z/xcresult/bench-shd002.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:GeneratorGraphDeviceTests/GraphCostBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "no test summary in the log; exit 65; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D2/20261115T204015Z/xcresult/bench-shd002.xcresult / Build/qa-011/D2/20261115T204015Z/xcresult/bench-shd002.xcresult",
+      "durationSeconds": 104.3,
+      "id": "bench-shd002",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "fail",
+      "title": "SHD-002 12-node graph GPU cost (SHD002_BENCH)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-15T20:47:19Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D2",
+  "recordSha256": "1ea116398b31408addebc3f29d0f285a39d669359830f6f1030bc7ddd1110256",
+  "runId": "20261115T204015Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-15T20:40:15Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 1,
+    "not-run": 0,
+    "pass": 6,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "A8C56656-AA51-5F6B-8C3C-FC8EFD709F9C",
+    "kind": "device",
+    "name": "iPad77",
+    "osBuild": "24B119",
+    "osVersion": "27.2",
+    "productType": "iPad17,3",
+    "state": "connected",
+    "udid": "00008142-001640823C22401C"
+  }
+}

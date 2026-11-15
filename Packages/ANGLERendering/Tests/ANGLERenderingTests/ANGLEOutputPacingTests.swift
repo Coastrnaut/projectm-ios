@@ -7,6 +7,8 @@ import QuartzCore
 import XCTest
 @testable import ANGLERendering
 
+// DEBUG only: `ANGLEFrameFences.holdFences` exists in DEBUG builds; the Release benches build this bundle (QA-011).
+#if DEBUG
 @MainActor
 final class ANGLEOutputPacingTests: XCTestCase {
     private func makeLaidOut() throws -> ANGLERenderer {
@@ -73,3 +75,5 @@ final class ANGLEOutputPacingTests: XCTestCase {
         XCTAssertTrue(layer.allowsNextDrawableTimeout)
     }
 }
+
+#endif

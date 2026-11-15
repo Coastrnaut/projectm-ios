@@ -1,0 +1,88 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "1d055b69e4fc4bc76f47bc3a581861a61e5c36dd",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 2475,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261115T205740Z/artifacts/performance-perf012-2026-11-15T205904Z.json",
+          "sha256": "75169bb74749147c18dfd58b5f9b749fc1c7557fda88ee09124d11dca2228313"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "PROJECTM_AUTORUN=perf012",
+          "launch",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "report performance-perf012-2026-11-15T205904Z.json",
+      "durationSeconds": 87.4,
+      "id": "autorun-perf012",
+      "kind": "autorun",
+      "partOf": [
+        "QA-010-T12"
+      ],
+      "status": "pass",
+      "title": "AutomationRunner perf012: a 1-minute overlay session, then the PERF-012 report (frame-interval percentiles, peak memory, audio age) for the QA-010 judge"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-15T20:59:09Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "a9afd33f330cdc7c96ffb3472f72b5eeb656927b7cddcf23b0fd753b23a58960",
+  "runId": "20261115T205740Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-15T20:57:40Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 0,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}
