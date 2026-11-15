@@ -12,8 +12,9 @@
 
 - `isActive(width:height:)`: on and frame ≥ 2 × 2.
 - `limited(by: SafetyClamp)`: colour scale = intensity limit when it caps intensity, else 1.
-- `Block` (shader `CMPEdgeOutline`, 32 bytes): `colour: SIMD4<Float>` (linear × scale, alpha 1), `threshold: Float`,
-  `width: Int32`, `mode: UInt32`, `pad`; `last: SIMD2<UInt32>` is folded in as two UInt32 — see contract C2.
+- `Block` (shader `CMPEdgeOutline`, 48 bytes, `setFragmentBytes`): `colour: SIMD4<Float>` (linear × scale, alpha 1),
+  `last: SIMD2<UInt32>` (width − 1, height − 1), `threshold: Float`, `width: UInt32`, `mode: UInt32` (0 overlay,
+  1 outline only), padding to the 16-byte alignment of the `float4`.
 
 ## Settings keys (app)
 

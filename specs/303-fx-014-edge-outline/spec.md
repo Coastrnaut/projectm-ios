@@ -72,6 +72,15 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   mask is 0 and overlay keeps the input pixel (FX-002 handles the non-finite value downstream). Applied to the Edge
   Cases and FX-014-R4.
 
+### Session 2026-11-15 (speckit-analyze)
+
+- Finding A1 (inconsistency): data-model.md described the shader block twice with different fields; it now gives one
+  48-byte layout (`colour`, `last`, `threshold`, `width`, `mode`), as contract C2 uses. Finding A2 (coverage): R15
+  (ACC-012 colour cap) is checked in the model test (T03) and the app's effective value (T14); R13's reference is
+  T02/T03. Finding A3: no settings key may contain "focus", "exposure" or "whitebalance" (CAM-005 and siblings); the
+  `settings.edgeOutline.*` keys do not. No constitution conflicts; 15/15 requirements and 7/7 success criteria have
+  tasks (S7 is the `{device}` task T18).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Outline the picture's edges (Priority: P1)
