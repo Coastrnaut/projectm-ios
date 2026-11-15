@@ -515,6 +515,7 @@ struct VisualizerView: View {
                      cameraLens: coordinator.cameraLensChoice,   // CAM-003
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
                      cameraWhiteBalance: coordinator.cameraWhiteBalanceChoice,   // CAM-006
+                     cameraPersonMask: coordinator.cameraPersonMaskChoice,   // CAM-008
                      cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
@@ -583,6 +584,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.cameraCropMode) { coordinator.cameraSettingsChanged() }         // CAM-007
         .onChange(of: coordinator.settings.cameraCropAnchor) { coordinator.cameraSettingsChanged() }
         .onChange(of: coordinator.settings.cameraZoom) { coordinator.cameraSettingsChanged() }
+        .onChange(of: coordinator.settings.cameraPersonMask) { coordinator.cameraSettingsChanged() }   // CAM-008
     }
 
     private func withVisualChanges(_ content: some View) -> some View {

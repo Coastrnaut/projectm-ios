@@ -184,6 +184,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored let sceneCompare = SceneCompareCoordinator()
     /// REC-002: render selected snapshots to PNG files (AppCoordinator+SnapshotBatch.swift).
     @ObservationIgnored let snapshotBatch = SnapshotBatchExportCoordinator()
+    /// REC-013: deterministic offline video export (AppCoordinator+OfflineExport.swift).
+    @ObservationIgnored let offlineExport = OfflineExportCoordinator()
     /// CMP-015: the layer inspector's composites (a scene input) and transient solo/mute.
     let layers = LayerInspectorCoordinator()
     /// SCN-002: the current scene's autosave (nil only if its folder cannot be made).
@@ -237,6 +239,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraFocus: CameraFocusState = .notRunning(canFocus: false)
     /// CAM-006: the camera's white balance, read back (session state; CameraWhiteBalanceRow.swift).
     private(set) var cameraWhiteBalance: CameraWhiteBalanceState = .notRunning(canLock: false)
+    /// CAM-008: whether the person mask can be drawn (session state; CameraPersonMaskRow.swift).
+    var cameraPersonMaskAvailability: PersonMaskAvailability = .available
     @ObservationIgnored let cameraFocusFeedback = CameraFocusFeedback()
     /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
     @ObservationIgnored var cameraLensChoicePending = false
@@ -374,6 +378,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var oneHanded = OneHandedSetting(defaults: defaults)
     /// SHOW-006: cue rehearsal (session only; device-only panel).
     @ObservationIgnored private(set) lazy var cueRehearsal: CueRehearsalCoordinator = makeCueRehearsal()
+    /// SHOW-007: the show timeline transport (Play/Pause over SHOW-005's Hold, seek, scrub, Loop).
+    @ObservationIgnored private(set) lazy var showTransport: ShowTransportCoordinator = makeShowTransport(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
@@ -550,10 +556,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         #endif
         // Feature 002: the library (12,941 presets) loads off the main thread (SC-101).
-        presets = PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: presetLoader,
-                                    collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
-                                    tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
-                                    smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()))   // PRE-008
+        presets = Self.makePresets(defaults: defaults, settings: settings, loader: presetLoader)
         presets.recent = RecentPresetsCoordinator(store: RecentPresetsStore(defaults: defaults))   // PRE-006
         userPresets = UserPresetsCoordinator.makeDefault()
         userPresets.connect(presets: presets, loader: presetLoader)   // PRE-012
@@ -586,6 +589,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     // AppCoordinator.init is split in three (2026-11-14) to keep each body under the 300 ms
     // type-check budget that Xcode 26 on CI enforces: the UI-test reset and the wiring that runs
     // once every stored property is set moved out unchanged, called at the same points.
+
+    /// The preset coordinator with its stores in `Application Support/PresetCollections` (split from `init` for the
+    /// type-check budget).
+    private static func makePresets(defaults: UserDefaults, settings: AppSettings, loader: any PresetLoading) -> PresetCoordinator {
+        PresetCoordinator(store: FavoritesStore(defaults: defaults), settings: settings, loader: loader,
+                          collections: PresetCollectionStore(directory: PresetCollectionStore.defaultDirectory()),
+                          tags: PresetTagStore(directory: PresetTagStore.defaultDirectory()),   // PRE-003
+                          smart: PresetSmartCollectionStore(directory: PresetSmartCollectionStore.defaultDirectory()),   // PRE-008
+                          notes: PresetNoteStore(directory: PresetNoteStore.defaultDirectory()))   // PRE-011
+    }
 
     /// PRE-016: the overrides store (beside the tags, so `-uitestResetNotice` removes it), handed to the
     /// loader (applied on load) and to the coordinator (the Adjust Parameters sheet).
@@ -697,6 +710,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectSceneLock()   // SCN-015
         connectSceneCompare()   // SCN-009 (after the snapshots, the history and the lock)
         connectSnapshotBatch()   // REC-002 (after the snapshots and Compare)
+        connectOfflineExport()   // REC-013
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
@@ -1216,7 +1230,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount,
                                                  position: settings.cameraPosition, mirrored: settings.cameraMirrored,   // CAM-002
                                                  crop: settings.cameraCrop,   // CAM-007
-                                                 lens: cameraLensInventory.resolve(settings.cameraLens), lenses: cameraLensInventory)   // CAM-003
+                                                 lens: cameraLensInventory.resolve(settings.cameraLens), lenses: cameraLensInventory,   // CAM-003
+                                                 personMask: settings.cameraPersonMask)   // CAM-008
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
@@ -1233,6 +1248,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             cameraFocus = host.cameraFocus
             host.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in self?.cameraWhiteBalance = state }   // CAM-006
             cameraWhiteBalance = host.cameraWhiteBalance
+            observePersonMask(of: host)   // CAM-008
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1405,6 +1421,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         cameraExposure = .notRunning(canLock: false)   // CAM-004-R7: the host's stop released the camera
         cameraFocus = .notRunning(canFocus: false)   // CAM-005-R8: the host's stop reset the focus
         cameraWhiteBalance = .notRunning(canLock: false)   // CAM-006-R9: the host's stop released it
+        cameraPersonMaskAvailability = .available   // CAM-008: known again with the next host
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
         cameraNoticeDismissed = false   // UIX-015-R7
@@ -1464,6 +1481,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.cameraPosition = settings.cameraPosition
         host.mirrored = settings.cameraMirrored
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
+        host.personMask = settings.cameraPersonMask   // CAM-008-R1: from the next frame
         host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
 

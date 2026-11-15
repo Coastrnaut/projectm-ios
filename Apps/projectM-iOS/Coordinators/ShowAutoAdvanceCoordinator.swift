@@ -13,6 +13,10 @@
 // * SHOW-005: the performer's Hold (`isOperatorHeld`, session only, never stored) is one more hold source; turning it on
 //   withdraws a timed step waiting for the beat (SHOW-003) and re-arms the countdown held at 0, so Hold off requests it
 //   again at once. Manual steps never read it. `listChanged` also cancels a countdown left without a next cue (Skip).
+// * SHOW-007: `playhead` is a second `ShowAdvanceTimeline` that always counts down the active timed cue (the last one
+//   too) with the same holds and is never acted on: the timeline transport's position (research SHOW-007-D4).
+//   `reposition(cueID:remaining:)` moves both after a seek. With `loops` on, the last timeline cue counts down too and
+//   its due advance wraps to the first timeline cue through `show.timedGo(to:)` (one wrap per due time; `loopWraps`).
 import Foundation
 import Observation
 import ShowControl
@@ -33,6 +37,12 @@ final class ShowAutoAdvanceCoordinator {
     private(set) var isOperatorHeld = false
 
     @ObservationIgnored private(set) var timeline = ShowAdvanceTimeline()
+    /// SHOW-007: the active timed cue's elapsed time (always runs for a cue with a dwell; never fires).
+    @ObservationIgnored private(set) var playhead = ShowAdvanceTimeline()
+    /// SHOW-007: whether Loop is on (set by `ShowTransportCoordinator`).
+    @ObservationIgnored var loops: () -> Bool = { () -> Bool in false }
+    /// SHOW-007: wraps requested from the last timeline cue to the first (tests and DEBUG probes).
+    @ObservationIgnored private(set) var loopWraps = 0
     @ObservationIgnored let clock: any ShowMonotonicClock
     @ObservationIgnored private weak var show: ShowCoordinator?
     /// Whether the countdown holds now (pause, blackout, repair report, background); set by AppCoordinator.
@@ -70,16 +80,65 @@ final class ShowAutoAdvanceCoordinator {
     func cueStarted() {
         guard let show else { return }
         let now: Duration = clock.now()
-        timeline.setHeld(heldNow(), at: now)
-        ShowTimedAdvance.started(list: show.list, timeline: &timeline, at: now)
+        let held: Bool = heldNow()
+        timeline.setHeld(held, at: now)
+        playhead.setHeld(held, at: now)
+        timeline.cueStarted(show.list.activeCue, hasNext: hasNext(), at: now)   // SHOW-007: Loop counts as a next cue
+        playhead.cueStarted(show.list.activeCue, hasNext: true, at: now)
+        refresh()
+    }
+
+    /// Whether the active cue advances somewhere: the next cue, or (SHOW-007 Loop) the first timeline cue.
+    private func hasNext() -> Bool {
+        guard let show else { return false }
+        return show.list.canGoNext || loopTarget() != nil
+    }
+
+    /// SHOW-007-R7: the first timeline cue when Loop is on and the active cue is the last timeline cue.
+    private func loopTarget() -> UUID? {
+        guard let show, let active = show.list.activeCue?.id, !show.list.canGoNext, loops() else { return nil }
+        return ShowTimeline(list: show.list).loopTarget(from: active, looping: true)
+    }
+
+    /// SHOW-007-R2: a seek put the active cue's countdown at `remaining` (nil: an open-ended cue, nothing counts down).
+    func reposition(cueID: UUID, remaining: Duration?) {
+        guard let show, show.list.activeCue?.id == cueID else { return }
+        let now: Duration = clock.now()
+        let held: Bool = heldNow()
+        timeline.setHeld(held, at: now)
+        playhead.setHeld(held, at: now)
+        if let remaining {
+            playhead.rearm(cueID: cueID, remaining: remaining, at: now)
+            if hasNext() { timeline.rearm(cueID: cueID, remaining: remaining, at: now) } else { timeline.cancel() }
+        } else {
+            playhead.cancel()
+            timeline.cancel()
+        }
+        refresh()
+    }
+
+    /// SHOW-007-R7: Loop turned on or off. On the last timeline cue the countdown starts (from the playhead's remaining
+    /// time) or stops.
+    func loopChanged() {
+        guard let show, let cueID = show.list.activeCue?.id else { return }
+        let now: Duration = clock.now()
+        if hasNext() {
+            if timeline.isIdle, playhead.cueID == cueID, let left = playhead.remaining(at: now) {
+                timeline.rearm(cueID: cueID, remaining: left, at: now)
+            }
+        } else if timeline.cueID == cueID {
+            timeline.cancel()
+        }
         refresh()
     }
 
     /// The list changed: a countdown whose cue is no longer the active one, or (SHOW-005) that has no cue left to advance
     /// to, is cancelled.
     func listChanged() {
-        guard let show, let cueID = timeline.cueID else { return }
-        guard cueID != show.list.activeCue?.id || !show.list.canGoNext else { return }
+        guard let show else { return }
+        if let cueID = playhead.cueID, cueID != show.list.activeCue?.id { playhead.cancel() }   // SHOW-007
+        guard let cueID = timeline.cueID else { return }
+        guard cueID != show.list.activeCue?.id || !hasNext() else { return }
         timeline.cancel()
         refresh()
     }
@@ -94,6 +153,7 @@ final class ShowAutoAdvanceCoordinator {
             timeline.rearm(cueID: cueID, remaining: .zero, at: now)   // the withdrawn advance waits for Hold off
         }
         timeline.setHeld(heldNow(), at: now)
+        playhead.setHeld(heldNow(), at: now)   // SHOW-007
         refresh()
     }
 
@@ -104,9 +164,16 @@ final class ShowAutoAdvanceCoordinator {
     func tick() {
         guard let show else { return }
         let now: Duration = clock.now()
-        timeline.setHeld(heldNow(), at: now)
+        let held: Bool = heldNow()
+        timeline.setHeld(held, at: now)
+        playhead.setHeld(held, at: now)
         if let cueID = timeline.due(at: now), show.list.activeCue?.id == cueID {
-            show.timedNext()   // SHOW-003: waits for the beat or bar when quantizing; a move calls `cueStarted` (the next cue's countdown starts at its own now)
+            if show.list.canGoNext {
+                show.timedNext()   // SHOW-003: waits for the beat or bar when quantizing; a move calls `cueStarted` (the next cue's countdown starts at its own now)
+            } else if let first = loopTarget() {
+                loopWraps += 1   // SHOW-007-R7: one wrap per pass
+                show.timedGo(to: first)
+            }
         }
         refresh()
     }

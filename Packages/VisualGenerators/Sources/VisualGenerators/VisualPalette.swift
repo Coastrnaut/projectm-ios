@@ -69,15 +69,27 @@ public struct LinearColor: Sendable, Hashable {
 public struct PaletteRamp: Sendable, Hashable {
     public var stops: [LinearColor]
     public var blended: Bool
+    /// SHD-005: a gradient with positioned, translucent stops and an interpolation mode; when set it decides every
+    /// colour (colour × alpha on black, opaque). nil keeps the UIX-011 behaviour exactly.
+    public var gradient: GradientRamp?
 
     public init(stops: [LinearColor], blended: Bool) {
         self.stops = stops.isEmpty ? [LinearColor(red: 1, green: 1, blue: 1)] : stops
         self.blended = blended
+        gradient = nil
+    }
+
+    /// SHD-005: a palette with stop detail.
+    public init(gradient: GradientRamp) {
+        stops = gradient.stops.map { (s: GradientRampStop) -> LinearColor in s.linear }
+        blended = true
+        self.gradient = gradient
     }
 
     /// Position t in 0…1: a gradient interpolates the evenly spaced stops; swatches take stop min(⌊t·n⌋, n − 1).
     public func color(at t: Float) -> LinearColor {
         let clamped: Float = t.isNaN ? 0 : min(max(t, 0), 1)
+        if let gradient { return gradient.colorOverBlack(at: clamped) }
         guard stops.count > 1 else { return stops[0] }
         if blended { return VisualPalette.ramp(stops, at: clamped) }
         let index: Int = min(Int(clamped * Float(stops.count)), stops.count - 1)

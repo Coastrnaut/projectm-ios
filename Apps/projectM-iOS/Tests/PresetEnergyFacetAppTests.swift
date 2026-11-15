@@ -136,7 +136,7 @@ final class PresetEnergyFacetAppTests: XCTestCase {
         coordinator.clearEnergies()
 
         // A relaunch reads the scores back without drawing again.
-        for _ in 0..<500 where await store.snapshot().count < 3 { await Task.yield() }
+        for _ in 0..<500 where await store.snapshot().count < 3 { try await Task.sleep(for: .milliseconds(10)) }   // up to 5 s (load)
         await store.flush()
         let (relaunched, _) = try await makeCoordinator(drawing)
         XCTAssertEqual(relaunched.energyFilter.matching(any: [.calm, .moderate]), ["frontend-uwp/Alpha.milk", "frontend-uwp/Gamma.milk"])

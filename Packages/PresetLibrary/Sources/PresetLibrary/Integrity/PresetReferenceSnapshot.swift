@@ -18,12 +18,14 @@ public struct PresetReferenceSnapshot: Sendable, Equatable {
     public var tags: [String]
     /// Preset IDs with at least one adjustment (PRE-016).
     public var overrides: [String]
+    /// Preset IDs with a note (PRE-011).
+    public var notes: [String]
     public var collections: [Collection]
     public var recents: [String]
 
-    public init(favorites: [String] = [], tags: [String] = [], overrides: [String] = [], collections: [Collection] = [],
+    public init(favorites: [String] = [], tags: [String] = [], overrides: [String] = [], notes: [String] = [], collections: [Collection] = [],
                 recents: [String] = []) {
-        self.favorites = favorites; self.tags = tags; self.overrides = overrides
+        self.favorites = favorites; self.tags = tags; self.overrides = overrides; self.notes = notes
         self.collections = collections; self.recents = recents
     }
 

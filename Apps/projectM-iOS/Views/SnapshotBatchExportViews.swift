@@ -171,7 +171,7 @@ struct SnapshotBatchExportSheet: View {
 }
 
 /// Save…: the system folder picker exporting copies of every file with its own name (REC-002-D8).
-private struct BatchExportPicker: UIViewControllerRepresentable {
+struct BatchExportPicker: UIViewControllerRepresentable {
     let files: [URL]
     let onFinish: @MainActor () -> Void
 
@@ -209,7 +209,7 @@ private struct BatchExportPicker: UIViewControllerRepresentable {
 }
 
 /// Share…: the system share sheet with every file, without Save to Photos and Assign to Contact (REC-012-R7).
-private struct BatchSharePresenter: UIViewControllerRepresentable {
+struct BatchSharePresenter: UIViewControllerRepresentable {
     let files: [URL]
     let onFinish: @MainActor () -> Void
 

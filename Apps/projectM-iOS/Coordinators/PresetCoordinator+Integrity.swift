@@ -1,6 +1,6 @@
 // PresetCoordinator+Integrity.swift — roadmap PRE-018 (specs/194-pre-018-integrity-scanner; R1, R4, R9):
 // the library check's view of the reference stores this coordinator owns or reaches: favorites, tags,
-// collections, adjustments (PRE-016) and recently played (PRE-006). `integrityReferences` copies their
+// collections, adjustments (PRE-016), notes (PRE-011) and recently played (PRE-006). `integrityReferences` copies their
 // preset IDs on the main actor; `removeDanglingReference` removes one entry through the store's own
 // save path (a refusal leaves the store unchanged and returns false). Nothing announces here: the
 // check announces its result on the library lane.
@@ -8,7 +8,7 @@ import Foundation
 import PresetLibrary
 
 extension PresetCoordinator {
-    /// The five stores' preset IDs, copied now (R1).
+    /// The six stores' preset IDs, copied now (R1).
     func integrityReferences() -> PresetReferenceSnapshot {
         let collections: [PresetReferenceSnapshot.Collection] = collectionStore.collections.map {
             (collection: PresetCollection) -> PresetReferenceSnapshot.Collection in
@@ -18,7 +18,8 @@ extension PresetCoordinator {
         let adjusted: [String] = overrides.map { (model: PresetOverridesCoordinator) -> [String] in
             model.store.map.values.keys.sorted()
         } ?? []
-        return PresetReferenceSnapshot(favorites: store.favorites, tags: tagged, overrides: adjusted, collections: collections,
+        let noted: [String] = noteStore.map.notes.keys.sorted()   // PRE-011-R8: IDs only, never the text
+        return PresetReferenceSnapshot(favorites: store.favorites, tags: tagged, overrides: adjusted, notes: noted, collections: collections,
                                        recents: recent?.ids ?? [])
     }
 
@@ -45,6 +46,9 @@ extension PresetCoordinator {
             guard let overrides else { return false }
             overrides.prune(id)
             return overrides.store.overrides(for: id).isEmpty
+        case .notes:
+            pruneNote(id)
+            return noteStore.note(for: id) == nil
         case .collections:
             guard let collectionID = issue.collectionID else { return false }
             changeCollections { try collectionStore.remove([id], from: collectionID) }

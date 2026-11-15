@@ -109,6 +109,16 @@ final class ShowCueQuantizer {
         return true
     }
 
+    /// SHOW-007-R5: a seek withdraws any waiting step (manual or timed), so nothing scheduled before the seek fires after
+    /// it. True when one was withdrawn. Silent: the seek is the performer's own action.
+    @discardableResult
+    func withdrawAll() -> Bool {
+        guard step.pending != nil else { return false }
+        _ = step.cancel()
+        reschedule()
+        return true
+    }
+
     // MARK: - Boundaries (R4)
 
     /// Applies the waiting step when `time` has reached its deadline (once).

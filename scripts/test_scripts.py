@@ -357,6 +357,32 @@ class ComplianceTests(unittest.TestCase):
             self.assertTrue(check_compliance.check_project_yml(p))
 
 
+class ComplianceNotesPrivacyTests(unittest.TestCase):
+    """PRE-011-R6, S2: a diagnostics source that names the notes store fails; the same text elsewhere passes."""
+
+    def test_notes_in_a_diagnostics_source_are_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            diagnostics = Path(d) / "Diagnostics"
+            diagnostics.mkdir()
+            bad = diagnostics / "Report.swift"
+            bad.write_text("let text = presets.noteStore.note(for: id)\n", encoding="utf-8")
+            literal = diagnostics / "Path.swift"
+            literal.write_text('let url = folder.appendingPathComponent("notes.json")\n', encoding="utf-8")
+            comment = diagnostics / "Comment.swift"
+            comment.write_text("// never reads PresetNoteStore\nlet x = 1\n", encoding="utf-8")
+            elsewhere = Path(d) / "Elsewhere.swift"
+            elsewhere.write_text("let store = PresetNoteStore(directory: url)\n", encoding="utf-8")
+            with mock.patch.object(check_compliance, "NOTES_PRIVATE_SOURCES", [diagnostics]):
+                for path in (bad, literal):
+                    self.assertIn("preset notes in a diagnostics source", "\n".join(check_compliance.check_file(path)))
+                self.assertEqual(check_compliance.check_file(comment), [])
+                self.assertEqual(check_compliance.check_file(elsewhere), [])
+
+    def test_the_listed_sources_exist(self):
+        for source in check_compliance.NOTES_PRIVATE_SOURCES:
+            self.assertTrue(source.exists(), source)
+
+
 class ComplianceOSCExceptionTests(unittest.TestCase):
     """FR-068 as amended 2026-11-12: the Network framework only in the OSC transport folder."""
 

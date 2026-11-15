@@ -106,6 +106,7 @@ struct SettingsView: View {
     var cameraExposure: CameraExposureChoice? = nil
     /// CAM-006: the Lock white balance row (nil in previews and tests that don't need it).
     var cameraWhiteBalance: CameraWhiteBalanceChoice? = nil
+    var cameraPersonMask: CameraPersonMaskChoice? = nil   // CAM-008
     /// CAM-005: whether the chosen camera can focus on a point (nil: no focus note, e.g. in previews).
     var cameraCanFocus: (@MainActor () -> Bool)? = nil
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
@@ -201,10 +202,11 @@ struct SettingsView: View {
             Toggle("Mirror", isOn: $settings.cameraMirrored)
                 .accessibilityIdentifier("cameraMirrorToggle")
             cameraCropRows
+            if let cameraPersonMask { CameraPersonMaskRow(choice: cameraPersonMask) }   // CAM-008-R1
         } header: {
             Text("Camera")
         } footer: {
-            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Lock exposure holds the camera's current brightness until you turn it off, change lens or camera, or the camera stops. Lock white balance holds the camera's current colors the same way, also through an interruption. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device.")
+            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Lock exposure holds the camera's current brightness until you turn it off, change lens or camera, or the camera stops. Lock white balance holds the camera's current colors the same way, also through an interruption. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device. Person mask shows only the people in the picture, or only what is behind them; it is worked out on this device and never saved.")
         }
     }
 
@@ -364,6 +366,7 @@ struct SettingsView: View {
                 }
             }
             if let layerInspector { SceneSnapshotRows(snapshots: layerInspector.sceneSnapshots) }   // SCN-008-R9: under what it holds
+            if let layerInspector { OfflineExportRow(export: layerInspector.offlineExport) }   // REC-013-R1
         } header: {
             Text("Visual")
         } footer: {
