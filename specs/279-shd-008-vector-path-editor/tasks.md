@@ -34,8 +34,8 @@
 
 **Goal**: path spawn shape. **Independent test**: `VectorPathEmitterTests`.
 
-- [ ] SHD-008-T12 [US3] `ParticleEmitterSettings`: `Shape.path`, `path: VectorPath` (default diamond; invalid or missing → default, contract P3); `ParticleFountainSimulation.spawnFromEmitter` `.path` case: three draws, x = (px − 0.5)·shapeWidth, y = (0.5 − py)·shapeHeight (SHD-008-R7, R8)
-- [ ] SHD-008-T13 [P] [US3] `VectorPathEmitterTests.swift`: seeded 10 s run with a concave path at 60 Hz and jittery frames: every spawn inside, none in the notch, attempts = SHD-007 formula, identical runs; settings round trip exact; invalid stored path → default (SHD-008-S4)
+- [X] SHD-008-T12 [US3] `ParticleEmitterSettings`: `Shape.path`, `path: VectorPath` (default diamond; invalid or missing → default, contract P3); `ParticleFountainSimulation.spawnFromEmitter` `.path` case: three draws, x = (px − 0.5)·shapeWidth, y = (0.5 − py)·shapeHeight (SHD-008-R7, R8) — Verified 2026-11-14: VisualGenerators builds; `VectorPathEmitterTests` and every `ParticleEmitter*`/`ParticleFountain*` suite pass (34 tests, 2.6 s)
+- [X] SHD-008-T13 [P] [US3] `VectorPathEmitterTests.swift`: seeded 10 s run with a concave path at 60 Hz and jittery frames: every spawn inside, none in the notch, attempts = SHD-007 formula, identical runs; settings round trip exact; invalid stored path → default (SHD-008-S4) — Verified 2026-11-14: `VectorPathEmitterTests` 2 tests pass in 0.08 s: 10 s seeded runs at 60 Hz and jittery frames, 600 attempts and spawns (⌊60 × 10⌋), >10 000 particle-frame checks all inside the L, none in its notch, identical reruns; settings JSON round trip exact; bow-tie stored path → default, other fields kept; pre-SHD-008 settings → default path
 - [ ] SHD-008-T14 [US3] App: `ParticleEmitterEditorView` spawn section shows width/height for `.path` and an "Edit path" link `particleEmitterPathEdit` (SHD-008-R9)
 
 ## Phase 6: App and UI tests
