@@ -34,7 +34,7 @@ Tests are requested by the spec (acceptance: recorded synthetic pose frames, con
 **Independent test**: a recorded pose fixture drives a bound parameter deterministically; the Camera visual applies bindings.
 
 - [ ] CAM-010-T13 [P] [US2] Package tests: normalisation (centred, pinch, fist, extreme, degenerate, non-finite, low confidence), smoothing, and the recorded-pose determinism acceptance through `AudioFeatureModulator` (two runs identical, expected values at sample times within 0.001, jittered cadence equal at shared times within 1e-9) in `Packages/ParameterGraph/Tests/ParameterGraphTests/HandFeatureTrackerTests.swift`
-- [ ] CAM-010-T14 [US2] Camera visual modulation (`CameraVisualModulation`: catalog modulator, load, resolve inner radius and gap, face and hand readers) in `Apps/projectM-iOS/Visuals/CameraVisualHost+Modulation.swift`; one stored property and one frame call in `CameraVisualHost.swift`; load on creation and on matrix edits in `AppCoordinator+HandTracking.swift`, `AppCoordinator.swift`, `AppCoordinator+ModulationMatrix.swift`; native host reads hand values (`NativeSpectrumHost.swift`); inspector names in `ParameterInspectorModel.swift`
+- [ ] CAM-010-T14 [US2] Camera visual modulation (`CameraVisualModulation`: catalog modulator, load, resolve inner radius and gap, face and hand readers) in `Apps/projectM-iOS/Visuals/CameraVisualHost+Modulation.swift`; one stored property and one frame call in `CameraVisualHost.swift`; load on creation and on matrix edits in `AppCoordinator+HandTracking.swift`, `AppCoordinator.swift`, `AppCoordinator+ModulationMatrix.swift`; native host reads hand values (`NativeSpectrumHost.swift`); inspector names in `ParameterInspectorModel.swift`; DEBUG seed `-uitestBindCameraRadiusToPinch` (binds `audio.hand.pinch` to `visual.circularSpectrum.innerRadius` for the device check T17)
 - [ ] CAM-010-T15 [US2] App tests: recorded poses through `HandPoseAnalyzer` and `CameraVisualModulation` (deterministic radius), face and hand bindings move the Camera visual's spectrum inner radius in a stand-in-camera host, in `Apps/projectM-iOS/Tests/HandTrackingAppTests.swift`
 
 ## Phase 5: User Story 3 — Nothing leaves the device (P1)
@@ -45,7 +45,7 @@ Tests are requested by the spec (acceptance: recorded synthetic pose frames, con
 
 - [ ] CAM-010-T17 {device} D1: real hands drive the bound inner radius (DEBUG `-uitestBindCameraRadiusToPinch`), the badge and iOS's camera indicator show, frame rate with face and hand tracking on recorded
 - [ ] CAM-010-T18 ADR `docs/adr/0087-on-device-hand-pose.md`, `docs/adr/README.md`, privacy policy section in `docs/privacy-policy.md`, CAM-009's limitation note updated in `specs/270-cam-009-face-landmark-emitters/spec.md` Assumptions
-- [ ] CAM-010-T19 Repo checks, type-check budget, network symbols and privacy manifest on the built app, `SettingsTests` and `LibraryBackupAppTests`
+- [ ] CAM-010-T19 Repo checks, the Linux shape of `HandFeatureTracker.swift` (Foundation-free, as `FaceFeatureTracker.swift`; CAM-010-R15), type-check budget, network symbols and privacy manifest on the built app, `SettingsTests` and `LibraryBackupAppTests`
 
 ## Dependencies
 
@@ -59,3 +59,10 @@ T02 ∥ T04; T13 ∥ T06-T08; T12 ∥ T15 once T09 is in.
 ## Implementation strategy
 
 MVP: Phase 2 + US1 (consent-gated hand values). Then US2 closes the acceptance and the CAM-009 gap, then US3 and polish.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1-R16 and S1-S7 each map to at least one task (R15 → T02, T19; S5 → T19; R16/S7 → T14, T15). No
+constitution conflict (Vision and CoreVideo public; consent before analysis; on-device, memory only). Fixed: the
+quickstart's DEBUG seed had no task (added to T14); R15's Linux shape had no explicit check (added to T19). No
+critical or high findings.
