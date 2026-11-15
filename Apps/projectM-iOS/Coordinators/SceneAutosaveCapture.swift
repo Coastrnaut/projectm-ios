@@ -298,14 +298,14 @@ enum SceneAutosaveCapture {
                              directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil,
                              echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil,
                              edgeOutline: EdgeOutlineSetting? = nil, lensDistortion: LensDistortionSetting? = nil,
-                             vignette: VignetteSetting? = nil, scanlines: ScanlinesSetting? = nil) {
+                             vignette: VignetteSetting? = nil, pixelSort: PixelSortSetting? = nil, scanlines: ScanlinesSetting? = nil) {
         guard let entries else {
             chain.order = .standard
             return
         }
         applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic,
                      directionalBlur: directionalBlur, radialBlur: radialBlur, echo: echo, mosaic: mosaic,
-                     edgeOutline: edgeOutline, lensDistortion: lensDistortion, vignette: vignette, scanlines: scanlines)
+                     edgeOutline: edgeOutline, lensDistortion: lensDistortion, vignette: vignette, pixelSort: pixelSort, scanlines: scanlines)
     }
 
     @MainActor
@@ -314,7 +314,7 @@ enum SceneAutosaveCapture {
                              directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil,
                              echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil,
                              edgeOutline: EdgeOutlineSetting? = nil, lensDistortion: LensDistortionSetting? = nil,
-                             vignette: VignetteSetting? = nil, scanlines: ScanlinesSetting? = nil) {
+                             vignette: VignetteSetting? = nil, pixelSort: PixelSortSetting? = nil, scanlines: ScanlinesSetting? = nil) {
         chain.order = settings.order
         if let g = settings.grade {
             if grade.temperature != g.temperature { grade.temperature = g.temperature }
@@ -343,6 +343,7 @@ enum SceneAutosaveCapture {
         if let o = settings.edgeOutline { edgeOutline?.apply(o) }   // FX-014
         if let l = settings.lensDistortion { lensDistortion?.apply(l) }   // FX-016
         if let v = settings.vignette { vignette?.apply(v) }   // FX-015
+        if let p = settings.pixelSort { pixelSort?.apply(p) }   // FX-011
         if let s = settings.scanlines { scanlines?.apply(s) }   // FX-018
     }
 

@@ -78,6 +78,7 @@ final class EffectChainSetting {
         case .mosaic: "Mosaic"   // FX-012
         case .edgeOutline: "Edge outline"   // FX-014
         case .lensDistortion: "Lens distortion"   // FX-016
+        case .pixelSort: "Pixel sort"   // FX-011
         case .vignette: "Vignette"   // FX-015
         case .scanlines: "Scanlines"   // FX-018
         }

@@ -45,7 +45,7 @@ struct EffectChainView: View {
             Button("Save") { save() }
             Button("Cancel", role: .cancel) { presetName = "" }
         } message: {
-            Text("Saves the order and the Color, Trails, Chromatic split, Directional blur, Radial blur, Echo, Mosaic, Edge outline, Lens distortion, Vignette and Scanlines settings.")
+            Text("Saves the order and the Color, Trails, Chromatic split, Directional blur, Radial blur, Echo, Mosaic, Edge outline, Lens distortion, Pixel sort, Vignette and Scanlines settings.")
         }
     }
 
@@ -103,6 +103,7 @@ private struct EffectChainRow: View {
         let outline: EdgeOutlineSetting = coordinator.edgeOutline   // FX-014
         let lens: LensDistortionSetting = coordinator.lensDistortion   // FX-016
         let vignette: VignetteSetting = coordinator.vignette   // FX-015
+        let sort: PixelSortSetting = coordinator.pixelSort   // FX-011
         let lines: ScanlinesSetting = coordinator.scanlines   // FX-018
         switch kind {
         case .grade:
@@ -123,6 +124,8 @@ private struct EffectChainRow: View {
             return Binding<Bool>(get: { () -> Bool in outline.isEnabled }, set: { (on: Bool) -> Void in outline.isEnabled = on })
         case .lensDistortion:   // FX-016
             return Binding<Bool>(get: { () -> Bool in lens.isEnabled }, set: { (on: Bool) -> Void in lens.isEnabled = on })
+        case .pixelSort:   // FX-011
+            return Binding<Bool>(get: { () -> Bool in sort.isEnabled }, set: { (on: Bool) -> Void in sort.isEnabled = on })
         case .vignette:   // FX-015
             return Binding<Bool>(get: { () -> Bool in vignette.isEnabled }, set: { (on: Bool) -> Void in vignette.isEnabled = on })
         case .scanlines:   // FX-018

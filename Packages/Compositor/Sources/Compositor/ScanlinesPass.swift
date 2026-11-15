@@ -4,7 +4,7 @@
 // One full-screen pass `cmp_scanlines` while the scanlines are active: it reads its input (the composite, or the
 // output of the effect before it) once per pixel and writes one pooled picture (composite size, `rgba16Float`), which
 // the next effect, the flash guard and every output read. Per pixel: one exact read, an integer modulo and at most one
-// multiply, no loop (FX-018-R6). Its source is a module constant spliced after `VignettePass.source` at the
+// multiply, no loop (FX-018-R6). Its source is a module constant spliced after `PixelSortPass.source` (FX-011) at the
 // compositor's existing reviewed compile site (SHD-011, ADR-0024) and listed in `CompositorShaderSources.archived`.
 // The picture is taken from the pool on the first active frame at a size and returned (fenced by the last command
 // buffer) when the effect turns inactive, at a size change and with the compositor. Per frame only Metal's own command

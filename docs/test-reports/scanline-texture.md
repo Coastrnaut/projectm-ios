@@ -63,3 +63,14 @@ gained one line, and `EffectChainSection.body`, 313 ms, whose code is unchanged)
 - FX-018-T16 `{device}`: on D1, the look on a real screen (even lines, no crawl or flicker at spacings 2, 3, 16,
   intensity 100 %, both orientations) and the frame rate with and without scanlines.
 - CI's Linux job builds the model; it was exercised here only in the Linux shape on the Mac.
+
+## Merge with FX-011 Pixel sort (2026-11-15)
+
+`autonomous/integration` (FX-011 integrated) was merged into `feature/fx-018`, keeping both sides. The order is now
+… Edge outline → Lens distortion → Pixel sort → Vignette → Scanlines. Two FX-011 assertions that Vignette is last
+(`PixelSortCompositeTests`, `PixelSortSettingTests`) now assert that Vignette directly follows Pixel sort. After the merge:
+Compositor package 1259 tests in all bundles, 0 failures (CompositorTests 798, 10 skipped); SceneFormat 228;
+RenderGoldens 130 (1 skipped); LibraryBackup 88; the full app unit bundle 1388 tests, 0 failures (58.9 s), and
+`ScanlinesUITests` (14.6 s), `PixelSortUITests` (13.0 s) and `EffectChainUITests` (15.5 s) passed on a new own
+simulator ("FX18b iPhone 17", deleted afterwards); `test_scripts` (186), `check_compliance` and `validate_docs` OK.
+PosterBoard reports: 25 before, 25 after.
