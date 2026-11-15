@@ -29,6 +29,19 @@ levels), MOD-009 (tempo-synced cycle length), ACC-012 / FR-072 (Reduce flashing)
 | Scenes | `lfos` entries are kept verbatim (unknown fields included); an unknown shape is reported (`unknownLFO`) and the oscillator is kept but not used. |
 | Editor UI | None for oscillators (MOD-007, MOD-008 and MOD-009 decided the same); oscillators come from scene files. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: How is the random motion produced so that any frame timing or seek gives the same value? → A: As a new oscillator shape, `randomWalk`, in the existing oscillator bank: each cycle n has one seeded target, the MOD-008 counter-based level of (seed, n); within cycle n the value moves from target n to target n + 1 along the cycle's phase. The value is a pure function of seed, step and phase, which come from the bank's exact time-to-cycle computation, so there is no accumulated state. A stateful walk (adding a random increment each frame, or an Ornstein-Uhlenbeck process integrated per frame) was rejected: it depends on the frame chunking and drifts (MOD-016-R2, R3).
+- Q: Which curve joins two targets, and how does it guarantee the bounds? → A: A blend of a straight line and the quintic "smootherstep" ease, e(φ) = (1 − s)·φ + s·(6φ⁵ − 15φ⁴ + 10φ³) with smoothness s in 0…1 (default 1). Both parts rise monotonically from 0 to 1, so the value always lies between the two targets: no overshoot, so the walk stays inside the range by construction (only the existing 0…1 clamp of centre ± depth/2 applies). Splines through neighbouring targets (Catmull-Rom, cubic Hermite with tangents) were rejected because they overshoot (MOD-016-R4, R5).
+- Q: What continuity bound must hold between frames? → A: The ease's steepest slope is (1 − s) + s·15/8 ≤ 1.875 per cycle, and two targets differ by less than 1, so between two samples Δt apart the value changes by at most depth · ((1 − s) + 1.875·s) · rate · Δt (for a free oscillator at a constant rate; tempo changes continue from the reached phase, MOD-009). The tests use this bound (MOD-016-R6).
+- Q: Are consecutive targets correlated (a bounded step from the previous target) or independent? → A: Independent, uniform over the range: correlated targets would need either history (breaking the pure function) or a window of past targets (shrinking the range toward the centre). How far the walk wanders per second is set by the rate (or the synced cycle length) and the depth; smoothness shapes the motion between targets (MOD-016-R3).
+- Q: How is the random walk stored and seeded? → A: The entry's `shape` is `randomWalk`; the existing `rate`, `phase`, `amplitude` (depth), `center`, `sync` and `seed` fields apply unchanged (unseeded walks use MOD-008's position-derived seed, so two unseeded walks differ); a new optional `smoothness` (0…1) is written only for `randomWalk` when it is not 1. No format version change, no new issue codes (`invalidLFO` for an out-of-range smoothness, older apps report the shape as `unknownLFO` and keep the entry), no UserDefaults key, no editor UI. Reduce flashing caps the effective rate at 3 Hz, so at most 3 new targets per second (MOD-016-R7 to R9).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Smooth random motion that repeats exactly for the same seed (Priority: P1)
