@@ -115,6 +115,9 @@
 // FX-015 (specs/305-fx-015-vignette, ADR-0116): while `vignette` is active, `VignettePass` darkens towards the edges
 // (colour × (1 − intensity × w), the centre exact) at its place in `outputEffectOrder` (Color folded before it the same
 // way); appended last (after FX-016's Lens distortion).
+// FX-017 (specs/311-fx-017-film-grain, ADR-0122): while `filmGrain` is active, `FilmGrainPass` adds seeded integer-hash
+// grain (zero-mean, bounded; the grain frame from the frame's injected clock, at most 24 Hz, static under Reduce
+// flashing) at its place in `outputEffectOrder` (Color folded before it the same way); appended last, after Vignette.
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -309,6 +312,8 @@ public final class Compositor {
     private let lensDistortionPass: LensDistortionPass
     /// FX-015: the vignette pass and its pooled picture.
     private let vignettePass: VignettePass
+    /// FX-017: the film grain pass and its pooled picture.
+    private let filmGrainPass: FilmGrainPass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -398,6 +403,18 @@ public final class Compositor {
     /// FX-015: frames drawn through the vignette pass, and whether its picture is held (tests, diagnostics).
     public var vignetteFrames: Int { vignettePass.frames }
     public var holdsVignettePicture: Bool { vignettePass.holdsPicture }
+
+    /// FX-017 (ADR-0122): the film grain, set between frames. Off or opacity 0 (the default is off) adds no pass and
+    /// holds no picture: output bit-identical to before FX-017.
+    public var filmGrain: FilmGrain = .off {
+        didSet { if !filmGrain.isEnabled { filmGrainPass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-017: frames drawn through the grain pass, whether its picture is held and the last grain frame (tests,
+    /// diagnostics).
+    public var filmGrainFrames: Int { filmGrainPass.frames }
+    public var holdsFilmGrainPicture: Bool { filmGrainPass.holdsPicture }
+    public var lastFilmGrainFrame: UInt32 { filmGrainPass.lastGrainFrame }
 
     /// FX-016 (ADR-0117): the lens distortion, set between frames. Off or strength 0 (the default is off) adds no pass and
     /// holds no picture: output bit-identical to before FX-016.
@@ -500,7 +517,8 @@ public final class Compositor {
                                                 + MosaicPass.source
                                                 + EdgeOutlinePass.source
                                                 + LensDistortionPass.source
-                                                + VignettePass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015
+                                                + VignettePass.source
+                                                + FilmGrainPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-017
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
@@ -512,6 +530,7 @@ public final class Compositor {
         edgeOutlinePass = try EdgeOutlinePass(device: device, library: library, vertex: fullScreen)   // FX-014
         lensDistortionPass = try LensDistortionPass(device: device, library: library, vertex: fullScreen)   // FX-016
         vignettePass = try VignettePass(device: device, library: library, vertex: fullScreen)   // FX-015
+        filmGrainPass = try FilmGrainPass(device: device, library: library, vertex: fullScreen)   // FX-017
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -549,6 +568,7 @@ public final class Compositor {
         edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer)   // FX-014
         lensDistortionPass.release(to: texturePool, after: lastCommandBuffer)   // FX-016
         vignettePass.release(to: texturePool, after: lastCommandBuffer)   // FX-015
+        filmGrainPass.release(to: texturePool, after: lastCommandBuffer)   // FX-017
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -964,6 +984,7 @@ public final class Compositor {
         var outlineRan = false   // FX-014
         var lensRan = false   // FX-016
         var vignetteRan = false   // FX-015
+        var grainRan = false   // FX-017
         for kind in outputEffectOrder.effects {
             switch kind {
             case .grade:
@@ -1098,6 +1119,21 @@ public final class Compositor {
                 pictureAllocations += vignettePass.allocations - taken   // PERF-004
                 shown = darkened
                 vignetteRan = true
+            case .filmGrain:   // FX-017
+                guard filmGrain.isActive(width: shown.width, height: shown.height) else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                let taken: Int = filmGrainPass.allocations
+                let grainFrame: UInt32 = filmGrain.grainFrame(presentationTimeNanoseconds: frame.presentationTimeNanoseconds,
+                                                              reduceFlashing: frame.reduceFlashing)
+                guard let grained = filmGrainPass.encode(input: shown, block: filmGrain.block(frame: grainFrame), pool: texturePool,
+                                                         fence: lastCommandBuffer, commandBuffer: commandBuffer) else { return nil }
+                pictureAllocations += filmGrainPass.allocations - taken   // PERF-004
+                shown = grained
+                grainRan = true
             }
         }
         if !graded, gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
@@ -1111,6 +1147,7 @@ public final class Compositor {
         if !outlineRan, edgeOutlinePass.holdsPicture { edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-014
         if !lensRan, lensDistortionPass.holdsPicture { lensDistortionPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-016
         if !vignetteRan, vignettePass.holdsPicture { vignettePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-015
+        if !grainRan, filmGrainPass.holdsPicture { filmGrainPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-017
         return shown
     }
 

@@ -14,43 +14,43 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
 
 ## Phase 2: Foundational
 
-- [ ] FX-017-T02 [P] `FilmGrain` in `Packages/Compositor/Sources/Compositor/FilmGrain.swift`: value and ranges (data
+- [X] FX-017-T02 [P] `FilmGrain` in `Packages/Compositor/Sources/Compositor/FilmGrain.swift`: value and ranges (data
   model), clamps, `isActive`, `grainFrame`, `effective(reduceMotion:)`, `block`, `pcg`, `hash`, `noise`,
-  `referencePixel`, `reference` (contract C2); plain Swift (Linux)
-- [ ] FX-017-T03 [P] `FilmGrainModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps (NaN, ±Inf,
+  `referencePixel`, `reference` (contract C2); plain Swift (Linux) — Verified 2026-11-15: FilmGrainModelTests 6/6 on the host
+- [X] FX-017-T03 [P] `FilmGrainModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps (NaN, ±Inf,
   fractions); hash fixed vectors and determinism; noise exact multiples of 2⁻²³ in [−1, 1); size-2 cells share a value;
   monochrome channels equal, colour red equals monochrome; grain frame 0 when static or Reduce flashing, ≤ 24 steps per
   second at 120 Hz, wraps at 2³²; mean over a uniform grey within 0.005 and every change within the bound; opacity 0
-  reference is the input (FX-017-R2 to R6, R13, S3, S4)
-- [ ] FX-017-T04 `OutputEffectKind.filmGrain` (`fx.filmGrain`, appended after `vignette`) in
+  reference is the input (FX-017-R2 to R6, R13, S3, S4) — Verified 2026-11-15: swift test --filter FilmGrainModelTests, 6 pass (hash vectors vs an independent 64-bit PCG, exact noise, 2 × 2 cells, ≤ 24 changes in 1 s at 120 Hz, wrap at 2³², mean < 0.005 on 96 × 64 grey, opacity 0 identity)
+- [X] FX-017-T04 `OutputEffectKind.filmGrain` (`fx.filmGrain`, appended after `vignette`) in
   `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update the existing whole-order assertions in
-  `OutputEffectOrderTests` and add a position-based one (FX-017-R8)
+  `OutputEffectOrderTests` and add a position-based one (FX-017-R8) — Verified 2026-11-15: OutputEffectOrderTests 5/5 on the host; position asserts last == .filmGrain and an FX-015 stored order reads with it at index 10
 
 ## Phase 3: User Stories 1-3 — the pass (P1, P2)
 
 **Goal**: deterministic seeded grain on every compositor output, exact identity at opacity zero, capped temporal steps.
 **Independent test**: GPU tests through the real compositor.
 
-- [ ] FX-017-T05 [US1] `FilmGrainPass` with `cmp_grain_hash`, `cmp_grain_noise` and `cmp_film_grain` in
-  `Packages/Compositor/Sources/Compositor/FilmGrainPass.swift` (one pooled picture, released when unused; one read and at most three hashes per pixel, FX-017-R7)
-- [ ] FX-017-T06 [US1] `Compositor.swift`: `filmGrain` property, splice the source at the existing compile site, the
+- [X] FX-017-T05 [US1] `FilmGrainPass` with `cmp_grain_hash`, `cmp_grain_noise` and `cmp_film_grain` in
+  `Packages/Compositor/Sources/Compositor/FilmGrainPass.swift` (one pooled picture, released when unused; one read and at most three hashes per pixel, FX-017-R7) — Verified 2026-11-15: FilmGrainCompositeTests 7/7 on the host (real Metal device, not skipped)
+- [X] FX-017-T06 [US1] `Compositor.swift`: `filmGrain` property, splice the source at the existing compile site, the
   `.filmGrain` case in `encodeOutputEffects` (Color folded before it; grain frame from the frame context), release in
-  deinit; add the source to `CompositorShaderSources.archived` in `CompositorShaders.swift` (every output path reads `encodeOutputEffects`, FX-017-R1; R12, R14)
-- [ ] FX-017-T07 [US1] [US2] [US3] `FilmGrainCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and
+  deinit; add the source to `CompositorShaderSources.archived` in `CompositorShaders.swift` (every output path reads `encodeOutputEffects`, FX-017-R1; R12, R14) — Verified 2026-11-15: Compositor package on the host: CompositorTests 785 tests, 0 failures (10 skipped), 43.9 s; CompositorPipelineArchiveTests pass
+- [X] FX-017-T07 [US1] [US2] [US3] `FilmGrainCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and
   opacity 0 (several seeds, sizes, colour, temporal) bit-identical with no pass and no picture; the pass encoded
   directly at opacity 0 bit-identical; GPU hash and noise equal the CPU exactly (test kernel through
   `CompositorShaders.library`); output equals the reference within one half-float step; two renders and two frame
   times identical when static; seeds differ; temporal: different 1⁄24 s steps differ, same step identical, Reduce
-  flashing static; uniform grey mean within 0.005, bound held, all finite; order last and pool release (FX-017-S1 to S4)
-- [ ] FX-017-T08 [US1] Existing compositor tests still pass (`VignetteCompositeTests`, `EffectOrderCompositeTests`,
-  `CompositorPipelineArchiveTests`, the whole Compositor suite)
+  flashing static; uniform grey mean within 0.005, bound held, all finite; order last and pool release (FX-017-S1 to S4) — Verified 2026-11-15: FilmGrainCompositeTests 7/7 (host, 0.69 s): off/opacity 0 bit-identical with no pass; pass at scale 0 bit-identical on 37 × 29, 2 × 2, 3 × 64 incl. negative and HDR; GPU hash and noise = CPU on 3 × 1024 cells bit for bit; output = reference within one half step; renders and later times identical; seeds differ; temporal steps; Reduce flashing static; grey mean < 0.005, bound held
+- [X] FX-017-T08 [US1] Existing compositor tests still pass (`VignetteCompositeTests`, `EffectOrderCompositeTests`,
+  `CompositorPipelineArchiveTests`, the whole Compositor suite) — Verified 2026-11-15: VignetteCompositeTests, EffectOrderCompositeTests, CompositorPipelineArchiveTests pass in the full host run (785 tests)
 
 ## Phase 4: User Story 4 — chain, scenes, goldens (P2)
 
-- [ ] FX-017-T09 [US4] `SceneEffectSettings.filmGrain` (property set after `init`) and the `fx.filmGrain` entry (read,
+- [X] FX-017-T09 [US4] `SceneEffectSettings.filmGrain` (property set after `init`) and the `fx.filmGrain` entry (read,
   clamp, write, `isDefault`) in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift` and
   `SceneEffectChain+FilmGrain.swift`; `FilmGrainSceneEntryTests`; whole-order updates in `SceneEffectChainTests`; the new
-  file in `SceneSourceSafetyTests` (FX-017-R11, S5)
+  file in `SceneSourceSafetyTests` (FX-017-R11, S5) — Verified 2026-11-15: SceneFormat 226 tests on the host, 0 failures (FilmGrainSceneEntryTests 2/2, SceneEffectChainTests, SceneSourceSafetyTests, VignetteSceneEntryTests position update)
 - [ ] FX-017-T10 [US4] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the grain;
   `FilmGrainSceneGoldenTests` (off and opacity 0 render as no chain; a grain scene round-trips and renders identically
   twice; stored golden images in `GeneratorGoldens/FilmGrain/` for macos and ios-simulator, with their integrity test);
