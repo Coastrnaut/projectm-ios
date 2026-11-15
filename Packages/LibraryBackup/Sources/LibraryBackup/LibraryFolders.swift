@@ -10,7 +10,8 @@ public struct LibraryFolders: Sendable, Equatable {
         case show = "Show"
         /// `Scenes/`: current.scene (SCN-002 autosave).
         case currentScene = "Scenes"
-        /// `UserPresets/`: index.json, files/ (PRE-012).
+        /// `UserPresets/`: index.json, files/ (PRE-012); history.json and versions/ (PRE-017 restore points: copied with the
+        /// folder by a restore, never in a backup).
         case presets = "UserPresets"
         /// `PresetCollections/`: collections.json (PRE-007), tags.json (PRE-003), overrides.json (PRE-016), smart-collections.json (PRE-008) and notes.json (PRE-011).
         case collections = "PresetCollections"
