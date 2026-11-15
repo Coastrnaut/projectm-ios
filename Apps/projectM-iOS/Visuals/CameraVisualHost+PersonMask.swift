@@ -9,6 +9,7 @@
 // here starts the camera, and no mask is stored.
 import CameraLayer
 import Foundation
+import ParameterGraph
 import Rendering
 
 extension CameraVisualHost {
@@ -62,7 +63,17 @@ extension CameraVisualHost {
     /// Applies the current heat and power state to the masker (main thread).
     func updatePersonMaskPlan() {
         let info = ProcessInfo.processInfo
-        camera.personMasker?.plan = Self.personMaskPlan(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled,
-                                                        profile: PowerProfileState.current)
+        let plan: PersonMaskPlan = Self.personMaskPlan(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled,
+                                                       profile: PowerProfileState.current)
+        camera.personMasker?.plan = plan
+        (camera.provider.pictureAnalyzer as? FaceLandmarkAnalyzer)?.interval = Self.faceInterval(plan)   // CAM-009-R10
+    }
+
+    /// CAM-009-R10: the same heat and power state → the face analysis interval (paused when warm; 10 Hz when reduced).
+    static func faceInterval(_ plan: PersonMaskPlan) -> UInt64? {
+        switch plan {
+        case .paused: return FaceTrackingRate.interval(warm: true, reducedPower: false)
+        case let .run(quality, _): return FaceTrackingRate.interval(warm: false, reducedPower: quality == .fast)
+        }
     }
 }

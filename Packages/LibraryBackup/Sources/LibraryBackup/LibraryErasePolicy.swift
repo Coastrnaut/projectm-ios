@@ -73,7 +73,8 @@ public enum LibraryErasePolicy {
                                                        "settings.externalDisplay.resolution",   // OUT-003-R7
                                                        "settings.externalDisplay.resolutionPercent",
                                                        "settings.externalDisplay.outputMode",   // OUT-006-R7
-                                                       "settings.externalDisplay.cornerPin"]   // OUT-007-R9
+                                                       "settings.externalDisplay.cornerPin",   // OUT-007-R9
+                                                       "settings.externalDisplay.calibration"]   // OUT-009-R9
     /// UIX-007-R7: the iPad split editor's width (this device's screen: not backed up, erased with Settings).
     public static let splitEditorWidthKey = "settings.splitEditor.width"
 
@@ -134,8 +135,12 @@ public enum LibraryErasePolicy {
             + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
             + [showLoopKey]   // SHOW-007: erasing Settings turns Loop off
             + [sceneRotationKey]   // SHOW-013: erasing Settings resets rotation's choices
+            + faceTrackingKeys   // CAM-009-R3: erasing Settings turns face tracking off and forgets the consent
             + [midiFollowClockKey]   // MIDI-010: erasing Settings stops following the MIDI clock
     }()
+
+    /// CAM-009-R3: the face tracking switch and its consent (never backed up; erased with Settings).
+    public static let faceTrackingKeys: [String] = ["settings.camera.faceTracking", "settings.camera.faceTrackingConsent"]
 
     /// MIDI-010: Follow MIDI clock (excluded from backups; erased with Settings).
     public static let midiFollowClockKey = "settings.midi.followClock"

@@ -398,6 +398,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// CAM-011: device tilt and shake as modulation sources (Settings › Motion; the sensor runs only while used).
     @ObservationIgnored private(set) lazy var motionModulation: MotionModulationCoordinator = makeMotionModulation(defaults: defaults)
+    /// CAM-009: opt-in face tracking on the Camera visual's pictures (Settings › Camera; consent first).
+    @ObservationIgnored private(set) lazy var faceTracking: FaceTrackingCoordinator = makeFaceTracking(defaults: defaults)
     /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
     @ObservationIgnored private(set) lazy var hapticBeat = HapticBeatCoordinator(
         defaults: defaults, tempo: tempo, clamp: { [unowned self] () -> SafetyClamp in self.settings.safetyClamp })
@@ -658,6 +660,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
         ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
+        FaceTrackingCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // CAM-009: off, no consent
         NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
@@ -745,6 +748,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectOfflineExport()   // REC-013
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
+        connectMIDIFeedback()   // MIDI-009
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
@@ -1240,6 +1244,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
             connectMotion(host)   // CAM-011
+            faceTracking.connect(native: host)   // CAM-009
             connectStereoPhase(host)   // ANL-013
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
@@ -1284,6 +1289,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in self?.cameraWhiteBalance = state }   // CAM-006
             cameraWhiteBalance = host.cameraWhiteBalance
             observePersonMask(of: host)   // CAM-008
+            faceTracking.connect(camera: host)   // CAM-009: the same pictures, only behind the consent gate
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1526,6 +1532,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.mirrored = settings.cameraMirrored
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
         host.personMask = settings.cameraPersonMask   // CAM-008-R1: from the next frame
+        faceTracking.analyzer.mirrored = host.mirrored   // CAM-009: x follows the shown picture
         host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
 
@@ -2003,6 +2010,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midi.sceneBecame(active: active)   // MIDI-001-R7: no discovery outside the foreground
         warmStart.sceneBecame(active: active)   // PERF-009-R6: write the pipeline archive back
         motionModulation.setAppActive(active)   // CAM-011-R8: no motion sensor outside the foreground
+        if active { faceTracking.refreshPermission() }   // CAM-009-R5: access changed in iOS Settings
         if active { countdown.appBecameActive() }   // MED-012-R4: a countdown that ended in the background finishes once
         updateIdleTimer()
     }

@@ -103,6 +103,12 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         get { masker.withLock { $0 } }
         set { masker.withLock { $0 = newValue } }
     }
+    /// CAM-009: set on the main thread, read on the video queue.
+    private let analyzer = OSAllocatedUnfairLock<(any CameraPictureAnalyzing)?>(initialState: nil)
+    public var pictureAnalyzer: (any CameraPictureAnalyzing)? {
+        get { analyzer.withLock { $0 } }
+        set { analyzer.withLock { $0 = newValue } }
+    }
 
     public init(device: MTLDevice, lensInventory: any CameraLensInventory = AVCameraLensInventory()) {
         self.device = device
@@ -540,10 +546,13 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
               let wrapper, let texture = CVMetalTextureGetTexture(wrapper) else { return }
         let position: CameraPosition? = Self.position(of: connection)
         guard latest.store(texture, owner: CVMetalTextureHold(texture: wrapper, cache: cache), position: position) else { return }
-        if let personMasker {   // CAM-008-R4: the masker decides whether this picture is analysed
-            let stamp = latest.stamp
-            personMasker.offer(pixels, rotation: stamp.rotation, position: position ?? stamp.position)
-        }
+        let masker: PersonMasker? = personMasker
+        let analyzer: (any CameraPictureAnalyzing)? = pictureAnalyzer
+        guard masker != nil || analyzer != nil else { return }
+        let stamp = latest.stamp
+        // CAM-008-R4, CAM-009: each decides itself whether this picture is analysed
+        masker?.offer(pixels, rotation: stamp.rotation, position: position ?? stamp.position)
+        analyzer?.offer(pixels, rotation: stamp.rotation, position: position ?? stamp.position)
     }
 
     /// CAM-002-D3: the camera a buffer came from (nil: the slot's position).

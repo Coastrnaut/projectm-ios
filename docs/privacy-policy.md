@@ -94,12 +94,25 @@ the app is in the foreground; it stops when you choose another visual, pause, st
 app, and iOS shows its camera indicator whenever it runs. The app also shows its own "Camera on"
 badge ("Front camera on" for the front camera) while the camera runs, with a Stop camera button that turns the camera off at once and returns
 to the visual you had before (CAM-012). Each picture is held in memory only until
-the next one replaces it and is drawn on your screen. The app never records, saves, sends or
-analyses camera pictures (no face, person or scene detection), and it does not remember the Camera
+the next one replaces it and is drawn on your screen. The app never records, saves or sends camera
+pictures, and it analyses them only for two features you turn on yourself, both on your device: Person mask
+(CAM-008) finds the people in the picture to cut them out or keep only them, and Face tracking (CAM-009) measures
+your face. It does not remember the Camera
 choice: after a relaunch the camera starts only when you choose it again. A picture reaches a file
 only when you yourself tap Save Frame or Record, and then exactly as shown on screen, mirrored or
 not (CAM-002). The app remembers which camera you picked and the Mirror setting of each camera with
 your other settings; they hold no picture and never start the camera.
+
+## Face tracking (only if you turn it on)
+
+Face tracking is off unless you turn it on in Settings › Camera and confirm the explanation that appears first. It
+then looks at the pictures the Camera visual already shows, on your device, and works out a few numbers from the
+largest face: whether a face is there, where it is, how large it is, how the head is tilted and turned, and how open
+the mouth and eyes are. These numbers only move the visuals while the app runs. No picture, face data, face print or
+number is saved, recorded, written to scenes, settings backups or reports, or sent anywhere; nothing is shared with
+anyone. It needs no extra permission and never starts the camera itself; while it runs the camera badge says "Face
+tracking". Turning the switch off stops it at once. Your confirmation is remembered only on this device: it is not
+included in backups, Settings erase removes it, and deleting the app deletes it.
 
 ## A photo you choose
 

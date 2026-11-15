@@ -390,15 +390,18 @@ public final class StubCameraFrameProvider: CameraFrameProvider {
 
     /// CAM-008: the masker this stand-in offers its picture to (main thread).
     public var personMasker: PersonMasker?
+    /// CAM-009: the analyzer this stand-in offers its picture to (main thread).
+    public var pictureAnalyzer: (any CameraPictureAnalyzing)?
     /// CAM-008: the picture as a CoreVideo buffer for the masker, made once.
     private var pixelBuffer: CVPixelBuffer?
 
     /// Stores the picture and (CAM-008) offers it to the masker, as the real camera does per buffer.
     private func deliver(_ texture: MTLTexture) {
-        guard latest.store(texture, position: position), let personMasker else { return }
+        guard latest.store(texture, position: position), personMasker != nil || pictureAnalyzer != nil else { return }
         if pixelBuffer == nil { pixelBuffer = makePixelBuffer() }
         guard let pixelBuffer else { return }
-        personMasker.offer(pixelBuffer, rotation: rotation, position: position)
+        personMasker?.offer(pixelBuffer, rotation: rotation, position: position)
+        pictureAnalyzer?.offer(pixelBuffer, rotation: rotation, position: position)   // CAM-009
     }
 
     /// CAM-008 (tests): delivers the same picture again while running, as the next camera frame.

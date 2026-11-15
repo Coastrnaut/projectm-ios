@@ -31,6 +31,7 @@ enum ExpressionCatalog {
             if case .lfo = source { return nil }   // MOD-007-D4: oscillators are binding sources, not formula names
             if case .bandEnvelope = source { return nil }   // MOD-015-D5: band envelopes likewise
             if case .motion = source { return nil }   // CAM-011-R2: motion sources likewise
+            if case .face = source { return nil }   // CAM-009-R8: face sources likewise
             return .audio(source)
         }
     }

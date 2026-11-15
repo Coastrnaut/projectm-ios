@@ -8,12 +8,14 @@
 // slider 50…100 % in 5 % steps with ACC-005's `.accessibleParameter`.
 // OUT-006 (contract C4): an Output picker (Same scene, Clean output), applied live.
 // OUT-007 (contract C4): "Corner pin…" opens `CornerPinEditorView` full screen (available with or without a display).
+// OUT-009 (contract C5): "Color calibration…" opens `DisplayCalibrationEditorView` full screen, likewise.
 import PresentationLifecycle
 import SwiftUI
 
 struct ExternalDisplaySection: View {
     @Bindable var setting: ExternalOutputSetting
     @State private var editsCornerPin = false
+    @State private var editsCalibration = false
 
     var body: some View {
         Section {
@@ -25,6 +27,7 @@ struct ExternalDisplaySection: View {
             if setting.resolutionMode == .custom { resolutionPercentRow }
             rehearseRow
             cornerPinRow
+            calibrationRow
         } header: {
             Text(ExternalOutputSetting.sectionTitle)
         } footer: {
@@ -59,6 +62,16 @@ struct ExternalDisplaySection: View {
             .fullScreenCover(isPresented: $editsCornerPin) {
                 let aspect: Double = setting.external?.calibrationAspect ?? 16.0 / 9.0
                 CornerPinEditorView(setting: setting, aspect: aspect) { editsCornerPin = false }
+            }
+    }
+
+    // MARK: - OUT-009
+
+    private var calibrationRow: some View {
+        Button(ExternalOutputSetting.calibrationTitle) { editsCalibration = true }
+            .accessibilityIdentifier("externalCalibrationButton")
+            .fullScreenCover(isPresented: $editsCalibration) {
+                DisplayCalibrationEditorView(setting: setting) { editsCalibration = false }
             }
     }
 

@@ -180,7 +180,7 @@ struct VisualizerView: View {
                                  onShown: { () -> Void in coordinator.announceRecoveryOffer() })
         let indicator: CameraIndicator = coordinator.cameraIndicator
         if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
-            CameraIndicatorBadge(indicator: indicator) { () -> Void in coordinator.stopCamera() }
+            CameraIndicatorBadge(indicator: indicator, faceTracking: coordinator.cameraFaceTrackingShown) { () -> Void in coordinator.stopCamera() }   // CAM-009
                 .transition(.opacity)
         }
         if coordinator.externalDisplay.blackoutPhase != .live {   // OUT-010-R9: never hidden with the controls
@@ -269,7 +269,7 @@ struct VisualizerView: View {
     private var performanceOverlay: some View {
         let overlay = PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                          renderHealth: { coordinator.renderHealthOverlayLine },
-                                         stageLines: { () -> [String] in coordinator.frameStageLines() },
+                                         stageLines: { () -> [String] in coordinator.frameStageLines() + coordinator.faceTrackingOverlayLines },   // CAM-009
                                          stereoLine: { () -> String? in coordinator.stereoOverlayLine })   // ANL-013
         return VStack { HStack { Spacer(); overlay }; Spacer() }
             .padding(.top, 2)
@@ -525,6 +525,7 @@ struct VisualizerView: View {
                      cameraExposure: coordinator.cameraExposureChoice,   // CAM-004
                      cameraWhiteBalance: coordinator.cameraWhiteBalanceChoice,   // CAM-006
                      cameraPersonMask: coordinator.cameraPersonMaskChoice,   // CAM-008
+                     cameraFaceTracking: coordinator.faceTracking,   // CAM-009
                      cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008
@@ -598,12 +599,12 @@ struct VisualizerView: View {
     }
 
     private func withVisualChanges(_ content: some View) -> some View {
-        withSpectrumChanges(content
+        withGeneratorChanges(withSpectrumChanges(content
             .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
             .onChange(of: coordinator.settings.sensorySafety.profile) { coordinator.applyReduceFlashing() }   // ACC-012
             .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
             .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
-            .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() }) // ACC-003-R13
+            .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() })) // ACC-003-R13
     }
 
     private func withSpectrumChanges(_ content: some View) -> some View {
@@ -618,6 +619,14 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.radialWaveformRing) { coordinator.visualSettingsChanged() }   // VIS-005
         .onChange(of: coordinator.settings.radialWaveformAmplitude) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.beatRingsLife) { coordinator.visualSettingsChanged() }   // VIS-006
+        .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
+    }
+
+    /// Split from withSpectrumChanges: one chain of ~20 `.onChange` calls was too long for Xcode 26's type
+    /// checker on CI ("unable to type-check this expression in reasonable time", run 43668458383). New native
+    /// visuals add their settings here; keep each chain to about ten modifiers.
+    private func withGeneratorChanges(_ content: some View) -> some View {
+        content
         .onChange(of: coordinator.settings.mandalaSymmetry) { coordinator.visualSettingsChanged() }   // VIS-007
         .onChange(of: coordinator.settings.mandalaMirror) { coordinator.visualSettingsChanged() }
         .onChange(of: coordinator.settings.mandalaPetal) { coordinator.visualSettingsChanged() }
@@ -628,7 +637,6 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.noiseFieldSeed) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.kaleidoscopeWedges) { coordinator.visualSettingsChanged() }   // VIS-014
         .onChange(of: coordinator.settings.tunnelPace) { coordinator.visualSettingsChanged() }   // VIS-015
-        .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
     private func withSourceChanges(_ content: some View) -> some View {

@@ -14,20 +14,23 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 34,
-   "implementing": 2,
-   "integrated": 43
+   "audited": 30,
+   "built": 3,
+   "implementing": 1,
+   "integrated": 45
   },
   "P3": {
    "audited": 8,
-   "implementing": 1
+   "unit_passed": 1
   }
  },
  "by_state": {
-  "audited": 44,
-  "implementing": 3,
-  "integrated": 278,
-  "skipped_existing": 1
+  "audited": 40,
+  "built": 3,
+  "implementing": 1,
+  "integrated": 280,
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -51,7 +54,6 @@
    "FX-017",
    "FX-018",
    "MED-005",
-   "MIDI-009",
    "MIDI-010",
    "OSC-004",
    "OSC-005",
@@ -60,7 +62,6 @@
    "OSC-011",
    "OSC-012",
    "OUT-008",
-   "OUT-009",
    "OUT-011",
    "OUT-013",
    "OUT-014",
@@ -85,7 +86,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "47 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "45 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -752,12 +753,12 @@
   "CAM-009": {
    "attempts": 0,
    "branch": "feature/cam-009",
-   "branch_sha": null,
+   "branch_sha": "60cc3e3c14a43c3076a80ee1042ef5f1e6ce0e3a",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CAM-010": {
    "attempts": 0,
@@ -1502,22 +1503,22 @@
   "MIDI-009": {
    "attempts": 0,
    "branch": "feature/midi-009",
-   "branch_sha": null,
+   "branch_sha": "83672cf76d5d258195bbd76a6be1740421760298",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "13f2f3ff5feff9bf2eba28f5f8b5ad1aa8479b3d",
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "MIDI-010": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/midi-010",
+   "branch_sha": "707c94fa536a5a4ab643063692c9afe2b9720294",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "built"
   },
   "MIDI-011": {
    "attempts": 0,
@@ -1751,13 +1752,13 @@
   },
   "OSC-004": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/osc-004",
+   "branch_sha": "77c0be39d19bcfd4006fbbd1cad3c6375842316b",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "built"
   },
   "OSC-005": {
    "attempts": 0,
@@ -1922,12 +1923,12 @@
   "OUT-009": {
    "attempts": 0,
    "branch": "feature/out-009",
-   "branch_sha": null,
+   "branch_sha": "a5ea892238efabe572c810c3c1022217475845c0",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "9808cd43ea6d42ae570145dc6b111d8a673fa64c",
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "OUT-010": {
    "attempts": 0,
@@ -2790,14 +2791,14 @@
    "state": "integrated"
   },
   "SHD-007": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "attempts": 1,
+   "branch": "feature/shd-007",
+   "branch_sha": "ae9ca2ca20f5b8ee4cadab83171a2ab2294f3d5f",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "built"
   },
   "SHD-008": {
    "attempts": 0,
@@ -3241,13 +3242,13 @@
   },
   "VIS-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-011": {
    "attempts": 0,
@@ -3977,6 +3978,11 @@
    "sha": "265ddd1401f9b6b4732556c66a10d6a9be758182"
   },
   {
+   "branch": "feature/midi-009",
+   "id": "MIDI-009",
+   "sha": "13f2f3ff5feff9bf2eba28f5f8b5ad1aa8479b3d"
+  },
+  {
    "branch": null,
    "id": "MIDI-011",
    "sha": "2a986abd"
@@ -4140,6 +4146,11 @@
    "branch": "feature/out-007",
    "id": "OUT-007",
    "sha": "e097e3500ac0e02957e29ff3257d91e63b80a3e7"
+  },
+  {
+   "branch": "feature/out-009",
+   "id": "OUT-009",
+   "sha": "9808cd43ea6d42ae570145dc6b111d8a673fa64c"
   },
   {
    "branch": "feature/out-010",
@@ -4767,5 +4778,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:30:58Z"
+ "updated": "2026-11-15T03:59:49Z"
 }

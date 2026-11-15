@@ -143,6 +143,7 @@ public enum LibrarySettingsPolicy {
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
         "settings.show.rotation",   // SHOW-013: a performance choice of this device (auto scene rotation)
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
+        "settings.camera.faceTracking", "settings.camera.faceTrackingConsent",   // CAM-009-R3: likewise (face tracking)
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
         "settings.recording.aspect", "settings.recording.customWidth",   // REC-014-R7: sizes depend on this device's
@@ -152,6 +153,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   // OUT-003-R7: likewise
         "settings.externalDisplay.outputMode",   // OUT-006-R7: likewise
         "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
+        "settings.externalDisplay.calibration",   // OUT-009-R9: likewise (one display's colour response)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device

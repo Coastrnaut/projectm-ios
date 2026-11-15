@@ -16,6 +16,9 @@
 //      the gain.
 //   3. Output: the frame x gain in linear light (exact sRGB decode/encode), never lifted; with
 //      gain 1 the scene is copied unchanged.
+//      OUT-009 (specs/268-out-009-output-color-calibration): then, only while a display calibration is set, each
+//      encoded channel becomes clamp(gain_c × c^exponent, 0, 1); `PMFlashLimiterDrawOutput` redraws this step from the
+//      current state (calibrated or not) for REC-001's read-back.
 // Tile rows are counted from the bottom of the picture (GL's origin); only consistency matters.
 
 #define TILE_SIDE 4
@@ -85,6 +88,7 @@ typedef struct GLTable {
     GLint (*getUniformLocation)(GLuint, const char *);
     void (*uniform1i)(GLint, GLint);
     void (*uniform1f)(GLint, GLfloat);
+    void (*uniform3f)(GLint, GLfloat, GLfloat, GLfloat);   // OUT-009
     void (*genVertexArrays)(GLsizei, GLuint *);
     void (*deleteVertexArrays)(GLsizei, const GLuint *);
     void (*bindVertexArray)(GLuint);
@@ -111,6 +115,7 @@ static int loadGL(GLTable *gl, PMFlashLoadProc load, void *user) {
     LOAD(getProgramiv, "glGetProgramiv") LOAD(deleteProgram, "glDeleteProgram")
     LOAD(useProgram, "glUseProgram") LOAD(getUniformLocation, "glGetUniformLocation")
     LOAD(uniform1i, "glUniform1i") LOAD(uniform1f, "glUniform1f")
+    LOAD(uniform3f, "glUniform3f")
     LOAD(genVertexArrays, "glGenVertexArrays") LOAD(deleteVertexArrays, "glDeleteVertexArrays")
     LOAD(bindVertexArray, "glBindVertexArray") LOAD(viewport, "glViewport")
     LOAD(disable, "glDisable") LOAD(colorMask, "glColorMask") LOAD(drawArrays, "glDrawArrays")
@@ -266,12 +271,16 @@ static const char *outputSource =
     COMMON
     "uniform sampler2D scene;\n"
     "uniform sampler2D state;\n"
+    "uniform float calOn;\n"
+    "uniform float calExponent;\n"
+    "uniform vec3 calGain;\n"
     "in vec2 uv;\n"
     "out vec4 color;\n"
     "void main() {\n"
     "    float g = unpack(texelFetch(state, ivec2(0, 17), 0).rg);\n"
     "    vec3 c = texture(scene, uv).rgb;\n"
     "    if (g < 1.0) c = encodeSRGB(decodeSRGB(c) * g);\n"
+    "    if (calOn > 0.5) c = clamp(calGain * pow(clamp(c, 0.0, 1.0), vec3(calExponent)), 0.0, 1.0);\n"
     "    color = vec4(c, 1.0);\n"
     "}\n";
 
@@ -287,6 +296,9 @@ struct PMFlashLimiter {
     GLint measureScene;
     GLint stateTiles, statePrevious, stateDt, stateWindow, stateLum, stateRed, stateMargin, stateRise, stateBudget, stateReset;
     GLint outputScene, outputState;
+    GLint outputCalOn, outputCalExponent, outputCalGain;   // OUT-009
+    int calibrated;
+    float calExponent, calGain[3];
 };
 
 static GLuint compile(const GLTable *gl, GLenum type, const char *source) {
@@ -375,6 +387,12 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
     limiter->stateReset = gl->getUniformLocation(s, "resetState");
     limiter->outputScene = gl->getUniformLocation(limiter->outputProgram, "scene");
     limiter->outputState = gl->getUniformLocation(limiter->outputProgram, "state");
+    limiter->outputCalOn = gl->getUniformLocation(limiter->outputProgram, "calOn");
+    limiter->outputCalExponent = gl->getUniformLocation(limiter->outputProgram, "calExponent");
+    limiter->outputCalGain = gl->getUniformLocation(limiter->outputProgram, "calGain");
+    limiter->calibrated = 0;
+    limiter->calExponent = 1.0f;
+    limiter->calGain[0] = limiter->calGain[1] = limiter->calGain[2] = 1.0f;
     gl->genVertexArrays(1, &limiter->vertexArray);
     limiter->tileFramebuffer = makeTarget(gl, &limiter->tileTexture, TILE_SIDE, TILE_SIDE);
     limiter->stateFramebuffers[0] = makeTarget(gl, &limiter->stateTextures[0], STATE_WIDTH, STATE_HEIGHT);
@@ -440,6 +458,9 @@ static void prepareState(const GLTable *gl) {
     gl->colorMask(1, 1, 1, 1);
 }
 
+static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int calibrated);
+static void finishBindings(const GLTable *gl);
+
 void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffer, const PMFlashEnvelopeParameters *p) {
     const GLTable *gl = &limiter->gl;
     prepareState(gl);
@@ -477,7 +498,29 @@ void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffe
     limiter->current = next;
     limiter->needsReset = 0;
 
-    // 3. Output: the scene × gain into the target.
+    // 3. Output: the scene × gain (then OUT-009's calibration) into the target.
+    drawOutput(limiter, targetFramebuffer, limiter->calibrated);
+    finishBindings(gl);
+}
+
+void PMFlashLimiterSetCalibration(PMFlashLimiter *limiter, int enabled, float exponent, float red, float green, float blue) {
+    limiter->calibrated = enabled ? 1 : 0;
+    limiter->calExponent = exponent;
+    limiter->calGain[0] = red;
+    limiter->calGain[1] = green;
+    limiter->calGain[2] = blue;
+}
+
+void PMFlashLimiterDrawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int calibrated) {
+    const GLTable *gl = &limiter->gl;
+    prepareState(gl);
+    gl->bindVertexArray(limiter->vertexArray);
+    drawOutput(limiter, targetFramebuffer, calibrated && limiter->calibrated);
+    finishBindings(gl);
+}
+
+static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int calibrated) {
+    const GLTable *gl = &limiter->gl;
     gl->bindFramebuffer(GL_FRAMEBUFFER, targetFramebuffer);
     gl->viewport(0, 0, limiter->width, limiter->height);
     gl->useProgram(limiter->outputProgram);
@@ -485,11 +528,16 @@ void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffe
     gl->bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);
     gl->uniform1i(limiter->outputScene, 0);
     gl->activeTexture(GL_TEXTURE1);
-    gl->bindTexture(GL_TEXTURE_2D, limiter->stateTextures[next]);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->stateTextures[limiter->current]);
     gl->uniform1i(limiter->outputState, 1);
+    gl->uniform1f(limiter->outputCalOn, calibrated ? 1.0f : 0.0f);
+    gl->uniform1f(limiter->outputCalExponent, limiter->calExponent);
+    gl->uniform3f(limiter->outputCalGain, limiter->calGain[0], limiter->calGain[1], limiter->calGain[2]);
     gl->drawArrays(GL_TRIANGLES, 0, 3);
+}
 
-    // Leave neutral bindings for the engine's next frame.
+/// Leaves neutral bindings for the engine's next frame.
+static void finishBindings(const GLTable *gl) {
     gl->bindTexture(GL_TEXTURE_2D, 0);
     gl->activeTexture(GL_TEXTURE2);
     gl->bindTexture(GL_TEXTURE_2D, 0);

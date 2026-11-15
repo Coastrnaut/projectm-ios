@@ -81,6 +81,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",   # CAM-007
                 "settings.camera.lens",   # CAM-003
                 "settings.camera.personMask",   # CAM-008
+                "settings.camera.faceTracking", "settings.camera.faceTrackingConsent",   # CAM-009-R3
                 "settings.visual.colorBlindSafePalette",   # ACC-003-R13
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8
@@ -140,6 +141,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   # OUT-003-R7
                 "settings.externalDisplay.outputMode",   # OUT-006-R7
                 "settings.externalDisplay.cornerPin",   # OUT-007-R9 (corner pin; identity = absent)
+                "settings.externalDisplay.calibration",   # OUT-009-R9 (display calibration; identity = absent)
                 "settings.recording.timedStop",   # REC-008-R9 (stop recording after a length; Off by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11
