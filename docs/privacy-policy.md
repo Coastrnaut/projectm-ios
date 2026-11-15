@@ -28,7 +28,8 @@ and allow microphone access; other apps' audio (System/App Capture) is never rec
 recordings are silent; you then save it to Files, share it or discard it, and the app keeps nothing after
 the session. Share… sends a picture or video only to the app or person you pick in the share sheet. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
-that devices on your own local network send to the app.**
+that devices on your own local network send to the app and, only if you turn on Send OSC, short OSC
+messages the app sends to the one device on your local network that you enter.**
 
 ## The three audio sources and what each captures
 
@@ -366,7 +367,7 @@ network) send control messages to the app. It is off until you turn it on.
 - While it is listening, the visualizer and the source screen show "OSC listening on port …" with a
   Stop button; Stop turns "OSC receiver" off and closes the port at once.
 - It accepts messages only from addresses on your local network (and from the device itself), never
-  over cellular data, and it never connects to anything: it only receives.
+  over cellular data; the receiver itself never connects to anything: it only receives.
 - A received message can change only the visual parameters listed under Settings › OSC › OSC Routes
   (today the glow's intensity, radius, threshold and knee) and a test value shown in Settings, so you
   can check that your controller reaches the app. These changes are kept in memory only and end when
@@ -381,6 +382,16 @@ network) send control messages to the app. It is off until you turn it on.
   messages it blocked, in memory only, so you can tap Allow; it forgets them when you turn OSC off. The
   local network addresses you approve are stored on your device only: they are never sent anywhere, are
   not included in a library backup, and are removed when you erase Settings.
+- "Send OSC" (Settings › OSC › Send OSC, off unless you turn it on) sends short OSC messages to one
+  device you enter by its numeric address on your local network (names are not looked up; internet
+  addresses are refused), never over cellular data, and only while "OSC receiver" is on and the app is
+  open in the foreground. It sends only what you choose: that a show cue changed the scene (with the
+  scene's name only if you turn on "Include scene names"), a beat count once per beat of the current
+  tempo, and "started" or "stopped" when an audio source starts or stops; at most 60 messages a second.
+  Nothing else about you, your device, your music or your library is sent. Turning it off, turning
+  "OSC receiver" off or leaving the app stops sending at once. The address, port and choices are stored
+  on your device only: they are not included in a library backup and are removed when you erase
+  Settings. The app keeps only counts of sent messages in memory while it runs.
 - If the app closed unexpectedly (a crash, or it was ended while open on screen), it turns "OSC
   receiver" off when it starts again and does not listen until you turn it on yourself. The camera is
   never turned back on by itself either.

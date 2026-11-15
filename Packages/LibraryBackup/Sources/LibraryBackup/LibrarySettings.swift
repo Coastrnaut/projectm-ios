@@ -140,6 +140,8 @@ public enum LibrarySettingsPolicy {
         "settings.midi.followClock",   // MIDI-010-R6: this device's MIDI setup (Follow MIDI clock), like Listen for MIDI
         "settings.scene.locked",   // SCN-015: a performance lock is session state of this device
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
+        "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   // OSC-005-R12: this device's
+        "settings.osc.send.kinds", "settings.osc.send.sceneNames",                         // network output setup
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
         "settings.show.quantizeCues",   // SHOW-003: a performance timing choice of this device
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
