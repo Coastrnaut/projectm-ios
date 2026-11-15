@@ -27,12 +27,7 @@ extension AppCoordinator {
     /// (Split into typed steps for the type-check budget; the order of the steps is unchanged.)
     func applySceneInputs(_ inputs: SceneInputs) {
         applySceneLookSettings(inputs)
-        if texts.spec != inputs.text { texts.spec = inputs.text }
-        if let composites = inputs.layerComposites { layers.restore(composites) }   // CMP-015-R6
-        if let id = inputs.videoID {
-            videos.restoreLoop(storeID: id.uuidString, loop: inputs.videoLoop)   // MED-003-R8
-            videos.restoreSpeed(storeID: id.uuidString, speedPercent: inputs.videoSpeedPercent)   // MED-004-R7
-        }
+        applySceneLayersAndVideo(inputs)
         if let effects = inputs.effects { applySceneEffects(effects) }   // FX-020: order, Color and Trails
         macros.restore(inputs.macros)   // MOD-010: the macro values (targets come back with the settings above)
         modulationMatrix.restore(inputs.bindings)   // MOD-012: the routes' order and on/off
@@ -55,6 +50,17 @@ extension AppCoordinator {
         if settings.glowIntensity != inputs.glowIntensity { settings.glowIntensity = inputs.glowIntensity }
         if settings.glowRadius != inputs.glowRadius { settings.glowRadius = inputs.glowRadius }
         if settings.glowThreshold != inputs.glowThreshold { settings.glowThreshold = inputs.glowThreshold }
+    }
+
+    /// The Text visual's spec, CMP-015-R6 composites, and MED-003-R8 / MED-004-R7 for the stored video.
+    private func applySceneLayersAndVideo(_ inputs: SceneInputs) {
+        if texts.spec != inputs.text { texts.spec = inputs.text }
+        if let composites = inputs.layerComposites { layers.restore(composites) }   // CMP-015-R6
+        if let id = inputs.videoID {
+            let storeID: String = id.uuidString
+            videos.restoreLoop(storeID: storeID, loop: inputs.videoLoop)   // MED-003-R8
+            videos.restoreSpeed(storeID: storeID, speedPercent: inputs.videoSpeedPercent)   // MED-004-R7
+        }
     }
 
     /// FX-020 and every FX-0xx setting of a history state (FX-007, FX-008, FX-010, FX-012, FX-014, FX-016,
