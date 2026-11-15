@@ -152,6 +152,7 @@ targets:
           - "**/.gitkeep"
           - "UITests/**"
           - "Tests/**"
+          - "DeviceUITests/**"   # QA-011 device acceptance (DeviceTests.yml)
           - "Resources/Presets"
           - "Resources/Licenses"
           - "Resources/SceneTemplates"   # SCN-011: bundled as a folder below

@@ -1071,9 +1071,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         // AudioSourceMode raw value) skips the notice and starts that source.
         if let raw = defaults.string(forKey: "autostart"), let mode = AudioSourceMode(rawValue: raw) {
             screen = .chooser
-            Task { @MainActor in
-                if mode == .inAppPlayback { self.prepareReferenceTrack() }
-                self.start(mode)
+            // QA-011: with `-uitestPlayImported YES` the import hook plays the first imported track from the chooser.
+            if !defaults.bool(forKey: "uitestPlayImported") {
+                Task { @MainActor in
+                    if mode == .inAppPlayback { self.prepareReferenceTrack() }
+                    self.start(mode)
+                }
             }
         }
         #endif
@@ -1213,10 +1216,18 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             #if DEBUG
             // ImportedAudioUITests and TransportUITests: `-uitestImportAudio <path>[|<path>…]` imports
             // those files, in that order, through the same code path as the Files picker's result.
+            // QA-011 device acceptance: a path without a leading "/" is relative to Documents (a fixture copied
+            // there with devicectl), and `-uitestPlayImported YES` then plays the first imported track.
             if let paths = defaults.string(forKey: "uitestImportAudio") {
                 for path in paths.split(separator: "|") {
-                    await audioLibrary.importPicked(.success([URL(fileURLWithPath: String(path))]))
+                    let raw = String(path)
+                    let url: URL = raw.hasPrefix("/") ? URL(fileURLWithPath: raw)
+                        : URL.documentsDirectory.appendingPathComponent(raw)
+                    await audioLibrary.importPicked(.success([url]))
                 }
+            }
+            if defaults.bool(forKey: "uitestPlayImported"), let first = audioLibrary.tracks.first {
+                play(first)
             }
             #endif
         }

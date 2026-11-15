@@ -128,7 +128,27 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.ANGLEDeviceTests
+  projectM-iOSDeviceUITests:
+    # QA-011 device acceptance: the owner sessions' steps automated on D1/D2 (Apps/projectM-iOS/DeviceUITests).
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [Apps/projectM-iOS/DeviceUITests]
+    dependencies:
+      - target: projectM-iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOSDeviceUITests
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: projectM-iOS
 schemes:
+  DeviceAcceptance:
+    build:
+      targets:
+        projectM-iOS: all
+    test:
+      config: Debug
+      targets:
+        - projectM-iOSDeviceUITests
   DeviceTests:
     build:
       targets:
