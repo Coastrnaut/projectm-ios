@@ -4,7 +4,8 @@
 // The field is not flat geometry, so its light is estimated from the CPU mirror (`SeededNoise`): an 8 × 8 grid of
 // sample points (the cell centres; four per 4 × 4 safety tile) is evaluated with the frame's frequency, octaves,
 // seed, warp and drift, and each sample's colour at gain 1 (palette × (0.25 + 0.75 n) × brightness, as the shader) is
-// kept. VIS-014: with the kaleidoscope on, each sample point is folded first, exactly as the shader does.
+// kept. VIS-014: with the kaleidoscope on, each sample point is folded first, exactly as the shader does. VIS-015: the
+// tunnel's samples come from `TunnelMapping` (palette at its texture × light × brightness, as its shader).
 // `levels(gain:transfer:into:)` gives each tile the mean of its four samples after the downstream stages, and
 // the whole frame the mean of all 64. Exact at the sample points; the field is smooth at these scales. All storage is
 // allocated in `init`; ≤ 64 × 3 × 6 noise evaluations per frame. Pure Swift (every platform). Not Sendable.
@@ -87,6 +88,29 @@ public final class NoiseFieldFlashAreas {
                 values[k] = n
                 let base: LinearColor = Self.paletteColor(n, stops: paletteStops)
                 let scale: Float = (0.25 + 0.75 * n) * lit
+                colors[k] = LinearColor(red: base.red * scale, green: base.green * scale, blue: base.blue * scale, alpha: 1)
+            }
+        }
+    }
+
+    /// VIS-015: evaluates the 64 samples of the tunnel for this frame. `paletteStops` holds 16 colours.
+    public func sampleTunnel(configuration c: NoiseFieldConfiguration, drive: TunnelDrive, paletteStops: UnsafePointer<LinearColor>,
+                             width: Int, height: Int) {
+        let w: Int = max(width, 1), h: Int = max(height, 1)
+        let size: SIMD2<Float> = SIMD2(Float(w), Float(h))
+        let shorter: Float = min(size.x, size.y)
+        let seed: UInt32 = UInt32(c.seed)
+        let phase: Float = Float(drive.phase)
+        let lit: Float = Float(drive.brightness)
+        for row in 0..<Self.gridSide {
+            for column in 0..<Self.gridSide {
+                let k: Int = row * Self.gridSide + column
+                let pixel: SIMD2<Float> = Self.samplePoint(column: column, row: row, width: w, height: h)
+                let p: SIMD2<Float> = (pixel - 0.5 * size) / shorter
+                let s: (t: Float, light: Float) = TunnelMapping.sample(p, phase: phase, seed: seed)
+                values[k] = s.t
+                let base: LinearColor = Self.paletteColor(s.t, stops: paletteStops)
+                let scale: Float = s.light * lit
                 colors[k] = LinearColor(red: base.red * scale, green: base.green * scale, blue: base.blue * scale, alpha: 1)
             }
         }
