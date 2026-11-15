@@ -38,6 +38,7 @@ import validate_docs  # noqa: E402
 import qa009_manifest_check as qa009  # noqa: E402
 import qa011_inventory as qa011  # noqa: E402
 import run_device_matrix as rdm  # noqa: E402
+import release_manifest as rmf  # noqa: E402
 import verify_environment  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -2335,6 +2336,96 @@ class QA011MatrixTests(unittest.TestCase):
         with mock.patch.object(rdm, "main", return_value=0) as forwarded:
             self.assertEqual(rdt.main(["--dry-run", "matrix", "--device", "D2"]), 0)
         forwarded.assert_called_once_with(["--dry-run", "--device", "D2"])
+
+
+class ReleaseManifestTests(unittest.TestCase):
+    """QA-012: the evidence manifest hashes files, counts only verified physical device records, lists gaps."""
+
+    def tree(self) -> Path:
+        root = Path(tempfile.mkdtemp())
+        (root / "docs/test-reports/qa-011").mkdir(parents=True)
+        (root / "docs/test-reports/a.md").write_text("report a\n")
+        (root / "docs/test-reports/qa-011/runs/sim/r1").mkdir(parents=True)
+        (root / "docs/test-reports/qa-011/runs/sim/r1/record.json").write_text("{}")
+        (root / "docs/licenses").mkdir(parents=True)
+        (root / "docs/licenses/x.txt").write_text("licence\n")
+        (root / "docs/FEATURE_ROADMAP_AUTONOMOUS.md").write_text("roadmap\n")
+        return root
+
+    def record(self, root: Path, device: str, evidence: bool = True, fail: int = 0, tamper: bool = False) -> Path:
+        rec = {"kind": "x", "runId": "20261115T000000Z", "evidence": evidence, "dryRun": False,
+               "target": {"osVersion": "27.2", "osBuild": "24B1"}, "summary": {"pass": 3, "fail": fail}}
+        rec["recordSha256"] = rdm.record_hash(rec)
+        if tamper:
+            rec["summary"]["pass"] = 99
+        path = root / f"docs/test-reports/qa-011/runs/{device}/20261115T000000Z/record.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(rec))
+        return path
+
+    def state(self, root: Path, states: dict[str, str]) -> Path:
+        path = root / "state.json"
+        path.write_text(json.dumps({"run_id": "r", "features": {
+            fid: {"state": st, "branch_sha": "b", "integrated_sha": "i",
+                  "evidence": [{"command": "swift test", "exit_code": 0, "sha": "s", "at": "t"}]}
+            for fid, st in states.items()}}))
+        return path
+
+    def test_files_are_hashed_simulator_runs_excluded_and_the_manifest_verifies(self):
+        root = self.tree()
+        m = rmf.build(root, self.state(root, {"A-1": "integrated"}), use_git=False, now="2026-11-15T00:00:00Z")
+        paths = [f["path"] for f in m["groups"]["testReports"]]
+        self.assertIn("docs/test-reports/a.md", paths)
+        self.assertFalse(any("/runs/sim/" in p for p in paths), "simulator rehearsals are never evidence")
+        self.assertEqual(m["groups"]["licenses"][0]["sha256"],
+                         hashlib.sha256(b"licence\n").hexdigest())
+        self.assertEqual(m["manifestSha256"], rmf.manifest_hash(m))
+        self.assertEqual(rmf.verify(root, m, use_git=False), [])
+        self.assertEqual(m["features"][0]["evidence"][0]["command"], "swift test")
+
+    def test_verify_reports_a_changed_file_and_a_tampered_manifest(self):
+        root = self.tree()
+        m = rmf.build(root, None, use_git=False)
+        (root / "docs/test-reports/a.md").write_text("changed\n")
+        self.assertTrue(any("a.md changed" in p for p in rmf.verify(root, m, use_git=False)))
+        m2 = dict(m, commit="f" * 40)
+        self.assertTrue(any("manifestSha256" in p for p in rmf.verify(root, m2, use_git=False)))
+
+    def test_only_verified_physical_device_records_count(self):
+        root = self.tree()
+        self.record(root, "D1")
+        self.record(root, "D2", evidence=False)          # a rehearsal written as a device run
+        self.record(root, "D3", tamper=True)
+        dev = rmf.device_evidence(root, None)
+        self.assertEqual(dev["D1"]["status"], "recorded")
+        self.assertEqual(dev["D1"]["os"], "27.2")
+        self.assertEqual(dev["D2"]["status"], "missing")
+        self.assertIn("not a physical device run", dev["D2"]["problems"][0])
+        self.assertEqual(dev["D3"]["status"], "missing")
+        self.assertIn("does not verify", dev["D3"]["problems"][0])
+
+    def test_gaps_keep_the_release_open_until_everything_is_recorded(self):
+        root = self.tree()
+        m = rmf.build(root, self.state(root, {"A-1": "integrated", "Q-1": "awaiting_final_device"}), use_git=False)
+        self.assertFalse(m["releaseReady"])
+        self.assertTrue(any(g.startswith("D1:") for g in m["gaps"]))
+        self.assertTrue(any("awaiting the final device stage: Q-1" in g for g in m["gaps"]))
+        for d in ("D1", "D2", "D3"):
+            self.record(root, d)
+        m = rmf.build(root, self.state(root, {"A-1": "integrated", "Q-1": "device_passed"}), use_git=False)
+        self.assertEqual(m["gaps"], [])
+        self.assertTrue(m["releaseReady"])
+        self.record(root, "D2", fail=1)
+        m = rmf.build(root, self.state(root, {"A-1": "integrated"}), use_git=False)
+        self.assertIn("D2: QA-011 record has 1 failing case(s)", m["gaps"])
+
+    def test_open_device_tasks_from_the_inventory_are_a_gap(self):
+        root = self.tree()
+        (root / "docs/test-reports/qa-011/device-inventory.json").write_text(json.dumps(
+            {"tasks": [{"category": "a"}, {"category": "b"}, {"category": "b"}]}))
+        m = rmf.build(root, None, use_git=False)
+        self.assertEqual(m["openDeviceTasks"]["byCategory"], {"a": 1, "b": 2})
+        self.assertIn("3 open {device}/{owner} tasks (QA-011 inventory)", m["gaps"])
 
 
 if __name__ == "__main__":
