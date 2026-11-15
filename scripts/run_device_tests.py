@@ -132,6 +132,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.reactionDiffusion.speed",
                 "settings.starfield.speed", "settings.starfield.density",   # VIS-016-R8
                 "settings.signedDistance.quality",   # VIS-017-R8
+                "settings.cymatic.bands",   # VIS-019-R10
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)

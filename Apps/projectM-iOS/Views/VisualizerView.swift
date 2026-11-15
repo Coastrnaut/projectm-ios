@@ -656,6 +656,7 @@ struct VisualizerView: View {
     private func withSignedDistanceChanges(_ content: some View) -> some View {
         content
         .onChange(of: coordinator.settings.signedDistanceQuality) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.cymaticBands) { coordinator.visualSettingsChanged() }   // VIS-019
     }
 
     /// VIS-016: the starfield's settings (its own short chain, so withGeneratorChanges stays at about ten).
