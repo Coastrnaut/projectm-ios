@@ -56,8 +56,8 @@ each answer is the conservative, local-first option.
   by pacing from that display's link (OUT-013-R1) and the drawable-wait back-off (OUT-013-R7).
 - Q: What does a dropped projectM tick do with the audio? → A: It reads nothing; the normalized PCM ring is bounded and
   overwrites its oldest samples, and the next rendered frame reads at most one frame's maximum (no catch-up backlog).
-- Q: Where are the counts shown? → A: Nowhere new: in memory on each visual, readable by tests and the DEBUG probe
-  (`outputPacing`). PERF-007's counters already show the skipped refresh slots a drop causes. No user interface change,
+- Q: Where are the counts shown? → A: Nowhere new: in memory on each visual, readable by tests and diagnostics code
+  through each visual's `outputPacing` counts. PERF-007's counters already show the skipped refresh slots a drop causes. No user interface change,
   so no UI test.
 - Q: Are counts reset when the visual moves to another screen? → A: No. The gate is the visual's; frames in flight
   complete wherever they were submitted, and the counts are cumulative for the visual's life (tests read deltas).
