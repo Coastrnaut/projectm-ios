@@ -7,12 +7,12 @@ marks work the Mac cannot finish.
 
 ## Phase 1: Setup
 
-- [ ] VIS-011-T01 Create simulator "VIS11 iPhone 17" (iOS 27.2), init preset submodules, `xcodegen generate` in the worktree
+- [X] VIS-011-T01 Create simulator "VIS11 iPhone 17" (iOS 27.2), init preset submodules, `xcodegen generate` in the worktree — Verified 2026-11-14: simulator created (03B2DD75…), presets initialised, xcodegen generate exit 0
 
 ## Phase 2: Foundational (CPU model, every platform)
 
-- [ ] VIS-011-T02 `FluidInk` constants ("grid 128, step 1/60 s, maxStepsPerFrame 4, jacobi 20, speedCap 0.45 (× 0.5 Reduce Motion), velocityHalfLife 1 s, inkHalfLife 2.5 s, inkCap 0.8"), `FluidImpulse.strength(onset:threshold:)` (0.4…1, non-finite → nil), seeded `FluidSplat`, `FluidStepScheduler` (anchor, ≤ 4 steps, stall skip, queue 16, ≤ 2 impulses and ≤ 1.5 strength per step, Reduce Motion spacing 0.5 s), `FluidInkBound`, `FluidInkSolver` (reference, any N, fixed storage, non-finite reset, health) in Packages/VisualGenerators/Sources/VisualGenerators/FluidInk.swift
-- [ ] VIS-011-T03 [P] Solver tests: 60 s of max impulses every frame at 32² (finite, speed ≤ cap, ink ≤ 0.8, kinetic energy bounded and not growing); 30 vs 120 fps bit-identical at shared times; scheduler caps and stall skip; impulse mapping; non-finite reset; bound ≥ solver max ink; storage fixed in Packages/VisualGenerators/Tests/VisualGeneratorsTests/FluidInkSolverTests.swift
+- [X] VIS-011-T02 `FluidInk` constants ("grid 128, step 1/60 s, maxStepsPerFrame 4, jacobi 20, speedCap 0.45 (× 0.5 Reduce Motion), velocityHalfLife 1 s, inkHalfLife 2.5 s, inkCap 0.8"), `FluidImpulse.strength(onset:threshold:)` (0.4…1, non-finite → nil), seeded `FluidSplat`, `FluidStepScheduler` (anchor, ≤ 4 steps, stall skip, queue 16, ≤ 2 impulses and ≤ 1.5 strength per step, Reduce Motion spacing 0.5 s), `FluidInkBound`, `FluidInkHealth` in Packages/VisualGenerators/Sources/VisualGenerators/FluidInk.swift; `FluidInkSolver` (reference, any N, fixed storage, non-finite reset, health) in its own target `VisualFluidReference` (compiled with -O, so the Debug acceptance run is short) in Packages/VisualGenerators/Sources/VisualFluidReference/FluidInkSolver.swift — Verified 2026-11-14: swift build (host and -DVISUAL_NO_METAL) and FluidInkSolverTests
+- [X] VIS-011-T03 [P] Solver tests: 60 s of max impulses every frame at 32² (finite, speed ≤ cap, ink ≤ 0.8, kinetic energy bounded and not growing); 30 vs 120 fps bit-identical at shared times; scheduler caps and stall skip; impulse mapping; non-finite reset; bound ≥ solver max ink in Packages/VisualGenerators/Tests/VisualGeneratorsTests/FluidInkSolverTests.swift — Verified 2026-11-14: FluidInkSolverTests 8 passed + 1 on-demand skip in 0.22 s on the macOS host (60 s × 60 fps max impulses: finite, speed ≤ 0.45, ink ≤ 0.8, energy ≤ ½·cap², last-10 s mean ≤ 1.25 × previous; 30 vs 120 fps bit-identical); VIS011_LONG=1 run (300 s, Reduce Motion at 120 fps) passed in 0.9 s
 
 ## Phase 3: US1 + US2 Ink on the GPU, stable (P1)
 

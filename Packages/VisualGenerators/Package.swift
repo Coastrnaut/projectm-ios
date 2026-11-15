@@ -23,7 +23,7 @@ import PackageDescription
 let package = Package(
     name: "VisualGenerators",
     platforms: [.iOS("26.0"), .macOS(.v15)],
-    products: [.library(name: "VisualGenerators", targets: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters"])],
+    products: [.library(name: "VisualGenerators", targets: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters", "VisualFluidReference"])],
     dependencies: [
         .package(path: "../AudioCore"),
         .package(path: "../AnalysisFeatures"),
@@ -38,9 +38,12 @@ let package = Package(
         .target(name: "VisualGenerators", dependencies: ["FlashSafety", "LocalPortability"]),   // PERF-009: NativePipelineArchive
         .target(name: "VisualBandFeed", dependencies: ["VisualGenerators", "AudioCore", "AnalysisFeatures"]),
         .target(name: "VisualEffects", dependencies: ["VisualGenerators", "FlashSafety"]),   // ACC-012: SafetyClamp
+        // VIS-011: the fluid's CPU reference solver (tests only); optimized in Debug too so its acceptance runs stay short
+        // (a local path package may use unsafeFlags, as Packages/Rendering).
+        .target(name: "VisualFluidReference", dependencies: ["VisualGenerators"], swiftSettings: [.unsafeFlags(["-O"])]),
         .target(name: "VisualParameters", dependencies: ["VisualGenerators", "VisualEffects", "ParameterGraph", "FlashSafety"]),   // MOD-011: GlowModulationOrder
         .testTarget(name: "VisualGeneratorsTests",
-                    dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters", "AudioCore",
+                    dependencies: ["VisualGenerators", "VisualBandFeed", "VisualEffects", "VisualParameters", "VisualFluidReference", "AudioCore",
                                    "AnalysisFeatures", "FlashSafety", "ParameterGraph", "LocalPortability"]),
     ]
 )
