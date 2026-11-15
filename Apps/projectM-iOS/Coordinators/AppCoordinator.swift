@@ -646,6 +646,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         // LibraryCheckUITests (PRE-018): the broken files are written right after the reset, in `init`, before anything
         // can open the user preset store (the renderer's pending-trial run may open it before the library task).
         UITestBrokenLibraryFixture.seedFilesIfRequested()
+        UITestPresetVersionsFixture.seedIfRequested()   // PRE-017: a preset with one earlier version
         #endif
         if let photos = try? PhotoStore.defaultDirectory() { try? FileManager.default.removeItem(at: photos) }   // MED-001: no photo
         if let videos = try? VideoStore.defaultDirectory() { try? FileManager.default.removeItem(at: videos) }   // MED-002: no video
