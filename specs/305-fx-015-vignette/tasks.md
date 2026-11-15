@@ -13,42 +13,42 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 2: Foundational
 
-- [ ] FX-015-T02 [P] `Vignette` value in `Packages/Compositor/Sources/Compositor/Vignette.swift`: intensity "0…1
+- [X] FX-015-T02 [P] `Vignette` value in `Packages/Compositor/Sources/Compositor/Vignette.swift`: intensity "0…1
   (step 0.01)" default 0.5, softness "0.1…0.9 (step 0.05)" default 0.5, centerX/centerY "0…1 (step 0.05)" default
   0.5 (NaN → default; ±Inf and out of range → nearest bound); `isActive` (on, intensity > 0, ≥ 2 × 2); `block`
-  (32 bytes), `weight`, `factor`, `reference` (contract C2); plain Swift (Linux)
-- [ ] FX-015-T03 [P] `VignetteModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; inactive cases;
+  (32 bytes), `weight`, `factor`, `reference` (contract C2); plain Swift (Linux) — Verified 2026-11-15: VignetteModelTests 7/7 on the host and in the Linux shape (-DCOMPOSITOR_NO_METAL)
+- [X] FX-015-T03 [P] `VignetteModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; inactive cases;
   zero intensity is identity at centre and corners; the centre pixel exact at any intensity and softness (clear
   core); weight monotonic along centre→corner rays; centre control moves the unchanged region; finite outputs for
-  finite and HDR input (FX-015-R2 to R5, R12)
-- [ ] FX-015-T04 `OutputEffectKind.vignette` (`fx.vignette`, appended last) in
-  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-015-R7)
+  finite and HDR input (FX-015-R2 to R5, R12) — Verified 2026-11-15: swift test --filter VignetteModelTests, 7 pass (0.002 s)
+- [X] FX-015-T04 `OutputEffectKind.vignette` (`fx.vignette`, appended last) in
+  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-015-R7) — Verified 2026-11-15: OutputEffectOrderTests 5/5 (host)
 
 ## Phase 3: User Stories 1-2 — the pass (P1)
 
 **Goal**: smooth edge darkening on every compositor output, exact identity at zero intensity and off.
 **Independent test**: GPU tests through the real compositor.
 
-- [ ] FX-015-T05 [US1] `VignettePass` with `cmp_vignette` in
-  `Packages/Compositor/Sources/Compositor/VignettePass.swift` (one pooled picture, released when unused)
-- [ ] FX-015-T06 [US1] `Compositor.swift`: `vignette` property, splice the source at the existing compile site, the
+- [X] FX-015-T05 [US1] `VignettePass` with `cmp_vignette` in
+  `Packages/Compositor/Sources/Compositor/VignettePass.swift` (one pooled picture, released when unused) — Verified 2026-11-15: VignetteCompositeTests 5/5 on the host (real Metal device)
+- [X] FX-015-T06 [US1] `Compositor.swift`: `vignette` property, splice the source at the existing compile site, the
   `.vignette` case in `encodeOutputEffects` (Color folded before it), release in deinit; add the source to
-  `CompositorShaderSources.archived` (FX-015-R4, R7, R11, R13)
-- [ ] FX-015-T07 [US1] [US2] `VignetteCompositeTests` (the shader unit test) in
+  `CompositorShaderSources.archived` (FX-015-R4, R7, R11, R13) — Verified 2026-11-15: Compositor suite on the host, 755 tests, 0 failures (10 skipped), 27.5 s; CompositorPipelineArchiveTests pass
+- [X] FX-015-T07 [US1] [US2] `VignetteCompositeTests` (the shader unit test) in
   `Packages/Compositor/Tests/CompositorTests/`: off and intensity 0 (several softness and centre values)
   bit-identical on random content with no picture held, centre and corners included; on a uniform picture the
   centre pixel is exact at intensities 0.3 and 1, brightness never rises centre→corner and corners are darker;
   moving the centre moves the unchanged region (S3); GPU = reference within 2⁻⁹ relative (exact where the
   factor is 1); HDR input gives finite output; order and pool
-  (FX-015-S1 to S4)
+  (FX-015-S1 to S4) — Verified 2026-11-15: VignetteCompositeTests 5/5 (0.13 s)
 
 ## Phase 4: User Story 3 — scenes and the chain (P2)
 
-- [ ] FX-015-T08 [US3] `fx.vignette` entry: `SceneEffectSettings.vignette`, read/write in
+- [X] FX-015-T08 [US3] `fx.vignette` entry: `SceneEffectSettings.vignette`, read/write in
   `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain+Vignette.swift` with one case per switch in
   `SceneEffectChain.swift`; tests for round trip, clamping and old scenes byte-identical in
   `Packages/SceneFormat/Tests/SceneFormatTests/VignetteSceneEntryTests.swift`; the source-safety list names the new
-  file (FX-015-R10, S5)
+  file (FX-015-R10, S5) — Verified 2026-11-15: SceneFormat suite 220 tests, 0 failures (2.4 s), incl. VignetteSceneEntryTests 2/2 and SceneSourceSafetyTests
 - [ ] FX-015-T09 [US3] RenderGoldens: apply `effects.vignette` in `GoldenSceneRenderer.swift`;
   `VignetteSceneGoldenTests` (intensity 0 and off render exactly as no chain; a vignette scene saved and reloaded
   renders the same picture, darker at the corners, centre unchanged); update `EffectChainSceneTests` if it lists the
