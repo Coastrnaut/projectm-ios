@@ -47,6 +47,13 @@ option.
 - Q: What does Reduce Motion change? → A: Half the iterations per step (rounded up) and at most one injection per second (VIS-012-R12).
 - Q: Which app surface and keys? → A: Visual choice "Reaction Diffusion" (`settings.visual` = `reactionDiffusion`), host style `.reactionDiffusion(settings)` switching in place with the other noise-field modes, accessibility identifier `reactionDiffusion`, value "<Preset>, <Pattern>, seed <n>, speed <s>, Glow off/on". Options under the Visual list: Preset and Pattern pickers, Seed and Speed steppers. Four keys, all in `AppSettings.allKeys` and FILE-005's included keys (they are settings): `settings.reactionDiffusion.preset` (`coral`/`mitosis`/`spots`/`maze`, anything else → coral), `settings.reactionDiffusion.pattern` (`square`/`spots`/`ring`/`stripes`, else → square), `settings.reactionDiffusion.seed` (0…9999, else → 1), `settings.reactionDiffusion.speed` (1…16, else → 8). Palette and glow are shared, Bars hidden; scenes record no layer (VIS-012-R13, R14).
 
+### Session 2026-11-15 (speckit-clarify)
+
+- Q: Does a palette or Glow change re-seed the grid? → A: No: they change only the display; the simulation keeps its state (VIS-012-R6).
+- Q: Does Reaction Diffusion subscribe to the analysis event bus like Fluid Ink? → A: No: it reads only the frame's bands (ANL-002), so the host needs no subscription; bass kicks are detected inside the generator on the frame clock (VIS-012-R8).
+- Q: How strict is the GPU health check? → A: Strict: any non-finite value, any value above 1 or below 0 sets the flag (every pass clamps, so a flag can only mean a fault); the reference solver asserts the same after every iteration (VIS-012-R9).
+- Q: What happens to queued injections at a reload? → A: The queue, kick detector, clock and injection index start over, so a reload with the same bass timeline replays exactly (VIS-012-R6, R8).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A growing pattern from a chosen seed (Priority: P1)
@@ -92,6 +99,8 @@ and grows organically from the seed shape; bass pulses plant new growth.
 - Stored values out of range or of the wrong type: the defaults.
 - A frame clock that goes backwards: nothing runs.
 - Speed changed mid-run: applies from the next step, no re-seed.
+- Palette or Glow changed: display only, no re-seed.
+- Reload: queued injections and the kick detector start over.
 
 ## Requirements *(mandatory)*
 
