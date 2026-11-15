@@ -6,7 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 2,
+   "audited": 1,
+   "awaiting_final_device": 1,
    "integrated": 84,
    "skipped_existing": 1
   },
@@ -21,7 +22,8 @@
   }
  },
  "by_state": {
-  "audited": 2,
+  "audited": 1,
+  "awaiting_final_device": 1,
   "integrated": 323,
   "skipped_existing": 1
  },
@@ -31,12 +33,11 @@
   "implementation_complete": false,
   "infeasible": [],
   "pending": [
-   "QA-011",
    "QA-012"
   ],
   "phase": "implementation",
   "reasons": [
-   "2 features are not implemented yet (first: QA-011, QA-012)"
+   "1 features are not implemented yet (first: QA-012)"
   ]
  },
  "features": {
@@ -2352,13 +2353,13 @@
   },
   "QA-011": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/qa-011",
+   "branch_sha": "f0d86e8b32d42f956784321e7ad3124fee51dab9",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "awaiting_final_device"
   },
   "QA-012": {
    "attempts": 0,
@@ -4943,5 +4944,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T15:27:55Z"
+ "updated": "2026-11-15T17:58:24Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T15:27:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T17:58:24Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,23 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 2 |
+| audited | 1 |
 | integrated | 323 |
+| awaiting_final_device | 1 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | integrated | skipped_existing |
-|---|---|---|---|
-| P0 | 2 | 84 | 1 |
-| P1 | 0 | 151 | 0 |
-| P2 | 0 | 79 | 0 |
-| P3 | 0 | 9 | 0 |
+| Priority | audited | integrated | awaiting_final_device | skipped_existing |
+|---|---|---|---|---|
+| P0 | 1 | 84 | 1 | 1 |
+| P1 | 0 | 151 | 0 | 0 |
+| P2 | 0 | 79 | 0 | 0 |
+| P3 | 0 | 9 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 2 features are not implemented yet (first: QA-011, QA-012)
+- 1 features are not implemented yet (first: QA-012)
 
 ## Integrated
 
@@ -3026,6 +3027,13 @@ None.
 - `python3 scripts/test_scripts.py`: pass at `db68dafe4747` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-010/20261114T165247/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `db68dafe4747` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-010/20261114T165247/autonomous-tests.log`)
 - `post-merge batch62/62b/65/66: Diagnostics 30, PresetLibrary 326, FrameTiming 54, Camera 59, scripts 174, projectM-iOSTests 1012; UI: camera exposure/lens/crop/front/recovery, frame-drop overlay, performance report, color + energy facets, thumbnails, visualizer 7, scene lock, performance pad (after the reveal, safe-area and cache fixes)`: pass at `98d056d0` (log `.autonomous/logs/integration/batch66/app-tests.log`)
+
+### QA-011 Final physical device matrix (awaiting_final_device)
+- `python3 scripts/check_compliance.py`: pass at `f0d86e8b32d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-011/20261115T125718/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `f0d86e8b32d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-011/20261115T125718/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `f0d86e8b32d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-011/20261115T125718/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `f0d86e8b32d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-011/20261115T125718/autonomous-tests.log`)
+- `test_scripts 205 OK; check_compliance OK; validate_docs OK; qa011_inventory --check OK; simulator rehearsal (not evidence) 13/15 with benches after fix`: pass at `fac83d5d`
 
 ### REC-001 Still frame capture (integrated)
 - `python3 scripts/check_compliance.py`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/compliance.log`)
