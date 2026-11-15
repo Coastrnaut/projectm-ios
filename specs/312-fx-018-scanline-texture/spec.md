@@ -59,6 +59,32 @@ answer is the conservative option.
   f = 1 − intensity (intensity 0…100 %, default 50 %); alpha is kept; every other pixel is untouched. Applied to
   FX-018-R3, R4.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Does the first dark band start at the picture's first row, or does the pattern start with untouched rows? → A: At
+  the first row: row (column) 0 is dark, so the phase is fixed to the top-left pixel and never depends on the size, the
+  time or the content. Applied to FX-018-R3.
+- Q: What does "consistent in pixels" mean exactly, so a test can decide it? → A: For every spacing p, thickness t and
+  picture size W × H: the set of darkened rows is exactly {y : y mod p < t} (columns for vertical), every darkened
+  pixel is the input × the same factor 1 − intensity, every other pixel is bit-identical, and the pitch measured from
+  the rendered picture (the distance between the first rows of consecutive dark bands) equals p exactly for every
+  pair of bands. Applied to FX-018-R3, S2.
+- Q: Are the lines in the pixels of each output (screen, external display, recording, capture) or scaled from one
+  master size? → A: In each picture's own pixels: the chain runs at the output's own pixel size (an external display
+  has its own compositor at its size), a recording is the shown output cropped from the top-left (so its pixel rows
+  are the screen's rows, phase unchanged) and a still capture is the composite at output size. Nothing scales the
+  period. OUT-008's projection mesh resamples after the chain and bends the lines like everything else. Applied to
+  FX-018-R1, R3 and the Edge Cases.
+- Q: Is Scanlines a global setting or a per-scene value? → A: Both, like FX-006 to FX-016: a global setting the visuals
+  use, which a scene or effect-chain preset with an `fx.scanlines` entry overwrites when opened; a scene without one
+  leaves it alone. Applied to FX-018-R9, R10.
+- Q: What happens to the thickness when the spacing is lowered below it? → A: The renderer always uses
+  min(thickness, spacing − 1); the Settings slider for thickness ranges 1…spacing − 1 and lowering the spacing lowers a
+  larger stored thickness with it, so what the slider shows is what is drawn. A scene or old stored value with a larger
+  thickness is kept and used as spacing − 1. Applied to FX-018-R2, R8.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A scanline look (Priority: P1)
@@ -130,9 +156,10 @@ same lines back when the scene or preset is opened.
 - **FX-018-R1**: Scanlines (on/off, off by default) applies to the compositor-backed visuals (Camera, Photo, Video,
   Text) on every output of a frame: screen, external display, recording and still capture.
 - **FX-018-R2**: Controls: Spacing 2…16 pixels (default 3, step 1), Thickness 1…15 pixels (default 1, step 1, used as
-  at most spacing − 1), Intensity 0…100 % (default 50 %, step 1 %), Orientation Horizontal (default) or Vertical.
+  at most spacing − 1; the Settings slider ranges 1…spacing − 1 and follows a lowered spacing), Intensity 0…100 % (default 50 %, step 1 %), Orientation Horizontal (default) or Vertical.
 - **FX-018-R3**: With p the spacing, t = min(thickness, p − 1) and c the pixel's row index y (column index x when
-  vertical), counted from 0 at the picture's top (left) pixel, the pixel is in a line exactly when c mod p < t. A pixel
+  vertical), counted from 0 at the picture's top (left) pixel, the pixel is in a line exactly when c mod p < t (so
+  row or column 0 is always dark). The picture is each output's own picture at its own pixel size; nothing scales p. A pixel
   in a line has its colour multiplied by f = 1 − intensity (one value for the whole frame) and keeps its alpha; every
   other pixel is unchanged bit for bit. The factor applies to the linear premultiplied composite, before the flash guard
   and the tone map. The pattern has no time input: it is identical in every frame.
@@ -173,7 +200,8 @@ same lines back when the scene or preset is opened.
   the output without the feature on random content; all existing RenderGoldens pass unchanged.
 - **FX-018-S2**: For every spacing 2…16 and several output sizes (odd widths and heights, portrait and landscape, a 4K
   size), the darkened rows (columns) are exactly the predicted ones, all darkened by one factor, all other pixels
-  bit-identical, and the pitch measured from the rendered picture equals the spacing exactly.
+  bit-identical, and the pitch measured from the rendered picture (first row of each dark band to the next) equals the
+  spacing exactly for every pair of bands.
 - **FX-018-S3**: The GPU output equals the software reference within half-float rounding, and every output is finite
   for finite input, HDR values included.
 - **FX-018-S4**: A scene and a preset with Scanlines round-trip to the same values and picture; a scene from before the
