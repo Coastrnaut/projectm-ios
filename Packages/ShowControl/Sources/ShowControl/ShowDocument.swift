@@ -14,6 +14,8 @@
 // null or false = not skipped; another JSON type is dropped with a counted warning (contract show-cue-hold-skip.md K1-K2).
 // SHOW-008: the show may carry an optional `tracks` list (keyframe tracks), written only when non-empty, read leniently
 // with counted warnings (ShowKeyframesDocument.swift; contract show-keyframe-tracks.md K4). No version bump.
+// SHOW-012: each cue entry may carry an optional `note` string, written only when the cue has one; read leniently (cleaned and
+// cut to 500 characters, a non-string dropped; contract show-cue-note.md N1-N3). No version bump.
 import Foundation
 import ParameterGraph
 
@@ -68,6 +70,10 @@ public enum ShowDecodeWarning: Sendable, Hashable {
     case droppedKeyframeTracks(Int)
     /// SHOW-008: keyframes that broke a rule (time, value, interpolation, kind, duplicate time, over the limit) were left out.
     case droppedKeyframes(Int)
+    /// SHOW-012: cue `note` values that were not text were left out (the cue has no note).
+    case droppedNotes(Int)
+    /// SHOW-012: cue notes that were cleaned or cut to 500 characters (or became empty) on reading.
+    case shortenedNotes(Int)
 }
 
 public struct ShowDecodeResult: Sendable {
@@ -89,7 +95,8 @@ extension ShowCueList {
                                                  transition: cue.transition.map(StoredTransition.init(_:)),
                                                  advanceAfter: cue.dwell.map { (d: ShowCueDwell) -> StoredDwell in StoredDwell(seconds: d.seconds) },
                                                  transitionOverride: cue.transitionOverride.map(StoredTransition.init(_:)),
-                                                 skip: cue.skipped ? StoredSkip(true) : nil)
+                                                 skip: cue.skipped ? StoredSkip(true) : nil,
+                                                 note: cue.operatorNote.map(StoredNote.init(_:)))
                               },
                               position: activeCue?.id.uuidString)
         // SCN-004 (contract F4): written only when non-empty, so a show without folders keeps its bytes.
@@ -132,6 +139,8 @@ extension ShowCueList {
         var droppedDwells = 0
         var droppedOverrides = 0
         var droppedSkips = 0
+        var droppedNotes = 0
+        var shortenedNotes = 0
         for cue in file.cues {
             guard let cueID = canonicalUUID(cue.id) else { throw .invalidID(cue.id) }
             var transition: ShowCueTransition? = nil
@@ -159,13 +168,24 @@ extension ShowCueList {
             if let stored = cue.skip {   // SHOW-005 (contract K2)
                 if let flag = stored.value { skipped = flag } else { droppedSkips += 1 }
             }
+            var note: String? = nil
+            if let stored = cue.note {   // SHOW-012 (contract N2)
+                if let text = stored.text {
+                    note = ShowCueNote.stored(text)
+                    if note != text { shortenedNotes += 1 }
+                } else {
+                    droppedNotes += 1
+                }
+            }
             cues.append(ShowCue(id: cueID, sceneID: cue.scene, label: cue.label, transition: transition, dwell: dwell,
-                                transitionOverride: transitionOverride, skipped: skipped))
+                                transitionOverride: transitionOverride, skipped: skipped, operatorNote: note))
         }
         if droppedTransitions > 0 { warnings.append(.droppedTransitions(droppedTransitions)) }
         if droppedDwells > 0 { warnings.append(.droppedDwells(droppedDwells)) }
         if droppedOverrides > 0 { warnings.append(.droppedTransitionOverrides(droppedOverrides)) }
         if droppedSkips > 0 { warnings.append(.droppedSkipFlags(droppedSkips)) }
+        if droppedNotes > 0 { warnings.append(.droppedNotes(droppedNotes)) }
+        if shortenedNotes > 0 { warnings.append(.shortenedNotes(shortenedNotes)) }
         var position = ShowPosition.standby
         if let text = file.position {
             if let cueID = canonicalUUID(text), cues.contains(where: { (c: ShowCue) -> Bool in c.id == cueID }) {
@@ -233,11 +253,13 @@ private struct ShowFileV1: Codable {
         var transitionOverride: StoredTransition? = nil
         /// SHOW-005, optional: absent (or null) = not skipped.
         var skip: StoredSkip? = nil
+        /// SHOW-012, optional: absent (or null) = no note.
+        var note: StoredNote? = nil
 
-        enum CodingKeys: String, CodingKey { case id, scene, label, transition, advanceAfter, transitionOverride, skip }
+        enum CodingKeys: String, CodingKey { case id, scene, label, transition, advanceAfter, transitionOverride, skip, note }
 
         init(id: String, scene: String, label: String, transition: StoredTransition?, advanceAfter: StoredDwell?,
-             transitionOverride: StoredTransition?, skip: StoredSkip?) {
+             transitionOverride: StoredTransition?, skip: StoredSkip?, note: StoredNote?) {
             self.id = id
             self.scene = scene
             self.label = label
@@ -245,6 +267,7 @@ private struct ShowFileV1: Codable {
             self.advanceAfter = advanceAfter
             self.transitionOverride = transitionOverride
             self.skip = skip
+            self.note = note
         }
 
         init(from decoder: any Decoder) throws {
@@ -256,6 +279,7 @@ private struct ShowFileV1: Codable {
             advanceAfter = try container.decodeIfPresent(StoredDwell.self, forKey: .advanceAfter)
             transitionOverride = try container.decodeIfPresent(StoredTransition.self, forKey: .transitionOverride)
             skip = try container.decodeIfPresent(StoredSkip.self, forKey: .skip)
+            note = try container.decodeIfPresent(StoredNote.self, forKey: .note)
         }
 
         func encode(to encoder: any Encoder) throws {
@@ -267,6 +291,7 @@ private struct ShowFileV1: Codable {
             try container.encodeIfPresent(advanceAfter, forKey: .advanceAfter)
             try container.encodeIfPresent(transitionOverride, forKey: .transitionOverride)
             try container.encodeIfPresent(skip, forKey: .skip)
+            try container.encodeIfPresent(note, forKey: .note)
         }
     }
 
@@ -455,5 +480,24 @@ private struct StoredSkip: Codable {
         var container = encoder.singleValueContainer()
         guard let value else { return try container.encodeNil() }
         try container.encode(value)
+    }
+}
+
+/// SHOW-012: one cue's `note` value, read leniently: a string (cleaned by the decoder's caller), or anything else (`text`
+/// nil: dropped with a warning) instead of refusing the show (contract N2).
+private struct StoredNote: Codable {
+    let text: String?
+
+    init(_ text: String) { self.text = text }
+
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        text = try? container.decode(String.self)
+    }
+
+    func encode(to encoder: any Encoder) throws {
+        var container = encoder.singleValueContainer()
+        guard let text else { return try container.encodeNil() }
+        try container.encode(text)
     }
 }
