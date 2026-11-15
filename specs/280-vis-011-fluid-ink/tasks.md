@@ -47,3 +47,12 @@ T03 alongside T04; T07 and T08 after T05; T10 and T11 after T09.
 ## Implementation strategy
 
 MVP = T02-T06 (the acceptance: stability on the reference solver and the GPU). Then golden and safety, then the app.
+
+## Analyze notes (speckit-analyze, 2026-11-14)
+
+- Coverage: R1, R9 T04-T05; R2, R5, R6 T02-T03, T05; R3, R4, R7 T02-T06; R8 T06; R10, R11 T08; R12 T09-T11; R13 T07.
+  S1-S6 each have a test task. No constitution conflict (no new compile site, no compute, no networking, nothing reaches
+  projectM).
+- Fix applied (ambiguity): "kinetic energy not growing" is now measurable in US2 scenario 1 and S1 (absolute bound
+  ½ × cells × cap², last-10 s mean ≤ 1.25 × previous 10 s).
+- Fix applied (inconsistency): the GPU health check's 1 % over-cap tolerance (research D5) is now in the spec.
