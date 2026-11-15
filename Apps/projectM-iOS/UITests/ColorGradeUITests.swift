@@ -2,6 +2,8 @@
 // "Reset to neutral" disabled; moving the gain slider changes its readout and enables the reset, which returns the
 // readout to "1.00×" (FX-003-R9, S6); FX-004-T09: the Hue slider is there too, at "0°", and the reset covers it. One short test (owner rule 7: under 30 s); persistence across a relaunch is
 // proven by `ColorGradeSettingTests.testNeutralByDefaultAndPersisted`. Simulator results are never device evidence.
+// FX-005-T10: the Contrast picker starts at Linear with no strength slider; choosing S-curve shows the strength at "50%"
+// and enables the reset, which returns the picker to Linear and hides the slider (one short test).
 import XCTest
 
 @MainActor
@@ -54,5 +56,29 @@ final class ColorGradeUITests: XCTestCase {
         XCTAssertTrue(poll(5) { self.gainReadout.label == "1.00\u{00D7}" }, "readout after reset: \(gainReadout.label)")
         XCTAssertFalse(reset.isEnabled)
         XCTAssertEqual(app.staticTexts["colorHueSliderValue"].label, "0\u{00B0}", "the reset covers the hue")
+    }
+
+    // MARK: - FX-005: Contrast
+
+    private var contrastPicker: XCUIElement { app.segmentedControls["colorContrastPicker"] }
+    private var strengthReadout: XCUIElement { app.staticTexts["colorContrastStrengthSliderValue"] }
+
+    func testContrastPickerShowsStrengthAndResets() {
+        launch()
+        openSettings()
+        XCTAssertTrue(app.reveal(contrastPicker), "Contrast is in Settings → Color")
+        XCTAssertTrue(contrastPicker.buttons["Linear"].isSelected, "Linear by default")
+        XCTAssertFalse(app.slider("colorContrastStrengthSlider").exists, "no strength while Linear")
+        contrastPicker.buttons["S-curve"].tap()
+        XCTAssertTrue(strengthReadout.appears(within: 5), "the strength appears once a curve is chosen")
+        XCTAssertEqual(strengthReadout.label, "50%")
+        XCTAssertEqual(app.slider("colorContrastStrengthSlider").label, "Contrast strength")
+        XCTAssertTrue(app.reveal(reset))
+        XCTAssertTrue(poll(5) { self.reset.isEnabled }, "a curve is not neutral")
+        reset.tap()
+        XCTAssertTrue(poll(5) { !self.reset.isEnabled }, "reset to neutral")
+        XCTAssertTrue(app.reveal(contrastPicker, down: true))
+        XCTAssertTrue(poll(5) { self.contrastPicker.buttons["Linear"].isSelected }, "the reset covers the curve")
+        XCTAssertFalse(app.slider("colorContrastStrengthSlider").exists)
     }
 }

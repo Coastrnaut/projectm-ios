@@ -111,6 +111,7 @@ extension AppCoordinator {
         let driver = ShowAutoAdvanceCoordinator(show: show)
         driver.isHeld = { [weak self] () -> Bool in
             guard let self else { return true }
+            if self.osc.cueSync?.holdsTimedAdvance == true { return true }   // OSC-012-R10: the leader drives the follower
             return self.userPaused || self.externalDisplay.blackoutPhase != .live || self.sceneRepair.pending != nil || !self.appIsActive
         }
         return driver

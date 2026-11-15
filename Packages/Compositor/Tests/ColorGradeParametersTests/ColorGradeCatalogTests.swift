@@ -1,4 +1,4 @@
-// FX-003-T10, FX-004-T06: the colour grade's MOD-001 descriptors (FX-003-R7, FX-004-R7). CPU only.
+// FX-003-T10, FX-004-T06, FX-005-T07: the colour grade's MOD-001 descriptors (FX-003-R7, FX-004-R7, FX-005-R7). CPU only.
 import ColorGradeParameters
 import Compositor
 import ParameterGraph
@@ -9,7 +9,7 @@ import XCTest
 final class ColorGradeCatalogTests: XCTestCase {
     func testTheCatalogValidatesAndMatchesColorGrade() throws {
         let registry: ParameterRegistry = try ColorGradeCatalog.makeRegistry()
-        XCTAssertEqual(registry.descriptors.count, 6)
+        XCTAssertEqual(registry.descriptors.count, 8)   // FX-005: + contrast, contrastStrength
         typealias IDs = ColorGradeParameterIDs
         let expected: [(ParameterID, ClosedRange<Double>, Double, Double)] = [
             (IDs.temperature, ColorGrade.temperatureRange, 0, ColorGrade.temperatureStep),
@@ -19,8 +19,8 @@ final class ColorGradeCatalogTests: XCTestCase {
             (IDs.saturation, ColorGrade.saturationRange, 1, ColorGrade.saturationStep),
             (IDs.hue, ColorGrade.hueRange, 0, ColorGrade.hueStep),
         ]
-        XCTAssertEqual(ColorGradeCatalog.descriptors.count, expected.count)
-        for (descriptor, row) in zip(ColorGradeCatalog.descriptors, expected) {
+        XCTAssertEqual(ColorGradeCatalog.descriptors.count, expected.count + 2)
+        for (descriptor, row) in zip(ColorGradeCatalog.descriptors.prefix(expected.count), expected) {
             XCTAssertEqual(descriptor.id, row.0)
             XCTAssertEqual(descriptor.group.id, "effect.colorGrade")
             XCTAssertEqual(descriptor.modulation, .continuousDefault)
@@ -34,6 +34,22 @@ final class ColorGradeCatalogTests: XCTestCase {
             XCTAssertEqual(step, row.3)
             XCTAssertEqual(descriptor.unit, descriptor.id == IDs.hue ? .degrees : ParameterUnit.none)
         }
+    }
+
+    func testContrastDescriptors() throws {
+        let tail: [ParameterDescriptor] = Array(ColorGradeCatalog.descriptors.suffix(2))
+        XCTAssertEqual(tail.map(\.id), [ColorGradeParameterIDs.contrast, ColorGradeParameterIDs.contrastStrength])
+        guard case let .enumeration(cases, defaultValue) = tail[0].kind else { return XCTFail("contrast is an enumeration") }
+        XCTAssertEqual(cases.map(\.id), ["linear", "sCurve", "filmic"])
+        XCTAssertEqual(defaultValue, "linear")
+        XCTAssertEqual(tail[0].modulation, .discreteManual)
+        guard case let .continuous(minimum, maximum, value, step, _) = tail[1].kind else { return XCTFail("strength is continuous") }
+        XCTAssertEqual([minimum, maximum, value, step ?? 0], [0, 1, 0.5, 0.01])
+        let values: [ParameterID: ParameterValue] = [ColorGradeParameterIDs.contrast: .enumeration("filmic"),
+                                                     ColorGradeParameterIDs.contrastStrength: .continuous(3)]
+        XCTAssertEqual(ColorGradeCatalog.grade(from: values), ColorGrade(contrast: .filmic, contrastStrength: 1))
+        let unknown: [ParameterID: ParameterValue] = [ColorGradeParameterIDs.contrast: .enumeration("sepia")]
+        XCTAssertEqual(ColorGradeCatalog.grade(from: unknown).contrast, .linear)
     }
 
     func testIDsAreUniqueInTheAppRegistry() throws {

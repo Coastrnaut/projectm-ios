@@ -20,6 +20,8 @@
 // * OSC-005 (specs/277-osc-005-osc-send): `sender` (Send OSC) is re-evaluated on every switch or foreground change.
 // * OSC-011 (specs/289-osc-011-local-peer-discovery): `discovery` (Nearby Devices) likewise; it announces through
 //   `setAdvertisement(_:)` on this receiver's listener.
+// * OSC-012 (specs/291-osc-012-peer-cue-sync): `cueSync` (Cue Sync) likewise; a follower taps `/projectm/cue` on this
+//   receiver's dispatcher.
 // * OSC-004 (specs/274-osc-004-osc-learn): `learn` is OSC learn on OSC Routes; every refresh tells it whether the
 //   receiver still listens (learn ends when it stops). `dispatcher` lets it arm the one-shot capture.
 // The test value feeds nothing that renders (OSC-001-R7). The networking itself lives in
@@ -52,6 +54,8 @@ final class OSCReceiverCoordinator {
     var sender: OSCSendCoordinator?
     /// OSC-011: Nearby Devices (nil in tests that do not need it); follows this switch and the foreground (OSC-011-R5).
     var discovery: OSCDiscoveryCoordinator?
+    /// OSC-012: Cue Sync (nil in tests that do not need it); follows this switch and the foreground.
+    var cueSync: OSCCueSyncCoordinator?
     /// OSC-003: messages to addresses that are not on the route list, since launch.
     private(set) var unknownAddressCount = 0
 
@@ -148,6 +152,7 @@ final class OSCReceiverCoordinator {
         }
         sender?.conditionsChanged()   // OSC-005-R4, R5: sending follows the switch and the foreground
         discovery?.conditionsChanged()   // OSC-011-R5, R6: so do browsing and announcing
+        cueSync?.conditionsChanged()   // OSC-012: and cue sync's roles
         refresh()
     }
 

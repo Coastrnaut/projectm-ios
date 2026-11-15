@@ -90,6 +90,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.motion.range",   # CAM-011-R12
                 "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   # FX-003-R8
                 "settings.colorGrade.gain", "settings.colorGrade.saturation", "settings.colorGrade.hue",   # FX-004-R8
+                "settings.colorGrade.contrast", "settings.colorGrade.contrastStrength",   # FX-005-R8
                 "settings.feedback.enabled", "settings.feedback.halfLife",   # FX-009-R11 (Trails, off by default)
                 "settings.noiseEditor.values",   # SHD-006-R7 (Noise editor values, absent at defaults)
                 "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   # FX-020-R8, R10
@@ -122,6 +123,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   # OSC-005 (Send OSC)
                 "settings.osc.send.kinds", "settings.osc.send.sceneNames",
                 "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   # OSC-011 (Nearby Devices switches)
+                "settings.osc.cueSync.role",   # OSC-012 (Cue Sync role: off, lead, follow; absent = off)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)
@@ -144,6 +146,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.customWidth", "settings.recording.customHeight",   # REC-014-R7 (custom size)
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.visualizer.sceneHUD",   # UIX-013-R11 (scene performance HUD; off by default)
+                "settings.gestures.shortcuts",   # UIX-006-R9 (gesture shortcuts switch and mapping; off by default)
                 "settings.visualizer.guides", "settings.visualizer.guides.actionSafe",   # OUT-005-R6 (safe-area guides; off)
                 "settings.visualizer.guides.titleSafe", "settings.visualizer.guides.centreCross",
                 "settings.controls.oneHanded",   # ACC-009-R9 (one-handed layout; Off by default)

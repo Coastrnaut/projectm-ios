@@ -355,9 +355,11 @@ enum CompositorShaders {
     ///   FX-004 hue (`ColorGradeCoefficients.rotateHue`: the differences (r − g, b − g) times `hue` as a 2 × 2 matrix,
     ///   rebuilt around the luminance g + wR·d1 + wB·d2, which is exact for greys; negative results pulled to grey).
     static let displaySource = """
-    struct CMPGrade { float4 balance; float4 tone; float4 hue; float saturation; uint flags; uint pad0; uint pad1; };
+    struct CMPGrade { float4 balance; float4 tone; float4 hue; float saturation; uint flags; uint pad0; uint pad1;
+                      float4 contrast; };
 
     \(toneMapSource)
+    \(contrastSource)
     static float4 cmp_grade(float4 c, constant CMPGrade &g) {
         if (g.flags == 0u) return c;
         float4 s = select(c, float4(0.0), isnan(c) || isinf(c));
@@ -382,13 +384,36 @@ enum CompositorShaders {
             float m = min(v.r, min(v.g, v.b));
             if (m < 0.0) v = y > 0.0 ? max(y + (y / (y - m)) * (v - y), float3(0.0)) : float3(0.0);
         }
+        if ((g.flags & 768u) != 0u) return cmp_contrast(float4(v, a), g.contrast, (g.flags & 512u) != 0u);   // FX-005
         return float4(v, a);
     }
 
     static float4 cmp_display(float4 c, constant CMPGrade &g) { return cmp_tone_map(cmp_grade(c, g)); }
     """
 
-    /// FX-003: `CMPGrade` in the shader (64 bytes since FX-004's `hue`, copied by `setFragmentBytes` / `setBytes`;
+    /// FX-005 (contracts/contrast-curves.md in specs/292, research FX-005-D1 to D5): step 7 of the grade, the same
+    /// steps as `ColorGradeCoefficients.applyContrast` / `ContrastCurve.value`. `k` = (exponent 1 + s, strength s,
+    /// toe τ, shoulder σ). Into display range with `cmp_tone_map` (identity in range), then per channel: S-curve, a
+    /// two-sided power around 0.18, or Filmic, toe ∘ shoulder blended as x + s·(F − x); clamped to 0…1.
+    static let contrastSource = """
+    static float4 cmp_contrast(float4 c, float4 k, bool filmic) {
+        float4 t = cmp_tone_map(c);
+        float3 x = clamp(t.rgb, 0.0, 1.0);
+        float3 y;
+        if (filmic) {
+            float3 toe = x * x * (1.0 + k.z) / (x + k.z);
+            float3 f = toe * (1.0 + k.w) / (toe + k.w);
+            y = x + k.y * (f - x);
+        } else {
+            float3 low = 0.18 * pow(x / 0.18, float3(k.x));
+            float3 high = 1.0 - 0.82 * pow((1.0 - x) / 0.82, float3(k.x));
+            y = select(high, low, x <= 0.18);
+        }
+        return float4(clamp(y, 0.0, 1.0), t.a);
+    }
+    """
+
+    /// FX-003: `CMPGrade` in the shader (64 bytes since FX-004's `hue`, 80 since FX-005's `contrast`, copied by `setFragmentBytes` / `setBytes`;
     /// research FX-003-D4, FX-004-D5).
     struct GradeBlock: Equatable {
         var balance: SIMD4<Float>
@@ -400,6 +425,8 @@ enum CompositorShaders {
         var flags: UInt32
         var pad0: UInt32 = 0
         var pad1: UInt32 = 0
+        /// FX-005: (exponent, strength, toe, shoulder); appended so earlier offsets stay.
+        var contrast: SIMD4<Float>
 
         /// Flags 0: `cmp_grade` returns its input (bypass).
         static let neutral = GradeBlock(ColorGrade.neutral.coefficients)
@@ -411,6 +438,7 @@ enum CompositorShaders {
             hue = SIMD4<Float>(Float(k.hueMatrix.x), Float(k.hueMatrix.y), Float(k.hueMatrix.z), Float(k.hueMatrix.w))
             saturation = Float(k.saturation)
             flags = k.flags
+            contrast = SIMD4<Float>(Float(k.contrast.x), Float(k.contrast.y), Float(k.contrast.z), Float(k.contrast.w))
         }
     }
 

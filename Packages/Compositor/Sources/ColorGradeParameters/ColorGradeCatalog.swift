@@ -20,6 +20,9 @@ public enum ColorGradeParameterIDs {
     public static let saturation: ParameterID = "effect.colorGrade.saturation"
     /// FX-004: degrees around the grey axis.
     public static let hue: ParameterID = "effect.colorGrade.hue"
+    /// FX-005: the contrast preset (enumeration: linear, sCurve, filmic) and its strength 0…1.
+    public static let contrast: ParameterID = "effect.colorGrade.contrast"
+    public static let contrastStrength: ParameterID = "effect.colorGrade.contrastStrength"
 }
 
 public enum ColorGradeCatalog {
@@ -45,7 +48,21 @@ public enum ColorGradeCatalog {
             descriptor(IDs.gain, "Gain", G.gainRange, neutral.gain, G.gainStep),
             descriptor(IDs.saturation, "Saturation", G.saturationRange, neutral.saturation, G.saturationStep),
             descriptor(IDs.hue, "Hue (degrees)", G.hueRange, neutral.hue, G.hueStep, unit: .degrees),
-        ]
+        ] + contrastDescriptors
+    }
+
+    /// FX-005 (specs/292-fx-005-contrast-curves, data-model.md): the preset (discrete, chosen by hand) and its strength.
+    public static var contrastDescriptors: [ParameterDescriptor] {
+        let cases: [ParameterEnumCase] = ContrastCurve.allCases.map { (c: ContrastCurve) -> ParameterEnumCase in
+            ParameterEnumCase(id: c.rawValue, displayName: c.displayName)
+        }
+        let preset = ParameterDescriptor(id: ColorGradeParameterIDs.contrast, displayName: "Contrast curve", group: group,
+                                         unit: .none, kind: .enumeration(cases: cases, defaultValue: ContrastCurve.linear.rawValue),
+                                         modulation: .discreteManual)
+        let strength: ParameterDescriptor = descriptor(ColorGradeParameterIDs.contrastStrength, "Contrast strength",
+                                                       ContrastCurve.strengthRange, ContrastCurve.defaultStrength,
+                                                       ContrastCurve.strengthStep, unit: .normalized)
+        return [preset, strength]
     }
 
     /// The grade of a set of parameter values (missing or non-continuous values → neutral; clamped).
@@ -57,7 +74,10 @@ public enum ColorGradeCatalog {
         typealias IDs = ColorGradeParameterIDs
         let grade = ColorGrade(temperature: value(IDs.temperature, 0), lift: value(IDs.lift, 0), gamma: value(IDs.gamma, 1),
                                gain: value(IDs.gain, 1), saturation: value(IDs.saturation, 1), hue: value(IDs.hue, 0))
-        return grade.clamped
+        var withCurve: ColorGrade = grade
+        if case let .enumeration(name)? = values[IDs.contrast] { withCurve.contrast = ContrastCurve(storedName: name) }   // FX-005
+        withCurve.contrastStrength = value(IDs.contrastStrength, ContrastCurve.defaultStrength)
+        return withCurve.clamped
     }
 
     private static func descriptor(_ id: ParameterID, _ name: String, _ range: ClosedRange<Double>, _ value: Double,

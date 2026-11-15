@@ -75,6 +75,28 @@ new pass or ADR:
 6. One more setting key `settings.colorGrade.hue` (FILE-005 backup, FILE-011 Settings erase, privacy allow-list),
    MOD-001 ID `effect.colorGrade.hue` (unit degrees), and a "Hue" slider in Settings → Color.
 
+## Amendment 2026-11-15: FX-005 contrast curves (decided by Claude under owner rule 4)
+
+`specs/292-fx-005-contrast-curves` (research FX-005-D1 to D10) adds a contrast preset and strength to the same stage:
+
+1. **Operator 7, last (after the hue).** The colour is first brought into display range with FX-002's tone-map step
+   (identity for in-range colours; luminance and hue kept above white), then one monotone curve is applied to each
+   channel. FX-002's tone map that follows is then an exact identity, and the curve runs exactly once whether the
+   grade is in the output pass or in FX-020's pass before Trails.
+2. **Presets** (strength s ∈ 0…1, default 0.5): **Linear** (neutral; no flag, bit-for-bit bypass); **S-curve**,
+   pivot 0.18 (linear mid-grey), c = 1 + s, x ≤ p → p·(x/p)^c, else 1 − (1 − p)·((1 − x)/(1 − p))^c; **Filmic**,
+   F = S∘T with toe T(x) = x²(1 + τ)/(x + τ) and shoulder S(y) = y(1 + σ)/(y + σ), τ = 0.1, σ = 0.5, blended as
+   x + s·(F(x) − x). Each maps 0 → 0 and 1 → 1 exactly, is monotone, and is clamped to 0…1 (NaN → 0). Hable's
+   filmic curve was rejected: on display-range input it lifts the shadows.
+3. **Block**: `CMPGrade` gains `float4 contrast` (c, s, τ, σ) appended after `pad1`: 80 bytes, earlier offsets
+   unchanged. Flags 256 (S-curve) and 512 (Filmic), FX-005's own bits, leaving 64 and 128 to parallel FX rows.
+4. **Safety**: the guard measures the curved colour; black and white are fixed points, so a black ↔ white strobe is
+   limited exactly as without a curve. ACC-012 does not cap the curve.
+5. Settings `settings.colorGrade.contrast` (String) and `settings.colorGrade.contrastStrength` (FILE-005 backup,
+   FILE-011 erase, privacy allow-list); MOD-001 `effect.colorGrade.contrast` (enumeration) and
+   `effect.colorGrade.contrastStrength`; the scene's `fx.grade` entry gains `contrast` and `contrastStrength`
+   (written only when used; old scenes read as Linear); Settings → Color gains a "Contrast" picker and strength slider.
+
 ## Alternatives considered
 
 ASC CDL (its offset moves white); grading in sRGB-encoded space (an encode/decode per pixel, and the composite is

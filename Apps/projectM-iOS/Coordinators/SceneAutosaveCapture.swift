@@ -311,6 +311,8 @@ enum SceneAutosaveCapture {
             if grade.gain != g.gain { grade.gain = g.gain }
             if grade.saturation != g.saturation { grade.saturation = g.saturation }
             if grade.hue != g.hue { grade.hue = g.hue }
+            if grade.contrast != g.contrast { grade.contrast = g.contrast }   // FX-005
+            if grade.contrastStrength != g.contrastStrength { grade.contrastStrength = g.contrastStrength }
         }
         if let enabled = settings.gradeEnabled { grade.isEnabled = enabled }
         if let t = settings.trails {
