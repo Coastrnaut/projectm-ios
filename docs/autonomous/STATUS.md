@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T03:54:21Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T03:59:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,24 +10,25 @@
 | State | Features |
 |---|---|
 | audited | 40 |
-| implementing | 4 |
-| unit_passed | 2 |
-| integrated | 279 |
+| implementing | 1 |
+| built | 3 |
+| unit_passed | 1 |
+| integrated | 280 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 30 | 4 | 1 | 44 | 0 |
-| P3 | 8 | 0 | 1 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 0 | 0 | 151 | 0 |
+| P2 | 30 | 1 | 3 | 0 | 45 | 0 |
+| P3 | 8 | 0 | 0 | 1 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 46 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 45 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -192,6 +193,7 @@ The physical-device suite may **not** start:
 | OUT-005 | Safe-area guides | `2279477acc0a` | `feature/out-005` |
 | OUT-006 | Output mirroring toggle | `eeb64861aa81` | `feature/out-006` |
 | OUT-007 | Corner-pin warp | `e097e3500ac0` | `feature/out-007` |
+| OUT-009 | Output color calibration | `9808cd43ea6d` | `feature/out-009` |
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
 | OUT-012 | External display rehearsal | `25f9c7db` | `feature/out-012` |
 | PERF-001 | Per-stage frame timings | `2c4317ae` | `feature/perf-001` |
@@ -2136,7 +2138,7 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/sim-test_Rendering.log`)
 - `swift test PresentationLifecycle 109, LibraryBackup 87; postmerge projectM-iOSTests 1196 + CornerPinUITests 1; ExternalOutputModeUITests timed out once under load, 2/2 reruns pass`: pass at `e097e3500ac0` (log `.autonomous/logs/integration/batch103b-2/app-tests.log`)
 
-### OUT-009 Output color calibration (unit_passed)
+### OUT-009 Output color calibration (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a5ea892238ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-009/20261114T224116/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `a5ea892238ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-009/20261114T224116/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `a5ea892238ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-009/20261114T224116/script-tests.log`)
@@ -2150,6 +2152,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `a5ea892238ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-009/20261114T224116/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `a5ea892238ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-009/20261114T224116/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `a5ea892238ef` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-009/20261114T224116/swift-test_ShowControl.log`)
+- `swift test Compositor 1075, LibraryBackup 87; gate incl. ANGLERendering sim tests; postmerge projectM-iOSTests 1214 + DisplayCalibration/CornerPin UI tests 2`: pass at `9808cd43ea6d` (log `.autonomous/logs/integration/batch108/app-tests.log`)
 
 ### OUT-010 Output blackout isolation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e7b40368ae98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-010/20261113T140140/compliance.log`)
@@ -2998,6 +3001,13 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `0f9b7c193e44` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-006/20261114T192748/swift-test_ShowControl.log`)
 - `post-merge batch87: ShowControl 135, Compositor 1018, RenderGoldens 87, LibraryBackup 86, validate_docs, projectM-iOSTests 1127, UI 9 (one-handed 3, noise editor, show timeline, performance layout 4)`: pass at `fd57c72f` (log `.autonomous/logs/integration/batch87/app-tests.log`)
+
+### SHD-007 Particle emitter editor (built)
+- `python3 scripts/check_compliance.py`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: exit 65 at `4107e4133962` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-007/20261114T225706/sim-test_ANGLERendering.log`)
 
 ### SHD-009 Expression mapping DSL (integrated)
 - `python3 scripts/check_compliance.py`: pass at `269a293b8d9d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHD-009/20261113T125934/compliance.log`)
