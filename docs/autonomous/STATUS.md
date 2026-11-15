@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T01:49:54Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T01:57:46Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 59 |
-| built | 1 |
-| unit_passed | 1 |
-| integrated | 264 |
+| audited | 56 |
+| implementing | 3 |
+| integrated | 266 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 5 | 1 | 0 | 145 | 0 |
-| P2 | 43 | 0 | 1 | 35 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 4 | 1 | 146 | 0 |
+| P2 | 41 | 2 | 36 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 61 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 59 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -182,6 +181,7 @@ The physical-device suite may **not** start:
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
 | OUT-001 | External display scene | `dfd5757fccd4` | `feature/out-001` |
 | OUT-002 | Display connect handling | `526c47e9` | `None` |
+| OUT-003 | Independent output resolution | `5fb23871c944` | `feature/out-003` |
 | OUT-004 | Aspect correction | `5e533a80` | `feature/out-004` |
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
 | OUT-012 | External display rehearsal | `25f9c7db` | `feature/out-012` |
@@ -297,6 +297,7 @@ The physical-device suite may **not** start:
 | VIS-007 | Mandala symmetry | `8bdb0122` | `feature/vis-007` |
 | VIS-008 | Particle fountain | `11e727ab` | `feature/vis-008` |
 | VIS-009 | Particle orbit | `cd89f309` | `feature/vis-009` |
+| VIS-013 | Noise field | `a6c2cf3cfd3b` | `feature/vis-013` |
 
 ## Proved already implemented
 
@@ -1983,7 +1984,7 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `b233fd39e01c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-002/20261114T101841/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b233fd39e01c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-002/20261114T101841/sim-test_Rendering.log`)
 
-### OUT-003 Independent output resolution (unit_passed)
+### OUT-003 Independent output resolution (integrated)
 - `python3 scripts/check_compliance.py`: pass at `dfd3efe61278` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-003/20261114T204603/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `dfd3efe61278` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-003/20261114T204603/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `dfd3efe61278` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-003/20261114T204603/script-tests.log`)
@@ -1993,6 +1994,7 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `dfd3efe61278` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-003/20261114T204603/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `dfd3efe61278` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-003/20261114T204603/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `dfd3efe61278` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-003/20261114T204603/sim-test_Rendering.log`)
+- `swift test PresentationLifecycle 92, LibraryBackup 87; postmerge projectM-iOSTests 1156 + ExternalDisplayUITests 3`: pass at `5fb23871c944` (log `.autonomous/logs/integration/batch93/app-tests.log`)
 
 ### OUT-004 Aspect correction (integrated)
 - `python3 scripts/check_compliance.py`: pass at `24d0995cbd79` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-004/20261114T114533/compliance.log`)
@@ -3215,3 +3217,19 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `444292771120` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-009/20261114T155605/swift-test_VisualGenerators.log`)
 - `post-merge batch57: VisualGenerators 245, RenderGoldens 82, ShowControl 110, LibraryBackup 77, projectM-iOSTests 980, UI ParticleOrbit/ParticleFountain/LayerInspector/VisualizerUITests 7 of 8 (compact-width row test fails, pre-existing from UIX-005/SCN-015 controls; fix/compact-controls in progress). SplitEditorUITests (iPad) pending`: pass at `cd89f309` (log `.autonomous/logs/integration/batch57/app-tests.log`)
+
+### VIS-013 Noise field (integrated)
+- `python3 scripts/check_compliance.py`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_VisualGenerators.log`)
+- `swift test VisualGenerators 279, Compositor 1041, RenderGoldens 89; postmerge projectM-iOSTests 1161 + NoiseFieldUITests 1; compliance, docs OK`: pass at `a6c2cf3cfd3b` (log `.autonomous/logs/integration/batch94/app-tests.log`)
