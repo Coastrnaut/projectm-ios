@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "articles": [
+    { "id": "getting-started", "title": "Getting started and audio sources", "file": "getting-started.md",
+      "keywords": ["start", "audio", "source", "microphone", "capture", "system", "playback", "import", "status"] },
+    { "id": "visuals", "title": "Visuals", "file": "visuals.md",
+      "keywords": ["visual", "projectm", "spectrum", "oscilloscope", "waveform", "particles", "glow", "smoothing"] },
+    { "id": "presets", "title": "Presets and library", "file": "presets.md",
+      "keywords": ["preset", "library", "favorites", "collections", "unlock", "purchase", "restore", "import", "milk"] },
+    { "id": "scenes-shows", "title": "Scenes and shows", "file": "scenes-shows.md",
+      "keywords": ["scene", "show", "cue", "snapshot", "undo", "lock", "export", "keyframe"] },
+    { "id": "effects", "title": "Effects", "file": "effects.md",
+      "keywords": ["effect", "color", "grade", "trails", "chromatic", "blur", "echo", "order", "chain"] },
+    { "id": "layers-media", "title": "Layers and media", "file": "layers-media.md",
+      "keywords": ["layer", "camera", "photo", "video", "text", "logo", "clock", "key", "mask", "media"] },
+    { "id": "recording", "title": "Recording", "file": "recording.md",
+      "keywords": ["record", "video", "frame", "screenshot", "photos", "export", "countdown"] },
+    { "id": "external-display", "title": "External display and output tools", "file": "external-display.md",
+      "keywords": ["display", "projector", "airplay", "output", "corner pin", "calibration", "blackout", "rehearse"] },
+    { "id": "midi-osc", "title": "MIDI and OSC", "file": "midi-osc.md",
+      "keywords": ["midi", "osc", "controller", "learn", "mapping", "network", "clock", "feedback"] },
+    { "id": "accessibility-safety", "title": "Accessibility and sensory safety", "file": "accessibility-safety.md",
+      "keywords": ["accessibility", "safety", "flash", "flashing", "seizure", "voiceover", "haptic", "color-blind", "motion"] },
+    { "id": "privacy", "title": "Privacy", "file": "privacy.md",
+      "keywords": ["privacy", "data", "permissions", "network", "offline", "storage"] }
+  ]
+}
