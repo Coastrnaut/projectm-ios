@@ -1,0 +1,34 @@
+# Tasks: VIS-013 Noise Field
+
+**Input**: `specs/252-vis-013-noise-field/` (spec, plan, research, data-model, contracts/noise-field.md)
+
+## Phase 1: Shared noise (VIS-013-R2)
+
+- [ ] VIS-013-T01 Move SHD-006's CPU noise core to `Packages/VisualGenerators/Sources/VisualGenerators/SeededNoise.swift` with `SeededNoiseShader.functions`; make `NoiseTextureReference` call it (VIS-013-D1).
+- [ ] VIS-013-T02 [P] `SeededNoiseTests` (VisualGenerators): hash and fBm values pinned, seed changes values, Linux shape.
+- [ ] VIS-013-T03 [P] `SharedNoiseSourceTests` (ProceduralMaterialsTests): the material literal contains `SeededNoiseShader.functions`; `MaterialNoiseTests` digests and `NoiseTextureReferenceTests` still pass.
+
+## Phase 2: User Story 1 + 2 - the field (VIS-013-R1, R3, R5-R8)
+
+- [ ] VIS-013-T04 `NoiseFieldConfiguration` and `NoiseFieldDrive` (pure Swift) per data-model.md.
+- [ ] VIS-013-T05 `NoiseFieldFlashAreas` (8 × 8 samples → 17 areas, preallocated).
+- [ ] VIS-013-T06 `NoiseFieldGenerator` (Metal fragment pass through `NativePipelineArchive`).
+- [ ] VIS-013-T07 [P] `NoiseFieldDriveTests`: silence and full bands settle to S2's values, brightness ≤ 0.8, smoothing on frame time, drift bounded and never backwards, Reduce Motion halves drift and band warp, non-finite bands.
+- [ ] VIS-013-T08 [P] `NoiseFieldFlashTests`: bursts alternating with silence stay within the transition budget in all 17 areas, Reduce flashing on and off (S3).
+- [ ] VIS-013-T09 `NoiseFieldRenderTests` (GPU): same seed/settings/clock/fixture bands twice → identical bytes; per-GPU digest; different seed differs in > 10 % of pixels; GPU vs CPU mirror within 0.02 at sample points; more octaves → more high-frequency energy (S1, S4).
+- [ ] VIS-013-T10 `NoiseFieldGoldenTests` + goldens (macOS host, iOS Simulator) (S5).
+
+## Phase 3: User Story 3 - the app (VIS-013-R4, R9, R11, R12)
+
+- [ ] VIS-013-T11 Visual choice `noiseField`, three keys, Settings section (Frequency, Octaves, Seed + New Seed), host style and generator, accessibility value, scene capture as no layer; keys in `ALLOWED_KEYS`, FILE-005 policy, UI-test reset.
+- [ ] VIS-013-T12 [P] `NoiseFieldAppTests` (settings persist and fall back, style mapping, value text, New Seed deterministic, keys in lists) and existing list tests updated; `LibraryBackupAppTests` passes.
+- [ ] VIS-013-T13 [P] `NoiseFieldUITests`: choose Noise Field, controls offered, Bars not, choose High, value "High frequency…", source started once (< 30 s).
+
+## Phase 4: Polish
+
+- [ ] VIS-013-T14 Full touched package suites, Linux shape, repo checks, privacy manifest and network symbol scans, type-check budget.
+- [ ] VIS-013-T15 {device} On D1 with music, Noise Field holds the display's frame rate on the PERF-001/007 overlay.
+
+## Dependencies
+
+T01 → T02, T03, T04-T06; T04-T06 → T07-T10; T06 → T11 → T12, T13; all → T14. T15 needs a device.
