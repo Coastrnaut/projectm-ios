@@ -6,6 +6,9 @@
 // transparency (lossless, alpha kept), JPEG at quality 0.9 otherwise. No property of the source is
 // copied, so the copy carries no location, camera, date, maker, IPTC or XMP data and needs no
 // orientation tag. Only the sRGB color profile of the new pixels is written.
+// MED-008-R2 (specs/257-med-008-animated-images): with `.automatic`, an animation (`AnimatedImageProbe`) whose first
+// frame passed the decoder's checks is stored as an animated PNG of pixels and delays only (`AnimatedImageSanitizer`);
+// `.png` (logos) keeps the first frame as a still.
 import Foundation
 
 /// Which encoding the sanitizer writes (MED-010-R3: logos are always PNG).
@@ -61,6 +64,10 @@ public enum ImageSanitizer {
                                 decoder: any ImageDecoding = ImageIODecoder(),
                                 format: ImageOutputFormat = .automatic) throws(ImageImportError) -> SanitizedImage {
         let decoded = try decoder.decode(data, limits: limits)
+        if format == .automatic, let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+           let facts = AnimatedImageProbe.facts(source) {
+            return try AnimatedImageSanitizer.sanitize(source, facts: facts, limits: limits)
+        }
         guard let image = makeImage(decoded) else { throw .damaged }
         let png: Bool = decoded.hasAlpha || format == .png
         let type: UTType = png ? .png : .jpeg
