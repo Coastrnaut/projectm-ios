@@ -115,6 +115,10 @@
 // FX-015 (specs/305-fx-015-vignette, ADR-0116): while `vignette` is active, `VignettePass` darkens towards the edges
 // (colour × (1 − intensity × w), the centre exact) at its place in `outputEffectOrder` (Color folded before it the same
 // way); appended last (after FX-016's Lens distortion).
+// FX-011 (specs/310-fx-011-pixel-sorting, ADR-0121): while `pixelSort` is active, `PixelSortPass` sorts qualifying runs
+// inside fixed tiles by luminance in one compute dispatch at its place in `outputEffectOrder` (Color folded before it),
+// after Lens distortion and before Vignette; the per-frame workload is capped by `PixelSort.frameBudget` (shorter span,
+// else skipped).
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -309,6 +313,8 @@ public final class Compositor {
     private let lensDistortionPass: LensDistortionPass
     /// FX-015: the vignette pass and its pooled picture.
     private let vignettePass: VignettePass
+    /// FX-011: the pixel sort pass and its pooled picture.
+    private let pixelSortPass: PixelSortPass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -409,6 +415,22 @@ public final class Compositor {
     public var lensDistortionFrames: Int { lensDistortionPass.frames }
     public var holdsLensDistortionPicture: Bool { lensDistortionPass.holdsPicture }
 
+    /// FX-011 (ADR-0121): the pixel sort, set between frames. Off (the default) adds no pass and holds no picture: output
+    /// bit-identical to before FX-011.
+    public var pixelSort: PixelSort = .off {
+        didSet { if !pixelSort.isEnabled { pixelSortPass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-011: the per-frame workload cap (steps); tests lower it to exercise the skip on small frames.
+    var pixelSortBudget: Int = PixelSort.frameBudget
+
+    /// FX-011: dispatches encoded, frames skipped by the budget, and the last encoded frame's plan (tests, diagnostics).
+    public var pixelSortDispatches: Int { pixelSortPass.dispatches }
+    public private(set) var pixelSortBudgetSkips = 0
+    public private(set) var pixelSortEffectiveSpan = 0
+    public private(set) var pixelSortWorkload = 0
+    public var holdsPixelSortPicture: Bool { pixelSortPass.holdsPicture }
+
     /// FX-020: frames that ran the Color-first grade pass (tests, diagnostics).
     public var gradePassFrames: Int { gradePass.frames }
 
@@ -500,7 +522,8 @@ public final class Compositor {
                                                 + MosaicPass.source
                                                 + EdgeOutlinePass.source
                                                 + LensDistortionPass.source
-                                                + VignettePass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015
+                                                + VignettePass.source
+                                                + PixelSortPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
@@ -512,6 +535,7 @@ public final class Compositor {
         edgeOutlinePass = try EdgeOutlinePass(device: device, library: library, vertex: fullScreen)   // FX-014
         lensDistortionPass = try LensDistortionPass(device: device, library: library, vertex: fullScreen)   // FX-016
         vignettePass = try VignettePass(device: device, library: library, vertex: fullScreen)   // FX-015
+        pixelSortPass = try PixelSortPass(device: device, library: library)   // FX-011
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -549,6 +573,7 @@ public final class Compositor {
         edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer)   // FX-014
         lensDistortionPass.release(to: texturePool, after: lastCommandBuffer)   // FX-016
         vignettePass.release(to: texturePool, after: lastCommandBuffer)   // FX-015
+        pixelSortPass.release(to: texturePool, after: lastCommandBuffer)   // FX-011
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -964,6 +989,7 @@ public final class Compositor {
         var outlineRan = false   // FX-014
         var lensRan = false   // FX-016
         var vignetteRan = false   // FX-015
+        var sortRan = false   // FX-011
         for kind in outputEffectOrder.effects {
             switch kind {
             case .grade:
@@ -1085,6 +1111,12 @@ public final class Compositor {
                 pictureAllocations += lensDistortionPass.allocations - taken   // PERF-004
                 shown = warped
                 lensRan = true
+            case .pixelSort:   // FX-011
+                guard let sorted = encodePixelSort(&shown, gradeListed: gradeListed, graded: &graded,
+                                                   commandBuffer: commandBuffer) else { continue }
+                guard let output = sorted else { return nil }
+                shown = output
+                sortRan = true
             case .vignette:   // FX-015
                 guard vignette.isActive(width: shown.width, height: shown.height) else { continue }
                 if gradeListed && !graded {
@@ -1111,7 +1143,30 @@ public final class Compositor {
         if !outlineRan, edgeOutlinePass.holdsPicture { edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-014
         if !lensRan, lensDistortionPass.holdsPicture { lensDistortionPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-016
         if !vignetteRan, vignettePass.holdsPicture { vignettePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-015
+        if !sortRan, pixelSortPass.holdsPicture { pixelSortPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-011
         return shown
+    }
+
+    /// FX-011: nil when the sort does not run this frame (off, too small, or skipped by the budget, which is counted);
+    /// .some(nil) when encoding failed; else the sorted picture. Color listed before it is folded first.
+    private func encodePixelSort(_ shown: inout MTLTexture, gradeListed: Bool, graded: inout Bool,
+                                 commandBuffer: MTLCommandBuffer) -> MTLTexture?? {
+        let plan: PixelSort.Plan = pixelSort.plan(width: shown.width, height: shown.height, budget: pixelSortBudget)
+        if plan.budgetSkipped { pixelSortBudgetSkips += 1 }
+        guard plan.runs else { return nil }
+        if gradeListed && !graded {
+            guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return .some(nil) }
+            shown = output
+            graded = true
+        }
+        let taken: Int = pixelSortPass.allocations
+        let block: PixelSort.Block = pixelSort.block(effectiveSpan: plan.effectiveSpan)
+        guard let sorted = pixelSortPass.encode(input: shown, block: block, pool: texturePool, fence: lastCommandBuffer,
+                                                commandBuffer: commandBuffer) else { return .some(nil) }
+        pictureAllocations += pixelSortPass.allocations - taken   // PERF-004
+        pixelSortEffectiveSpan = plan.effectiveSpan
+        pixelSortWorkload = plan.workload
+        return .some(sorted)
     }
 
     /// FX-020: `input` graded by the grade pass; the guard and outputs then use the neutral block.

@@ -76,5 +76,6 @@
 | [0114](0114-edge-outline.md) | Edge outline is its own output pass, last in the effect chain (after Mosaic): a Sobel mask on linear luminance, overlay keeps unmasked pixels exact (amends ADR-0104) | Accepted 2026-11-15 (FX-014; owner rule 4) |
 | [0116](0116-vignette.md) | Vignette is its own output pass, last in the effect chain, darkening only outside a clear core (amends ADR-0110) | Accepted 2026-11-15 (FX-015; owner rule 4) |
 | [0117](0117-lens-distortion.md) | Lens distortion is its own output pass after Edge outline: a bounded radial polynomial (k within ±0.3), zoom to fill, clamped bilinear taps, transparent black outside (amends ADR-0104) | Accepted 2026-11-15 (FX-016; owner rule 4) |
+| [0121](0121-pixel-sort.md) | Pixel sort is one compute dispatch before Vignette: stable sort of qualifying runs inside fixed tiles, hard per-frame workload budget (amends ADR-0117, ADR-0116) | Accepted 2026-11-15 (FX-011; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

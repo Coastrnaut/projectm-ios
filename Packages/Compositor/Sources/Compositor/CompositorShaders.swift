@@ -16,7 +16,8 @@ public enum CompositorShaderSources {
          EchoPass.source, MosaicPass.source,
          EdgeOutlinePass.source,
          LensDistortionPass.source,
-         VignettePass.source]   // FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015
+         VignettePass.source,
+         PixelSortPass.source]   // FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011 (compute; key only)
     }
 }
 

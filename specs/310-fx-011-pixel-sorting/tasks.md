@@ -8,39 +8,39 @@ trip, settings, one UI test). Budgets: unit test ≤ 10 s, suite < 1 min, UI tes
 
 ## Phase 1: Setup
 
-- [ ] FX-011-T01 ADR-0121 (pixel sort as one compute dispatch, tiles and segments, stable rank-and-scatter, frame budget
+- [X] FX-011-T01 ADR-0121 (pixel sort as one compute dispatch, tiles and segments, stable rank-and-scatter, frame budget
   B and span reduction, chain position before Vignette) in `docs/adr/0121-pixel-sort.md` and its row in
-  `docs/adr/README.md`
+  `docs/adr/README.md` — Verified 2026-11-15: docs/adr/0121-pixel-sort.md and README row; validate_docs OK
 
 ## Phase 2: Foundational
 
-- [ ] FX-011-T02 [P] `PixelSort` in `Packages/Compositor/Sources/Compositor/PixelSort.swift`: threshold, span, direction
+- [X] FX-011-T02 [P] `PixelSort` in `Packages/Compositor/Sources/Compositor/PixelSort.swift`: threshold, span, direction
   with clamping and span snapping; `luminance`, `qualifies`, `plan(width:height:budget:)` (contract C3), `block`,
-  `reference` (contract C2, Swift stable sort per segment); plain Swift (Linux)
-- [ ] FX-011-T03 [P] `PixelSortModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamping and snapping; plan
+  `reference` (contract C2, Swift stable sort per segment); plain Swift (Linux) — Verified 2026-11-15: PixelSortModelTests 5/5 on the host
+- [X] FX-011-T03 [P] `PixelSortModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamping and snapping; plan
   over sizes 1 × 1 … 16384 × 16384 (common displays, 7680 × 4320, extremes) × every span: workload ≤ B, effective span
   the largest admissible, skip exactly when W·H·4 > B, inactive when off or too small; reference: segments
   non-decreasing, non-qualifying pixels unchanged, permutation per tile, thresholds 0.5 and 0.2 give different outputs
-  (FX-011-R2 to R7, R13, S1, S2, S4)
-- [ ] FX-011-T04 `OutputEffectKind.pixelSort` (`fx.pixelSort`, declared between `lensDistortion` and `vignette`) in
+  (FX-011-R2 to R7, R13, S1, S2, S4) — Verified 2026-11-15: swift test --filter PixelSortModelTests, 5 pass (budget plan over 39 × 39 sizes up to 16384 × 16384 × 5 spans × 2 directions)
+- [X] FX-011-T04 `OutputEffectKind.pixelSort` (`fx.pixelSort`, declared between `lensDistortion` and `vignette`) in
   `OutputEffectOrder.swift`; update whole-order assertions in `OutputEffectOrderTests` and add a position-based one
-  (FX-011-R8)
+  (FX-011-R8) — Verified 2026-11-15: OutputEffectOrderTests pass on the host; position asserts firstIndex(of: .pixelSort) == 9, Vignette last
 
 ## Phase 3: User Stories 1-2 — the pass (P1)
 
 **Goal**: segments sorted by luminance on every compositor output within the frame budget.
 **Independent test**: GPU tests through the real compositor.
 
-- [ ] FX-011-T05 [US1] `PixelSortPass` with `cmp_pixel_sort` in `PixelSortPass.swift` (one pooled picture, one dispatch,
-  fixed loops of `span` steps)
-- [ ] FX-011-T06 [US1] [US2] `Compositor.swift`: `pixelSort` property and counters, the source at the existing compile
+- [X] FX-011-T05 [US1] `PixelSortPass` with `cmp_pixel_sort` in `PixelSortPass.swift` (one pooled picture, one dispatch,
+  fixed loops of `span` steps) — Verified 2026-11-15: PixelSortCompositeTests 6/6 on the host (real Metal device)
+- [X] FX-011-T06 [US1] [US2] `Compositor.swift`: `pixelSort` property and counters, the source at the existing compile
   site, the `.pixelSort` case in `encodeOutputEffects` (Color folded before it; plan; skip counted), release in deinit;
-  source in `CompositorShaderSources.archived` (FX-011-R5 to R7, R12, R14)
-- [ ] FX-011-T07 [US1] [US2] `PixelSortCompositeTests`: GPU equals the CPU reference bit for bit at thresholds 0.5 and
+  source in `CompositorShaderSources.archived` (FX-011-R5 to R7, R12, R14) — Verified 2026-11-15: Compositor package on the host: CompositorTests 783 tests, 0 failures (10 skipped), whole package 68 s; CompositorPipelineArchiveTests pass
+- [X] FX-011-T07 [US1] [US2] `PixelSortCompositeTests`: GPU equals the CPU reference bit for bit at thresholds 0.5 and
   0.2, both directions, with a partial last tile; the two outputs differ; non-qualifying pixels unchanged; off
   bit-identical with no dispatch and no picture; one dispatch per active frame and workload ≤ B; a lowered budget skips
   with zero dispatches and identical output; finite output for finite random input; archive key contains the source
-  (FX-011-S1 to S4)
+  (FX-011-S1 to S4) — Verified 2026-11-15: swift test --filter PixelSortCompositeTests, 6 pass: GPU output equals the CPU reference bit for bit at thresholds 0.5 and 0.2 in both directions (37 × 21, partial tiles), the outputs differ, one dispatch per frame, lowered budget gives span 8 or a skip with zero dispatches
 
 ## Phase 4: User Story 3 — scenes and goldens (P2)
 
