@@ -66,11 +66,11 @@ trip, settings, one UI test). Budgets: unit test ≤ 10 s, suite < 1 min, UI tes
 
 ## Phase 6: Polish
 
-- [ ] FX-011-T13 Test report `docs/test-reports/pixel-sort.md` (commands, counts, times)
-- [ ] FX-011-T14 Repo checks: `test_scripts.py`, `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`,
-  `check_permission_catalog.py`, `check_status_events.py`, privacy manifest and network symbols on the Debug app
-- [ ] FX-011-T15 Package suites (Compositor, SceneFormat, LibraryBackup, RenderGoldens) and the app's affected tests on
-  the own simulator; spec status Implemented
+- [X] FX-011-T13 Test report `docs/test-reports/pixel-sort.md` (commands, counts, times) — Verified 2026-11-15: report written; validate_docs OK
+- [X] FX-011-T14 Repo checks: `test_scripts.py`, `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`,
+  `check_permission_catalog.py`, `check_status_events.py`, privacy manifest and network symbols on the Debug app — Verified 2026-11-15: all OK; test_scripts 186 tests OK (1 skipped)
+- [X] FX-011-T15 Package suites (Compositor, SceneFormat, LibraryBackup, RenderGoldens) and the app's affected tests on
+  the own simulator; spec status Implemented — Verified 2026-11-15: Compositor 783/0 (68 s), SceneFormat 226/0 (41 s), RenderGoldens 123/0 (17 s), LibraryBackup 88/0 (27 s), app 58/0, PixelSortUITests 25.0 s, EffectChainUITests 22.9 s
 - [ ] FX-011-T16 {device} GPU frame time with Pixel sort on (span 32 and 64, both directions) on D1, and on a 4K external
   display if available (FX-011-S8)
 

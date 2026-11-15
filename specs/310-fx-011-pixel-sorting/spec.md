@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-011-T01-T15 verified on the Mac and an own iOS 27.2 simulator; T16 `{device}` open)
 
 **Input**: User description: "Implement FX-011 (Pixel sorting approximation) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Reorder luminance segments within a fixed GPU workload." Acceptance, verbatim:
