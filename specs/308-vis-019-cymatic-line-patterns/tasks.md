@@ -27,7 +27,7 @@
 
 ## Phase 5: Polish
 
-- [ ] VIS-019-T12 Touched package suites, Linux shape, RenderGoldens, LibraryBackup, repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbol scans, type-check budget, PosterBoard counts.
+- [X] VIS-019-T12 Touched package suites, Linux shape, RenderGoldens, LibraryBackup, repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbol scans, type-check budget, PosterBoard counts. — Verified 2026-11-15: VisualGenerators swift test 418 passed, 1 skipped (69.2 s on a machine at load 128; the Cymatic suites add about 1.6 s); Linux shape (-DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE) 333 passed, 1 skipped; LibraryBackup 88 passed; RenderGoldens full 121 passed, 1 skipped (28.5 s); check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 186 OK (1 skipped); check_privacy_manifest OK; check_network_symbols OK (19 images); type-check flags show no warning in a touched function; PosterBoard reports 25 before and after; VIS19 simulator and derived data deleted
 - [ ] VIS-019-T13 {device} On D1: a test-tone sweep and music for 30 s each; frame rate on the overlay; tones change the figure, silence returns it to the cross within about 1 s; Reduce Motion calmer; device GPU golden look.
 
 ## Dependencies
