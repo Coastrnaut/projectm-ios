@@ -11,7 +11,7 @@
 
 - [ ] SHOW-015-T02 [US1] Refusals (contract P1): `refusedByLock()` and `isCollectionEditLocked` in Apps/projectM-iOS/Coordinators/PresetCoordinator.swift guarding `deleteCollection`, `removeFromCollection`, `movePresets`, `moveCollections` (and so `movePreset`, `moveCollection`); `deleteSmartCollection` in Apps/projectM-iOS/Coordinators/PresetCoordinator+Smart.swift; refusal sets `collectionsMessage` to `SceneLock.refusalMessage`
 - [ ] SHOW-015-T03 [US1] Storage refusals: `LibraryEraseCoordinator.canStart` false while locked, `openSheet`/`requestErase` refuse (Apps/projectM-iOS/Coordinators/LibraryEraseCoordinator.swift); `restoreTapped` returns false and `requestRestore` refuses, `isRestoreLocked` (Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift); Cancel Erase and Cancel Restore unchanged
-- [ ] SHOW-015-T04 [P] [US1] Collection views (contract P3): hide Delete/Remove swipe actions, Move Up/Down and Delete menu items, the matching VoiceOver actions, the Edit button and `onMove` while locked; show `SceneLockNote` — Apps/projectM-iOS/Views/PresetCollectionsView.swift, Apps/projectM-iOS/Views/PresetCollectionView.swift, Apps/projectM-iOS/Views/SmartCollectionViews.swift, Apps/projectM-iOS/Views/PresetBrowserView.swift (`PresetRow` collection actions)
+- [ ] SHOW-015-T04 [P] [US1] Collection views (contract P3): hide Delete/Remove swipe actions, Move Up/Down and Delete menu items, the matching VoiceOver actions, the Edit button and `onMove` while locked, and end an active Edit mode when the lock turns on (spec edge case); show `SceneLockNote` — Apps/projectM-iOS/Views/PresetCollectionsView.swift, Apps/projectM-iOS/Views/PresetCollectionView.swift, Apps/projectM-iOS/Views/SmartCollectionViews.swift, Apps/projectM-iOS/Views/PresetBrowserView.swift (`PresetRow` collection actions)
 - [ ] SHOW-015-T05 [P] [US1] Scene Folders: hide folder Rename/Move/Delete and scene Move/Tags (swipe, menu, VoiceOver) while locked, disable New Folder, show the note — Apps/projectM-iOS/Views/SceneFoldersView.swift
 - [ ] SHOW-015-T06 [P] [US1] Storage views: note beside the disabled Erase Data… and Restore from Backup… — Apps/projectM-iOS/Views/LibraryEraseSection.swift, Apps/projectM-iOS/Views/LibraryBackupSection.swift
 - [ ] SHOW-015-T07 [US1] Acceptance tests (S1, S2): with the lock on, cue delete, cue move, folder delete, collection delete, collection reorder, preset reorder in a collection, Remove from Collection and smart collection delete are refused and the show list and collections are unchanged; erase and restore open nothing and record nothing; with the lock off the same calls succeed — Apps/projectM-iOS/Tests/PerformanceLockAcceptanceTests.swift
@@ -22,7 +22,7 @@
 
 ## Phase 4: User Story 3 — Unlock deliberately (P1)
 
-- [ ] SHOW-015-T09 [US3] Copy (R7): `SceneLock.unlockMessage` and the Settings footer name collections, erase and restore — Apps/projectM-iOS/Views/SceneLockViews.swift
+- [ ] SHOW-015-T09 [US3] Copy (R7; R6's persistence and confirmation are SCN-015's, proved by `SceneLockAcceptanceTests` and rerun in T11): `SceneLock.unlockMessage` and the Settings footer name collections, erase and restore — Apps/projectM-iOS/Views/SceneLockViews.swift
 - [ ] SHOW-015-T10 [US1] [US2] [US3] UI test (S4, under 30 s): lock in the controls; Collections shows the note, no Edit button and no Delete on swipe; back on the visualizer the emergency Black out works and Restore returns; unlock with confirmation removes the badge — Apps/projectM-iOS/UITests/PerformanceLockUITests.swift
 
 ## Phase 5: Polish
