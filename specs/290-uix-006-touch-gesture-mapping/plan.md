@@ -40,6 +40,7 @@ Packages/PerformanceControl/Sources/PerformanceControl/Gestures/GestureShortcuts
 Packages/PerformanceControl/Tests/PerformanceControlTests/GestureShortcutTests.swift      (new)
 Apps/projectM-iOS/Coordinators/GestureShortcutsSetting.swift                             (new)
 Apps/projectM-iOS/Coordinators/AppCoordinator+GestureShortcuts.swift                     (new)
+Apps/projectM-iOS/Coordinators/GestureShortcutPerformer.swift (new: the actions, injectable for tests)
 Apps/projectM-iOS/Views/GestureShortcutViews.swift      (new: recogniser, representable, settings section, probe)
 Apps/projectM-iOS/Views/VisualizerView.swift            (one modifier on tapArea)
 Apps/projectM-iOS/Views/SettingsView.swift              (one optional property, one line in performanceSection)
