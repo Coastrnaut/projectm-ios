@@ -12,10 +12,12 @@ import SceneFormat
 extension AppCoordinator {
     /// The chain as the user set it.
     var liveEffectSettings: SceneEffectSettings {
-        SceneEffectSettings(order: effectChain.order, grade: colorGrade.grade, gradeEnabled: colorGrade.isEnabled,
-                            trails: motionFeedback.feedback, chromatic: chromaticSplit.split,
-                            directionalBlur: directionalBlur.blur, radialBlur: radialBlur.blur,
-                            echo: echoFeedback.feedback, mosaic: mosaic.mosaic)   // FX-006, FX-007, FX-008, FX-010, FX-012
+        var live = SceneEffectSettings(order: effectChain.order, grade: colorGrade.grade, gradeEnabled: colorGrade.isEnabled,
+                                       trails: motionFeedback.feedback, chromatic: chromaticSplit.split,
+                                       directionalBlur: directionalBlur.blur, radialBlur: radialBlur.blur,
+                                       echo: echoFeedback.feedback, mosaic: mosaic.mosaic)   // FX-006, FX-007, FX-008, FX-010, FX-012
+        live.vignette = vignette.vignette   // FX-015
+        return live
     }
 
     /// Wires the setting to the visuals (called once from init).
@@ -44,7 +46,7 @@ extension AppCoordinator {
         guard let preset = effectChain.presets.preset(named: name) else { return }
         SceneAutosaveCapture.applyEffects(preset.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
                                           directionalBlur: directionalBlur, radialBlur: radialBlur,
-                                          echo: echoFeedback, mosaic: mosaic)   // FX-007, FX-008, FX-010, FX-012
+                                          echo: echoFeedback, mosaic: mosaic, vignette: vignette)   // FX-007, FX-008, FX-010, FX-012, FX-015
         announcer.announce("Applied effect preset " + preset.name, kind: .parameter)
     }
 }

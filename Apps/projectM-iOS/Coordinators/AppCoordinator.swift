@@ -224,6 +224,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let echoFeedback: EchoSetting
     /// FX-012: the mosaic (Settings → Mosaic) of the compositor-backed visuals.
     let mosaic: MosaicSetting
+    /// FX-015: the vignette (Settings → Vignette) of the compositor-backed visuals.
+    let vignette: VignetteSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// MIDI-003 and OSC-003 live values, merged (newest change wins per parameter; OSC-003-R5).
@@ -477,6 +479,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         radialBlur = RadialBlurSetting(defaults: defaults)   // FX-008
         echoFeedback = EchoSetting(defaults: defaults)   // FX-010
         mosaic = MosaicSetting(defaults: defaults)   // FX-012
+        vignette = VignetteSetting(defaults: defaults)   // FX-015
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -546,7 +549,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
                                               chromatic: chromaticSplit, directionalBlur: directionalBlur,
                                               radialBlur: radialBlur, echo: echoFeedback,
-                                              mosaic: mosaic)   // FX-020, FX-006, FX-007, FX-008, FX-010, FX-012
+                                              mosaic: mosaic, vignette: vignette)   // FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-015
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
@@ -704,6 +707,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         RadialBlurSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-008: off
         EchoSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-010: off
         MosaicSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-012: off
+        VignetteSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-015: off
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
@@ -768,6 +772,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectRadialBlur()   // FX-008
         connectEcho()   // FX-010
         connectMosaic()   // FX-012
+        connectVignette()   // FX-015
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
         manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
@@ -1352,6 +1357,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.compositor.mosaic = mosaic.mosaic   // FX-012
+            host.compositor.vignette = vignette.vignette   // FX-015
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1404,6 +1410,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.compositor.mosaic = mosaic.mosaic   // FX-012
+            host.compositor.vignette = vignette.vignette   // FX-015
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1468,6 +1475,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.compositor.mosaic = mosaic.mosaic   // FX-012
+            host.compositor.vignette = vignette.vignette   // FX-015
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1529,6 +1537,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.compositor.mosaic = mosaic.mosaic   // FX-012
+            host.compositor.vignette = vignette.vignette   // FX-015
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1866,7 +1875,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
                                               chromatic: chromaticSplit, directionalBlur: directionalBlur,
                                               radialBlur: radialBlur, echo: echoFeedback,
-                                              mosaic: mosaic)   // FX-020, FX-006, FX-007, FX-008, FX-010, FX-012
+                                              mosaic: mosaic, vignette: vignette)   // FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-015
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8

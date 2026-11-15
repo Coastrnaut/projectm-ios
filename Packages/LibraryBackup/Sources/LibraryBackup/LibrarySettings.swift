@@ -103,6 +103,8 @@ public enum LibrarySettingsPolicy {
         "settings.radialBlur.enabled", "settings.radialBlur.strength", "settings.radialBlur.centerX", "settings.radialBlur.centerY",   // FX-008-R9
         "settings.echo.enabled", "settings.echo.count", "settings.echo.delay", "settings.echo.decay",   // FX-010-R13
         "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   // FX-012-R9
+        "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   // FX-015-R9
+        "settings.vignette.centerX", "settings.vignette.centerY",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9

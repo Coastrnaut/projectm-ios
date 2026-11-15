@@ -53,15 +53,15 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   `VignetteSceneGoldenTests` (intensity 0 and off render exactly as no chain; a vignette scene saved and reloaded
   renders the same picture, darker at the corners, centre unchanged); update `EffectChainSceneTests` if it lists the
   order (FX-015-S1, S5) — Verified 2026-11-15: RenderGoldens suite 115 tests, 0 failures (1 on-demand skip), 33.9 s wall incl. build; VignetteSceneGoldenTests 2/2
-- [ ] FX-015-T10 [US1] [US3] App setting: `VignetteSetting` (five keys, "absent or malformed → default, out of range →
+- [X] FX-015-T10 [US1] [US3] App setting: `VignetteSetting` (five keys, "absent or malformed → default, out of range →
   nearest bound"), `AppCoordinator+Vignette.swift`, the compositor pushes in `AppCoordinator.swift`, the UI-test
   reset, scene and preset apply (`SceneAutosaveCapture`, `AppCoordinator+EffectChain`, `+SceneHistory`), keys in
   `LibrarySettings.swift`, `scripts/run_device_tests.py`, `LibraryBackupAppTests`, `LibraryEraseAppTests`
-  (FX-015-R1, R9)
-- [ ] FX-015-T11 [US1] [US3] UI: `VignetteSection.swift` (toggle, four ACC-005 sliders, help text) in Settings, the
+  (FX-015-R1, R9) — Verified 2026-11-15: own iOS 27.2 simulator (FX15): VignetteSettingTests 5/5, LibraryBackupAppTests and LibraryEraseAppTests pass, SettingsTests pass (53 app tests in 10 suites, 0 failures, 2.5 s)
+- [X] FX-015-T11 [US1] [US3] UI: `VignetteSection.swift` (toggle, four ACC-005 sliders, help text) in Settings, the
   Effect order row and name in `EffectChainSetting`/`EffectChainView`; `VignetteSettingTests` (persistence with a
   reloaded store, clamping, scene apply); update the order tests that list every kind; `VignetteUITests` under 30 s
-  (FX-015-R8, S6)
+  (FX-015-R8, S6) — Verified 2026-11-15: VignetteUITests.testVignetteControls passed in 18.3 s; EffectChainSettingTests and the Chromatic/Directional/Radial/Echo/Mosaic setting tests pass with Vignette appended
 
 ## Phase 5: Polish
 
