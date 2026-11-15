@@ -11,7 +11,7 @@
 // × the guard's gain) and `FrameColorConversion.rgba8` (8-bit sRGB, straight alpha). Every layer must
 // have rendered its own picture on a captured frame, or the run fails.
 // FX-020: a scene's `effects` list sets the compositor's output effect order, colour grade and Trails (and FX-006's
-// chromatic split)
+// chromatic split, FX-008's radial blur)
 // (`apply(effects:to:)`); without one the compositor keeps its defaults (Trails off, neutral grade), as before.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import AnalysisFeatures
@@ -198,6 +198,7 @@ public final class GoldenSceneRenderer {
         if let grade = effects.grade { compositor.colorGrade = (effects.gradeEnabled ?? true) ? grade : .neutral }
         if let trails = effects.trails { compositor.motionFeedback = trails }
         if let chromatic = effects.chromatic { compositor.chromaticSplit = chromatic }   // FX-006
+        if let blur = effects.radialBlur { compositor.radialBlur = blur }   // FX-008
     }
 }
 #endif

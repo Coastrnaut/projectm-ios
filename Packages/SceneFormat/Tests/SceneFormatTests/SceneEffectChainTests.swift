@@ -44,7 +44,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again, document)
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
-        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic])   // FX-006 appended
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .radialBlur])   // FX-006, FX-008 appended
         XCTAssertEqual(settings.grade, ColorGrade(gamma: 1.6, saturation: 0.4))
         XCTAssertEqual(settings.trails, MotionFeedback(isEnabled: true, halfLifeSeconds: 0.3))
         XCTAssertFalse(settings.isDefault)
@@ -84,7 +84,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.chromatic, split)
-        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade])
+        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade, .radialBlur])
         let wild = SceneEffectEntry(kind: "fx.chromatic", enabled: false, parameters: ["amount": .double(1), "angle": .string("up")])
         let read = SceneEffectSettings.read([trails, grade, wild])
         XCTAssertEqual(read.settings.chromatic, ChromaticSplit(isEnabled: false, amount: 0.02, angleDegrees: 0))
@@ -96,8 +96,37 @@ final class SceneEffectChainTests: XCTestCase {
 
     func testFX020ListsReadWithTheSplitLastAndUntouched() throws {
         let settings = SceneEffectSettings.read([grade, trails]).settings
-        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic])
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .radialBlur])
         XCTAssertNil(settings.chromatic, "no entry: the current split stays")
+        XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
+    }
+
+    // MARK: FX-008 radial blur (FX-008-R10, S5)
+
+    func testRadialBlurEntryRoundTripsAndIsClamped() throws {
+        let blur = RadialBlur(isEnabled: true, strength: 0.2, focusX: 0.25, focusY: 0.75)
+        let live = SceneEffectSettings(order: OutputEffectOrder([.radialBlur, .trails, .grade, .chromatic]), radialBlur: blur)
+        XCTAssertFalse(live.isDefault)
+        let document = try minimal(live.entries(over: nil))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.encoded(), document.encoded())
+        let settings = try XCTUnwrap(again.effectSettings)
+        XCTAssertEqual(settings.radialBlur, blur)
+        XCTAssertEqual(settings.order.effects, [.radialBlur, .trails, .grade, .chromatic])
+        let wild = SceneEffectEntry(kind: "fx.radialBlur", enabled: true,
+                                    parameters: ["strength": .double(4), "focusX": .string("left"), "focusY": .double(-1)])
+        let read = SceneEffectSettings.read([trails, wild])
+        XCTAssertEqual(read.settings.radialBlur, RadialBlur(isEnabled: true, strength: 0.25, focusX: 0.5, focusY: 0))
+        XCTAssertEqual(read.issues.map(\.path), ["$.effects[1].parameters.strength", "$.effects[1].parameters.focusX",
+                                                 "$.effects[1].parameters.focusY"])
+        XCTAssertTrue(SceneEffectSettings(radialBlur: RadialBlur(isEnabled: false, strength: 0.25)).isDefault,
+                      "a disabled blur is the default, so nothing is saved")
+    }
+
+    func testOlderListsReadWithTheBlurLastAndUntouched() throws {
+        let settings = SceneEffectSettings.read([grade, trails]).settings
+        XCTAssertEqual(settings.order.effects.last, .radialBlur)
+        XCTAssertNil(settings.radialBlur, "no entry: the current blur stays")
         XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
     }
 

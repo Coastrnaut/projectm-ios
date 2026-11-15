@@ -4,7 +4,7 @@
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
-// `fx.chromatic`) gives that effect's
+// `fx.chromatic`, FX-008's `fx.radialBlur`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
@@ -82,14 +82,17 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var trails: MotionFeedback?
     /// FX-006 (ADR-0104): `isEnabled` is the entry's flag.
     public var chromatic: ChromaticSplit?
+    /// FX-008 (ADR-0107): `isEnabled` is the entry's flag.
+    public var radialBlur: RadialBlur?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
-                chromatic: ChromaticSplit? = nil) {
+                chromatic: ChromaticSplit? = nil, radialBlur: RadialBlur? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
         self.trails = trails
         self.chromatic = chromatic
+        self.radialBlur = radialBlur
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -109,13 +112,20 @@ public struct SceneEffectSettings: Sendable, Equatable {
         SceneEffectParameter(name: "angle", range: ChromaticSplit.angleRange, fallback: ChromaticSplit.defaultAngle),
         SceneEffectParameter(name: "radial", range: 0...1, fallback: 0),
     ]
+    /// FX-008: strength and the focus (fractions of the frame).
+    static let radialBlurParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "strength", range: RadialBlur.strengthRange, fallback: RadialBlur.defaultStrength),
+        SceneEffectParameter(name: "focusX", range: RadialBlur.focusRange, fallback: RadialBlur.defaultFocus),
+        SceneEffectParameter(name: "focusY", range: RadialBlur.focusRange, fallback: RadialBlur.defaultFocus),
+    ]
 
     /// Standard order, Trails off (or absent), Color on and neutral (or absent): nothing to save (research FX-020-D7).
     public var isDefault: Bool {
         let trailsOff: Bool = !(trails?.isEnabled ?? false)
         let gradeNeutral: Bool = grade?.isNeutral ?? true
         let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
-        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff
+        let radialBlurOff: Bool = !(radialBlur?.isEnabled ?? false)   // FX-008
+        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && radialBlurOff
     }
 
     // MARK: Reading
@@ -147,6 +157,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .chromatic:   // FX-006
                     let v = values(entry, chromaticParameters, path, &issues)
                     settings.chromatic = ChromaticSplit(isEnabled: entry.enabled, amount: v[0], angleDegrees: v[1], isRadial: v[2] >= 0.5)
+                case .radialBlur:   // FX-008
+                    let v = values(entry, radialBlurParameters, path, &issues)
+                    settings.radialBlur = RadialBlur(isEnabled: entry.enabled, strength: v[0], focusX: v[1], focusY: v[2])
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -224,6 +237,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.parameters["amount"] = .double(c.amount)
             entry.parameters["angle"] = .double(c.angleDegrees)
             entry.parameters["radial"] = .double(c.isRadial ? 1 : 0)
+        case .radialBlur:   // FX-008
+            guard let r = radialBlur else { return stored }
+            entry.enabled = r.isEnabled
+            entry.parameters["strength"] = .double(r.strength)
+            entry.parameters["focusX"] = .double(r.focusX)
+            entry.parameters["focusY"] = .double(r.focusY)
         }
         return entry
     }
