@@ -41,6 +41,14 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: Beat phase? → A: Start sets the next pulse to position 0 (a downbeat); Song Position (in sixteenths, 6 pulses each) received before Continue sets the position Continue resumes from; Continue without one resumes counting. Every 24th position is a beat; the anchor given to the tempo snapshot is the fitted time of the latest beat pulse. A clock that never sent Start or Continue gives a BPM without phase.
 - Q: What does the status row show? → A: "MIDI clock: 120.0 BPM" while locked, "MIDI clock: stopped" after Stop, "MIDI clock: out of range", "No MIDI clock" otherwise, and nothing extra while the toggle is off. The tempo readout's source becomes "MIDI clock" ("120 BPM, MIDI clock" spoken).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: Does Start or Stop from the clock source also start or pause the show? → A: No. Following the clock only sets the tempo and beat phase; MIDI-008's learned `rt:start` / `rt:stop` rows stay the only way MIDI Start/Stop act on the show (no hidden second mapping).
+- Q: Does following the clock need "Listen for MIDI devices" on? → A: Yes. The clock is read through MIDI-002's shared input, which receives only while discovery listens and the app is active; with listening off the status row says "Turn on Listen for MIDI devices" and the tempo is unchanged.
+- Q: How does the tempo readout show the clock? → A: As its own source: "120 BPM" with state "MIDI clock", spoken "120 BPM, MIDI clock"; the scene HUD names the source "MIDI clock"; the Reset button stays hidden while the clock sets the tempo (Reset clears only a tapped tempo). Consumers that accept a manual or stable tempo (beat grid, slideshow) treat the clock like a manual tempo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The show follows a drum machine's tempo (Priority: P1)
@@ -87,7 +95,8 @@ A performer connects a drum machine or DAW that sends MIDI clock, turns on "Foll
 - **MIDI-010-R3**: The tracker MUST lose lock after 0.5 s without a pulse or on Stop, ignore pulses after Stop until Start/Continue, and ignore tempos outside 20–300 BPM.
 - **MIDI-010-R4**: The tracker MUST count positions from Start (0), Song Position + Continue, or Continue, and give the fitted time of the latest beat (position multiple of 24) as the beat anchor.
 - **MIDI-010-R5**: The tempo snapshot MUST report a locked clock (toggle on) with origin MIDI clock, outranking tap and estimate, and fall back to tap, else estimate, when the clock is lost or the toggle turned off.
-- **MIDI-010-R6**: Settings → MIDI MUST offer "Follow MIDI clock" (off by default, stored as `settings.midi.followClock`) and, while on, a status row with the clock's state.
+- **MIDI-010-R6**: Settings → MIDI MUST offer "Follow MIDI clock" (off by default, stored as `settings.midi.followClock`) and, while on, a status row with the clock's state ("Turn on Listen for MIDI devices" while listening is off).
+- **MIDI-010-R9**: The tempo readout, its spoken value and the scene HUD MUST name the source "MIDI clock"; consumers that accept a manual tempo accept the clock the same way; MIDI Start/Stop act on the show only through MIDI-008 mappings.
 - **MIDI-010-R7**: A tap while the clock sets the tempo MUST announce "MIDI clock is setting the tempo" on the tempo's announcement path.
 - **MIDI-010-R8**: The model MUST build and pass its tests on Linux; no permission, usage string or network API; the one new key is listed in every settings-key list.
 
