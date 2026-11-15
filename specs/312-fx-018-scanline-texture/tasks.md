@@ -73,8 +73,8 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
   RenderGoldens), the Linux-shape build of the model, the app's `SettingsTests`, backup and erase tests — Verified 2026-11-15: six repo checks OK (test_scripts 186 tests OK), check_privacy_manifest OK and check_network_symbols OK on the Debug app; Compositor 787, SceneFormat 226, LibraryBackup 88, RenderGoldens 128 (0 failures); Linux-shape model tests 10/10; app SettingsTests, backup and erase tests pass
 - [X] FX-018-T13 Type-check budget on the new app files (`-warn-long-function-bodies=300`,
   `-warn-long-expression-type-checking=150`), no warnings from the new files — Verified 2026-11-15: build-for-testing with -warn-long-function-bodies=300 -warn-long-expression-type-checking=150: no warning in any new or FX-018-edited body (existing bodies near 300 ms under load listed in the report)
-- [ ] FX-018-T14 Test report `docs/test-reports/scanline-texture.md`; spec status Implemented
-- [ ] FX-018-T15 Own simulator and derived data deleted; PosterBoard reports counted before and after (in the report)
+- [X] FX-018-T14 Test report `docs/test-reports/scanline-texture.md`; spec status Implemented — Verified 2026-11-15: docs/test-reports/scanline-texture.md; spec status Implemented; validate_docs OK
+- [X] FX-018-T15 Own simulator and derived data deleted; PosterBoard reports counted before and after (in the report) — Verified 2026-11-15: xcrun simctl delete of "FX18 iPhone 17" and rm of the worktree derived data and Linux-shape scratch path; PosterBoard reports 25 before, 25 after (in the report)
 - [ ] FX-018-T16 {device} On D1, Photo visual: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations:
   even lines, no crawl or flicker; frame rate with and without it (FX-018-S6)
 
