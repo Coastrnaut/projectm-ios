@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T08:14:51Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T08:18:09Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 11 |
-| implementing | 1 |
-| unit_passed | 1 |
-| integrated | 312 |
+| audited | 9 |
+| implementing | 3 |
+| integrated | 313 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 5 | 1 | 1 | 72 | 0 |
-| P3 | 4 | 0 | 0 | 5 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 151 | 0 |
+| P2 | 3 | 3 | 73 | 0 |
+| P3 | 4 | 0 | 5 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 13 features are not implemented yet (first: FX-011, FX-014, FX-015, FX-016, FX-017)
+- 12 features are not implemented yet (first: FX-011, FX-014, FX-015, FX-016, FX-017)
 
 ## Integrated
 
@@ -327,6 +326,7 @@ The physical-device suite may **not** start:
 | UIX-011 | Color palette picker | `99cce200` | `feature/uix-011` |
 | UIX-012 | Touch color sampler | `43946dd31960` | `feature/uix-012` |
 | UIX-013 | Scene performance HUD | `89ef6bce` | `feature/uix-013` |
+| UIX-014 | Offline help browser | `3e1376fb` | `feature/uix-014` |
 | UIX-015 | Onboarding permission explainer | `ae498579` | `feature/uix-015` |
 | VIS-001 | Circular spectrum | `48285d49c422` | `feature/vis-001` |
 | VIS-002 | Linear spectrum | `c2b2f75c11bb` | `feature/vis-002` |
@@ -3600,11 +3600,13 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `a0d884722a9a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-013/20261114T180242/swift-test_LibraryBackup.log`)
 - `post-merge batch76: LibraryBackup 83, projectM-iOSTests 1071, UI 5 (scene HUD 3, snapshot batch export, scene compare)`: pass at `a6c0a5ef` (log `.autonomous/logs/integration/batch76/app-tests.log`)
 
-### UIX-014 Offline help browser (unit_passed)
+### UIX-014 Offline help browser (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f7959b28ff82` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-014/20261115T031338/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `f7959b28ff82` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-014/20261115T031338/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `f7959b28ff82` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-014/20261115T031338/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `f7959b28ff82` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-014/20261115T031338/autonomous-tests.log`)
+- `test_scripts 186 OK; check_compliance OK; validate_docs OK`: pass at `3e1376fb`
+- `postmerge batch139: projectM-iOSTests 1349, HelpBrowserUITests 2`: pass at `3e1376fb` (log `.autonomous/logs/integration/batch139.txt`)
 
 ### UIX-015 Onboarding permission explainer (integrated)
 - `python3 scripts/check_compliance.py`: pass at `4f7b3b7b8790` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-015/20261114T021007/compliance.log`)

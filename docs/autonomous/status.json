@@ -14,10 +14,9 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 5,
-   "implementing": 1,
-   "integrated": 72,
-   "unit_passed": 1
+   "audited": 3,
+   "implementing": 3,
+   "integrated": 73
   },
   "P3": {
    "audited": 4,
@@ -25,11 +24,10 @@
   }
  },
  "by_state": {
-  "audited": 11,
-  "implementing": 1,
-  "integrated": 312,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 9,
+  "implementing": 3,
+  "integrated": 313,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -46,14 +44,13 @@
    "OUT-008",
    "QA-011",
    "QA-012",
-   "UIX-014",
    "VIS-017",
    "VIS-018",
    "VIS-019"
   ],
   "phase": "implementation",
   "reasons": [
-   "13 features are not implemented yet (first: FX-011, FX-014, FX-015, FX-016, FX-017)"
+   "12 features are not implemented yet (first: FX-011, FX-014, FX-015, FX-016, FX-017)"
   ]
  },
  "features": {
@@ -1189,13 +1186,13 @@
   },
   "FX-015": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-015",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FX-016": {
    "attempts": 0,
@@ -3102,10 +3099,10 @@
    "branch": "feature/uix-014",
    "branch_sha": "f7959b28ff822ad2a0727dcbb727f0b4d2673231",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "3e1376fb",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "UIX-015": {
    "attempts": 0,
@@ -3285,7 +3282,7 @@
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-018": {
    "attempts": 0,
@@ -4790,6 +4787,11 @@
    "sha": "89ef6bce"
   },
   {
+   "branch": "feature/uix-014",
+   "id": "UIX-014",
+   "sha": "3e1376fb"
+  },
+  {
    "branch": "feature/uix-015",
    "id": "UIX-015",
    "sha": "ae498579"
@@ -4905,5 +4907,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T08:14:51Z"
+ "updated": "2026-11-15T08:18:09Z"
 }
