@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MED-012-T01-T13 verified on the Mac host, the Linux shape and the iOS 27.2 simulator; device task T14 `{device}` open; report `docs/test-reports/countdown-overlay.md`)
 
 **Input**: User description: "Implement MED-012 (Countdown overlay) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Render a timer controlled by
