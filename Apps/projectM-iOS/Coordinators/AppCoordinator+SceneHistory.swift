@@ -39,7 +39,7 @@ extension AppCoordinator {
         }
         if let effects = inputs.effects {   // FX-020: order, Color and Trails
             SceneAutosaveCapture.applyEffects(effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
-                                              directionalBlur: directionalBlur)
+                                              directionalBlur: directionalBlur, echo: echoFeedback)
         }
         macros.restore(inputs.macros)   // MOD-010: the macro values (targets come back with the settings above)
         modulationMatrix.restore(inputs.bindings)   // MOD-012: the routes' order and on/off

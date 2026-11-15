@@ -55,21 +55,21 @@ round trip, app and UI tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI te
 
 ## Phase 5: App (P2)
 
-- [ ] FX-010-T11 [US1] `EchoSetting` in `Apps/projectM-iOS/Coordinators/EchoSetting.swift` (keys
+- [X] FX-010-T11 [US1] `EchoSetting` in `Apps/projectM-iOS/Coordinators/EchoSetting.swift` (keys
   `settings.echo.enabled`, `.count`, `.delay`, `.decay`; written only when changed; clamped on read) and
   `AppCoordinator+Echo.swift` (effective value under ACC-012); wire in `AppCoordinator.swift` (init, connect, the four
   hosts, `applyReduceFlashing`, UI-test reset), `AppCoordinator+EffectChain.swift`, `AppCoordinator+SceneHistory.swift`,
-  `SceneAutosaveCapture.swift` (FX-010-R1, R10, R13)
-- [ ] FX-010-T12 [US1] `EchoSection` in `Apps/projectM-iOS/Views/EchoSection.swift` (toggle, ACC-005 Echoes, Delay and
+  `SceneAutosaveCapture.swift` (FX-010-R1, R10, R13) — Verified 2026-11-15: EchoSettingTests 5/5 on the own iOS 27.2 simulator; app unit tests 1316, 1 failure (ExternalDisplayCoordinatorTests.testInfoPlistConfiguresOnlyTheExternalDisplayRole, pre-existing from UIX-008 multi-window, unrelated)
+- [X] FX-010-T12 [US1] `EchoSection` in `Apps/projectM-iOS/Views/EchoSection.swift` (toggle, ACC-005 Echoes, Delay and
   Fade sliders) beside the Directional blur section in `SettingsView.swift`; Effect order row and name in
-  `EffectChainView.swift` and `EffectChainSetting.swift`; section id in `UITestSettingsSection.swift` (FX-010-R12)
-- [ ] FX-010-T13 [US1] Keys in `LibrarySettingsPolicy.includedKeys` (`LibrarySettings.swift`), `ALLOWED_KEYS`
-  (`scripts/run_device_tests.py`), `LibraryBackupAppTests` and `LibraryEraseAppTests` key lists (FX-010-R13)
-- [ ] FX-010-T14 [US1] `EchoSettingTests` in `Apps/projectM-iOS/Tests/` (defaults, persistence, clamp incl. count
+  `EffectChainView.swift` and `EffectChainSetting.swift`; section id in `UITestSettingsSection.swift` (FX-010-R12) — Verified 2026-11-15: EchoUITests 1/1 (19.0 s) and EffectChainUITests (Echo row present, 15.5 s) on the own simulator; type-check run shows no FX-010 warning (the one EffectChainView.swift:21 warning also appears on the commit before the app change)
+- [X] FX-010-T13 [US1] Keys in `LibrarySettingsPolicy.includedKeys` (`LibrarySettings.swift`), `ALLOWED_KEYS`
+  (`scripts/run_device_tests.py`), `LibraryBackupAppTests` and `LibraryEraseAppTests` key lists (FX-010-R13) — Verified 2026-11-15: LibraryBackupAppTests 5/5, LibraryEraseAppTests 3/3, SettingsTests 9/9 on the simulator; LibraryBackup package 88 pass; test_scripts 186 OK
+- [X] FX-010-T14 [US1] `EchoSettingTests` in `Apps/projectM-iOS/Tests/` (defaults, persistence, clamp incl. count
   > 4, readouts, ACC-012 effective value, scene and preset round trip through the app paths, a real host's compositor);
-  run `LibraryBackupAppTests`, `LibraryEraseAppTests`, `SettingsTests`, `EffectChainSettingTests`
-- [ ] FX-010-T15 [US1] `EchoUITests` in `Apps/projectM-iOS/UITests/` (off by default, turn on, readouts, drag Echoes to
-  4; under 30 s) and the Effect order row check in `EffectChainUITests` (FX-010-S6)
+  run `LibraryBackupAppTests`, `LibraryEraseAppTests`, `SettingsTests`, `EffectChainSettingTests` — Verified 2026-11-15: EchoSettingTests 5/5, EffectChainSettingTests 6/6, ChromaticSplitSettingTests, DirectionalBlurSettingTests 5/5, LibraryBackupAppTests, LibraryEraseAppTests, SettingsTests pass
+- [X] FX-010-T15 [US1] `EchoUITests` in `Apps/projectM-iOS/UITests/` (off by default, turn on, readouts, drag Echoes to
+  4; under 30 s) and the Effect order row check in `EffectChainUITests` (FX-010-S6) — Verified 2026-11-15: EchoUITests.testEchoControls passed (18.99 s), EffectChainUITests.testReorderEffects passed (15.50 s)
 
 ## Phase 6: Polish
 

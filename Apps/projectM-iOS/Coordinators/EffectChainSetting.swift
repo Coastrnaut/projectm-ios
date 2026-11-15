@@ -73,6 +73,7 @@ final class EffectChainSetting {
         case .grade: "Color"
         case .chromatic: "Chromatic split"   // FX-006
         case .directionalBlur: "Directional blur"   // FX-007
+        case .echo: "Echo"   // FX-010
         }
     }
 

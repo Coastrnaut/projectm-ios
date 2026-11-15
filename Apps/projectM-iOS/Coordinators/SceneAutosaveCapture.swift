@@ -293,19 +293,19 @@ enum SceneAutosaveCapture {
     @MainActor
     static func applyEffects(_ entries: [SceneEffectEntry]?, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
-                             directionalBlur: DirectionalBlurSetting? = nil) {
+                             directionalBlur: DirectionalBlurSetting? = nil, echo: EchoSetting? = nil) {
         guard let entries else {
             chain.order = .standard
             return
         }
         applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic,
-                     directionalBlur: directionalBlur)
+                     directionalBlur: directionalBlur, echo: echo)
     }
 
     @MainActor
     static func applyEffects(_ settings: SceneEffectSettings, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
-                             directionalBlur: DirectionalBlurSetting? = nil) {
+                             directionalBlur: DirectionalBlurSetting? = nil, echo: EchoSetting? = nil) {
         chain.order = settings.order
         if let g = settings.grade {
             if grade.temperature != g.temperature { grade.temperature = g.temperature }
@@ -324,6 +324,7 @@ enum SceneAutosaveCapture {
         }
         if let c = settings.chromatic { chromatic?.apply(c) }   // FX-006
         if let b = settings.directionalBlur { directionalBlur?.apply(b) }   // FX-007
+        if let e = settings.echo { echo?.apply(e) }   // FX-010
     }
 
     /// The seven app-held values as MOD-001 values.

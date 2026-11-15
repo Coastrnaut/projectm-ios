@@ -70,7 +70,7 @@ final class ChromaticSplitSettingTests: XCTestCase {
                                                        "settings.chromatic.angle", "settings.chromatic.radial"])
         let included = Set(LibrarySettingsPolicy.includedKeys)
         for key in ChromaticSplitSetting.allKeys { XCTAssertTrue(included.contains(key), "\(key) is backed up and erased") }
-        XCTAssertEqual(EffectChainSetting.summary(.standard), "Trails \u{2192} Color \u{2192} Chromatic split \u{2192} Directional blur")
+        XCTAssertEqual(EffectChainSetting.summary(.standard), "Trails \u{2192} Color \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Echo")
     }
 
     func testSceneAndPresetRoundTripThroughTheAppPaths() {

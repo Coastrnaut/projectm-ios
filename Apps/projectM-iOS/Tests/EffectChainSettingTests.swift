@@ -31,7 +31,7 @@ final class EffectChainSettingTests: XCTestCase {
             chain.order = .standard
             XCTAssertNil(defaults.object(forKey: EffectChainSetting.orderKey))
             XCTAssertEqual(reported, [colorFirst, .standard])
-            XCTAssertEqual(EffectChainSetting.summary(colorFirst), "Color \u{2192} Trails \u{2192} Chromatic split \u{2192} Directional blur")
+            XCTAssertEqual(EffectChainSetting.summary(colorFirst), "Color \u{2192} Trails \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Echo")
         }
     }
 

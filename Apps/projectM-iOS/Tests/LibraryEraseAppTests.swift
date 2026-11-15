@@ -47,6 +47,7 @@ final class LibraryEraseAppTests: XCTestCase {
         let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys + EffectChainSetting.allKeys
             + ChromaticSplitSetting.allKeys   // FX-006
             + DirectionalBlurSetting.allKeys   // FX-007
+            + EchoSetting.allKeys   // FX-010
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, VideoStore.idKey, VideoStore.loopKey, TextOverlayStore.key,
                RecordingAudioSetting.includeMicrophoneKey]   // REC-004-R3

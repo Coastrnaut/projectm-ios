@@ -98,6 +98,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.chromatic.radial",
                 "settings.directionalBlur.enabled", "settings.directionalBlur.radius",   # FX-007-R10
                 "settings.directionalBlur.angle",
+                "settings.echo.enabled", "settings.echo.count", "settings.echo.delay",   # FX-010-R13
+                "settings.echo.decay",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
