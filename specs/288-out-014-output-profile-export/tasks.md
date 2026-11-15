@@ -27,7 +27,7 @@
 **Independent test**: export, reset, import on the stand-in: values, `sublayerTransform` and calibration equal the originals; different class warns.
 
 - [ ] OUT-014-T08 [US2] Import: security-scoped read of at most 16 KB + 1, decode, match, apply or hold as pending; Apply Anyway / Cancel in Apps/projectM-iOS/Coordinators/OutputProfileCoordinator.swift
-- [ ] OUT-014-T09 [US2] App acceptance tests (round trip on the stand-in without warning; 1280 × 720 stand-in warns, Cancel changes nothing, Apply Anyway applies; calibration ranges equal `DisplayCalibration`'s; leak test: no device name, identifierForVendor, display id, UUID, IPv4 or MAC in the file; no new UserDefaults keys) in Apps/projectM-iOS/Tests/OutputProfileAppTests.swift
+- [ ] OUT-014-T09 [US2] App acceptance tests (round trip on the stand-in without warning; 1280 × 720 stand-in warns, Cancel changes nothing, Apply Anyway applies; no display connected applies with the "could not be checked" message (OUT-014-R9); export then cancel leaves no temporary file (OUT-014-R4); calibration ranges equal `DisplayCalibration`'s; leak test: no device name, identifierForVendor, display id, UUID, IPv4 or MAC in the file; no new UserDefaults keys) in Apps/projectM-iOS/Tests/OutputProfileAppTests.swift
 
 ## Phase 5: User Story 3 — bad files (P2)
 
@@ -50,3 +50,11 @@ T03 alongside T04/T05 (different files). T09/T10 and T11 build once, run separat
 ## Implementation strategy
 
 MVP = Phases 2-4 (the roadmap acceptance). US3's rules live in C1 already; T10 proves them in the app.
+
+## Analyze (2026-11-15)
+
+speckit-analyze: 0 critical, 0 high. Applied: C1 (MEDIUM) OUT-014-R9's unknown-class path had no test → added to
+T09; C2 (MEDIUM) R4's "removes its temporary copy" had no assertion → added to T09. Noted, not changed: E1 (LOW) the
+recording-hold edge case reuses the setting's existing behaviour (covered by OUT-003/004/007/009 tests). Coverage
+R1-R10: 100 % (R1 T07; R2 T02, T05, T06; R3 T09; R4 T06, T09; R5 T02, T08; R6 T08, T10; R7 T05, T08, T09; R8 T08, T09;
+R9 T08, T09; R10 T03, T09). Constitution: no conflict.
