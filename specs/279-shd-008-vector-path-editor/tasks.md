@@ -57,3 +57,13 @@ Parallel: T03, T05, T09, T10, T13, T15 (separate test files).
 
 MVP = T02-T05 (validated model + editing model): proves the "rejects self-intersecting" half. Then US2 (the
 saved-path half and the mask), then US3, then app/UI tests and polish.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+| ID | Category | Severity | Finding | Fix applied |
+|---|---|---|---|---|
+| U1 | Underspecification | MEDIUM | R3 did not say whether a tap adds points to a closed path, nor what "Start over" keeps (research D8 did). | R3 now says taps add only while drawing and the last closed path stays in use until the new one closes. |
+| C1 | Coverage | LOW | Every requirement R1-R9 and S1-S5 maps to at least one task (R1-R2 T02-T03; R3 T04-T06; R4 T06; R5 T07, T10; R6 T08-T09; R7-R8 T12-T13; R9 T11, T14; S5 T16). | None needed. |
+| K1 | Constitution | — | No conflict: VII (no allocation in spawn) is covered by T02's precomputed triangulation and T12; X by the test tasks and the open `{device}` task T18. | None needed. |
+
+Metrics: 9 requirements, 5 success criteria, 18 tasks, 100 % coverage, 0 critical issues.

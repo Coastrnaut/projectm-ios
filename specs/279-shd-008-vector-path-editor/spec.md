@@ -149,8 +149,9 @@ polygon, the spawn count equals the SHD-007 formula, two runs are identical.
   fewer than 3 or more than 32 points; equal consecutive points (including last→first); absolute area at or
   below the minimum; any intersection between two non-adjacent edges, any touch of a vertex on a
   non-adjacent edge, and any collinear overlap of edges (adjacent edges included).
-- **SHD-008-R3**: Editing: add a point (tap), move a point (drag or nudge), delete a point, close the
-  path. Before closing, the draft may be invalid and an inline message states the reason; Close is
+- **SHD-008-R3**: Editing: add a point (tap, while drawing only), move a point (drag or nudge), delete a
+  point, close the path, and start over (a new drawing; the last closed path stays in use until the new one
+  closes). Before closing, the draft may be invalid and an inline message states the reason; Close is
   available only for a valid draft. After closing, an edit that would make the path invalid is refused, the
   last valid path is kept and the message states why.
 - **SHD-008-R4**: Accessibility: every point is one VoiceOver element ("Point 2", value with its position)
