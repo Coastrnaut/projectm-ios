@@ -13,8 +13,8 @@ coordinates"), so test tasks are included. Budgets (owner rule 7): unit tests �
 
 ## Phase 2: Foundational (blocking)
 
-- [ ] OUT-003-T02 Create `ExternalResolutionMode` (`native`, `1080p`, `720p`, `custom`), `ExternalOutputResolution` (mode, percent "clamped to 50…100; default 75"), `ExternalPixelBudget` (maxSide ≥ 2, maxPixels ≥ 4, `.unlimited`) and `ResolvedExternalOutput` with `resolve(width:height:nativeScale:budget:)` per contract C1 in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/ExternalOutputResolution.swift`.
-- [ ] OUT-003-T03 [P] Tests for C1 (OUT-003-S1): 4K/1080p/720p screens × the four choices × compact and regular budgets (representative cases), portrait screen, never upscaled, shape within one pixel, clamp flag, invalid input, percent clamping, in `Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/ExternalOutputResolutionTests.swift`.
+- [X] OUT-003-T02 Create `ExternalResolutionMode` (`native`, `1080p`, `720p`, `custom`), `ExternalOutputResolution` (mode, percent "clamped to 50…100; default 75"), `ExternalPixelBudget` (maxSide ≥ 2, maxPixels ≥ 4, `.unlimited`) and `ResolvedExternalOutput` with `resolve(width:height:nativeScale:budget:)` per contract C1 in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/ExternalOutputResolution.swift`. — Verified 2026-11-14: OUT-003-T03 tests.
+- [X] OUT-003-T03 [P] Tests for C1 (OUT-003-S1): 4K/1080p/720p screens × the four choices × compact and regular budgets (representative cases), portrait screen, never upscaled, shape within one pixel, clamp flag, invalid input, percent clamping, in `Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/ExternalOutputResolutionTests.swift`. — Verified 2026-11-14: `swift test --package-path Packages/PresentationLifecycle` 92 tests, 0 failures (9 new, 0.002 s).
 
 ## Phase 3: User Story 1 + 2 — safe output pixels, same scene (P1)
 
