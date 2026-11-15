@@ -15,7 +15,7 @@
 ## Phase 3: User Stories 1, 2, 4 on Metal (R1, R6 to R8, R11, R14; S1 to S5)
 
 - [ ] VIS-019-T05 [US1] Mode `.cymatic` in `NoiseFieldGenerator` (pipeline, drive, flash sampling, 40-float block at buffer 1, entry points `vis_cym_fragment` and test-only `vis_cym_mask_fragment`, restart, re-entry) and `NoiseFieldFlashAreas.sampleCymatic`.
-- [ ] VIS-019-T06 [US1] [US2] [US4] `CymaticRenderTests` (GPU): two tone frames' GPU nodal masks differ ≥ 10% and agree with the CPU mirror's mask away from the threshold; tone then 1 s silence gives a frame bit-identical to a fresh generator's silent frame (gain 1); two renders identical; extreme bands and times render finite in 0…1; a range change applies in place; entering the mode and a loop restart reset to rest.
+- [ ] VIS-019-T06 [US1] [US2] [US4] `CymaticRenderTests` (GPU): two tone frames' GPU nodal masks differ ≥ 10% and agree with the CPU mirror's mask away from the threshold; tone then 1 s silence gives a frame bit-identical to a fresh generator's silent frame (gain 1); two renders identical; extreme bands and times render finite in 0…1; a size-0 target draws nothing and a landscape target centres the plate on the shorter side; a range change applies in place; entering the mode and a loop restart reset to rest.
 - [ ] VIS-019-T07 [US4] `CymaticFlashTests`: bursts alternating with silence stay within the transition budget in all 17 areas, Reduce flashing on and off, portrait and landscape with the strongest glow; sample colours ≤ 0.8.
 - [ ] VIS-019-T08 [US1] `CymaticGoldenTests` + goldens in `Packages/RenderGoldens` (macOS host, iOS Simulator); README entry.
 
@@ -38,3 +38,14 @@ T01, T02 → T03 → T04; T03 → T05 → T06, T07, T08, T09 → T10, T11; all �
 
 MVP = T01-T04 (the acceptance proven on the CPU mirror with real ANL-002 tones), then the GPU proof (T05-T08), then
 the app (T09-T11).
+
+## Analyze notes (speckit-analyze, 2026-11-15)
+
+- Coverage: R1 T05; R2 T01, T04; R3 T02, T04; R4 T02, T04, T06; R5 T02, T04; R6 T04, T06, T08; R7 T04, T06; R8 T07;
+  R9 T04; R10 T09-T11; R11 T08; R12 T09, T10; R13 T09-T11; R14 T12. S1 T04, T06; S2 T04, T06; S3 T06, T08; S4 T04,
+  T06; S5 T07; S6 T10, T11; S7 T12. No constitution conflict (no new compile site, no dependency, no networking,
+  nothing reaches projectM; bands come from ANL-002, no analysis duplicated).
+- Fix applied (coverage): the edge cases "output size 0" and "non-square outputs" had no task; T06 now asserts both.
+- Fix applied (consistency): `LibraryEraseAppTests` (FILE-011 erase derives from the FILE-005 lists) added to T10, as
+  the agent rules require for a new key.
+- No ambiguity left: the nodal mask, the 10% threshold, the settle time and the floor are numbers in Clarifications.
