@@ -48,9 +48,9 @@ trip, settings, one UI test). Budgets: unit test ≤ 10 s, suite < 1 min, UI tes
   `SceneEffectChain.swift`, read/write in `SceneEffectChain+PixelSort.swift`; `PixelSortSceneEntryTests` (round trip,
   clamping and span snapping reported, off not written); update `SceneEffectChainTests`, `SceneSourceSafetyTests`
   (FX-011-R11, S6) — Verified 2026-11-15: swift test --package-path Packages/SceneFormat, 226 tests, 0 failures, 41 s (PixelSortSceneEntryTests 2/2)
-- [ ] FX-011-T09 [US3] Golden renderer applies `pixelSort`; `PixelSortSceneGoldenTests` (off equals no chain; a saved
+- [X] FX-011-T09 [US3] Golden renderer applies `pixelSort`; `PixelSortSceneGoldenTests` (off equals no chain; a saved
   pixel-sort scene reloads and renders the same picture; sorted output differs from unsorted) and update
-  `EffectChainSceneTests` (FX-011-S5)
+  `EffectChainSceneTests` (FX-011-S5) — Verified 2026-11-15: swift test --package-path Packages/RenderGoldens, 123 tests, 0 failures (1 skipped), 17 s (PixelSortSceneGoldenTests 2/2)
 
 ## Phase 5: App
 
