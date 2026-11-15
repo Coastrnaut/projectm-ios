@@ -114,7 +114,7 @@ final class RehearsalCardView: UIView {
 
     /// Circles of radius 0.14 · the short side on a 2.4-radius pitch, a centre circle of 0.45 · the short
     /// side and a full-size crosshair.
-    static func gridPath(in bounds: CGRect) -> CGPath {
+    nonisolated static func gridPath(in bounds: CGRect) -> CGPath {   // nonisolated: OUT-007's card layer draws it too
         let path = CGMutablePath()
         let radius: CGFloat = min(bounds.width, bounds.height) * 0.14
         let step: CGFloat = radius * 2.4

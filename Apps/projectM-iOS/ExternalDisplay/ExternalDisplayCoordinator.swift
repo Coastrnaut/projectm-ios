@@ -42,6 +42,10 @@
 //   report a change of `routesSceneOverlays` (AppCoordinator hides MED-010's logo layers while it is
 //   false). A mode change never moves the visual and never touches the audio source; it applies live,
 //   also while a recording holds the placement (one render: the recording shows what the output shows).
+// * OUT-007 (spec specs/264-out-007-corner-pin, contract C3): the corner pin and the calibration flag are
+//   pushed to every external slot (never the device slot) inside the set and to each newly connected slot.
+//   Neither is deferred by the recording hold: the warp changes no bounds or drawable size, and the recorder
+//   encodes rendered frames, never the composited display (research OUT-007-D5).
 import OSLog
 import PresentationLifecycle
 import SwiftUI
@@ -145,6 +149,16 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     /// Called inside the change, only when `routesSceneOverlays` changes (AppCoordinator: the logo layers).
     @ObservationIgnored var onSceneOverlaysChange: ((Bool) -> Void)?
 
+    // OUT-007: corner pin.
+    /// The user's correction (ExternalOutputSetting sets it); applied to every external slot inside the call.
+    @ObservationIgnored var cornerPin: CornerPin = .identity {
+        didSet { if cornerPin != oldValue { pushCornerPin() } }
+    }
+    /// The corner-pin editor is open: external slots show the calibration card.
+    private(set) var isCalibrating = false
+    /// The last connected external display's shape (width ÷ height with its pixel aspect).
+    @ObservationIgnored private(set) var lastExternalAspect: Double?
+
     /// `connectSettle` 0 (the default): a connect moves the visual inside the call (OUT-001-R6 tests).
     init(connectSettle: Double = 0, scheduleSettle: SettleScheduler? = nil) {
         settle = HotPlugSettle(interval: connectSettle)
@@ -205,6 +219,8 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         slot.deviceAspect = deviceAspect
         slot.resolution = resolution   // OUT-003: likewise
         slot.pixelBudget = pixelBudget
+        slot.cornerPin = cornerPin   // OUT-007
+        slot.showsCalibrationCard = isCalibrating
         slot.onGeometryChange = { [weak self] (geometry: ExternalDisplayGeometry) in self?.externalResized(id: id, geometry: geometry) }
         log.info("external display connected: \(geometry.width, privacy: .public) × \(geometry.height, privacy: .public) @\(geometry.scale, privacy: .public), foreground \(foreground, privacy: .public)")
         if routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id }) || settle.isImmediate {
@@ -366,6 +382,55 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         let par: Double = slot.correction.pixelAspect.resolved(screen: slot.screenPixelAspect)
         return SafeAreaGuideGeometry.externalAspect(width: Double(slot.bounds.width), height: Double(slot.bounds.height),
                                                     pixelAspect: par)
+    }
+
+    // MARK: - Corner pin (OUT-007)
+
+    func beginCalibration() {
+        isCalibrating = true
+        pushCornerPin()
+        log.info("corner pin calibration opened")
+    }
+
+    func endCalibration() {
+        guard isCalibrating else { return }
+        isCalibrating = false
+        pushCornerPin()
+        log.info("corner pin calibration closed")
+    }
+
+    private func pushCornerPin() {
+        for slot in externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }) {
+            slot.cornerPin = cornerPin
+            slot.showsCalibrationCard = isCalibrating
+        }
+    }
+
+    /// OUT-007-D7: the shape the editor draws: a connected display's, else the last known, else 16:9.
+    var calibrationAspect: Double {
+        if let slot = externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }).first {
+            let par: Double = slot.correction.pixelAspect.resolved(screen: slot.screenPixelAspect)
+            if let aspect: Double = SafeAreaGuideGeometry.externalAspect(width: Double(slot.bounds.width),
+                                                                          height: Double(slot.bounds.height), pixelAspect: par) {
+                lastExternalAspect = aspect
+                return aspect
+            }
+        }
+        return lastExternalAspect ?? 16.0 / 9.0
+    }
+
+    /// "pin=<identity|custom> card=<shown|hidden> corners=<x,y;x,y;x,y;x,y>" for the external slot holding the
+    /// visual, else the first external slot; "none" without one (tests, DEBUG probe; geometry only).
+    var cornerPinSummary: String {
+        let live = externalSlots.values.compactMap { (w: WeakSlot) -> VisualSlotView? in w.slot }
+        let holding: VisualSlotView? = (visual?.superview as? VisualSlotView).flatMap { (s: VisualSlotView) -> VisualSlotView? in
+            s.role == .external ? s : nil
+        }
+        guard let slot = holding ?? live.first else { return "none" }
+        let pin: CornerPin = slot.cornerPin
+        let kind: String = pin.isIdentity ? "identity" : "custom"
+        let card: String = slot.isCalibrationCardShown ? "shown" : "hidden"
+        return "pin=" + kind + " card=" + card + " corners=" + pin.stored
     }
 
     // MARK: - Output mode (OUT-006)
