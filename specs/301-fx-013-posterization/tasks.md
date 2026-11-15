@@ -69,9 +69,9 @@ finish. Logs go to `.autonomous/logs-fx-013/`.
 
 ## Phase 6: Polish
 
-- [ ] FX-013-T13 Amend `docs/adr/0050-output-color-grade.md` (step 8, block 96 bytes, flags 64/128, position
+- [X] FX-013-T13 Amend `docs/adr/0050-output-color-grade.md` (step 8, block 96 bytes, flags 64/128, position
   functions); run repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
-  RenderGoldens and FX-005's output tests unchanged; type-check budget; spec status.
+  RenderGoldens and FX-005's output tests unchanged; type-check budget; spec status. — Verified 2026-11-15: ADR-0050 amended; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK, test_scripts 186 OK (1 skipped), check_privacy_manifest and check_network_symbols OK on the Debug app; Compositor suite 1,171 passed and RenderGoldens 110 passed unchanged (logs-fx-013/compositor-all.log, goldens.log); spec status Implemented.
 - [ ] FX-013-T14 {device} On D1: a compositor-backed visual with Posterize at 6 levels and Dither on; frame rate
   within 1 fps of off; bands visible, no shimmer on a still picture.
 

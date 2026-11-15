@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-013-T01-T13 verified on the Mac and an own iOS 27.2 simulator; T14 `{device}` open)
 
 **Input**: User description: "Implement FX-013 (Posterization) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Quantize RGB to selectable step counts with dithering toggle." Acceptance, verbatim: "Known
