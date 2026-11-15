@@ -6,6 +6,9 @@
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
+// FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
+// name) and `contrastStrength` (0…1). Missing → Linear and 0.5; an unknown or non-string name → Linear with a warning.
+// They are written only when the curve is not Linear or the stored entry already had them, so other scenes are unchanged.
 import Compositor
 
 /// One saved effect.
@@ -122,7 +125,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 switch kind {
                 case .grade:
                     let v = values(entry, gradeParameters, path, &issues)
-                    settings.grade = ColorGrade(temperature: v[0], lift: v[1], gamma: v[2], gain: v[3], saturation: v[4], hue: v[5])
+                    var g = ColorGrade(temperature: v[0], lift: v[1], gamma: v[2], gain: v[3], saturation: v[4], hue: v[5])
+                    readContrast(entry, path, &issues, into: &g)   // FX-005
+                    settings.grade = g
                     settings.gradeEnabled = entry.enabled
                 case .trails:
                     let v = values(entry, trailsParameters, path, &issues)
@@ -142,7 +147,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
 
     /// The known parameters in table order: missing → fallback; not a finite number → fallback, out of range → clamped
     /// (both reported as `valueClamped`).
-    private static func values(_ entry: SceneEffectEntry, _ table: [SceneEffectParameter], _ path: String,
+    static func values(_ entry: SceneEffectEntry, _ table: [SceneEffectParameter], _ path: String,
                                _ issues: inout [SceneIssue]) -> [Double] {
         table.map { (p: SceneEffectParameter) -> Double in
             guard let raw = entry.parameters[p.name] else { return p.fallback }
@@ -193,6 +198,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.enabled = gradeEnabled ?? true
             let values: [Double] = [g.temperature, g.lift, g.gamma, g.gain, g.saturation, g.hue]
             for (p, v) in zip(Self.gradeParameters, values) { entry.parameters[p.name] = .double(v) }
+            Self.writeContrast(g, into: &entry)   // FX-005
         case .trails:
             guard let t = trails else { return stored }
             entry.enabled = t.isEnabled
@@ -211,5 +217,36 @@ extension SceneDocument {
     func effectIssues() -> [SceneIssue] {
         guard let effects else { return [] }
         return SceneEffectSettings.read(effects).issues
+    }
+}
+
+// MARK: - FX-005 contrast curve in the grade entry
+
+extension SceneEffectSettings {
+    static let contrastKey = "contrast"
+    static let contrastStrengthParameter = SceneEffectParameter(name: "contrastStrength", range: ContrastCurve.strengthRange,
+                                                                fallback: ContrastCurve.defaultStrength)
+
+    /// Reads `contrast` and `contrastStrength` (research FX-005-D8).
+    static func readContrast(_ entry: SceneEffectEntry, _ path: String, _ issues: inout [SceneIssue], into grade: inout ColorGrade) {
+        grade.contrastStrength = values(entry, [contrastStrengthParameter], path, &issues)[0]
+        guard let raw = entry.parameters[contrastKey] else { return }
+        let location: String = path + ".parameters." + contrastKey
+        guard let name = raw.stringValue, let curve = ContrastCurve(rawValue: name) else {
+            issues.append(SceneIssue(.valueClamped, path: location, "\(location) is not a known contrast curve; read as linear."))
+            return
+        }
+        grade.contrast = curve
+    }
+
+    /// Writes both fields when the curve is not Linear or the entry already had them (an unknown stored name that the
+    /// live grade still reads as Linear is left as written).
+    static func writeContrast(_ grade: ColorGrade, into entry: inout SceneEffectEntry) {
+        let had: Bool = entry.parameters[contrastKey] != nil || entry.parameters[contrastStrengthParameter.name] != nil
+        guard had || grade.contrast != .linear else { return }
+        if grade.contrast == .linear, let raw = entry.parameters[contrastKey],
+           ContrastCurve(rawValue: raw.stringValue ?? "") == nil { return }   // an unknown name read as Linear is kept
+        entry.parameters[contrastKey] = .string(grade.contrast.rawValue)
+        entry.parameters[contrastStrengthParameter.name] = .double(grade.contrastStrength)
     }
 }

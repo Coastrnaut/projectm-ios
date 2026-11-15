@@ -73,6 +73,33 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(written[0].parameters["future"], .bool(true), "unknown parameter names are kept")
     }
 
+    // MARK: FX-005 contrast curve (FX-005-R8, S5)
+
+    func testContrastRoundTripsAndOldEntriesReadAsLinear() throws {
+        XCTAssertEqual(SceneEffectSettings.read([grade]).settings.grade?.contrast, .linear, "an entry without the field")
+        XCTAssertEqual(SceneEffectSettings.read([grade]).settings.grade?.contrastStrength, 0.5)
+        let live = SceneEffectSettings(order: .standard, grade: ColorGrade(gamma: 1.6, contrast: .filmic, contrastStrength: 0.75),
+                                       gradeEnabled: true)
+        let document = try minimal(live.entries(over: nil))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.encoded(), document.encoded())
+        XCTAssertEqual(again.effectSettings?.grade, ColorGrade(gamma: 1.6, contrast: .filmic, contrastStrength: 0.75))
+        XCTAssertEqual(again.effects?[0].parameters["contrast"], .string("filmic"))
+        let linear = SceneEffectSettings(order: .standard, grade: ColorGrade(gamma: 1.6), gradeEnabled: true)
+        XCTAssertNil(linear.entries(over: nil)[0].parameters["contrast"], "Linear is not written into scenes that never had it")
+        XCTAssertEqual(linear.entries(over: again.effects)[0].parameters["contrast"], .string("linear"), "but resets a stored curve")
+    }
+
+    func testUnknownContrastReadsAsLinearIsReportedAndKept() {
+        let entry = SceneEffectEntry(kind: "fx.grade", parameters: ["contrast": .string("posterize"), "contrastStrength": .double(4)])
+        let read = SceneEffectSettings.read([entry])
+        XCTAssertEqual(read.settings.grade, ColorGrade(contrastStrength: 1))
+        XCTAssertEqual(read.issues.map(\.path), ["$.effects[0].parameters.contrastStrength", "$.effects[0].parameters.contrast"])
+        XCTAssertEqual(read.settings.entries(over: [entry])[0].parameters["contrast"], .string("posterize"), "kept as written")
+        let wrongType = SceneEffectEntry(kind: "fx.grade", parameters: ["contrast": .integer(2)])
+        XCTAssertEqual(SceneEffectSettings.read([wrongType]).issues.map(\.code), [.valueClamped])
+    }
+
     // MARK: Unknown, repeated and fixed entries
 
     func testUnknownEntryIsKeptAtItsIndexAndReported() throws {
