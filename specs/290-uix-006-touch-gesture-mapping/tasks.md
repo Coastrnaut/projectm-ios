@@ -13,7 +13,7 @@
 
 - [ ] UIX-006-T04 `GestureShortcutsSetting` (key `settings.gestures.shortcuts`, lock-refused writes, UI-test reset) and `AppCoordinator.gestureShortcuts` (R8, R9)
 - [ ] UIX-006-T05 `AppCoordinator+GestureShortcuts.swift`: `performGestureShortcut`, `handleGestureShortcut` (G3; R7)
-- [ ] UIX-006-T06 Recogniser + representable on `visualizerTapArea`, attached only while on and VoiceOver off; DEBUG probe (G5; R5, R6, R11)
+- [ ] UIX-006-T06 Recogniser + representable on `visualizerTapArea`, attached only while on and VoiceOver off; DEBUG probe (G5; R5, R6, R11; the one-finger tap path is checked by T10's controls assertion)
 - [ ] UIX-006-T07 Settings › Performance › Gesture shortcuts section with lock note and VoiceOver note (G4; R8)
 - [ ] UIX-006-T08 Key lists: `ALLOWED_KEYS` (`scripts/run_device_tests.py`), FILE-005 `includedKeys`, `LibraryBackupAppTests` app keys (R9)
 
@@ -26,9 +26,15 @@
 
 ## Phase 4: Close
 
-- [ ] UIX-006-T13 Spec status, `docs/autonomous` nothing; spec Status line updated with the test counts
+- [ ] UIX-006-T13 Spec Status line updated with the verified test counts and the open {device} task
 - [ ] UIX-006-T14 {device} On D1 and D2: quickstart device steps 1-6 (S6)
 
 ## Dependencies
 
 T01 → T02 → T03; T01 → T04 → T05 → T06, T07; T08 with T04; T09 after T05; T10 after T06, T07; T11, T12 after all; T14 needs a person and a device.
+
+## Analysis (speckit-analyze, 2026-11-15)
+
+- Coverage: R1-R2 T01/T03; R3-R6 T02/T03/T06; R7 T05/T09; R8 T04/T07/T09; R9 T04/T08/T09; R10 T02/T03; R11 T06/T10. S1-S2 T03; S3-S4 T09; S5 T10; S6 T14.
+- Fixed: T13 wording (no stray reference); T06 names how R11 is checked. The key is not in `AppSettings.allKeys`, so `SettingsTests` needs no change (it is still run in T11).
+- No constitution conflicts; no ADR needed (no default overridden).
