@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T01:18:49Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T01:39:56Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,21 @@
 
 | State | Features |
 |---|---|
-| audited | 63 |
-| implementing | 1 |
+| audited | 59 |
+| implementing | 2 |
+| built | 2 |
+| unit_passed | 1 |
 | integrated | 261 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 7 | 0 | 144 | 0 |
-| P2 | 45 | 1 | 33 | 0 |
-| P3 | 9 | 0 | 0 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 5 | 1 | 1 | 0 | 144 | 0 |
+| P2 | 43 | 1 | 1 | 1 | 33 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1876,6 +1878,21 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `c05f569b6078` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-015/20261114T144306/swift-test_VisualGenerators.log`)
 - `post-merge (conflicts with ANL-013 resolved): ParameterGraph 208 + projectM-iOSTests 912`: pass at `17a05dd0` (log `.autonomous/logs/integration/batch48/app-tests.log`)
+
+### MOD-016 Random walk modulator (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ParameterGraph`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_ParameterGraph.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_PerformanceControl.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `b5ce7c14172b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-016/20261114T203036/swift-test_VisualGenerators.log`)
 
 ### MOD-017 Quantized parameter changes (integrated)
 - `python3 scripts/check_compliance.py`: pass at `0eb277448742` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MOD-017/20261114T152305/compliance.log`)
