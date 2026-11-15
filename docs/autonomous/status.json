@@ -12,15 +12,14 @@
   },
   "P1": {
    "audited": 1,
-   "built": 1,
    "implementing": 1,
-   "integrated": 148
+   "integrated": 148,
+   "unit_passed": 1
   },
   "P2": {
    "audited": 38,
    "implementing": 1,
-   "integrated": 39,
-   "unit_passed": 1
+   "integrated": 40
   },
   "P3": {
    "audited": 9
@@ -28,9 +27,8 @@
  },
  "by_state": {
   "audited": 50,
-  "built": 1,
   "implementing": 2,
-  "integrated": 271,
+  "integrated": 272,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -56,7 +54,6 @@
    "FX-017",
    "FX-018",
    "MED-005",
-   "MED-011",
    "MED-012",
    "MIDI-005",
    "MIDI-009",
@@ -97,7 +94,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "54 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "53 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -1396,10 +1393,10 @@
    "branch": "feature/med-011",
    "branch_sha": "d488c36349cf34308f033f459cc953d5862f4a1f",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "12cfdd4372a55015b79061196ad4b671ff427b9f",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-012": {
    "attempts": 0,
@@ -3004,12 +3001,12 @@
   "SHOW-015": {
    "attempts": 0,
    "branch": "feature/show-015",
-   "branch_sha": "a07879f845540f7caad02e602611658bb121a1e1",
+   "branch_sha": "ee48122e152e05b90c339cd56c5ca785f85df5db",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "UIX-001": {
    "attempts": 0,
@@ -3929,6 +3926,11 @@
    "sha": "6ac0c21c"
   },
   {
+   "branch": "feature/med-011",
+   "id": "MED-011",
+   "sha": "12cfdd4372a55015b79061196ad4b671ff427b9f"
+  },
+  {
    "branch": "feature/med-013",
    "id": "MED-013",
    "sha": "52fabb13"
@@ -4744,5 +4746,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T02:49:12Z"
+ "updated": "2026-11-15T02:52:34Z"
 }

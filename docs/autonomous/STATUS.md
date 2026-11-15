@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T02:49:12Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T02:52:34Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,24 +11,23 @@
 |---|---|
 | audited | 50 |
 | implementing | 2 |
-| built | 1 |
 | unit_passed | 1 |
-| integrated | 271 |
+| integrated | 272 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
-| P1 | 1 | 1 | 1 | 0 | 148 | 0 |
-| P2 | 38 | 1 | 0 | 1 | 39 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 1 | 1 | 1 | 148 | 0 |
+| P2 | 38 | 1 | 0 | 40 | 0 |
+| P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 54 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 53 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -147,6 +146,7 @@ The physical-device suite may **not** start:
 | MED-008 | Animated image support | `a088143dc766` | `feature/med-008` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-010 | Logo overlay | `6ac0c21c` | `feature/med-010` |
+| MED-011 | Clock overlay | `12cfdd4372a5` | `feature/med-011` |
 | MED-013 | Media asset relinking | `52fabb13` | `feature/med-013` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
@@ -1586,7 +1586,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `5e70427cd3e6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-010/20261114T071247/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
-### MED-011 Clock overlay (unit_passed)
+### MED-011 Clock overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/script-tests.log`)
@@ -1599,6 +1599,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/swift-test_ShowControl.log`)
+- `swift test Compositor 1060, LibraryBackup 87; postmerge projectM-iOSTests 1185 + Clock/Logo UI tests 2`: pass at `12cfdd4372a5` (log `.autonomous/logs/integration/batch100/app-tests.log`)
 
 ### MED-013 Media asset relinking (integrated)
 - `python3 scripts/check_compliance.py`: pass at `3e9e52be2928` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-013/20261114T094349/compliance.log`)
@@ -3056,6 +3057,10 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `081b69a69a42` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-014/20261113T154000/sim-test_Rendering.log`)
 - `post-merge (batch with SCN-001, REC-012, SHOW-014, FILE-001 on a second iOS 27.2 iPhone 17 simulator): projectM-iOSTests 271 incl. SceneArchiveServiceTests; CaptureShareUITests, EmergencyBlackoutUITests 2, OutputBlackoutUITests; SceneFormat 31 and SceneArchive 18 on host and Linux shape`: pass at `c3886d1cb0bb` (log `.autonomous/logs/integration/batch-scn-rec12-show14-file1/app-tests.log`)
+
+### SHOW-015 Performance lock (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `ee48122e152e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-015/20261114T215044/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `ee48122e152e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-015/20261114T215044/docs.log`)
 
 ### UIX-001 Guided first scene (integrated)
 - `python3 scripts/check_compliance.py`: pass at `47115ca78022` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/UIX-001/20261113T180131/compliance.log`)
