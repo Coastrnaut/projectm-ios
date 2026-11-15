@@ -51,6 +51,12 @@ local-first option.
 - Q: Are My Presets removal, recordings and media list edits covered? → A: No. They are library-management screens reached from the preset browser or Settings, each removal confirmed or reversible, and none of them changes the show, its cues or its scenes. Covering every list in the app would turn the lock into a read-only mode, which the roadmap row does not ask for.
 - Q: New stored data? → A: None. The lock key `settings.scene.locked` already exists and is already in the device-test allowed keys, the Library settings policy (excluded) and the UI-test reset.
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Where does a refused collection delete or reorder (one that still reaches the coordinator, such as a delete alert already open when the lock turned on) show its message? → A: In the collections' existing message alert (`collectionsMessage`, PRE-007-R8) with the lock's text "Scene locked. Unlock the scene to edit.", and the lock announces it on VoiceOver's library lane as every SCN-015 refusal does. Rejected: a new banner (a second message channel for one screen).
+- Q: Should a refused gesture be counted with the lock's other refusals? → A: Yes: every SHOW-015 refusal goes through the same `refusesEdit()` choke point, so the refusal count, last message and announcement stay one mechanism. Rejected: a separate refusal path per screen.
+- Q: Do the collection and Storage screens show the visualizer's "Scene locked" badge? → A: No; they show the one-line lock note at the top of the list (as the show editor does). The badge stays a visualizer element.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Nothing can be deleted or reordered mid-show (Priority: P1)
@@ -96,7 +102,7 @@ After the show the performer unlocks with a confirmation and can delete and reor
 
 ### Edge Cases
 
-- A delete alert that was open when the lock turned on (collection or folder): its confirm is refused by the coordinator and the message is shown.
+- A delete alert that was open when the lock turned on (collection or folder): its confirm is refused by the coordinator and the message is shown (collections: the message alert; folders: the Scene Folders message row).
 - A list's drag reorder that was in Edit mode when the lock turned on: Edit mode ends (the Edit button and handles disappear); any move that still arrives is refused.
 - A pending erase or restore requested before the lock: still listed, and Cancel still works.
 - Creating a collection or adding a preset to one while locked: allowed (additive, nothing lost), consistent with "blocks delete/reorder".
