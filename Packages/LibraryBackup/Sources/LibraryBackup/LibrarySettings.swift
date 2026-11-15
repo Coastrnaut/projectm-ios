@@ -114,6 +114,7 @@ public enum LibrarySettingsPolicy {
         "settings.noiseGate.enabled", "settings.noiseGate.thresholdDecibels",
         "settings.latencyOffset.microphone", "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",
         photoKey, slideshowKey, "settings.text.overlay",
+        "settings.photo.kenBurns",   // MED-007-R9: a preference (the photo's pan and zoom); erased with Settings
         logoKey, logoPlacementKey,   // MED-010
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings

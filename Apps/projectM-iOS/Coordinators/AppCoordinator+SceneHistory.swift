@@ -44,6 +44,7 @@ extension AppCoordinator {
         modulationMatrix.restore(inputs.bindings)   // MOD-012: the routes' order and on/off
         if let palette = inputs.palette { palettes.restore(palette.id) }   // UIX-011-R7
         slideshow.restore(inputs.slideshow)   // MED-006-R12: order, on/off and timing (pictures are not undone)
+        kenBurns.restore(inputs.kenBurns)   // MED-007-R10
         let recorded = SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
         if recorded != inputs.visual { settings.visual = inputs.visual }
         resetTrailsHistory()   // FX-009-R5: an undone or redone scene state starts without trails

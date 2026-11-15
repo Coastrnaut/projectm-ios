@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MED-007-T01-T15 verified on the Mac: Compositor GPU read-back acceptance and model tests, SceneFormat round trip, app unit and UI tests on a private iOS 27.2 simulator; T16 open `{device}`)
 
 **Input**: User description: "Implement MED-007 (Image Ken Burns) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Pan and zoom still images with keyframed bounds." Acceptance, verbatim: "Start/end frames match
