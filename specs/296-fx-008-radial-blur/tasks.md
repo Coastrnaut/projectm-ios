@@ -36,7 +36,7 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   `CompositorShaderSources.archived` (FX-008-R5, R7, R11, R13)
 - [ ] FX-008-T07 [US1] [US2] `RadialBlurCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and zero
   bit-identical on random content (no picture held); dot pattern at the maximum: focus pixel bit-identical (centred and
-  off-centre focus), each outer dot's streak ends within 1 px of d(1 + s) on its ray and stays on it; GPU = reference
+  off-centre focus; frame sizes chosen so focus × (size − 1) is a whole pixel, speckit-analyze C1), each outer dot's streak ends within 1 px of d(1 + s) on its ray and stays on it; GPU = reference
   within 1/128; corner focus in bounds; order and pool (FX-008-S1 to S4)
 - [ ] FX-008-T08 [US1] Existing compositor tests still pass (`ChromaticSplitCompositeTests`, `EffectOrderCompositeTests`,
   `CompositorPipelineArchiveTests`)
