@@ -6,6 +6,7 @@
 // coordinator's `isRehearsing` (a settling real display closes it); unavailable while one is connected.
 // OUT-003 (contract C4): a Resolution picker (Native, 1080p, 720p, Custom) and, for Custom only, a Scale
 // slider 50…100 % in 5 % steps with ACC-005's `.accessibleParameter`.
+// OUT-006 (contract C4): an Output picker (Same scene, Clean output), applied live.
 import PresentationLifecycle
 import SwiftUI
 
@@ -14,6 +15,7 @@ struct ExternalDisplaySection: View {
 
     var body: some View {
         Section {
+            outputModePicker
             fitPicker
             shapePicker
             pixelAspectPicker
@@ -49,6 +51,15 @@ struct ExternalDisplaySection: View {
     private func rehearsalBinding(_ external: ExternalDisplayCoordinator) -> Binding<Bool> {
         Binding<Bool>(get: { () -> Bool in external.isRehearsing },
                       set: { (open: Bool) -> Void in if !open { external.endRehearsal() } })
+    }
+
+    private var outputModePicker: some View {
+        Picker(ExternalOutputSetting.outputModeTitle, selection: $setting.outputMode) {
+            ForEach(ExternalOutputMode.allCases, id: \.self) { (mode: ExternalOutputMode) in
+                Text(ExternalOutputSetting.title(mode)).tag(mode)
+            }
+        }
+        .accessibilityIdentifier("externalOutputModePicker")
     }
 
     private var fitPicker: some View {

@@ -11,6 +11,8 @@
 // device-local values with the same rules: `settings.externalDisplay.resolution` (`native`, `1080p`,
 // `720p`, `custom`) and `settings.externalDisplay.resolutionPercent` (integer 50…100, default 75).
 // The device's pixel budget is REC-014's `RecordingOutputCap.device`.
+// OUT-006 (spec specs/261-out-006-output-mirroring, contract C4): the output mode, one more device-local
+// value with the same rules: `settings.externalDisplay.outputMode` (`sameScene`, `clean`), applied live.
 import FrameRecording
 import Foundation
 import Observation
@@ -24,7 +26,8 @@ final class ExternalOutputSetting {
     static let pixelAspectKey = "settings.externalDisplay.pixelAspect"
     static let resolutionKey = "settings.externalDisplay.resolution"
     static let resolutionPercentKey = "settings.externalDisplay.resolutionPercent"
-    static let keys: [String] = [fitKey, shapeKey, pixelAspectKey, resolutionKey, resolutionPercentKey]
+    static let outputModeKey = "settings.externalDisplay.outputMode"   // OUT-006
+    static let keys: [String] = [fitKey, shapeKey, pixelAspectKey, resolutionKey, resolutionPercentKey, outputModeKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// OUT-012: the rehearsal row reads and drives the coordinator's rehearsal flag.
@@ -59,6 +62,15 @@ final class ExternalOutputSetting {
         }
     }
 
+    // OUT-006
+    var outputMode: ExternalOutputMode {
+        didSet {
+            guard outputMode != oldValue else { return }
+            defaults.set(outputMode.rawValue, forKey: Self.outputModeKey)
+            external?.outputMode = outputMode
+        }
+    }
+
     var resolution: ExternalOutputResolution {
         ExternalOutputResolution(mode: resolutionMode, percent: resolutionPercent)
     }
@@ -86,9 +98,11 @@ final class ExternalOutputSetting {
         resolutionMode = defaults.string(forKey: Self.resolutionKey).flatMap(ExternalResolutionMode.init(rawValue:)) ?? .native
         let storedPercent: Int? = defaults.object(forKey: Self.resolutionPercentKey) as? Int
         resolutionPercent = ExternalOutputResolution.clampPercent(storedPercent ?? ExternalOutputResolution.defaultPercent)
+        outputMode = ExternalOutputMode(stored: defaults.string(forKey: Self.outputModeKey))
         external.correction = correction
         external.pixelBudget = Self.devicePixelBudget
         external.resolution = resolution
+        external.outputMode = outputMode
     }
 
     private func store(_ value: String, _ key: String) {
@@ -104,6 +118,8 @@ final class ExternalOutputSetting {
         + "Device keeps this device's shape; Pixel aspect keeps circles round on screens with non-square pixels. "
         + "Resolution sets how many pixels are drawn for the display (never more than it has, and within "
         + "this device's safe limit); the picture's layout stays the same. "
+        + "Output: Same scene shows the scene as composed, logo included; Clean output shows the visual only "
+        + "(no logo) on the display, and recordings made meanwhile match it. The device always shows the whole scene. "
         + "Rehearse output previews a display that is not connected."
 
     // OUT-012
@@ -112,6 +128,16 @@ final class ExternalOutputSetting {
     static let rehearsalFooter = "A preview of what a display of this size would show: black bars, crop and "
         + "pixel aspect, with this app's output settings. The visualization keeps running on this device. "
         + "Nothing here is saved; connecting a real display ends the rehearsal."
+
+    // OUT-006
+    static let outputModeTitle = "Output"
+
+    static func title(_ mode: ExternalOutputMode) -> String {
+        switch mode {
+        case .sameScene: "Same scene"
+        case .clean: "Clean output"
+        }
+    }
 
     // OUT-003
     static let resolutionTitle = "Resolution"
