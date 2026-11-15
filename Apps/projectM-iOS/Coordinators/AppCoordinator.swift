@@ -376,6 +376,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var recordingCountdown = RecordingCountdownSetting(defaults: defaults)
     /// UIX-013: the scene performance HUD preference (Settings → Show HUD; off by default).
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
+    /// OUT-005: the safe-area guides preference (Settings → Safe-area guides; off by default; device only).
+    @ObservationIgnored private(set) lazy var safeAreaGuides = SafeAreaGuideSetting(defaults: defaults)
     /// ACC-009: the one-handed layout preference (Settings → One-handed layout; Off by default; iPhone only).
     @ObservationIgnored private(set) lazy var oneHanded = OneHandedSetting(defaults: defaults)
     /// SHOW-006: cue rehearsal (session only; device-only panel).
