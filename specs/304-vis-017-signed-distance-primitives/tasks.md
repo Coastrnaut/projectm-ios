@@ -21,9 +21,9 @@
 
 ## Phase 4: User Story 5 - the app (R8, R10, R11; S5)
 
-- [ ] VIS-017-T09 [US5] Visual choice `signedDistance` ("SDF Shapes"), key `settings.signedDistance.quality` (in `allKeys`, `ALLOWED_KEYS`, FILE-005 policy), `SignedDistanceOptions` (segmented picker), host style `.signedDistance(quality:)` built and updated in place (`SignedDistanceHostSupport.swift`), accessibility value, scene capture as no layer, onChange in a small new chain.
-- [ ] VIS-017-T10 [P] [US5] `SignedDistanceAppTests` (setting persists and falls back; keys in every list; host names itself, applies quality in place; scene capture no layer); `SettingsTests`, `CameraVisualTests`, `LibraryBackupAppTests` updated and passing.
-- [ ] VIS-017-T11 [P] [US5] `SignedDistanceUITests`: choose SDF Shapes, Quality offered at Medium, Bars not, choose High, value updates, source started once (< 30 s).
+- [X] VIS-017-T09 [US5] Visual choice `signedDistance` ("SDF Shapes"), key `settings.signedDistance.quality` (in `allKeys`, `ALLOWED_KEYS`, FILE-005 policy), `SignedDistanceOptions` (segmented picker), host style `.signedDistance(quality:)` built and updated in place (`SignedDistanceHostSupport.swift`), accessibility value, scene capture as no layer, onChange in a small new chain. — Verified 2026-11-15: xcodebuild build-for-testing on VIS17 iPhone 17 with the type-check flags: TEST BUILD SUCCEEDED, no type-check warning in a touched function (the one warning in a touched file, AppCoordinator's initializer at 585 ms, is in an untouched function under a loaded machine)
+- [X] VIS-017-T10 [P] [US5] `SignedDistanceAppTests` (setting persists and falls back; keys in every list; host names itself, applies quality in place; scene capture no layer); `SettingsTests`, `CameraVisualTests`, `LibraryBackupAppTests` updated and passing. — Verified 2026-11-15: xcodebuild test-without-building: SignedDistanceAppTests 4, SettingsTests, CameraVisualTests, LibraryBackupAppTests, StarfieldAppTests, ReactionDiffusionAppTests (32 passed, 2.1 s)
+- [X] VIS-017-T11 [P] [US5] `SignedDistanceUITests`: choose SDF Shapes, Quality offered at Medium, Bars not, choose High, value updates, source started once (< 30 s). — Verified 2026-11-15: SignedDistanceUITests passed in 25.5 s on VIS17 iPhone 17 (iOS 27.2)
 
 ## Phase 5: Polish
 
