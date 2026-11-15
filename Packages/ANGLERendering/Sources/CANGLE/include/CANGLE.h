@@ -136,6 +136,17 @@ void PMANGLEFlush(void);
 /// MTLSharedEvent of a sync, retained (+1), or NULL when unavailable.
 void *_Nullable PMANGLECopyMetalSharedEvent(EGLDisplay dpy, EGLSync sync);
 
+/// OUT-013 (contract C3): a GL ES 3.0 fence after the current context's commands
+/// (glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0) through eglGetProcAddress), or NULL. Needs a current context.
+void *_Nullable PMANGLEFenceInsert(void);
+
+/// OUT-013: 1 when the fence has signalled, 0 when not yet (glClientWaitSync with a zero timeout and the flush flag:
+/// never waits), -1 on an error (treat as signalled). Needs the fence's context current.
+int PMANGLEFencePoll(void *_Nonnull fence);
+
+/// OUT-013: glDeleteSync. Needs the fence's context current.
+void PMANGLEFenceDelete(void *_Nonnull fence);
+
 #endif
 
 /// Feature 002 SC-104 (preset warm-up): a framebuffer with one BGRA8 color texture, the window

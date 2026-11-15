@@ -86,28 +86,48 @@ public enum ShowKeyframeValue: Sendable, Hashable {
     }
 }
 
-/// How the value moves from a keyframe to the next one.
+/// How the value moves from a keyframe to the next one (SHOW-008; SHOW-009 adds Stepped, Hold and Cubic, specs/
+/// 283-show-009-keyframe-easing research D1, D2). The earlier keyframe's mode shapes the segment, except that a Hold
+/// keyframe also holds the segment arriving at it. Declared in picker order.
 public enum ShowKeyframeInterpolation: String, Sendable, Hashable, CaseIterable {
-    /// The value stays until the next keyframe.
-    case hold
     case linear
-    /// Smoothstep: slow at both ends, halfway at the middle.
+    /// The value stays until the next keyframe, then jumps (SHOW-008's former "Hold"; stored as `hold`).
+    case stepped
+    /// A cut: the value does not move towards this keyframe (the arriving segment keeps the previous value) and stays
+    /// at it until the next keyframe.
+    case hold
+    /// Smoothstep at every keyframe: slow at both ends, halfway at the middle.
     case ease
+    /// A monotone cubic through consecutive Cubic keyframes (no overshoot); with two keys, 3u² − 2u³.
+    case cubic
 
     public var displayName: String {
         switch self {
-        case .hold: "Hold"
         case .linear: "Linear"
+        case .stepped: "Stepped"
+        case .hold: "Hold"
         case .ease: "Ease"
+        case .cubic: "Cubic"
         }
     }
 
-    /// The eased fraction for `u` in 0…1.
+    /// One line for the editor (SHOW-009 clarify).
+    public var summary: String {
+        switch self {
+        case .linear: "Moves evenly to the next keyframe."
+        case .stepped: "Stays at this value, then jumps at the next keyframe."
+        case .hold: "Cuts to this value at its time and stays until the next keyframe."
+        case .ease: "Starts and ends slowly at every keyframe."
+        case .cubic: "Flows smoothly through Cubic keyframes without overshooting."
+        }
+    }
+
+    /// The shaped fraction for `u` in 0…1 (flat modes return 0; Cubic's two-key shape).
     func shaped(_ u: Double) -> Double {
         switch self {
-        case .hold: 0
+        case .stepped, .hold: 0
         case .linear: u
-        case .ease: u * u * (3 - 2 * u)
+        case .ease, .cubic: u * u * (3 - 2 * u)
         }
     }
 }
@@ -212,11 +232,41 @@ public struct ShowKeyframeTrack: Sendable, Hashable, Identifiable {
         let b: ShowKeyframe = keyframes[low + 1]
         let t1: Int64 = Self.nanoseconds(ms: b.time)
         let u: Double = Double(t - t0) / Double(t1 - t0)   // segment-relative, 0 < u < 1
-        return Self.interpolate(a.value, b.value, fraction: a.interpolation.shaped(u), hold: a.interpolation == .hold)
+        return segmentValue(low, fraction: u)
     }
 
-    static func interpolate(_ a: ShowKeyframeValue, _ b: ShowKeyframeValue, fraction f: Double, hold: Bool) -> ShowKeyframeValue {
-        if hold { return a }
+    /// The value inside segment `i` (keyframe i to i + 1) at fraction `u`, 0 < u < 1 (SHOW-009 research D1, D2, D4).
+    func segmentValue(_ i: Int, fraction u: Double) -> ShowKeyframeValue {
+        let a: ShowKeyframe = keyframes[i]
+        let b: ShowKeyframe = keyframes[i + 1]
+        let mode: ShowKeyframeInterpolation = b.interpolation == .hold ? .hold : a.interpolation   // Hold wins on arrival
+        switch (mode, a.value, b.value) {
+        case (.stepped, _, _), (.hold, _, _):
+            return a.value
+        case let (.cubic, .number(y0), .number(y1)):
+            let h = Double(b.time - a.time)
+            return .number(MonotoneCubic.value(y0: y0, y1: y1, m0: cubicTangent(at: i) * h, m1: cubicTangent(at: i + 1) * h, u: u))
+        default:
+            return Self.interpolate(a.value, b.value, fraction: mode.shaped(u))
+        }
+    }
+
+    /// Whether segment `i` is drawn as a cubic (its left key is Cubic and its right key is not Hold).
+    private func isCubicSegment(_ i: Int) -> Bool {
+        i >= 0 && i + 1 < keyframes.count && keyframes[i].interpolation == .cubic && keyframes[i + 1].interpolation != .hold
+    }
+
+    /// The slope (value per millisecond) at keyframe `j`: non-zero only inside a Cubic run (both neighbouring segments
+    /// cubic), from the two numeric secants (research D2).
+    private func cubicTangent(at j: Int) -> Double {
+        guard isCubicSegment(j - 1), isCubicSegment(j),
+              let y0 = keyframes[j - 1].value.number, let y1 = keyframes[j].value.number,
+              let y2 = keyframes[j + 1].value.number else { return 0 }
+        return MonotoneCubic.tangent(h0: Double(keyframes[j].time - keyframes[j - 1].time), d0: y1 - y0,
+                                     h1: Double(keyframes[j + 1].time - keyframes[j].time), d1: y2 - y1)
+    }
+
+    static func interpolate(_ a: ShowKeyframeValue, _ b: ShowKeyframeValue, fraction f: Double) -> ShowKeyframeValue {
         switch (a, b) {
         case let (.number(x), .number(y)):
             return .number(x + (y - x) * f)

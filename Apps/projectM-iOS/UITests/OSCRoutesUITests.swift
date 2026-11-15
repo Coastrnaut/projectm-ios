@@ -35,9 +35,11 @@ final class OSCRoutesUITests: XCTestCase {
         link.tap()
         XCTAssertTrue(app.navigationBars["OSC Routes"].appears(within: 5))
 
+        // The standard route sits above the alias: reveal it first, so a drag to the alias never leaves it behind
+        // (OSC-010 added a section below the list, which lets the list scroll further).
+        XCTAssertTrue(app.reveal(app.switches["oscRoute_projectm_param_effect_bloom_intensity"]), "the standard route is listed")
         let route = app.switches["oscRoute_projectm_param_glow_intensity"]
         XCTAssertTrue(app.reveal(route), "the glow intensity alias is listed")
-        XCTAssertTrue(app.switches["oscRoute_projectm_param_effect_bloom_intensity"].exists, "the standard route is listed")
         XCTAssertEqual(route.value as? String, "1", "on by default")
         let control = route.switches.firstMatch.exists ? route.switches.firstMatch : route
         control.tap()

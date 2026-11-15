@@ -75,6 +75,10 @@
 // * Spectrum waterfall (VIS-020): the same generator in its waterfall mode, fed the smoothed bands like the spectra; it
 //   keeps the last 60 s in a fixed ring; switches with the other noise-field modes change only its configuration (the
 //   history starts empty); `reduceMotion` halves its scroll (R8).
+// * Fluid ink (VIS-011): the same generator in its fluid mode; the same bus subscription as the fountain: each drained
+//   ANL-004 onset is queued as an impulse stamped with the frame's time, and the generator runs its fixed 1/60 s steps
+//   to the frame; switches with the other noise-field modes change only its configuration (the field starts at rest);
+//   `reduceMotion` slows the flow and spaces the impulses (R11).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -90,6 +94,7 @@
 //   signal. Its level goes to the bloom (Reduced: fewer taps, coarser glow; Minimal: no glow pass) and its fade weight
 //   multiplies the glow intensity after the ACC-012 clamp, so the FX-019 limiter models the glow actually drawn. With
 //   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
+import ANGLERendering
 import AnalysisFeatures
 import AudioCore
 import Compositor
@@ -151,7 +156,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
     /// ANL-013: called on the main actor when the warning is raised or cleared (cleared on start and stop).
     var onPhaseWarningChange: (@MainActor (Bool) -> Void)?
     private var lastLinkTimestamp: CFTimeInterval?
-    private var displayLink: CADisplayLink?
+    private var displayLink: ScreenDisplayLink?   // OUT-013: the screen that shows the view
+    /// OUT-013: this visual's frames in flight and drops (contract C4).
+    let outputPacing = MetalOutputPacing()
     private var paused = true
     private(set) var isSuspended = false
     private var meter = FrameRateMeter()
@@ -369,6 +376,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
     }
 
     /// VIS-006: emits a ring for each accepted event since the last frame, stamped with the frame's time.
+    /// VIS-011: queues each onset into fluid ink as an impulse, stamped likewise.
     /// VIS-008: enqueues each onset into the particle fountain, stamped likewise.
     /// VIS-009: queues a centre pulse for each event the beat trigger accepts, stamped likewise.
     func drainBeatEvents(context: VisualFrameContext) {
@@ -377,6 +385,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
             while let event = subscription.nextEvent() {
                 guard let onset = ParticleFountainTrigger.onset(event) else { continue }
                 fountain.enqueueOnset(atNanoseconds: context.timeNanoseconds, strength: onset.strength, threshold: onset.threshold)
+            }
+            return
+        }
+        if let field = generator as? NoiseFieldGenerator {
+            while let event = subscription.nextEvent() {   // VIS-011: only fluid ink subscribes among the field's modes
+                guard let onset = ParticleFountainTrigger.onset(event) else { continue }
+                field.enqueueImpulse(atNanoseconds: context.timeNanoseconds, strength: onset.strength, threshold: onset.threshold)
             }
             return
         }
@@ -577,6 +592,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                     configuration: NoiseFieldConfiguration.waterfall())
             generator.barCount = barCount
             return generator
+        case .fluidInk:   // VIS-011: the noise field's generator in its fluid mode (its pass is made here, off the frame loop)
+            let generator = try NoiseFieldGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                    configuration: NoiseFieldConfiguration.fluidInk())
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -603,6 +623,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         samples.initialize(repeating: 0, count: WaveformFrameBuffer.capacity)
         view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
+        view.onWindowChange = { [weak self] in self?.followScreen() }   // OUT-013
         observeFrameRatePressure()
         applyGlow()
         applyLissajousPersistence()   // VIS-004-R9
@@ -663,6 +684,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.wedges = 0   // VIS-014: from the kaleidoscope, the fold turns off
             configuration.tunnelPace = 0   // VIS-015: from the tunnel, back to the field
             configuration.waterfall = false   // VIS-020: from the waterfall, back to the field
+            configuration.fluidInk = false   // VIS-011: from fluid ink, back to the field
             field.configuration = configuration
         } else if case let .kaleidoscope(wedges) = newStyle, let field = generator as? NoiseFieldGenerator {
             // VIS-014: in place, from the next frame (from Noise Field too: the kaleidoscope's own source settings)
@@ -676,6 +698,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
             // VIS-020: in place, from the next frame (the history starts empty; storage kept)
             field.configuration = NoiseFieldConfiguration.waterfall(reduceMotion: field.configuration.reduceMotion,
                                                                     palette: field.configuration.palette)
+        } else if case .fluidInk = newStyle, let field = generator as? NoiseFieldGenerator {
+            // VIS-011: in place, from the next frame (the field starts at rest; storage kept)
+            field.configuration = NoiseFieldConfiguration.fluidInk(reduceMotion: field.configuration.reduceMotion,
+                                                                   palette: field.configuration.palette)
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -919,6 +945,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .kaleidoscope(wedges): return "\(wedges) wedges, \(glow)"   // VIS-014-R12
         case let .tunnel(pace): return "\(pace.title), \(glow)"   // VIS-015-R12
         case .waterfall: return "Newest at top, \(glow)"   // VIS-020-R12
+        case .fluidInk: return "Ink from sudden sounds, \(glow)"   // VIS-011-R12
         }
     }
 
@@ -977,6 +1004,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
         updateLoop()
     }
 
+    /// OUT-013: the view joined a window, maybe on another screen; the frame link follows it.
+    private func followScreen() {
+        displayLink?.follow(view)
+    }
+
     private func updateLoop() {
         let run = !paused && !isSuspended
         if run, displayLink == nil {
@@ -996,10 +1028,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             setPhaseInverted(false)   // ANL-013: and its warning
             startEffectQuality()   // PERF-003: the floor at once, no fade
             if let waveform { analyzer.start(reader: waveform) }   // VIS-003: the tap through the pass-through wrapper
-            let link = CADisplayLink(target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)))
-            link.preferredFrameRateRange = quality.frameRateRange
-            link.add(to: .main, forMode: .common)
-            displayLink = link
+            displayLink = ScreenDisplayLink(view: view, target: NativeSpectrumLinkProxy(self), selector: #selector(NativeSpectrumLinkProxy.fire(_:)),
+                                            range: quality.frameRateRange)
         } else if !run, let link = displayLink {
             link.invalidate()
             displayLink = nil
@@ -1106,7 +1136,9 @@ final class NativeSpectrumHost: PresentationBoundResource {
         lastLinkTimestamp = link.timestamp
         let smoothedBands = smoother.update(target: bands, count: bandCount, frameInterval: interval, generation: bandSession)
         timer?.end(.audio)   // the drawable wait is not audio work; the modulation below is (accumulated)
-        guard let drawable = layer.nextDrawable(), let commands = queue.makeCommandBuffer() else { return }
+        guard outputPacing.begin() else { return }   // OUT-013: a full output drops the tick (counted), never waits
+        guard let drawable = outputPacing.nextDrawable(from: layer, refreshInterval: link.targetTimestamp - link.timestamp) else { return }
+        guard let commands = queue.makeCommandBuffer() else { return outputPacing.abandon() }
         timer?.begin(.audio)
         let context: VisualFrameContext = frameContext(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9),
                                                        frameDuration: link.targetTimestamp - link.timestamp)
@@ -1147,7 +1179,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             drawn = generator.encode(into: target, commandBuffer: commands, bands: input, context: context)
         }
         timer?.end(.render)
-        guard drawn else { return }
+        guard drawn else { return outputPacing.abandon() }
         encodeCaptureIfPending(target, commands: commands)   // REC-001; nothing without a request
         if videoRecording != nil { timer?.begin(.encode) }
         // REC-003: the drawn drawable (glow included) copied into the recording's pixel buffer.
@@ -1158,6 +1190,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         timer?.end(.encode)
         timer?.begin(.present)
         frameDrops?.track(drawable, link: link)   // PERF-007: before present, so the handler is in place
+        outputPacing.track(commands)   // OUT-013: the slot returns when the GPU completes the frame
         commands.present(drawable)
         commands.commit()
         timer?.end(.present)
@@ -1220,6 +1253,7 @@ final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
         metalLayer.pixelFormat = .bgra8Unorm_srgb
         metalLayer.framebufferOnly = true
         metalLayer.isOpaque = true
+        MetalOutputPacing.configure(metalLayer)   // OUT-013-R6
         isOpaque = true
         backgroundColor = .black
         isUserInteractionEnabled = false
@@ -1235,6 +1269,14 @@ final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
     override func layoutSubviews() {
         super.layoutSubviews()
         onLayout?()
+    }
+
+    /// OUT-013: the host's frame link follows the screen of the window this view joins.
+    var onWindowChange: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onWindowChange?()
     }
 }
 
@@ -1282,11 +1324,13 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case tunnel(pace: TunnelPace)
     /// VIS-020: the spectrum waterfall (the noise field's generator in its waterfall mode).
     case waterfall
+    /// VIS-011: fluid ink (the noise field's generator in its fluid mode).
+    case fluidInk
 
-    /// VIS-006, VIS-008, VIS-009: the host drains its analysis bus subscription into the generator.
+    /// VIS-006, VIS-008, VIS-009, VIS-011: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
         switch self {
-        case .beatRings, .particleFountain, .particleOrbit: true
+        case .beatRings, .particleFountain, .particleOrbit, .fluidInk: true
         default: false
         }
     }
@@ -1314,6 +1358,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .kaleidoscope: VisualChoice.kaleidoscope.title
         case .tunnel: VisualChoice.tunnel.title
         case .waterfall: VisualChoice.spectrumWaterfall.title
+        case .fluidInk: VisualChoice.fluidInk.title
         }
     }
 
@@ -1332,6 +1377,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .kaleidoscope: "kaleidoscope"
         case .tunnel: "tunnel"
         case .waterfall: "spectrumWaterfall"
+        case .fluidInk: "fluidInk"
         }
     }
 }

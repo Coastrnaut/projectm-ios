@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "fluid-ink-128x96-f0.png",
+      "fileSHA256" : "a100859d2009ceb9738280437d394852d21f97d0dbe86ac2aa690e47e209002e",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "3b1f87aa808c8f4421c4a289ac79fd7814e36ac753fda6e7328ccb80e6e1ddd1",
+      "scene" : "fluid-ink",
+      "width" : 128
+    },
+    {
+      "file" : "fluid-ink-256x192-f0.png",
+      "fileSHA256" : "f5a5ef8f663eb8720764af765ca58e645bc8b7ca8e6068d0af31194b1c11dbae",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "d725959d5c0f0ee87b720217000ac1e485dd42ae6f9e5ee268c742099b05bfeb",
+      "scene" : "fluid-ink",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

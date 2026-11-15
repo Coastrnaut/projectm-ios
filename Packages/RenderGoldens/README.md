@@ -79,6 +79,11 @@ spectrum palette, a bass slope plus one lit band stepping five bands right each 
 `NoiseFieldGenerator` with `waterfall: true` (`Tests/RenderGoldensTests/WaterfallGoldenTests.swift`); record with
 `--filter WaterfallGolden` or `-only-testing:RenderGoldensTests/WaterfallGoldenTests`.
 
+`GeneratorGoldens/FluidInk/<class>/` (VIS-011) holds fluid ink's golden: `fluid-ink-<w>x<h>-f0.png` (the spectrum
+palette, eight scripted onsets over the first 1.5 s, 60 Hz frames, captured at 2 s), through `NoiseFieldGenerator` with
+`fluidInk: true` (`Tests/RenderGoldensTests/FluidInkGoldenTests.swift`); record with `--filter FluidInkGolden` or
+`-only-testing:RenderGoldensTests/FluidInkGoldenTests`.
+
 ## Run
 
 ```bash

@@ -44,6 +44,8 @@
 //   absent or anything else → 6). Glow is shared; Bars does not apply.
 // * Tunnel (VIS-015-R9): `settings.visual` may also be `tunnel`; key `settings.tunnel.pace` (`half`/`beat`/`double`;
 //   anything else → beat). Its speed follows the tempo snapshot (SHOW-011). Glow is shared; Bars does not apply.
+// * Fluid Ink (VIS-011-R12): `settings.visual` may also be `fluidInk`; no key of its own. Onsets (ANL-004) drive it; palette
+//   and glow are shared; Bars does not apply.
 // * Spectrum Waterfall (VIS-020-R9): `settings.visual` may also be `spectrumWaterfall`; no key of its own. Bars applies
 //   (the band count feeding its columns); palette and glow are shared.
 // * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
@@ -644,6 +646,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case tunnel
     /// The native spectrum waterfall (VIS-020).
     case spectrumWaterfall
+    /// The native fluid ink (VIS-011).
+    case fluidInk
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -669,6 +673,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .kaleidoscope: "Kaleidoscope"
         case .tunnel: "Tunnel"
         case .spectrumWaterfall: "Spectrum Waterfall"
+        case .fluidInk: "Fluid Ink"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -680,7 +685,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
         || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel
-        || self == .spectrumWaterfall }
+        || self == .spectrumWaterfall || self == .fluidInk }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .spectrumWaterfall }   // VIS-020: band count
