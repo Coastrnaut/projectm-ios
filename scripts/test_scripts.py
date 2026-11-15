@@ -2259,6 +2259,12 @@ class QA011MatrixTests(unittest.TestCase):
         after = sorted(p for p in rdm.RUNS.rglob("*")) if rdm.RUNS.exists() else []
         self.assertEqual(before, after)
 
+    def test_counts_take_the_run_total_including_skipped_wording(self):
+        log = ("Executed 1 test, with 0 failures (0 unexpected)\n"
+               "Executed 134 tests, with 3 tests skipped and 2 failures (2 unexpected)\n"
+               "Executed 12 tests, with 0 failures (0 unexpected)\n")
+        self.assertTrue(rdm.test_counts(log).startswith("134 tests, 2 failures"))
+
     def test_device_package_cases_map_to_app_hosted_bundles(self):
         self.assertEqual(rdm.device_only_testing(["CompositorTests/LayerGradientCompositeTests/testX"]),
                          ["CompositorDeviceTests/LayerGradientCompositeTests/testX"])

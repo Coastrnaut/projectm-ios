@@ -435,7 +435,7 @@ def xctest_command(c: dict, target: MatrixTarget, derived: Path, bundle: Path) -
 
 
 def test_counts(log: str) -> str:
-    found = re.findall(r"Executed (\d+) tests?, with (\d+) failures?(?: \((\d+) unexpected\))?", log)
+    found = re.findall(r"Executed (\d+) tests?, with (?:\d+ tests? skipped and )?(\d+) failures?(?: \((\d+) unexpected\))?", log)
     skipped = len(re.findall(r"Test Case .* skipped", log))
     if not found:
         return "no test summary in the log"
