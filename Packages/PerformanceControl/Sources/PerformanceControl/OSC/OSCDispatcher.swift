@@ -23,6 +23,12 @@
 // limiter, so a held value is already the parameter value. Every applied value of a routed parameter is
 // kept in `liveValues` (memory only) for the app's live-value path; replacing the routes drops the live
 // values of parameters no route reaches any more.
+//
+// OSC-004 (specs/274-osc-004-osc-learn, contract L1): `armLearn` arms a one-shot capture. The first message after
+// it whose address and argument pass `OSCLearnEligibility` (so only after the allow list, the datagram rate check
+// and a whole-datagram decode) is captured and the capture disarms in the same locked step, so a burst or bundle
+// records one address. The handler runs after the lock is released, on the receiving side. The message is then
+// dispatched with the routes as they are (learning only creates a route later).
 import ParameterGraph
 import Synchronization
 
@@ -86,7 +92,12 @@ public final class OSCDispatcher: Sendable {
         var reached: Set<ParameterID> = []
         /// OSC-003: the newest applied value per routed parameter (memory only).
         var liveValues: [ParameterID: Double] = [:]
+        /// OSC-004: the one-shot learn capture.
+        var learnHandler: LearnHandler?
+        var learnCaptured: String?
     }
+
+    public typealias LearnHandler = @Sendable (String) -> Void
 
     public let store: ParameterStore
     public let limits: OSCRateLimitConfiguration
@@ -145,6 +156,26 @@ public final class OSCDispatcher: Sendable {
     /// Whether a deferred flush is scheduled (tests: never more than one).
     public var isFlushScheduled: Bool { state.withLock { $0.flushScheduled } }
 
+    // MARK: Learn (OSC-004)
+
+    /// Arms the one-shot learn capture: `handler` receives the first eligible address, once. Arming again replaces
+    /// the handler.
+    public func armLearn(_ handler: @escaping LearnHandler) {
+        state.withLock { s in
+            s.learnHandler = handler
+            s.learnCaptured = nil
+        }
+    }
+
+    public func disarmLearn() {
+        state.withLock { s in
+            s.learnHandler = nil
+            s.learnCaptured = nil
+        }
+    }
+
+    public var isLearnArmed: Bool { state.withLock { $0.learnHandler != nil } }
+
     /// Called on the receiving side after every handled datagram, drop and flush (OSC-009-R11).
     public func onActivity(_ handler: @escaping ActivityHandler) {
         activityHandlers.withLock { $0.append(handler) }
@@ -152,12 +183,12 @@ public final class OSCDispatcher: Sendable {
 
     @discardableResult
     public func handle(_ datagram: [UInt8], source: OSCSourceID = .unattributed) -> OSCDispatchOutcome {
-        let (outcome, flushDelay) = state.withLock { s -> (OSCDispatchOutcome, UInt64?) in
+        let (outcome, flushDelay, learned) = state.withLock { s -> (OSCDispatchOutcome, UInt64?, (LearnHandler, String)?) in
             let now = clock.now()
             s.counters.received += 1
             guard s.limiter.admitDatagram(from: source, now: now) else {
                 s.counters.rateLimited += 1
-                return (.rateLimited, nil)
+                return (.rateLimited, nil, nil)
             }
             let outcome = apply(datagram, now: now, &s)
             switch outcome {
@@ -170,9 +201,10 @@ public final class OSCDispatcher: Sendable {
             default:
                 Self.countMessage(outcome, in: &s.counters)
             }
-            return (outcome, Self.claimFlush(&s, now: now))
+            return (outcome, Self.claimFlush(&s, now: now), Self.takeLearned(&s))
         }
         if let flushDelay { scheduleFlush(after: flushDelay) }
+        if let (handler, address) = learned { handler(address) }
         notifyActivity()
         return outcome
     }
@@ -231,6 +263,14 @@ public final class OSCDispatcher: Sendable {
         state.withLock { $0.limiter.reset() }
     }
 
+    /// OSC-004: the captured address and its handler, disarming the capture.
+    private static func takeLearned(_ s: inout State) -> (LearnHandler, String)? {
+        guard let address = s.learnCaptured, let handler = s.learnHandler else { return nil }
+        s.learnCaptured = nil
+        s.learnHandler = nil
+        return (handler, address)
+    }
+
     /// The delay of the next flush when one must be scheduled now (never two at once).
     private static func claimFlush(_ s: inout State, now: UInt64) -> UInt64? {
         guard !s.flushScheduled, let delay = s.limiter.nextDue(now: now) else { return nil }
@@ -262,6 +302,9 @@ public final class OSCDispatcher: Sendable {
     }
 
     private func apply(_ message: OSCMessage, now: UInt64, _ s: inout State) -> OSCDispatchOutcome {
+        if s.learnHandler != nil, s.learnCaptured == nil, let address = OSCLearnEligibility.address(of: message) {
+            s.learnCaptured = address                 // OSC-004-R5: the first eligible message only
+        }
         guard let route = s.routes[message.address] else { return .unknownAddress }   // OSC-003-R2: allowlist only
         let id: ParameterID = route.parameter
         guard let descriptor = store.registry.descriptor(for: id), descriptor.modulation.allowsExternalControl else {

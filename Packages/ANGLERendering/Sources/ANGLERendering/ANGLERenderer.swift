@@ -32,6 +32,10 @@
 //   retry tick (30, 60, 120, 240 display ticks), each retry recreates the window surface, and after
 //   the last failed retry the state is `placeholder` until `resume()` or `resumeForPresentation()`.
 //   DEBUG builds can arm `faultInjection` (preset loads, swap results).
+// * OUT-009 (specs/268-out-009-output-color-calibration, contract C3): the view is a `DisplayCalibrationReceiver`;
+//   the external display slot gives it the display calibration (the device slot the identity). Each frame passes
+//   it to the FX-019 pass, whose output step applies it after the envelope's gain. A REC-001 capture is read from an
+//   uncalibrated redraw of that step (same envelope state), then the calibrated step is drawn again for the display.
 import AudioCore
 import CANGLE
 import CFlashLimiter
@@ -92,6 +96,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// RendererLab's T104 baseline: frames bypass the pass (`timedFrames(_:reduceFlashing: false)`).
     private var envelopeBypassed = false
     public let supportsReduceFlashing = true
+    /// OUT-009: the calibration the next frames apply (the view's, set by the slot that holds it).
+    public var displayCalibration: DisplayCalibration { layerView.displayCalibration }
     private var flashLimiter: OpaquePointer?
 
     private let layerView: MetalLayerView
@@ -304,6 +310,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         }
         timer?.end(.audio)
         timer?.begin(.render)
+        var limitedFrame: OpaquePointer?   // OUT-009: the pass that drew this frame, if any
         if !envelopeBypassed, let limiter = flashLimiterForFrame() {
             let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
             if framebuffer != 0 {
@@ -311,7 +318,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                 timer?.end(.render)
                 timer?.begin(.output)
                 var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
+                applyCalibration(to: limiter)   // OUT-009
                 PMFlashLimiterFinish(limiter, 0, &parameters)
+                limitedFrame = limiter
                 timer?.end(.output)
             } else {
                 engine.renderFrame(toFramebuffer: 0)
@@ -322,7 +331,13 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         timer?.end(.render)   // no-op when the output pass already ended it
         if let handler = pendingCapture {   // REC-001: the frame as shown, before the swap
             pendingCapture = nil
+            let calibrated: OpaquePointer? = layerView.displayCalibration.isIdentity ? nil : limitedFrame
+            if let calibrated { PMFlashLimiterDrawOutput(calibrated, 0, 0) }   // OUT-009: content, not the display's
             let pixels = readPixels()
+            if let calibrated {
+                eglMakeCurrent(display, surface, surface, context)
+                PMFlashLimiterDrawOutput(calibrated, 0, 1)
+            }
             handler(pixels.isEmpty ? nil : ANGLECapturedFrame(width: surfaceSize.width, height: surfaceSize.height, rgbaBottomUp: pixels))
             eglMakeCurrent(display, surface, surface, context)
         }
@@ -600,8 +615,15 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         guard framebuffer != 0 else { return nil }
         PMANGLEClearFramebuffer(framebuffer, value, value, value)
         var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
+        applyCalibration(to: limiter)   // OUT-009
         PMFlashLimiterFinish(limiter, 0, &parameters)
         return PMFlashLimiterLastGain(limiter)
+    }
+
+    /// OUT-009: the view's calibration into the pass's output step (uniforms only; the identity turns it off).
+    private func applyCalibration(to limiter: OpaquePointer) {
+        let c: DisplayCalibration = layerView.displayCalibration
+        PMFlashLimiterSetCalibration(limiter, c.isIdentity ? 0 : 1, Float(c.exponent), Float(c.red), Float(c.green), Float(c.blue))
     }
 
     /// Reads back the default framebuffer of the current surface as RGBA bytes (tests).
@@ -615,8 +637,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     }
 }
 
-/// A CAMetalLayer-backed view that reports layout and window changes.
-final class MetalLayerView: UIView {
+/// A CAMetalLayer-backed view that reports layout and window changes. OUT-009: it carries the display calibration
+/// its slot gives it (applied by the renderer's pass from the next frame).
+final class MetalLayerView: UIView, DisplayCalibrationReceiver {
+    var displayCalibration: DisplayCalibration = .identity
+    var acceptsDisplayCalibration: Bool { true }
     override class var layerClass: AnyClass { CAMetalLayer.self }
     var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
     var onLayout: (() -> Void)?

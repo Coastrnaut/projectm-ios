@@ -144,6 +144,7 @@ enum StatusCueCatalog {
                 NamedStatusCue(name: "uncertain", cue: tempo(.uncertain(bpm: 120))),
                 NamedStatusCue(name: "searching", cue: tempo(.searching)),
                 NamedStatusCue(name: "manual", cue: tempo(.manual(bpm: 120))),
+                NamedStatusCue(name: "midiClock", cue: tempo(.midiClock(bpm: 120))),   // MIDI-010
             ]),
         ]
     }

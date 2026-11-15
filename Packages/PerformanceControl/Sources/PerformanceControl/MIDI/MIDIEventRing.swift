@@ -8,6 +8,7 @@
 // * Overflow: drop newest. When full, the pushed event is dropped and `dropped` is incremented; the producer
 //   never touches the read index, so the consumer's copy is always intact.
 // * Timing clock and active sensing increment their own counters and are never stored (MIDI-002-R4).
+// * MIDI-010: clock, start, continue, stop and song position are also copied to `clockLane` (when enabled).
 import Synchronization
 
 public final class MIDIEventRing: MIDIEventSink, @unchecked Sendable {
@@ -20,6 +21,8 @@ public final class MIDIEventRing: MIDIEventSink, @unchecked Sendable {
     private let droppedCount = Atomic<Int>(0)
     private let clocks = Atomic<Int>(0)
     private let sensing = Atomic<Int>(0)
+    /// MIDI-010-R1: the clock follower's in-order copy of the clock-relevant events.
+    public let clockLane = MIDIClockLane()
 
     public init(capacity: Int = MIDIEventRing.defaultCapacity) {
         precondition(capacity > 0, "capacity must be positive")
@@ -38,6 +41,7 @@ public final class MIDIEventRing: MIDIEventSink, @unchecked Sendable {
     public func receive(_ event: MIDIEvent) { push(event) }
 
     public func push(_ event: MIDIEvent) {
+        if MIDIClockLane.carries(event.kind) { clockLane.push(event) }   // MIDI-010
         switch event.kind {
         case .clock:
             clocks.add(1, ordering: .relaxed)
@@ -79,6 +83,7 @@ public final class MIDIEventRing: MIDIEventSink, @unchecked Sendable {
     public func discardAll() {
         let w: Int = writeIndex.load(ordering: .acquiring)
         readIndex.store(w, ordering: .releasing)
+        clockLane.discardAll()   // MIDI-010
     }
 
     // MARK: Counters (monotonic since init; readers keep their own baselines)

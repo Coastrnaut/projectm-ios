@@ -95,7 +95,7 @@ final class SlideshowCoordinator {
     /// MED-006-R6: a beat grid only for a manual or stable tempo with a period and a phase.
     nonisolated static func grid(snapshot: TempoSnapshot, readout: TempoReadout) -> SlideshowBeatGrid? {
         switch readout {
-        case .manual, .stable: break
+        case .manual, .midiClock, .stable: break   // MIDI-010: the clock counts as a manual tempo
         case .uncertain, .searching: return nil
         }
         guard let period = snapshot.periodNanoseconds, let anchor = snapshot.anchorNanoseconds else { return nil }

@@ -86,6 +86,11 @@ final class ExpressionRejectionTests: XCTestCase {
         XCTAssertEqual(Self.error(for: "audio.motion.shake")?.reason, .unknownIdentifier("audio.motion.shake"))
     }
 
+    /// CAM-009-R8: face sources are binding sources, not formula names.
+    func testFaceSourcesAreNotFormulaNames() {
+        XCTAssertEqual(Self.error(for: "audio.face.mouth * 2")?.reason, .unknownIdentifier("audio.face.mouth"))
+    }
+
     func testErrorCarriesPositionAndReason() {
         let error = Self.error(for: "1 +\n  audio.bass")
         XCTAssertEqual(error?.position, SourcePosition(line: 2, column: 3))

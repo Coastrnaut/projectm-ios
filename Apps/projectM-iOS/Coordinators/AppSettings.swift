@@ -114,6 +114,7 @@ final class AppSettings {
     static let mandalaMirrorKey = "settings.mandala.mirror"
     static let mandalaPetalKey = "settings.mandala.petal"
     static let particleGravityKey = "settings.particleFountain.gravity"   // VIS-008
+    static let particleEmitterKey = ParticleEmitterChoice.key   // SHD-007: the Particle emitter editor
     static let particleOrbitRadiusKey = "settings.particleOrbit.radius"   // VIS-009
     static let particleTrailsKey = "settings.particleTrails"   // VIS-010
     static let noiseFieldFrequencyKey = "settings.noiseField.frequency"   // VIS-013
@@ -159,7 +160,7 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, particleTrailsKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleEmitterKey, particleTrailsKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
@@ -328,6 +329,17 @@ final class AppSettings {
     /// VIS-008: the particle fountain's gravity (Medium by default).
     var particleGravity: ParticleGravity {
         didSet { defaults.set(particleGravity.rawValue, forKey: Self.particleGravityKey) }
+    }
+
+    /// SHD-007-R8: the Particle emitter editor's switch and settings (absent key at the defaults).
+    var particleEmitter: ParticleEmitterChoice {
+        didSet {
+            if let data = ParticleEmitterChoice.encode(particleEmitter) {
+                defaults.set(data, forKey: Self.particleEmitterKey)
+            } else {
+                defaults.removeObject(forKey: Self.particleEmitterKey)
+            }
+        }
     }
 
     /// VIS-009: the particle orbit's radius (Medium by default); the manual value of `visual.particleOrbit.radius`.
@@ -543,6 +555,7 @@ final class AppSettings {
         mandalaMirror = defaults.bool(forKey: Self.mandalaMirrorKey)
         mandalaPetal = defaults.string(forKey: Self.mandalaPetalKey).flatMap(MandalaPetalStyle.init(rawValue:)) ?? .petal
         particleGravity = defaults.string(forKey: Self.particleGravityKey).flatMap(ParticleGravity.init(rawValue:)) ?? .medium   // VIS-008
+        particleEmitter = ParticleEmitterChoice.load(defaults.data(forKey: Self.particleEmitterKey))   // SHD-007
         particleOrbitRadius = defaults.string(forKey: Self.particleOrbitRadiusKey).flatMap(ParticleOrbitRadius.init(rawValue:)) ?? .medium   // VIS-009
         particleTrails = defaults.string(forKey: Self.particleTrailsKey).flatMap(ParticleTrailSetting.init(rawValue:)) ?? .off   // VIS-010
         noiseFieldFrequency = defaults.string(forKey: Self.noiseFieldFrequencyKey).flatMap(NoiseFieldFrequency.init(rawValue:)) ?? .medium   // VIS-013

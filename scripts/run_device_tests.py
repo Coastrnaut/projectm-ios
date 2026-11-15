@@ -81,6 +81,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom",   # CAM-007
                 "settings.camera.lens",   # CAM-003
                 "settings.camera.personMask",   # CAM-008
+                "settings.camera.faceTracking", "settings.camera.faceTrackingConsent",   # CAM-009-R3
                 "settings.visual.colorBlindSafePalette",   # ACC-003-R13
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8
@@ -100,6 +101,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.beatRings.life",   # VIS-006-R9
                 "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   # VIS-007-R9
                 "settings.particleFountain.gravity",   # VIS-008-R10
+                "settings.particleFountain.emitter",   # SHD-007-R8 (Particle emitter editor, absent at defaults)
                 "settings.particleOrbit.radius",   # VIS-009-R10
                 "settings.particleTrails",   # VIS-010-R9
                 "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   # VIS-013-R9
@@ -111,6 +113,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   # OSC-008 (user-approved local hosts)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
+                "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)
                 "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
                 "settings.scene.locked",  # SCN-015 (scene lock; absent = unlocked)
                 "settings.modulation.quantize",  # MOD-017 (quantize mode; absent = off)
@@ -140,6 +143,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   # OUT-003-R7
                 "settings.externalDisplay.outputMode",   # OUT-006-R7
                 "settings.externalDisplay.cornerPin",   # OUT-007-R9 (corner pin; identity = absent)
+                "settings.externalDisplay.calibration",   # OUT-009-R9 (display calibration; identity = absent)
                 "settings.recording.timedStop",   # REC-008-R9 (stop recording after a length; Off by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11

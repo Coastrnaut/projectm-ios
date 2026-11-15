@@ -22,6 +22,9 @@
 // * ACC-007 (specs/238-acc-007-haptic-beat-feedback, research D2): while `analysisEventObserver` is set (haptic
 //   beat pulses on) every drained event is handed to it and the poll runs every 40 ms; nil (the default) keeps
 //   today's 250 ms poll and hands nothing on.
+// * MIDI-010 (specs/273-midi-010-midi-clock-receive): `updateMIDIClock` hands in a locked MIDI clock's tempo (from
+//   `MIDIClockCoordinator`); it outranks taps and the estimate. A tap while the clock sets the tempo is still recorded
+//   (the fallback when the clock goes) and announces "MIDI clock is setting the tempo".
 // Nothing here reaches projectM (Constitution VIII, ADR-0008 decision 5).
 import AnalysisFeatures
 import AudioCore
@@ -97,6 +100,10 @@ final class TempoCoordinator: PresentationBoundResource {
         let before = snapshot
         let outcome = source.tap(at: clock())
         publish()
+        if source.followsMIDIClock {   // MIDI-010-R7: the clock keeps the tempo; the tap only builds the fallback
+            if outcome != .tooFast { announce(Self.midiClockNotice) }
+            return
+        }
         switch outcome {
         case .established(let bpm):
             announce(Self.setAnnouncement(bpm: bpm))
@@ -124,6 +131,17 @@ final class TempoCoordinator: PresentationBoundResource {
         publish()
     }
 
+    /// MIDI-010: the locked clock's tempo (nil: no clock, not locked, or not followed).
+    func updateMIDIClock(_ tempo: MIDIClockTempo?) {
+        source.updateMIDIClock(tempo)
+        publish()
+    }
+
+    /// Whether a MIDI clock sets the tempo now (MIDI-010).
+    var followsMIDIClock: Bool { source.followsMIDIClock }
+
+    static let midiClockNotice = "MIDI clock is setting the tempo"
+
     private func publish() {
         let next = source.snapshot
         if next != snapshot { snapshot = next }
@@ -141,7 +159,7 @@ final class TempoCoordinator: PresentationBoundResource {
     /// node whenever no tempo had been found yet (2026-11-14 regression).
     static func readoutText(_ readout: TempoReadout) -> String {
         switch readout {
-        case .manual(let bpm), .stable(let bpm):
+        case .manual(let bpm), .midiClock(let bpm), .stable(let bpm):
             let whole: Int = wholeBPM(bpm)
             return "\(whole) BPM"
         case .uncertain(let bpm):
@@ -156,6 +174,7 @@ final class TempoCoordinator: PresentationBoundResource {
     static func stateText(_ readout: TempoReadout) -> String {
         switch readout {
         case .manual: "Manual"
+        case .midiClock: "MIDI clock"
         case .stable: "Stable"
         case .uncertain: "Uncertain"
         case .searching: "Searching"
@@ -168,6 +187,9 @@ final class TempoCoordinator: PresentationBoundResource {
         case .manual(let bpm):
             let whole: Int = wholeBPM(bpm)
             return "\(whole) BPM, manual"
+        case .midiClock(let bpm):
+            let whole: Int = wholeBPM(bpm)
+            return "\(whole) BPM, MIDI clock"
         case .stable(let bpm):
             let whole: Int = wholeBPM(bpm)
             return "\(whole) BPM, stable"
@@ -199,6 +221,8 @@ final class TempoCoordinator: PresentationBoundResource {
         case .uncertain(let bpm):
             let whole: Int = wholeBPM(bpm)
             detail = "Tempo uncertain, about \(whole) BPM"
+        case .midiClock:
+            detail = midiClockNotice
         case .searching, .manual:
             detail = "Searching for tempo"
         }

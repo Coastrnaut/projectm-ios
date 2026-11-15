@@ -101,6 +101,7 @@ public enum LibrarySettingsPolicy {
         "settings.beatRings.life",   // VIS-006-R9
         "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   // VIS-007-R9
         "settings.particleFountain.gravity",   // VIS-008-R10
+        "settings.particleFountain.emitter",   // SHD-007-R8: the Particle emitter editor (absent at defaults)
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.particleTrails",   // VIS-010-R9
         "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   // VIS-013-R9
@@ -136,6 +137,7 @@ public enum LibrarySettingsPolicy {
     /// Read by the app but deliberately left out (documented; a test checks none is included).
     public static let excludedKeys: [String] = [
         "settings.osc.enabled", "settings.midi.enabled",
+        "settings.midi.followClock",   // MIDI-010-R6: this device's MIDI setup (Follow MIDI clock), like Listen for MIDI
         "settings.scene.locked",   // SCN-015: a performance lock is session state of this device
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
@@ -143,6 +145,7 @@ public enum LibrarySettingsPolicy {
         "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
         "settings.show.rotation",   // SHOW-013: a performance choice of this device (auto scene rotation)
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
+        "settings.camera.faceTracking", "settings.camera.faceTrackingConsent",   // CAM-009-R3: likewise (face tracking)
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
         "settings.recording.aspect", "settings.recording.customWidth",   // REC-014-R7: sizes depend on this device's
@@ -152,6 +155,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   // OUT-003-R7: likewise
         "settings.externalDisplay.outputMode",   // OUT-006-R7: likewise
         "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
+        "settings.externalDisplay.calibration",   // OUT-009-R9: likewise (one display's colour response)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device

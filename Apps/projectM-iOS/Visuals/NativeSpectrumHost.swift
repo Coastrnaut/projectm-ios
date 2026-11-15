@@ -92,6 +92,7 @@
 //   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
 import AnalysisFeatures
 import AudioCore
+import Compositor
 import FlashSafety
 import FrameCapture
 import FrameTiming
@@ -441,6 +442,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
     var motionValues: (@MainActor () -> MotionFeatureValues)?
     /// CAM-011: called when `usesMotion` changes, so the motion coordinator starts or stops the sensor.
     var onMotionDemandChange: (@MainActor (Bool) -> Void)?
+    /// CAM-009: true while a binding or trigger reads a face source (recomputed with `usesMotion`).
+    private(set) var usesFace = false
+    /// CAM-009: the face analyzer's current values, read once per evaluated frame while `usesFace`.
+    var faceValues: (@MainActor () -> FaceFeatureValues)?
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
@@ -537,9 +542,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                                                      petalStyle: petal))
             generator.barCount = barCount
             return generator
-        case let .particleFountain(gravity):   // VIS-008
+        case let .particleFountain(gravity, emitter):   // VIS-008, SHD-007: the edited emitter when on
             let generator = try ParticleFountainGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
-                                                          configuration: ParticleFountainConfiguration(gravity: gravity.value))
+                                                          configuration: ParticleFountainConfiguration(gravity: gravity.value,
+                                                                                                       emitter: emitter))
             generator.barCount = barCount
             return generator
         case let .particleOrbit(radius):   // VIS-009
@@ -634,10 +640,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.mirror = mirror
             configuration.petalStyle = petal
             mandala.configuration = configuration
-        } else if case let .particleFountain(gravity) = newStyle, let fountain = generator as? ParticleFountainGenerator {
+        } else if case let .particleFountain(gravity, emitter) = newStyle, let fountain = generator as? ParticleFountainGenerator {
             var configuration = fountain.configuration   // VIS-008: later bursts, no rebuild
             configuration.gravity = gravity.value
+            let restart: Bool = configuration.emitter?.seed != emitter?.seed   // SHD-007: a new seed or on/off replays
+            configuration.emitter = emitter
             fountain.configuration = configuration
+            if restart { fountain.restartLoop() }
         } else if case let .particleOrbit(radius) = newStyle, let orbit = generator as? ParticleOrbitGenerator {
             var configuration = orbit.configuration   // VIS-009: the base radius, eased in by the simulation
             configuration.radius = radius.value
@@ -782,6 +791,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
             if case .motion = source { return true }
             return false
         }
+        let isFace: (AudioFeatureSource) -> Bool = { (source: AudioFeatureSource) -> Bool in
+            if case .face = source { return true }
+            return false
+        }
+        usesFace = bindings.contains { (b: AudioFeatureBinding) -> Bool in isFace(b.source) }
+            || triggerBank.bindings.contains { (t: ThresholdTriggerBinding) -> Bool in isFace(t.source) }   // CAM-009
         let uses: Bool = bindings.contains { (b: AudioFeatureBinding) -> Bool in isMotion(b.source) }
             || triggerBank.bindings.contains { (t: ThresholdTriggerBinding) -> Bool in isMotion(t.source) }
         guard uses != usesMotion else { return }
@@ -827,7 +842,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                       highTransient: highTransient, rolloff: rolloff, flatness: flatness,
                                       correlation: correlation, sectionChange: sectionChange, lfos: lfos,
                                       bandEnvelopes: bandEnvelopeBank.values,
-                                      motion: usesMotion ? motionValues?() : nil)   // CAM-011: a struct, no allocation
+                                      motion: usesMotion ? motionValues?() : nil,   // CAM-011: a struct, no allocation
+                                      face: usesFace ? faceValues?() : nil)   // CAM-009: a struct, no allocation
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
@@ -888,7 +904,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .beatRings(life): return "\(life.title) ring life, \(glow)"   // VIS-006-R11
         case let .mandala(symmetry, mirror, petal):   // VIS-007-R11
             return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
-        case let .particleFountain(gravity): return "\(gravity.title) gravity, \(glow)"   // VIS-008-R12
+        case let .particleFountain(gravity, emitter):   // VIS-008-R12, SHD-007
+            return emitter == nil ? "\(gravity.title) gravity, \(glow)" : "Custom emitter, \(glow)"
         case let .particleOrbit(radius): return "\(radius.title) radius, \(glow)"   // VIS-009-R12
         case let .noiseField(frequency, octaves, seed):   // VIS-013-R12
             return "\(frequency.title) frequency, \(octaves) octaves, seed \(seed), \(glow)"
@@ -1177,10 +1194,18 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
 /// The CAMetalLayer-backed view; one accessibility element (VIS-001-R18, VIS-002-R13). The host sets
 /// its label, identifier and value for the shown visual.
-final class NativeSpectrumLayerView: UIView {
+/// OUT-009 (specs/268, contract C3): a display calibration receiver that accepts only when its host installed
+/// `onDisplayCalibrationChange` (the compositor hosts do: their output pass applies it). The native spectra draw
+/// straight into the drawable with no shared final pass, so they leave it unset (not covered, OUT-009-R3).
+final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
     override class var layerClass: AnyClass { CAMetalLayer.self }
     var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
     var onLayout: (() -> Void)?
+    var displayCalibration: DisplayCalibration = .identity {
+        didSet { if displayCalibration != oldValue { onDisplayCalibrationChange?(displayCalibration) } }
+    }
+    var onDisplayCalibrationChange: ((DisplayCalibration) -> Void)?
+    var acceptsDisplayCalibration: Bool { onDisplayCalibrationChange != nil }
 
     init(device: MTLDevice) {
         super.init(frame: .zero)
@@ -1239,7 +1264,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     /// VIS-007: the mandala.
     case mandala(symmetry: Int, mirror: Bool, petal: MandalaPetalStyle)
     /// VIS-008: the particle fountain.
-    case particleFountain(gravity: ParticleGravity)
+    case particleFountain(gravity: ParticleGravity, emitter: ParticleEmitterSettings? = nil)   // SHD-007: emitter
     /// VIS-009: the particle orbit.
     case particleOrbit(radius: ParticleOrbitRadius)
     /// VIS-013: the noise field.

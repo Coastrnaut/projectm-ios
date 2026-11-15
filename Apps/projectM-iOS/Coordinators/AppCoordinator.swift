@@ -353,6 +353,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let midiMonitor: MIDIMonitorCoordinator
     /// MIDI-003: MIDI learn and the mapping list (opened from the MIDI section; `midi.mappings` points here).
     let midiMappings: MIDIMappingCoordinator
+    /// MIDI-010: Follow MIDI clock (Settings → MIDI; off by default); feeds `tempo` while a clock is locked.
+    let midiClock: MIDIClockCoordinator
     /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
     @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
         guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
@@ -396,6 +398,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// CAM-011: device tilt and shake as modulation sources (Settings › Motion; the sensor runs only while used).
     @ObservationIgnored private(set) lazy var motionModulation: MotionModulationCoordinator = makeMotionModulation(defaults: defaults)
+    /// CAM-009: opt-in face tracking on the Camera visual's pictures (Settings › Camera; consent first).
+    @ObservationIgnored private(set) lazy var faceTracking: FaceTrackingCoordinator = makeFaceTracking(defaults: defaults)
     /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
     @ObservationIgnored private(set) lazy var hapticBeat = HapticBeatCoordinator(
         defaults: defaults, tempo: tempo, clamp: { [unowned self] () -> SafetyClamp in self.settings.safetyClamp })
@@ -455,7 +459,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let oscReceiver: OSCReceiver = .system(store: OSCRoutesCoordinator.makeStore(routable: oscRoutable),
                                                routes: OSCRoutesCoordinator.initialRoutes(routable: oscRoutable, defaults: defaults))
         #if DEBUG
-        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? oscReceiver)
+        let fakeOSC: OSCReceiver? = UITestFakeOSC.receiverIfRequested(store: oscReceiver.store, routable: oscRoutable, defaults: defaults)   // OSC-004
+        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? fakeOSC ?? oscReceiver)
         #else
         osc = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
         #endif
@@ -569,6 +574,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         #endif
         tempo = TempoCoordinator(clock: tempoClock)
+        midiClock = MIDIClockCoordinator(input: midiInput, tempo: tempo, defaults: defaults)   // MIDI-010
+        midi.clock = midiClock
         #if DEBUG
         // TempoConfidenceUITests: `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` (ANL-006 D7).
         if let script = defaults.string(forKey: "uitestTempoEstimate").flatMap(TempoCoordinator.estimateScript) {
@@ -654,9 +661,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
         ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
+        FaceTrackingCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // CAM-009: off, no consent
         NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
@@ -683,6 +692,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
         _ = hapticBeat   // ACC-007-R7: a stored "on" installs the tempo observer before any visual starts
         osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
+        if let routes = osc.routes {   // OSC-004: learn on OSC Routes, announced on the .osc lane
+            let announcer: AccessibilityAnnouncer = statusEvents.announcer
+            osc.learn = OSCLearnCoordinator(osc: osc, routes: routes) { (text: String) -> Void in announcer.announce(text, kind: .osc) }
+        }
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010
@@ -740,6 +753,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectOfflineExport()   // REC-013
         connectParameterQuantizer()   // MOD-017
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
+        connectMIDIFeedback()   // MIDI-009
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
@@ -1192,7 +1206,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
-        case .particleFountain: .particleFountain(gravity: settings.particleGravity)   // VIS-008
+        case .particleFountain: .particleFountain(gravity: settings.particleGravity, emitter: settings.particleEmitter.effective)   // VIS-008, SHD-007
         case .particleOrbit: .particleOrbit(radius: settings.particleOrbitRadius)   // VIS-009
         case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
@@ -1236,6 +1250,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
             connectMotion(host)   // CAM-011
+            faceTracking.connect(native: host)   // CAM-009
             connectStereoPhase(host)   // ANL-013
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
@@ -1280,6 +1295,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in self?.cameraWhiteBalance = state }   // CAM-006
             cameraWhiteBalance = host.cameraWhiteBalance
             observePersonMask(of: host)   // CAM-008
+            faceTracking.connect(camera: host)   // CAM-009: the same pictures, only behind the consent gate
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1522,6 +1538,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.mirrored = settings.cameraMirrored
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
         host.personMask = settings.cameraPersonMask   // CAM-008-R1: from the next frame
+        faceTracking.analyzer.mirrored = host.mirrored   // CAM-009: x follows the shown picture
         host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
 
@@ -2000,6 +2017,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midi.sceneBecame(active: active)   // MIDI-001-R7: no discovery outside the foreground
         warmStart.sceneBecame(active: active)   // PERF-009-R6: write the pipeline archive back
         motionModulation.setAppActive(active)   // CAM-011-R8: no motion sensor outside the foreground
+        if active { faceTracking.refreshPermission() }   // CAM-009-R5: access changed in iOS Settings
         if active { countdown.appBecameActive() }   // MED-012-R4: a countdown that ended in the background finishes once
         updateIdleTimer()
     }

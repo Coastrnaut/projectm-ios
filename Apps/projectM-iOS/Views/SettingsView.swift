@@ -115,6 +115,7 @@ struct SettingsView: View {
     /// CAM-006: the Lock white balance row (nil in previews and tests that don't need it).
     var cameraWhiteBalance: CameraWhiteBalanceChoice? = nil
     var cameraPersonMask: CameraPersonMaskChoice? = nil   // CAM-008
+    var cameraFaceTracking: FaceTrackingCoordinator? = nil   // CAM-009
     /// CAM-005: whether the chosen camera can focus on a point (nil: no focus note, e.g. in previews).
     var cameraCanFocus: (@MainActor () -> Bool)? = nil
     /// PRE-006: Recently Played (nil hides its section, e.g. in previews).
@@ -213,10 +214,11 @@ struct SettingsView: View {
                 .accessibilityIdentifier("cameraMirrorToggle")
             cameraCropRows
             if let cameraPersonMask { CameraPersonMaskRow(choice: cameraPersonMask) }   // CAM-008-R1
+            if let cameraFaceTracking { CameraFaceTrackingRow(tracking: cameraFaceTracking) }   // CAM-009-R1
         } header: {
             Text("Camera")
         } footer: {
-            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Lock exposure holds the camera's current brightness until you turn it off, change lens or camera, or the camera stops. Lock white balance holds the camera's current colors the same way, also through an interruption. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device. Person mask shows only the people in the picture, or only what is behind them; it is worked out on this device and never saved.")
+            Text("Mirror flips the camera picture left to right, like a mirror; saved frames and recordings show it the same way. Each camera keeps its own setting: on for Front, off for Back unless you change it. Lens lists only the back lenses this device has. Lock exposure holds the camera's current brightness until you turn it off, change lens or camera, or the camera stops. Lock white balance holds the camera's current colors the same way, also through an interruption. Fill covers the screen and crops the rest; Fit shows the whole picture with bars. Anchor keeps that part of the picture in place, and Zoom enlarges it; both cameras use the same framing, also after you turn the device. Person mask shows only the people in the picture, or only what is behind them; it is worked out on this device and never saved. Face tracking, off until you turn it on and confirm, follows your face in the camera picture on this device to move the visuals; nothing is saved or sent.")
         }
     }
 
@@ -436,14 +438,19 @@ struct SettingsView: View {
         .accessibilityIdentifier("particleTrailsPicker")
     }
 
-    /// VIS-008-R10: the particle fountain's gravity.
-    private var particleFountainOptions: some View {
+    /// VIS-008-R10: the particle fountain's gravity (SHD-007: the emitter's gravity replaces it when the emitter is on).
+    @ViewBuilder private var particleFountainOptions: some View {
         Picker("Gravity", selection: $settings.particleGravity) {
             ForEach(ParticleGravity.allCases, id: \.self) { (gravity: ParticleGravity) in Text(gravity.title).tag(gravity) }
         }
         .segmentedUnlessAccessibilitySize()   // ACC-006-R1
         .accessibilityLabel("Gravity")
         .accessibilityIdentifier("particleGravityPicker")
+        if settings.particleEmitter.enabled {
+            Text("The particle emitter is on, so its own gravity is used.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 
     /// VIS-007-R9: the mandala's symmetry, mirror and petal style.
@@ -547,6 +554,7 @@ struct SettingsView: View {
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let layerInspector { PaletteLinkSection(palettes: layerInspector.palettes).id("palettes") }   // UIX-011
         NoiseEditorLinkSection().id("noiseEditor")   // SHD-006-R6
+        ParticleEmitterLinkSection(settings: settings).id("particleEmitter")   // SHD-007-R7
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
@@ -895,7 +903,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("oscRateLimited")
             }
             if let routes = osc.routes {   // OSC-003-R10
-                NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount) }
+                NavigationLink("OSC Routes") { OSCRoutesView(routes: routes, unknownCount: osc.unknownAddressCount, learn: osc.learn) }
                     .accessibilityIdentifier("oscRoutesLink")
             }
             if let peers = osc.peers {   // OSC-008-R9
