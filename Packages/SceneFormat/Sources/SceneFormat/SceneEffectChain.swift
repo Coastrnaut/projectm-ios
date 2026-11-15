@@ -5,7 +5,7 @@
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
 // `fx.chromatic`, FX-008's `fx.radialBlur`, FX-012's `fx.mosaic`, FX-014's `fx.edgeOutline`, FX-016's `fx.lensDistortion`,
-// FX-015's `fx.vignette`) gives that effect's
+// FX-015's `fx.vignette`, FX-018's `fx.scanlines`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
@@ -100,6 +100,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var lensDistortion: LensDistortion?
     /// FX-015 (ADR-0116): `isEnabled` is the entry's flag (`SceneEffectChain+Vignette.swift`); set after `init`.
     public var vignette: Vignette?
+    /// FX-018 (ADR-0123): `isEnabled` is the entry's flag (`SceneEffectChain+Scanlines.swift`); set after `init`.
+    public var scanlines: Scanlines?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
                 chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil,
@@ -163,8 +165,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let vignetteOff: Bool = !(vignette?.isEnabled ?? false)   // FX-015
         let outlineOff: Bool = !(edgeOutline?.isEnabled ?? false)   // FX-014
         let lensOff: Bool = !(lensDistortion?.isEnabled ?? false)   // FX-016
+        let scanlinesOff: Bool = !(scanlines?.isEnabled ?? false)   // FX-018
         return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && radialBlurOff
-            && echoOff && mosaicOff && outlineOff && lensOff && vignetteOff
+            && echoOff && mosaicOff && outlineOff && lensOff && vignetteOff && scanlinesOff
     }
 
     // MARK: Reading
@@ -215,6 +218,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
                     settings.lensDistortion = readLensDistortion(entry, path, &issues)
                 case .vignette:   // FX-015
                     settings.vignette = readVignette(entry, path, &issues)
+                case .scanlines:   // FX-018
+                    settings.scanlines = readScanlines(entry, path, &issues)
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -322,6 +327,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         case .vignette:   // FX-015
             guard let v = vignette else { return stored }
             Self.writeVignette(v, into: &entry)
+        case .scanlines:   // FX-018
+            guard let s = scanlines else { return stored }
+            Self.writeScanlines(s, into: &entry)
         }
         return entry
     }

@@ -14,43 +14,43 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
 
 ## Phase 2: Foundational
 
-- [ ] FX-018-T02 [P] `Scanlines` value in `Packages/Compositor/Sources/Compositor/Scanlines.swift`: spacing "2…16
+- [X] FX-018-T02 [P] `Scanlines` value in `Packages/Compositor/Sources/Compositor/Scanlines.swift`: spacing "2…16
   pixels (step 1)" default 3, thickness "1…15 pixels (step 1); used as min(thickness, spacing − 1)" default 1,
   intensity "0…1 (step 0.01)" default 0.5, isVertical default false (NaN → default; ±Inf and out of range → nearest
   bound; spacing and thickness rounded); `isActive` (on, intensity > 0, ≥ 2 × 2); `block` (16 bytes), `isDark`,
-  `factor`, `reference` (contract C2); plain Swift (Linux)
-- [ ] FX-018-T03 [P] `ScanlinesModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; effective
+  `factor`, `reference` (contract C2); plain Swift (Linux) — Verified 2026-11-15: ScanlinesModelTests 5/5 on the host and in the Linux shape (-DCOMPOSITOR_NO_METAL, own scratch path)
+- [X] FX-018-T03 [P] `ScanlinesModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; effective
   thickness; inactive cases; the rule anchored at index 0 for every spacing; zero intensity is identity; finite output
-  for finite and HDR input (FX-018-R2 to R5, R12)
-- [ ] FX-018-T04 `OutputEffectKind.scanlines` (`fx.scanlines`, appended after Vignette) in
-  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-018-R7)
+  for finite and HDR input (FX-018-R2 to R5, R12) — Verified 2026-11-15: swift test --filter ScanlinesModelTests, 5 pass (0.006 s)
+- [X] FX-018-T04 `OutputEffectKind.scanlines` (`fx.scanlines`, appended after Vignette) in
+  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-018-R7) — Verified 2026-11-15: OutputEffectOrderTests 5/5 (host and Linux shape)
 
 ## Phase 3: User Stories 1-2 — the pass (P1)
 
 **Goal**: exact scanlines on every compositor output, exact identity at zero intensity and off.
 **Independent test**: GPU tests through the real compositor.
 
-- [ ] FX-018-T05 [US1] `ScanlinesPass` with `cmp_scanlines` in
+- [X] FX-018-T05 [US1] `ScanlinesPass` with `cmp_scanlines` in
   `Packages/Compositor/Sources/Compositor/ScanlinesPass.swift` (one pooled picture, released when unused; one exact
-  read per pixel, an integer modulo and at most one multiply, no loop: FX-018-R6)
-- [ ] FX-018-T06 [US1] `Compositor.swift`: `scanlines` property, splice the source at the existing compile site, the
+  read per pixel, an integer modulo and at most one multiply, no loop: FX-018-R6) — Verified 2026-11-15: ScanlinesCompositeTests 6/6 on the host (real Metal device); shader is one read, a modulo, at most one multiply
+- [X] FX-018-T06 [US1] `Compositor.swift`: `scanlines` property, splice the source at the existing compile site, the
   `.scanlines` case in `encodeOutputEffects` (Color folded before it), release in deinit; add the source to
-  `CompositorShaderSources.archived` (FX-018-R4, R7, R11, R13)
-- [ ] FX-018-T07 [US1] [US2] `ScanlinesCompositeTests` (the shader unit test) in
+  `CompositorShaderSources.archived` (FX-018-R4, R7, R11, R13) — Verified 2026-11-15: Compositor package suite on the host: CompositorTests 787 tests, 0 failures (10 skipped), 56 s; CompositorPipelineArchiveTests pass
+- [X] FX-018-T07 [US1] [US2] `ScanlinesCompositeTests` (the shader unit test) in
   `Packages/Compositor/Tests/CompositorTests/`: off and intensity 0 (several spacings, thicknesses, both
   orientations) bit-identical on random content with no picture held; the pass run directly with intensity 0
   bit-identical; for every spacing 2…16 at 37 × 23, 61 × 97 (portrait) and 129 × 45 (landscape), plus spacings 2, 3
   and 16 at 3840 × 2160, a uniform picture has exactly the rows c mod p < t darkened by one factor, all other pixels
   bit-identical and the measured pitch = p for every pair of bands; vertical columns the same; random content equals
-  the half-rounded reference; HDR input gives finite output; order and pool (FX-018-S1 to S3)
+  the half-rounded reference (untouched pixels exact, darkened within one half step, research D5); HDR input gives finite output; order and pool (FX-018-S1 to S3) — Verified 2026-11-15: ScanlinesCompositeTests 6/6 in 0.61 s (4K case 0.34 s): identity off/zero and shader at 0 bit-identical; spacings 2…16 at 37×23, 61×97, 129×45 both orientations, 2/3/16 at 3840×2160: exact rows, one factor, pitch = spacing; reference within one half step; finite HDR
 
 ## Phase 4: User Story 3 — scenes and the chain (P2)
 
-- [ ] FX-018-T08 [US3] `fx.scanlines` entry: `SceneEffectSettings.scanlines` (set after `init`), read/write in
+- [X] FX-018-T08 [US3] `fx.scanlines` entry: `SceneEffectSettings.scanlines` (set after `init`), read/write in
   `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain+Scanlines.swift` with one case per switch in
   `SceneEffectChain.swift`; tests for round trip, clamping and old scenes byte-identical in
   `Packages/SceneFormat/Tests/SceneFormatTests/ScanlinesSceneEntryTests.swift`; the source-safety list names the new
-  file; update `SceneEffectChainTests` if it lists the order (FX-018-R10, S4)
+  file; update `SceneEffectChainTests` if it lists the order (FX-018-R10, S4) — Verified 2026-11-15: SceneFormat suite 226 tests, 0 failures (2.8 s), incl. ScanlinesSceneEntryTests 2/2, SceneSourceSafetyTests and the order lists in SceneEffectChainTests
 - [ ] FX-018-T09 [US3] RenderGoldens: apply `effects.scanlines` in `GoldenSceneRenderer.swift`;
   `ScanlinesSceneGoldenTests` (intensity 0 and off render exactly as no chain; a scanline scene saved and reloaded
   renders the same picture with dark rows exactly at c mod p < t); update `EffectChainSceneTests` if it lists the order

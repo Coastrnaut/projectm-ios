@@ -24,9 +24,10 @@
   Intensity 0 normally runs no pass.
 - **FX-018-D5 — Block and reference.** `CMPScanlines { uint period; uint thickness; uint vertical; float factor; }`
   (16 bytes). The CPU reference applies the same rule and the same single `Float` multiply; the result is rounded to
-  half precision by the picture. A single multiply is correctly rounded on both sides, so the tests expect the
-  half-rounded reference exactly (a 1-ulp half tolerance is allowed only if a GPU proves otherwise, recorded in the
-  test report).
+  half precision by the picture. Measured 2026-11-15 on the Mac's GPU: the float-to-half store of the render target
+  does not round to nearest (0.5 × 0.7 is stored one half step below the CPU's nearest half), so a darkened pixel is
+  the reference within one half-float step; every untouched pixel is bit-identical, and on a uniform picture every
+  darkened pixel is bit-identical to every other (one factor). The tests assert exactly that.
 - **FX-018-D6 — Chain position.** Decision: `fx.scanlines` appended after `fx.vignette` (the current last). FX-011's
   `fx.pixelSort` is placed between Lens distortion and Vignette and FX-017's `fx.filmGrain` after Scanlines when those
   branches merge (grain on top of the lines, like grain in a photographed CRT); both sides are kept at merge. Stored

@@ -13,6 +13,8 @@
 For pixel (x, y) of a W × H frame: c = y (x when vertical); p = spacing; t = min(thickness, p − 1); f = 1 − intensity
 (one `Float`). If c mod p < t: out.rgb = in.rgb × f, out.a = in.a; otherwise out = in bit for bit. Row (column) 0 is
 always dark. Measured pitch (first row of a dark band to the first row of the next) = p for every pair of bands.
+Untouched pixels are bit-identical; a darkened pixel equals the half-rounded reference within one half-float step (the
+GPU's float-to-half store rounding, research FX-018-D5), and on a uniform input all darkened pixels are bit-identical.
 
 ## C3 — Scene entry
 
