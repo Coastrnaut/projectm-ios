@@ -23,7 +23,7 @@ Format: `- [ ] QA-012-Tnn Description (file)`. Budgets (owner rule 7): each unit
 
 ## Phase 2: After integration
 
-- [ ] QA-012-T07 Build the manifest at the integration head (after QA-012 merges), commit
-  `docs/release/evidence-manifest.*` alone, push; `verify` must report OK (QA-012-S1)
+- [X] QA-012-T07 Build the manifest at the integration head (after QA-012 merges), commit
+  `docs/release/evidence-manifest.*` alone, push; `verify``verify` must report OK (QA-012-S1) — Verified 2026-11-15: built for commit a59818dd, 161 files, verify OK; release ready no (5 gaps: D1-D3 records, 247 open device tasks, QA-011 awaiting)
 - [ ] QA-012-T08 {device} Rebuild the manifest after QA-011-T19 to T22 commit the D1-D3 records; release ready only
   when it lists no gaps
