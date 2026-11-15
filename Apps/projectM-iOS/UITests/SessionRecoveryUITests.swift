@@ -86,7 +86,7 @@ final class SessionRecoveryUITests: XCTestCase {
     private func commitCircularSpectrum16() {
         openSettings()
         app.visualRow("Circular Spectrum").tap()
-        XCTAssertTrue(bars.appears(within: 5))
+        XCTAssertTrue(app.reveal(bars), "the Bars picker below the visual rows")
         bars.buttons["16"].tap()
         closeSettings()
         XCTAssertTrue(circularSpectrum.appears(within: 10))
@@ -108,9 +108,9 @@ final class SessionRecoveryUITests: XCTestCase {
         closeSettings()
         openSettings()
         app.visualRow("Circular Spectrum").tap()
-        XCTAssertTrue(bars.appears(within: 5))
+        XCTAssertTrue(app.reveal(bars), "the Bars picker below the visual rows")
         bars.buttons["16"].tap()
-        XCTAssertTrue(app.reveal(app.visualRow("Camera")), "the Camera row")
+        XCTAssertTrue(app.reveal(app.visualRow("Camera"), down: true) || app.reveal(app.visualRow("Camera")), "the Camera row")
         app.visualRow("Camera").tap()
         closeSettings()
         XCTAssertTrue(poll(10) { self.autosave.contains("pending=0") && !self.autosave.contains("committed=0") },
@@ -144,7 +144,7 @@ final class SessionRecoveryUITests: XCTestCase {
         XCTAssertEqual(oscToggle.value as? String, "0", "the stored OSC toggle is off; Reopen does not turn it on")
         closeSettings()
         openSettings()   // then at the top
-        XCTAssertTrue(bars.appears(within: 5))
+        XCTAssertTrue(app.reveal(bars), "the Bars picker below the visual rows")
         XCTAssertTrue(bars.buttons["16"].isSelected, "the committed bar count returns")
         closeSettings()
         XCTAssertFalse(oscBadge.exists)
