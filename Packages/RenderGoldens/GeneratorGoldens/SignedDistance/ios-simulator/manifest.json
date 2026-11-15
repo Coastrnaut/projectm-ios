@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "signed-distance-128x96-f0.png",
+      "fileSHA256" : "5ec000443e228742b85b926503bc5eedd421a10e2fc798ddebe6a4487fa263d9",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "2d0479dcc2acfee8d1e88d52aedafbc13535ed6fd0e335911a1ed5e1062a1b23",
+      "scene" : "signed-distance",
+      "width" : 128
+    },
+    {
+      "file" : "signed-distance-256x192-f0.png",
+      "fileSHA256" : "abcb42f66a978fd7e166ec6085b8c287020c319c86f885a9e35e57e9bfb257d7",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "93e7e773c8b22a46ce00b14519db6603eae9606750c5ed896166322536d1c330",
+      "scene" : "signed-distance",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}
