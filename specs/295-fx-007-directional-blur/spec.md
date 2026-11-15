@@ -55,6 +55,26 @@ answer is the conservative option.
 - Q: What does "fixed tap budget" mean? → A: Every output pixel reads exactly the same number of samples (16) for every
   radius and angle, so the cost does not grow with the radius. Applied to FX-007-R4.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: How are the 16 samples weighted? → A: Gaussian weights with a standard deviation of half the radius, normalised to
+  sum to 1: a smooth streak without the hard ends of a box average, at the same cost. Applied to FX-007-R2, R4.
+- Q: Where along the axis are the 16 samples placed? → A: Evenly from −radius to +radius, both ends included (spacing
+  2 × radius ÷ 15); there is no separate centre sample (16 is even), so the pixel itself is reached through filtering
+  between the two innermost samples. Fractional positions are filtered between neighbouring pixels. Applied to
+  FX-007-R2, R4.
+- Q: How are frame edges handled: clamped samples, or a fade to zero blur at the border like FX-006? → A: Clamped
+  samples only: a sample past the border reads the border pixel (the edge is repeated), so nothing from outside the
+  frame appears and the blur stays uniform up to the edge. Applied to FX-007-R6, Edge Cases.
+- Q: Do the sensory safety profile or Reduce flashing limit the blur? → A: No cap: the blur only averages existing
+  colour (each output value is a convex combination of input values), so it adds no brightness or flashing; the flash
+  guard still judges the shown frame. Applied to the Assumptions.
+- Q: Is the blur a global setting or a per-scene value? → A: Both, like Trails and the chromatic split: a global
+  setting the visuals use, which a scene or effect-chain preset with an `fx.directionalBlur` entry overwrites when
+  opened; a scene without one leaves it alone (FX-020's rule). Applied to FX-007-R10, R11.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A streak along a direction (Priority: P1)
@@ -132,13 +152,15 @@ the same blur back when the scene or preset is opened.
 - **FX-007-R1**: Directional blur (on/off, off by default) applies to the compositor-backed visuals (Camera, Photo,
   Video, Text) on every output of a frame: screen, external display, recording and still capture.
 - **FX-007-R2**: With the blur active, each output pixel is a weighted average of samples taken along the blur axis
-  through the pixel, symmetric on both sides, reaching the radius on each side; the weights sum to 1.
+  through the pixel: 16 samples evenly spaced from −radius to +radius (both ends included), with Gaussian weights
+  (standard deviation radius ÷ 2) that sum to 1; fractional positions are filtered between neighbouring pixels.
 - **FX-007-R3**: Angle 0…180° (default 0°; 0° = horizontal, 90° = vertical; VoiceOver step 15°). Radius 0…2% of the
   frame's shorter side (default 0.5%; VoiceOver step 0.1%).
 - **FX-007-R4**: Fixed tap budget: exactly 16 samples per output pixel for every radius and angle.
 - **FX-007-R5**: At angle 0° the samples differ from the pixel only horizontally (and at 90° only vertically), so a
   blur at 0° never mixes rows and at 90° never mixes columns.
-- **FX-007-R6**: Every sample position is clamped to the frame; no value from outside the frame is read.
+- **FX-007-R6**: Every sample position is clamped to the frame (a position past the border reads the border pixel);
+  no value from outside the frame is read.
 - **FX-007-R7**: The blur is active only when on and the radius (in pixels) is above zero; otherwise no pass runs and
   the output is bit-identical to the output before this feature.
 - **FX-007-R8**: The blur is an FX-020 reorderable output effect (`fx.directionalBlur`); the standard order is Trails,
