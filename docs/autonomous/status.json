@@ -14,10 +14,9 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 11,
-   "built": 1,
-   "implementing": 1,
-   "integrated": 66
+   "audited": 10,
+   "implementing": 2,
+   "integrated": 67
   },
   "P3": {
    "audited": 4,
@@ -25,10 +24,9 @@
   }
  },
  "by_state": {
-  "audited": 17,
-  "built": 1,
-  "implementing": 1,
-  "integrated": 306,
+  "audited": 16,
+  "implementing": 2,
+  "integrated": 307,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -37,7 +35,6 @@
   "implementation_complete": false,
   "infeasible": [],
   "pending": [
-   "FX-008",
    "FX-010",
    "FX-011",
    "FX-012",
@@ -59,7 +56,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "19 features are not implemented yet (first: FX-008, FX-010, FX-011, FX-012, FX-013)"
+   "18 features are not implemented yet (first: FX-010, FX-011, FX-012, FX-013, FX-014)"
   ]
  },
  "features": {
@@ -1124,14 +1121,14 @@
    "state": "integrated"
   },
   "FX-008": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/fx-008",
-   "branch_sha": "4d289e1e64dae0587fbac27743f902713f6ab6a0",
+   "branch_sha": "af2387ba78ea95ec3cdfedf969a5cd980cd3c287",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "292f2a8e72e508591942ab637736d419b0798d5f",
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "integrated"
   },
   "FX-009": {
    "attempts": 0,
@@ -3065,13 +3062,13 @@
   },
   "UIX-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/uix-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "UIX-011": {
    "attempts": 0,
@@ -3854,6 +3851,11 @@
    "branch": "feature/fx-007",
    "id": "FX-007",
    "sha": "735bf65d0b5ca6cfebb20ad3b06b9eafdb058a29"
+  },
+  {
+   "branch": "feature/fx-008",
+   "id": "FX-008",
+   "sha": "292f2a8e72e508591942ab637736d419b0798d5f"
   },
   {
    "branch": "feature/fx-009",
@@ -4881,5 +4883,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T07:03:48Z"
+ "updated": "2026-11-15T07:21:10Z"
 }

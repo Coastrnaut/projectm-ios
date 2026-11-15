@@ -70,7 +70,8 @@ final class ChromaticSplitSettingTests: XCTestCase {
                                                        "settings.chromatic.angle", "settings.chromatic.radial"])
         let included = Set(LibrarySettingsPolicy.includedKeys)
         for key in ChromaticSplitSetting.allKeys { XCTAssertTrue(included.contains(key), "\(key) is backed up and erased") }
-        XCTAssertEqual(EffectChainSetting.summary(.standard), "Trails \u{2192} Color \u{2192} Chromatic split \u{2192} Directional blur")
+        XCTAssertEqual(EffectChainSetting.summary(.standard),
+                       "Trails \u{2192} Color \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Radial blur")   // FX-007, FX-008 appended
     }
 
     func testSceneAndPresetRoundTripThroughTheAppPaths() {
@@ -94,7 +95,7 @@ final class ChromaticSplitSettingTests: XCTestCase {
             chromatic.amount = 0.002
             SceneAutosaveCapture.applyEffects(written, chain: chain, grade: grade, trails: trails, chromatic: chromatic)
             XCTAssertEqual(chromatic.split, ChromaticSplit(isEnabled: true, amount: 0.01, angleDegrees: 30))
-            XCTAssertEqual(chain.order.effects, [.chromatic, .trails, .grade, .directionalBlur])
+            XCTAssertEqual(chain.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur])
             chromatic.isEnabled = false
             let preset = chain.presets.preset(named: "Fringe")
             SceneAutosaveCapture.applyEffects(preset?.effects, chain: chain, grade: grade, trails: trails, chromatic: chromatic)

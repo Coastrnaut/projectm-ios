@@ -26,12 +26,14 @@ final class EffectChainSettingTests: XCTestCase {
             var reported: [OutputEffectOrder] = []
             chain.onChange = { (order: OutputEffectOrder) -> Void in reported.append(order) }
             chain.order = colorFirst
-            XCTAssertEqual(defaults.string(forKey: EffectChainSetting.orderKey), "fx.grade,fx.trails,fx.chromatic,fx.directionalBlur")   // FX-006, FX-007 appended
+            XCTAssertEqual(defaults.string(forKey: EffectChainSetting.orderKey),
+                           "fx.grade,fx.trails,fx.chromatic,fx.directionalBlur,fx.radialBlur")   // FX-006, FX-007, FX-008 appended
             XCTAssertEqual(EffectChainSetting(defaults: defaults).order, colorFirst, "kept across a relaunch")
             chain.order = .standard
             XCTAssertNil(defaults.object(forKey: EffectChainSetting.orderKey))
             XCTAssertEqual(reported, [colorFirst, .standard])
-            XCTAssertEqual(EffectChainSetting.summary(colorFirst), "Color \u{2192} Trails \u{2192} Chromatic split \u{2192} Directional blur")
+            XCTAssertEqual(EffectChainSetting.summary(colorFirst),
+                           "Color \u{2192} Trails \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Radial blur")
         }
     }
 

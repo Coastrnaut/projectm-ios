@@ -14,7 +14,7 @@ extension AppCoordinator {
     var liveEffectSettings: SceneEffectSettings {
         SceneEffectSettings(order: effectChain.order, grade: colorGrade.grade, gradeEnabled: colorGrade.isEnabled,
                             trails: motionFeedback.feedback, chromatic: chromaticSplit.split,
-                            directionalBlur: directionalBlur.blur)   // FX-006, FX-007
+                            directionalBlur: directionalBlur.blur, radialBlur: radialBlur.blur)   // FX-006, FX-007, FX-008
     }
 
     /// Wires the setting to the visuals (called once from init).
@@ -42,7 +42,7 @@ extension AppCoordinator {
     func applyEffectPreset(named name: String) {
         guard let preset = effectChain.presets.preset(named: name) else { return }
         SceneAutosaveCapture.applyEffects(preset.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
-                                          directionalBlur: directionalBlur)
+                                          directionalBlur: directionalBlur, radialBlur: radialBlur)   // FX-007, FX-008
         announcer.announce("Applied effect preset " + preset.name, kind: .parameter)
     }
 }
