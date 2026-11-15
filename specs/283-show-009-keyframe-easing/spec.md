@@ -38,6 +38,14 @@ local-first option.
 - Q: How are the new modes stored? → A: `interpolation` keeps the names SHOW-008 builds know (`linear`, `hold` for Stepped, `ease`); a missing `interpolation` now means Linear. A new optional `easing` field is written only for Hold (`"hold"`) and Cubic (`"cubic"`), next to the nearest older curve (`hold` and `ease`), so a SHOW-008 build reads a show with the new curves as Stepped and Ease instead of dropping the keyframes. An unknown `easing` falls back to `interpolation`. No version bump; shows without the new modes keep their bytes.
 - Q: Key times? → A: Unchanged from SHOW-008: at a keyframe's time every mode returns the stored value bit for bit.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Three questions, each answered with the recommended option (owner rules 4 and 9).
+
+- Q: Which mode does Add Keyframe at Playhead give a keyframe? → A: A new keyframe gets Linear (as in SHOW-008); when it replaces a keyframe at the same time, that keyframe keeps its mode (only the value changes), so re-recording a value never silently undoes a chosen curve.
+- Q: How does the editor present five modes? → A: The SHOW-008 segmented picker with five short names (Linear, Stepped, Hold, Ease, Cubic), each a VoiceOver button by name, plus a one-line description of the chosen mode under it, so the difference between Stepped and Hold is visible where it is chosen.
+- Q: Does an unknown `easing` value raise a load warning? → A: No. It is a forward-compatible hint from a newer build; the keyframe loads with its `interpolation` curve and nothing is counted. An unknown `interpolation` with no known `easing` still drops the keyframe with SHOW-008's counted warning.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Choose how a value moves between keyframes (Priority: P1) — MVP
@@ -94,7 +102,7 @@ reads the chosen curve ("0:30, 0.90, Cubic"), and VoiceOver reads each choice by
 - **SHOW-009-R3**: Two-key reference values MUST hold: at the middle Linear 0.5, Stepped 0.0, Hold 0.0, Ease 0.5, Cubic 0.5; Cubic at a quarter and three quarters 0.15625 and 0.84375 (within 1e-9).
 - **SHOW-009-R4**: Cubic MUST be monotone within each segment (never outside the segment's two key values) and smooth through inner keys of a Cubic run whose neighbouring segments rise or fall the same way.
 - **SHOW-009-R5**: Storage MUST stay readable by SHOW-008 builds (nearest older curve), MUST read a missing interpolation as Linear, MUST round-trip every mode, and MUST keep the bytes of shows that use no new mode.
-- **SHOW-009-R6**: The keyframe editor MUST offer the five modes with VoiceOver names, show the chosen mode in the keyframe row, and refuse changes while the scene is locked.
+- **SHOW-009-R6**: The keyframe editor MUST offer the five modes with VoiceOver names and a description of the chosen mode, show the chosen mode in the keyframe row, and refuse changes while the scene is locked. Add Keyframe at Playhead MUST give a new keyframe Linear and MUST keep the mode of a keyframe it replaces.
 - **SHOW-009-R7**: A playing show MUST apply the eased values (same live path as SHOW-008); evaluation stays a pure function of the time.
 - **SHOW-009-R8**: No network access, no new UserDefaults key, no wall-clock assertions in tests; ShowControl MUST keep building on Linux.
 
