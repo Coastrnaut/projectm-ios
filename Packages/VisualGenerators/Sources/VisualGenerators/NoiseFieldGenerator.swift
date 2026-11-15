@@ -1,6 +1,8 @@
 // NoiseFieldGenerator.swift — the noise field on Metal (VIS-013-R1, R3, R5 to R8; contracts/noise-field.md C2, C3;
 // research VIS-013-D2 to D4).
 //
+// VIS-014: `configuration.wedges` ≥ 2 folds every pixel into one kaleidoscope wedge first (`KaleidoscopeFold`, turned by
+// the drive's rotation); 0 takes the plain path, frame for frame as before.
 // Per frame: VIS-007's band groups of the input bands → `NoiseFieldDrive` (smoothed warp and brightness, drift on the
 // frame context's clock) → the CPU mirror's 64 samples → the strobe safety envelope's gain over 17 areas (after the
 // downstream stages when `downstreamLuminance` is set; FX-001-R10, FX-019-R9) → one full-screen triangle whose
@@ -114,7 +116,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         writeUniforms(width: target.width, height: target.height, gain: gain)
         pass.colorAttachments[0].texture = target
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
-        encoder.label = "VIS-013 Noise field"
+        encoder.label = c.isKaleidoscope ? "VIS-014 Kaleidoscope" : "VIS-013 Noise field"
         encoder.setRenderPipelineState(pipeline)
         encoder.setFragmentBytes(uniforms, length: Self.uniformFloats * MemoryLayout<Float>.stride, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
@@ -135,6 +137,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         uniforms[7] = Float(c.seed)
         uniforms[8] = NoiseFieldConfiguration.lacunarity
         uniforms[9] = NoiseFieldConfiguration.gain
+        uniforms[10] = Float(c.wedges)   // VIS-014: 0 = no fold
+        uniforms[11] = Float(drive.rotation)
         for k in 0..<NoiseFieldConfiguration.paletteColors {
             let color: LinearColor = palette[k]
             uniforms[12 + 4 * k] = color.red
@@ -144,8 +148,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         }
     }
 
-    /// Module-authored shader: SHD-006's shared noise functions, then the field (no user text; SHD-011).
-    public static let shaderSource: String = shaderHeader + SeededNoiseShader.functions + shaderBody
+    /// Module-authored shader: SHD-006's shared noise functions, VIS-014's fold, then the field (no user text; SHD-011).
+    public static let shaderSource: String = shaderHeader + SeededNoiseShader.functions + KaleidoscopeFoldShader.function + shaderBody
 
     static let shaderHeader = """
     #include <metal_stdlib>
@@ -168,7 +172,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         float seed;
         float lacunarity;
         float gain;
-        float2 pad;
+        float wedges;
+        float rotation;
         float4 palette[16];
     };
 
@@ -182,6 +187,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     fragment float4 vis_noise_fragment(NoiseOut in [[stage_in]], constant NoiseUniforms &u [[buffer(0)]]) {
         float2 size = max(u.size, float2(1.0));
         float2 p = (in.position.xy - 0.5 * size) / min(size.x, size.y);
+        p = vis_kfold(p, u.wedges, u.rotation);
         int octaves = clamp(int(u.octaves + 0.5), 1, 8);
         uint seed = uint(clamp(u.seed, 0.0, 65535.0) + 0.5);
         float2 q = p * u.frequency + float2(u.phase, 0.5 * u.phase);

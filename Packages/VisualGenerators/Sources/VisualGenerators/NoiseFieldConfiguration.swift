@@ -41,16 +41,30 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
     public var seed: Int
     public var reduceMotion: Bool
     public var palette: VisualPalette
+    /// VIS-014: kaleidoscope wedges; 0 draws the plain field, 2…24 fold it (`KaleidoscopeFold`).
+    public var wedges: Int
 
     public init(frequency: Double = NoiseFieldConfiguration.defaultFrequency, octaves: Int = NoiseFieldConfiguration.defaultOctaves,
-                seed: Int = NoiseFieldConfiguration.defaultSeed, reduceMotion: Bool = false, palette: VisualPalette = .spectrum) {
+                seed: Int = NoiseFieldConfiguration.defaultSeed, reduceMotion: Bool = false, palette: VisualPalette = .spectrum,
+                wedges: Int = 0) {
         self.frequency = frequency
         self.octaves = octaves
         self.seed = seed
         self.reduceMotion = reduceMotion
         self.palette = palette
+        self.wedges = wedges
         self = clamped()
     }
+
+    /// VIS-014: the kaleidoscope, the default field (4 cells, 4 octaves, seed 1301) folded into `wedges` (2…24).
+    public static func kaleidoscope(wedges: Int = KaleidoscopeFold.defaultWedges, reduceMotion: Bool = false,
+                                    palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
+        let n: Int = min(max(wedges, KaleidoscopeFold.wedgeRange.lowerBound), KaleidoscopeFold.wedgeRange.upperBound)
+        return NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, wedges: n)
+    }
+
+    /// VIS-014: the fold is on.
+    public var isKaleidoscope: Bool { wedges >= KaleidoscopeFold.wedgeRange.lowerBound }
 
     /// Every value in its documented range.
     public func clamped() -> NoiseFieldConfiguration {
@@ -59,6 +73,7 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
             : Self.defaultFrequency
         c.octaves = min(max(octaves, Self.octaveRange.lowerBound), Self.octaveRange.upperBound)
         c.seed = Self.seedRange.contains(seed) ? seed : Self.defaultSeed
+        c.wedges = wedges < KaleidoscopeFold.wedgeRange.lowerBound ? 0 : min(wedges, KaleidoscopeFold.wedgeRange.upperBound)
         return c
     }
 

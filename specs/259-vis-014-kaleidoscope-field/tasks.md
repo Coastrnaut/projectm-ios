@@ -4,15 +4,15 @@
 
 ## Phase 1: Shared fold (VIS-014-R3, R4, R6)
 
-- [ ] VIS-014-T01 `KaleidoscopeFold` (CPU mirror, constants) and `KaleidoscopeFoldShader.function` in `Packages/VisualGenerators/Sources/VisualGenerators/KaleidoscopeFold.swift` (research D2).
-- [ ] VIS-014-T02 [P] `KaleidoscopeFoldTests`: identity below 2 wedges; continuity across every boundary and axis and the ±π wrap for N = 2, 5, 6, 24 (K2); rotation and mirror invariance (K3); Linux shape.
+- [X] VIS-014-T01 `KaleidoscopeFold` (CPU mirror, constants) and `KaleidoscopeFoldShader.function` in `Packages/VisualGenerators/Sources/VisualGenerators/KaleidoscopeFold.swift` (research D2). — Verified 2026-11-14: swift test --filter Kaleidoscope (KaleidoscopeFoldTests 5 passed)
+- [X] VIS-014-T02 [P] `KaleidoscopeFoldTests`: identity below 2 wedges; continuity across every boundary and axis and the ±π wrap for N = 2, 5, 6, 24 (K2); rotation and mirror invariance (K3); Linux shape. — Verified 2026-11-14: KaleidoscopeFoldTests 5 passed on the host and in the -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE shape
 
 ## Phase 2: User Story 1 + 2 - the folded field (VIS-014-R1, R2, R4-R8)
 
-- [ ] VIS-014-T03 `NoiseFieldConfiguration.wedges` and `kaleidoscope(wedges:…)`; `NoiseFieldDrive` spin and rotation (research D3).
-- [ ] VIS-014-T04 `NoiseFieldFlashAreas` folds its sample points; `NoiseFieldGenerator` appends the fold function and writes wedges and rotation into the former padding.
-- [ ] VIS-014-T05 [P] `KaleidoscopeDriveFlashTests`: silence and full bass settle to 0.1 and 0.4 rad/s, never above 0.4, half with Reduce Motion; rotation never backwards and ≤ 1 s per frame; no rotation when unfolded; bursts alternating with silence within the envelope in all 17 areas with Reduce flashing on and off (S3, S4).
-- [ ] VIS-014-T06 `KaleidoscopeRenderTests` (GPU): N-fold rotation and mirror symmetry for N = 5 and 6 and the other count's rotation rejected (S1); seam test across every boundary and axis, square and non-square (S2); GPU agrees with the CPU fold; Noise Field digests unchanged (K4).
+- [X] VIS-014-T03 `NoiseFieldConfiguration.wedges` and `kaleidoscope(wedges:…)`; `NoiseFieldDrive` spin and rotation (research D3). — Verified 2026-11-14: KaleidoscopeDriveFlashTests 4 passed; NoiseFieldDriveTests unchanged and passing
+- [X] VIS-014-T04 `NoiseFieldFlashAreas` folds its sample points; `NoiseFieldGenerator` appends the fold function and writes wedges and rotation into the former padding. — Verified 2026-11-14: NoiseFieldRenderTests 3 passed with the recorded VIS-013 digests unchanged (K4); KaleidoscopeRenderTests 3 passed
+- [X] VIS-014-T05 [P] `KaleidoscopeDriveFlashTests`: silence and full bass settle to 0.1 and 0.4 rad/s, never above 0.4, half with Reduce Motion; rotation never backwards and ≤ 1 s per frame; no rotation when unfolded; bursts alternating with silence within the envelope in all 17 areas with Reduce flashing on and off (S3, S4). — Verified 2026-11-14: KaleidoscopeDriveFlashTests 4 passed (worst 1 transition per window with Reduce flashing on, 4 off; limits 4/6)
+- [X] VIS-014-T06 `KaleidoscopeRenderTests` (GPU): N-fold rotation and mirror symmetry for N = 5 and 6 and the other count's rotation rejected (S1); seam test across every boundary and axis, square and non-square (S2); GPU agrees with the CPU fold; Noise Field digests unchanged (K4). — Verified 2026-11-14: KaleidoscopeRenderTests 3 passed on the host GPU: rotation/mirror mean |Δ| ≈ 8e-5 vs the other count's rotation 0.026-0.030; seams side ≈ 1.5e-4, centre 0.004-0.005 ≤ interior 0.0065-0.0084 (square and 160 × 96); GPU vs CPU fold < 0.02
 - [ ] VIS-014-T07 `KaleidoscopeGoldenTests` + goldens (macOS host, iOS Simulator) (S5).
 
 ## Phase 3: User Story 3 - the app (VIS-014-R9, R11, R12)
