@@ -15,8 +15,8 @@
   },
   "P2": {
    "audited": 5,
-   "implementing": 2,
-   "integrated": 71,
+   "implementing": 1,
+   "integrated": 72,
    "unit_passed": 1
   },
   "P3": {
@@ -26,8 +26,8 @@
  },
  "by_state": {
   "audited": 11,
-  "implementing": 2,
-  "integrated": 311,
+  "implementing": 1,
+  "integrated": 312,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -38,7 +38,6 @@
   "infeasible": [],
   "pending": [
    "FX-011",
-   "FX-013",
    "FX-014",
    "FX-015",
    "FX-016",
@@ -54,7 +53,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "14 features are not implemented yet (first: FX-011, FX-013, FX-014, FX-015, FX-016)"
+   "13 features are not implemented yet (first: FX-011, FX-014, FX-015, FX-016, FX-017)"
   ]
  },
  "features": {
@@ -1173,10 +1172,10 @@
    "branch": "feature/fx-013",
    "branch_sha": "e486ddf3997b5fd6a0ac5be1a40ff4162bccc3ee",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "44d2f666",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "FX-014": {
    "attempts": 0,
@@ -3101,12 +3100,12 @@
   "UIX-014": {
    "attempts": 0,
    "branch": "feature/uix-014",
-   "branch_sha": null,
+   "branch_sha": "f7959b28ff822ad2a0727dcbb727f0b4d2673231",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "UIX-015": {
    "attempts": 0,
@@ -3280,7 +3279,7 @@
   },
   "VIS-017": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-017",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
@@ -3869,6 +3868,11 @@
    "branch": "feature/fx-012",
    "id": "FX-012",
    "sha": "192e64b350e4354f85186942a46aaf403b011ee3"
+  },
+  {
+   "branch": "feature/fx-013",
+   "id": "FX-013",
+   "sha": "44d2f666"
   },
   {
    "branch": "feature/fx-019",
@@ -4901,5 +4905,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T08:10:34Z"
+ "updated": "2026-11-15T08:14:51Z"
 }
