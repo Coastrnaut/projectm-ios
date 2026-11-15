@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T02:20:41Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T02:23:54Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,24 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 53 |
-| implementing | 3 |
-| unit_passed | 1 |
-| integrated | 268 |
+| implementing | 2 |
+| built | 1 |
+| integrated | 269 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | implementing | built | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 2 | 2 | 0 | 147 | 0 |
-| P2 | 40 | 1 | 1 | 37 | 0 |
+| P1 | 2 | 1 | 1 | 147 | 0 |
+| P2 | 40 | 1 | 0 | 38 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 57 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 56 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -143,6 +143,7 @@ The physical-device suite may **not** start:
 | MED-004 | Video playback speed | `c61dedd2` | `feature/med-004` |
 | MED-006 | Image slideshow | `d6ec9dc5e426` | `feature/med-006` |
 | MED-007 | Image Ken Burns | `5ec1a2e59b21` | `feature/med-007` |
+| MED-008 | Animated image support | `a088143dc766` | `feature/med-008` |
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-010 | Logo overlay | `6ac0c21c` | `feature/med-010` |
 | MED-013 | Media asset relinking | `52fabb13` | `feature/med-013` |
@@ -1547,7 +1548,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `2ca8a1db733a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-007/20261114T204133/swift-test_ShowControl.log`)
 - `swift test ShowControl 154, Compositor 1039, SceneFormat 201, LibraryBackup 87; postmerge projectM-iOSTests 1152 + 4 UI tests`: pass at `5ec1a2e59b21` (log `.autonomous/logs/integration/batch92/app-tests.log`)
 
-### MED-008 Animated image support (unit_passed)
+### MED-008 Animated image support (integrated)
 - `python3 scripts/check_compliance.py`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/sim-test_ANGLERendering.log`)
@@ -1558,6 +1559,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `97c2d548a3a9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-008/20261114T211620/swift-test_ShowControl.log`)
+- `swift test Compositor 1052, LibraryBackup 87; postmerge projectM-iOSTests 1175 + PhotoLayerUITests 1`: pass at `a088143dc766` (log `.autonomous/logs/integration/batch97/app-tests.log`)
 
 ### MED-009 Text overlay (integrated)
 - `python3 scripts/check_compliance.py`: pass at `5adba5200543` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-009/20261113T142110/compliance.log`)
