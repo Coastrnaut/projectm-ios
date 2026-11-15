@@ -119,6 +119,7 @@ final class LibraryIntegrityAcceptanceTests: XCTestCase {
             _ = try presets.tagStore.add("broken", to: Self.gone)
             _ = try presets.tagStore.add("broken", to: "user/broken")
             _ = try overrideStore.set(1.05, for: "zoom", preset: Self.gone)
+            try presets.noteStore.set("A note for a removed preset", for: Self.gone)   // PRE-011-R8
             let collection = try XCTUnwrap(presets.createCollection(named: "Party"))
             XCTAssertTrue(presets.changeCollections { _ = try collections.add(Self.gone, to: collection.id) })
             XCTAssertTrue(presets.changeCollections { _ = try collections.add("included/Alpha.milk", to: collection.id) })
@@ -148,9 +149,9 @@ final class LibraryIntegrityAcceptanceTests: XCTestCase {
         XCTAssertEqual(rig.integrity.resultText, PresetIntegrityText.notChecked)
         await rig.integrity.check()
         let issues = rig.integrity.issues
-        XCTAssertEqual(issues.count, 8, issues.map(\.id).joined(separator: "\n"))
-        XCTAssertEqual(Set(issues.map(\.id)).count, 8)
-        XCTAssertEqual(announcements, ["Found 8 problems."])
+        XCTAssertEqual(issues.count, 9, issues.map(\.id).joined(separator: "\n"))
+        XCTAssertEqual(Set(issues.map(\.id)).count, 9)
+        XCTAssertEqual(announcements, ["Found 9 problems."])
         XCTAssertEqual(issues.filter { $0.kind == .missingTexture }.map(\.detail), ["absent"])
         XCTAssertEqual(issues.filter { $0.kind == .missingFile }.map(\.presetID), ["user/lost"])
         XCTAssertEqual(issues.filter { $0.kind == .missingFile }.first?.actions, [.relinkFile, .removePreset])
@@ -162,7 +163,7 @@ final class LibraryIntegrityAcceptanceTests: XCTestCase {
 
         let filesBefore = snapshot(userDirectory)
         await rig.integrity.fixAllSafe()
-        XCTAssertEqual(rig.integrity.resultText, "Removed 5 broken references. Found 3 problems.")
+        XCTAssertEqual(rig.integrity.resultText, "Removed 6 broken references. Found 3 problems.")
         XCTAssertEqual(rig.integrity.issues.map(\.kind), [.missingTexture, .missingFile, .unparsable])
         XCTAssertFalse(rig.integrity.hasSafeIssues)
         XCTAssertEqual(snapshot(userDirectory), filesBefore, "Fix All Safe never touches a user preset")
@@ -171,6 +172,7 @@ final class LibraryIntegrityAcceptanceTests: XCTestCase {
         XCTAssertTrue(rig.presets.tagStore.map.tags(of: Self.gone).isEmpty)
         XCTAssertEqual(rig.presets.tagStore.map.tags(of: "user/broken"), ["broken"])
         XCTAssertTrue(rig.presets.overrides?.store.overrides(for: Self.gone).isEmpty == true)
+        XCTAssertNil(rig.presets.noteStore.note(for: Self.gone))
         XCTAssertEqual(rig.presets.collections.first?.presetIDs, ["included/Alpha.milk"])
         XCTAssertEqual(rig.recents.history.ids, ["included/Alpha.milk"])
         XCTAssertEqual(rig.presets.recent?.ids, ["included/Alpha.milk"])

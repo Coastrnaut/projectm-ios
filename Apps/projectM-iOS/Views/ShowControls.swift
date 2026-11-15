@@ -18,6 +18,7 @@
 //   here. After a close without a choice VoiceOver focus returns to the Scenes button.
 // * SHOW-006-R1: the row's Rehearse toggle (eye.circle) shows the device-only cue rehearsal panel; VoiceOver
 //   "Rehearse next cue", value On/Off.
+// * SHOW-007-R8: under the buttons, the show timeline transport (`ShowTimelineRow`) when a cue is timed.
 import ShowControl
 import SwiftUI
 
@@ -35,11 +36,16 @@ struct ShowCueRow: View {
     }
 
     private var row: some View {
-        HStack(spacing: 12) {
-            previousButton
-            status
-            nextButton
-            trailingButtons
+        VStack(spacing: 8) {
+            HStack(spacing: 12) {
+                previousButton
+                status
+                nextButton
+                trailingButtons
+            }
+            if coordinator.showTransport.isAvailable {   // SHOW-007-R8: only with a timed cue
+                ShowTimelineRow(transport: coordinator.showTransport, touched: { coordinator.showControls() })
+            }
         }
     }
 

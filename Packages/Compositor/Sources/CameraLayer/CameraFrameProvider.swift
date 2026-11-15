@@ -4,7 +4,8 @@
 // A provider owns the camera (or a stand-in) and keeps only its newest picture, in a
 // `LatestCameraFrame` slot: the camera's thread replaces it, the render thread reads it with a
 // try-lock and never waits. Stopping closes the slot and drops the picture, so nothing is kept after
-// the camera stops (CAM-001-R9). Pictures are never written, sent or analysed by any provider.
+// the camera stops (CAM-001-R9). Pictures are never written or sent by any provider; the only analysis is
+// CAM-008's on-device person mask, in memory, while the user chose it (ADR-0063).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 import os
@@ -96,6 +97,10 @@ public protocol CameraFrameProvider: AnyObject {
     /// white balance. Unsupported or not running: nothing is configured. An interruption keeps the lock;
     /// a lens or position switch and every stop release it (R7 to R9).
     func setWhiteBalanceLocked(_ locked: Bool)
+    /// CAM-008 (contracts/person-mask.md C4): the masker the provider offers its pictures to (main thread
+    /// sets it; the camera's thread reads it). Nil: no masking. Pictures offered are never kept by the masker
+    /// beyond the analysis; masks stay in memory.
+    var personMasker: PersonMasker? { get set }
 }
 
 extension CameraFrameProvider {
@@ -129,6 +134,11 @@ extension CameraFrameProvider {
         set {}
     }
     public func setWhiteBalanceLocked(_ locked: Bool) {}
+    /// CAM-008: a provider that offers no pictures to a masker.
+    public var personMasker: PersonMasker? {
+        get { nil }
+        set {}
+    }
 }
 
 /// The newest-picture slot shared by a provider's camera thread and the render thread.
@@ -174,6 +184,11 @@ public final class LatestCameraFrame: @unchecked Sendable {
     /// The rotation stamped on pictures stored from now on.
     public func setRotation(_ rotation: CameraRotation) {
         lock.withLockUnchecked { $0.rotation = rotation }
+    }
+
+    /// CAM-008: the rotation and position stamped on pictures stored now (the masker gets the same).
+    public var stamp: (rotation: CameraRotation, position: CameraPosition) {
+        lock.withLockUnchecked { (slot: inout Slot) -> (rotation: CameraRotation, position: CameraPosition) in (slot.rotation, slot.position) }
     }
 
     /// CAM-002: the position stamped on pictures stored from now on without their own position.

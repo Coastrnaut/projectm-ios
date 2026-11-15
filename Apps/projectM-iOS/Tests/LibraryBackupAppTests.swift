@@ -57,6 +57,7 @@ final class LibraryBackupAppTests: XCTestCase {
                         OSCPeersCoordinator.enabledKey, OSCPeersCoordinator.approvedKey,   // OSC-008-R10: this device's network
                         ParameterQuantizer.key,   // MOD-017: a performance timing choice of this device
                         ShowCueQuantizer.key,   // SHOW-003: a performance timing choice of this device
+                        ShowTransportCoordinator.loopKey,   // SHOW-007: a performance choice of this device
                         SplitEditorSetting.key])   // UIX-007-R7
                        .union(RecordingQualitySetting.aspectKeys))   // REC-014-R7
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)

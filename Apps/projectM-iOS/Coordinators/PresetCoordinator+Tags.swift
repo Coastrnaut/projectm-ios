@@ -77,12 +77,13 @@ extension PresetCoordinator {
         return listing.filter { (preset: IndexedPreset) -> Bool in isFavorite(preset) }
     }
 
-    /// R9: search over names, authors and tags, narrowed by the selected tag and colour chips.
+    /// R9: search over names, authors, tags and notes (PRE-011-R5), narrowed by the selected tag and colour chips.
     func searchResults(_ query: String) -> (groups: [(source: String, presets: [IndexedPreset])], truncated: Bool) {
         guard let library else { return ([], false) }
         let index: PresetTagIndex = tagIndex
         let within: Set<String>? = filterMatches   // PRE-004-R8: tags and colours
-        return library.search(query, limit: PresetLibrary.searchLimit, tagMatches: index.presetIDs(tagContaining: query), within: within)
+        let matches: Set<String> = index.presetIDs(tagContaining: query).union(notePresetIDs(containing: query))   // PRE-011-R5
+        return library.search(query, limit: PresetLibrary.searchLimit, tagMatches: matches, within: within)
     }
 
     // MARK: - Chips

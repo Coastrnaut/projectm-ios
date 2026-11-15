@@ -45,6 +45,10 @@
 // * SHOW-006: `rehearsalScene(of:)` reads and validates a cue's scene for cue rehearsal without applying it;
 //   `saveRehearsal(cueID:changes:)` writes rehearsal values into the cue's scene file (an edit, refused while locked)
 //   and never applies anything, even for the active cue.
+// * SHOW-007: `seek(to:)` is the timeline transport's jump: it withdraws a waiting quantized step (silent), then runs the
+//   one step path once with the destination coming in as a cut (it lands on the target state; Reduce flashing still
+//   widens the cut). Never quantized, allowed while locked (a performance action). `timedGo(to:)` is Loop's wrap: a timed
+//   Go to, quantized like SHOW-002's advance.
 // Main actor; file I/O is small (≤ 1 MiB per file, typically a few KB) and only on user action.
 import Foundation
 import Observation
@@ -189,6 +193,26 @@ final class ShowCoordinator {
     @discardableResult
     func timedNext() -> ShowStep { request(.next, timed: true) }
 
+    /// SHOW-007: Loop's wrap to the first timeline cue, quantized like SHOW-002's timed advance.
+    @discardableResult
+    func timedGo(to cueID: UUID) -> ShowStep { request(.go(cueID), timed: true) }
+
+    /// SHOW-007-R2, R5: the transport's seek to another cue: one step at once (never quantized; a waiting step is
+    /// withdrawn), the scene coming in as a cut.
+    @discardableResult
+    func seek(to cueID: UUID) -> ShowStep {
+        cueQuantizer?.withdrawAll()
+        landsAsCut = true
+        defer { landsAsCut = false }
+        return stepNow(.go(cueID))
+    }
+
+    /// SHOW-007: true during a seek's step (the cue's transition is replaced by a cut).
+    @ObservationIgnored private var landsAsCut = false
+
+    /// The transition a step into `cue` drives: SHOW-004's override or the scene default; a cut for a seek (SHOW-007).
+    private func stepTransition(_ cue: ShowCue) -> ShowCueTransition? { landsAsCut ? nil : cue.effectiveTransition }
+
     /// SHOW-003: the beat or bar gate (nil = every step is immediate, as in SHOW-001).
     @ObservationIgnored var cueQuantizer: ShowCueQuantizer? {
         didSet {
@@ -252,13 +276,13 @@ final class ShowCoordinator {
                                        assets: availability())
         guard report.needsReview, let requestRepair else {
             return apply(decoded.document, decodeWarnings: decoded.warnings, sceneID: cue.sceneID, number: number,
-                         transition: cue.effectiveTransition)   // SHOW-004-R3
+                         transition: stepTransition(cue))   // SHOW-004-R3, SHOW-007-R5
         }
         if !report.canOpenAsIs { unreadableScenes.insert(cue.sceneID) }
         clearNotice()
         let sceneID = cue.sceneID
         let warnings = decoded.warnings
-        let transition = cue.effectiveTransition   // SHOW-004-R3
+        let transition = stepTransition(cue)   // SHOW-004-R3, SHOW-007-R5
         requestRepair(SceneRepairRequest(title: title, report: report, document: decoded.document,
                                          open: { [weak self] (document: SceneDocument) in
                                              self?.apply(document, decodeWarnings: warnings, sceneID: sceneID, number: number,
