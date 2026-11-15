@@ -141,6 +141,17 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(selection.waiting_on_lock, ("BBB-001",))
         self.assertEqual(s.select({}, {"AAA-001"}).waiting_on_lock, ("BBB-001",))
 
+    def test_lock_capacity_lets_two_share_a_lock_but_not_three(self):
+        over = {"AAA-001": ("x",), "BBB-001": ("x",), "CCC-001": ("x",)}
+        s = sched.Scheduler(self.roadmap, max_concurrency=3, lock_overrides=over, lock_capacity={"x": 2})
+        selection = s.select({}, set())
+        self.assertEqual(selection.start, ("AAA-001", "BBB-001"))
+        self.assertEqual(selection.waiting_on_lock, ("CCC-001",))
+        self.assertEqual(s.select({}, {"AAA-001"}).start, ("BBB-001",))
+        self.assertEqual(s.select({}, {"AAA-001", "BBB-001"}).waiting_on_lock, ("CCC-001",))
+        self.assertEqual(sched.Scheduler(self.roadmap, max_concurrency=3, lock_overrides=over,
+                                         lock_capacity={}).select({}, set()).start, ("AAA-001",))
+
     def test_dependency_must_be_done_and_blocked_propagates(self):
         s = sched.Scheduler(self.roadmap, max_concurrency=10)
         states = {"AAA-001": "blocked", "BBB-001": "integrated", "CCC-001": "skipped_existing"}
