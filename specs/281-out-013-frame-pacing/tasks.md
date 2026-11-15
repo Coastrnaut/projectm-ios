@@ -8,18 +8,18 @@ suite < 1 min, single xcodebuild run < 10 min; no wall-clock assertion in the mo
 
 ## Phase 1: Setup
 
-- [ ] OUT-013-T01 Create simulator "OUT13 iPhone 17" (iOS 27.2), run `xcodegen generate` in the worktree, confirm `Build` and the preset submodules are present
+- [X] OUT-013-T01 Create simulator "OUT13 iPhone 17" (iOS 27.2), run `xcodegen generate` in the worktree, confirm `Build` and the preset submodules are present — Verified 2026-11-14: simulator 069E0B99 created, xcodegen generate OK, Build symlink and presets present
 
 ## Phase 2: Foundational (the pure gate)
 
-- [ ] OUT-013-T02 Implement `OutputPacingPolicy` (`maxFramesInFlight` default 2, "clamped to 1…3"; `slowWaitFraction` 0.5), `OutputPacingCounts` and the lock-free `OutputFrameGate` (`tryBegin`, `complete`, `abandon`, `noteDrawableWait`, `counts`; "Never blocks, never allocates after init") in Packages/Compositor/Sources/FrameTiming/OutputFrameGate.swift (contract C1)
-- [ ] OUT-013-T03 Gate unit tests (bound, abandon, complete never below 0, back-off one tick, counts invariant `begun + droppedInFlight + droppedBackOff == ticks`) in Packages/Compositor/Tests/FrameTimingTests/OutputFramePacingTests.swift
+- [X] OUT-013-T02 Implement `OutputPacingPolicy` (`maxFramesInFlight` default 2, "clamped to 1…3"; `slowWaitFraction` 0.5), `OutputPacingCounts` and the lock-free `OutputFrameGate` (`tryBegin`, `complete`, `abandon`, `noteDrawableWait`, `counts`; "Never blocks, never allocates after init") in Packages/Compositor/Sources/FrameTiming/OutputFrameGate.swift (contract C1) — Verified 2026-11-14: `swift test --package-path Packages/Compositor --filter OutputFramePacingTests` (8 passed)
+- [X] OUT-013-T03 Gate unit tests (bound, abandon, complete never below 0, back-off one tick, counts invariant `begun + droppedInFlight + droppedBackOff == ticks`) in Packages/Compositor/Tests/FrameTimingTests/OutputFramePacingTests.swift — Verified 2026-11-14: same run: bound, abandon, stray completions, back-off, clamp, 2,000 concurrent begin/complete
 
 ## Phase 3: User Story 1 — the device stays responsive (P1) 🎯 MVP
 
 **Independent test**: the simulation (S1-S3) and the app test (S4).
 
-- [ ] OUT-013-T04 [US1] Simulation in Packages/Compositor/Tests/FrameTimingTests/OutputFramePacingTests.swift: 120 Hz device ticks, 60 Hz output link, 100 ms output, 1 ms encode, 10 simulated s: no device tick late > 1 ms, in flight ≤ 2, max depth after 1 s == after 10 s, every drop counted; the blocking control is late ≥ 50 ms (S1-S3)
+- [X] OUT-013-T04 [US1] Simulation in Packages/Compositor/Tests/FrameTimingTests/OutputFramePacingTests.swift: 120 Hz device ticks, 60 Hz output link, 100 ms output, 1 ms encode, 10 simulated s: no device tick late > 1 ms, in flight ≤ 2, max depth after 1 s == after 10 s, every drop counted; the blocking control is late ≥ 50 ms (S1-S3) — Verified 2026-11-14: same run: `testASlowExternalOutputDoesNotDelayTheDeviceLoop` (lateness ≤ 1 ms, in flight ≤ 2, constant depth, drops counted), blocking control ≥ 50 ms late
 - [ ] OUT-013-T05 [US1] `MetalOutputPacing` (gate, timed `nextDrawable`, completion tracking, DEBUG held completions) and the explicit drawable policy (`maximumDrawableCount = 3`, `allowsNextDrawableTimeout = true`) in Apps/projectM-iOS/Visuals/MetalOutputPacing.swift (contract C4)
 - [ ] OUT-013-T06 [US1] Use it in the five Metal hosts before `nextDrawable` and before `commit`: Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift, CameraVisualHost.swift, PhotoVisualHost.swift, VideoVisualHost.swift, TextVisualHost.swift
 - [ ] OUT-013-T07 [US1] ANGLE fences: CANGLE helpers `PMANGLEFenceInsert`, `PMANGLEFenceSignaled`, `PMANGLEFenceDelete` (GL ES 3.0 sync objects through `eglGetProcAddress`) in Packages/ANGLERendering/Sources/CANGLE/include/CANGLE.h and CANGLE.c; `ANGLEFrameFences` (fixed capacity, zero-timeout poll, DEBUG hold) in Packages/ANGLERendering/Sources/ANGLERendering/ANGLEFrameFences.swift; gate + fences + layer policy in ANGLERenderer.swift (contract C3)
