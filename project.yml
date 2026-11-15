@@ -155,6 +155,7 @@ targets:
           - "Resources/Presets"
           - "Resources/Licenses"
           - "Resources/SceneTemplates"   # SCN-011: bundled as a folder below
+          - "Resources/Help"   # UIX-014: bundled as a folder below
           - "Resources/PresetExclusions.txt"   # build input only (research R-30); PresetBlocklist.json is also bundled, for imports (PRE-012-R6)
           - "Store/*.storekit"   # StoreKit test configuration: scheme and tests only
       - path: Apps/projectM-iOS/Resources/Presets
@@ -166,6 +167,10 @@ targets:
         buildPhase: resources
       # SCN-011: read-only starter scenes and their licence manifest (the app's own MIT content).
       - path: Apps/projectM-iOS/Resources/SceneTemplates
+        type: folder
+        buildPhase: resources
+      # UIX-014: offline help articles (Markdown) and their index, read from the bundle only.
+      - path: Apps/projectM-iOS/Resources/Help
         type: folder
         buildPhase: resources
       # In-App Playback track and the SC-006 click timings (T044).
