@@ -4,7 +4,7 @@
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
-// `fx.chromatic`) gives that effect's
+// `fx.chromatic`, FX-008's `fx.radialBlur`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
@@ -84,17 +84,21 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var chromatic: ChromaticSplit?
     /// FX-007 (ADR-0106): `isEnabled` is the entry's flag.
     public var directionalBlur: DirectionalBlur?
+    /// FX-008 (ADR-0107): `isEnabled` is the entry's flag.
+    public var radialBlur: RadialBlur?
     /// FX-010 (ADR-0108): `isEnabled` is the entry's flag; the weight cap is not stored (ACC-012 sets it live).
     public var echo: EchoFeedback?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
-                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, echo: EchoFeedback? = nil) {
+                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil,
+                echo: EchoFeedback? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
         self.trails = trails
         self.chromatic = chromatic
         self.directionalBlur = directionalBlur
+        self.radialBlur = radialBlur
         self.echo = echo
     }
 
@@ -120,6 +124,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
         SceneEffectParameter(name: "radius", range: DirectionalBlur.radiusRange, fallback: DirectionalBlur.defaultRadius),
         SceneEffectParameter(name: "angle", range: DirectionalBlur.angleRange, fallback: DirectionalBlur.defaultAngle),
     ]
+    /// FX-008: strength and the focus (fractions of the frame).
+    static let radialBlurParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "strength", range: RadialBlur.strengthRange, fallback: RadialBlur.defaultStrength),
+        SceneEffectParameter(name: "focusX", range: RadialBlur.focusRange, fallback: RadialBlur.defaultFocus),
+        SceneEffectParameter(name: "focusY", range: RadialBlur.focusRange, fallback: RadialBlur.defaultFocus),
+    ]
     /// FX-010: `count` echoes (0…4, rounded; above 4 is clamped and reported), `delay` in seconds, `decay` per echo.
     static let echoParameters: [SceneEffectParameter] = [
         SceneEffectParameter(name: "count", range: 0...Double(EchoFeedback.cap), fallback: Double(EchoFeedback.defaultCount)),
@@ -133,8 +143,10 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let gradeNeutral: Bool = grade?.isNeutral ?? true
         let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
         let blurOff: Bool = !(directionalBlur?.isEnabled ?? false)   // FX-007
+        let radialBlurOff: Bool = !(radialBlur?.isEnabled ?? false)   // FX-008
         let echoOff: Bool = !(echo?.isEnabled ?? false)   // FX-010
-        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && echoOff
+        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && radialBlurOff
+            && echoOff
     }
 
     // MARK: Reading
@@ -169,6 +181,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .directionalBlur:   // FX-007
                     let v = values(entry, directionalBlurParameters, path, &issues)
                     settings.directionalBlur = DirectionalBlur(isEnabled: entry.enabled, radius: v[0], angleDegrees: v[1])
+                case .radialBlur:   // FX-008
+                    let v = values(entry, radialBlurParameters, path, &issues)
+                    settings.radialBlur = RadialBlur(isEnabled: entry.enabled, strength: v[0], focusX: v[1], focusY: v[2])
                 case .echo:   // FX-010
                     let v = values(entry, echoParameters, path, &issues)
                     settings.echo = EchoFeedback(isEnabled: entry.enabled, count: EchoFeedback.clampCount(v[0]),
@@ -255,6 +270,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.enabled = b.isEnabled
             entry.parameters["radius"] = .double(b.radius)
             entry.parameters["angle"] = .double(b.angleDegrees)
+        case .radialBlur:   // FX-008
+            guard let r = radialBlur else { return stored }
+            entry.enabled = r.isEnabled
+            entry.parameters["strength"] = .double(r.strength)
+            entry.parameters["focusX"] = .double(r.focusX)
+            entry.parameters["focusY"] = .double(r.focusY)
         case .echo:   // FX-010
             guard let e = echo else { return stored }
             entry.enabled = e.isEnabled

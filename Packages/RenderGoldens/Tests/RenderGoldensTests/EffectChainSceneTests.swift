@@ -60,7 +60,7 @@ final class EffectChainSceneTests: XCTestCase {
 
         // Order and values persist.
         let restored = try XCTUnwrap(reloaded.effectSettings)
-        XCTAssertEqual(restored.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .echo])
+        XCTAssertEqual(restored.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo])
         XCTAssertEqual(restored.grade, ColorGrade(temperature: 0.3, lift: 0.02, gamma: 2.0, gain: 1.1, saturation: 0.4, hue: 25))
         XCTAssertEqual(restored.gradeEnabled, true)
         XCTAssertEqual(restored.trails, MotionFeedback(isEnabled: true, halfLifeSeconds: 0.5))
@@ -80,7 +80,7 @@ final class EffectChainSceneTests: XCTestCase {
         let r = try renderer()
         let hostile = try plasma(effects: [SceneEffectEntry(kind: "fx.flashGuard"), SceneEffectEntry(kind: "fx.toneMap"), grade, trails])
         let read = SceneEffectSettings.read(try XCTUnwrap(hostile.effects))
-        XCTAssertEqual(read.settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .echo])
+        XCTAssertEqual(read.settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo])
         XCTAssertEqual(read.issues.map(\.code), [.fixedEffectStage, .fixedEffectStage])
         let a = try frame(r, hostile, allowEffectWarnings: true)
         let b = try frame(r, try plasma(effects: [grade, trails]))
@@ -150,6 +150,36 @@ final class EffectChainSceneTests: XCTestCase {
         let shown = try frame(r, document)
         let reloaded = try GoldenSceneRenderer.document(from: document.encoded())
         XCTAssertEqual(reloaded.effectSettings?.directionalBlur, blur)
+        let again = ImageDiff.compare(expected: shown, actual: try frame(r, reloaded), tolerance: .exact)
+        XCTAssertTrue(again.identical, again.summary)
+        let plain = ImageDiff.compare(expected: try frame(r, try plasma(effects: nil)), actual: shown, tolerance: .exact)
+        XCTAssertGreaterThan(plain.changedPixels, 100, "the blur changes the picture: " + plain.summary)
+    }
+
+    // MARK: FX-008 radial blur through the golden renderer (FX-008-S1, S5)
+
+    private func radial(_ blur: RadialBlur) -> SceneEffectEntry {
+        SceneEffectSettings(radialBlur: blur).entries(over: nil)[0]
+    }
+
+    func testZeroRadialBlurRendersExactlyAsNoChain() throws {
+        let r = try renderer()
+        let plain = try frame(r, try plasma(effects: nil))
+        let zero = try frame(r, try plasma(effects: [radial(RadialBlur(isEnabled: true, strength: 0, focusX: 0.2))]))
+        let off = try frame(r, try plasma(effects: [radial(RadialBlur(isEnabled: false, strength: 0.25))]))
+        for image in [zero, off] {
+            let diff = ImageDiff.compare(expected: plain, actual: image, tolerance: .exact)
+            XCTAssertTrue(diff.identical, "a zero or disabled blur is exact pass-through: " + diff.summary)
+        }
+    }
+
+    func testRadialBlurSaveReloadPersistsValuesAndPicture() throws {
+        let r = try renderer()
+        let blur = RadialBlur(isEnabled: true, strength: 0.25, focusX: 0.3, focusY: 0.6)
+        let document = try plasma(effects: [radial(blur)])
+        let shown = try frame(r, document)
+        let reloaded = try GoldenSceneRenderer.document(from: document.encoded())
+        XCTAssertEqual(reloaded.effectSettings?.radialBlur, blur)
         let again = ImageDiff.compare(expected: shown, actual: try frame(r, reloaded), tolerance: .exact)
         XCTAssertTrue(again.identical, again.summary)
         let plain = ImageDiff.compare(expected: try frame(r, try plasma(effects: nil)), actual: shown, tolerance: .exact)

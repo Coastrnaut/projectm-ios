@@ -98,6 +98,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.chromatic.radial",
                 "settings.directionalBlur.enabled", "settings.directionalBlur.radius",   # FX-007-R10
                 "settings.directionalBlur.angle",
+                "settings.radialBlur.enabled", "settings.radialBlur.strength", "settings.radialBlur.centerX",   # FX-008-R9
+                "settings.radialBlur.centerY",
                 "settings.echo.enabled", "settings.echo.count", "settings.echo.delay",   # FX-010-R13
                 "settings.echo.decay",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",

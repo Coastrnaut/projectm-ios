@@ -218,6 +218,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let chromaticSplit: ChromaticSplitSetting
     /// FX-007: the directional blur (Settings → Directional blur) of the compositor-backed visuals.
     let directionalBlur: DirectionalBlurSetting
+    /// FX-008: the radial blur (Settings → Radial blur) of the compositor-backed visuals.
+    let radialBlur: RadialBlurSetting
     /// FX-010: Echo (Settings → Echo) of the compositor-backed visuals.
     let echoFeedback: EchoSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
@@ -468,6 +470,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         effectChain = EffectChainSetting(defaults: defaults)   // FX-020
         chromaticSplit = ChromaticSplitSetting(defaults: defaults)   // FX-006
         directionalBlur = DirectionalBlurSetting(defaults: defaults)   // FX-007
+        radialBlur = RadialBlurSetting(defaults: defaults)   // FX-008
         echoFeedback = EchoSetting(defaults: defaults)   // FX-010
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
@@ -537,7 +540,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             SceneAutosaveCapture.apply(values, to: settings)
             SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
                                               chromatic: chromaticSplit, directionalBlur: directionalBlur,
-                                              echo: echoFeedback)   // FX-020, FX-006, FX-007, FX-010
+                                              radialBlur: radialBlur, echo: echoFeedback)   // FX-020, FX-006, FX-007, FX-008, FX-010
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
@@ -692,6 +695,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         ChromaticSplitSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-006: off
         DirectionalBlurSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-007: off
+        RadialBlurSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-008: off
         EchoSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-010: off
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
@@ -754,6 +758,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectEffectChain()   // FX-020
         connectChromaticSplit()   // FX-006
         connectDirectionalBlur()   // FX-007
+        connectRadialBlur()   // FX-008
         connectEcho()   // FX-010
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
@@ -1336,6 +1341,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.compositor.directionalBlur = directionalBlur.blur   // FX-007
+            host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
@@ -1386,6 +1392,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.compositor.directionalBlur = directionalBlur.blur   // FX-007
+            host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
@@ -1448,6 +1455,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.compositor.directionalBlur = directionalBlur.blur   // FX-007
+            host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
@@ -1507,6 +1515,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
             host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.compositor.directionalBlur = directionalBlur.blur   // FX-007
+            host.compositor.radialBlur = radialBlur.blur   // FX-008
             host.compositor.echoFeedback = effectiveEcho   // FX-010, ACC-012 weight cap
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
@@ -1844,7 +1853,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             SceneAutosaveCapture.apply(values, to: settings)
             SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
                                               chromatic: chromaticSplit, directionalBlur: directionalBlur,
-                                              echo: echoFeedback)   // FX-020, FX-006, FX-007, FX-010
+                                              radialBlur: radialBlur, echo: echoFeedback)   // FX-020, FX-006, FX-007, FX-008, FX-010
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8

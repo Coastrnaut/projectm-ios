@@ -95,6 +95,16 @@ final class ParameterQuantizer {
         reschedule()
     }
 
+    /// UIX-010-R9: drops the queued changes of `ids` without announcing (a batch reset wins over them, so a queued
+    /// value never lands after the reset's one undo step).
+    func cancelQueued(_ ids: [ParameterID]) {
+        for id in ids {
+            guard let pending = queue.pendingValue(for: id) else { continue }
+            _ = queue.request(id, value: pending, current: pending, at: clock(), tempo: tempo(), hasCues: hasCues())
+        }
+        reschedule()
+    }
+
     // MARK: - Boundaries (R5, R7, R8)
 
     /// Applies every change whose beat or bar boundary is at or before `time`.
