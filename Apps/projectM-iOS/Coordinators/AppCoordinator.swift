@@ -1286,6 +1286,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .fluidInk: .fluidInk   // VIS-011
         case .reactionDiffusion: .reactionDiffusion(settings.reactionDiffusion)   // VIS-012
         case .starfield: .starfield(speed: settings.starfieldSpeed, density: settings.starfieldDensity)   // VIS-016
+        case .signedDistance: .signedDistance(quality: settings.signedDistanceQuality)   // VIS-017
         default: .circular
         }
     }

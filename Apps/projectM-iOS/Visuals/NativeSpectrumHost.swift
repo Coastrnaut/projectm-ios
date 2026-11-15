@@ -85,6 +85,9 @@
 //   the iterations and spaces the injections (R12).
 // * Starfield (VIS-016): its own generator on the flat-shape pass (`StarfieldHostSupport.swift`); Speed and Stars change
 //   only its configuration (the stars keep flying); the loop restart resets the stars; `reduceMotion` halves its speed.
+// * SDF Shapes (VIS-017): the noise field's generator in its signed-distance mode (`SignedDistanceHostSupport.swift`);
+//   Quality changes only its configuration (the pose keeps turning); it reads the frame's bands; `reduceMotion` halves the
+//   turning and the swell.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -617,6 +620,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             return generator
         case let .starfield(speed, density):   // VIS-016
             return try StarfieldGenerator.make(device: device, speed: speed, density: density, barCount: barCount)
+        case let .signedDistance(quality):   // VIS-017: the noise field's generator in its SDF mode
+            return try NoiseFieldGenerator.makeSignedDistance(device: device, quality: quality, barCount: barCount)
         }
     }
 
@@ -706,6 +711,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.waterfall = false   // VIS-020: from the waterfall, back to the field
             configuration.fluidInk = false   // VIS-011: from fluid ink, back to the field
             configuration.reactionDiffusion = nil   // VIS-012: from reaction diffusion, back to the field
+            configuration.signedDistance = nil   // VIS-017: from the SDF shapes, back to the field
             field.configuration = configuration
         } else if case let .kaleidoscope(wedges) = newStyle, let field = generator as? NoiseFieldGenerator {
             // VIS-014: in place, from the next frame (from Noise Field too: the kaleidoscope's own source settings)
@@ -727,6 +733,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             // VIS-012: in place, from the next frame (entering, or a preset/pattern/seed change, re-seeds; storage kept)
             field.configuration = NoiseFieldConfiguration.reactionDiffusion(settings, reduceMotion: field.configuration.reduceMotion,
                                                                             palette: field.configuration.palette)
+        } else if case let .signedDistance(quality) = newStyle, let field = generator as? NoiseFieldGenerator {
+            field.applySignedDistance(quality: quality)   // VIS-017: in place, from the next frame
         } else if case let .starfield(speed, density) = newStyle, let stars = generator as? StarfieldGenerator {
             stars.apply(speed: speed, density: density)   // VIS-016: in place, from the next frame
         } else {
@@ -975,6 +983,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case .fluidInk: return "Ink from sudden sounds, \(glow)"   // VIS-011-R12
         case let .reactionDiffusion(settings): return settings.accessibilityDescription + ", \(glow)"   // VIS-012-R13
         case let .starfield(speed, density): return StarfieldDescription.accessibilityValue(speed: speed, density: density, glow: glow)   // VIS-016-R11
+        case let .signedDistance(quality): return "\(quality.title) quality, \(glow)"   // VIS-017-R11
         }
     }
 
@@ -1359,6 +1368,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case reactionDiffusion(ReactionDiffusionSettings)
     /// VIS-016: the starfield at `speed` with `density` stars requested.
     case starfield(speed: StarfieldSpeed, density: Int)
+    /// VIS-017: SDF shapes (the noise field's generator in its signed-distance mode) at `quality`.
+    case signedDistance(quality: SignedDistanceQuality)
 
     /// VIS-006, VIS-008, VIS-009, VIS-011: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1394,6 +1405,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .fluidInk: VisualChoice.fluidInk.title
         case .reactionDiffusion: VisualChoice.reactionDiffusion.title
         case .starfield: VisualChoice.starfield.title
+        case .signedDistance: VisualChoice.signedDistance.title
         }
     }
 
@@ -1415,6 +1427,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .fluidInk: "fluidInk"
         case .reactionDiffusion: "reactionDiffusion"
         case .starfield: "starfield"
+        case .signedDistance: "signedDistance"
         }
     }
 }
