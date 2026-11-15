@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T02:26:49Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T02:33:14Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 52 |
 | implementing | 3 |
-| unit_passed | 1 |
-| integrated | 269 |
+| integrated | 270 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 2 | 1 | 1 | 147 | 0 |
-| P2 | 39 | 2 | 0 | 38 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 2 | 1 | 148 | 0 |
+| P2 | 39 | 2 | 38 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 56 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 55 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -302,6 +301,7 @@ The physical-device suite may **not** start:
 | VIS-008 | Particle fountain | `11e727ab` | `feature/vis-008` |
 | VIS-009 | Particle orbit | `cd89f309` | `feature/vis-009` |
 | VIS-013 | Noise field | `a6c2cf3cfd3b` | `feature/vis-013` |
+| VIS-014 | Kaleidoscope field | `5bc17cf6b352` | `feature/vis-014` |
 
 ## Proved already implemented
 
@@ -3273,7 +3273,7 @@ None.
 - `swift test --package-path Packages/VisualGenerators`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_VisualGenerators.log`)
 - `swift test VisualGenerators 279, Compositor 1041, RenderGoldens 89; postmerge projectM-iOSTests 1161 + NoiseFieldUITests 1; compliance, docs OK`: pass at `a6c2cf3cfd3b` (log `.autonomous/logs/integration/batch94/app-tests.log`)
 
-### VIS-014 Kaleidoscope field (unit_passed)
+### VIS-014 Kaleidoscope field (integrated)
 - `python3 scripts/check_compliance.py`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/script-tests.log`)
@@ -3287,3 +3287,4 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_VisualGenerators.log`)
+- `swift test VisualGenerators 291, LibraryBackup 87, RenderGoldens 91; postmerge projectM-iOSTests 1179 + Kaleidoscope/NoiseField UI tests 2`: pass at `5bc17cf6b352` (log `.autonomous/logs/integration/batch98/app-tests.log`)
