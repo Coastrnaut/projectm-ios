@@ -4,7 +4,8 @@
 // A provider owns the camera (or a stand-in) and keeps only its newest picture, in a
 // `LatestCameraFrame` slot: the camera's thread replaces it, the render thread reads it with a
 // try-lock and never waits. Stopping closes the slot and drops the picture, so nothing is kept after
-// the camera stops (CAM-001-R9). Pictures are never written, sent or analysed by any provider.
+// the camera stops (CAM-001-R9). Pictures are never written or sent by any provider; the only analysis is
+// CAM-008's on-device person mask, in memory, while the user chose it (ADR-0063).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Metal
 import os

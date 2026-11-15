@@ -68,8 +68,15 @@ public final class VisionPersonSegmenter: PersonSegmenting, @unchecked Sendable 
     public init() {}
 
     /// The API exists on every supported OS; a device that cannot run it fails its first analysis and the
-    /// masker reports `failed`.
-    public var isSupported: Bool { true }
+    /// masker reports `failed`. The iOS Simulator cannot run it (CAM-008-T10, iOS 27.2 Simulator 2026-11-14:
+    /// "E5RT is not supported"), so it reports unsupported there before any analysis.
+    public var isSupported: Bool {
+        #if targetEnvironment(simulator)
+        return false
+        #else
+        return true
+        #endif
+    }
 
     public func segment(_ pixels: CVPixelBuffer, rotation: CameraRotation, quality: PersonSegmentationQuality) throws -> PersonMaskBitmap {
         let request: VNGeneratePersonSegmentationRequest = requests[quality] ?? Self.makeRequest(quality)

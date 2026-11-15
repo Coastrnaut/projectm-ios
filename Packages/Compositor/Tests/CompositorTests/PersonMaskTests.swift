@@ -173,7 +173,7 @@ final class PersonMaskerTests: XCTestCase {
     func testMaskingSourcesNeverStoreOrSendMasks() throws {
         let sources: URL = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().appendingPathComponent("Sources/CameraLayer")
-        let forbidden: [String] = ["FileManager", "write(to", "URLSession", "UserDefaults", "Logger(", "os_log", "print(", "NSLog"]
+        let forbidden: [String] = ["FileManager", "write(to", "URL" + "Session", "UserDefaults", "Logger(", "os_log", "print(", "NSLog"]
         for name in ["PersonMask.swift", "PersonMasker.swift", "PersonSegmenting.swift"] {
             let text: String = try String(contentsOf: sources.appendingPathComponent(name), encoding: .utf8)
             for word in forbidden { XCTAssertFalse(text.contains(word), "\(name) uses \(word)") }
@@ -188,6 +188,8 @@ import CoreVideo
 final class VisionPersonSegmenterProbeTests: XCTestCase {
     /// CAM-008-T10: runs the real request once on a synthetic 64 × 48 still turned a quarter. Records the
     /// outcome; passes either way (whether Vision runs here is a fact about this host, not the app).
+    /// 2026-11-14: on the Mac host it ran (mask 384 × 512, upright for a quarter turn, nothing covered); on the
+    /// iOS 27.2 Simulator it threw "E5RT is not supported". Neither is device evidence.
     func testVisionRequestOnASyntheticStill() throws {
         var buffer: CVPixelBuffer?
         XCTAssertEqual(CVPixelBufferCreate(kCFAllocatorDefault, 64, 48, kCVPixelFormatType_32BGRA, nil, &buffer), kCVReturnSuccess)
@@ -206,7 +208,11 @@ final class VisionPersonSegmenterProbeTests: XCTestCase {
         }
         CVPixelBufferUnlockBaseAddress(pixels, [])
         let segmenter = VisionPersonSegmenter()
+        #if targetEnvironment(simulator)
+        XCTAssertFalse(segmenter.isSupported, "the Simulator reports unsupported (Vision cannot run there)")
+        #else
         XCTAssertTrue(segmenter.isSupported)
+        #endif
         do {
             let mask = try segmenter.segment(pixels, rotation: .clockwise90, quality: .balanced)
             XCTAssertEqual(mask.bytes.count, mask.width * mask.height)

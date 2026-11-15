@@ -72,3 +72,7 @@ Decisions are numbered `CAM-008-D1…`. Each is the conservative, local-first op
 - **Decision**: the Simulator has no camera; app tests use the stand-in camera with
   `-uitestPersonSegmenter fixture|unsupported|failing`. A package test runs the real Vision request on
   a synthetic still image and records whether it runs there; its output is never device evidence.
+- **Recorded 2026-11-14 (CAM-008-T10)**: on the Mac host the request ran on a synthetic 64 × 48 still turned a
+  quarter and returned a 384 × 512 mask, i.e. in the upright picture's orientation (nothing covered: no person).
+  On the iOS 27.2 Simulator it threw "E5RT is not supported"; `VisionPersonSegmenter.isSupported` is therefore
+  false on the Simulator, which shows the unsupported note. Neither result is device evidence (CAM-008-T16).

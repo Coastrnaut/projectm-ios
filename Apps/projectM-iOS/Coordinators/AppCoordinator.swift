@@ -237,6 +237,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var cameraFocus: CameraFocusState = .notRunning(canFocus: false)
     /// CAM-006: the camera's white balance, read back (session state; CameraWhiteBalanceRow.swift).
     private(set) var cameraWhiteBalance: CameraWhiteBalanceState = .notRunning(canLock: false)
+    /// CAM-008: whether the person mask can be drawn (session state; CameraPersonMaskRow.swift).
+    var cameraPersonMaskAvailability: PersonMaskAvailability = .available
     @ObservationIgnored let cameraFocusFeedback = CameraFocusFeedback()
     /// CAM-003-R6: a lens the user chose waits for the switch's end (CameraLensRow.swift).
     @ObservationIgnored var cameraLensChoicePending = false
@@ -1210,7 +1212,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             let host = try CameraVisualHost.make(device: device, reader: trimmedAnalysisTap, barCount: circularSpectrumBarCount,
                                                  position: settings.cameraPosition, mirrored: settings.cameraMirrored,   // CAM-002
                                                  crop: settings.cameraCrop,   // CAM-007
-                                                 lens: cameraLensInventory.resolve(settings.cameraLens), lenses: cameraLensInventory)   // CAM-003
+                                                 lens: cameraLensInventory.resolve(settings.cameraLens), lenses: cameraLensInventory,   // CAM-003
+                                                 personMask: settings.cameraPersonMask)   // CAM-008
             host.reduceFlashing = settings.effectiveReduceFlashing   // ACC-012-R7
             host.compositor.flashLimits = settings.safetyClamp.flashLimitsOverride   // ACC-012-R5
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
@@ -1227,6 +1230,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             cameraFocus = host.cameraFocus
             host.onWhiteBalanceChange = { [weak self] (state: CameraWhiteBalanceState) -> Void in self?.cameraWhiteBalance = state }   // CAM-006
             cameraWhiteBalance = host.cameraWhiteBalance
+            observePersonMask(of: host)   // CAM-008
             host.onRecoveryChange = { [weak self, weak host] () -> Void in   // CAM-013
                 self?.cameraRetryPending = host?.retryPending ?? false
             }
@@ -1399,6 +1403,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         cameraExposure = .notRunning(canLock: false)   // CAM-004-R7: the host's stop released the camera
         cameraFocus = .notRunning(canFocus: false)   // CAM-005-R8: the host's stop reset the focus
         cameraWhiteBalance = .notRunning(canLock: false)   // CAM-006-R9: the host's stop released it
+        cameraPersonMaskAvailability = .available   // CAM-008: known again with the next host
         cameraStopReason = nil   // CAM-013
         cameraRetryPending = false
         cameraNoticeDismissed = false   // UIX-015-R7
@@ -1458,6 +1463,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         host.cameraPosition = settings.cameraPosition
         host.mirrored = settings.cameraMirrored
         host.crop = settings.cameraCrop   // CAM-007-R5: from the next frame, the camera untouched
+        host.personMask = settings.cameraPersonMask   // CAM-008-R1: from the next frame
         host.cameraLens = cameraLensInventory.resolve(settings.cameraLens)   // CAM-003-R5, R6
     }
 

@@ -48,6 +48,8 @@
 // * Camera crop (CAM-007-R1, R6): `settings.camera.cropMode` (`fill`/`fit`; else fill),
 //   `settings.camera.cropAnchor` (`center`/`top`/`bottom`; else center) and `settings.camera.zoom`
 //   (1, 1.5, 2 or 3; else 1), one set for both cameras. Same rules as position and mirror.
+// * Person mask (CAM-008-R1, R9): `settings.camera.personMask` (`off`/`person`/`background`; else off),
+//   one choice for both cameras. Same rules as the crop; masks themselves are never stored (R7).
 // * Camera lens (CAM-003-R4, R5): `settings.camera.lens` (`ultraWide`/`wide`/`telephoto`; else wide),
 //   the back camera's last chosen lens. A lens this device lacks is used as wide (the coordinator
 //   resolves it against the device's lenses); the stored value is kept. Same rules as position.
@@ -115,6 +117,7 @@ final class AppSettings {
     static let cameraCropAnchorKey = "settings.camera.cropAnchor"
     static let cameraZoomKey = "settings.camera.zoom"
     static let cameraLensKey = "settings.camera.lens"               // CAM-003
+    static let cameraPersonMaskKey = "settings.camera.personMask"   // CAM-008
     /// MED-001: the stored photo's identifier (written by PhotoStore).
     static let photoIDKey = PhotoStore.idKey
     /// MED-006: the image slideshow (written by SlideshowStore).
@@ -135,7 +138,7 @@ final class AppSettings {
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, videoIDKey, videoLoopKey, videoSpeedKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
-                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, midiEnabledKey,
+                          cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017, SHOW-003
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
@@ -213,6 +216,11 @@ final class AppSettings {
             if valid != cameraZoom { cameraZoom = valid }   // inside didSet: no second didSet
             defaults.set(cameraZoom, forKey: Self.cameraZoomKey)
         }
+    }
+
+    /// CAM-008-R1, R9: Off (default), Person or Background, for both cameras. Never starts the camera.
+    var cameraPersonMask: CameraPersonMaskMode {
+        didSet { defaults.set(cameraPersonMask.rawValue, forKey: Self.cameraPersonMaskKey) }
     }
 
     /// CAM-007: the crop the camera layer draws with.
@@ -452,6 +460,7 @@ final class AppSettings {
         cameraCropAnchor = defaults.string(forKey: Self.cameraCropAnchorKey).flatMap(CameraCropAnchor.init(rawValue:)) ?? .center
         let storedZoom: Double = defaults.object(forKey: Self.cameraZoomKey) as? Double ?? 1
         cameraZoom = Double(CameraCrop.validZoom(Float(storedZoom)))
+        cameraPersonMask = defaults.string(forKey: Self.cameraPersonMaskKey).flatMap(CameraPersonMaskMode.init(rawValue:)) ?? .off   // CAM-008
         let bars = defaults.integer(forKey: Self.circularSpectrumBarsKey)
         circularSpectrumBars = Self.circularSpectrumBarChoices.contains(bars) ? bars : Self.defaultCircularSpectrumBars
         linearSpectrumOrientation = defaults.string(forKey: Self.linearSpectrumOrientationKey)

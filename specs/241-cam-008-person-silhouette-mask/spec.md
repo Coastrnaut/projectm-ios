@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-008-T01-T15, T17 verified on the Mac with the stand-in camera and a fixture segmenter; device task T16 `{device}` open)
 
 **Input**: User description: "Implement CAM-008 (Person silhouette mask) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Use on-device segmentation where
