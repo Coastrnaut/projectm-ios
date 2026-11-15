@@ -49,6 +49,10 @@
 //   Glow and palette are shared; Bars does not apply.
 // * Fluid Ink (VIS-011-R12): `settings.visual` may also be `fluidInk`; no key of its own. Onsets (ANL-004) drive it; palette
 //   and glow are shared; Bars does not apply.
+// * Reaction Diffusion (VIS-012-R13): `settings.visual` may also be `reactionDiffusion`; keys
+//   `settings.reactionDiffusion.preset` (`coral`/`mitosis`/`spots`/`maze`; else coral), `.pattern`
+//   (`square`/`spots`/`ring`/`stripes`; else square), `.seed` (Int 0…9999; else 1), `.speed` (Int 1…16; else 8). Bass
+//   (the bands) plants growth; palette and glow are shared; Bars does not apply.
 // * Spectrum Waterfall (VIS-020-R9): `settings.visual` may also be `spectrumWaterfall`; no key of its own. Bars applies
 //   (the band count feeding its columns); palette and glow are shared.
 // * Spectral smoothing (ANL-003-R6): the circular and linear spectra's attack and release, keys
@@ -127,6 +131,10 @@ final class AppSettings {
     static let noiseFieldSeedKey = "settings.noiseField.seed"   // VIS-013
     static let kaleidoscopeWedgesKey = "settings.kaleidoscope.wedges"   // VIS-014
     static let tunnelPaceKey = "settings.tunnel.pace"   // VIS-015
+    static let reactionPresetKey = "settings.reactionDiffusion.preset"   // VIS-012
+    static let reactionPatternKey = "settings.reactionDiffusion.pattern"
+    static let reactionSeedKey = "settings.reactionDiffusion.seed"
+    static let reactionSpeedKey = "settings.reactionDiffusion.speed"
     static let starfieldSpeedKey = "settings.starfield.speed"   // VIS-016
     static let starfieldDensityKey = "settings.starfield.density"   // VIS-016
     static let spectrumAttackKey = "settings.spectrum.attack"
@@ -169,7 +177,7 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey, videoReverseKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleEmitterKey, particleTrailsKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, starfieldSpeedKey, starfieldDensityKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleEmitterKey, particleTrailsKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, reactionPresetKey, reactionPatternKey, reactionSeedKey, reactionSpeedKey, starfieldSpeedKey, starfieldDensityKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
@@ -380,6 +388,30 @@ final class AppSettings {
             if !NoiseFieldConfiguration.seedRange.contains(noiseFieldSeed) { noiseFieldSeed = NoiseFieldConfiguration.defaultSeed }
             defaults.set(noiseFieldSeed, forKey: Self.noiseFieldSeedKey)
         }
+    }
+
+    /// VIS-012: reaction diffusion's preset, seed pattern, seed (0…9999) and speed (1…16 iterations per step).
+    var reactionPreset: ReactionDiffusionPreset {
+        didSet { defaults.set(reactionPreset.rawValue, forKey: Self.reactionPresetKey) }
+    }
+    var reactionPattern: ReactionDiffusionPattern {
+        didSet { defaults.set(reactionPattern.rawValue, forKey: Self.reactionPatternKey) }
+    }
+    var reactionSeed: Int {
+        didSet {
+            if !ReactionDiffusion.seedRange.contains(reactionSeed) { reactionSeed = ReactionDiffusion.defaultSeed }
+            defaults.set(reactionSeed, forKey: Self.reactionSeedKey)
+        }
+    }
+    var reactionSpeed: Int {
+        didSet {
+            if !ReactionDiffusion.speedRange.contains(reactionSpeed) { reactionSpeed = ReactionDiffusion.defaultSpeed }
+            defaults.set(reactionSpeed, forKey: Self.reactionSpeedKey)
+        }
+    }
+    /// VIS-012: the four as the generator's settings.
+    var reactionDiffusion: ReactionDiffusionSettings {
+        ReactionDiffusionSettings(preset: reactionPreset, pattern: reactionPattern, seed: reactionSeed, speed: reactionSpeed)
     }
 
     /// VIS-016: the starfield's speed (Medium by default).
@@ -593,6 +625,14 @@ final class AppSettings {
         kaleidoscopeWedges = Self.storedInt(defaults, Self.kaleidoscopeWedgesKey, in: KaleidoscopeFold.wedgeRange,
                                             fallback: KaleidoscopeFold.defaultWedges)   // VIS-014
         tunnelPace = defaults.string(forKey: Self.tunnelPaceKey).flatMap(TunnelPace.init(rawValue:)) ?? .defaultPace   // VIS-015
+        let reaction = ReactionDiffusionSettings(storedPreset: defaults.string(forKey: Self.reactionPresetKey),   // VIS-012
+                                                 pattern: defaults.string(forKey: Self.reactionPatternKey),
+                                                 seed: defaults.object(forKey: Self.reactionSeedKey) as? Int,
+                                                 speed: defaults.object(forKey: Self.reactionSpeedKey) as? Int)
+        reactionPreset = reaction.preset
+        reactionPattern = reaction.pattern
+        reactionSeed = reaction.seed
+        reactionSpeed = reaction.speed
         starfieldSpeed = defaults.string(forKey: Self.starfieldSpeedKey).flatMap(StarfieldSpeed.init(rawValue:)) ?? .defaultSpeed   // VIS-016
         let density: Int = Self.storedInt(defaults, Self.starfieldDensityKey, in: StarfieldConfiguration.settingsDensityRange,
                                           fallback: StarfieldConfiguration.defaultDensity)
@@ -675,6 +715,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case spectrumWaterfall
     /// The native fluid ink (VIS-011).
     case fluidInk
+    /// The native reaction diffusion (VIS-012).
+    case reactionDiffusion
     /// The native starfield (VIS-016).
     case starfield
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
@@ -703,6 +745,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .tunnel: "Tunnel"
         case .spectrumWaterfall: "Spectrum Waterfall"
         case .fluidInk: "Fluid Ink"
+        case .reactionDiffusion: "Reaction Diffusion"
         case .starfield: "Starfield"
         case .camera: "Camera"
         case .photo: "Photo"
@@ -715,7 +758,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
         || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel
-        || self == .spectrumWaterfall || self == .fluidInk || self == .starfield }
+        || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .spectrumWaterfall }   // VIS-020: band count
