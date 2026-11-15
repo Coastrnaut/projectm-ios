@@ -619,6 +619,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         LatencyOffsetSetting.allKeys.forEach(defaults.removeObject(forKey:))   // AUD-013: 0 ms
         ColorGradeSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-003: neutral
         MotionFeedbackSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-009: Trails off
+        NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases

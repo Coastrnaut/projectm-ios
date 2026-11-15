@@ -32,6 +32,8 @@ final class MaterialNoiseTests: XCTestCase {
     /// Recorded 2026-11-14 on the build Mac's host GPU ("Apple M5 Max") and on the iOS 27.2 simulator of the same Mac.
     private static let digests: [String: [UInt64]] = [
         "Apple M5 Max": [0xAA38_5390_08A9_C248, 0xF8B5_9524_8754_462B, 0x94FE_4936_FF98_C69D],
+        // The simulator draws on the same Mac GPU and gives the same bytes.
+        "Apple iOS simulator GPU": [0xAA38_5390_08A9_C248, 0xF8B5_9524_8754_462B, 0x94FE_4936_FF98_C69D],
     ]
 
     /// Mean RGB, peak RGB, pixels (32,32), (8,8), (56,16), (16,56) — SHD-001's signature, phase 0. ±0.02 on any GPU.

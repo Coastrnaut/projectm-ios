@@ -511,6 +511,7 @@ struct SettingsView: View {
         }
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let layerInspector { PaletteLinkSection(palettes: layerInspector.palettes).id("palettes") }   // UIX-011
+        NoiseEditorLinkSection().id("noiseEditor")   // SHD-006-R6
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)

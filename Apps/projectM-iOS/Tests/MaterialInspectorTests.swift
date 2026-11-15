@@ -49,7 +49,7 @@ final class MaterialInspectorTests: XCTestCase {
                 count += 1
             }
         }
-        XCTAssertEqual(count, 29)
+        XCTAssertEqual(count, 34)   // SHD-006: Noise Flow's five noise parameters
     }
 
     /// The accessibility values are the formatted values (ACC-005 for sliders, UIX-003 otherwise).
@@ -69,7 +69,7 @@ final class MaterialInspectorTests: XCTestCase {
 
         let noise = Model.controls(for: .material(id: "material.noiseFlow"), parameters: [ParameterID("material.noiseFlow.octaves"): .integer(9)])
         XCTAssertEqual(noise[2].kind, .stepper)
-        XCTAssertEqual(Model.spoken(noise[2]), "5", "shown clamped, as the layer would store it")
+        XCTAssertEqual(Model.spoken(noise[2]), "8", "shown clamped, as the layer would store it (SHD-006: 1…8)")
     }
 
     func testOnlyCatalogMaterialsHaveControls() {

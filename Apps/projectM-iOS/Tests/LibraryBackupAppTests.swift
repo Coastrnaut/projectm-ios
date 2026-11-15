@@ -29,6 +29,7 @@ final class LibraryBackupAppTests: XCTestCase {
 
     func testIncludedKeysAndFolderNamesAgreeWithTheStores() {
         let appKeys: Set<String> = Set(AppSettings.allKeys + LatencyOffsetSetting.allKeys + ColorGradeSetting.allKeys + MotionFeedbackSetting.allKeys + EffectChainSetting.allKeys
+            + NoiseEditorStore.allKeys   // SHD-006-R7
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, TextOverlayStore.key,
                MIDIMappingCoordinator.mappingsKey, RecordingAudioSetting.includeMicrophoneKey,   // MIDI-003-R9, REC-004-R3

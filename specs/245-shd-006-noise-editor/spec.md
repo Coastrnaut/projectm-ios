@@ -84,8 +84,8 @@ change immediately. The settings survive relaunch.
 
 **Why this priority**: It is the roadmap row's observable behaviour.
 
-**Independent Test**: A UI test opens the editor, steps the octaves and reads the value back, taps Randomize seed
-and reads the new seed; app unit tests cover storage and clamping.
+**Independent Test**: A UI test opens the editor, taps Randomize seed and reads the new seed, drags the lacunarity
+slider and reads the value back; app unit tests cover storage and clamping.
 
 **Acceptance Scenarios**:
 
