@@ -44,6 +44,16 @@ interaction); each answer is the conservative, local-first option.
 - Q: Do versions travel in backups and exports? → A: No. They are local restore points: FILE-005 backs up the live text only (the library backup's format is unchanged) and PRE-014 exports only live texts. A restore keeps the device's existing versions (it copies the live folder). FILE-009 counts them inside "Presets"; FILE-011's presets erase removes them with the folder.
 - Q: Do existing presets need a migration? → A: No. A preset with no list entry has no versions; the first edit after the update starts its list. No `index.json` schema change.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Does a revert also bring back the name the preset had then? → A: No. Revert restores the text only and keeps the current name (renames keep no version); the list shows the earlier name when it differs, for reference.
+- Q: Which presets offer Versions…? → A: Only editable ones (playable, not awaiting the library unlock), the same set that offers Edit. Pending and quarantined presets keep their versions but do not offer them.
+- Q: What does the sheet show when the version list is from a newer app version? → A: "Earlier versions were saved by a newer version of the app." and no rows; edits still save, without keeping a version, and the file is never written.
+- Q: What happens to a version whose text file is missing or damaged? → A: An entry whose file is missing is dropped at load (it cannot be restored). A damaged file (size or SHA-256 differs) is found when Preview or Revert reads it: "This version could not be read." and nothing changes.
+- Q: How is the earlier text decoded for Preview? → A: As the editor decodes texts (UTF-8, else Latin-1 with the editor's note), shown read-only in a monospaced, selectable, scrollable text view that follows Dynamic Type.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Revert an edit (Priority: P1) — MVP
@@ -90,6 +100,7 @@ device's versions.
 - The earlier text is identical to another user preset's current text: refused as for an edit ("same as <name>").
 - The earlier text now equals a built-in preset: refused as for an edit.
 - A copy of a locked pack while the library is locked: Versions… is not offered (it is not editable).
+- A version's text file is missing: the entry is dropped at load. Damaged: Preview and Revert say "This version could not be read." and nothing changes.
 - A quarantined preset keeps its versions; they are offered again when it is playable.
 - An app ending during a revert's check: `edit.json` drops the unchecked revert at launch, as for an edit.
 
@@ -104,7 +115,7 @@ device's versions.
 - **PRE-017-R5**: Revert MUST read the version text, check its size and SHA-256, and save it through the PRE-015 edit path (static checks, engine trial, `edit.json`, "changed meanwhile"). It MUST restore the exact bytes of the version.
 - **PRE-017-R6**: A revert MUST NOT remove or change any file except the preset's live text, `index.json`, `history.json` and version texts it adds or leaves unnamed.
 - **PRE-017-R7**: Removing a user preset MUST remove its versions and every version text no remaining version names. At load, version texts no version names MUST be deleted (left by an interrupted save) — only in `versions/`, only names of the form `<sha256>.milk`, and only when the list was read (never after it was set aside or is newer). List entries for preset IDs the record no longer has MUST be dropped.
-- **PRE-017-R8**: The browser row of an editable user preset MUST offer "Versions…" (touch-and-hold menu and a VoiceOver action). The sheet lists versions newest first ("<date, time> · <size>", the name at that time when it differs), each with Preview (the text read-only) and Revert (confirmed: "Revert to this version? Your current text is kept as a version."), shows "No earlier versions." when empty, and shows the check's progress and any refusal as the editor does. A successful revert announces "Reverted <name>." on the library lane and closes the sheet.
+- **PRE-017-R8**: The browser row of an editable user preset MUST offer "Versions…" (touch-and-hold menu and a VoiceOver action). The sheet lists versions newest first ("<date, time> · <size>", the name at that time when it differs), each with Preview (the text read-only) and Revert (confirmed: "Revert to this version? Your current text is kept as a version."), shows "No earlier versions." when empty, and shows the check's progress and any refusal as the editor does. Revert keeps the current name. A newer list shows "Earlier versions were saved by a newer version of the app." Preview decodes as the editor does (UTF-8, else Latin-1). A successful revert announces "Reverted <name>." on the library lane and closes the sheet.
 - **PRE-017-R9**: Versions MUST stay local: not in the library backup, preset exports or diagnostics. A library restore MUST keep the device's versions.
 - **PRE-017-R10**: The version model, list file and store logic MUST be Foundation-only Swift in `PresetLibrary` that builds on Linux.
 
