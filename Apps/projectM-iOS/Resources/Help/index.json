@@ -16,7 +16,7 @@
     { "id": "recording", "title": "Recording", "file": "recording.md",
       "keywords": ["record", "video", "frame", "screenshot", "photos", "export", "countdown"] },
     { "id": "external-display", "title": "External display and output tools", "file": "external-display.md",
-      "keywords": ["display", "projector", "airplay", "output", "corner pin", "calibration", "blackout", "rehearse"] },
+      "keywords": ["display", "projector", "airplay", "output", "corner pin", "grid warp", "calibration", "blackout", "rehearse"] },
     { "id": "midi-osc", "title": "MIDI and OSC", "file": "midi-osc.md",
       "keywords": ["midi", "osc", "controller", "learn", "mapping", "network", "clock", "feedback"] },
     { "id": "accessibility-safety", "title": "Accessibility and sensory safety", "file": "accessibility-safety.md",

@@ -609,12 +609,12 @@ struct VisualizerView: View {
     }
 
     private func withVisualChanges(_ content: some View) -> some View {
-        withSignedDistanceChanges(withStarfieldChanges(withGeneratorChanges(withSpectrumChanges(content
+        withTessellationChanges(withSignedDistanceChanges(withStarfieldChanges(withGeneratorChanges(withSpectrumChanges(content
             .onChange(of: coordinator.settings.reduceFlashing) { coordinator.applyReduceFlashing() }
             .onChange(of: coordinator.settings.sensorySafety.profile) { coordinator.applyReduceFlashing() }   // ACC-012
             .onChange(of: coordinator.settings.visual) { coordinator.visualSettingsChanged() }                 // VIS-001
             .onChange(of: coordinator.settings.glowParameters) { coordinator.glowSettingsChanged() }          // FX-001
-            .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() })))) // ACC-003-R13
+            .onChange(of: coordinator.settings.colorBlindSafePalette) { coordinator.spectrumPaletteChanged() }))))) // ACC-003-R13
     }
 
     private func withSpectrumChanges(_ content: some View) -> some View {
@@ -652,10 +652,17 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.reactionDiffusion) { coordinator.visualSettingsChanged() }   // VIS-012
     }
 
+    /// VIS-018: the tessellation's settings (one value, its own one-modifier chain for the type-check budget).
+    private func withTessellationChanges(_ content: some View) -> some View {
+        content
+        .onChange(of: coordinator.settings.tessellation) { coordinator.visualSettingsChanged() }
+    }
+
     /// VIS-017: the SDF shapes' quality (its own short chain, so the other chains stay at about ten).
     private func withSignedDistanceChanges(_ content: some View) -> some View {
         content
         .onChange(of: coordinator.settings.signedDistanceQuality) { coordinator.visualSettingsChanged() }
+        .onChange(of: coordinator.settings.cymaticBands) { coordinator.visualSettingsChanged() }   // VIS-019
     }
 
     /// VIS-016: the starfield's settings (its own short chain, so withGeneratorChanges stays at about ten).

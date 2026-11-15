@@ -13,6 +13,7 @@ Connect a display, projector or AirPlay receiver and the visualization appears t
 ## Projection tools
 
 - **Corner pin…** moves the picture's four corners to fit a projector that is not square to the screen. A test card helps you line up the edges.
+- **Grid warp…** bends the picture with a grid of points (3 × 3 to 9 × 9) to fit a curved or uneven surface. Guide lines on the display help you line up the grid. Shapes that would fold the picture are refused.
 - **Color calibration…** adjusts gamma and red, green and blue for that display only.
 - **Rehearse output…** previews a display that is not connected yet. Nothing there is saved.
 - **Test grid** and the safe-area guides help with framing.

@@ -2,6 +2,7 @@
 // setting as an `OutputProfile` and back. Applying sets every property inside the call; their existing `didSet`s write
 // the usual `settings.externalDisplay.*` keys and push each value to the external coordinator, so a connected display
 // updates at once (placement changes still wait for a recording hold, as from the controls). No new storage.
+// OUT-008: the grid warp travels too (optional in the file).
 import Compositor
 import PresentationLifecycle
 
@@ -12,7 +13,7 @@ extension ExternalOutputSetting {
         return OutputProfile(fit: fit, shape: shape, pixelAspect: pixelAspect, resolution: resolution, outputMode: outputMode,
                              cornerPin: cornerPin,
                              calibration: OutputProfile.Calibration(gamma: c.gamma, red: c.red, green: c.green, blue: c.blue),
-                             display: display)
+                             display: display, gridWarp: gridWarp)
     }
 
     /// Sets every transform of a validated profile (OUT-014-R7).
@@ -26,5 +27,6 @@ extension ExternalOutputSetting {
         cornerPin = profile.cornerPin
         let c: OutputProfile.Calibration = profile.calibration
         calibration = DisplayCalibration(gamma: c.gamma, red: c.red, green: c.green, blue: c.blue)
+        gridWarp = profile.gridWarp   // OUT-008 (validated by the decoder)
     }
 }

@@ -14,20 +14,20 @@
    "integrated": 151
   },
   "P2": {
-   "built": 2,
-   "integrated": 77
+   "integrated": 79
   },
   "P3": {
-   "audited": 3,
+   "audited": 1,
+   "built": 1,
    "implementing": 1,
-   "integrated": 5
+   "integrated": 6
   }
  },
  "by_state": {
-  "audited": 5,
-  "built": 2,
+  "audited": 3,
+  "built": 1,
   "implementing": 1,
-  "integrated": 317,
+  "integrated": 320,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -39,15 +39,12 @@
    "FX-011",
    "FX-017",
    "FX-018",
-   "OUT-008",
    "QA-011",
-   "QA-012",
-   "VIS-018",
-   "VIS-019"
+   "QA-012"
   ],
   "phase": "implementation",
   "reasons": [
-   "8 features are not implemented yet (first: FX-011, FX-017, FX-018, OUT-008, QA-011)"
+   "5 features are not implemented yet (first: FX-011, FX-017, FX-018, QA-011, QA-012)"
   ]
  },
  "features": {
@@ -1143,13 +1140,13 @@
   },
   "FX-011": {
    "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "branch": "feature/fx-011",
+   "branch_sha": "b1fd8888",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
-   "state": "audited"
+   "state": "built"
   },
   "FX-012": {
    "attempts": 0,
@@ -1203,13 +1200,13 @@
   },
   "FX-017": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-017",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FX-018": {
    "attempts": 0,
@@ -1872,14 +1869,14 @@
    "state": "integrated"
   },
   "OUT-008": {
-   "attempts": 0,
+   "attempts": 1,
    "branch": "feature/out-008",
-   "branch_sha": null,
+   "branch_sha": "26b51db943e161c8be13933418aecf70395c97f8",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "f5160474",
    "priority": "P3",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "OUT-009": {
    "attempts": 0,
@@ -3284,22 +3281,22 @@
   "VIS-018": {
    "attempts": 0,
    "branch": "feature/vis-018",
-   "branch_sha": "0e0f42af",
+   "branch_sha": "2d2b678db21fb1b22534f4e422dd712f1e7ca9a1",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "b048b215",
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "integrated"
   },
   "VIS-019": {
    "attempts": 0,
    "branch": "feature/vis-019",
-   "branch_sha": "5e5a8682",
+   "branch_sha": "64bdbdd9861668d5baa6d474ed61e0d4c00299ae",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "e8544866",
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "integrated"
   },
   "VIS-020": {
    "attempts": 0,
@@ -4209,6 +4206,11 @@
    "sha": "e097e3500ac0e02957e29ff3257d91e63b80a3e7"
   },
   {
+   "branch": "feature/out-008",
+   "id": "OUT-008",
+   "sha": "f5160474"
+  },
+  {
    "branch": "feature/out-009",
    "id": "OUT-009",
    "sha": "9808cd43ea6d42ae570145dc6b111d8a673fa64c"
@@ -4894,6 +4896,16 @@
    "sha": "49dc9035"
   },
   {
+   "branch": "feature/vis-018",
+   "id": "VIS-018",
+   "sha": "b048b215"
+  },
+  {
+   "branch": "feature/vis-019",
+   "id": "VIS-019",
+   "sha": "e8544866"
+  },
+  {
    "branch": "feature/vis-020",
    "id": "VIS-020",
    "sha": "7cdcce682ee8e5f2329dd6836c2bccf9dcb442b5"
@@ -4924,5 +4936,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T11:42:55Z"
+ "updated": "2026-11-15T14:37:27Z"
 }

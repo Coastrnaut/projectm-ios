@@ -8,6 +8,7 @@
 // slider 50…100 % in 5 % steps with ACC-005's `.accessibleParameter`.
 // OUT-006 (contract C4): an Output picker (Same scene, Clean output), applied live.
 // OUT-007 (contract C4): "Corner pin…" opens `CornerPinEditorView` full screen (available with or without a display).
+// OUT-008 (contract C4): "Grid warp…" opens `GridWarpEditorView` full screen, likewise.
 // OUT-009 (contract C5): "Color calibration…" opens `DisplayCalibrationEditorView` full screen, likewise.
 // OUT-014 (contract C3): `OutputProfileRows` (export and import of these settings as a local file) closes the section.
 import PresentationLifecycle
@@ -17,6 +18,7 @@ struct ExternalDisplaySection: View {
     @Bindable var setting: ExternalOutputSetting
     @State private var editsCornerPin = false
     @State private var editsCalibration = false
+    @State private var editsGridWarp = false   // OUT-008
 
     var body: some View {
         Section {
@@ -28,6 +30,7 @@ struct ExternalDisplaySection: View {
             if setting.resolutionMode == .custom { resolutionPercentRow }
             rehearseRow
             cornerPinRow
+            gridWarpRow
             calibrationRow
             OutputProfileRows(setting: setting)
         } header: {
@@ -68,6 +71,15 @@ struct ExternalDisplaySection: View {
     }
 
     // MARK: - OUT-009
+
+    private var gridWarpRow: some View {   // OUT-008
+        Button(ExternalOutputSetting.gridWarpTitle) { editsGridWarp = true }
+            .accessibilityIdentifier("externalGridWarpButton")
+            .fullScreenCover(isPresented: $editsGridWarp) {
+                let aspect: Double = setting.external?.calibrationAspect ?? 16.0 / 9.0
+                GridWarpEditorView(setting: setting, aspect: aspect) { editsGridWarp = false }
+            }
+    }
 
     private var calibrationRow: some View {
         Button(ExternalOutputSetting.calibrationTitle) { editsCalibration = true }

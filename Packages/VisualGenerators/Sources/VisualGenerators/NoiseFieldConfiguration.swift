@@ -53,11 +53,16 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
     public var reactionDiffusion: ReactionDiffusionSettings?
     /// VIS-017: SDF shapes with these settings (nil: off); on forces every other mode off.
     public var signedDistance: SignedDistanceSettings?
+    /// VIS-019: cymatic lines with these settings (nil: off); on forces every other mode off. Set through `cymatic(_:)`.
+    public var cymatic: CymaticSettings? = nil
+    /// VIS-018: geometric tessellation with these settings (nil: off); on forces every other mode off.
+    public var tessellation: TessellationSettings?
 
     public init(frequency: Double = NoiseFieldConfiguration.defaultFrequency, octaves: Int = NoiseFieldConfiguration.defaultOctaves,
                 seed: Int = NoiseFieldConfiguration.defaultSeed, reduceMotion: Bool = false, palette: VisualPalette = .spectrum,
                 wedges: Int = 0, tunnelPace: Double = 0, waterfall: Bool = false, fluidInk: Bool = false,
-                reactionDiffusion: ReactionDiffusionSettings? = nil, signedDistance: SignedDistanceSettings? = nil) {
+                reactionDiffusion: ReactionDiffusionSettings? = nil, signedDistance: SignedDistanceSettings? = nil,
+                tessellation: TessellationSettings? = nil) {
         self.frequency = frequency
         self.octaves = octaves
         self.seed = seed
@@ -69,6 +74,7 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         self.fluidInk = fluidInk
         self.reactionDiffusion = reactionDiffusion
         self.signedDistance = signedDistance
+        self.tessellation = tessellation
         self = clamped()
     }
 
@@ -107,6 +113,26 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, signedDistance: settings)
     }
 
+    /// VIS-019: cymatic lines with `settings` (only the palette and Reduce Motion apply besides).
+    public static func cymatic(_ settings: CymaticSettings = .default, reduceMotion: Bool = false,
+                               palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
+        var c = NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette)
+        c.cymatic = settings
+        return c.clamped()
+    }
+
+    /// VIS-018: geometric tessellation with `settings` (only the palette and Reduce Motion apply besides).
+    public static func tessellation(_ settings: TessellationSettings = .default, reduceMotion: Bool = false,
+                                    palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
+        NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, tessellation: settings)
+    }
+
+    /// The palette drawn (VIS-018: the tessellation's own choice unless the shared palette is not Spectrum).
+    public var effectivePalette: VisualPalette {
+        guard let t = tessellation else { return palette }
+        return t.palette.resolved(over: palette)
+    }
+
     /// VIS-015: the tunnel is on.
     public var isTunnel: Bool { tunnelPace > 0 }
 
@@ -134,6 +160,14 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         }
         if c.signedDistance != nil {   // VIS-017
             c.wedges = 0; c.tunnelPace = 0; c.waterfall = false; c.fluidInk = false; c.reactionDiffusion = nil
+        }
+        if c.cymatic != nil {   // VIS-019
+            c.wedges = 0; c.tunnelPace = 0; c.waterfall = false; c.fluidInk = false; c.reactionDiffusion = nil; c.signedDistance = nil
+        }
+        if let t = c.tessellation {   // VIS-018
+            c.tessellation = t.clamped()
+            c.cymatic = nil   // VIS-019: one mode at a time
+            c.wedges = 0; c.tunnelPace = 0; c.waterfall = false; c.fluidInk = false; c.reactionDiffusion = nil; c.signedDistance = nil
         }
         return c
     }

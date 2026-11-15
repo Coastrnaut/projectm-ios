@@ -19,6 +19,11 @@
 //      OUT-009 (specs/268-out-009-output-color-calibration): then, only while a display calibration is set, each
 //      encoded channel becomes clamp(gain_c × c^exponent, 0, 1); `PMFlashLimiterDrawOutput` redraws this step from the
 //      current state (calibrated or not) for REC-001's read-back.
+//      OUT-008 (specs/309-out-008-grid-warp, contract C3): while a grid warp is set, the output step for the display clears
+//      the target to black and draws the same output through the mesh (the warp program: `gl_VertexID` → lattice vertex,
+//      16 x 16 quads per control cell, placed on the Catmull-Rom surface through the control points; optional guide
+//      lines), the same steps as Compositor's `GridWarpPass` and PresentationLifecycle's `GridWarp`. The REC-001 redraw
+//      (display 0) is neither calibrated nor warped.
 // Tile rows are counted from the bottom of the picture (GL's origin); only consistency matters.
 
 #define TILE_SIDE 4
@@ -54,6 +59,9 @@
 #define GL_SCISSOR_TEST 0x0C11
 #define GL_CULL_FACE 0x0B44
 #define GL_STENCIL_TEST 0x0B90
+#define GL_COLOR_BUFFER_BIT 0x00004000
+#define WARP_MAX_SIDE 9
+#define WARP_SUBDIVISIONS 16
 
 typedef unsigned int GLuint;
 typedef int GLint;
@@ -89,6 +97,10 @@ typedef struct GLTable {
     void (*uniform1i)(GLint, GLint);
     void (*uniform1f)(GLint, GLfloat);
     void (*uniform3f)(GLint, GLfloat, GLfloat, GLfloat);   // OUT-009
+    void (*uniform2fv)(GLint, GLsizei, const GLfloat *);   // OUT-008
+    void (*uniform4i)(GLint, GLint, GLint, GLint, GLint);   // OUT-008
+    void (*clearColor)(GLfloat, GLfloat, GLfloat, GLfloat);   // OUT-008
+    void (*clear)(GLuint);   // OUT-008
     void (*genVertexArrays)(GLsizei, GLuint *);
     void (*deleteVertexArrays)(GLsizei, const GLuint *);
     void (*bindVertexArray)(GLuint);
@@ -116,6 +128,8 @@ static int loadGL(GLTable *gl, PMFlashLoadProc load, void *user) {
     LOAD(useProgram, "glUseProgram") LOAD(getUniformLocation, "glGetUniformLocation")
     LOAD(uniform1i, "glUniform1i") LOAD(uniform1f, "glUniform1f")
     LOAD(uniform3f, "glUniform3f")
+    LOAD(uniform2fv, "glUniform2fv") LOAD(uniform4i, "glUniform4i")
+    LOAD(clearColor, "glClearColor") LOAD(clear, "glClear")
     LOAD(genVertexArrays, "glGenVertexArrays") LOAD(deleteVertexArrays, "glDeleteVertexArrays")
     LOAD(bindVertexArray, "glBindVertexArray") LOAD(viewport, "glViewport")
     LOAD(disable, "glDisable") LOAD(colorMask, "glColorMask") LOAD(drawArrays, "glDrawArrays")
@@ -131,6 +145,49 @@ static const char *vertexSource =
     "    vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));\n"
     "    uv = p;\n"
     "    gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);\n"
+    "}\n";
+
+// OUT-008: the grid warp's vertices from gl_VertexID; grid = (columns, rows, subdivisions, guides). `lattice` is the
+// picture-relative position (y down); `uv` the scene's texture coordinate (GL: y up).
+static const char *warpVertexSource =
+    "#version 300 es\n"
+    "precision highp float;\n"
+    "precision highp int;\n"
+    "uniform vec2 ctrl[81];\n"
+    "uniform ivec4 grid;\n"
+    "out vec2 uv;\n"
+    "out vec2 lattice;\n"
+    "vec4 weights(float t) {\n"
+    "    float t2 = t * t; float t3 = t2 * t;\n"
+    "    return 0.5 * vec4(-t3 + 2.0 * t2 - t, 3.0 * t3 - 5.0 * t2 + 2.0, -3.0 * t3 + 4.0 * t2 + t, t3 - t2);\n"
+    "}\n"
+    "vec2 rowPoint(int r, int c) {\n"
+    "    if (c < 0) return 2.0 * ctrl[r * grid.x] - ctrl[r * grid.x + 1];\n"
+    "    if (c >= grid.x) return 2.0 * ctrl[r * grid.x + grid.x - 1] - ctrl[r * grid.x + grid.x - 2];\n"
+    "    return ctrl[r * grid.x + c];\n"
+    "}\n"
+    "vec2 gridPoint(int r, int c) {\n"
+    "    if (r < 0) return 2.0 * rowPoint(0, c) - rowPoint(1, c);\n"
+    "    if (r >= grid.y) return 2.0 * rowPoint(grid.y - 1, c) - rowPoint(grid.y - 2, c);\n"
+    "    return rowPoint(r, c);\n"
+    "}\n"
+    "void main() {\n"
+    "    int n = grid.z; int cx = grid.x - 1; int cy = grid.y - 1; int quadsX = cx * n;\n"
+    "    int q = gl_VertexID / 6; int k = gl_VertexID - q * 6;\n"
+    "    int i = q - (q / quadsX) * quadsX + ((k == 1 || k == 3 || k == 4) ? 1 : 0);\n"
+    "    int j = q / quadsX + ((k == 2 || k == 4 || k == 5) ? 1 : 0);\n"
+    "    int c = min(i / n, cx - 1); int r = min(j / n, cy - 1);\n"
+    "    vec4 wx = weights(float(i - c * n) / float(n));\n"
+    "    vec4 wy = weights(float(j - r * n) / float(n));\n"
+    "    vec2 s = vec2(0.0);\n"
+    "    for (int b = 0; b < 4; b++) {\n"
+    "        vec2 row = vec2(0.0);\n"
+    "        for (int a = 0; a < 4; a++) row += wx[a] * gridPoint(r - 1 + b, c - 1 + a);\n"
+    "        s += wy[b] * row;\n"
+    "    }\n"
+    "    lattice = vec2(float(i) / float(quadsX), float(j) / float(cy * n));\n"
+    "    uv = vec2(lattice.x, 1.0 - lattice.y);\n"
+    "    gl_Position = vec4(s.x * 2.0 - 1.0, 1.0 - s.y * 2.0, 0.0, 1.0);\n"
     "}\n";
 
 #define COMMON \
@@ -284,6 +341,31 @@ static const char *outputSource =
     "    color = vec4(c, 1.0);\n"
     "}\n";
 
+// OUT-008: the output step through the mesh (same steps as outputSource), then the guides.
+static const char *warpOutputSource =
+    COMMON
+    "uniform sampler2D scene;\n"
+    "uniform sampler2D state;\n"
+    "uniform float calOn;\n"
+    "uniform float calExponent;\n"
+    "uniform vec3 calGain;\n"
+    "uniform ivec4 grid;\n"
+    "in vec2 uv;\n"
+    "in vec2 lattice;\n"
+    "out vec4 color;\n"
+    "void main() {\n"
+    "    float g = unpack(texelFetch(state, ivec2(0, 17), 0).rg);\n"
+    "    vec3 c = texture(scene, uv).rgb;\n"
+    "    if (g < 1.0) c = encodeSRGB(decodeSRGB(c) * g);\n"
+    "    if (calOn > 0.5) c = clamp(calGain * pow(clamp(c, 0.0, 1.0), vec3(calExponent)), 0.0, 1.0);\n"
+    "    if (grid.w != 0) {\n"
+    "        vec2 q = lattice * vec2(float(grid.x - 1), float(grid.y - 1));\n"
+    "        vec2 d = abs(q - floor(q + 0.5)) / max(fwidth(q), vec2(1e-6));\n"
+    "        if (min(d.x, d.y) < 0.75) c = vec3(1.0);\n"
+    "    }\n"
+    "    color = vec4(c, 1.0);\n"
+    "}\n";
+
 struct PMFlashLimiter {
     GLTable gl;             // this limiter's entry points (from the caller's loader)
     GLuint measureProgram, stateProgram, outputProgram, vertexArray;
@@ -299,6 +381,10 @@ struct PMFlashLimiter {
     GLint outputCalOn, outputCalExponent, outputCalGain;   // OUT-009
     int calibrated;
     float calExponent, calGain[3];
+    GLuint warpProgram;   // OUT-008
+    GLint warpScene, warpState, warpCalOn, warpCalExponent, warpCalGain, warpCtrl, warpGrid;
+    int warpColumns, warpRows, warpGuides;
+    float warpPoints[WARP_MAX_SIDE * WARP_MAX_SIDE * 2];
 };
 
 static GLuint compile(const GLTable *gl, GLenum type, const char *source) {
@@ -311,8 +397,8 @@ static GLuint compile(const GLTable *gl, GLenum type, const char *source) {
     return shader;
 }
 
-static GLuint link(const GLTable *gl, const char *fragmentSource) {
-    GLuint vertex = compile(gl, GL_VERTEX_SHADER, vertexSource);
+static GLuint linkWith(const GLTable *gl, const char *vertexText, const char *fragmentSource) {
+    GLuint vertex = compile(gl, GL_VERTEX_SHADER, vertexText);
     GLuint fragment = compile(gl, GL_FRAGMENT_SHADER, fragmentSource);
     if (!vertex || !fragment) {
         if (vertex) gl->deleteShader(vertex);
@@ -329,6 +415,10 @@ static GLuint link(const GLTable *gl, const char *fragmentSource) {
     gl->getProgramiv(program, GL_LINK_STATUS, &ok);
     if (!ok) { gl->deleteProgram(program); return 0; }
     return program;
+}
+
+static GLuint link(const GLTable *gl, const char *fragmentSource) {
+    return linkWith(gl, vertexSource, fragmentSource);
 }
 
 static void textureParameters(const GLTable *gl, GLint filter) {
@@ -369,6 +459,8 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
     limiter->measureProgram = link(gl, measureSource);
     limiter->stateProgram = link(gl, stateSource);
     limiter->outputProgram = link(gl, outputSource);
+    // OUT-008: a warp program that does not build only turns the warp off; the envelope never depends on it.
+    limiter->warpProgram = linkWith(gl, warpVertexSource, warpOutputSource);
     if (!limiter->measureProgram || !limiter->stateProgram || !limiter->outputProgram) {
         PMFlashLimiterDestroy(limiter);
         return 0;
@@ -393,6 +485,15 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
     limiter->calibrated = 0;
     limiter->calExponent = 1.0f;
     limiter->calGain[0] = limiter->calGain[1] = limiter->calGain[2] = 1.0f;
+    GLuint w = limiter->warpProgram;   // OUT-008
+    limiter->warpScene = gl->getUniformLocation(w, "scene");
+    limiter->warpState = gl->getUniformLocation(w, "state");
+    limiter->warpCalOn = gl->getUniformLocation(w, "calOn");
+    limiter->warpCalExponent = gl->getUniformLocation(w, "calExponent");
+    limiter->warpCalGain = gl->getUniformLocation(w, "calGain");
+    limiter->warpCtrl = gl->getUniformLocation(w, "ctrl");
+    limiter->warpGrid = gl->getUniformLocation(w, "grid");
+    limiter->warpColumns = limiter->warpRows = limiter->warpGuides = 0;
     gl->genVertexArrays(1, &limiter->vertexArray);
     limiter->tileFramebuffer = makeTarget(gl, &limiter->tileTexture, TILE_SIDE, TILE_SIDE);
     limiter->stateFramebuffers[0] = makeTarget(gl, &limiter->stateTextures[0], STATE_WIDTH, STATE_HEIGHT);
@@ -420,6 +521,7 @@ void PMFlashLimiterDestroy(PMFlashLimiter *limiter) {
     if (limiter->measureProgram) gl->deleteProgram(limiter->measureProgram);
     if (limiter->stateProgram) gl->deleteProgram(limiter->stateProgram);
     if (limiter->outputProgram) gl->deleteProgram(limiter->outputProgram);
+    if (limiter->warpProgram) gl->deleteProgram(limiter->warpProgram);   // OUT-008
     free(limiter);
 }
 
@@ -458,7 +560,7 @@ static void prepareState(const GLTable *gl) {
     gl->colorMask(1, 1, 1, 1);
 }
 
-static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int calibrated);
+static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int display);
 static void finishBindings(const GLTable *gl);
 
 void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffer, const PMFlashEnvelopeParameters *p) {
@@ -498,8 +600,8 @@ void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffe
     limiter->current = next;
     limiter->needsReset = 0;
 
-    // 3. Output: the scene × gain (then OUT-009's calibration) into the target.
-    drawOutput(limiter, targetFramebuffer, limiter->calibrated);
+    // 3. Output: the scene × gain (then OUT-009's calibration, through OUT-008's mesh) into the target.
+    drawOutput(limiter, targetFramebuffer, 1);
     finishBindings(gl);
 }
 
@@ -511,18 +613,55 @@ void PMFlashLimiterSetCalibration(PMFlashLimiter *limiter, int enabled, float ex
     limiter->calGain[2] = blue;
 }
 
-void PMFlashLimiterDrawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int calibrated) {
+void PMFlashLimiterDrawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int display) {
     const GLTable *gl = &limiter->gl;
     prepareState(gl);
     gl->bindVertexArray(limiter->vertexArray);
-    drawOutput(limiter, targetFramebuffer, calibrated && limiter->calibrated);
+    drawOutput(limiter, targetFramebuffer, display);
     finishBindings(gl);
 }
 
-static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int calibrated) {
+void PMFlashLimiterSetWarp(PMFlashLimiter *limiter, int columns, int rows, const float *points, int guides) {
+    if (!limiter->warpProgram || !points || columns < 2 || rows < 2 || columns > WARP_MAX_SIDE || rows > WARP_MAX_SIDE) {
+        limiter->warpColumns = limiter->warpRows = limiter->warpGuides = 0;
+        return;
+    }
+    for (int k = 0; k < columns * rows * 2; k++) limiter->warpPoints[k] = points[k];
+    limiter->warpColumns = columns;
+    limiter->warpRows = rows;
+    limiter->warpGuides = guides ? 1 : 0;
+}
+
+/// OUT-008: the output step through the mesh (target cleared to opaque black first).
+static void drawWarpedOutput(PMFlashLimiter *limiter, int calibrated) {
     const GLTable *gl = &limiter->gl;
+    gl->clearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    gl->clear(GL_COLOR_BUFFER_BIT);
+    gl->useProgram(limiter->warpProgram);
+    gl->activeTexture(GL_TEXTURE0);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);
+    gl->uniform1i(limiter->warpScene, 0);
+    gl->activeTexture(GL_TEXTURE1);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->stateTextures[limiter->current]);
+    gl->uniform1i(limiter->warpState, 1);
+    gl->uniform1f(limiter->warpCalOn, calibrated ? 1.0f : 0.0f);
+    gl->uniform1f(limiter->warpCalExponent, limiter->calExponent);
+    gl->uniform3f(limiter->warpCalGain, limiter->calGain[0], limiter->calGain[1], limiter->calGain[2]);
+    gl->uniform2fv(limiter->warpCtrl, limiter->warpColumns * limiter->warpRows, limiter->warpPoints);
+    gl->uniform4i(limiter->warpGrid, limiter->warpColumns, limiter->warpRows, WARP_SUBDIVISIONS, limiter->warpGuides);
+    int vertices = (limiter->warpColumns - 1) * (limiter->warpRows - 1) * WARP_SUBDIVISIONS * WARP_SUBDIVISIONS * 6;
+    gl->drawArrays(GL_TRIANGLES, 0, vertices);
+}
+
+static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, int display) {
+    const GLTable *gl = &limiter->gl;
+    int calibrated = display && limiter->calibrated;
     gl->bindFramebuffer(GL_FRAMEBUFFER, targetFramebuffer);
     gl->viewport(0, 0, limiter->width, limiter->height);
+    if (display && limiter->warpColumns >= 2) {   // OUT-008
+        drawWarpedOutput(limiter, calibrated);
+        return;
+    }
     gl->useProgram(limiter->outputProgram);
     gl->activeTexture(GL_TEXTURE0);
     gl->bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);

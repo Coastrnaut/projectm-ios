@@ -126,6 +126,36 @@ final class OutputProfileTests: XCTestCase {
         XCTAssertFalse(OutputProfileImportError.invalidValue("settings.cornerPin").message.isEmpty)
     }
 
+    // MARK: - Grid warp (OUT-008-R10, contract C5)
+
+    func testAGridWarpRoundTripsAndAnInvalidOneIsRefused() throws {
+        var points: [GridWarpPoint] = GridWarp.identity(columns: 5, rows: 4).points
+        points[6] = GridWarpPoint(x: 0.27, y: 0.3123456789)
+        var original: OutputProfile = try custom()
+        original.gridWarp = try XCTUnwrap(GridWarp(columns: 5, rows: 4, points: points))
+        let decoded: OutputProfile = try OutputProfileDocument.decode(OutputProfileDocument.encode(original))
+        XCTAssertEqual(decoded, original)
+        XCTAssertEqual(decoded.gridWarp.points[6].y.bitPattern, points[6].y.bitPattern)
+        XCTAssertNil(try XCTUnwrap(try json(try custom())["settings"] as? [String: Any])["gridWarp"], "identity: not written")
+        XCTAssertEqual(try OutputProfileDocument.decode(OutputProfileDocument.encode(try custom())).gridWarp, .identity,
+                       "absent reads as the identity")
+
+        var swapped: [[String: Double]] = GridWarp.identity.points.map { (p: GridWarpPoint) -> [String: Double] in ["x": p.x, "y": p.y] }
+        swapped.swapAt(0, 1)
+        XCTAssertEqual(refusal(try edited { (_: inout [String: Any], s: inout [String: Any]) in
+            s["gridWarp"] = ["columns": 3, "rows": 3, "points": swapped]
+        }), .invalidValue("settings.gridWarp"), "a folded mesh is refused")
+        XCTAssertEqual(refusal(try edited { (_: inout [String: Any], s: inout [String: Any]) in
+            s["gridWarp"] = ["columns": 12, "rows": 3, "points": swapped]
+        }), .invalidValue("settings.gridWarp"), "too many columns")
+        XCTAssertEqual(refusal(try edited { (_: inout [String: Any], s: inout [String: Any]) in
+            s["gridWarp"] = ["columns": 3, "rows": 3]
+        }), .missingField("settings.gridWarp.points"))
+        XCTAssertEqual(refusal(try edited { (_: inout [String: Any], s: inout [String: Any]) in
+            s["gridWarp"] = ["columns": 3, "rows": 3, "points": [["x": 0, "y": 0, "z": 1]]]
+        }), .unknownField("settings.gridWarp.points[0].z"))
+    }
+
     // MARK: - Display class (OUT-014-R8, R9)
 
     func testDisplayClassMatching() {
