@@ -53,8 +53,13 @@ final class PerformanceLockUITests: XCTestCase {
         // that move can miss: hide the controls first and tap the settled button, as EmergencyBlackoutUITests does.
         let controls = app.otherElements["controls"]
         let area = app.otherElements["visualizerTapArea"].firstMatch
-        if controls.exists { area.tap() }
-        XCTAssertTrue(controls.disappears(within: 6), "the controls are hidden")
+        // A tap that races the 5 s auto-hide shows them again, so retry (EmergencyBlackoutUITests.hideControls).
+        var hidden = false
+        for _ in 0..<4 where !hidden {
+            if controls.exists { area.tap() }
+            hidden = controls.disappears(within: 1.5) && !controls.appears(within: 0.5)
+        }
+        XCTAssertTrue(hidden, "the controls are hidden")
         XCTAssertTrue(poll(3) { emergency.isHittable }, "the emergency button can be tapped")
         emergency.tap()
         XCTAssertTrue(poll(2) { self.output == "black" }, "black at once while locked")
