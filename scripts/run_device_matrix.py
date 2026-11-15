@@ -240,8 +240,8 @@ def render_markdown(record: dict) -> str:
 
 
 def verify_record(path: Path) -> list[str]:
-    """Problems with a record: a wrong record hash, or a committed artifact missing or changed. An artifact kept
-    outside the repository (an xcresult) that is gone is reported as a note, not a problem."""
+    """Problems with a record: a wrong record hash, or a committed artifact missing or changed. Artifacts kept
+    outside the repository (xcresults) are not checked: they are local working files, not committed evidence."""
     record = json.loads(path.read_text(encoding="utf-8"))
     problems = []
     if record.get("recordSha256") != record_hash(record):
@@ -256,8 +256,10 @@ def verify_record(path: Path) -> list[str]:
                 if a.get("committed"):
                     problems.append(f"missing artifact {a['path']}")
                 continue
-            if sha256_path(p) != a["sha256"]:
+            if sha256_path(p) != a["sha256"] and a.get("committed"):
                 problems.append(f"artifact changed: {a['path']}")
+            # An uncommitted artifact (an xcresult under Build/) is not evidence that can be checked later: Xcode
+            # keeps rewriting a result bundle's database after the run, so its folder hash drifts (D1, 2026-11-15).
     return problems
 
 
