@@ -20,7 +20,7 @@ person runs them.
 
 **Independent test**: coarse/fine pairs on a 14-bit mapping give (MSB × 128 + LSB) / 16383, and the live parameter takes values between two 7-bit steps.
 
-- [ ] MIDI-005-T05 [US1] Package tests `Packages/PerformanceControl/Tests/PerformanceControlTests/MIDIHighResolutionTests.swift`: 0x40/0x00 → 8192/16383, 0x7F/0x7F → 1, 0/0 → 0, coarse then several fine, a new coarse resets the fine part, fine before coarse, other channel ignored, 7-bit fallback, curve and Invert on the 14-bit value, a flag on controller ≥ 32 ignored (S1, S2, S3; R1-R4)
+- [ ] MIDI-005-T05 [US1] Package tests `Packages/PerformanceControl/Tests/PerformanceControlTests/MIDIHighResolutionTests.swift`: 0x40/0x00 → 8192/16383, 0x7F/0x7F → 1, 0/0 → 0, coarse then several fine, a new coarse resets the fine part, fine before coarse, other channel ignored, 7-bit fallback, curve and Invert on the 14-bit value, a flag on controller ≥ 32 ignored, `hires=1` segment order and the ", 14-bit" summary, the 7-bit overload unchanged; the suite builds without Apple-only APIs (Linux CI) (S1, S2, S3; R1-R4, R7, R9, R10)
 - [ ] MIDI-005-T06 [US1] Coordinator wiring: tracker and watch properties, the stateful values call in `receive` in `Apps/projectM-iOS/Coordinators/MIDIMappingCoordinator.swift` (R1-R4)
 - [ ] MIDI-005-T07 [US1] App test `Apps/projectM-iOS/Tests/MIDIHighResolutionCoordinatorTests.swift`: a seeded 14-bit mapping driven by the stand-in MIDI source sets Glow intensity between two 7-bit steps; a coarse-only controller reaches both ends (S3, S6)
 
