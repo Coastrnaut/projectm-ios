@@ -17,6 +17,7 @@ docs/test-reports/exports/feature002/<D1|D2|D3|sim>/ and checks them against the
     python3 scripts/run_device_tests.py summarize               # verdicts from the pulled reports
     python3 scripts/run_device_tests.py thresholds --device D1 --run --report <PERF-012 export>
                                                                 # QA-010: budgets (docs/performance/thresholds.json)
+    python3 scripts/run_device_tests.py matrix --device D1      # QA-011: the whole matrix, signed run record
 
 --simulator <UDID> replaces --device to rehearse a step on a simulator (a Debug build from
 --app). Simulator results are never evidence (Constitution X); they go to exports/feature002/sim.
@@ -751,12 +752,20 @@ def cmd_thresholds(args) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     global DRY_RUN
+    raw = list(sys.argv[1:] if argv is None else argv)
+    positional = [a for a in raw if not a.startswith("-")]
+    if positional[:1] == ["matrix"]:   # QA-011: the whole device matrix (scripts/run_device_matrix.py)
+        import run_device_matrix
+        raw.remove("matrix")
+        return run_device_matrix.main(raw)
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--dry-run", action="store_true")
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("devices")
     sub.add_parser("build")
     sub.add_parser("summarize")
+    sub.add_parser("matrix", help="QA-011: every scripted case on a device, with a signed run record "
+                                  "(options: scripts/run_device_matrix.py --help)")
     for name in ("perf", "scroll", "entitlement", "privacy", "install", "warmstart"):
         p = sub.add_parser(name)
         p.add_argument("--device", choices=sorted(DEVICES))

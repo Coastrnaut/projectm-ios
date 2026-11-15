@@ -1,0 +1,5953 @@
+{
+  "kind": "projectM-iOS.qa011.deviceInventory",
+  "schemaVersion": 1,
+  "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
+  "generator": "scripts/qa011_inventory.py",
+  "counts": {
+    "total": 263,
+    "specs": 222,
+    "byStatus": {
+      "open": 246,
+      "optional": 6,
+      "waived": 11
+    },
+    "byCategory": {
+      "a": 14,
+      "b": 238
+    },
+    "byCategoryIncludingWaived": {
+      "a": 14,
+      "b": 249
+    },
+    "byDevice": {
+      "D1": 242,
+      "D2": 53,
+      "D3": 53
+    },
+    "byDeviceAndCategory": {
+      "D1": {
+        "a": 13,
+        "b": 229
+      },
+      "D2": {
+        "a": 3,
+        "b": 50
+      },
+      "D3": {
+        "a": 4,
+        "b": 49
+      }
+    },
+    "bySession": {
+      "B01": 36,
+      "B02": 12,
+      "B03": 5,
+      "B04": 18,
+      "B05": 25,
+      "B06": 21,
+      "B07": 20,
+      "B08": 14,
+      "B09": 17,
+      "B10": 13,
+      "B11": 31,
+      "B12": 5,
+      "B13": 21,
+      "MATRIX": 14
+    },
+    "devicesInferred": 2
+  },
+  "matrixCases": [
+    {
+      "id": "autorun-perf001",
+      "kind": "autorun",
+      "title": "AutomationRunner perf001: per-stage frame timings, 1 s frame-rate windows, PERF-007 drops",
+      "closes": [
+        "PERF-001-T16",
+        "PERF-002-T13",
+        "QA-010-T12"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "launches-sc015",
+      "kind": "launches",
+      "title": "sc015 cold launches (10 recorded) for the QA-010 launch budget",
+      "closes": [
+        "QA-010-T12"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "timeoutSeconds": 400
+    },
+    {
+      "id": "warmstart-perf009",
+      "kind": "warmstart",
+      "title": "PERF-009 cold and warm launches (10 each), medians",
+      "closes": [
+        "PERF-009-T16"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "autorun-sc009",
+      "kind": "autorun",
+      "title": "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
+      "closes": [
+        "AUD-014-T32"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "timeoutSeconds": 600
+    },
+    {
+      "id": "thresholds",
+      "kind": "thresholds",
+      "title": "QA-010 judge over the pulled perf001 and sc015 reports (plus any PERF-012 export given with --perf012-report)",
+      "closes": [
+        "QA-010-T12"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "timeoutSeconds": 120
+    },
+    {
+      "id": "xctest-goldens",
+      "kind": "xctest",
+      "title": "RenderGoldens suite on the device GPU (goldens report pending without a device golden class; short soak included)",
+      "closes": [
+        "QA-003-T17"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "xctest-soak-600",
+      "kind": "xctest",
+      "title": "QA-006 long scene soak, 600 s simulated",
+      "closes": [
+        "QA-006-T13"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 1200
+    },
+    {
+      "id": "xctest-materials",
+      "kind": "xctest",
+      "title": "SHD-004 material variants on the device GPU family (Detailed needs family 9; Standard fallback with the notice)",
+      "closes": [
+        "SHD-004-T20"
+      ],
+      "partOf": [],
+      "devices": [
+        "D2",
+        "D3"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "xctest-angle-layer",
+      "kind": "xctest",
+      "title": "CMP-001 ProjectMLayerTests and the client-buffer spike tests on the device",
+      "closes": [],
+      "partOf": [
+        "CMP-001-T20"
+      ],
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "bench-shd002",
+      "kind": "xctest",
+      "title": "SHD-002 12-node graph GPU cost (SHD002_BENCH)",
+      "closes": [
+        "SHD-002-T24"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "bench-cmp008",
+      "kind": "xctest",
+      "title": "CMP-008 full-screen gradient layer GPU time (CMP008_BENCH)",
+      "closes": [
+        "CMP-008-T19"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "bench-cmp009",
+      "kind": "xctest",
+      "title": "CMP-009 full-screen luma-keyed layer GPU time (CMP009_BENCH)",
+      "closes": [
+        "CMP-009-T19"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "bench-cmp010",
+      "kind": "xctest",
+      "title": "CMP-010 full-screen colour-keyed layer GPU time (CMP010_BENCH)",
+      "closes": [
+        "CMP-010-T19"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "bench-expression",
+      "kind": "xctest",
+      "title": "SHD-010 per-frame expression cost, Release (PARAMETER_EXPRESSION_BENCH)",
+      "closes": [
+        "SHD-010-T13"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "xctest-offline-export",
+      "kind": "xctest",
+      "title": "REC-013 two offline exports of the fixture match frame checksums (app-hosted; replaces the installed app, so it runs last)",
+      "closes": [
+        "REC-013-T14"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    }
+  ],
+  "sessions": [
+    {
+      "id": "B01",
+      "title": "Visuals and effects: look and frame rate with music",
+      "install": "Debug build (once, kept through B08)",
+      "preparation": [
+        "Install the signed Debug build from Xcode or `xcodebuild -allowProvisioningUpdates`",
+        "Unlock, Auto-Lock Never, Do Not Disturb on, brightness fixed",
+        "Import the reference track and a few photos for In-App Playback and the Photo visual",
+        "Show the performance overlay (Settings)"
+      ],
+      "record": [
+        "Frame rate shown by the overlay per check",
+        "Pass/fail by eye with a one-line note",
+        "Screenshots only as illustration (never evidence of performance)"
+      ],
+      "order": 1,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "020-fx-001-bloom:FX-001-T27",
+        "024-anl-016-analysis-event-bus:ANL-016-T20",
+        "025-vis-002-linear-spectrum:VIS-002-T16",
+        "123-fx-003-color-grading:FX-003-T22",
+        "126-fx-004-hue-shift:FX-004-T15",
+        "132-pre-001-thumbnail-cache:PRE-001-T14",
+        "142-fx-020-effect-chains:FX-020-T19",
+        "154-vis-004-lissajous:VIS-004-T13",
+        "176-vis-005-radial-waveform:VIS-005-T12",
+        "186-vis-006-beat-rings:VIS-006-T14",
+        "195-vis-007-mandala:VIS-007-T13",
+        "202-anl-015-section-energy-change:ANL-015-T12",
+        "203-vis-008-particle-fountain:VIS-008-T14",
+        "209-perf-012-performance-report:PERF-012-T17",
+        "211-vis-009-particle-orbit:VIS-009-T10",
+        "236-shd-005-gradient-editor:SHD-005-T13",
+        "252-vis-013-noise-field:VIS-013-T15",
+        "259-vis-014-kaleidoscope-field:VIS-014-T12",
+        "263-vis-015-tunnel-warp:VIS-015-T12",
+        "267-vis-020-spectrum-waterfall:VIS-020-T12",
+        "271-shd-007-particle-emitter-editor:SHD-007-T13",
+        "272-vis-010-particle-trails:VIS-010-T16",
+        "279-shd-008-vector-path-editor:SHD-008-T18",
+        "280-vis-011-fluid-ink:VIS-011-T13",
+        "286-vis-012-reaction-diffusion:VIS-012-T13",
+        "287-vis-016-starfield-flight:VIS-016-T13",
+        "292-fx-005-contrast-curves:FX-005-T14",
+        "293-fx-006-chromatic-split:FX-006-T18",
+        "295-fx-007-directional-blur:FX-007-T17",
+        "296-fx-008-radial-blur:FX-008-T18",
+        "299-fx-012-mosaic-pixelation:FX-012-T18",
+        "301-fx-013-posterization:FX-013-T14",
+        "304-vis-017-signed-distance-primitives:VIS-017-T13",
+        "305-fx-015-vignette:FX-015-T15",
+        "311-fx-017-film-grain:FX-017-T17",
+        "312-fx-018-scanline-texture:FX-018-T16"
+      ],
+      "optionalTasks": 1,
+      "estimatedMinutes": 205
+    },
+    {
+      "id": "B02",
+      "title": "Shows, presets, scenes and everyday controls",
+      "install": "same Debug install",
+      "preparation": [
+        "A show with 4-5 cues and a few scenes",
+        "Music playing through In-App Playback"
+      ],
+      "record": [
+        "Pass/fail per step with a note",
+        "Times where the step names a limit"
+      ],
+      "order": 2,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "004-perf-011-background-resource-release:PERF-011-T22",
+        "019-vis-001-circular-spectrum:VIS-001-T36",
+        "022-fx-019-strobe-safety-envelope:FX-019-T23",
+        "027-show-011-tap-tempo:SHOW-011-T23",
+        "122-fx-002-tone-mapping:FX-002-T18",
+        "179-perf-005-prewarm-scheduler:PERF-005-T15",
+        "245-shd-006-noise-editor:SHD-006-T14",
+        "249-shd-012-authoring-preview-fixture:SHD-012-T13",
+        "254-show-010-beat-grid:SHOW-010-T12",
+        "256-show-013-auto-scene-rotation:SHOW-013-T13",
+        "260-show-015-performance-lock:SHOW-015-T12",
+        "290-uix-006-touch-gesture-mapping:UIX-006-T14"
+      ],
+      "optionalTasks": 1,
+      "estimatedMinutes": 90
+    },
+    {
+      "id": "B03",
+      "title": "Debug fault injection and crash recovery",
+      "install": "same Debug install (DEBUG launch arguments through Xcode's scheme editor or `devicectl ... process launch -- <args>`)",
+      "preparation": [
+        "Xcode open with the device attached",
+        "The launch arguments each step names"
+      ],
+      "record": [
+        "Pass/fail, the event log lines the step names",
+        "Crash reports produced on purpose"
+      ],
+      "order": 3,
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "tasks": [
+        "057-perf-014-render-failure-fallback:PERF-014-T22",
+        "067-scn-002-scene-autosave:SCN-002-T10",
+        "070-perf-010-crash-safe-session-recovery:PERF-010-T15",
+        "226-rec-016-recording-interruption-recovery:REC-016-T13",
+        "276-cam-010-hand-pose-modulation:CAM-010-T17"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 30
+    },
+    {
+      "id": "B04",
+      "title": "Accessibility: VoiceOver, large text, Reduce Motion, filters, haptics and hand use",
+      "install": "same Debug install",
+      "preparation": [
+        "Accessibility Shortcut set to VoiceOver",
+        "Text size AX5 ready in Settings › Accessibility › Display & Text Size",
+        "Reduce Motion, Increase Contrast and Color Filters reachable"
+      ],
+      "record": [
+        "What VoiceOver reads for each control",
+        "Pass/fail per step"
+      ],
+      "order": 4,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "010-pre-015-user-preset-duplication:PRE-015-T26",
+        "030-acc-002-reduced-flash-preset-policy:ACC-002-T20",
+        "080-acc-001-reduce-motion-mode:ACC-001-T12",
+        "082-acc-004-voiceover-scene-browser:ACC-004-T12",
+        "087-acc-006-dynamic-type-inspector:ACC-006-T12",
+        "100-acc-011-captioned-status-events:ACC-011-T17",
+        "110-acc-003-color-blind-friendly-controls:ACC-003-T17",
+        "115-acc-005-voiceover-parameter-editing:ACC-005-T16",
+        "119-acc-008-high-contrast-overlay:ACC-008-T16",
+        "121-acc-012-sensory-safety-profile:ACC-012-T22",
+        "177-qa-009-accessibility-suite:QA-009-T10",
+        "193-uix-005-performance-controls:UIX-005-T13",
+        "218-shd-003-shader-parameter-metadata:SHD-003-T20",
+        "238-acc-007-haptic-beat-feedback:ACC-007-T13",
+        "244-acc-009-one-handed-mode:ACC-009-T14",
+        "248-acc-010-left-handed-layout:ACC-010-T13",
+        "298-uix-010-batch-parameter-reset:UIX-010-T10",
+        "308-vis-019-cymatic-line-patterns:VIS-019-T13"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 110
+    },
+    {
+      "id": "B05",
+      "title": "Audio routes, headphones, calls and interruptions",
+      "install": "same Debug install",
+      "preparation": [
+        "Wired headphones (USB-C or adapter) and Bluetooth headphones (AirPods)",
+        "A second phone to call D1 and a FaceTime contact for D2/D3",
+        "An alarm set 2 minutes ahead",
+        "Imported MP3/M4A tracks"
+      ],
+      "record": [
+        "Pass/fail per route change and interruption",
+        "Whether audio or visuals glitched"
+      ],
+      "order": 5,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "003-aud-001-import-drm-free-audio-files:AUD-001-T26",
+        "003-aud-001-import-drm-free-audio-files:AUD-001-T33",
+        "006-aud-002-support-common-audio-containers:AUD-002-T25",
+        "006-aud-002-support-common-audio-containers:AUD-002-T26",
+        "006-aud-002-support-common-audio-containers:AUD-002-T27",
+        "007-aud-006-seekable-transport:AUD-006-T38",
+        "007-aud-006-seekable-transport:AUD-006-T39",
+        "007-aud-006-seekable-transport:AUD-006-T40",
+        "009-aud-014-audio-session-interruption-recovery:AUD-014-T29",
+        "009-aud-014-audio-session-interruption-recovery:AUD-014-T30",
+        "009-aud-014-audio-session-interruption-recovery:AUD-014-T31",
+        "011-aud-016-reference-tone-suite:AUD-016-T30",
+        "013-qa-007-audio-source-contract-suite:QA-007-T23",
+        "015-aud-003-audio-library-queue:AUD-003-T22",
+        "017-aud-004-loop-track-and-queue:AUD-004-T19",
+        "023-aud-005-shuffle-with-history:AUD-005-T17",
+        "026-aud-007-audio-output-route-indicator:AUD-007-T16",
+        "086-aud-008-input-trim:AUD-008-T13",
+        "089-aud-009-channel-selection:AUD-009-T13",
+        "091-aud-011-input-noise-gate:AUD-011-T12",
+        "092-aud-012-source-crossfade:AUD-012-T20",
+        "097-aud-015-background-playback-policy:AUD-015-T13",
+        "138-aud-010-channel-balance:AUD-010-T16",
+        "196-anl-013-stereo-correlation:ANL-013-T14",
+        "216-perf-013-audio-render-sync:PERF-013-T12"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 185
+    },
+    {
+      "id": "B06",
+      "title": "Camera and motion sensors",
+      "install": "same Debug install",
+      "preparation": [
+        "Good light and a coloured light source",
+        "A face and hands in frame",
+        "Camera permission not yet granted for the first step (reset with Settings › General › Transfer or Reset › Reset Location & Privacy only if needed)"
+      ],
+      "record": [
+        "Pass/fail per step",
+        "Frame rate and thermal state where asked"
+      ],
+      "order": 6,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "033-cam-001-rear-camera-layer:CAM-001-T24",
+        "033-cam-001-rear-camera-layer:CAM-001-T25",
+        "033-cam-001-rear-camera-layer:CAM-001-T27",
+        "037-cam-012-camera-privacy-status:CAM-012-T13",
+        "096-cam-002-front-camera-layer:CAM-002-T21",
+        "096-cam-002-front-camera-layer:CAM-002-T22",
+        "096-cam-002-front-camera-layer:CAM-002-T23",
+        "098-cam-007-camera-crop-and-rotation:CAM-007-T15",
+        "098-cam-007-camera-crop-and-rotation:CAM-007-T16",
+        "102-cam-013-camera-failure-recovery:CAM-013-T18",
+        "130-fx-009-motion-feedback:FX-009-T18",
+        "204-cam-003-lens-selection:CAM-003-T11",
+        "217-cam-004-exposure-lock:CAM-004-T08",
+        "227-cam-005-focus-point:CAM-005-T14",
+        "239-cam-006-white-balance:CAM-006-T09",
+        "241-cam-008-person-silhouette-mask:CAM-008-T16",
+        "247-cam-011-motion-sensor-modulation:CAM-011-T15",
+        "270-cam-009-face-landmark-emitters:CAM-009-T16",
+        "297-fx-010-echo-feedback:FX-010-T17",
+        "303-fx-014-edge-outline:FX-014-T18",
+        "306-fx-016-lens-distortion:FX-016-T17"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 160
+    },
+    {
+      "id": "B07",
+      "title": "Photos and Files pickers, iCloud, sharing, import and export",
+      "install": "same Debug install",
+      "preparation": [
+        "Photos with HEIC, ProRAW, panorama, animated GIF, HDR and transparent PNG items",
+        "Files: On My iPhone/iPad and iCloud Drive with a not-yet-downloaded file",
+        "A DRM-protected purchase and DRM-free MP3/AAC/M4A/WAV files",
+        "A second device for AirDrop"
+      ],
+      "record": [
+        "Pass/fail per pick, import and share",
+        "Messages shown on refusals"
+      ],
+      "order": 7,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "005-pre-007-preset-collections:PRE-007-T23",
+        "008-pre-012-preset-import-validation:PRE-012-T31",
+        "012-pre-014-bulk-preset-export:PRE-014-T25",
+        "044-med-001-import-photo-layer:MED-001-T22",
+        "044-med-001-import-photo-layer:MED-001-T23",
+        "044-med-001-import-photo-layer:MED-001-T24",
+        "048-med-002-import-video-layer:MED-002-T26",
+        "053-med-009-text-overlay:MED-009-T23",
+        "056-med-014-safe-media-decoder:MED-014-T23",
+        "062-file-001-portable-scene-archive:FILE-001-T19",
+        "071-file-009-storage-usage-explorer:FILE-009-T12",
+        "072-file-010-safe-cache-cleanup:FILE-010-T11",
+        "106-med-003-video-loop-region:MED-003-T20",
+        "124-med-004-video-playback-speed:MED-004-T22",
+        "127-med-006-image-slideshow:MED-006-T22",
+        "131-med-010-logo-overlay:MED-010-T25",
+        "251-med-007-ken-burns:MED-007-T16",
+        "257-med-008-animated-images:MED-008-T12",
+        "262-med-011-clock-overlay:MED-011-T13",
+        "265-med-012-countdown-overlay:MED-012-T14"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 165
+    },
+    {
+      "id": "B08",
+      "title": "Recording",
+      "install": "same Debug install",
+      "preparation": [
+        "At least 5 GB free (and, for the low-storage step, a nearly full device)",
+        "Music playing"
+      ],
+      "record": [
+        "File size, duration, frame rate and dropped frames",
+        "Whether the file plays in Files"
+      ],
+      "order": 8,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "055-rec-001-still-frame-capture:REC-001-T19",
+        "058-rec-003-video-recording:REC-003-T25",
+        "060-rec-012-share-via-files:REC-012-T13",
+        "063-rec-015-recording-disk-guard:REC-015-T17",
+        "134-rec-004-recording-audio:REC-004-T19",
+        "150-rec-005-quality-profiles:REC-005-T14",
+        "163-qa-008-recording-validation:QA-008-T10",
+        "164-rec-006-record-frame-rate:REC-006-T15",
+        "175-rec-007-countdown:REC-007-T13",
+        "180-rec-008-timed-stop:REC-008-T14",
+        "190-rec-009-status-overlay:REC-009-T11",
+        "198-rec-010-recording-library:REC-010-T13",
+        "210-rec-011-export-to-photos:REC-011-T16",
+        "215-rec-014-export-aspect-presets:REC-014-T15"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 95
+    },
+    {
+      "id": "B09",
+      "title": "Network: Wi-Fi controllers, two devices, Airplane Mode, privacy report",
+      "install": "fresh install of the Debug build at the start (UIX-001 needs it)",
+      "preparation": [
+        "A Mac or second device on the same Wi-Fi with an OSC sender/receiver",
+        "Two of D1-D3 on one Wi-Fi",
+        "App Privacy Report on (Settings › Privacy & Security)",
+        "USB cable connected so devicectl still reaches the device in Airplane Mode"
+      ],
+      "record": [
+        "Pass/fail per step",
+        "App Privacy Report entries"
+      ],
+      "order": 9,
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "tasks": [
+        "003-aud-001-import-drm-free-audio-files:AUD-001-T23",
+        "032-osc-001-osc-receiver:OSC-001-T26",
+        "038-osc-007-osc-network-access-switch:OSC-007-T12",
+        "041-osc-009-osc-rate-limiter:OSC-009-T15",
+        "075-uix-001-guided-first-scene:UIX-001-T14",
+        "076-file-012-no-telemetry-verification:FILE-012-T11",
+        "078-file-013-privacy-permission-audit:FILE-013-T11",
+        "108-uix-015-onboarding-permission-explainer:UIX-015-T14",
+        "191-osc-003-parameter-routes:OSC-003-T15",
+        "200-osc-008-peer-allowlist:OSC-008-T13",
+        "274-osc-004-osc-learn:OSC-004-T14",
+        "277-osc-005-osc-send:OSC-005-T16",
+        "278-osc-006-osc-bundles:OSC-006-T11",
+        "282-osc-010-osc-schema-export:OSC-010-T09",
+        "289-osc-011-local-peer-discovery:OSC-011-T19",
+        "291-osc-012-peer-cue-sync:OSC-012-T22",
+        "302-uix-014-offline-help-browser:UIX-014-T12"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 100
+    },
+    {
+      "id": "B10",
+      "title": "MIDI hardware",
+      "install": "same install",
+      "preparation": [
+        "A class-compliant USB MIDI controller with faders, knobs, pads (14-bit and motorised if available)",
+        "A USB-C hub",
+        "A MIDI clock source at 120 and 174 BPM"
+      ],
+      "record": [
+        "Pass/fail per mapping"
+      ],
+      "order": 10,
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "tasks": [
+        "107-midi-001-midi-endpoint-discovery:MIDI-001-T18",
+        "125-midi-002-midi-input-monitor:MIDI-002-T20",
+        "128-midi-003-midi-learn:MIDI-003-T17",
+        "140-midi-004-cc-scaling:MIDI-004-T16",
+        "143-midi-006-note-triggers:MIDI-006-T16",
+        "147-midi-007-scene-selection:MIDI-007-T15",
+        "157-midi-008-transport:MIDI-008-T12",
+        "166-midi-011-hotplug:MIDI-011-T12",
+        "171-midi-012-profiles:MIDI-012-T15",
+        "183-midi-013-panic:MIDI-013-T13",
+        "266-midi-005-14-bit-controls:MIDI-005-T14",
+        "269-midi-009-midi-feedback:MIDI-009-T15",
+        "273-midi-010-midi-clock-receive:MIDI-010-T12"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 80
+    },
+    {
+      "id": "B11",
+      "title": "External display, AirPlay and projector",
+      "install": "same install",
+      "preparation": [
+        "USB-C to HDMI adapter and an HDMI display (4K if available)",
+        "An Apple TV on the same network",
+        "A projector (and a curved surface for grid warp)",
+        "A hardware keyboard for D2"
+      ],
+      "record": [
+        "Pass/fail per step",
+        "External frame rate from the overlay",
+        "Display resolution and refresh"
+      ],
+      "order": 11,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "049-out-001-external-display-scene:OUT-001-T15",
+        "049-out-001-external-display-scene:OUT-001-T16",
+        "049-out-001-external-display-scene:OUT-001-T17",
+        "049-out-001-external-display-scene:OUT-001-T18",
+        "051-out-010-output-blackout-isolation:OUT-010-T15",
+        "052-perf-004-texture-pool:PERF-004-T16",
+        "055-rec-001-still-frame-capture:REC-001-T20",
+        "058-rec-003-video-recording:REC-003-T24",
+        "061-show-014-emergency-blackout:SHOW-014-T12",
+        "161-out-002-display-hotplug:OUT-002-T12",
+        "172-out-004-aspect-correction:OUT-004-T10",
+        "184-out-012-display-rehearsal:OUT-012-T11",
+        "192-perf-007-frame-drop-telemetry:PERF-007-T12",
+        "233-uix-013-performance-hud:UIX-013-T12",
+        "237-show-006-cue-rehearsal:SHOW-006-T17",
+        "243-show-007-timeline-transport:SHOW-007-T16",
+        "246-show-008-keyframe-tracks:SHOW-008-T14",
+        "255-out-003-output-resolution:OUT-003-T10",
+        "258-out-005-safe-area-guides:OUT-005-T12",
+        "261-out-006-output-mirroring:OUT-006-T10",
+        "264-out-007-corner-pin:OUT-007-T12",
+        "268-out-009-output-color-calibration:OUT-009-T14",
+        "275-out-011-output-diagnostics:OUT-011-T12",
+        "281-out-013-frame-pacing:OUT-013-T12",
+        "283-show-009-keyframe-easing:SHOW-009-T13",
+        "285-show-012-cue-annotations:SHOW-012-T14",
+        "288-out-014-output-profile-export:OUT-014-T13",
+        "294-uix-008-multiwindow-document-editing:UIX-008-T16",
+        "307-vis-018-geometric-tessellation:VIS-018-T14",
+        "309-out-008-grid-warp:OUT-008-T15",
+        "310-fx-011-pixel-sorting:FX-011-T16"
+      ],
+      "optionalTasks": 1,
+      "estimatedMinutes": 215
+    },
+    {
+      "id": "B12",
+      "title": "iPad multitasking: Stage Manager, Split View, windows",
+      "install": "same install on D2 and D3",
+      "preparation": [
+        "Stage Manager on",
+        "A second app for Split View"
+      ],
+      "record": [
+        "Pass/fail per step"
+      ],
+      "order": 12,
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "tasks": [
+        "007-aud-006-seekable-transport:AUD-006-T41",
+        "033-cam-001-rear-camera-layer:CAM-001-T26",
+        "102-cam-013-camera-failure-recovery:CAM-013-T17",
+        "205-uix-007-split-preview-editor:UIX-007-T13",
+        "300-uix-012-touch-color-sampler:UIX-012-T13"
+      ],
+      "optionalTasks": 0,
+      "estimatedMinutes": 55
+    },
+    {
+      "id": "B13",
+      "title": "Measurements attached to Xcode and Instruments",
+      "install": "Release build run from Xcode (Profile) with the device attached",
+      "preparation": [
+        "Instruments templates: Allocations, Metal System Trace, Energy Log, os_signpost",
+        "Xcode's memory gauge and Simulate Memory Warning",
+        "A 240 fps camera for the latency steps"
+      ],
+      "record": [
+        "Trace files (kept outside git; note their SHA-256)",
+        "Numbers into docs/test-reports/performance.md"
+      ],
+      "order": 13,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "tasks": [
+        "004-perf-011-background-resource-release:PERF-011-T21",
+        "014-anl-001-windowed-fft:ANL-001-T27",
+        "016-anl-002-log-frequency-bands:ANL-002-T20",
+        "018-anl-004-spectral-flux-onset-detector:ANL-004-T25",
+        "022-fx-019-strobe-safety-envelope:FX-019-T22",
+        "029-cmp-001-unified-layer-protocol:CMP-001-T20",
+        "039-shd-001-procedural-material-catalog:SHD-001-T19",
+        "040-cmp-002-ordered-layer-stack:CMP-002-T15",
+        "048-med-002-import-video-layer:MED-002-T27",
+        "048-med-002-import-video-layer:MED-002-T28",
+        "052-perf-004-texture-pool:PERF-004-T14",
+        "052-perf-004-texture-pool:PERF-004-T15",
+        "054-perf-006-memory-warning-recovery:PERF-006-T17",
+        "058-rec-003-video-recording:REC-003-T23",
+        "083-vis-003-waveform-oscilloscope:VIS-003-T17",
+        "095-aud-013-source-latency-calibration:AUD-013-T15",
+        "173-perf-003-adaptive-quality:PERF-003-T15",
+        "201-perf-008-battery-saver:PERF-008-T16",
+        "221-pre-005-energy-facets:PRE-005-T17",
+        "235-pre-009-preset-comparison:PRE-009-T13",
+        "284-med-005-video-reverse-playback:MED-005-T20"
+      ],
+      "optionalTasks": 3,
+      "estimatedMinutes": 210
+    }
+  ],
+  "tasks": [
+    {
+      "id": "T113",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 163,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T113 [US1] {A}{device} Device checks no other task requires (owner review 2026-11-08, ADR-0001 ruling 11), run in the T040 and T041 sessions on D1 and D2 and recorded in `docs/platform-research/screencapturekit-ios.md` (\"Open until device testing\"): what `present()` offers (item 12); `isAvailable` (14); whether a system capture indicator appears (quickstart A.2 tester note; if none, the owner decides on an in-app indicator, ruling 10); the microphone stays out (13); `excludesCurrentProcessAudio` with the approved test-tone build (8); an audio-only stream with the approved build without the `.screen` output (2); the minimum video size (3; if 64 × 64 is refused, a mid size, then the native size); picker callbacks and Stop cancelling a waiting start (10); FairPlay audio (11); a Control Center re-pick and a stop of sharing from system UI during capture, with callbacks, stop code and whether audio continues, in the T041 session (9, quickstart A.5); and, if audio is silent with `present()`, one diagnostic run with `present(using: .display)` before T056 (ruling 6). Temporary builds are diagnostic only and never compatibility evidence — AC: each item has a recorded result with its export or tester note on D1 and D2; required before Gate 1 — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 18): the extra device checks stay unanswered"
+    },
+    {
+      "id": "T049",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 182,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T049 [US2] {A}{device} Run US2 acceptance scenarios 1–7 on every FR-032 device; record them in `docs/test-reports/compatibility-report.md` — AC: all 7 scenarios pass on every device, and SC-004 (Active audio within 2 s) holds — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 18): Microphone and In-App Playback stay unverified on devices beyond the T040 runs"
+    },
+    {
+      "id": "T050",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 183,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T050 [US2] {A}{device} Phase A real-time check (Constitution VII): run an allocation trace for 60 s on each Phase A adapter callback (System/App Capture, Microphone, In-App Playback) on the reference device before any Gate 1/2 run; record the results in `docs/test-reports/performance.md` — AC: zero heap allocations and zero lock acquisitions on each audio callback thread — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 18): Constitution VII still applies; the allocation-free audio callbacks are verified by design, code review and unit tests only, not by a device trace"
+    },
+    {
+      "id": "T051",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 195,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": true,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T051 [US3] {A}{device} For each FR-030 source on each applicable device, run 10 minutes in the foreground and export diagnostics into `docs/test-reports/exports/<device>/<source>/` — AC: SC-001 coverage (≥ 2 capture-capable iPhones + 1 iPad for capture sources; all devices for fallbacks) — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 19; Gates 1 and 2 waived): no 10-minute runs, so no source gets an FR-031 rating"
+    },
+    {
+      "id": "T053",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 197,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T053 [US3] {A}{device} Gate 2: for each source rated \"Works\", run a 30-minute foreground capture (results in `docs/test-reports/compatibility-report.md`) on the reference device and record unrecovered failures, dropped audio, start-to-first-audio, CPU, and memory against the Gate 2 thresholds in spec Delivery Gating — AC: each Works source passes or is downgraded to Partial with its reason — ⛔ not required (owner ruling 2026-11-09, ADR-0001 ruling 19; Gates 1 and 2 waived): no source is rated \"Works\", so there is nothing to run"
+    },
+    {
+      "id": "T084",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 259,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": true,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T084 [US4] {D}{win} Implement `Apps/projectM-iOS/Views/VisualizerView.swift` (UIViewRepresentable hosting the renderer full-screen; portrait/landscape/split (FR-041); status bar and home indicator hidden with controls, unless that hides the capture/mic indicator per FR-086/FR-089) (FR-040) — AC: T081 rotation case passes {mac}; with the controls hidden during System/App Capture and Microphone, whether the screen-recording and microphone indicators stay visible is recorded on D1 and D2 (FR-089, quickstart Scenario C; moved here from the Stage 1 checks by the owner review 2026-11-08) {device} — ⏳ Mac part verified 2026-11-09 on the iOS 27.2 iPhone and iPad simulators: T081's rotation case passes. Device part open: whether the capture and microphone indicators stay visible with the controls hidden on D1 and D2 (FR-089). The status bar and home indicator are hidden with the controls only during In-App Playback — device part (FR-089 on D1/D2) ⛔ not required (owner ruling 2026-11-10, T112: open device rows waived; `docs/test-reports/release-report.md`)"
+    },
+    {
+      "id": "T087",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 262,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T087 [US4] {D}{device} Run US4 acceptance 1–4 and SC-006 (240 fps camera, 20 clicks from `reference-clicks.json`, median < 150 ms) on the reference device; verify FR-084 by visualizing past the auto-lock interval — AC: all pass; results in performance.md — ⛔ not required (owner ruling 2026-11-10, T112: open device rows waived; `docs/test-reports/release-report.md`)"
+    },
+    {
+      "id": "T092",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 276,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T092 [US5] {D}{device} Run US5 acceptance 1–4 and SC-007 (Next × 50: 95% of first frames within 1 s) on the reference device — AC: pass; recorded in `docs/test-reports/performance.md` — ⛔ not required (owner ruling 2026-11-10, T112: open device rows waived; `docs/test-reports/release-report.md`)"
+    },
+    {
+      "id": "T097",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 290,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T097 [US6] {D}{device} Run US6 acceptance 1–4 on the reference device and an iPad, recorded in `docs/test-reports/release-report.md`; run SC-010 usability with ≥ 8 participants not involved in development (≥ 3 on iPad) — AC: all pass; ≥ 90% correct identification — ⛔ not required (owner ruling 2026-11-10, T112: open device rows waived; `docs/test-reports/release-report.md`)"
+    },
+    {
+      "id": "T102",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 304,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T102 [US7] {D}{device} Gate 4: run SC-005, SC-008, SC-013, SC-014, and SC-015 on D1 (reference), D2, and D3; finalize the Stage 2 thresholds in `docs/test-reports/performance.md` and update the affected FR/SC lines — AC: all targets met or thresholds formally revised by the project owner; **Gate 4 passed** — ⛔ not required (owner ruling 2026-11-10): Gate 4 waived; SC-005, SC-008, SC-013 and SC-014 not run, the Stage 2 thresholds stay at their initial values; SC-015 measured anyway on D1 and D3 (`docs/test-reports/performance.md`)"
+    },
+    {
+      "id": "T105",
+      "spec": "001-ios-projectm-visualizer",
+      "feature": "001",
+      "line": 312,
+      "tags": [
+        "device"
+      ],
+      "status": "waived",
+      "category": "b",
+      "session": null,
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": true,
+      "matrixCases": [],
+      "estimatedMinutes": 0,
+      "text": "T105 [P] {E}{win} Add accessibility labels, state announcements, and Dynamic Type to all controls and the indicator in `Packages/CaptureUI/` and `Apps/projectM-iOS/Views/` (FR-070) — AC: SC-012 screen-reader audit passes on iPhone and iPad {device} — Code done 2026-11-10 (audio-state announcements with the indicator's text, one-row controls at accessibility text sizes, scrollable notice; AccessibilityTests; controls stay visible while VoiceOver runs) — ⛔ SC-012 audit not required (owner ruling 2026-11-10): the screen-reader audit on iPhone and iPad was not run"
+    },
+    {
+      "id": "AUD-001-T23",
+      "spec": "003-aud-001-import-drm-free-audio-files",
+      "feature": "AUD-001",
+      "line": 73,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-001-T23 [US2] {device} On D1: import from Files, delete the original, Airplane Mode, relaunch, play (quickstart D 1-4). Evidence: tester note in `docs/test-reports/` in the final device phase. — Open: device phase."
+    },
+    {
+      "id": "AUD-001-T26",
+      "spec": "003-aud-001-import-drm-free-audio-files",
+      "feature": "AUD-001",
+      "line": 83,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-001-T26 [US3] {device} With a real DRM-protected purchase in Files on D1: the import is refused with the copy-protected message and nothing is stored (AUD-001-R7). Evidence: tester note in the final device phase. — Open: device phase; needs a real protected file."
+    },
+    {
+      "id": "AUD-001-T33",
+      "spec": "003-aud-001-import-drm-free-audio-files",
+      "feature": "AUD-001",
+      "line": 96,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-001-T33 {device} Final device phase: routes and interruptions with an imported track (FR-051); AUD-001-S1 (10 MB file listed within 2 s on D1); AUD-001-S7 (memory with a 60-minute track); a file from iCloud Drive; the privacy review with a non-empty library. Evidence: `docs/test-reports/`. — Open: device phase."
+    },
+    {
+      "id": "PERF-011-T21",
+      "spec": "004-perf-011-background-resource-release",
+      "feature": "PERF-011",
+      "line": 124,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-011-T21 {device} S7 on D1: GPU time zero and lower memory 10 s after backgrounding with System/App Capture running; frames within 2 s of return (quickstart D1, D2). Final device stage. — Open: `{device}`, final device stage; not attempted."
+    },
+    {
+      "id": "PERF-011-T22",
+      "spec": "004-perf-011-background-resource-release",
+      "feature": "PERF-011",
+      "line": 126,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "PERF-011-T22 {device} S8 on D1-D3: app switcher card and first frame after return, lock and unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted."
+    },
+    {
+      "id": "PRE-007-T23",
+      "spec": "005-pre-007-preset-collections",
+      "feature": "PRE-007",
+      "line": 187,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "PRE-007-T23 {device} (open: final device stage) S11 on D1-D3: collections survive installing over the previous build; reorder with VoiceOver using the Move Up / Move Down actions; S8 timing by hand. Final device stage only."
+    },
+    {
+      "id": "AUD-002-T25",
+      "spec": "006-aud-002-support-common-audio-containers",
+      "feature": "AUD-002",
+      "line": 78,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "AUD-002-T25 {device} On D1, D2 and D3 with the owner's own DRM-free files from real encoders: one MP3 (constant bit rate), one MP3 (variable bit rate, ID3 tag with artwork), one `.aac`, one M4A (AAC), one M4A (Apple Lossless), one WAV and one AIFF each import and reach \"Active audio\" (quickstart D)."
+    },
+    {
+      "id": "AUD-002-T26",
+      "spec": "006-aud-002-support-common-audio-containers",
+      "feature": "AUD-002",
+      "line": 79,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-002-T26 {device} On D1: a route change (headphones unplugged) and an interruption (alarm) during playback of an MP3 and of an M4A track behave as for the reference track (FR-051)."
+    },
+    {
+      "id": "AUD-002-T27",
+      "spec": "006-aud-002-support-common-audio-containers",
+      "feature": "AUD-002",
+      "line": 80,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-002-T27 {device} On D1: a damaged file and a non-audio file picked in the Files app show the messages of contracts/ui-strings.md, and VoiceOver announces them."
+    },
+    {
+      "id": "AUD-006-T38",
+      "spec": "007-aud-006-seekable-transport",
+      "feature": "AUD-006",
+      "line": 99,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-006-T38 {device} On D1 (iPhone 15), with wired or built-in output: play an imported track, seek 20 times; listen and watch for audio or picture from before a seek; record the result in `docs/test-reports/`. Open question from research: whether `player.stop()` precedes the render cycle in flight on hardware."
+    },
+    {
+      "id": "AUD-006-T39",
+      "spec": "007-aud-006-seekable-transport",
+      "feature": "AUD-006",
+      "line": 100,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "AUD-006-T39 {device} On D1 and D2: pause, lock and unlock, background and foreground: playback stays paused; while playing: the existing pause and resume on background still work and continue from the same position (within 50 ms by ear and by the shown time)."
+    },
+    {
+      "id": "AUD-006-T40",
+      "spec": "007-aud-006-seekable-transport",
+      "feature": "AUD-006",
+      "line": 101,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-006-T40 {device} On D1: an interruption (incoming call or alarm) while playing and while user-paused; a route change (unplug headphones, Bluetooth) while playing, then Play; next track between tracks of different sample rates over Bluetooth. Record what happens; AUD-014 decides the final interruption policy."
+    },
+    {
+      "id": "AUD-006-T41",
+      "spec": "007-aud-006-seekable-transport",
+      "feature": "AUD-006",
+      "line": 102,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B12",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "AUD-006-T41 {device} VoiceOver on D1: every transport control is announced by its label; the scrubber's increment and decrement move 10 s and announce the value; largest text size on D1 and iPad split view on D2: no control is cut off."
+    },
+    {
+      "id": "PRE-012-T31",
+      "spec": "008-pre-012-preset-import-validation",
+      "feature": "PRE-012",
+      "line": 246,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "PRE-012-T31 {device} (open: final device phase; also confirm on D1-D3 that the worst-case shapes at the static limits do not crash, since stack sizes differ from the simulator) Final device phase on D1-D3: import through the real Files picker; a renamed JPEG is quarantined; trial timing on device; VoiceOver pass over My Presets and Quarantine."
+    },
+    {
+      "id": "AUD-014-T29",
+      "spec": "009-aud-014-audio-session-interruption-recovery",
+      "feature": "AUD-014",
+      "line": 96,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-014-T29 {device} Real phone call on D1 (iPhone 15, iOS 27.0.1): `quickstart.md` section C steps 1 to 7 (decline; answer and return; return during the call; user pause; seek during the interruption). Evidence: `docs/test-reports/aud-014-interruptions.md` with device, OS build, app build and each variant's observed transport state, including whether iOS delivered the end of the interruption and `shouldResume` (AUD-014-S6; research AUD-014-D1, D4)."
+    },
+    {
+      "id": "AUD-014-T30",
+      "spec": "009-aud-014-audio-session-interruption-recovery",
+      "feature": "AUD-014",
+      "line": 97,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "AUD-014-T30 {device} FaceTime-audio variant of T29 on D2 (iPadOS 27.2) and D3 (iPadOS 26.5), so both the iOS 27 and the iOS 26 notification paths are observed."
+    },
+    {
+      "id": "AUD-014-T31",
+      "spec": "009-aud-014-audio-session-interruption-recovery",
+      "feature": "AUD-014",
+      "line": 98,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-014-T31 {device} Routes on D1: `quickstart.md` section C steps 8 and 9 (headphones unplugged while playing and during a ringing call; an output with another sample rate connected while playing)."
+    },
+    {
+      "id": "AUD-014-T32",
+      "spec": "009-aud-014-audio-session-interruption-recovery",
+      "feature": "AUD-014",
+      "line": 99,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "autorun-sc009"
+      ],
+      "estimatedMinutes": 10,
+      "text": "AUD-014-T32 {device} `PROJECTM_AUTORUN=sc009` on D1 and D3 with this build: the In-App Playback and Microphone lifecycle scripts end in the same states as the 2026-11-10 run (`docs/test-reports/performance.md`)."
+    },
+    {
+      "id": "PRE-015-T26",
+      "spec": "010-pre-015-user-preset-duplication",
+      "feature": "PRE-015",
+      "line": 168,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PRE-015-T26 {device} (open: final device stage) S7 on D1: the editor opens a 524,288-byte preset in under 2 s; VoiceOver pass over the editor. Final device stage; not run here."
+    },
+    {
+      "id": "AUD-016-T30",
+      "spec": "011-aud-016-reference-tone-suite",
+      "feature": "AUD-016",
+      "line": 86,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "AUD-016-T30 {device} (open: final device phase) On D1, D2 and D3 in the final device phase: each signal kind audible on the speaker and on headphones; status \"Active audio\" for sines and sweeps, \"Audio received — silent\" for pulses and silence; an interruption and a route change behave as for an imported track; Release generation time on D1 (AUD-016-S8)."
+    },
+    {
+      "id": "PRE-014-T25",
+      "spec": "012-pre-014-bulk-preset-export",
+      "feature": "PRE-014",
+      "line": 163,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "PRE-014-T25 {device} Final device phase: on D1 export three presets (two imports, an Included copy) with a pack copy present, Save to Files, open the ZIP in Files, check the pack copy is absent; repeat on D3 (iPadOS 26.5, popover share sheet). Not run here (ADR-0008 decision 7)."
+    },
+    {
+      "id": "QA-007-T23",
+      "spec": "013-qa-007-audio-source-contract-suite",
+      "feature": "QA-007",
+      "line": 61,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "QA-007-T23 {device} (open: awaits the final device stage; not run in this feature) The real platform backends keep the seam's promises (no sink write after stop, interruption and end events mapped as the fakes model them) on D1-D3: part of the final device matrix (QA-011); not run in this feature."
+    },
+    {
+      "id": "ANL-001-T27",
+      "spec": "014-anl-001-windowed-fft",
+      "feature": "ANL-001",
+      "line": 72,
+      "tags": [
+        "device"
+      ],
+      "status": "optional",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ANL-001-T27 {device} (open: final device phase, only if a later row needs it) Run `AnalysisBench` logic on D1 in Release to record the per-frame cost on the reference device. Not required for this row's acceptance (spec Assumptions)."
+    },
+    {
+      "id": "AUD-003-T22",
+      "spec": "015-aud-003-audio-library-queue",
+      "feature": "AUD-003",
+      "line": 60,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-003-T22 {device} On D1 with headphones: reorder while listening (no gap), add a second track while a lone track loops (it ends once, the next follows; listen for a repeated fragment at the edit, research AUD-003-D4), remove the playing track, reorder during a call (resume behaves as without the edit), relaunch keeps the queue. Evidence: tester note."
+    },
+    {
+      "id": "ANL-002-T20",
+      "spec": "016-anl-002-log-frequency-bands",
+      "feature": "ANL-002",
+      "line": 64,
+      "tags": [
+        "device"
+      ],
+      "status": "optional",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ANL-002-T20 {device} (open: final device phase, only if a later row needs it) Measure the reduction cost on D1 in Release. Not required for this row's acceptance (spec Assumptions)."
+    },
+    {
+      "id": "AUD-004-T19",
+      "spec": "017-aud-004-loop-track-and-queue",
+      "feature": "AUD-004",
+      "line": 58,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-004-T19 {device} On D1 with three imported tracks: Off stops after the last track at the first track's 0:00 showing \"Stopped\"; One Track repeats without an audible gap on the speaker and a Bluetooth route; a phone-call interruption during One Track resumes per AUD-014; mode change during playback is inaudible. Evidence: device notes in `docs/test-reports/` (roadmap device phase only)."
+    },
+    {
+      "id": "ANL-004-T25",
+      "spec": "018-anl-004-spectral-flux-onset-detector",
+      "feature": "ANL-004",
+      "line": 75,
+      "tags": [
+        "device"
+      ],
+      "status": "optional",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ANL-004-T25 {device} (open: final device phase, only if a later row needs it) Measure `process` cost on D1 in Release. Not required for this row's acceptance (spec Assumptions)."
+    },
+    {
+      "id": "VIS-001-T36",
+      "spec": "019-vis-001-circular-spectrum",
+      "feature": "VIS-001",
+      "line": 80,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "VIS-001-T36 {device} (open: final device phase) On D1, D2, D3: choose Circular Spectrum with the reference track; rotate; lock/unlock and background/return; toggle Reduce flashing; note the overlay's frame rate; confirm no crash and the fallback never shows. Final device phase only."
+    },
+    {
+      "id": "FX-001-T27",
+      "spec": "020-fx-001-bloom",
+      "feature": "FX-001",
+      "line": 72,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "FX-001-T27 {device} (open: final device phase) On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row."
+    },
+    {
+      "id": "FX-019-T22",
+      "spec": "022-fx-019-strobe-safety-envelope",
+      "feature": "FX-019",
+      "line": 62,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-019-T22 {device} Measure the pass cost on D1 with RendererLab `RL_MODE=flashcost` (T104 method; target ≤ 2 ms per frame, FX-019-S6) and watch a strobing preset with Reduce flashing off and on."
+    },
+    {
+      "id": "FX-019-T23",
+      "spec": "022-fx-019-strobe-safety-envelope",
+      "feature": "FX-019",
+      "line": 63,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "FX-019-T23 {device} On D1 and D3, confirm visually that a strobing preset is clamped with the setting off and that ordinary presets look unchanged."
+    },
+    {
+      "id": "AUD-005-T17",
+      "spec": "023-aud-005-shuffle-with-history",
+      "feature": "AUD-005",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-005-T17 {device} On D1: five imported tracks shuffled with a route change and an interruption; Shuffle changes never cut audio (AUD-005-R15). Not run by agents."
+    },
+    {
+      "id": "ANL-016-T20",
+      "spec": "024-anl-016-analysis-event-bus",
+      "feature": "ANL-016",
+      "line": 58,
+      "tags": [
+        "device"
+      ],
+      "status": "optional",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ANL-016-T20 [US5] {device} Optional (open, pending device; not required): run Circular Spectrum on D1 with music; the bars move as before. Not required for acceptance (spec Assumptions)."
+    },
+    {
+      "id": "VIS-002-T16",
+      "spec": "025-vis-002-linear-spectrum",
+      "feature": "VIS-002",
+      "line": 55,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "VIS-002-T16 `{device}` On D1-D3: Linear Spectrum renders in both orientations, glow on, Reduce flashing on; frame time within the VIS-001 budget. Final device phase only."
+    },
+    {
+      "id": "AUD-007-T16",
+      "spec": "026-aud-007-audio-output-route-indicator",
+      "feature": "AUD-007",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-007-T16 {device} Device acceptance on D1 (quickstart \"Device\", steps 1-7): plug/unplug wired headphones and connect/disconnect Bluetooth headphones during In-App Playback; the indicator changes within 1 s with the explanation, AUD-014 pauses on unplug, no capture source is named; Microphone mode shows the headset input. Record in `docs/test-reports/route-indicator.md`. Evidence: the report."
+    },
+    {
+      "id": "SHOW-011-T23",
+      "spec": "027-show-011-tap-tempo",
+      "feature": "SHOW-011",
+      "line": 52,
+      "tags": [
+        "device"
+      ],
+      "status": "optional",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-011-T23 `{device}` On D1, tap along with music, reset with music playing; not required for this row and not run (open, `{device}`)."
+    },
+    {
+      "id": "CMP-001-T20",
+      "spec": "029-cmp-001-unified-layer-protocol",
+      "feature": "CMP-001",
+      "line": 66,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "xctest-angle-layer"
+      ],
+      "estimatedMinutes": 15,
+      "text": "CMP-001-T20 {device} On D1-D3: the spike tests and `ProjectMLayerTests` on each device, and a frame-time sample of a compositor with two spectrum layers and a projectM layer (CMP-001-S7 on hardware, the cost noted in ADR-0013). Roadmap final device phase; not run in this row."
+    },
+    {
+      "id": "ACC-002-T20",
+      "spec": "030-acc-002-reduced-flash-preset-policy",
+      "feature": "ACC-002",
+      "line": 58,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-002-T20 {device} On D1 with Reduce flashing on: VoiceOver reads \"may flash\" on flagged rows and the alert; Random 50 times without a flagged preset; the alert at the largest text size (quickstart §4)."
+    },
+    {
+      "id": "OSC-001-T26",
+      "spec": "032-osc-001-osc-receiver",
+      "feature": "OSC-001",
+      "line": 52,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-001-T26 `{device}` On D1 on Wi-Fi, a controller on another computer sends `/projectm/test ,f 0.42` to port 9000 → \"Test value 0.42\"; Local Network permission prompt appears on first enable; turning OSC off stops changes (quickstart D; OSC-001-S7). Owner, last stage."
+    },
+    {
+      "id": "CAM-001-T24",
+      "spec": "033-cam-001-rear-camera-layer",
+      "feature": "CAM-001",
+      "line": 55,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "CAM-001-T24 {device} On D1, D2, D3: choose Camera → system prompt → Allow → live upright picture under the spectrum and the camera indicator; rotate (S1, R2)"
+    },
+    {
+      "id": "CAM-001-T25",
+      "spec": "033-cam-001-rear-camera-layer",
+      "feature": "CAM-001",
+      "line": 56,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "CAM-001-T25 {device} On D1 and D3: Don't Allow → notice and Open Settings; allow then revoke in Settings while backgrounded → notice on return, no crash (R5, US2 scenario 4)"
+    },
+    {
+      "id": "CAM-001-T26",
+      "spec": "033-cam-001-rear-camera-layer",
+      "feature": "CAM-001",
+      "line": 57,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B12",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 16,
+      "text": "CAM-001-T26 {device} On D1: interruption by another app (Camera app in Split View on D2, a FaceTime call on D1) → paused notice, picture returns; 3 minutes running with thermal state and frame rate recorded (R8)"
+    },
+    {
+      "id": "CAM-001-T27",
+      "spec": "033-cam-001-rear-camera-layer",
+      "feature": "CAM-001",
+      "line": 58,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-001-T27 {device} On D1: another visual, pause, Stop, background, lock → the camera indicator turns off each time; relaunch → the camera does not start until Camera is chosen (R7, R11, S3, S4)"
+    },
+    {
+      "id": "CAM-012-T13",
+      "spec": "037-cam-012-camera-privacy-status",
+      "feature": "CAM-012",
+      "line": 42,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-012-T13 {device} On D1: choose Camera, tap Stop camera; iOS's camera indicator turns off within one second, the previous visual keeps animating, music continues; pause/resume and lock/unlock do not restart the camera (S5; quickstart \"Device\")"
+    },
+    {
+      "id": "OSC-007-T12",
+      "spec": "038-osc-007-osc-network-access-switch",
+      "feature": "OSC-007",
+      "line": 40,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-007-T12 `{device}` On D1 over Wi-Fi (quickstart D): the badge shows while listening, Stop ends delivery and Settings shows off (OSC-007-S5). Owner, last stage."
+    },
+    {
+      "id": "SHD-001-T19",
+      "spec": "039-shd-001-procedural-material-catalog",
+      "feature": "SHD-001",
+      "line": 64,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "SHD-001-T19 {device} (open: needs D1-D3 and the final device stage) Per-material GPU frame cost at full screen on D1, D2 and D3 (median and 95th percentile over 600 frames at defaults), recorded in `docs/test-reports/performance.md` (S8; R16)"
+    },
+    {
+      "id": "CMP-002-T15",
+      "spec": "040-cmp-002-ordered-layer-stack",
+      "feature": "CMP-002",
+      "line": 61,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "CMP-002-T15 {device} Per-layer frame cost of a 4-layer stack (projectM or a material, camera, two spectra) on D1, D2 and D3: GPU time per frame with 1 to 4 layers, recorded in `docs/test-reports/performance.md` (CMP-002-S6, R15)"
+    },
+    {
+      "id": "OSC-009-T15",
+      "spec": "041-osc-009-osc-rate-limiter",
+      "feature": "OSC-009",
+      "line": 44,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-009-T15 {device} On D1, a LAN controller floods `/projectm/test` at ~2,000 msg/s for 10 s: rendering continues, \"Rate-limited N\" grows, the value ends at the last one sent (quickstart C). Device LAN check, last stage; not run by this row."
+    },
+    {
+      "id": "SHD-002-T24",
+      "spec": "042-shd-002-node-generator-graph",
+      "feature": "SHD-002",
+      "line": 75,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "bench-shd002"
+      ],
+      "estimatedMinutes": 15,
+      "text": "SHD-002-T24 {device} Frame cost of the 12-node bench graph on D1, D2 and D3 (GPU time per frame at native size), recorded in `docs/test-reports/performance.md`"
+    },
+    {
+      "id": "MED-001-T22",
+      "spec": "044-med-001-import-photo-layer",
+      "feature": "MED-001",
+      "line": 66,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MED-001-T22 {device} On D1 (iOS 27) and D3 (iPadOS 26.5): Choose from Photos… with full library access and with limited access — no permission prompt, the photo renders, relaunch keeps it"
+    },
+    {
+      "id": "MED-001-T23",
+      "spec": "044-med-001-import-photo-layer",
+      "feature": "MED-001",
+      "line": 67,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MED-001-T23 {device} On D1 and D3: Choose from Files… from On My iPhone/iPad and from iCloud Drive (a file not yet downloaded), relaunch, Remove Photo"
+    },
+    {
+      "id": "MED-001-T24",
+      "spec": "044-med-001-import-photo-layer",
+      "feature": "MED-001",
+      "line": 68,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MED-001-T24 {device} On D1 and D3: a HEIC photo with location (stored copy has none: export the container and read it with `mdls`/ImageIO), a large panorama (≥ 60 MP), and a file over 40 MB (notice shown, app keeps running)"
+    },
+    {
+      "id": "SHD-010-T13",
+      "spec": "047-shd-010-expression-sandbox-budgets",
+      "feature": "SHD-010",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "bench-expression"
+      ],
+      "estimatedMinutes": 5,
+      "text": "SHD-010-T13 {device} Measure per-frame expression cost on D1 (a full-budget snapshot, Release build) and record it in `docs/test-reports/performance.md` — open: needs the device"
+    },
+    {
+      "id": "MED-002-T26",
+      "spec": "048-med-002-import-video-layer",
+      "feature": "MED-002",
+      "line": 69,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MED-002-T26 {device} (open: needs D1/D3 and the owner) Photos and Files picks on D1 and D3 (HEVC from the camera, an H.264 file), no permission prompt, Remove Video, relaunch"
+    },
+    {
+      "id": "MED-002-T27",
+      "spec": "048-med-002-import-video-layer",
+      "feature": "MED-002",
+      "line": 70,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 30,
+      "text": "MED-002-T27 {device} (open: needs D1/D3 and the owner) 4K60 HEVC and a long (≥ 10 min) file play at their rate on D1 and D3; memory stays bounded (Xcode memory gauge)"
+    },
+    {
+      "id": "MED-002-T28",
+      "spec": "048-med-002-import-video-layer",
+      "feature": "MED-002",
+      "line": 71,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 16,
+      "text": "MED-002-T28 {device} (open: needs D1/D3 and the owner) Thermal state over 3 minutes of 4K playback on D1 and D3 (`ProcessInfo.thermalState` stays below serious), frame rate recorded"
+    },
+    {
+      "id": "OUT-001-T15",
+      "spec": "049-out-001-external-display-scene",
+      "feature": "OUT-001",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "OUT-001-T15 {device} Quickstart C on D1, D2, D3: USB-C/HDMI adapter and AirPlay to an Apple TV; the external display shows the visualization alone and the device keeps the controls (OUT-001-S1, S6)"
+    },
+    {
+      "id": "OUT-001-T16",
+      "spec": "049-out-001-external-display-scene",
+      "feature": "OUT-001",
+      "line": 50,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-001-T16 {device} D2 Stage Manager on an extended display: the app's window moves as before; the external scene role is not used for it"
+    },
+    {
+      "id": "OUT-001-T17",
+      "spec": "049-out-001-external-display-scene",
+      "feature": "OUT-001",
+      "line": 51,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "OUT-001-T17 {device} Hot-plug during playback on D1-D3 (cable and AirPlay): source never restarts, Camera keeps running (OUT-001-S2, S6)"
+    },
+    {
+      "id": "OUT-001-T18",
+      "spec": "049-out-001-external-display-scene",
+      "feature": "OUT-001",
+      "line": 52,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": true,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-001-T18 {device} Resolution and refresh changes on the Apple TV (60 / 50 / 24 Hz): no crash; record fps for OUT-013"
+    },
+    {
+      "id": "OUT-010-T15",
+      "spec": "051-out-010-output-blackout-isolation",
+      "feature": "OUT-010",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "optional",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "OUT-010-T15 {device} Blackout on HDMI (USB-C adapter) and AirPlay on D1 and D2 (quickstart D): black at once, controls responsive, restore fade, unplug while blacked out keeps the device black; optional 240 fps camera timing"
+    },
+    {
+      "id": "PERF-004-T14",
+      "spec": "052-perf-004-texture-pool",
+      "feature": "PERF-004",
+      "line": 48,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-004-T14 {device} D1: 100 visual and stack switches (Camera → Photo → Spectrum → Camera), live GPU memory from Xcode's memory report or `MTLDevice.currentAllocatedSize` plateaus after the first cycle (S6)"
+    },
+    {
+      "id": "PERF-004-T15",
+      "spec": "052-perf-004-texture-pool",
+      "feature": "PERF-004",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-004-T15 {device} D3 (iPadOS 26.5): the same as T14"
+    },
+    {
+      "id": "PERF-004-T16",
+      "spec": "052-perf-004-texture-pool",
+      "feature": "PERF-004",
+      "line": 50,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-004-T16 {device} D1: Instruments signposts \"PERF-004 texture allocation\" appear only at the first cycle and at size changes (rotation or external display)"
+    },
+    {
+      "id": "MED-009-T23",
+      "spec": "053-med-009-text-overlay",
+      "feature": "MED-009",
+      "line": 59,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MED-009-T23 `{device}` On D1 (iOS 27) and D3 (iPadOS 26.5): quickstart D — Dynamic Type at the largest size in the editor, right-to-left typing with the Arabic and Hebrew keyboards, emoji with skin tones; relaunch shows the same text (owner)"
+    },
+    {
+      "id": "PERF-006-T17",
+      "spec": "054-perf-006-memory-warning-recovery",
+      "feature": "PERF-006",
+      "line": 51,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "PERF-006-T17 {device} D1 (iOS 27) and D3 (iPadOS 26.5) under real pressure (Xcode's Simulate Memory Warning while attached, or a memory-hungry companion app): the app survives, logs a memory recovery event, keeps rendering and playing (quickstart D)"
+    },
+    {
+      "id": "REC-001-T19",
+      "spec": "055-rec-001-still-frame-capture",
+      "feature": "REC-001",
+      "line": 56,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "REC-001-T19 {device} D1 and D3 (iPadOS 26.5): PNG to On My iPhone/iPad, HEIF to iCloud Drive, both open in Files; HEIF on iOS 26.5 (quickstart, device stage 1-2)"
+    },
+    {
+      "id": "REC-001-T20",
+      "spec": "055-rec-001-still-frame-capture",
+      "feature": "REC-001",
+      "line": 57,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "REC-001-T20 {device} External display active on D1 or D2: the saved frame has the display's pixel size, the projector shows nothing of the capture; blackout refusal (quickstart, device stage 3-4)"
+    },
+    {
+      "id": "MED-014-T23",
+      "spec": "056-med-014-safe-media-decoder",
+      "feature": "MED-014",
+      "line": 62,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MED-014-T23 {device} Import a real HEIC, a ProRAW DNG, a panorama and an HDR video on D1 and D3: each imports and renders as before (no false refusal); quickstart step 5"
+    },
+    {
+      "id": "PERF-014-T22",
+      "spec": "057-perf-014-render-failure-fallback",
+      "feature": "PERF-014",
+      "line": 56,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B03",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "PERF-014-T22 {device} D1 (iOS 27) and D3 (iPadOS 26.5), Debug build with `-uitestRenderFaults prepare:photo,preset:1,gpu:gpuTimeout`: no hang, controls respond, overlay shows the reason, \"Render fault\" events in Console, the placeholder fades in after the GPU retries and goes after pause/resume with the fault cleared (quickstart E)"
+    },
+    {
+      "id": "REC-003-T23",
+      "spec": "058-rec-003-video-recording",
+      "feature": "REC-003",
+      "line": 66,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "REC-003-T23 {device} D1 and D3 (iPadOS 26.5): 60 s recordings of the Camera and the Circular Spectrum at the device's drawable size: frame rate, dropped frames, thermal state before and after; files play in Files (quickstart D1)"
+    },
+    {
+      "id": "REC-003-T24",
+      "spec": "058-rec-003-video-recording",
+      "feature": "REC-003",
+      "line": 67,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-003-T24 {device} D3 with a 4K external display: 60 s recording of the Photo visual on the display: size, frame rate, drops, thermal state (quickstart D2)"
+    },
+    {
+      "id": "REC-003-T25",
+      "spec": "058-rec-003-video-recording",
+      "feature": "REC-003",
+      "line": 68,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-003-T25 {device} Save to On My iPhone/iPad and iCloud Drive; HEVC on iPadOS 26.5 plays (quickstart D3)"
+    },
+    {
+      "id": "REC-012-T13",
+      "spec": "060-rec-012-share-via-files",
+      "feature": "REC-012",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "REC-012-T13 {device} D1: AirDrop, Messages and Save to Files from the share sheet for a frame and a recording; cancel keeps the panel; no Photos or Contacts activity, no permission prompt; on D2 or D3 the sheet is a popover at Share… (REC-012-R13) (quickstart, REC-012-S5)"
+    },
+    {
+      "id": "SHOW-014-T12",
+      "spec": "061-show-014-emergency-blackout",
+      "feature": "SHOW-014",
+      "line": 44,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "SHOW-014-T12 {device} On D1 with HDMI or AirPlay and D2 with an external display and a hardware keyboard: quickstart \"Device\" steps 1-5 (owner's hands)"
+    },
+    {
+      "id": "FILE-001-T19",
+      "spec": "062-file-001-portable-scene-archive",
+      "feature": "FILE-001",
+      "line": 48,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "FILE-001-T19 {device} Export a scene archive on D1, send it by AirDrop or Files to D3, import there offline: the photo and video appear (needs the SCN-014 entry point or a DEBUG build calling the service; owner)"
+    },
+    {
+      "id": "REC-015-T17",
+      "spec": "063-rec-015-recording-disk-guard",
+      "feature": "REC-015",
+      "line": 54,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-015-T17 {device} On D1 nearly full (or a long recording), the guard stops the recording with \"Recording stopped because storage is almost full.\" and the offered file plays (REC-015-S6)"
+    },
+    {
+      "id": "SCN-002-T10",
+      "spec": "067-scn-002-scene-autosave",
+      "feature": "SCN-002",
+      "line": 26,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B03",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SCN-002-T10 [US1] {device} On D1 (Debug build): Circular Spectrum, 16 bars, close Settings; reopen, 32 bars, force-quit from the app switcher at once; relaunch: a committed value (32 expected, the switcher passes through the background), never 64, visual draws (quickstart D)"
+    },
+    {
+      "id": "PERF-010-T15",
+      "spec": "070-perf-010-crash-safe-session-recovery",
+      "feature": "PERF-010",
+      "line": 54,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B03",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-010-T15 `{device}` D1: real crash with the DEBUG \"Crash now\" button, relaunch from the home screen (quickstart, Device)."
+    },
+    {
+      "id": "FILE-009-T12",
+      "spec": "071-file-009-storage-usage-explorer",
+      "feature": "FILE-009",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FILE-009-T12 {device} D1 with real media: import a photo, a video and an audio track, record a clip, open Settings › Storage; values are plausible against iPhone Storage's \"Documents & Data\" for the app (quickstart step 5)"
+    },
+    {
+      "id": "FILE-010-T11",
+      "spec": "072-file-010-safe-cache-cleanup",
+      "feature": "FILE-010",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FILE-010-T11 {device} D1: after preset switches and a shared recording, Clear Caches frees the Caches size; the app plays and the current scene and show load after relaunch (quickstart, Device)"
+    },
+    {
+      "id": "UIX-001-T14",
+      "spec": "075-uix-001-guided-first-scene",
+      "feature": "UIX-001",
+      "line": 59,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "UIX-001-T14 `{device}` D1, fresh install, Airplane Mode on: finish the tutorial and Play with no sign-in, network or permission prompt; VoiceOver pass over all five steps (quickstart D)."
+    },
+    {
+      "id": "FILE-012-T11",
+      "spec": "076-file-012-no-telemetry-verification",
+      "feature": "FILE-012",
+      "line": 30,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FILE-012-T11 {device} D1: App Privacy Report (or the owner's Mac proxy) during the quickstart session with OSC off, then with OSC on; expected: no app network activity with OSC off, only local-network listening with it on (FILE-012-R10)"
+    },
+    {
+      "id": "FILE-013-T11",
+      "spec": "078-file-013-privacy-permission-audit",
+      "feature": "FILE-013",
+      "line": 51,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FILE-013-T11 {device} D1: deny Microphone, Camera and Local Network in Settings and use each feature; restrict Camera with Screen Time and use the Camera visual; notices match the catalog (FILE-013-R9)"
+    },
+    {
+      "id": "ACC-001-T12",
+      "spec": "080-acc-001-reduce-motion-mode",
+      "feature": "ACC-001",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-001-T12 {device} On D1: toggle Reduce Motion while the app runs; controls transition changes at once; VoiceOver behavior unchanged (quickstart Scenario 3; S6) — open, needs the owner"
+    },
+    {
+      "id": "ACC-004-T12",
+      "spec": "082-acc-004-voiceover-scene-browser",
+      "feature": "ACC-004",
+      "line": 71,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-004-T12 `{device}` VoiceOver pass on D1 (quickstart \"Device\"): every primary control reachable and named, cue and preset rotor actions (including the swipe actions iOS exposes, D4), C1 announcements without repeats (ACC-004-S6)."
+    },
+    {
+      "id": "VIS-003-T17",
+      "spec": "083-vis-003-waveform-oscilloscope",
+      "feature": "VIS-003",
+      "line": 53,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "VIS-003-T17 `{device}` On D1 under Instruments (Allocations, Metal System Trace): 60 s of the oscilloscope with the reference track, no allocation growth in the frame loop and frame time within the VIS-001 budget; D2 and D3 render it. Final device phase only."
+    },
+    {
+      "id": "AUD-008-T13",
+      "spec": "086-aud-008-input-trim",
+      "feature": "AUD-008",
+      "line": 52,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "AUD-008-T13 {device} On D1 (microphone) and D3 (In-App Playback): set +12 dB and check the bars react more strongly while playback volume is unchanged; plug or unplug headphones and take a phone call (interruption): the trim stays and the analysis resumes. Evidence: a device note in `docs/test-reports/` (final roadmap device phase)."
+    },
+    {
+      "id": "ACC-006-T12",
+      "spec": "087-acc-006-dynamic-type-inspector",
+      "feature": "ACC-006",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "ACC-006-T12 {device} D1 at AX5 and an iPad at AX5 (portrait and landscape): the quickstart's device walk; record in `docs/test-reports/accessibility-dynamic-type.md` (S5)."
+    },
+    {
+      "id": "AUD-009-T13",
+      "spec": "089-aud-009-channel-selection",
+      "feature": "AUD-009",
+      "line": 52,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-009-T13 {device} On D1 (In-App Playback with a hard-panned track, then the microphone) choose Left, Right, Mid and Side and check the bars follow each definition while playback is unchanged; plug or unplug headphones and take a phone call (interruption): the mode stays and the analysis resumes. Evidence: a device note in `docs/test-reports/` (final roadmap device phase)."
+    },
+    {
+      "id": "AUD-011-T12",
+      "spec": "091-aud-011-input-noise-gate",
+      "feature": "AUD-011",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-011-T12 {device} On D1 with the Microphone source in a quiet room: gate on, the bars stay still; music opens it at once and it closes about 0.25 s after the music stops; plug or unplug headphones and take a phone call (interruption): the gate keeps working after resume; In-App Playback is unaffected. Evidence: a device note in `docs/test-reports/` (final roadmap device phase)."
+    },
+    {
+      "id": "AUD-012-T20",
+      "spec": "092-aud-012-source-crossfade",
+      "feature": "AUD-012",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "AUD-012-T20 {device} On D1/D2: switch between Microphone, In-App Playback and System/App Capture (D3: Microphone and In-App Playback) including a route change, an interruption and a trip to the background during a switch; record the indicator sequence and that projectM never freezes on old audio"
+    },
+    {
+      "id": "AUD-013-T15",
+      "spec": "095-aud-013-source-latency-calibration",
+      "feature": "AUD-013",
+      "line": 55,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-013-T15 {device} On D1: In-App Playback through the speaker, wired and Bluetooth headphones; record Estimate from Output per route; measure click-to-visual delay with a 240 fps camera at 0 ms and at the estimate (20 clicks, median); confirm the visuals line up within one display frame of the sound at the estimate; then route changes and an interruption with a non-zero delay."
+    },
+    {
+      "id": "CAM-002-T21",
+      "spec": "096-cam-002-front-camera-layer",
+      "feature": "CAM-002",
+      "line": 52,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "CAM-002-T21 {device} D1-D3: quickstart device stage steps 1-2 (front camera upright and mirrored in portrait and landscape, badge, iOS indicator)"
+    },
+    {
+      "id": "CAM-002-T22",
+      "spec": "096-cam-002-front-camera-layer",
+      "feature": "CAM-002",
+      "line": 53,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-002-T22 {device} D1: quickstart step 3 (Mirror flips at once; Save Frame and Record match the screen for mirror on and off)"
+    },
+    {
+      "id": "CAM-002-T23",
+      "spec": "096-cam-002-front-camera-layer",
+      "feature": "CAM-002",
+      "line": 54,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "CAM-002-T23 {device} D1-D3: quickstart step 4 (switching within 2 s, no frame of the old camera, audio uninterrupted; CAM-002-S7)"
+    },
+    {
+      "id": "AUD-015-T13",
+      "spec": "097-aud-015-background-playback-policy",
+      "feature": "AUD-015",
+      "line": 118,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-015-T13 {device} On D1, per source (Microphone, In-App Playback, System/App Capture): Home and return, lock and unlock into the app, lock then unlock onto the Home Screen then open the app; record the export; check against the contract (S6)."
+    },
+    {
+      "id": "CAM-007-T15",
+      "spec": "098-cam-007-camera-crop-and-rotation",
+      "feature": "CAM-007",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-007-T15 {device} D1: quickstart device steps 1-4 (Back and Front, each mode, portrait ↔ landscape, Save Frame) (CAM-007-S6)"
+    },
+    {
+      "id": "CAM-007-T16",
+      "spec": "098-cam-007-camera-crop-and-rotation",
+      "feature": "CAM-007",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "CAM-007-T16 {device} D2 and D3: the same steps on the iPads (4:3 screen, iPadOS 26.5 on D3) (CAM-007-S6)"
+    },
+    {
+      "id": "ACC-011-T17",
+      "spec": "100-acc-011-captioned-status-events",
+      "feature": "ACC-011",
+      "line": 50,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-011-T17 `{device}` VoiceOver pass on D1 (quickstart C) — left open, needs a person"
+    },
+    {
+      "id": "CAM-013-T17",
+      "spec": "102-cam-013-camera-failure-recovery",
+      "feature": "CAM-013",
+      "line": 48,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B12",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "CAM-013-T17 {device} D1 and D2: quickstart device steps 1-3 (FaceTime or another camera app, Split View on D2, Retry spacing, revocation ends the app and the next start is denied) (CAM-013-S7)"
+    },
+    {
+      "id": "CAM-013-T18",
+      "spec": "102-cam-013-camera-failure-recovery",
+      "feature": "CAM-013",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-013-T18 {device} D3 (iPadOS 26.5): an interruption and Retry on the iOS 26 path (CAM-013-S7)"
+    },
+    {
+      "id": "MED-003-T20",
+      "spec": "106-med-003-video-loop-region",
+      "feature": "MED-003",
+      "line": 54,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MED-003-T20 {device} D1: pick a clip with the system picker, set a region, five joints with no visible stall, background/relaunch inside, Reset (MED-003-S7)"
+    },
+    {
+      "id": "MIDI-001-T18",
+      "spec": "107-midi-001-midi-endpoint-discovery",
+      "feature": "MIDI-001",
+      "line": 45,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MIDI-001-T18 `{device}` On D1 or D2 with a class-compliant USB MIDI controller: listening on, plug → listed within 1 s as Input and Output, unplug → gone, replug → same rows; record the transport the system reports (S8)"
+    },
+    {
+      "id": "UIX-015-T14",
+      "spec": "108-uix-015-onboarding-permission-explainer",
+      "feature": "UIX-015",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "UIX-015-T14 {device} On D1: the real camera and local network prompts follow the explainer; deny each, use the feature again: no explainer, fallback visible"
+    },
+    {
+      "id": "ACC-003-T17",
+      "spec": "110-acc-003-color-blind-friendly-controls",
+      "feature": "ACC-003",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-003-T17 `{device}` D1 with Color Filters (Grayscale) and Increase Contrast, quickstart \"D1\" steps 1-7 (left open for the owner's device stage)"
+    },
+    {
+      "id": "ACC-005-T16",
+      "spec": "115-acc-005-voiceover-parameter-editing",
+      "feature": "ACC-005",
+      "line": 48,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-005-T16 `{device}` D1 with VoiceOver: swipe up and down on every slider (quickstart C); each step is one step and is read with its unit; ends announced once"
+    },
+    {
+      "id": "ACC-008-T16",
+      "spec": "119-acc-008-high-contrast-overlay",
+      "feature": "ACC-008",
+      "line": 83,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-008-T16 `{device}` D1 over the brightest presets, standard and Increase Contrast (quickstart D)."
+    },
+    {
+      "id": "ACC-012-T22",
+      "spec": "121-acc-012-sensory-safety-profile",
+      "feature": "ACC-012",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-012-T22 `{device}` (open: needs D1 and a person) ACC-012-S6 on D1 (quickstart \"Device\")"
+    },
+    {
+      "id": "FX-002-T18",
+      "spec": "122-fx-002-tone-mapping",
+      "feature": "FX-002",
+      "line": 77,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-002-T18 {device} On D1, a scene with a glowing spectrum layer over a bright photo: no hue-shifted clipping or broken pixels; frame rate as before (FX-002-S6, last stage)."
+    },
+    {
+      "id": "FX-003-T22",
+      "spec": "123-fx-003-color-grading",
+      "feature": "FX-003",
+      "line": 101,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-003-T22 {device} On D1: Photo visual graded (warm, gain 1.5, saturation 0 → grey), reset → identical; frame rate unchanged in the performance overlay (FX-003-S7)."
+    },
+    {
+      "id": "MED-004-T22",
+      "spec": "124-med-004-video-playback-speed",
+      "feature": "MED-004",
+      "line": 56,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MED-004-T22 `{device}` On D1 (MED-004-S7): a picked clip at 2× keeps up or drops late pictures without slowing down; 0.25× looks smooth; the In-App Playback music is unchanged at every speed"
+    },
+    {
+      "id": "MIDI-002-T20",
+      "spec": "125-midi-002-midi-input-monitor",
+      "feature": "MIDI-002",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MIDI-002-T20 `{device}` On D1 or D2 with a class-compliant USB MIDI controller: monitor shows fader moves as control changes and keys as note on/off with the right numbers; closing stops receiving; reopen is empty (S8)"
+    },
+    {
+      "id": "FX-004-T15",
+      "spec": "126-fx-004-hue-shift",
+      "feature": "FX-004",
+      "line": 80,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-004-T15 `{device}` (open: needs D1) On D1 (quickstart step 5): hue +120 on the Photo visual, greys unchanged, frame rate unchanged."
+    },
+    {
+      "id": "MED-006-T22",
+      "spec": "127-med-006-image-slideshow",
+      "feature": "MED-006",
+      "line": 56,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MED-006-T22 `{device}` On D1 (MED-006-S9): five pictures chosen at once in the real Photos picker and two from Files cycle in order in Time and Beats (tapped tempo) modes; relaunch keeps order and mode"
+    },
+    {
+      "id": "MIDI-003-T17",
+      "spec": "128-midi-003-midi-learn",
+      "feature": "MIDI-003",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-003-T17 `{device}` On D1 with a USB MIDI controller: learn a knob for Glow intensity, turning it drives the glow, the mapping survives a relaunch (S9)"
+    },
+    {
+      "id": "FX-009-T18",
+      "spec": "130-fx-009-motion-feedback",
+      "feature": "FX-009",
+      "line": 98,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "FX-009-T18 `{device}` On D1 (and D2 at 120 Hz): Trails on in the Camera or Photo visual, cue step shows no ghost, frame rate with and without Trails recorded in `docs/test-reports/performance.md`."
+    },
+    {
+      "id": "MED-010-T25",
+      "spec": "131-med-010-logo-overlay",
+      "feature": "MED-010",
+      "line": 56,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MED-010-T25 {device} On D1: a transparent PNG from the real Photos picker and one from Files appear over the Photo visual with clean edges in each corner (MED-010-S8)"
+    },
+    {
+      "id": "PRE-001-T14",
+      "spec": "132-pre-001-thumbnail-cache",
+      "feature": "PRE-001",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PRE-001-T14 {device} On D1: the visualizer's fps with the browser open while about 20 thumbnails generate, against a run with them cached (S7: within 10%) — `docs/test-reports/performance.md`"
+    },
+    {
+      "id": "QA-003-T17",
+      "spec": "133-qa-003-visual-diff",
+      "feature": "QA-003",
+      "line": 50,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": true,
+      "matrixCases": [
+        "xctest-goldens"
+      ],
+      "estimatedMinutes": 5,
+      "text": "QA-003-T17 {device} FINAL stage: run the comparator-backed goldens on a physical device once device goldens exist (QA-011); the device run reports \"pending\" today"
+    },
+    {
+      "id": "REC-004-T19",
+      "spec": "134-rec-004-recording-audio",
+      "feature": "REC-004",
+      "line": 56,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-004-T19 {device} Device stage: quickstart \"Device\" steps 1-4 on D1 (In-App Playback alignment within 40 ms, REC-004-S5; microphone consent; System/App Capture video only)"
+    },
+    {
+      "id": "AUD-010-T16",
+      "spec": "138-aud-010-channel-balance",
+      "feature": "AUD-010",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "AUD-010-T16 {device} On D1 with wired headphones and AirPods: full left silences the right ear, an interruption and a route change keep the balance, the visuals do not change with it"
+    },
+    {
+      "id": "MIDI-004-T16",
+      "spec": "140-midi-004-cc-scaling",
+      "feature": "MIDI-004",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-004-T16 {device} With a physical controller on D1, map a fader to Glow intensity, set Inverted, confirm fully down gives the brightest glow and fully up the dimmest; record the result"
+    },
+    {
+      "id": "FX-020-T19",
+      "spec": "142-fx-020-effect-chains",
+      "feature": "FX-020",
+      "line": 48,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-020-T19 {device} D1: compare both orders with Trails and a strong grade on a photo; flash guard still limits a strobing fixture in both orders"
+    },
+    {
+      "id": "MIDI-006-T16",
+      "spec": "143-midi-006-note-triggers",
+      "feature": "MIDI-006",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-006-T16 `{device}` With a physical controller on D1: map a pad to Next cue and a key to Black out while held; confirm one step per press (including a controller that sends velocity-0 note on) and black only while held"
+    },
+    {
+      "id": "MIDI-007-T15",
+      "spec": "147-midi-007-scene-selection",
+      "feature": "MIDI-007",
+      "line": 45,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-007-T15 {device} With a physical controller on D1, assign a program to a scene; the patch change selects it and a repeat does nothing"
+    },
+    {
+      "id": "REC-005-T14",
+      "spec": "150-rec-005-quality-profiles",
+      "feature": "REC-005",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5)"
+    },
+    {
+      "id": "PERF-001-T16",
+      "spec": "152-perf-001-stage-timings",
+      "feature": "PERF-001",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "autorun-perf001"
+      ],
+      "estimatedMinutes": 5,
+      "text": "PERF-001-T16 [US2] {device} Run `perf001` on D1 and record per-stage numbers and the overhead in `docs/test-reports/performance.md`."
+    },
+    {
+      "id": "VIS-004-T13",
+      "spec": "154-vis-004-lissajous",
+      "feature": "VIS-004",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-004-T13 {device} On D1 with stereo music, choose Lissajous and check frame time in the performance overlay with Persistence on."
+    },
+    {
+      "id": "QA-006-T13",
+      "spec": "155-qa-006-render-soak",
+      "feature": "QA-006",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "xctest-soak-600"
+      ],
+      "estimatedMinutes": 5,
+      "text": "QA-006-T13 {device} [US4] Long soak (≥ 600 s simulated) on D1 in the final QA phase (QA-006-S6)"
+    },
+    {
+      "id": "MIDI-008-T12",
+      "spec": "157-midi-008-transport",
+      "feature": "MIDI-008",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-008-T12 {device} With a physical controller on D1, map a CC button and a pad to Next cue and Play/Pause; each press acts once"
+    },
+    {
+      "id": "PERF-002-T13",
+      "spec": "160-perf-002-gpu-budget",
+      "feature": "PERF-002",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "autorun-perf001"
+      ],
+      "estimatedMinutes": 5,
+      "text": "PERF-002-T13 {device} On D1, the `perf001` automation run's `frameTimings.budget` at normal load (quickstart C). Pending device."
+    },
+    {
+      "id": "OUT-002-T12",
+      "spec": "161-out-002-display-hotplug",
+      "feature": "OUT-002",
+      "line": 36,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "OUT-002-T12 {device} Quickstart B on D1, D2, D3 (cable and AirPlay hot-plug, recording hold, blackout, quick wiggle)"
+    },
+    {
+      "id": "QA-008-T10",
+      "spec": "163-qa-008-recording-validation",
+      "feature": "QA-008",
+      "line": 32,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "QA-008-T10 [US4] {device} Validate one recording exported from D1 with `testExternalRecording` (quickstart C) in the final QA phase"
+    },
+    {
+      "id": "REC-006-T15",
+      "spec": "164-rec-006-record-frame-rate",
+      "feature": "REC-006",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6)"
+    },
+    {
+      "id": "MIDI-011-T12",
+      "spec": "166-midi-011-hotplug",
+      "feature": "MIDI-011",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-011-T12 {device} On D1 with a USB controller mapped to a glow parameter and a pad to Next cue, unplug and replug (also quickly); each movement and press acts once afterwards and the reconnect is announced"
+    },
+    {
+      "id": "MIDI-012-T15",
+      "spec": "171-midi-012-profiles",
+      "feature": "MIDI-012",
+      "line": 45,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MIDI-012-T15 {device} On D1 with a controller: save a profile, export it to Files, import it on D2, apply it, move each mapped control once"
+    },
+    {
+      "id": "OUT-004-T10",
+      "spec": "172-out-004-aspect-correction",
+      "feature": "OUT-004",
+      "line": 29,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "OUT-004-T10 {device} Quickstart B on D1/D2 with an HDMI adapter and, if available, a composite adapter (non-square pixels)"
+    },
+    {
+      "id": "PERF-003-T15",
+      "spec": "173-perf-003-adaptive-quality",
+      "feature": "PERF-003",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-003-T15 {device} D1 with the glow on under sustained load: the overlay shows Reduced at serious with the 60 fps cap kept, Minimal and 30 fps only at critical; `perf001` export carries the level"
+    },
+    {
+      "id": "REC-007-T13",
+      "spec": "175-rec-007-countdown",
+      "feature": "REC-007",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-007-T13 {device} On D1: 3 s countdown with VoiceOver on, let it complete and cancel once; the recording starts after \"1\" and a cancel leaves no file"
+    },
+    {
+      "id": "VIS-005-T12",
+      "spec": "176-vis-005-radial-waveform",
+      "feature": "VIS-005",
+      "line": 42,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-005-T12 {device} On D1 with music, choose Radial Waveform and check frame time in the performance overlay."
+    },
+    {
+      "id": "QA-009-T10",
+      "spec": "177-qa-009-accessibility-suite",
+      "feature": "QA-009",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "QA-009-T10 {device} VoiceOver and AX5 walk of the manifest screens on D1 (owner; extends ACC-004-T12 / ACC-006-T12)"
+    },
+    {
+      "id": "PERF-005-T15",
+      "spec": "179-perf-005-prewarm-scheduler",
+      "feature": "PERF-005",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-005-T15 {device} On D1: step a show with photo cues; no frame-rate change versus without prewarm and the photo is on the first frame of the cue"
+    },
+    {
+      "id": "REC-008-T14",
+      "spec": "180-rec-008-timed-stop",
+      "feature": "REC-008",
+      "line": 36,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps)"
+    },
+    {
+      "id": "MIDI-013-T13",
+      "spec": "183-midi-013-panic",
+      "feature": "MIDI-013",
+      "line": 40,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-013-T13 `{device}` On D1 with a physical controller: hold a pad mapped to \"Black out while held\", press MIDI Panic, the output returns and the pad works again (quickstart step 4)"
+    },
+    {
+      "id": "OUT-012-T11",
+      "spec": "184-out-012-display-rehearsal",
+      "feature": "OUT-012",
+      "line": 33,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-012-T11 {device} Quickstart C on D1 with an HDMI projector"
+    },
+    {
+      "id": "VIS-006-T14",
+      "spec": "186-vis-006-beat-rings",
+      "feature": "VIS-006",
+      "line": 45,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-006-T14 {device} On D1 with music, choose Beat Rings: rings follow the beat; frame time in the performance overlay."
+    },
+    {
+      "id": "REC-009-T11",
+      "spec": "190-rec-009-status-overlay",
+      "feature": "REC-009",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-009-T11 {device} On D1, record the Photo visual, look at the lines (and a low-storage warning on a nearly full device), save the file and confirm the lines are not in it"
+    },
+    {
+      "id": "OSC-003-T15",
+      "spec": "191-osc-003-parameter-routes",
+      "feature": "OSC-003",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-003-T15 {device} Send `/projectm/param/glow.intensity` from a controller on Wi-Fi to D1 and see the glow follow (quickstart). Not run: needs a device and a person."
+    },
+    {
+      "id": "PERF-007-T12",
+      "spec": "192-perf-007-frame-drop-telemetry",
+      "feature": "PERF-007",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PERF-007-T12 {device} On D1 with an external display: overlay shows `frames external` counting after the connection settles, the device counter stops; a recording line matches the recording's dropped slots"
+    },
+    {
+      "id": "UIX-005-T13",
+      "spec": "193-uix-005-performance-controls",
+      "feature": "UIX-005",
+      "line": 31,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking"
+    },
+    {
+      "id": "VIS-007-T13",
+      "spec": "195-vis-007-mandala",
+      "feature": "VIS-007",
+      "line": 44,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-007-T13 {device} On D1 with music, choose Mandala: petals follow the music, the slow turn; frame time in the performance overlay."
+    },
+    {
+      "id": "ANL-013-T14",
+      "spec": "196-anl-013-stereo-correlation",
+      "feature": "ANL-013",
+      "line": 45,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ANL-013-T14 {device} Play a phase-inverted stereo feed through Mix on D1 with a native visual: the overlay reads negative r and the source status shows the warning after about 1 s; switching AUD-009 to Left clears it (quickstart)"
+    },
+    {
+      "id": "REC-010-T13",
+      "spec": "198-rec-010-recording-library",
+      "feature": "REC-010",
+      "line": 42,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-010-T13 {device} On D1: record, Keep, open Recordings, play, share to Files, rename, delete."
+    },
+    {
+      "id": "OSC-008-T13",
+      "spec": "200-osc-008-peer-allowlist",
+      "feature": "OSC-008",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "OSC-008-T13 {device} LAN check on D1 with a second device on Wi-Fi (quickstart step 5)."
+    },
+    {
+      "id": "PERF-008-T16",
+      "spec": "201-perf-008-battery-saver",
+      "feature": "PERF-008",
+      "line": 35,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "PERF-008-T16 {device} D1: 5 min Standard vs 5 min Battery saver (same preset, In-App Playback), Instruments Energy Log + Metal System Trace with the \"Power profile\" signpost; record frame time and energy per minute in docs/test-reports/performance.md (PERF-008-S3)"
+    },
+    {
+      "id": "ANL-015-T12",
+      "spec": "202-anl-015-section-energy-change",
+      "feature": "ANL-015",
+      "line": 40,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ANL-015-T12 {device} Play a track with a quiet intro and a loud chorus on D1 with a native visual and a \"Section change\" binding on the glow: one flash about 2 s into the chorus, none on drum hits (quickstart)"
+    },
+    {
+      "id": "VIS-008-T14",
+      "spec": "203-vis-008-particle-fountain",
+      "feature": "VIS-008",
+      "line": 45,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-008-T14 {device} On D1 with music, choose Particle Fountain: bursts follow onsets, arcs under gravity and drag, Reduce Motion fewer and slower; frame time in the performance overlay."
+    },
+    {
+      "id": "CAM-003-T11",
+      "spec": "204-cam-003-lens-selection",
+      "feature": "CAM-003",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "CAM-003-T11 {device} D1: Wide ↔ Ultra Wide ten times while running (picture follows, badge stays, no crash); D2 and D3: no Lens row (S4)."
+    },
+    {
+      "id": "UIX-007-T13",
+      "spec": "205-uix-007-split-preview-editor",
+      "feature": "UIX-007",
+      "line": 41,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B12",
+      "devices": [
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4)"
+    },
+    {
+      "id": "CMP-008-T19",
+      "spec": "207-cmp-008-gradient-masks",
+      "feature": "CMP-008",
+      "line": 53,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "bench-cmp008"
+      ],
+      "estimatedMinutes": 5,
+      "text": "CMP-008-T19 {device} GPU time of a full-screen gradient layer on D1 (Release automation build), recorded in docs/test-reports/gradient-masks.md (CMP-008-S5)"
+    },
+    {
+      "id": "PERF-012-T17",
+      "spec": "209-perf-012-performance-report",
+      "feature": "PERF-012",
+      "line": 41,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 6,
+      "text": "PERF-012-T17 {device} D1: export after a 1-minute session with the overlay shown; the file validates and shows plausible percentiles and counters (PERF-012-S5)"
+    },
+    {
+      "id": "REC-011-T16",
+      "spec": "210-rec-011-export-to-photos",
+      "feature": "REC-011",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-011-T16 {device} D1: record, Save to Photos, Allow → video in Photos, recording still offered; save a frame; turn Photos off for projectM in Settings → denied notice, file still offered (quickstart step 5)"
+    },
+    {
+      "id": "VIS-009-T10",
+      "spec": "211-vis-009-particle-orbit",
+      "feature": "VIS-009",
+      "line": 35,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-009-T10 {device} On D1 with music, choose Particle Orbit: ring swells on kicks, centre pulses on beats, Reduce Motion slower; the PERF-001/007 overlay shows the frame rate within budget (no more drops than the Mandala)."
+    },
+    {
+      "id": "REC-014-T15",
+      "spec": "215-rec-014-export-aspect-presets",
+      "feature": "REC-014",
+      "line": 40,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B08",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5)"
+    },
+    {
+      "id": "PERF-013-T12",
+      "spec": "216-perf-013-audio-render-sync",
+      "feature": "PERF-013",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B05",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "PERF-013-T12 {device} D1: native visual, microphone, overlay on 5 minutes: age line < 100 ms, no drift verdict; export the performance report and check `audioSync` (spec S5)"
+    },
+    {
+      "id": "CAM-004-T08",
+      "spec": "217-cam-004-exposure-lock",
+      "feature": "CAM-004",
+      "line": 50,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-004-T08 {device} On D1: quickstart \"Device\" steps 1-4 (real lock holds brightness, lens switch and visual change release it)"
+    },
+    {
+      "id": "SHD-003-T20",
+      "spec": "218-shd-003-shader-parameter-metadata",
+      "feature": "SHD-003",
+      "line": 50,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHD-003-T20 {device} On D1, open the seeded material layer and read the Material settings controls with VoiceOver"
+    },
+    {
+      "id": "CMP-009-T19",
+      "spec": "220-cmp-009-luma-key",
+      "feature": "CMP-009",
+      "line": 53,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "bench-cmp009"
+      ],
+      "estimatedMinutes": 5,
+      "text": "CMP-009-T19 {device} GPU time of a full-screen keyed layer on D1 (CMP-009-S5)"
+    },
+    {
+      "id": "PRE-005-T17",
+      "spec": "221-pre-005-energy-facets",
+      "feature": "PRE-005",
+      "line": 45,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PRE-005-T17 {device} Tune the provisional thresholds with a device sweep of real thumbnails (score distribution on D1); a threshold change needs no data migration"
+    },
+    {
+      "id": "QA-010-T12",
+      "spec": "223-qa-010-performance-thresholds",
+      "feature": "QA-010",
+      "line": 50,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "autorun-perf001",
+        "launches-sc015",
+        "thresholds"
+      ],
+      "estimatedMinutes": 15,
+      "text": "QA-010-T12 {device} Run `run_device_tests.py thresholds --device <D> --run --report <PERF-012 export>` on D1, D2 and D3 and record the verdicts in `docs/test-reports/performance.md` (QA-010-S4)"
+    },
+    {
+      "id": "REC-016-T13",
+      "spec": "226-rec-016-recording-interruption-recovery",
+      "feature": "REC-016",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B03",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "REC-016-T13 {device} On D1 record 30 s (normal finish plays, no `moof`), and a Debug run with `-uitestWriterFault writer:90` keeps a playable part; note CPU against REC-003"
+    },
+    {
+      "id": "CAM-005-T14",
+      "spec": "227-cam-005-focus-point",
+      "feature": "CAM-005",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-005-T14 {device} On D1: double-tap near and far objects on the back wide lens and the front camera (mirror on) and with Fit bars; focus follows the finger, bars do nothing; with VoiceOver, the \"Focus at centre\" action focuses and announces (T12)"
+    },
+    {
+      "id": "PERF-009-T16",
+      "spec": "229-perf-009-startup-warm-cache",
+      "feature": "PERF-009",
+      "line": 74,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "warmstart-perf009"
+      ],
+      "estimatedMinutes": 5,
+      "text": "PERF-009-T16 [US3] {device} Run `run_device_tests.py warmstart --device D1 --repeat 10` and record cold and warm medians in `docs/test-reports/performance.md` (PERF-009 section) — S5"
+    },
+    {
+      "id": "CMP-010-T19",
+      "spec": "230-cmp-010-color-key",
+      "feature": "CMP-010",
+      "line": 53,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "bench-cmp010"
+      ],
+      "estimatedMinutes": 5,
+      "text": "CMP-010-T19 {device} GPU time of a full-screen colour-keyed layer on D1 (CMP-010-S5)"
+    },
+    {
+      "id": "SHD-004-T20",
+      "spec": "231-shd-004-shader-variant-switching",
+      "feature": "SHD-004",
+      "line": 51,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "xctest-materials"
+      ],
+      "estimatedMinutes": 10,
+      "text": "SHD-004-T20 {device} On D3 (iPad A16, family 8) a Plasma layer with Detailed reports the unsupported notice and draws Standard; on D2 (M5) Detailed draws (Debug build; GPU test bundle on device)"
+    },
+    {
+      "id": "UIX-013-T12",
+      "spec": "233-uix-013-performance-hud",
+      "feature": "UIX-013",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "UIX-013-T12 {device} On D1 with Settings → Show HUD and the five-cue show: the four lines read correctly, a cue step updates them, and an external display or a recording shows no HUD (quickstart step 5)"
+    },
+    {
+      "id": "PRE-009-T13",
+      "spec": "235-pre-009-preset-comparison",
+      "feature": "PRE-009",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "PRE-009-T13 {device} [US3] S5 on D1: 60 s comparison with music, previews near their rate, thermal state not above fair, main visual resumes on Close; record in `docs/test-reports/performance.md`"
+    },
+    {
+      "id": "SHD-005-T13",
+      "spec": "236-shd-005-gradient-editor",
+      "feature": "SHD-005",
+      "line": 36,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHD-005-T13 {device} Look at a gradient palette with moved stops, alpha and Step on D1"
+    },
+    {
+      "id": "SHOW-006-T17",
+      "spec": "237-show-006-cue-rehearsal",
+      "feature": "SHOW-006",
+      "line": 42,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-006-T17 {device} On D1 with an external display: the projector and a recording do not change while rehearsing and editing; Save to Cue then stepping shows the new values"
+    },
+    {
+      "id": "ACC-007-T13",
+      "spec": "238-acc-007-haptic-beat-feedback",
+      "feature": "ACC-007",
+      "line": 36,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-007-T13 {device} On D1: Settings → Haptics on, Beats, In-App Playback music: taps on the beat; Kicks and Downbeats change them; Strict, Low Power Mode and the switch off give none (quickstart step 4)"
+    },
+    {
+      "id": "CAM-006-T09",
+      "spec": "239-cam-006-white-balance",
+      "feature": "CAM-006",
+      "line": 35,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-006-T09 [US2] {device} On D1, Camera visual under colored light: lock → colors hold, `whiteBalanceMode` locked; interrupt (Siri or a call) and return → still locked; switch lens → switch off; stop → automatic (quickstart step 4)"
+    },
+    {
+      "id": "REC-013-T14",
+      "spec": "240-rec-013-deterministic-offline-export",
+      "feature": "REC-013",
+      "line": 30,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "a",
+      "session": "MATRIX",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [
+        "xctest-offline-export"
+      ],
+      "estimatedMinutes": 5,
+      "text": "REC-013-T14 {device} On D1: export the fixture twice at Landscape 30 fps, compare the sidecars' `frameChecksums`, note render time and GPU name"
+    },
+    {
+      "id": "CAM-008-T16",
+      "spec": "241-cam-008-person-silhouette-mask",
+      "feature": "CAM-008",
+      "line": 32,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-008-T16 {device} D1: person masked in Person and Background, alignment through rotation/mirror/crop, ≥30 fps, mask space confirmed (quickstart)"
+    },
+    {
+      "id": "SHOW-007-T16",
+      "spec": "243-show-007-timeline-transport",
+      "feature": "SHOW-007",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-007-T16 {device} D1: scrub across cues during a running show on the projector; one look change per release; loop runs two passes"
+    },
+    {
+      "id": "ACC-009-T14",
+      "spec": "244-acc-009-one-handed-mode",
+      "feature": "ACC-009",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "ACC-009-T14 {device} On D1: Right and Left hand, portrait and landscape, with and without the pad: every critical action reached with the thumb of the holding hand (quickstart step 5)"
+    },
+    {
+      "id": "SHD-006-T14",
+      "spec": "245-shd-006-noise-editor",
+      "feature": "SHD-006",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHD-006-T14 {device} Look at the Noise editor preview on D1 (seed, octaves, warp)"
+    },
+    {
+      "id": "SHOW-008-T14",
+      "spec": "246-show-008-keyframe-tracks",
+      "feature": "SHOW-008",
+      "line": 40,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-008-T14 {device} D1: a glow ramp and a colour track across two cues on the projector; scrub to a keyframe time and see its value"
+    },
+    {
+      "id": "CAM-011-T15",
+      "spec": "247-cam-011-motion-sensor-modulation",
+      "feature": "CAM-011",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-011-T15 {device} On D1: bind a scene's glow to Tilt forward and Shake, Calibrate, tilt and shake; background the app and confirm the sensor stops"
+    },
+    {
+      "id": "ACC-010-T13",
+      "spec": "248-acc-010-left-handed-layout",
+      "feature": "ACC-010",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "ACC-010-T13 {device} On D1 (and D2 for iPad): quickstart \"Device\" steps 1-6 with the left hand"
+    },
+    {
+      "id": "SHD-012-T13",
+      "spec": "249-shd-012-authoring-preview-fixture",
+      "feature": "SHD-012",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHD-012-T13 {device} On D1: Settings › Noise editor › Play fixture; the loop plays smoothly, the warp follows the kicks, a second Play shows the same run digest"
+    },
+    {
+      "id": "MED-007-T16",
+      "spec": "251-med-007-ken-burns",
+      "feature": "MED-007",
+      "line": 47,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MED-007-T16 {device} On D1: a photo with Zoom in over 10 s moves smoothly and holds; a slideshow restarts the movement at each slide; Reduce Motion stops it"
+    },
+    {
+      "id": "VIS-013-T15",
+      "spec": "252-vis-013-noise-field",
+      "feature": "VIS-013",
+      "line": 30,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-013-T15 {device} On D1 with music, Noise Field holds the display's frame rate on the PERF-001/007 overlay."
+    },
+    {
+      "id": "SHOW-010-T12",
+      "spec": "254-show-010-beat-grid",
+      "feature": "SHOW-010",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-010-T12 {device} On D1, tap tempo with a 120 BPM track and play a timed show: ticks every half second, readout counts bars with the music"
+    },
+    {
+      "id": "OUT-003-T10",
+      "spec": "255-out-003-output-resolution",
+      "feature": "OUT-003",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-003-T10 {device} D1 with a real 4K display (quickstart B): composition identical at Native, 1080p, 720p and Custom 50 %; log shows the drawable sizes."
+    },
+    {
+      "id": "SHOW-013-T13",
+      "spec": "256-show-013-auto-scene-rotation",
+      "feature": "SHOW-013",
+      "line": 36,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-013-T13 {device} On D1: a show of 4+ scenes, 120 BPM tapped, Rotate scenes on, Bars 4: scenes change on the downbeat every 8 s, never repeating, a disabled scene never shows; Timer 15 s also rotates"
+    },
+    {
+      "id": "MED-008-T12",
+      "spec": "257-med-008-animated-images",
+      "feature": "MED-008",
+      "line": 41,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MED-008-T12 {device} D1: a large animated GIF from Photos plays smoothly for one minute within the memory budget; Reduce Motion holds frame 0"
+    },
+    {
+      "id": "OUT-005-T12",
+      "spec": "258-out-005-safe-area-guides",
+      "feature": "OUT-005",
+      "line": 41,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-005-T12 {device} D1 with a real external display (quickstart B): the phone shows the display-shaped guides, the display and a 10 s recording show none."
+    },
+    {
+      "id": "VIS-014-T12",
+      "spec": "259-vis-014-kaleidoscope-field",
+      "feature": "VIS-014",
+      "line": 27,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-014-T12 {device} On D1 with music, Kaleidoscope holds the display's frame rate on the PERF-001/007 overlay and shows no seam at 2, 7 and 24 wedges."
+    },
+    {
+      "id": "SHOW-015-T12",
+      "spec": "260-show-015-performance-lock",
+      "feature": "SHOW-015",
+      "line": 31,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-015-T12 {device} On D1: lock; swipe a cue and a collection (no Delete); tap the emergency blackout and restore; unlock with confirmation — docs/test-reports (owner run)"
+    },
+    {
+      "id": "OUT-006-T10",
+      "spec": "261-out-006-output-mirroring",
+      "feature": "OUT-006",
+      "line": 32,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-006-T10 {device} D1 with a real external display, a logo and the Photo visual: quickstart B (Clean hides the logo on the display at once, audio uninterrupted, disconnect restores it)"
+    },
+    {
+      "id": "MED-011-T13",
+      "spec": "262-med-011-clock-overlay",
+      "feature": "MED-011",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "MED-011-T13 {device} On D1 and D3: Show Clock on the Text and Photo visuals; the clock matches the status bar, changes at the minute, is readable; 12-hour with seconds updates each second; a REC-003 recording contains the clock"
+    },
+    {
+      "id": "VIS-015-T12",
+      "spec": "263-vis-015-tunnel-warp",
+      "feature": "VIS-015",
+      "line": 33,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-015-T12 {device} On D1 with music, Tunnel holds the display's frame rate on the PERF-001/007 overlay, and a tapped tempo speeds it up smoothly; Reset eases it back."
+    },
+    {
+      "id": "OUT-007-T12",
+      "spec": "264-out-007-corner-pin",
+      "feature": "OUT-007",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-007-T12 {device} D1 with a real projector: quickstart B (corners match the screen, straight lines straight, phone and recording unwarped, relaunch keeps it)"
+    },
+    {
+      "id": "MED-012-T14",
+      "spec": "265-med-012-countdown-overlay",
+      "feature": "MED-012",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B07",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MED-012-T14 {device} On D1: Text visual, Show Countdown, 0:10, Start: it reaches \"00:00\" once and holds, VoiceOver says \"Countdown finished\" once, and a recording contains the countdown"
+    },
+    {
+      "id": "MIDI-005-T14",
+      "spec": "266-midi-005-14-bit-controls",
+      "feature": "MIDI-005",
+      "line": 41,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-005-T14 `{device}` On D1 with a physical 14-bit controller (quickstart step 4): learn detects the pair and a slow move has no visible steps"
+    },
+    {
+      "id": "VIS-020-T12",
+      "spec": "267-vis-020-spectrum-waterfall",
+      "feature": "VIS-020",
+      "line": 33,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-020-T12 {device} On D1 with music, Spectrum Waterfall holds the display's frame rate on the PERF-001/007 overlay and falls steadily, newest at the top."
+    },
+    {
+      "id": "OUT-009-T14",
+      "spec": "268-out-009-output-color-calibration",
+      "feature": "OUT-009",
+      "line": 36,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-009-T14 {device} Quickstart step 4 on D1 with a real display or projector (OUT-009-S2, S4 on hardware)"
+    },
+    {
+      "id": "MIDI-009-T15",
+      "spec": "269-midi-009-midi-feedback",
+      "feature": "MIDI-009",
+      "line": 42,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-009-T15 `{device}` On D1 with a physical controller with motorised faders or LED rings (quickstart step 5): the ring or fader follows on-screen changes; moving the control causes no jitter or runaway messages"
+    },
+    {
+      "id": "CAM-009-T16",
+      "spec": "270-cam-009-face-landmark-emitters",
+      "feature": "CAM-009",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-009-T16 {device} On D1: a real face drives the sources, the badge and iOS's indicator show, the frame rate with tracking on stays within 5 % (quickstart)"
+    },
+    {
+      "id": "SHD-007-T13",
+      "spec": "271-shd-007-particle-emitter-editor",
+      "feature": "SHD-007",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHD-007-T13 {device} Look at a box-bounce emitter at rate 120 on D1: particles stay inside the box, frame rate steady"
+    },
+    {
+      "id": "VIS-010-T16",
+      "spec": "272-vis-010-particle-trails",
+      "feature": "VIS-010",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-010-T16 {device} (open: needs D1 and a person) D1: Particle Fountain and Particle Orbit with Trails Short/Long; streaks fade, frame rate unchanged within noise, no flashing with Reduce flashing"
+    },
+    {
+      "id": "MIDI-010-T12",
+      "spec": "273-midi-010-midi-clock-receive",
+      "feature": "MIDI-010",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B10",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "MIDI-010-T12 {device} On D1 with a hardware or app clock source at 120 and 174 BPM: turn on Follow MIDI clock; the readout shows the BPM within 0.1 and the beat grid follows Start; Stop falls back"
+    },
+    {
+      "id": "OSC-004-T14",
+      "spec": "274-osc-004-osc-learn",
+      "feature": "OSC-004",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-004-T14 {device} LAN controller on D1 (quickstart step 4)."
+    },
+    {
+      "id": "OUT-011-T12",
+      "spec": "275-out-011-output-diagnostics",
+      "feature": "OUT-011",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-011-T12 {device} On D1 with a real HDMI display: values against the display's specification; unplug with the panel open shows \"No external display connected\" at once; replug shows fresh values (quickstart B)"
+    },
+    {
+      "id": "CAM-010-T17",
+      "spec": "276-cam-010-hand-pose-modulation",
+      "feature": "CAM-010",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B03",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "CAM-010-T17 {device} D1: real hands drive the bound inner radius (DEBUG `-uitestBindCameraRadiusToPinch`), the badge and iOS's camera indicator show, frame rate with face and hand tracking on recorded"
+    },
+    {
+      "id": "OSC-005-T16",
+      "spec": "277-osc-005-osc-send",
+      "feature": "OSC-005",
+      "line": 43,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-005-T16 {device} LAN receiver on D1 (quickstart step 4)."
+    },
+    {
+      "id": "OSC-006-T11",
+      "spec": "278-osc-006-osc-bundles",
+      "feature": "OSC-006",
+      "line": 35,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-006-T11 {device} D1 with a LAN sender whose clock is network-synced: a bundle 500 ms ahead changes the test value about half a second later; one 30 s ahead never applies (quickstart step 3)."
+    },
+    {
+      "id": "SHD-008-T18",
+      "spec": "279-shd-008-vector-path-editor",
+      "feature": "SHD-008",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHD-008-T18 {device} On D1, draw a path mask and a path emitter; look at the mask edge and the spawn area"
+    },
+    {
+      "id": "VIS-011-T13",
+      "spec": "280-vis-011-fluid-ink",
+      "feature": "VIS-011",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-011-T13 {device} D1: Fluid Ink with music; ink follows onsets, frame rate holds on the PERF-001/007 overlay, no flashing with Reduce flashing on"
+    },
+    {
+      "id": "OUT-013-T12",
+      "spec": "281-out-013-frame-pacing",
+      "feature": "OUT-013",
+      "line": 38,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-013-T12 {device} D1 with a real external display (USB-C HDMI adapter) and a deliberately heavy preset at the display's native resolution: the device's controls and HUD stay smooth; the external drop counts rise (S5)"
+    },
+    {
+      "id": "OSC-010-T09",
+      "spec": "282-osc-010-osc-schema-export",
+      "feature": "OSC-010",
+      "line": 36,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OSC-010-T09 {device} D1: Settings › OSC › OSC Routes › Export routes… › Save to Files; the file lists every route on the screen, opens in Files, and holds no address or port (quickstart step 4)."
+    },
+    {
+      "id": "SHOW-009-T13",
+      "spec": "283-show-009-keyframe-easing",
+      "feature": "SHOW-009",
+      "line": 39,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-009-T13 {device} D1: a Glow Intensity track with four Cubic keys and one Hold key during a running show on the projector; the glow flows through the Cubic keys and cuts at the Hold key"
+    },
+    {
+      "id": "MED-005-T20",
+      "spec": "284-med-005-video-reverse-playback",
+      "feature": "MED-005",
+      "line": 51,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B13",
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 14,
+      "text": "MED-005-T20 {device} On D1 and D3: a 30 s 1080p clip reverses after preparation within the device class budget (Xcode memory gauge), and a 2-minute clip shows the 30-second message while playing forward"
+    },
+    {
+      "id": "SHOW-012-T14",
+      "spec": "285-show-012-cue-annotations",
+      "feature": "SHOW-012",
+      "line": 30,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "SHOW-012-T14 {device} On D1 with an external display: add a note, step to its cue; nothing of the note on the external display or in a short recording; VoiceOver reads it on the row (quickstart 6)"
+    },
+    {
+      "id": "VIS-012-T13",
+      "spec": "286-vis-012-reaction-diffusion",
+      "feature": "VIS-012",
+      "line": 37,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-012-T13 {device} D1: Reaction Diffusion with music; patterns grow per preset, bass plants growth, frame rate holds at Speed 16 on the PERF-001/007 overlay, no flashing on reloads with Reduce flashing on"
+    },
+    {
+      "id": "VIS-016-T13",
+      "spec": "287-vis-016-starfield-flight",
+      "feature": "VIS-016",
+      "line": 34,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-016-T13 {device} On D1 with music, Starfield at 2000 stars and Fast holds the display's frame rate on the PERF-001/007 overlay, and looks calm with Reduce Motion."
+    },
+    {
+      "id": "OUT-014-T13",
+      "spec": "288-out-014-output-profile-export",
+      "feature": "OUT-014",
+      "line": 40,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-014-T13 {device} On D1 with a projector: export, reset, import reproduces the pin and calibration with no warning; another display warns (quickstart B)"
+    },
+    {
+      "id": "OSC-011-T19",
+      "spec": "289-osc-011-local-peer-discovery",
+      "feature": "OSC-011",
+      "line": 46,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "OSC-011-T19 {device} Two devices on one Wi-Fi: B announces, A finds B with its local address within 10 s, \"Use as send destination\" + Send OSC reaches B; turning A's switch off empties the list (quickstart step 5)"
+    },
+    {
+      "id": "UIX-006-T14",
+      "spec": "290-uix-006-touch-gesture-mapping",
+      "feature": "UIX-006",
+      "line": 30,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B02",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "UIX-006-T14 {device} On D1 and D2: quickstart device steps 1-6 (S6)"
+    },
+    {
+      "id": "OSC-012-T22",
+      "spec": "291-osc-012-peer-cue-sync",
+      "feature": "OSC-012",
+      "line": 49,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "OSC-012-T22 {device} Two devices on one Wi-Fi follow quickstart \"Two devices\": B follows A's cues and recovers after a 10 s Wi-Fi outage within about 2 s"
+    },
+    {
+      "id": "FX-005-T14",
+      "spec": "292-fx-005-contrast-curves",
+      "feature": "FX-005",
+      "line": 72,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-005-T14 {device} On D1: Photo visual with S-curve and Filmic at 100%; frame rate unchanged within noise (FX-005-S7)."
+    },
+    {
+      "id": "FX-006-T18",
+      "spec": "293-fx-006-chromatic-split",
+      "feature": "FX-006",
+      "line": 72,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-006-T18 {device} On D1: Photo visual, split at 2% and radial, fringes look right, frame rate recorded (FX-006-S7)"
+    },
+    {
+      "id": "UIX-008-T16",
+      "spec": "294-uix-008-multiwindow-document-editing",
+      "feature": "UIX-008",
+      "line": 77,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "UIX-008-T16 {device} D2 (iPadOS 27.2) and D3 (iPadOS 26.5) with Stage Manager: two editor windows beside the main window; edit and save each; the live output never changes; the external display still follows the main window."
+    },
+    {
+      "id": "FX-007-T17",
+      "spec": "295-fx-007-directional-blur",
+      "feature": "FX-007",
+      "line": 79,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-007-T17 {device} On D1 open Photo, turn on Directional blur at 2% and 45°: the streak looks right and the frame rate stays at the visual's normal rate (FX-007-S8)"
+    },
+    {
+      "id": "FX-008-T18",
+      "spec": "296-fx-008-radial-blur",
+      "feature": "FX-008",
+      "line": 73,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-008-T18 {device} On D1: Photo visual, Radial blur at 25% with the focus centred and moved, streaks radiate from the focus, frame rate with and without recorded (FX-008-S7)"
+    },
+    {
+      "id": "FX-010-T17",
+      "spec": "297-fx-010-echo-feedback",
+      "feature": "FX-010",
+      "line": 79,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-010-T17 {device} On D1 open Camera, turn on Echo with 4 echoes at 200 ms, wave a hand: four fading copies trail it and the frame rate stays at the visual's normal rate (FX-010-S7)"
+    },
+    {
+      "id": "UIX-010-T10",
+      "spec": "298-uix-010-batch-parameter-reset",
+      "feature": "UIX-010",
+      "line": 28,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "UIX-010-T10 {device} On D1 with VoiceOver: each row reads as a toggle with its state, the reset button reads its count, and \"Reset 2 parameters\" is announced after a reset"
+    },
+    {
+      "id": "FX-012-T18",
+      "spec": "299-fx-012-mosaic-pixelation",
+      "feature": "FX-012",
+      "line": 75,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-012-T18 {device} On D1: Photo visual, Mosaic at 8 and 64 in both shapes, blocks flat and discrete, frame rate with and without recorded (FX-012-S7)"
+    },
+    {
+      "id": "UIX-012-T13",
+      "spec": "300-uix-012-touch-color-sampler",
+      "feature": "UIX-012",
+      "line": 28,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B12",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear \"<name> set to …\" and cancel with the escape gesture; on D2 sample in the split editor"
+    },
+    {
+      "id": "FX-013-T14",
+      "spec": "301-fx-013-posterization",
+      "feature": "FX-013",
+      "line": 75,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-013-T14 {device} On D1: a compositor-backed visual with Posterize at 6 levels and Dither on; frame rate within 1 fps of off; bands visible, no shimmer on a still picture."
+    },
+    {
+      "id": "UIX-014-T12",
+      "spec": "302-uix-014-offline-help-browser",
+      "feature": "UIX-014",
+      "line": 33,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B09",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "UIX-014-T12 {device} On D1 with Airplane Mode on (Wi-Fi off): Settings › Help, open all eleven articles; each shows its title and text at once (S1, roadmap acceptance)"
+    },
+    {
+      "id": "FX-014-T18",
+      "spec": "303-fx-014-edge-outline",
+      "feature": "FX-014",
+      "line": 79,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-014-T18 {device} On D1: Camera visual, Edge outline at threshold 0.2, widths 1 and 3, both modes: outlines follow edges, flat areas clean; frame rate with and without recorded (FX-014-S7)"
+    },
+    {
+      "id": "VIS-017-T13",
+      "spec": "304-vis-017-signed-distance-primitives",
+      "feature": "VIS-017",
+      "line": 31,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-017-T13 {device} On D1 with music, SDF Shapes at each quality: frame rate on the PERF-001/007 overlay, look, Reduce Motion calm; binary archive hit on second launch (PERF-009)."
+    },
+    {
+      "id": "FX-015-T15",
+      "spec": "305-fx-015-vignette",
+      "feature": "FX-015",
+      "line": 74,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-015-T15 {device} On D1, Photo visual: Vignette at intensity 100 % with softness 10 % and 90 % and the centre moved: edges darken smoothly and the middle is unchanged; frame rate with and without it (FX-015-S7)"
+    },
+    {
+      "id": "FX-016-T17",
+      "spec": "306-fx-016-lens-distortion",
+      "feature": "FX-016",
+      "line": 79,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B06",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-016-T17 {device} On D1: Camera visual, Lens distortion at +100 % and −100 %, zoom on and off: bulge and pinch, corners show picture (black only at barrel with zoom off), no sparkles; frame rate with and without recorded (FX-016-S8)"
+    },
+    {
+      "id": "VIS-018-T14",
+      "spec": "307-vis-018-geometric-tessellation",
+      "feature": "VIS-018",
+      "line": 32,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1",
+        "D2"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 10,
+      "text": "VIS-018-T14 {device} On D1, D2 and an external display: Tessellation at N 2 → 16 in portrait and landscape: centre fixed, seams straight; frame rate on the PERF-001/007 overlay; Reduce Motion calm."
+    },
+    {
+      "id": "VIS-019-T13",
+      "spec": "308-vis-019-cymatic-line-patterns",
+      "feature": "VIS-019",
+      "line": 31,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B04",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "VIS-019-T13 {device} On D1: a test-tone sweep and music for 30 s each; frame rate on the overlay; tones change the figure, silence returns it to the cross within about 1 s; Reduce Motion calmer; device GPU golden look."
+    },
+    {
+      "id": "OUT-008-T15",
+      "spec": "309-out-008-grid-warp",
+      "feature": "OUT-008",
+      "line": 72,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "OUT-008-T15 {device} D1 with a projector on a curved surface: guides aligned with a 5 × 5 grid, identity shows no change, a recording made meanwhile is unwarped, a native spectrum shown unwarped (last stage)."
+    },
+    {
+      "id": "FX-011-T16",
+      "spec": "310-fx-011-pixel-sorting",
+      "feature": "FX-011",
+      "line": 74,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B11",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-011-T16 {device} GPU frame time with Pixel sort on (span 32 and 64, both directions) on D1, and on a 4K external display if available (FX-011-S8)"
+    },
+    {
+      "id": "FX-017-T17",
+      "spec": "311-fx-017-film-grain",
+      "feature": "FX-017",
+      "line": 83,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-017-T17 {device} On D1: Photo visual, Film grain at 100 %, sizes 1-3, colour and monochrome, Vary over time on (gentle, no strobing) and with Reduce Motion on (still); frame rate with and without recorded (FX-017-S7)"
+    },
+    {
+      "id": "FX-018-T16",
+      "spec": "312-fx-018-scanline-texture",
+      "feature": "FX-018",
+      "line": 78,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 5,
+      "text": "FX-018-T16 {device} On D1, Photo visual: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations: even lines, no crawl or flicker; frame rate with and without it (FX-018-S6)"
+    }
+  ]
+}
