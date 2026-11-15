@@ -103,6 +103,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.echo.enabled", "settings.echo.count", "settings.echo.delay",   # FX-010-R13
                 "settings.echo.decay",
                 "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   # FX-012-R9
+                "settings.edgeOutline.enabled", "settings.edgeOutline.threshold",   # FX-014-R10
+                "settings.edgeOutline.width", "settings.edgeOutline.color", "settings.edgeOutline.mode",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11

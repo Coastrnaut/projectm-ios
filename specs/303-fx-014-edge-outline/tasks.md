@@ -54,28 +54,28 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 5: App (US1, US3)
 
-- [ ] FX-014-T11 [US1] `EdgeOutlineSetting` (five keys) in `Apps/projectM-iOS/Coordinators/EdgeOutlineSetting.swift`
+- [X] FX-014-T11 [US1] `EdgeOutlineSetting` (five keys) in `Apps/projectM-iOS/Coordinators/EdgeOutlineSetting.swift`
   and `AppCoordinator+EdgeOutline.swift` (effective value under the safety clamp); wire into `AppCoordinator.swift`
   (init, the four compositor creations, the safety-clamp re-apply, scene apply, reset), `+SceneHistory`, `+EffectChain`,
-  `SceneAutosaveCapture.applyEffects` (FX-014-R1, R10, R15)
-- [ ] FX-014-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005
+  `SceneAutosaveCapture.applyEffects` (FX-014-R1, R10, R15) — Verified 2026-11-15: app unit tests 1344/1344 on the own simulator (EdgeOutlineSettingTests 5/5, incl. the host compositor push and the ACC-012 colour scale)
+- [X] FX-014-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005
   `LibrarySettingsPolicy.includedKeys`, the UI-test reset, `LibraryBackupAppTests` and `LibraryEraseAppTests`
-  `appKeys` (FX-014-R10)
-- [ ] FX-014-T13 [US1] `EdgeOutlineSection` (toggle, ACC-005 Threshold slider, Width and Mode pickers, ColorPicker,
+  `appKeys` (FX-014-R10) — Verified 2026-11-15: LibraryBackupAppTests, LibraryEraseAppTests, EdgeOutlineSettingTests.testEdgeOutlineKeysAreBackedUpErasedAndNamed, SettingsTests pass; test_scripts 186 OK
+- [X] FX-014-T13 [US1] `EdgeOutlineSection` (toggle, ACC-005 Threshold slider, Width and Mode pickers, ColorPicker,
   help) in `Apps/projectM-iOS/Views/EdgeOutlineSection.swift`, one line in `SettingsView.swift`, the section ID in
   `UITestSettingsSection.swift`; Effect order row and name in `EffectChainView.swift`/`EffectChainSetting.swift`
-  (FX-014-R9)
-- [ ] FX-014-T14 [US1] App tests `EdgeOutlineSettingTests` (persistence, clamp, slider, keys, scene/preset round trip,
+  (FX-014-R9) — Verified 2026-11-15: EdgeOutlineUITests and EffectChainUITests pass on the own simulator
+- [X] FX-014-T14 [US1] App tests `EdgeOutlineSettingTests` (persistence, clamp, slider, keys, scene/preset round trip,
   compositor push, ACC-012 cap) and the whole-order updates in `EffectChainSettingTests` and the other effect setting
-  tests; `SettingsTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` pass
-- [ ] FX-014-T15 [US1] UI test `EdgeOutlineUITests` (find, turn on, move Threshold, choose Outline only) under 30 s
-  (FX-014-S6)
+  tests; `SettingsTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` pass — Verified 2026-11-15: EdgeOutlineSettingTests 5/5, EffectChainSettingTests, Chromatic/Directional/Radial/Echo/Mosaic setting tests, SettingsTests, LibraryBackupAppTests, LibraryEraseAppTests pass (full app suite 1344)
+- [X] FX-014-T15 [US1] UI test `EdgeOutlineUITests` (find, turn on, move Threshold, choose Outline only) under 30 s
+  (FX-014-S6) — Verified 2026-11-15: EdgeOutlineUITests 1/1 (20.7 s)
 
 ## Phase 6: Polish
 
-- [ ] FX-014-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
-  privacy manifest and network symbols on the Debug app, type-check budget
-- [ ] FX-014-T17 Test report in `docs/test-reports/edge-outline.md`; spec status
+- [X] FX-014-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
+  privacy manifest and network symbols on the Debug app, type-check budget — Verified 2026-11-15: compliance, docs, motion policy, permission catalog, status events OK; 186 script tests; privacy manifest and network symbols OK on the Debug app; no type-check warning in the new files
+- [X] FX-014-T17 Test report in `docs/test-reports/edge-outline.md`; spec status — Verified 2026-11-15: docs/test-reports/edge-outline.md
 - [ ] FX-014-T18 {device} On D1: Camera visual, Edge outline at threshold 0.2, widths 1 and 3, both modes: outlines
   follow edges, flat areas clean; frame rate with and without recorded (FX-014-S7)
 
