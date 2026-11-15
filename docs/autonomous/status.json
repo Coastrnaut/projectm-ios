@@ -6,9 +6,8 @@
  },
  "by_priority": {
   "P0": {
-   "audited": 1,
    "awaiting_final_device": 1,
-   "integrated": 84,
+   "integrated": 85,
    "skipped_existing": 1
   },
   "P1": {
@@ -22,23 +21,22 @@
   }
  },
  "by_state": {
-  "audited": 1,
   "awaiting_final_device": 1,
-  "integrated": 323,
+  "integrated": 324,
   "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
-  "device_prerequisites": [],
-  "implementation_complete": false,
-  "infeasible": [],
-  "pending": [
-   "QA-012"
+  "device_prerequisites": [
+   "D1: not visible to devicectl; connect it, unlock it and trust this Mac",
+   "D2: not visible to devicectl; connect it, unlock it and trust this Mac",
+   "D3: not visible to devicectl; connect it, unlock it and trust this Mac"
   ],
-  "phase": "implementation",
-  "reasons": [
-   "1 features are not implemented yet (first: QA-012)"
-  ]
+  "implementation_complete": true,
+  "infeasible": [],
+  "pending": [],
+  "phase": "awaiting_final_device",
+  "reasons": []
  },
  "features": {
   "ACC-001": {
@@ -2362,14 +2360,14 @@
    "state": "awaiting_final_device"
   },
   "QA-012": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
+   "attempts": 1,
+   "branch": "feature/qa-012",
+   "branch_sha": "f5658e2d",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "70a832aa",
    "priority": "P0",
    "spec_dir": null,
-   "state": "audited"
+   "state": "integrated"
   },
   "REC-001": {
    "attempts": 0,
@@ -4454,6 +4452,11 @@
    "sha": "695a13a2"
   },
   {
+   "branch": "feature/qa-012",
+   "id": "QA-012",
+   "sha": "70a832aa"
+  },
+  {
    "branch": "feature/rec-001",
    "id": "REC-001",
    "sha": "5666cc2332ffd383299f9f9dc306a5f3d21c9ab9"
@@ -4944,5 +4947,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T17:58:24Z"
+ "updated": "2026-11-15T18:05:49Z"
 }

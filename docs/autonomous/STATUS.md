@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T17:58:24Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T18:05:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,24 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 1 |
-| integrated | 323 |
+| integrated | 324 |
 | awaiting_final_device | 1 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | integrated | awaiting_final_device | skipped_existing |
-|---|---|---|---|---|
-| P0 | 1 | 84 | 1 | 1 |
-| P1 | 0 | 151 | 0 | 0 |
-| P2 | 0 | 79 | 0 | 0 |
-| P3 | 0 | 9 | 0 | 0 |
+| Priority | integrated | awaiting_final_device | skipped_existing |
+|---|---|---|---|
+| P0 | 85 | 1 | 1 |
+| P1 | 151 | 0 | 0 |
+| P2 | 79 | 0 | 0 |
+| P3 | 9 | 0 | 0 |
 
 ## Final device gate
 
-The physical-device suite may **not** start:
-- 1 features are not implemented yet (first: QA-012)
+Implementation is complete. Device prerequisites:
+- D1: not visible to devicectl; connect it, unlock it and trust this Mac
+- D2: not visible to devicectl; connect it, unlock it and trust this Mac
+- D3: not visible to devicectl; connect it, unlock it and trust this Mac
 
 ## Integrated
 
@@ -262,6 +263,7 @@ The physical-device suite may **not** start:
 | QA-008 | Recording validation suite | `2a986abd` | `None` |
 | QA-009 | Accessibility snapshot suite | `5995f52e` | `feature/qa-009` |
 | QA-010 | Performance budget thresholds | `695a13a2` | `feature/qa-010` |
+| QA-012 | Release evidence manifest | `70a832aa` | `feature/qa-012` |
 | REC-001 | Still frame capture | `5666cc2332ff` | `feature/rec-001` |
 | REC-002 | Image batch export | `a6c0a5ef` | `feature/rec-002` |
 | REC-003 | Video recording | `bf82b49836a5` | `feature/rec-003` |
@@ -3034,6 +3036,12 @@ None.
 - `python3 scripts/test_scripts.py`: pass at `f0d86e8b32d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-011/20261115T125718/script-tests.log`)
 - `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `f0d86e8b32d4` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-011/20261115T125718/autonomous-tests.log`)
 - `test_scripts 205 OK; check_compliance OK; validate_docs OK; qa011_inventory --check OK; simulator rehearsal (not evidence) 13/15 with benches after fix`: pass at `fac83d5d`
+
+### QA-012 Release evidence manifest (integrated)
+- `python3 scripts/check_compliance.py`: pass at `f5658e2d8ee9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-012/20261115T130236/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `f5658e2d8ee9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-012/20261115T130236/docs.log`)
+- `python3 scripts/test_scripts.py`: exit 1 at `f5658e2d8ee9` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/QA-012/20261115T130236/script-tests.log`)
+- `test_scripts 210 OK; check_compliance OK; validate_docs OK; release_manifest trial build + verify OK`: pass at `70a832aa`
 
 ### REC-001 Still frame capture (integrated)
 - `python3 scripts/check_compliance.py`: pass at `08830385f564` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/REC-001/20261113T142938/compliance.log`)
