@@ -61,6 +61,27 @@ answer is the conservative option.
   the split fades to zero toward the frame border, so the outermost ring of pixels is shown unchanged and no colour
   from outside the picture (or wrapped from the opposite side) appears. Applied to FX-006-R4, S2.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Should the split also shrink at high-contrast edges inside the picture to avoid harsh fringes? → A: No, not in
+  this row: the fringes at contrast edges are the look users choose the effect for, the amount is capped at 2% of
+  the shorter side, and the frame-edge fade already removes the only out-of-picture artefact. "Edge-aware" in this
+  row means the frame-border rule (FX-006-R4). Applied to the Assumptions.
+- Q: Do the sensory safety profile or Reduce flashing limit the split? → A: No cap: the split only moves existing
+  colour (each output channel value is a filtered input value of the same channel), so it adds no brightness and no
+  flashing by itself; the flash guard still judges the shown frame. Applied to the Assumptions and FX-006-R7.
+- Q: Is the split a global setting or a per-scene value? → A: Both, like Trails: a global setting the visuals use,
+  which a scene or effect-chain preset with an `fx.chromatic` entry overwrites when opened; a scene without one
+  leaves it alone (FX-020's rule). Applied to FX-006-R9, R10.
+- Q: What slider steps are used? → A: Amount 0…2% with a 0.1% VoiceOver step (20 steps); Angle 0…360° with a 15°
+  VoiceOver step; 360° is the same direction as 0°. Applied to FX-006-R3, R8.
+- Q: How are fractional distances sampled, and how exact are whole-pixel distances? → A: Filtered between the four
+  nearest pixels (smooth when the amount moves); a weight of exactly zero never mixes in the neighbour, so a
+  whole-pixel distance copies values exactly and a pixel with a zero split vector is passed through bit for bit.
+  Applied to FX-006-R2, R5, S3.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Colour fringes on the picture (Priority: P1)
@@ -146,10 +167,11 @@ effect-chain preset, and gets the same split back when the scene or preset is op
 - **FX-006-R2**: With the split active, each output pixel takes its green (and the rest of its own value) from its
   own position, its red from the position offset by −v and its blue from the position offset by +v, where v is the
   split vector; red therefore appears moved by +v and blue by −v. Fractional positions are filtered between the four
-  nearest pixels.
+  nearest pixels; a filter weight of exactly zero never mixes in the neighbour.
 - **FX-006-R3**: The split vector is Amount × the frame's shorter side, in the direction of Angle (0° = red moves
   right, 90° = red moves up), or, with Radial on, along the line from the centre with a length growing linearly to
-  Amount at the corners. Amount is 0…2% of the shorter side (default 0.5%); Angle 0…360° (default 0°).
+  Amount at the corners. Amount is 0…2% of the shorter side (default 0.5%, VoiceOver step 0.1%); Angle 0…360° (default 0°, VoiceOver
+  step 15°; 360° equals 0°).
 - **FX-006-R4**: Edge rule: the split vector at a pixel is scaled by min(1, distance to the nearest border ÷ the
   amount in pixels); every sample position is additionally clamped to the frame. The outermost pixel ring is
   therefore unchanged and no sample lies outside the frame.
