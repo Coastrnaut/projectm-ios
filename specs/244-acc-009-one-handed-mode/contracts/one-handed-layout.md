@@ -7,6 +7,7 @@
 - the pad group (in `CriticalAction.allCases` order) is laid first at `padTarget ?? base`, then the main group at `base`, rows from the zone's bottom upward, each aligned to the chosen edge, reading order inside a row;
 - if the stack is taller than the zone, `base` shrinks by 4 pt down to 44; `fits` reports whether every frame lies in the zone;
 - `reservedInsets`: portrait-shaped → bottom = height − (top of the highest row − margin); landscape-shaped → the chosen side = width − the farthest frame edge + margin; zero when no action is placed;
+- `readoutHeight` (pad on, portrait-shaped): the band grows by it plus spacing; `asideRect` is the readout strip (portrait: above the cluster across the zone's width; landscape: the band above the zone); it never meets a target;
 - `OneHandedLayout.baseTarget(scaled:)` clamps to 44…56.
 
 ## C2 Action sets
@@ -18,4 +19,5 @@
 
 - Settings → Performance, after Show HUD, iPhone only: "One-handed layout" rows Off / Left hand / Right hand (`oneHanded.off`, `oneHanded.left`, `oneHanded.right`, selected row has the `.isSelected` trait); footer. `-uitestSettingsSection oneHanded` anchors it.
 - Active: the card leaves out the moved actions; `OneHandedControlsLayer` (identifier `oneHandedControls`) draws them with the standard identifiers; with the pad on, the pad's targets keep `perf*` and the B key.
+- Both layers size the layout from their own layout-space size (`proxy.size`), not the global frame: a sheet's presentation transform left the global frame stale after Settings closed (cluster 88 pt low in a UI test).
 - DEBUG `-uitestDiagnostics`: the layer exposes `oneHandedZone` with value "x,y,w,h" (window coordinates) for the UI tests.
