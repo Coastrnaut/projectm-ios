@@ -673,6 +673,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         OSCSendCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-005: Send OSC off, no destination
         OSCDiscoveryCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-011: discovery off
+        OSCCueSyncCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-012: cue sync off
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -767,6 +768,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings.applyValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.midi, values) }   // MIDI-003-R8
         connectMIDIFeedback()   // MIDI-009
         osc.applyLiveValues = { [weak self] (values: [ParameterID: Double]) -> Void in self?.pushLiveValues(.osc, values) }   // OSC-003-R5
+        osc.cueSync = OSCCueSyncCoordinator(osc: osc, show: show, defaults: defaults)   // OSC-012 (after connectShow: chains cueStarted)
         #if DEBUG
         UITestShowFixture.seedIfRequested(self)   // SHOW-001: ShowCueUITests
         #endif

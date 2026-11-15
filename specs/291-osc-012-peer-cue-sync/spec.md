@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented (OSC-012-T22 {device} open)
 
 **Input**: User description: "Implement roadmap row OSC-012 (Peer cue sync) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Synchronize cue ID and monotonic offset between user-approved local peers."
@@ -119,7 +119,7 @@ leader is applied on the follower; with real UDP on 127.0.0.1 the same holds thr
 - **OSC-012-R7**: A follower MUST apply only a message newer than the last accepted (same session and greater seq, or a different session); older and duplicate messages are ignored. Malformed messages (types other than `s i i i`, a cue ID empty or over 64 bytes, a negative seq or offset) are ignored and counted.
 - **OSC-012-R8**: A follower MUST go to the received cue at once through SHOW-001's step path (not quantized), unless already on it, and MUST record the cue's start as its own monotonic receipt time minus the offset.
 - **OSC-012-R9**: A cue ID that the follower's show does not have MUST be reported and counted, never applied.
-- **OSC-012-R10**: While following is active (Follow chosen, the allow list on and the OSC receiver listening) the follower's timed advance MUST be held.
+- **OSC-012-R10**: While following is active (Follow chosen, the OSC receiver switch on and the allow list on) the follower's timed advance MUST be held.
 - **OSC-012-R11**: Cue sync MUST NOT change settings, edit or delete show material or files, or turn any switch on; the scene/performance lock MUST NOT block following.
 - **OSC-012-R12**: The role MUST be stored on this device only (excluded from backup, removed by the Settings erase and the UI-test reset); all other sync state MUST stay in memory.
 - **OSC-012-R13**: Traffic MUST NOT schedule main-thread work per message (OSC-009-R11): received cue messages are coalesced into a bounded inbox with at most one pending hop.

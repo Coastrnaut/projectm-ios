@@ -923,6 +923,10 @@ struct SettingsView: View {
                 NavigationLink { OSCDiscoveryView(discovery: discovery) } label: { LabeledContent("Nearby Devices", value: discovery.browseSummaryText) }
                     .accessibilityIdentifier("oscDiscoveryLink")
             }
+            if let cueSync = osc.cueSync {   // OSC-012-R1
+                NavigationLink { OSCCueSyncView(cueSync: cueSync) } label: { LabeledContent("Cue Sync", value: cueSync.summaryText) }
+                    .accessibilityIdentifier("oscCueSyncLink")
+            }
         } header: {
             Text("OSC")
         } footer: {
