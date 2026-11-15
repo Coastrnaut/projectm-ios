@@ -43,6 +43,8 @@ struct ShowLook: Equatable, Sendable {
     var kenBurns: KenBurnsMotion? = nil
     /// MED-010-R10: the logo and its placement (nil: none).
     var logo: SceneLogo? = nil
+    /// MED-012-R8: the countdown the cue starts, in seconds (nil: none; recorded while Start From New Cues is on).
+    var countdownSeconds: Int? = nil
 }
 
 /// What applying a scene sets (contract S4).
@@ -64,6 +66,8 @@ struct ShowSceneApply: Equatable, Sendable {
     var slideshow: SceneSlideshowRestore? = nil
     /// MED-010-R10: the scene's logo (nil: the scene records none; the current logo stays).
     var logo: SceneLogo? = nil
+    /// MED-012-R8: the countdown a cue applying this scene starts (nil: none; the countdown is left alone).
+    var countdownSeconds: Int? = nil
 }
 
 /// SHOW-006: a cue's stored scene read for rehearsal (never applied).
@@ -94,7 +98,7 @@ enum ShowSceneSnapshot {
         var contents: [SceneLayerContent] = []
         var assets: [String: SceneAsset] = [:]
         switch look.visual {
-        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel:
+        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel, .spectrumWaterfall:
             break   // camera never reaches here (recordedVisual); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) the radial waveform (VIS-005-R10) beat rings (VIS-006-R10) the mandala (VIS-007-R10) the particle fountain (VIS-008-R11) and the particle orbit (VIS-009-R11) are no compositor layer
         case .circularSpectrum:
             contents = [.circularSpectrum]
@@ -127,7 +131,9 @@ enum ShowSceneSnapshot {
             instance += 1
             return SceneLayer(instance: instance, content: content)
         }
-        return SceneDocument(id: id, name: name, layers: layers, parameters: parameterValues(look), assets: assets)
+        var document = SceneDocument(id: id, name: name, layers: layers, parameters: parameterValues(look), assets: assets)
+        document.countdownSeconds = look.countdownSeconds   // MED-012-R8
+        return document
     }
 
     static func parameterValues(_ look: ShowLook) -> [ParameterID: ParameterValue] {
@@ -186,7 +192,8 @@ enum ShowSceneSnapshot {
         return ShowSceneApply(visual: visual, parameters: parameters, text: text, omittedKinds: omitted, missingMedia: missingMedia,
                               videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
                               slideshow: SceneSlideshowBridge.restore(in: document),   // MED-006
-                              logo: document.logo)   // MED-010
+                              logo: document.logo,   // MED-010
+                              countdownSeconds: document.countdownSeconds)   // MED-012
     }
 
     // MARK: JSON

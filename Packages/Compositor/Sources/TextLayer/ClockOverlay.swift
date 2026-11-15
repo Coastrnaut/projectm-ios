@@ -78,10 +78,29 @@ public final class ClockFormatter {
     public func string(for date: Date) -> String { formatter.string(from: date) }
 }
 
+/// An overlay's string, reported only when it changes (MED-011 contract C2; shared with MED-012's countdown). The
+/// text layer is given a new spec only for a reported string, so it rasterizes once per change.
+public struct ChangedText: Equatable, Sendable {
+    public private(set) var current: String?
+
+    public init() {}
+
+    /// `next` when it differs from the last string reported; nil otherwise.
+    public mutating func report(_ next: String) -> String? {
+        guard next != current else { return nil }
+        current = next
+        return next
+    }
+
+    /// Forgets the last string, so the next one is always reported (a new style or format).
+    public mutating func clear() { current = nil }
+}
+
 /// The clock's string, reported only when it changes (contract C2).
 public final class ClockText {
     public let formatter: ClockFormatter
-    public private(set) var current: String?
+    private var text = ChangedText()
+    public var current: String? { text.current }
 
     public init(formatter: ClockFormatter) {
         self.formatter = formatter
@@ -90,10 +109,7 @@ public final class ClockText {
     /// The string for `date` in `timeZone` when it differs from the last one reported; nil otherwise.
     public func update(at date: Date, timeZone: TimeZone) -> String? {
         formatter.timeZone = timeZone
-        let next = formatter.string(for: date)
-        guard next != current else { return nil }
-        current = next
-        return next
+        return text.report(formatter.string(for: date))
     }
 }
 
@@ -144,21 +160,44 @@ public struct ClockOverlaySettings: Equatable, Sendable {
     }
 }
 
-/// What a stored value reads as.
-public enum ClockOverlayDecodeResult: Equatable, Sendable {
-    case settings(ClockOverlaySettings)
+/// What a stored overlay setting reads as (MED-011, shared with MED-012).
+public enum StoredOverlayDecodeResult<Settings: Sendable>: Sendable {
+    case settings(Settings)
     /// Written by a newer app version: not used, left untouched.
     case unsupportedVersion(Int)
     /// Not readable: the defaults are used and the app removes the value.
     case damaged
 }
 
+extension StoredOverlayDecodeResult: Equatable where Settings: Equatable {}
+
+public enum StoredOverlayCodec {
+    private struct VersionProbe: Decodable { let version: Int }
+
+    /// JSON with sorted keys (the value writes its own `"version"`).
+    public static func encode<S: Encodable>(_ value: S) -> Data {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        return (try? encoder.encode(value)) ?? Data()
+    }
+
+    /// Reads `data` written with `"version": currentVersion`.
+    public static func decode<S: Decodable & Sendable>(_ type: S.Type, from data: Data, currentVersion: Int) -> StoredOverlayDecodeResult<S> {
+        let decoder = JSONDecoder()
+        guard let probe = try? decoder.decode(VersionProbe.self, from: data) else { return .damaged }
+        guard probe.version == currentVersion else { return .unsupportedVersion(probe.version) }
+        guard let value = try? decoder.decode(S.self, from: data) else { return .damaged }
+        return .settings(value)
+    }
+}
+
+/// What a stored clock value reads as.
+public typealias ClockOverlayDecodeResult = StoredOverlayDecodeResult<ClockOverlaySettings>
+
 extension ClockOverlaySettings: Codable {
     enum CodingKeys: String, CodingKey {
         case version, isShown, hourCycle, showsSeconds, style
     }
-
-    private struct VersionProbe: Decodable { let version: Int }
 
     public func encode(to encoder: any Encoder) throws {
         var c = encoder.container(keyedBy: CodingKeys.self)
@@ -181,17 +220,9 @@ extension ClockOverlaySettings: Codable {
     }
 
     /// JSON with sorted keys and `"version": 1`.
-    public func encodedForStorage() -> Data {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys]
-        return (try? encoder.encode(self)) ?? Data()
-    }
+    public func encodedForStorage() -> Data { StoredOverlayCodec.encode(self) }
 
     public static func decodeStored(_ data: Data) -> ClockOverlayDecodeResult {
-        let decoder = JSONDecoder()
-        guard let probe = try? decoder.decode(VersionProbe.self, from: data) else { return .damaged }
-        guard probe.version == currentVersion else { return .unsupportedVersion(probe.version) }
-        guard let settings = try? decoder.decode(ClockOverlaySettings.self, from: data) else { return .damaged }
-        return .settings(settings)
+        StoredOverlayCodec.decode(ClockOverlaySettings.self, from: data, currentVersion: currentVersion)
     }
 }

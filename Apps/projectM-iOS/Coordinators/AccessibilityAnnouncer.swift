@@ -35,6 +35,8 @@ enum AnnouncementKind: String, CaseIterable, Sendable {
     case safety
     /// OUT-002-R6: an external display connected or disconnected (its own lane, never the blackout's).
     case display
+    /// MED-012-R4: the countdown overlay reached zero (once per run).
+    case countdown
 }
 
 struct AnnouncementGate: Sendable, Equatable {
