@@ -17,7 +17,8 @@ final class OutputGradePass {
     // FX-020: the composite graded (no tone map; FX-002 runs in the output pass).
     fragment float4 cmp_grade_pass(FullScreenOut in [[stage_in]], texture2d<float, access::read> composite [[texture(0)]],
                                    constant CMPGrade &grade [[buffer(0)]]) {
-        return cmp_grade(composite.read(uint2(in.position.xy)), grade);
+        uint2 p = uint2(in.position.xy);
+        return cmp_grade_at(composite.read(p), grade, p);   // FX-013: the dither position
     }
     """
 

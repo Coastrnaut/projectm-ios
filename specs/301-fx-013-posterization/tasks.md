@@ -12,43 +12,43 @@ finish. Logs go to `.autonomous/logs-fx-013/`.
 
 ## Phase 1: Setup
 
-- [ ] FX-013-T01 Audit: confirm no posterization exists (`grep -rliE "posteri|quantiz"` over `Packages/*/Sources` and
-  `Apps/projectM-iOS`) and that grade flag bits 64 and 128 are unused; record it in spec.md's audit.
+- [X] FX-013-T01 Audit: confirm no posterization exists (`grep -rliE "posteri|quantiz"` over `Packages/*/Sources` and
+  `Apps/projectM-iOS`) and that grade flag bits 64 and 128 are unused; record it in spec.md's audit. — Verified 2026-11-15: grep -rliE "posteri|quantiz" over Packages/*/Sources and Apps/projectM-iOS: only beat/cue quantizing (MOD-017, SHOW-003) and the spectrum waterfall, no picture posterization; flag bits 64/128 unused (grep "Flag: UInt32 =", shaders); recorded in spec.md audit.
 
 ## Phase 2: Foundational
 
-- [ ] FX-013-T02 Create `Packages/Compositor/Sources/Compositor/Posterize.swift`: constants (levels 2…32, default 6),
+- [X] FX-013-T02 Create `Packages/Compositor/Sources/Compositor/Posterize.swift`: constants (levels 2…32, default 6),
   the Bayer 4 × 4 matrix, `threshold(x:y:)`, the scalar reference `quantize(_:levels:threshold:)` (contract C1),
-  typed steps, no Apple-only API (Linux).
-- [ ] FX-013-T03 Extend `Packages/Compositor/Sources/Compositor/ColorGrade.swift` in a marked FX-013 section: fields
+  typed steps, no Apple-only API (Linux). — Verified 2026-11-15: Posterize.swift builds on the host and in the Linux shape; PosterizeReferenceTests 6/6 (logs-fx-013/linux-shape.log).
+- [X] FX-013-T03 Extend `Packages/Compositor/Sources/Compositor/ColorGrade.swift` in a marked FX-013 section: fields
   `posterize`, `posterizeLevels`, `posterizeDither` (init defaults, Codable keys appended, missing → defaults),
   `clamped` (levels 2…32), coefficients `poster` and flags 64/128 (128 only with 64), step 8 in `apply(_:x:y:)` after
-  the curve (`ToneMap.map` then C1 per channel), `apply(_:)` = position (0, 0); off sets no flag.
-- [ ] FX-013-T04 Shader in `Packages/Compositor/Sources/Compositor/CompositorShaders.swift`: append `float4 poster` to
+  the curve (`ToneMap.map` then C1 per channel), `apply(_:)` = position (0, 0); off sets no flag. — Verified 2026-11-15: PosterizeReferenceTests 6/6 incl. order after the curve and off identity (logs-fx-013/ref.log).
+- [X] FX-013-T04 Shader in `Packages/Compositor/Sources/Compositor/CompositorShaders.swift`: append `float4 poster` to
   `CMPGrade` and `GradeBlock` (96 bytes), `cmp_posterize` with own sRGB helpers and a `constant` Bayer table,
   `cmp_grade_at` / `cmp_display_at` with the position (old names kept as wrappers); `cmp_output`,
   `cmp_output_calibrated` pass `uint2(in.position.xy)`; `OutputGradePass.swift` and `CompositeFlashGuard.swift` pass
-  their pixel.
+  their pixel. — Verified 2026-11-15: PosterizeOutputTests 4/4 through cmp_output, cmp_output_calibrated and the flash guard; full Compositor suite 1,171 passed, 0 failed (logs-fx-013/compositor-all.log, 62 s).
 
 ## Phase 3: User Story 1 — poster bands (P1) and User Story 3 — off and extremes (P1)
 
-- [ ] FX-013-T05 [P] [US1] `Packages/Compositor/Tests/CompositorTests/PosterizeReferenceTests.swift` (CPU): dense
+- [X] FX-013-T05 [P] [US1] `Packages/Compositor/Tests/CompositorTests/PosterizeReferenceTests.swift` (CPU): dense
   gradient (4,096 values) per channel, dithering off, at most L (and exactly L) distinct values for L ∈ {2, 3, 6, 16,
   32}; off identity bit for bit (sweep, 1,000 random colours, with other controls on); extremes (1e6, −1, NaN, ±∞)
-  finite and on a level; levels clamped; order after the curve.
-- [ ] FX-013-T06 [P] [US1] `Packages/Compositor/Tests/CompositorTests/PosterizeOutputTests.swift` (GPU, through
+  finite and on a level; levels clamped; order after the curve. — Verified 2026-11-15: PosterizeReferenceTests: counts ≤ L and = L for L in {2,3,6,16,32}, off identity, extremes on a level (6/6, 0.4 s).
+- [X] FX-013-T06 [P] [US1] `Packages/Compositor/Tests/CompositorTests/PosterizeOutputTests.swift` (GPU, through
   `cmp_output`): a horizontal gradient composite in `rgba16Float` and `bgra8Unorm_srgb`, dithering off: at most L
   distinct values per channel for L ∈ {2, 6, 32}; GPU vs CPU level indices equal on ≥ 99% of pixels and within one
   level everywhere; off bit-identical to the output without it; `cmp_output_calibrated` (OUT-009, spec Edge Cases)
-  keeps at most L values; flash guard still limits a strobe.
-- [ ] FX-013-T07 [US1] Block layout in `Packages/Compositor/Tests/CompositorTests/ColorGradeOutputTests.swift` (size
-  96, `poster` at 80).
+  keeps at most L values; flash guard still limits a strobe. — Verified 2026-11-15: PosterizeOutputTests: counts ≤ L in rgba16Float and bgra8Unorm_srgb for L in {2,6,32}, GPU = CPU levels 3072/3072 in every case, off bit-identical, calibrated ≤ L, guard limits (4/4, 1.4 s; logs-fx-013/gpu.log).
+- [X] FX-013-T07 [US1] Block layout in `Packages/Compositor/Tests/CompositorTests/ColorGradeOutputTests.swift` (size
+  96, `poster` at 80). — Verified 2026-11-15: ColorGradeOutputTests.testGradeBlockLayoutMatchesTheShader (96 bytes, poster at 80).
 
 ## Phase 4: User Story 2 — dithering (P2)
 
-- [ ] FX-013-T08 [US2] Dither tests in both new files: CPU — at most L values, two runs identical, a flat value
+- [X] FX-013-T08 [US2] Dither tests in both new files: CPU — at most L values, two runs identical, a flat value
   between levels shows both levels and its 4 × 4 mean is within 1/32 level of the input; GPU — at most L values per
-  channel and matches the CPU at each pixel's position (≥ 99%, within one level).
+  channel and matches the CPU at each pixel's position (≥ 99%, within one level). — Verified 2026-11-15: testDitherKeepsTheLevelsIsDeterministicAndMixesNeighbours (both levels, 4×4 mean within 1/32 level) and the GPU gradient test with dither (≤ L, 3072/3072 equal).
 
 ## Phase 5: Integration
 
