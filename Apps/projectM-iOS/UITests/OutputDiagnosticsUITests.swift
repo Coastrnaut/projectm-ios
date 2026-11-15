@@ -18,12 +18,7 @@ final class OutputDiagnosticsUITests: XCTestCase {
     private func row(_ id: String) -> XCUIElement { app.descendants(matching: .any)["outputDiagnostics." + id].firstMatch }
 
     private func openSettings() {
-        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
-        if controls.exists { area.tap() }
-        area.tap()
-        if !controls.appears(within: 2) { area.tap() }
-        XCTAssertTrue(controls.appears(within: 5), "the controls are shown")
-        app.buttons["settings"].tap()
+        app.tapFreshControl("settings")   // retries when the controls auto-hide mid-tap
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
     }
 
