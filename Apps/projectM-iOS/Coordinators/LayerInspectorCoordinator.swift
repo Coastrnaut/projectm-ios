@@ -13,6 +13,7 @@
 import Foundation
 import Observation
 import SceneFormat
+import VisualGenerators
 
 @MainActor
 @Observable
@@ -47,6 +48,8 @@ final class LayerInspectorCoordinator {
     func setBlend(_ name: String, kind: String) { set(LayerCompositeEdit.settingBlend(name, on: composite(for: kind)), for: kind) }
     func setFit(_ name: String?, kind: String) { set(LayerCompositeEdit.settingFit(name, on: composite(for: kind)), for: kind) }
     func setMask(_ name: String?, kind: String) { set(LayerCompositeEdit.settingMask(name, on: composite(for: kind)), for: kind) }
+    /// SHD-008: a committed path from the path editor (one undo step).
+    func setMaskPath(_ path: VectorPath, kind: String) { set(LayerMaskPathEdit.settingPath(path, on: composite(for: kind)), for: kind) }
 
     // CMP-008: the gradient mask (kind; stops by index in position order).
     func setGradientKind(_ name: String?, kind: String) { set(LayerGradientEdit.settingKind(name, on: composite(for: kind)), for: kind) }

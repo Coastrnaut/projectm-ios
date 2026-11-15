@@ -8,6 +8,7 @@
 // fields of the document, layers, bindings and assets.
 import Compositor
 import ParameterGraph
+import VisualGenerators
 
 /// A decoded document and the warnings decoding produced.
 public struct SceneDecodeResult: Sendable {
@@ -422,7 +423,7 @@ struct SceneDecoder {
         guard LayerMaskShape.kindNames.contains(shape) else { return .unknown(shape: shape, object: o) }
         var known: Set<String> = ["shape", "feather", "inverted", "transform"]
         if shape == "rectangle" { known.insert("cornerRadius") }
-        if shape == "polygon" { known.insert("points") }
+        if shape == "polygon" || shape == "path" { known.insert("points") }
         dropUnknown(o, known: known, path: path)
         let rawFeather: Double = try o["feather"].map { (v: SceneJSON) throws(SceneDecodeError) -> Double in
             try double(v, ScenePath.key(path, "feather"))
@@ -447,6 +448,9 @@ struct SceneDecoder {
             let r = LayerMask.cornerRadiusRange
             let stored: Double = min(max(raw, r.lowerBound), r.upperBound)
             if raw != stored { clamped(path + ".cornerRadius", raw, "\(r.lowerBound)…\(r.upperBound)", stored) }
+        case "path":
+            guard let made = try maskPath(o, path) else { return nil }
+            liveShape = .path(made)
         default:
             guard let pointsValue = o["points"] else { throw .malformed(path: ScenePath.key(path, "points"), reason: "a polygon needs points") }
             let items = try array(pointsValue, ScenePath.key(path, "points"))
@@ -476,6 +480,30 @@ struct SceneDecoder {
             return .known(try LayerMask(shape: liveShape, transform: placement, feather: rawFeather, inverted: inverted))
         } catch {
             warnings.append(SceneIssue(.droppedField, path: path, "\(path) has an unusable polygon (\(error)); the mask was dropped."))
+            return nil
+        }
+    }
+
+    /// SHD-008's path (contract P2 in specs/279): `points` required; 3…32 points counted before decoding; points are
+    /// not clamped; any validation failure (range, duplicate, crossing, area) drops the whole mask (nil, `droppedField`
+    /// naming the reason).
+    private mutating func maskPath(_ o: [String: SceneJSON], _ path: String) throws(SceneDecodeError) -> VectorPath? {
+        guard let pointsValue = o["points"] else { throw .malformed(path: ScenePath.key(path, "points"), reason: "a path needs points") }
+        let items = try array(pointsValue, ScenePath.key(path, "points"))
+        guard items.count >= VectorPath.minimumPoints, items.count <= VectorPath.maximumPoints else {
+            warnings.append(SceneIssue(.droppedField, path: path,
+                                       "\(path) has a path of \(items.count) points (\(VectorPath.minimumPoints)…\(VectorPath.maximumPoints) are drawn); the mask was dropped."))
+            return nil
+        }
+        var points: [VectorPoint] = []
+        for (i, item) in items.enumerated() {
+            let raw = try point(item, default: .zero, ScenePath.index(ScenePath.key(path, "points"), i))
+            points.append(VectorPoint(x: raw.x, y: raw.y))
+        }
+        do {
+            return try VectorPath(points)
+        } catch {
+            warnings.append(SceneIssue(.droppedField, path: path, "\(path) has an unusable path (\(error.message)); the mask was dropped."))
             return nil
         }
     }
