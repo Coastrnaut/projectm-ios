@@ -23,7 +23,7 @@ when verified, with " — Verified 2026-11-14: <how>".
 ## Phase 4: User Story 2 - Nothing private (P2)
 
 - [ ] OSC-010-T04 [US2] `OSCSchemaExportCoordinator` in `Apps/projectM-iOS/Coordinators/OSCSchemaExportCoordinator.swift` (inputs from `OSCRoutesCoordinator` only; app version; injected clock; REC-012 share copy; finish deletes it) and the `.oscSchema` kind in `Apps/projectM-iOS/Coordinators/CaptureShareCoordinator.swift` (R1, R5, R7; contract C2).
-- [ ] OSC-010-T05 [US2] App tests in `Apps/projectM-iOS/Tests/OSCSchemaExportCoordinatorTests.swift`: a seeded settings store with approved peers, `settings.osc.send.host`/`port`, `settings.osc.port` and a device name — the file contains none of those strings and no IPv4/IPv6 pattern; the file and request exist after export, a second export is refused while offered, finish deletes the copy (S3, S4).
+- [ ] OSC-010-T05 [US2] App tests in `Apps/projectM-iOS/Tests/OSCSchemaExportCoordinatorTests.swift`: a seeded settings store with approved peers, `settings.osc.send.host`/`port`, `settings.osc.port` and a device name — the file contains none of those strings and no IPv4/IPv6 pattern; the file and request exist after export, a second export is refused while offered, finish deletes the copy; a store that cannot write shows the failure notice and no request (S3, S4; edge cases).
 
 ## Phase 5: User Story 3 - Share it (P2)
 
@@ -34,6 +34,12 @@ when verified, with " — Verified 2026-11-14: <how>".
 
 - [ ] OSC-010-T08 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), the PerformanceControl suite, `LibraryBackupAppTests` and `SettingsTests` (no new keys), privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard counts.
 - [ ] OSC-010-T09 {device} D1: Settings › OSC › OSC Routes › Export routes… › Save to Files; the file lists every route on the screen, opens in Files, and holds no address or port (quickstart step 4).
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Every requirement maps to a task: R1 → T04, T06, T07; R2-R4 → T02, T03; R5 → T05; R6 → T07 (OSC off); R7 → T04,
+T05; R8 → T08. Fixed: the write-failure edge case had no test (added to T05). No constitution conflict; no
+ambiguity or duplication found.
 
 ## Dependencies
 
