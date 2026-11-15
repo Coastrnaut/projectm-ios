@@ -23,7 +23,7 @@ coordinates"), so test tasks are included. Budgets (owner rule 7): unit tests �
 
 - [ ] OUT-003-T04 [US1] `VisualSlotView`: `resolution`, `pixelBudget`, `resolvedOutput`; in `applyPlacement()` (external role) resolve from bounds and the slot's own display scale and set or remove `traitOverrides.displayScale` on each held view, then `setNeedsLayout()`; device role, `hold()` on a device slot and `removeVisuals()` remove the override (contract C2), in `Apps/projectM-iOS/ExternalDisplay/VisualSlotView.swift`.
 - [ ] OUT-003-T05 [US1] `ExternalDisplayCoordinator`: `resolution` and `pixelBudget` pushed with the correction in `pushCorrection()` (deferred while a recording holds the placement), set on new slots in `externalConnected`, `externalResolutionSummary` and a log line (contract C3), in `Apps/projectM-iOS/ExternalDisplay/ExternalDisplayCoordinator.swift`.
-- [ ] OUT-003-T06 [US2] Acceptance tests (OUT-003-S2): a real `TextVisualHost` on an external slot (640 × 360 pt, display scale 3) at Native then 720p: drawable and a captured frame change from 1920 × 1080 to 1280 × 720, while the view's bounds/centre/transform, the slot placement, the text spec, the normalised text canvas and the compositor's layer stack are equal; plus budget clamping (compact budget on a 4K slot), hold deferral, device return removes the override, in `Apps/projectM-iOS/Tests/ExternalOutputResolutionAppTests.swift`.
+- [ ] OUT-003-T06 [US2] Acceptance tests (OUT-003-S2): a real `TextVisualHost` on an external slot (640 × 360 pt, display scale 3) at Native then 720p: drawable and a captured frame change from 1920 × 1080 to 1280 × 720, while the view's bounds/centre/transform, the slot placement, the text spec, the normalised text canvas and the compositor's layer stack are equal, and the same host keeps compositing (no restart, OUT-003-R4); plus budget clamping (compact budget on a 4K slot), hold deferral, device return removes the override, in `Apps/projectM-iOS/Tests/ExternalOutputResolutionAppTests.swift`.
 
 ## Phase 4: User Story 3 — Settings (P2)
 
@@ -37,7 +37,7 @@ coordinates"), so test tasks are included. Budgets (owner rule 7): unit tests �
 ## Phase 5: Polish & device
 
 - [ ] OUT-003-T10 {device} D1 with a real 4K display (quickstart B): composition identical at Native, 1080p, 720p and Custom 50 %; log shows the drawable sizes.
-- [ ] OUT-003-T11 Regression (OUT-003-S4) and repo checks: `ExternalOutputCorrectionTests`, `ExternalDisplayCoordinatorTests`, `HotPlugAcceptanceTests`, `OutputBlackoutCoordinatorTests`, `ExternalRehearsalTests`, `LibraryBackupAppTests`; the six repo scripts; `check_privacy_manifest.py`; type-check budget; spec status.
+- [ ] OUT-003-T11 Regression (OUT-003-S4) and repo checks: `ExternalOutputCorrectionTests`, `ExternalDisplayCoordinatorTests`, `HotPlugAcceptanceTests`, `OutputBlackoutCoordinatorTests`, `ExternalRehearsalTests`, `LibraryBackupAppTests`; the six repo scripts; `check_privacy_manifest.py`; `PresentationLifecycle` stays Foundation-only so it builds on Linux (OUT-003-R9); type-check budget; spec status.
 
 ## Dependencies
 

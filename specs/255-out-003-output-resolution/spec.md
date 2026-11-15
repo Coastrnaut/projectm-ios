@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: In progress (tasks OUT-003-T01-T11)
 
 **Input**: User description: "Implement OUT-003 (Independent output resolution) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Set a safe drawable scale for
