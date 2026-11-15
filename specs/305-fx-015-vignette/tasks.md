@@ -8,8 +8,8 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 1: Setup
 
-- [ ] FX-015-T01 ADR-0116 (vignette pass, falloff rule, darken-only, chain position) in `docs/adr/0116-vignette.md`
-  and its row in `docs/adr/README.md`
+- [X] FX-015-T01 ADR-0116 (vignette pass, falloff rule, darken-only, chain position) in `docs/adr/0116-vignette.md`
+  and its row in `docs/adr/README.md` — Verified 2026-11-15: docs/adr/0116-vignette.md and README row; validate_docs OK
 
 ## Phase 2: Foundational
 

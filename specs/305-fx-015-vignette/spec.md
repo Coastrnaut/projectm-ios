@@ -204,7 +204,8 @@ vignette back when the scene or preset is opened.
   brightness never rises from the centre to each corner, and the corners are darker than the centre for any intensity
   above 0.
 - **FX-015-S3**: Moving the centre moves the bright region: on a uniform picture the pixel nearest the new centre is
-  exactly unchanged, the unchanged (clear-core) pixels are centred within 1 pixel of the new centre, and with the
+  exactly unchanged, the unchanged (clear-core) pixels, when the core lies inside the frame, are centred within 1 pixel of the
+  new centre, and with the
   centre left of the middle the left edge is brighter than the right edge.
 - **FX-015-S4**: The GPU output equals the software reference within half-float rounding, and every output is finite
   for finite input, HDR values included.
