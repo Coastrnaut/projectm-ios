@@ -48,6 +48,31 @@ each answer is the conservative option.
 - Q: What does "off" mean? → A: Posterize switched off skips the step entirely, so the picture is bit-identical to
   the output without this feature. Dithering only matters while posterize is on. Applied to FX-013-R4.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: On which brightness scale are the levels evenly spaced: the display's encoded (sRGB) values or linear light?
+  → A: The display-encoded sRGB scale (the exact sRGB curve), the usual posterization look: levels k/(L − 1) of the
+  encoded value, so the 8-bit screen shows exactly L values per channel and dark bands are not crushed. Applied to
+  FX-013-R2.
+- Q: Where does posterization run in the grade? → A: Last, after FX-005's contrast curve. Colours above display
+  white are first brought into range with FX-002's luminance-keeping step; FX-002's tone map that follows is then an
+  exact identity, so the quantiser is the last value-changing step for the output's colours (only the flash gain
+  and OUT-009's calibration follow, each a fixed per-value mapping for a frame). Applied to FX-013-R6.
+- Q: Which dither pattern? → A: An ordered 4 × 4 Bayer threshold indexed by the output pixel position (x mod 4,
+  y mod 4), thresholds (k + 0.5)/16: deterministic, no noise texture, no time dependence. A flat value between two
+  levels shows both levels in the proportion of its position between them. Applied to FX-013-R5.
+- Q: How is a value rounded to a level without dithering? → A: To the nearest level (half-way rounds up), i.e. the
+  dither formula with the fixed threshold 0.5; the result is clamped to the L levels. Applied to FX-013-R2, R5.
+- Q: What are the controls' names, steps and stored forms? → A: "Posterize" switch, "Levels" slider (2…32, one level
+  per step and per VoiceOver swipe, readout and spoken value "6 levels"), "Dither" switch. Stored as
+  `settings.colorGrade.posterize` (Bool), `settings.colorGrade.posterizeLevels` (number), and
+  `settings.colorGrade.posterizeDither` (Bool); the scene's `fx.grade` entry carries `posterize`,
+  `posterizeLevels` and `posterizeDither`, written only while posterize is on or when the entry already had them.
+  MOD-001: `effect.colorGrade.posterize` and `effect.colorGrade.posterizeDither` (booleans) and
+  `effect.colorGrade.posterizeLevels` (integer), all chosen by hand. Applied to FX-013-R7, R8, R9.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Flatten a visual into poster bands (Priority: P1)
@@ -112,13 +137,14 @@ output every time, and the output depends on pixel position only through a fixed
 - **FX-013-R1**: The colour grade has a Posterize switch (off by default), a level count per channel (whole number
   2…32, default 6) and a Dither switch (off by default), applied to the same visuals and outputs as FX-003's grade.
 - **FX-013-R2**: With Posterize on and dithering off, every colour channel of the shown picture takes at most L
-  distinct values, evenly spaced on the display's brightness scale from black to full, including black and full.
+  distinct values, evenly spaced on the display-encoded (sRGB) scale from black to full, including black and full;
+  each value goes to the nearest level (half-way up).
 - **FX-013-R3**: Extreme inputs (very large, negative, NaN, ±infinity) give finite outputs that are one of the L
   levels.
 - **FX-013-R4**: Posterize off skips the step: with every other control neutral the output is bit-identical to the
   ungraded output; with other controls active it is bit-identical to the grade without posterization.
-- **FX-013-R5**: Dithering on adds a fixed ordered pattern depending only on pixel position before quantising: the
-  output is deterministic and still uses at most L values per channel.
+- **FX-013-R5**: Dithering on replaces the half-way threshold with a fixed ordered 4 × 4 pattern depending only on the
+  output pixel position: the output is deterministic and still uses at most L values per channel.
 - **FX-013-R6**: Posterization runs last in the grade (after FX-005's curve), on colours first brought into
   display range; every later step of the output is an exact identity for its results except the flash gain and
   external-display calibration; the flash limiter measures the posterized colour.
