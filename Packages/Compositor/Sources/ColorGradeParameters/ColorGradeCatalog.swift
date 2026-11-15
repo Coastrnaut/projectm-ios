@@ -23,6 +23,10 @@ public enum ColorGradeParameterIDs {
     /// FX-005: the contrast preset (enumeration: linear, sCurve, filmic) and its strength 0…1.
     public static let contrast: ParameterID = "effect.colorGrade.contrast"
     public static let contrastStrength: ParameterID = "effect.colorGrade.contrastStrength"
+    /// FX-013: posterize on/off, levels per channel (2…32) and ordered dithering.
+    public static let posterize: ParameterID = "effect.colorGrade.posterize"
+    public static let posterizeLevels: ParameterID = "effect.colorGrade.posterizeLevels"
+    public static let posterizeDither: ParameterID = "effect.colorGrade.posterizeDither"
 }
 
 public enum ColorGradeCatalog {
@@ -48,7 +52,22 @@ public enum ColorGradeCatalog {
             descriptor(IDs.gain, "Gain", G.gainRange, neutral.gain, G.gainStep),
             descriptor(IDs.saturation, "Saturation", G.saturationRange, neutral.saturation, G.saturationStep),
             descriptor(IDs.hue, "Hue (degrees)", G.hueRange, neutral.hue, G.hueStep, unit: .degrees),
-        ] + contrastDescriptors
+        ] + contrastDescriptors + posterizeDescriptors
+    }
+
+    /// FX-013 (specs/301-fx-013-posterization, data-model.md): all three chosen by hand.
+    public static var posterizeDescriptors: [ParameterDescriptor] {
+        typealias IDs = ColorGradeParameterIDs
+        let range: ClosedRange<Int> = Posterize.levelsRange
+        let levelsKind: ParameterKind = .integer(minimum: range.lowerBound, maximum: range.upperBound,
+                                                 defaultValue: Posterize.defaultLevels, step: 1)
+        let on = ParameterDescriptor(id: IDs.posterize, displayName: "Posterize", group: group, unit: .none,
+                                     kind: .boolean(defaultValue: false), modulation: .discreteManual)
+        let levels = ParameterDescriptor(id: IDs.posterizeLevels, displayName: "Posterize levels", group: group,
+                                         unit: .count, kind: levelsKind, modulation: .discreteManual)
+        let dither = ParameterDescriptor(id: IDs.posterizeDither, displayName: "Posterize dither", group: group, unit: .none,
+                                         kind: .boolean(defaultValue: false), modulation: .discreteManual)
+        return [on, levels, dither]
     }
 
     /// FX-005 (specs/292-fx-005-contrast-curves, data-model.md): the preset (discrete, chosen by hand) and its strength.
@@ -77,6 +96,9 @@ public enum ColorGradeCatalog {
         var withCurve: ColorGrade = grade
         if case let .enumeration(name)? = values[IDs.contrast] { withCurve.contrast = ContrastCurve(storedName: name) }   // FX-005
         withCurve.contrastStrength = value(IDs.contrastStrength, ContrastCurve.defaultStrength)
+        if case let .boolean(on)? = values[IDs.posterize] { withCurve.posterize = on }   // FX-013
+        if case let .integer(levels)? = values[IDs.posterizeLevels] { withCurve.posterizeLevels = levels }
+        if case let .boolean(dither)? = values[IDs.posterizeDither] { withCurve.posterizeDither = dither }
         return withCurve.clamped
     }
 

@@ -63,7 +63,9 @@ AREA_LOCKS: dict[str, tuple[str, ...]] = {
 # agent slots stood empty. Each feature still works in its own worktree; the single integration
 # writer merges them one at a time, and the conflicts seen so far were small (shared key lists).
 LOCK_CAPACITY: dict[str, int] = {
-    "Packages/VisualGenerators": 2,
+    # 2026-11-15: raised to 3. FX rows take this lock by area default but now write mostly Compositor, so two
+    # FX rows left every VIS row waiting with seven agent slots empty.
+    "Packages/VisualGenerators": 3,
     "Packages/PerformanceControl": 2,
     # 2026-11-15: 13 of the last 25 rows are FX effects, each locking Compositor and Rendering (the output pass,
     # CompositorShaders, the effect chain). Two at a time halves the serial time; more would mostly trade time for

@@ -67,7 +67,7 @@ final class CompositeFlashGuard {
                 for (int i = 0; i < 16; i++) {
                     float2 f = (tile + (float2(float(i), float(j)) + 0.5) / 16.0) / 4.0;
                     uint2 q = min(uint2(f * float2(size)), size - 1);
-                    float3 c = cmp_display(scene.read(q), grade).rgb;   // FX-002, FX-003: as shown (0…1, never NaN)
+                    float3 c = cmp_display_at(scene.read(q), grade, q).rgb;   // FX-002, FX-003: as shown (0…1, never NaN); FX-013 at q
                     y += dot(c, float3(0.2126, 0.7152, 0.0722));
                     r += max(c.r - c.g - c.b, 0.0);
                 }

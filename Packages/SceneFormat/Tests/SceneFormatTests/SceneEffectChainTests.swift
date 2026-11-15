@@ -219,6 +219,38 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(older.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
     }
 
+    // MARK: FX-013 posterize (FX-013-R8, S6)
+
+    func testPosterizeRoundTripsAndOldEntriesReadAsOff() throws {
+        let old = SceneEffectSettings.read([grade]).settings.grade
+        XCTAssertEqual(old?.posterize, false, "an entry without the fields")
+        XCTAssertEqual(old?.posterizeLevels, 6)
+        XCTAssertEqual(old?.posterizeDither, false)
+        let live = SceneEffectSettings(order: .standard, grade: ColorGrade(gamma: 1.2, posterize: true, posterizeLevels: 4,
+                                                                          posterizeDither: true), gradeEnabled: true)
+        let document = try minimal(live.entries(over: nil))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.encoded(), document.encoded())
+        XCTAssertEqual(again.effectSettings?.grade, ColorGrade(gamma: 1.2, posterize: true, posterizeLevels: 4, posterizeDither: true))
+        XCTAssertEqual(again.effects?[0].parameters["posterize"], .bool(true))
+        let off = SceneEffectSettings(order: .standard, grade: ColorGrade(gamma: 1.2), gradeEnabled: true)
+        XCTAssertNil(off.entries(over: nil)[0].parameters["posterize"], "off is not written into scenes that never had it")
+        XCTAssertEqual(off.entries(over: again.effects)[0].parameters["posterize"], .bool(false), "but turns a stored one off")
+    }
+
+    func testMalformedPosterizeValuesReadAsDefaultsAndAreReported() {
+        let entry = SceneEffectEntry(kind: "fx.grade", parameters: ["posterize": .string("yes"), "posterizeLevels": .double(80),
+                                                                    "posterizeDither": .integer(1)])
+        let read = SceneEffectSettings.read([entry])
+        XCTAssertEqual(read.settings.grade?.posterize, false)
+        XCTAssertEqual(read.settings.grade?.posterizeLevels, 32, "clamped")
+        XCTAssertEqual(read.settings.grade?.posterizeDither, false)
+        XCTAssertEqual(read.issues.map(\.path), ["$.effects[0].parameters.posterizeLevels", "$.effects[0].parameters.posterize",
+                                                  "$.effects[0].parameters.posterizeDither"])
+        let fractional = SceneEffectEntry(kind: "fx.grade", parameters: ["posterize": .bool(true), "posterizeLevels": .double(7.6)])
+        XCTAssertEqual(SceneEffectSettings.read([fractional]).settings.grade?.posterizeLevels, 8, "rounded")
+    }
+
     // MARK: Unknown, repeated and fixed entries
 
     func testUnknownEntryIsKeptAtItsIndexAndReported() throws {

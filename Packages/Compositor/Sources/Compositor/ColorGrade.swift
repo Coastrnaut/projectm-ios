@@ -17,6 +17,9 @@
 //   7. FX-005 contrast curve (specs/292-fx-005-contrast-curves, research FX-005-D1, D2; `ContrastCurve.swift`): flags
 //      256 (S-curve) or 512 (Filmic): v ← FX-002's `ToneMap.map` (identity for in-range colours), then the curve on each
 //      channel (0…1 in, 0…1 out). Linear or strength 0 sets no flag, so the step is skipped bit for bit.
+//   8. FX-013 posterize (specs/301-fx-013-posterization, research FX-013-D1 to D5; `Posterize.swift`): flag 64 (and
+//      128 for dithering): v ← `ToneMap.map` (identity in range), then each channel quantised to L levels on the sRGB
+//      scale at the pixel position. Off sets no flag, so the step is skipped bit for bit.
 // Then FX-002's tone map. Each operator runs only when its control is not neutral, so a neutral control is an
 // exact identity. Every expression is split into typed steps (the type checker on Linux and Xcode 26).
 import Foundation
@@ -38,6 +41,10 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
     /// FX-005: the contrast preset (Linear = neutral) and its strength 0…1 (default 0.5).
     public var contrast: ContrastCurve
     public var contrastStrength: Double
+    /// FX-013: posterize on/off (off = neutral), levels per channel 2…32 (default 6) and ordered dithering.
+    public var posterize: Bool
+    public var posterizeLevels: Int
+    public var posterizeDither: Bool
 
     public static let temperatureRange: ClosedRange<Double> = -1...1
     public static let liftRange: ClosedRange<Double> = -0.1...0.1
@@ -62,7 +69,8 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
 
     public init(temperature: Double = 0, lift: Double = 0, gamma: Double = 1, gain: Double = 1, saturation: Double = 1,
                 hue: Double = 0, contrast: ContrastCurve = .linear,
-                contrastStrength: Double = ContrastCurve.defaultStrength) {
+                contrastStrength: Double = ContrastCurve.defaultStrength, posterize: Bool = false,
+                posterizeLevels: Int = Posterize.defaultLevels, posterizeDither: Bool = false) {
         self.temperature = temperature
         self.lift = lift
         self.gamma = gamma
@@ -71,11 +79,15 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
         self.hue = hue
         self.contrast = contrast
         self.contrastStrength = contrastStrength
+        self.posterize = posterize
+        self.posterizeLevels = posterizeLevels
+        self.posterizeDither = posterizeDither
     }
 
     private enum CodingKeys: String, CodingKey {
         case temperature, lift, gamma, gain, saturation, hue
         case contrast, contrastStrength   // FX-005
+        case posterize, posterizeLevels, posterizeDither   // FX-013
     }
 
     /// A grade encoded before FX-004 has no `hue`: it decodes as 0.
@@ -90,6 +102,10 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
         // FX-005: older grades have no curve (Linear); an unknown name reads as Linear.
         contrast = ContrastCurve(storedName: try container.decodeIfPresent(String.self, forKey: .contrast))
         contrastStrength = try container.decodeIfPresent(Double.self, forKey: .contrastStrength) ?? ContrastCurve.defaultStrength
+        // FX-013: older grades have no posterize (off, 6 levels, no dither).
+        posterize = try container.decodeIfPresent(Bool.self, forKey: .posterize) ?? false
+        posterizeLevels = try container.decodeIfPresent(Int.self, forKey: .posterizeLevels) ?? Posterize.defaultLevels
+        posterizeDither = try container.decodeIfPresent(Bool.self, forKey: .posterizeDither) ?? false
     }
 
     /// NaN → the neutral value; out of range (including ±Inf) → the nearest bound.
@@ -108,7 +124,9 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
                    hue: Self.clamp(hue, to: Self.hueRange, neutral: 0),
                    contrast: contrast,
                    contrastStrength: Self.clamp(contrastStrength, to: ContrastCurve.strengthRange,
-                                                neutral: ContrastCurve.defaultStrength))
+                                                neutral: ContrastCurve.defaultStrength),
+                   posterize: posterize, posterizeLevels: Posterize.clampLevels(posterizeLevels),
+                   posterizeDither: posterizeDither)
     }
 
     /// Every control neutral after clamping (no operator runs).
@@ -120,9 +138,15 @@ public struct ColorGrade: Sendable, Equatable, Hashable, Codable {
     /// Rec. 709 / WCAG luminance weights (as FX-002 and FX-019).
     public static let luminanceWeights: SIMD3<Double> = ToneMap.luminanceWeights
 
-    /// The graded pixel (steps 0-6) of a linear premultiplied RGBA pixel, before the tone map. Reference only.
+    /// The graded pixel (steps 0-8) of a linear premultiplied RGBA pixel, before the tone map. Reference only.
+    /// FX-013: dithering uses the pixel position (0, 0) here; see `apply(_:x:y:)`.
     public func apply(_ input: ToneMap.Pixel) -> ToneMap.Pixel {
         coefficients.apply(input)
+    }
+
+    /// FX-013: the graded pixel at output position (x, y) (the dither threshold depends on it).
+    public func apply(_ input: ToneMap.Pixel, x: Int, y: Int) -> ToneMap.Pixel {
+        coefficients.apply(input, x: x, y: y)
     }
 }
 
@@ -137,6 +161,9 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
     /// FX-005's own bits (research FX-005-D6): one per curve; never both.
     public static let sCurveFlag: UInt32 = 256
     public static let filmicFlag: UInt32 = 512
+    /// FX-013's bits (research FX-013-D5): posterize, and dithering (only with posterize).
+    public static let posterizeFlag: UInt32 = 64
+    public static let ditherFlag: UInt32 = 128
 
     /// Per-channel white-balance gains (1, 1, 1 at neutral temperature).
     public let balance: SIMD3<Double>
@@ -152,6 +179,8 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
     public let hueMatrix: SIMD4<Double>
     /// FX-005: (exponent 1 + s, strength s, toe τ, shoulder σ); the curve is chosen by the flag.
     public let contrast: SIMD4<Double>
+    /// FX-013: (n = levels − 1, 1/n, 0, 0).
+    public let poster: SIMD4<Double>
     /// One bit per active operator; 0 ⇔ every control neutral.
     public let flags: UInt32
 
@@ -187,6 +216,9 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
         let strength: Double = grade.contrastStrength
         contrast = SIMD4<Double>(1 + strength, strength, ContrastCurve.toe, ContrastCurve.shoulder)
         flags |= Self.contrastFlag(grade.contrast, strength: strength)
+        let steps: Double = Double(Posterize.clampLevels(grade.posterizeLevels) - 1)
+        poster = SIMD4<Double>(steps, 1 / steps, 0, 0)
+        flags |= Self.posterizeFlags(grade)
         self.flags = flags
     }
 
@@ -221,9 +253,21 @@ public struct ColorGradeCoefficients: Sendable, Equatable {
         return pulled
     }
 
-    /// The reference grading of one pixel (research D2, steps 0-5; FX-004 step 6).
+    /// The reference grading of one pixel (research D2, steps 0-5; FX-004 step 6) at position (0, 0).
     public func apply(_ input: ToneMap.Pixel) -> ToneMap.Pixel {
+        apply(input, x: 0, y: 0)
+    }
+
+    /// The reference grading of one pixel at output position (x, y) (FX-013's dither threshold).
+    public func apply(_ input: ToneMap.Pixel, x: Int, y: Int) -> ToneMap.Pixel {
         if flags == 0 { return input }
+        let graded: ToneMap.Pixel = applySteps(input)
+        if flags & Self.posterizeFlag == 0 { return graded }
+        return applyPosterize(graded, x: x, y: y)   // FX-013 step 8
+    }
+
+    /// Steps 0-7.
+    private func applySteps(_ input: ToneMap.Pixel) -> ToneMap.Pixel {
         var v: SIMD3<Double> = .zero
         for c in 0..<3 {
             let x: Double = input[c]
@@ -276,6 +320,26 @@ extension ColorGradeCoefficients {
         var out: ToneMap.Pixel = ToneMap.map(pixel)
         let curve: ContrastCurve = filmic ? .filmic : .sCurve
         for c in 0..<3 { out[c] = ContrastCurve.value(out[c], curve: curve, strength: contrast.y) }
+        return out
+    }
+}
+
+// MARK: - FX-013 posterize (step 8)
+
+extension ColorGradeCoefficients {
+    /// The flags of a grade's posterize settings: none while off (exact bypass, FX-013-R4).
+    static func posterizeFlags(_ grade: ColorGrade) -> UInt32 {
+        guard grade.posterize else { return 0 }
+        return grade.posterizeDither ? posterizeFlag | ditherFlag : posterizeFlag
+    }
+
+    /// Step 8 (research FX-013-D1): into display range with FX-002's step, then each channel quantised to the levels.
+    func applyPosterize(_ pixel: ToneMap.Pixel, x: Int, y: Int) -> ToneMap.Pixel {
+        var out: ToneMap.Pixel = ToneMap.map(pixel)
+        let dither: Bool = flags & Self.ditherFlag != 0
+        let t: Double = dither ? Posterize.threshold(x: x, y: y) : Posterize.roundingThreshold
+        let levels: Int = Int(poster.x.rounded()) + 1
+        for c in 0..<3 { out[c] = Posterize.quantize(out[c], levels: levels, threshold: t) }
         return out
     }
 }

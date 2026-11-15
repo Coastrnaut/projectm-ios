@@ -297,8 +297,9 @@ final class ColorGradeOutputTests: XCTestCase {
     }
 
     func testGradeBlockLayoutMatchesTheShader() {
-        XCTAssertEqual(MemoryLayout<CompositorShaders.GradeBlock>.size, 80)   // FX-004: + float4 hue; FX-005: + float4 contrast
+        XCTAssertEqual(MemoryLayout<CompositorShaders.GradeBlock>.size, 96)   // FX-004: + float4 hue; FX-005: + float4 contrast; FX-013: + float4 poster
         XCTAssertEqual(MemoryLayout<CompositorShaders.GradeBlock>.offset(of: \.contrast), 64)   // FX-005, appended
+        XCTAssertEqual(MemoryLayout<CompositorShaders.GradeBlock>.offset(of: \.poster), 80)   // FX-013, appended
         XCTAssertEqual(MemoryLayout<CompositorShaders.GradeBlock>.offset(of: \.hue), 32)
         XCTAssertEqual(MemoryLayout<CompositorShaders.GradeBlock>.offset(of: \.saturation), 48)
         XCTAssertEqual(MemoryLayout<CompositorShaders.GradeBlock>.offset(of: \.flags), 52)

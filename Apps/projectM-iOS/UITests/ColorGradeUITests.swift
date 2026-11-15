@@ -4,6 +4,8 @@
 // proven by `ColorGradeSettingTests.testNeutralByDefaultAndPersisted`. Simulator results are never device evidence.
 // FX-005-T10: the Contrast picker starts at Linear with no strength slider; choosing S-curve shows the strength at "50%"
 // and enables the reset, which returns the picker to Linear and hides the slider (one short test).
+// FX-013-T12: the Posterize switch starts off with no levels slider; turning it on shows "6 levels" and the Dither
+// switch and enables the reset, which turns it off again (one short test).
 import XCTest
 
 @MainActor
@@ -80,5 +82,32 @@ final class ColorGradeUITests: XCTestCase {
         XCTAssertTrue(app.reveal(contrastPicker, down: true))
         XCTAssertTrue(poll(5) { self.contrastPicker.buttons["Linear"].isSelected }, "the reset covers the curve")
         XCTAssertFalse(app.slider("colorContrastStrengthSlider").exists)
+    }
+
+    // MARK: - FX-013: Posterize
+
+    private var posterizeToggle: XCUIElement { app.switches["colorPosterizeToggle"] }
+    private var levelsReadout: XCUIElement { app.staticTexts["colorPosterizeLevelsSliderValue"] }
+
+    private func isOn(_ element: XCUIElement) -> Bool { (element.value as? String) == "1" }
+
+    func testPosterizeSwitchShowsLevelsAndResets() {
+        launch()
+        openSettings()
+        XCTAssertTrue(app.reveal(posterizeToggle), "Posterize is in Settings → Color")
+        XCTAssertFalse(isOn(posterizeToggle), "off by default")
+        XCTAssertFalse(app.slider("colorPosterizeLevelsSlider").exists, "no levels while off")
+        posterizeToggle.switches.firstMatch.exists ? posterizeToggle.switches.firstMatch.tap() : posterizeToggle.tap()
+        XCTAssertTrue(levelsReadout.appears(within: 5), "the levels appear once posterize is on")
+        XCTAssertEqual(levelsReadout.label, "6 levels")
+        XCTAssertEqual(app.slider("colorPosterizeLevelsSlider").label, "Posterize levels")
+        XCTAssertTrue(app.switches["colorPosterizeDitherToggle"].exists, "the Dither switch is shown")
+        XCTAssertTrue(app.reveal(reset))
+        XCTAssertTrue(poll(5) { self.reset.isEnabled }, "posterize is not neutral")
+        reset.tap()
+        XCTAssertTrue(poll(5) { !self.reset.isEnabled }, "reset to neutral")
+        XCTAssertTrue(app.reveal(posterizeToggle, down: true))
+        XCTAssertTrue(poll(5) { !self.isOn(self.posterizeToggle) }, "the reset turns posterize off")
+        XCTAssertFalse(app.slider("colorPosterizeLevelsSlider").exists)
     }
 }

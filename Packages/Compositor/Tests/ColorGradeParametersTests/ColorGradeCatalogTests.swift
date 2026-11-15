@@ -1,4 +1,4 @@
-// FX-003-T10, FX-004-T06, FX-005-T07: the colour grade's MOD-001 descriptors (FX-003-R7, FX-004-R7, FX-005-R7). CPU only.
+// FX-003-T10, FX-004-T06, FX-005-T07, FX-013-T09: the colour grade's MOD-001 descriptors (FX-003-R7, FX-004-R7, FX-005-R7). CPU only.
 import ColorGradeParameters
 import Compositor
 import ParameterGraph
@@ -9,7 +9,7 @@ import XCTest
 final class ColorGradeCatalogTests: XCTestCase {
     func testTheCatalogValidatesAndMatchesColorGrade() throws {
         let registry: ParameterRegistry = try ColorGradeCatalog.makeRegistry()
-        XCTAssertEqual(registry.descriptors.count, 8)   // FX-005: + contrast, contrastStrength
+        XCTAssertEqual(registry.descriptors.count, 11)   // FX-005: + contrast, contrastStrength; FX-013: + 3
         typealias IDs = ColorGradeParameterIDs
         let expected: [(ParameterID, ClosedRange<Double>, Double, Double)] = [
             (IDs.temperature, ColorGrade.temperatureRange, 0, ColorGrade.temperatureStep),
@@ -19,7 +19,7 @@ final class ColorGradeCatalogTests: XCTestCase {
             (IDs.saturation, ColorGrade.saturationRange, 1, ColorGrade.saturationStep),
             (IDs.hue, ColorGrade.hueRange, 0, ColorGrade.hueStep),
         ]
-        XCTAssertEqual(ColorGradeCatalog.descriptors.count, expected.count + 2)
+        XCTAssertEqual(ColorGradeCatalog.descriptors.count, expected.count + 5)
         for (descriptor, row) in zip(ColorGradeCatalog.descriptors.prefix(expected.count), expected) {
             XCTAssertEqual(descriptor.id, row.0)
             XCTAssertEqual(descriptor.group.id, "effect.colorGrade")
@@ -37,7 +37,7 @@ final class ColorGradeCatalogTests: XCTestCase {
     }
 
     func testContrastDescriptors() throws {
-        let tail: [ParameterDescriptor] = Array(ColorGradeCatalog.descriptors.suffix(2))
+        let tail: [ParameterDescriptor] = ColorGradeCatalog.contrastDescriptors
         XCTAssertEqual(tail.map(\.id), [ColorGradeParameterIDs.contrast, ColorGradeParameterIDs.contrastStrength])
         guard case let .enumeration(cases, defaultValue) = tail[0].kind else { return XCTFail("contrast is an enumeration") }
         XCTAssertEqual(cases.map(\.id), ["linear", "sCurve", "filmic"])
@@ -50,6 +50,21 @@ final class ColorGradeCatalogTests: XCTestCase {
         XCTAssertEqual(ColorGradeCatalog.grade(from: values), ColorGrade(contrast: .filmic, contrastStrength: 1))
         let unknown: [ParameterID: ParameterValue] = [ColorGradeParameterIDs.contrast: .enumeration("sepia")]
         XCTAssertEqual(ColorGradeCatalog.grade(from: unknown).contrast, .linear)
+    }
+
+    func testPosterizeDescriptors() throws {
+        let tail: [ParameterDescriptor] = Array(ColorGradeCatalog.descriptors.suffix(3))
+        typealias IDs = ColorGradeParameterIDs
+        XCTAssertEqual(tail.map(\.id), [IDs.posterize, IDs.posterizeLevels, IDs.posterizeDither])
+        XCTAssertEqual(tail.map(\.modulation), [.discreteManual, .discreteManual, .discreteManual])
+        guard case let .integer(minimum, maximum, value, step) = tail[1].kind else { return XCTFail("levels is an integer") }
+        XCTAssertEqual([minimum, maximum, value, step], [2, 32, 6, 1])
+        guard case .boolean(false) = tail[0].kind, case .boolean(false) = tail[2].kind else { return XCTFail("off by default") }
+        let values: [ParameterID: ParameterValue] = [IDs.posterize: .boolean(true), IDs.posterizeLevels: .integer(99),
+                                                     IDs.posterizeDither: .boolean(true)]
+        XCTAssertEqual(ColorGradeCatalog.grade(from: values),
+                       ColorGrade(posterize: true, posterizeLevels: 32, posterizeDither: true), "levels clamped")
+        XCTAssertFalse(ColorGradeCatalog.grade(from: [:]).posterize)
     }
 
     func testIDsAreUniqueInTheAppRegistry() throws {

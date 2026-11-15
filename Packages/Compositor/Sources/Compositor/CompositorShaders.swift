@@ -301,7 +301,7 @@ enum CompositorShaders {
                                constant CMPGrade &grade [[buffer(2)]]) {
         float4 c = composite.read(uint2(in.position.xy));
         if (any(isnan(c) || isinf(c))) atomic_fetch_add_explicit(nonFinite, 1u, memory_order_relaxed);
-        float4 t = cmp_display(c, grade);
+        float4 t = cmp_display_at(c, grade, uint2(in.position.xy));   // FX-013: the dither position
         float g = clamp(gain[0], 0.0, 1.0);
         return float4(t.rgb * g, t.a);
     }
@@ -316,7 +316,7 @@ enum CompositorShaders {
                                           constant CMPGrade &grade [[buffer(2)]], constant CMPCalibration &cal [[buffer(3)]]) {
         float4 c = composite.read(uint2(in.position.xy));
         if (any(isnan(c) || isinf(c))) atomic_fetch_add_explicit(nonFinite, 1u, memory_order_relaxed);
-        float4 t = cmp_display(c, grade);
+        float4 t = cmp_display_at(c, grade, uint2(in.position.xy));   // FX-013: the dither position
         float g = clamp(gain[0], 0.0, 1.0);
         float3 o = t.rgb * g;
         float3 e = float3(cmp_encode(o.r), cmp_encode(o.g), cmp_encode(o.b));
@@ -356,13 +356,16 @@ enum CompositorShaders {
     ///   lift (max(v·scale + offset, 0)), gamma (v^exponent), gain (× gain), saturation (around Rec. 709 luminance),
     ///   FX-004 hue (`ColorGradeCoefficients.rotateHue`: the differences (r − g, b − g) times `hue` as a 2 × 2 matrix,
     ///   rebuilt around the luminance g + wR·d1 + wB·d2, which is exact for greys; negative results pulled to grey).
+    ///   FX-013: `cmp_grade_at` / `cmp_display_at` take the output pixel (posterize's dither threshold); `cmp_grade` /
+    ///   `cmp_display` are the same at pixel (0, 0).
     static let displaySource = """
     struct CMPGrade { float4 balance; float4 tone; float4 hue; float saturation; uint flags; uint pad0; uint pad1;
-                      float4 contrast; };
+                      float4 contrast; float4 poster; };
 
     \(toneMapSource)
     \(contrastSource)
-    static float4 cmp_grade(float4 c, constant CMPGrade &g) {
+    \(posterizeSource)
+    static float4 cmp_grade_at(float4 c, constant CMPGrade &g, uint2 p) {
         if (g.flags == 0u) return c;
         float4 s = select(c, float4(0.0), isnan(c) || isinf(c));
         float3 v = max(s.rgb, float3(0.0));
@@ -386,11 +389,46 @@ enum CompositorShaders {
             float m = min(v.r, min(v.g, v.b));
             if (m < 0.0) v = y > 0.0 ? max(y + (y / (y - m)) * (v - y), float3(0.0)) : float3(0.0);
         }
-        if ((g.flags & 768u) != 0u) return cmp_contrast(float4(v, a), g.contrast, (g.flags & 512u) != 0u);   // FX-005
-        return float4(v, a);
+        float4 o = float4(v, a);
+        if ((g.flags & 768u) != 0u) o = cmp_contrast(o, g.contrast, (g.flags & 512u) != 0u);   // FX-005
+        if ((g.flags & 64u) != 0u) o = cmp_posterize(o, g.poster, (g.flags & 128u) != 0u, p);   // FX-013
+        return o;
     }
 
-    static float4 cmp_display(float4 c, constant CMPGrade &g) { return cmp_tone_map(cmp_grade(c, g)); }
+    static float4 cmp_grade(float4 c, constant CMPGrade &g) { return cmp_grade_at(c, g, uint2(0)); }
+    static float4 cmp_display_at(float4 c, constant CMPGrade &g, uint2 p) { return cmp_tone_map(cmp_grade_at(c, g, p)); }
+    static float4 cmp_display(float4 c, constant CMPGrade &g) { return cmp_display_at(c, g, uint2(0)); }
+    """
+
+    /// FX-013 (contracts/posterize.md in specs/301, research FX-013-D1 to D7): step 8 of the grade, the same steps as
+    /// `ColorGradeCoefficients.applyPosterize` / `Posterize.quantize`. `k` = (n = levels − 1, 1/n, 0, 0). Into display
+    /// range with `cmp_tone_map` (identity in range), then per channel on the sRGB-encoded value e:
+    /// level = clamp(floor(e·n + t), 0, n), output decode(level / n); t = 0.5, or with dithering the 4 × 4 Bayer
+    /// threshold at pixel `p`. Own sRGB helpers: the flash guard splices `displaySource` without `cmp_encode`.
+    static let posterizeSource = """
+    constant float cmp_pz_bayer[16] = { 0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0 };
+
+    static float cmp_pz_encode(float x) {
+        x = clamp(x, 0.0, 1.0);
+        return x <= 0.0031308 ? x * 12.92 : 1.055 * pow(x, 1.0 / 2.4) - 0.055;
+    }
+
+    static float cmp_pz_decode(float y) {
+        y = clamp(y, 0.0, 1.0);
+        return y <= 0.04045 ? y / 12.92 : pow((y + 0.055) / 1.055, 2.4);
+    }
+
+    static float4 cmp_posterize(float4 c, float4 k, bool dither, uint2 p) {
+        float4 t = cmp_tone_map(c);
+        float th = dither ? (cmp_pz_bayer[(p.y & 3u) * 4u + (p.x & 3u)] + 0.5) / 16.0 : 0.5;
+        float3 o;
+        for (int i = 0; i < 3; i++) {
+            float e = cmp_pz_encode(t[i]);
+            float level = clamp(floor(e * k.x + th), 0.0, k.x);
+            o[i] = cmp_pz_decode(level / k.x);
+        }
+        return float4(o, t.a);
+    }
     """
 
     /// FX-005 (contracts/contrast-curves.md in specs/292, research FX-005-D1 to D5): step 7 of the grade, the same
@@ -415,7 +453,7 @@ enum CompositorShaders {
     }
     """
 
-    /// FX-003: `CMPGrade` in the shader (64 bytes since FX-004's `hue`, 80 since FX-005's `contrast`, copied by `setFragmentBytes` / `setBytes`;
+    /// FX-003: `CMPGrade` in the shader (64 bytes since FX-004's `hue`, 80 since FX-005's `contrast`, 96 since FX-013's `poster`, copied by `setFragmentBytes` / `setBytes`;
     /// research FX-003-D4, FX-004-D5).
     struct GradeBlock: Equatable {
         var balance: SIMD4<Float>
@@ -429,6 +467,8 @@ enum CompositorShaders {
         var pad1: UInt32 = 0
         /// FX-005: (exponent, strength, toe, shoulder); appended so earlier offsets stay.
         var contrast: SIMD4<Float>
+        /// FX-013: (n = levels − 1, 1/n, 0, 0); appended after FX-005's field.
+        var poster: SIMD4<Float>
 
         /// Flags 0: `cmp_grade` returns its input (bypass).
         static let neutral = GradeBlock(ColorGrade.neutral.coefficients)
@@ -441,6 +481,7 @@ enum CompositorShaders {
             saturation = Float(k.saturation)
             flags = k.flags
             contrast = SIMD4<Float>(Float(k.contrast.x), Float(k.contrast.y), Float(k.contrast.z), Float(k.contrast.w))
+            poster = SIMD4<Float>(Float(k.poster.x), Float(k.poster.y), 0, 0)   // FX-013
         }
     }
 
