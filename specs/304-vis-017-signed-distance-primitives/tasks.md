@@ -16,7 +16,7 @@
 
 - [ ] VIS-017-T05 [US1] Mode `.signedDistance` in `NoiseFieldGenerator` (pipeline, drive, flash sampling, SDF uniform block, entry points `vis_sdf_fragment` and test-only `vis_sdf_steps_fragment`, restart) and `NoiseFieldFlashAreas.sampleSignedDistance`.
 - [ ] VIS-017-T06 [US1] [US2] [US3] `SignedDistanceRenderTests` (GPU): per preset the step-count render's maximum ≤ cap and High > Low cap; a rgba16Float render with extreme bands and time is finite and in 0…1; two renders identical; CPU mirror and GPU agree on hit/miss at sample points away from silhouettes; quality change in place; entering the mode and a loop restart reset the pose.
-- [ ] VIS-017-T07 [US4] `SignedDistanceFlashTests`: bass bursts alternating with silence stay within the transition budget in all 17 areas, Reduce flashing on and off; sample colours ≤ 0.8.
+- [X] VIS-017-T07 [US4] `SignedDistanceFlashTests`: bass bursts alternating with silence stay within the transition budget in all 17 areas, Reduce flashing on and off; sample colours ≤ 0.8. — Verified 2026-11-15: swift test --filter SignedDistanceFlashTests 2 passed (0.28 s host): samples ≤ 0.8 luminance; bursts every 0.1 s for 2 s worst 2 (portrait) / 3 (landscape, strongest glow) transitions per window, limit 4 (Reduce flashing on) and 6 (off)
 - [ ] VIS-017-T08 [US1] `SignedDistanceGoldenTests` + goldens in `Packages/RenderGoldens` (macOS host, iOS Simulator); README entry.
 
 ## Phase 4: User Story 5 - the app (R8, R10, R11; S5)
