@@ -20,7 +20,7 @@ CAM-011-S1 to S5). Budgets (owner rule 7): unit test ≤ 2 s, package suite < 1 
 **Goal**: attitude sources normalized around a calibrated neutral, bounded for any stream.
 **Independent Test**: `swift test --package-path Packages/ParameterGraph --filter Motion`.
 
-- [ ] CAM-011-T04 [US1] Synthetic-stream acceptance tests in `Packages/ParameterGraph/Tests/ParameterGraphTests/MotionTrackerTests.swift`: sweeps beyond range, spikes, NaN/±∞, time standing still/backwards, yaw seam crossed both ways (< 0.01 per sample), calibration → 0.5, range endpoints, restart re-anchors, ID round trip and expression refusal (S1, S2, S5)
+- [ ] CAM-011-T04 [US1] Synthetic-stream acceptance tests in `Packages/ParameterGraph/Tests/ParameterGraphTests/MotionTrackerTests.swift`: sweeps beyond range, spikes, NaN/±∞, time standing still/backwards, yaw seam crossed both ways (< 0.01 per sample), calibration → 0.5, range endpoints, restart re-anchors, ID round trip and expression refusal (S1, S2, S5); plus a scene round trip of a motion binding in `Packages/SceneFormat/Tests/SceneFormatTests/SceneMotionSourceTests.swift` (MOD-013 path)
 - [ ] CAM-011-T05 [US1] App sensor layer: `MotionSampling` protocol, `CoreMotionSampler` (CMMotionManager device motion, `.xArbitraryZVertical`, main queue) and DEBUG `StandInMotionSampler` in `Apps/projectM-iOS/Coordinators/MotionSampling.swift`
 - [ ] CAM-011-T06 [US1] `MotionModulationCoordinator` (demand = available ∧ active ∧ (host uses motion ∨ readout open); 60 Hz or 30 Hz under a 30 fps power budget; calibrate with announcement; range preference `settings.motion.range` written on change only, removed by `-uitestResetNotice`) in `Apps/projectM-iOS/Coordinators/MotionModulationCoordinator.swift`
 - [ ] CAM-011-T07 [US1] Host and app wiring: `usesMotion`, `motionValues`, `onMotionDemandChange` in `Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift`; `connectMotion(host)` in `Apps/projectM-iOS/Coordinators/AppCoordinator+Motion.swift`; the lazy property, the `connectMotion` call and the `sceneBecame(active:)` hook in `Apps/projectM-iOS/Coordinators/AppCoordinator.swift`; inspector names in `Apps/projectM-iOS/Coordinators/ParameterInspectorModel.swift`
@@ -39,7 +39,7 @@ CAM-011-S1 to S5). Budgets (owner rule 7): unit test ≤ 2 s, package suite < 1 
 
 - [ ] CAM-011-T12 The new key in `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift` (included keys), `scripts/run_device_tests.py` (`ALLOWED_KEYS`), `Apps/projectM-iOS/Tests/LibraryBackupAppTests.swift`; run `LibraryBackupAppTests` and the LibraryBackup package tests
 - [ ] CAM-011-T13 Privacy policy "Device motion" section in `docs/privacy-policy.md`; ADR `docs/adr/00NN-device-motion-modulation.md`
-- [ ] CAM-011-T14 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the built app, type-check budget, PosterBoard count; delete the simulator and derived data
+- [ ] CAM-011-T14 Repo checks, the Linux shape of ParameterGraph (no CoreMotion import in packages: `grep`), (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the built app, type-check budget, PosterBoard count; delete the simulator and derived data
 - [ ] CAM-011-T15 {device} On D1: bind a scene's glow to Tilt forward and Shake, Calibrate, tilt and shake; background the app and confirm the sensor stops
 
 ## Dependencies
