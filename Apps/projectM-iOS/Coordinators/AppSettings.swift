@@ -51,6 +51,9 @@
 //   and glow are shared; Bars does not apply.
 // * SDF Shapes (VIS-017-R8): `settings.visual` may also be `signedDistance`; key `settings.signedDistance.quality`
 //   (`low`/`medium`/`high`; anything else → medium). Bands swell and turn it; palette and glow are shared; Bars does not apply.
+// * Cymatic Lines (VIS-019-R10): `settings.visual` may also be `cymatic`; key `settings.cymatic.bands`
+//   (`all`/`low`/`mid`/`high`; anything else → all). The loudest selected band picks the figure; palette and glow are
+//   shared; Bars does not apply.
 // * Reaction Diffusion (VIS-012-R13): `settings.visual` may also be `reactionDiffusion`; keys
 //   `settings.reactionDiffusion.preset` (`coral`/`mitosis`/`spots`/`maze`; else coral), `.pattern`
 //   (`square`/`spots`/`ring`/`stripes`; else square), `.seed` (Int 0…9999; else 1), `.speed` (Int 1…16; else 8). Bass
@@ -140,6 +143,7 @@ final class AppSettings {
     static let starfieldSpeedKey = "settings.starfield.speed"   // VIS-016
     static let starfieldDensityKey = "settings.starfield.density"   // VIS-016
     static let signedDistanceQualityKey = "settings.signedDistance.quality"   // VIS-017
+    static let cymaticBandsKey = "settings.cymatic.bands"   // VIS-019
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
@@ -184,7 +188,8 @@ final class AppSettings {
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
-                          ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, MED-011, MED-012, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
+                          ShowTransportCoordinator.loopKey, SceneRotationCoordinator.key,
+                          cymaticBandsKey] + SensorySafetySetting.allKeys   // VIS-019-R10   // ACC-012-R8, MED-010, MED-011, MED-012, SCN-015, MOD-017, SHOW-003, SHOW-007, SHOW-013
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2
@@ -422,6 +427,11 @@ final class AppSettings {
         didSet { defaults.set(signedDistanceQuality.rawValue, forKey: Self.signedDistanceQualityKey) }
     }
 
+    /// VIS-019: which bands drive the cymatic lines (All by default).
+    var cymaticBands: CymaticBandRange {
+        didSet { defaults.set(cymaticBands.rawValue, forKey: Self.cymaticBandsKey) }
+    }
+
     /// VIS-016: the starfield's speed (Medium by default).
     var starfieldSpeed: StarfieldSpeed {
         didSet { defaults.set(starfieldSpeed.rawValue, forKey: Self.starfieldSpeedKey) }
@@ -647,6 +657,8 @@ final class AppSettings {
         starfieldDensity = Self.isStarfieldDensity(density) ? density : StarfieldConfiguration.defaultDensity   // VIS-016
         signedDistanceQuality = defaults.string(forKey: Self.signedDistanceQualityKey)
             .flatMap(SignedDistanceQuality.init(rawValue:)) ?? .defaultQuality   // VIS-017
+        cymaticBands = defaults.string(forKey: Self.cymaticBandsKey)
+            .flatMap(CymaticBandRange.init(rawValue:)) ?? .defaultRange   // VIS-019
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
@@ -731,6 +743,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case starfield
     /// The native SDF shapes (VIS-017).
     case signedDistance
+    /// The native cymatic lines (VIS-019).
+    case cymatic
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -760,6 +774,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .reactionDiffusion: "Reaction Diffusion"
         case .starfield: "Starfield"
         case .signedDistance: "SDF Shapes"
+        case .cymatic: "Cymatic Lines"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -771,7 +786,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
         || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel
-        || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield || self == .signedDistance }
+        || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield || self == .signedDistance
+        || self == .cymatic }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .spectrumWaterfall }   // VIS-020: band count

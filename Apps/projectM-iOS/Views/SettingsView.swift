@@ -360,6 +360,7 @@ struct SettingsView: View {
                 if settings.visual == .reactionDiffusion { ReactionDiffusionOptions(settings: settings) }   // VIS-012-R13
                 if settings.visual == .starfield { StarfieldOptions(settings: settings) }   // VIS-016-R8
                 if settings.visual == .signedDistance { SignedDistanceOptions(settings: settings) }   // VIS-017-R8
+                if settings.visual == .cymatic { CymaticOptions(settings: settings) }   // VIS-019-R10
                 if settings.visual == .linearSpectrum {
                     Picker("Orientation", selection: $settings.linearSpectrumOrientation) {
                         ForEach(LinearSpectrumOrientation.allCases, id: \.self) { Text($0.title).tag($0) }

@@ -21,9 +21,9 @@
 
 ## Phase 4: User Story 3 - the app (R10, R12, R13; S6)
 
-- [ ] VIS-019-T09 [US3] Visual choice `cymatic` ("Cymatic Lines"), key `settings.cymatic.bands` (in `allKeys`, `ALLOWED_KEYS`, FILE-005 policy), `CymaticOptions` (segmented picker), host style `.cymatic(bands:)` built and updated in place (`CymaticHostSupport.swift`), accessibility value, scene capture as no layer (separate `case` lines), onChange in a one-modifier chain.
-- [ ] VIS-019-T10 [P] [US3] `CymaticAppTests` (setting persists and falls back; key in every list; host names itself, applies the range in place, keeps Reduce Motion and palette, switches with other noise-field modes; scene capture no layer); `SettingsTests.testOnlyTheSettingsKeysAreWritten`, `CameraVisualTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` updated and passing.
-- [ ] VIS-019-T11 [P] [US3] `CymaticUITests`: choose Cymatic Lines, Bands offered at All, Bars not, choose Low, value updates, source started once (< 30 s).
+- [X] VIS-019-T09 [US3] Visual choice `cymatic` ("Cymatic Lines"), key `settings.cymatic.bands` (in `allKeys`, `ALLOWED_KEYS`, FILE-005 policy), `CymaticOptions` (segmented picker), host style `.cymatic(bands:)` built and updated in place (`CymaticHostSupport.swift`), accessibility value, scene capture as no layer (separate `case` lines), onChange in a one-modifier chain. — Verified 2026-11-15: xcodegen generate + xcodebuild build-for-testing on VIS19 iPhone 17 with the type-check flags: TEST BUILD SUCCEEDED, no type-check warning in a function this feature touched (warnings only in untouched functions, load average 128 from parallel agents)
+- [X] VIS-019-T10 [P] [US3] `CymaticAppTests` (setting persists and falls back; key in every list; host names itself, applies the range in place, keeps Reduce Motion and palette, switches with other noise-field modes; scene capture no layer); `SettingsTests.testOnlyTheSettingsKeysAreWritten`, `CameraVisualTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` updated and passing. — Verified 2026-11-15: xcodebuild test-without-building: CymaticAppTests 4, SettingsTests, CameraVisualTests, LibraryBackupAppTests, LibraryEraseAppTests, SignedDistanceAppTests (32 passed, 2.1 s)
+- [X] VIS-019-T11 [P] [US3] `CymaticUITests`: choose Cymatic Lines, Bands offered at All, Bars not, choose Low, value updates, source started once (< 30 s). — Verified 2026-11-15: CymaticUITests passed in 26.9 s on VIS19 iPhone 17 (iOS 27.2)
 
 ## Phase 5: Polish
 
