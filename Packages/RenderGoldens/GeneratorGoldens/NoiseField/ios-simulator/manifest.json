@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "noise-field-128x96-f0.png",
+      "fileSHA256" : "d5448d418e65f544d89b710a6cd4ecde8059fab5d9e518949833c0d84da7d7d9",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "c3777654f399255d9440e60aa7f7e979b1519d5f54831cf613ded45a137556f3",
+      "scene" : "noise-field",
+      "width" : 128
+    },
+    {
+      "file" : "noise-field-256x192-f0.png",
+      "fileSHA256" : "c58b6278a25e21c2b38243e12a4baf9f63f17f8d7da391a5e70bf04e99e6e9dd",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "0cad246d921c89676f00bd97dfe3a3eae12d6c8838fe5b05190b0acf3a68119a",
+      "scene" : "noise-field",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

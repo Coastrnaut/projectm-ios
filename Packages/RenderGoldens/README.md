@@ -59,6 +59,11 @@ with `--filter ParticleFountainGolden` or `-only-testing:RenderGoldensTests/Part
 frames, captured at 0.5 s), through `ParticleOrbitGenerator` (`Tests/RenderGoldensTests/ParticleOrbitGoldenTests.swift`);
 record with `--filter ParticleOrbitGolden` or `-only-testing:RenderGoldensTests/ParticleOrbitGoldenTests`.
 
+`GeneratorGoldens/NoiseField/<class>/` (VIS-013) holds the noise field's golden the same way:
+`noise-field-<w>x<h>-f0.png` (seed 1301, 4 cells, 4 octaves; fixture bands full for 0.25 s then at 0.3; 60 Hz frames,
+captured at 0.5 s), through `NoiseFieldGenerator` (`Tests/RenderGoldensTests/NoiseFieldGoldenTests.swift`); record
+with `--filter NoiseFieldGolden` or `-only-testing:RenderGoldensTests/NoiseFieldGoldenTests`.
+
 ## Run
 
 ```bash

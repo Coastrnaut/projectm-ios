@@ -17,6 +17,8 @@ final class NoiseFieldRenderTests: XCTestCase {
     /// class. Recorded 2026-11-14 on the build Mac's host GPU and on the iOS 27.2 simulator of the same Mac.
     private static let digests: [String: [UInt64]] = [
         "Apple M5 Max": [0x5ACA_F96E_ABA2_29D6, 0x2753_B914_F0B6_6DF5],
+        // The simulator draws on the same Mac GPU and gives the same bytes.
+        "Apple iOS simulator GPU": [0x5ACA_F96E_ABA2_29D6, 0x2753_B914_F0B6_6DF5],
     ]
 
     /// The fixture's 64 bands at frame f: a moving bass-heavy slope, 0…1.
