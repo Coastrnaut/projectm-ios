@@ -24,7 +24,7 @@ UI test < 30 s (owner rule 7). Tasks are ticked only when verified, with " — V
 - [ ] OSC-005-T06 [US1] Loopback acceptance in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCSendLoopbackTests.swift` (macOS host): `NetworkDatagramTransport` on port 0 receives byte-exact `/projectm/scene ,s "Intro"` and `/projectm/beat ,i 1` from `OSCSender` + `NetworkOSCSender` (S1).
 - [ ] OSC-005-T07 [US1] `OSCSendCoordinator` in `Apps/projectM-iOS/Coordinators/OSCSendCoordinator.swift` (five keys, conditions, beat poll, status text, counts) and the hooks: `OSCReceiverCoordinator.apply()` → `sender?.conditionsChanged()`, `AppCoordinator.connectAfterInit` wiring, `start(_:)`/`stop()` status events, `applyShowScene` scene event (R4, R6, R10).
 - [ ] OSC-005-T08 [US1] `Apps/projectM-iOS/Views/OSCSendView.swift` and the "Send OSC" row in `Apps/projectM-iOS/Views/SettingsView.swift` `oscSection` (R1, R10).
-- [ ] OSC-005-T09 [US1] App test `Apps/projectM-iOS/Tests/OSCSendCoordinatorTests.swift`: with a loopback `NetworkDatagramTransport` listener, a scene and a beat (fake grid and clock) arrive byte-exact; defaults off (R2).
+- [ ] OSC-005-T09 [US1] App test `Apps/projectM-iOS/Tests/OSCSendCoordinatorTests.swift`: with a loopback `NetworkDatagramTransport` listener, a scene and a beat (fake grid and clock) arrive byte-exact; defaults off (R2); status texts for off, receiver off, no destination, not approved and sending, and the sent/dropped counts (R10).
 
 ## Phase 4: User Story 2 - Disable stops traffic (P2)
 
@@ -53,3 +53,7 @@ T05 with T07 (different files); T13 with T14.
 ## Implementation strategy
 
 Package first (pure, Linux-safe), then the transport and loopback proof (MVP: US1 package acceptance), then the app coordinator, screen and tests.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 T08, T12; R2 T09; R3 T02, T04, T11; R4 T07, T10, T11; R5 T04, T10; R6 T02, T05; R7 T05; R8 T05; R9 T05; R10 T07-T09; R11 T14; R12 T13; R13 T05; S1 T06, T09; S2 T10; S3 T11; S4 T05; S5 T12. Fix applied: R10 had no test (status texts added to T09). The 300 ms "nothing arrives" window in S2 is the only real-time wait (a negative check on real UDP, as OSC-001's loopback tests). No constitution conflict: outbound traffic is opt-in, local only and recorded in ADR-0088 under ADR-0008's OSC ruling.
