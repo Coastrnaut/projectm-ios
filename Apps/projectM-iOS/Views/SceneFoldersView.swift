@@ -7,6 +7,8 @@
 // shows the scene's first cue (SHOW-001). Announcements go through ShowCoordinator's library lane.
 // SCN-005: scene rows show their tags and offer "Tags…" (swipe, context menu, VoiceOver action),
 // which opens the Tags sheet.
+// SHOW-015-R4: while the scene (performance) lock is on, folder Rename/Move/Delete, scene Move/Tags and New Folder
+// are hidden or disabled and the lock note shows; Go to Cue and Export stay.
 // SCN-014: scene rows offer "Export Scene…" (context menu, leading swipe, VoiceOver action) and the top level
 // has "Import Scene…" (`ScenePackSection`); the share sheet shows from the level on screen.
 // SCN-006: scene rows show the scene's preview picture in place of the scene symbol (placeholder until
@@ -46,6 +48,8 @@ struct SceneFoldersView: View {
     @State private var onScreen = false   // SCN-014: only the level on screen presents the share sheet
 
     private var tree: SceneFolderTree { show.list.folders }
+    /// SHOW-015-R4 (the show coordinator refuses these edits anyway, SCN-015-R3).
+    private var locked: Bool { show.isEditLocked }
     private var title: String { folderID.flatMap { (id: UUID) -> String? in tree.folder(id)?.name } ?? "Scene Folders" }
 
     var body: some View {
@@ -85,6 +89,7 @@ struct SceneFoldersView: View {
     // MARK: - Sections
 
     @ViewBuilder private var messageSection: some View {
+        if locked { Section { SceneLockNote() } }   // SHOW-015-R4
         if let message = show.editorMessage {
             Section {
                 Text(message).accessibilityIdentifier("sceneFoldersMessage")
@@ -104,7 +109,7 @@ struct SceneFoldersView: View {
                     Text("New Folder").fixedSize(horizontal: false, vertical: true)
                 }
             }
-            .disabled(!tree.canCreateFolder(in: folderID))
+            .disabled(!tree.canCreateFolder(in: folderID) || locked)   // SHOW-015-R4
             .accessibilityIdentifier("sceneFoldersNewFolder")
         } footer: {
             Text("Folders only organize this list. Cues, their order and the show stay as they are.")
@@ -152,28 +157,40 @@ struct SceneFoldersView: View {
             .accessibilityLabel(folder.name)
             .accessibilityValue(folderValue(folder))
             .accessibilityIdentifier("sceneFolderRow.\(folder.name)")
-            .contextMenu {
-                Button("Rename…") { startRename(folder) }
-                Button("Move to…") { moving = .folder(folder.id) }
-                Button("Delete…", role: .destructive) { requestDelete(folder) }
-            }
+            .contextMenu { if !locked { folderMenuItems(folder) } }   // SHOW-015-R4
             .swipeActions(edge: .leading) {
-                Button("Move") { moving = .folder(folder.id) }
-                    .tint(.indigo)
-                    .accessibilityLabel("Move to")
-                    .accessibilityIdentifier("sceneFolderMoveFolder")
-                Button("Name") { startRename(folder) }
-                    .tint(.gray)
-                    .accessibilityLabel("Rename")
-                    .accessibilityIdentifier("sceneFolderRename")
+                if !locked {   // SHOW-015-R4
+                    Button("Move") { moving = .folder(folder.id) }
+                        .tint(.indigo)
+                        .accessibilityLabel("Move to")
+                        .accessibilityIdentifier("sceneFolderMoveFolder")
+                    Button("Name") { startRename(folder) }
+                        .tint(.gray)
+                        .accessibilityLabel("Rename")
+                        .accessibilityIdentifier("sceneFolderRename")
+                }
             }
             .swipeActions(edge: .trailing) {
-                Button("Delete", role: .destructive) { requestDelete(folder) }
-                    .accessibilityIdentifier("sceneFolderDelete")
+                if !locked {   // SHOW-015-R4
+                    Button("Delete", role: .destructive) { requestDelete(folder) }
+                        .accessibilityIdentifier("sceneFolderDelete")
+                }
             }
-            .accessibilityAction(named: "Rename") { startRename(folder) }
-            .accessibilityAction(named: "Move to") { moving = .folder(folder.id) }
-            .accessibilityAction(named: "Delete") { requestDelete(folder) }
+            .accessibilityActions {
+                if !locked {   // SHOW-015-R4
+                    Button("Rename") { startRename(folder) }
+                    Button("Move to") { moving = .folder(folder.id) }
+                    Button("Delete") { requestDelete(folder) }
+                }
+            }
+    }
+
+    /// Rename…, Move to… and Delete… in the context menu.
+    @ViewBuilder
+    private func folderMenuItems(_ folder: SceneFolder) -> some View {
+        Button("Rename…") { startRename(folder) }
+        Button("Move to…") { moving = .folder(folder.id) }
+        Button("Delete…", role: .destructive) { requestDelete(folder) }
     }
 
     // MARK: - Scene rows
@@ -217,16 +234,18 @@ struct SceneFoldersView: View {
             .accessibilityValue(sceneValue(sceneID, missing: missing))
             .accessibilityIdentifier("sceneFolderScene.\(name)")
             .contextMenu {
-                Button("Move to…") { moving = .scene(sceneID) }
+                if !locked { Button("Move to…") { moving = .scene(sceneID) } }   // SHOW-015-R4
                 Button("Go to Cue") { show.goToScene(sceneID) }
-                Button("Tags…") { tagging = SceneTagsTarget(sceneID: sceneID) }   // SCN-005
+                if !locked { Button("Tags…") { tagging = SceneTagsTarget(sceneID: sceneID) } }   // SCN-005; SHOW-015-R4
                 Button("Export Scene…") { exportScene(sceneID) }   // SCN-014
             }
             .swipeActions(edge: .leading) {
-                Button("Move") { moving = .scene(sceneID) }
-                    .tint(.indigo)
-                    .accessibilityLabel("Move to")
-                    .accessibilityIdentifier("sceneFolderMoveScene")
+                if !locked {   // SHOW-015-R4
+                    Button("Move") { moving = .scene(sceneID) }
+                        .tint(.indigo)
+                        .accessibilityLabel("Move to")
+                        .accessibilityIdentifier("sceneFolderMoveScene")
+                }
                 Button("Go") { show.goToScene(sceneID) }
                     .tint(.accentColor)
                     .accessibilityLabel("Go to Cue")
@@ -236,14 +255,18 @@ struct SceneFoldersView: View {
                     .accessibilityIdentifier("sceneFolderExportScene")
             }
             .swipeActions(edge: .trailing) {   // SCN-005
-                Button("Tags") { tagging = SceneTagsTarget(sceneID: sceneID) }
-                    .tint(.teal)
-                    .accessibilityIdentifier("sceneFolderTags")
+                if !locked {   // SHOW-015-R4
+                    Button("Tags") { tagging = SceneTagsTarget(sceneID: sceneID) }
+                        .tint(.teal)
+                        .accessibilityIdentifier("sceneFolderTags")
+                }
             }
-            .accessibilityAction(named: "Move to") { moving = .scene(sceneID) }
-            .accessibilityAction(named: "Go to Cue") { show.goToScene(sceneID) }
-            .accessibilityAction(named: "Tags") { tagging = SceneTagsTarget(sceneID: sceneID) }
-            .accessibilityAction(named: "Export Scene") { exportScene(sceneID) }   // SCN-014
+            .accessibilityActions {
+                if !locked { Button("Move to") { moving = .scene(sceneID) } }   // SHOW-015-R4
+                Button("Go to Cue") { show.goToScene(sceneID) }
+                if !locked { Button("Tags") { tagging = SceneTagsTarget(sceneID: sceneID) } }
+                Button("Export Scene") { exportScene(sceneID) }   // SCN-014
+            }
     }
 
     /// SCN-014: packs the scene with its media and opens the share sheet.

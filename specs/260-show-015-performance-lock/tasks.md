@@ -1,0 +1,39 @@
+# Tasks: SHOW-015 Performance Lock
+
+**Input**: [plan.md](plan.md), [spec.md](spec.md), [data-model.md](data-model.md), [contracts/performance-lock.md](contracts/performance-lock.md)
+**Tests**: requested by the roadmap acceptance and the brief (coordinator acceptance tests, a UI test under 30 s).
+
+## Phase 1: Foundational (wiring the existing lock)
+
+- [X] SHOW-015-T01 Wire the SCN-015 lock into `PresetCoordinator` and `LibraryBackupCoordinator` (`sceneLock: SceneLock?`, set in `connectSceneLock()`) in Apps/projectM-iOS/Coordinators/AppCoordinator+SceneLock.swift; no new stored key (data-model: "No new entity or stored key") — Verified 2026-11-14: `PerformanceLockAcceptanceTests` (4 pass, 0.07 s) with the same wiring; build-for-testing succeeded on "SHOW15 iPhone 17" (iOS 27.2); no new key (LibraryBackupAppTests, SettingsTests pass)
+
+## Phase 2: User Story 1 — Nothing can be deleted or reordered mid-show (P1)
+
+- [X] SHOW-015-T02 [US1] Refusals (contract P1): `refusedByLock()` and `isCollectionEditLocked` in Apps/projectM-iOS/Coordinators/PresetCoordinator.swift guarding `deleteCollection`, `removeFromCollection`, `movePresets`, `moveCollections` (and so `movePreset`, `moveCollection`); `deleteSmartCollection` in Apps/projectM-iOS/Coordinators/PresetCoordinator+Smart.swift; refusal sets `collectionsMessage` to `SceneLock.refusalMessage` — Verified 2026-11-14: `testTheLockRefusesDeletesReordersEraseAndRestore` (collection delete/reorder, preset reorder, Remove from Collection, smart delete refused; collections unchanged; `collectionsMessage` = refusal)
+- [X] SHOW-015-T03 [US1] Storage refusals: `LibraryEraseCoordinator.canStart` false while locked, `openSheet`/`requestErase` refuse (Apps/projectM-iOS/Coordinators/LibraryEraseCoordinator.swift); `restoreTapped` returns false and `requestRestore` refuses, `isRestoreLocked` (Apps/projectM-iOS/Coordinators/LibraryBackupCoordinator.swift); Cancel Erase and Cancel Restore unchanged — Verified 2026-11-14: same test (Erase Data… opens no sheet and records no request; Restore opens no picker and records nothing; 12 refusals counted); `testEmergencyControlsStillActWhileLocked` (Cancel Erase works)
+- [X] SHOW-015-T04 [P] [US1] Collection views (contract P3): hide Delete/Remove swipe actions, Move Up/Down and Delete menu items, the matching VoiceOver actions, the Edit button and `onMove` while locked, and end an active Edit mode when the lock turns on (spec edge case); show `SceneLockNote` — Apps/projectM-iOS/Views/PresetCollectionsView.swift, Apps/projectM-iOS/Views/PresetCollectionView.swift, Apps/projectM-iOS/Views/SmartCollectionViews.swift, Apps/projectM-iOS/Views/PresetBrowserView.swift (`PresetRow` collection actions) — Verified 2026-11-14: `PerformanceLockUITests` (no Edit button, no swipe Delete, note shown, New Collection enabled); build with -warn-long-function-bodies=300 / expression 150 shows no warning in the touched views
+- [X] SHOW-015-T05 [P] [US1] Scene Folders: hide folder Rename/Move/Delete and scene Move/Tags (swipe, menu, VoiceOver) while locked, disable New Folder, show the note — Apps/projectM-iOS/Views/SceneFoldersView.swift — Verified 2026-11-14: build (no type-check warnings); Scene Folders refusals in `testTheLockRefusesDeletesReordersEraseAndRestore` (folder delete); SceneFoldersUITests regression
+- [X] SHOW-015-T06 [P] [US1] Storage views: note beside the disabled Erase Data… and Restore from Backup… — Apps/projectM-iOS/Views/LibraryEraseSection.swift, Apps/projectM-iOS/Views/LibraryBackupSection.swift — Verified 2026-11-14: build; `isRestoreLocked`/`canStart` asserted in the acceptance test; LibraryEraseUITests and LibraryBackupUITests regression
+- [X] SHOW-015-T07 [US1] Acceptance tests (S1, S2): with the lock on, cue delete, cue move, folder delete, collection delete, collection reorder, preset reorder in a collection, Remove from Collection and smart collection delete are refused and the show list and collections are unchanged; erase and restore open nothing and record nothing; with the lock off the same calls succeed — Apps/projectM-iOS/Tests/PerformanceLockAcceptanceTests.swift — Verified 2026-11-14: `PerformanceLockAcceptanceTests` 4 pass (0.069 s): locked refuses 8 attempts with state equal; unlocked the same succeed
+
+## Phase 3: User Story 2 — Emergency controls stay available (P1)
+
+- [X] SHOW-015-T08 [US2] Acceptance test (S3): with the lock on, blackout and restore, Go to cue and Next, and Reduce flashing each act; Cancel Erase stays available — Apps/projectM-iOS/Tests/PerformanceLockAcceptanceTests.swift — Verified 2026-11-14: `testEmergencyControlsStillActWhileLocked` (emergency blackout → blackedOut, Restore → live after injected frames; Go to cue and Previous apply scenes; Reduce flashing toggles; 0 refusals)
+
+## Phase 4: User Story 3 — Unlock deliberately (P1)
+
+- [X] SHOW-015-T09 [US3] Copy (R7; R6's persistence and confirmation are SCN-015's, proved by `SceneLockAcceptanceTests` and rerun in T11): `SceneLock.unlockMessage` and the Settings footer name collections, erase and restore — Apps/projectM-iOS/Views/SceneLockViews.swift — Verified 2026-11-14: build; AccessibilityScreensUITests' footer filter matches by the unchanged prefix "Locks the scene for a performance"; SceneLockAcceptanceTests pass
+- [X] SHOW-015-T10 [US1] [US2] [US3] UI test (S4, under 30 s): lock in the controls; Collections shows the note, no Edit button and no Delete on swipe; back on the visualizer the emergency Black out works and Restore returns; unlock with confirmation removes the badge — Apps/projectM-iOS/UITests/PerformanceLockUITests.swift — Verified 2026-11-14: `PerformanceLockUITests` passed 3 of 3 after the final edit (22.4 s, 18.5 s, 18.1 s; under 30 s): lock, Collections note, no Edit, no swipe Delete, New Collection enabled, emergency blackout → black and Restore → live while locked, unlock with confirmation. An earlier version tapped the emergency button while the controls were auto-hiding and failed 2 of 5; fixed by hiding the controls first
+
+## Phase 5: Polish
+
+- [X] SHOW-015-T11 Regression and repo checks: SceneLock, EmergencyBlackout, collections, SceneFolders, LibraryBackupApp and Settings tests; the six repo scripts; privacy manifest and network symbols on the Debug app; type-check budget — specs/260-show-015-performance-lock/spec.md status — Verified 2026-11-14: unit regression 69 tests pass (SceneLock, PresetCollectionsCoordinator, PresetSmartCollectionApp, LibraryEraseApp, LibraryBackupApp, FolderBackupApp, EmergencyBlackout, Settings, SceneFolder, SceneTag, ShowCoordinator, PerformanceLock; 1.9 s); UI regression SceneLockUITests, SceneFoldersUITests, PresetCollectionsUITests 9, PresetSmartCollectionUITests, LibraryEraseUITests, LibraryBackupUITests pass (three PresetCollections reorder tests hit "Critical process xctest crashed" in the batch, a runner crash also seen on another branch, and passed on rerun); check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; no type-check warnings in touched files
+- [ ] SHOW-015-T12 {device} On D1: lock; swipe a cue and a collection (no Delete); tap the emergency blackout and restore; unlock with confirmation — docs/test-reports (owner run)
+
+## Dependencies
+
+T01 → T02, T03 → T04-T07 → T08 → T09 → T10 → T11. T04, T05, T06 touch different files and can run in parallel.
+
+## Implementation Strategy
+
+MVP is User Story 1 (T01-T07); US2 adds only tests (the emergency paths are untouched); US3 is copy plus the UI test.
