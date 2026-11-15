@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (UIX-012-T01-T12 verified on the Mac: package GPU and pure tests, app unit and UI tests on a private iOS 27.2 simulator; T13 is a `{device}` check, open; no ADR)
 
 **Input**: User description: "Implement UIX-012 (Touch color sampler) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Sample color from current composited preview for a parameter." Acceptance,
@@ -39,7 +39,7 @@ interaction); each answer is the conservative, local-first option.
 - Q: What happens to a tap outside the picture (letterbox bars, the split pane's margin)? → A: It is rejected: nothing is written, sampling mode stays on and the banner says "Tap inside the picture". Clamping would write a colour the user did not touch.
 - Q: Which alpha is written? → A: The colour is converted from premultiplied to straight; the target keeps its own alpha. The preview is opaque over black, so the composite's coverage is not a colour the user sees; the sampled colour sets red, green and blue only.
 - Q: When is sampling unavailable? → A: When there is nothing to sample on the device: no visual, the visual shown only on the external display (OUT-001), the output blacked out (OUT-010), paused, or the scene locked (SCN-015's refusal). The eyedropper then reports why and does not enter sampling mode.
-- Q: How does sampling work when Settings is a sheet? → A: The sheet closes, a banner over the preview says "Tap the picture to pick <name>" with Cancel; after a sample or Cancel, Settings reopens. In the iPad split editor the editor stays open and the user taps the scaled preview.
+- Q: How does sampling work when Settings is a sheet? → A: The sheet closes, a banner over the preview says "Tap the picture to pick <name>" with Cancel; after a sample or Cancel, Settings reopens, scrolled back to the sampled control's section. In the iPad split editor the editor stays open and the user taps the scaled preview.
 
 ### Session 2026-11-15 (speckit-clarify)
 
@@ -48,7 +48,7 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Does sampling mode end after one sample? → A: Yes. A written sample (or an unchanged colour) ends sampling mode and returns to Settings; a rejected tap or a failed read keeps it, so the user can try again.
 - Q: Which output pixel does a point on a pixel boundary pick? → A: The pixel that contains it: floor of the continuous pixel coordinate, with the far edge (exactly the picture's width or height) clamped to the last pixel. Tests use pixel centres and boundaries.
 - Q: In which space are the announced and displayed percentages? → A: sRGB-encoded (the values colour pickers show), rounded to whole percents; the stored value keeps full precision in the target's space.
-- Q: Do other visualizer gestures work during sampling? → A: No. Taps on the preview sample; the tap-to-toggle controls, double-tap focus and gesture shortcuts are off until sampling ends. The emergency blackout stays reachable (it is above the sampling layer).
+- Q: Do other visualizer gestures work during sampling? → A: No. Taps on the preview sample; the tap-to-toggle controls, double-tap focus and gesture shortcuts are off until sampling ends. The emergency blackout, the status stack and the controls stay reachable (they are above the sampling layer).
 - Q: Is sampling offered when Reduce flashing is limiting the frame? → A: Yes; the sample is the frame as shown, after the FX-019 guard (what the user sees).
 
 ## User Scenarios & Testing *(mandatory)*
