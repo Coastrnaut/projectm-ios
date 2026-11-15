@@ -15,21 +15,21 @@
    "integrated": 150
   },
   "P2": {
-   "audited": 35,
-   "built": 1,
-   "implementing": 1,
-   "integrated": 42
+   "audited": 34,
+   "implementing": 2,
+   "integrated": 42,
+   "unit_passed": 1
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 46,
-  "built": 1,
-  "implementing": 2,
+  "audited": 45,
+  "implementing": 3,
   "integrated": 276,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1396,12 +1396,12 @@
   "MED-012": {
    "attempts": 0,
    "branch": "feature/med-012",
-   "branch_sha": "fb7c4a7e7899e26926b39fffaa800786e5df6c01",
+   "branch_sha": "bd402e8ddc4e413f92778e6f6cdf57bcb918f3d9",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "MED-013": {
    "attempts": 0,
@@ -1505,13 +1505,13 @@
   },
   "MIDI-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/midi-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "MIDI-010": {
    "attempts": 0,
@@ -4761,5 +4761,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:15:24Z"
+ "updated": "2026-11-15T03:16:33Z"
 }
