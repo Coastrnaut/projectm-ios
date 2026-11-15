@@ -37,6 +37,17 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: What about controllers that send only the coarse part? → A: Until the first fine message of that pair arrives, coarse messages read as 7-bit (value / 127, so the top still reaches the maximum). After the first fine message the pair reads as 14-bit for the rest of the session.
 - Q: What does "when supported" mean? → A: Both: learn detects a 14-bit control (the fine controller n+32 on the same channel within 500 ms after the learning message, or later in the same batch) and marks the mapping 14-bit; and each mapping on controller 0–31 has a "14-bit control" switch on its options screen to set or clear it by hand.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Must coarse and fine arrive in a fixed order? → A: Yes, coarse first (the MIDI 1.0 order every 14-bit controller uses). A fine message only refines the last coarse value; order-independent pairing within a window is not offered (it would delay or reorder values).
+- Q: What about MIDI 2.0 high-resolution (32-bit) controller values? → A: Not handled: the input port uses the MIDI 1.0 protocol, so the system delivers MIDI 2.0 devices as MIDI 1.0 messages and the UMP decoder keeps skipping message type 0x4. A later feature can map 32-bit values to the same normalized 0…1.
+- Q: Is the pair state stored? → A: No. It lives in memory for the session (like live values, MIDI-003-R8); only the `hires=1` flag is stored. Loading other mappings keeps it; it is keyed by channel and controller, not by parameter.
+- Q: How is learn detection announced? → A: The usual "… mapped to CC 7 on channel 1." message, then "Glow intensity uses 14-bit control (CC 7 and CC 39)." on the `.midi` lane and as the status; the manual switch announces "Glow intensity 14-bit control on." / "… off.". Neither is an Undo step (like MIDI-004's options).
+- Q: Does learning consume the fine message? → A: Yes for values: the learning gesture applies no value (MIDI-003-R7), so a fine message in the learning batch only marks the mapping; values start with the next coarse message.
+- Q: Does the flag add a UserDefaults key? → A: No: it is a segment of the existing `settings.midi.mappings` lines, so backup, erase and the key lists are unchanged.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A 14-bit knob drives a parameter smoothly (Priority: P1) — MVP
