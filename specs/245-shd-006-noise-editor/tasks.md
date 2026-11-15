@@ -34,5 +34,13 @@
 
 ## Phase 6: Polish
 
-- [ ] SHD-006-T13 Linux shape (Compositor `-DCOMPOSITOR_NO_METAL`), package suites, iOS simulator run of ProceduralMaterialsTests, type-check budget, repo checks, privacy manifest and network symbols on the Debug app; spec status
+- [ ] SHD-006-T13 Linux shape (Compositor `-DCOMPOSITOR_NO_METAL`), package suites (Compositor incl. MaterialFlashSafetyTests, SceneFormat), iOS simulator run of ProceduralMaterialsTests, type-check budget, repo checks, privacy manifest and network symbols on the Debug app; spec status
 - [ ] SHD-006-T14 {device} Look at the Noise editor preview on D1 (seed, octaves, warp)
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 → T03; R2 → T04-T05; R3 → T06; R4 → T07; R5 → T02-T03; R6 → T08, T10, T12; R7 → T09, T11; R8 → T03,
+T13. S1 → T06, T13 (simulator digest); S2 → T06; S3 → T07; S4 → T12; S5 → T13. Fixes applied: T13 also runs the
+SceneFormat suite (scenes storing Noise Flow values keep loading, R8) and the material flash-safety tests (new
+octave range at extremes); T06 records the simulator's digest in the same table. No constitution conflicts; no
+unmapped tasks.
