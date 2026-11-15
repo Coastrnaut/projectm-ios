@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T04:55:15Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T04:59:52Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,9 +11,9 @@
 |---|---|
 | audited | 30 |
 | implementing | 2 |
-| built | 2 |
+| built | 1 |
 | unit_passed | 1 |
-| integrated | 290 |
+| integrated | 291 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -22,13 +22,13 @@
 |---|---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 22 | 1 | 2 | 1 | 53 | 0 |
+| P2 | 22 | 1 | 1 | 1 | 54 | 0 |
 | P3 | 6 | 1 | 0 | 0 | 2 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 35 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
+- 34 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
 
 ## Integrated
 
@@ -192,6 +192,7 @@ The physical-device suite may **not** start:
 | OSC-007 | OSC network access switch | `ade4dfec39a5` | `feature/osc-007` |
 | OSC-008 | OSC peer allowlist | `1cc452b0` | `feature/osc-008` |
 | OSC-009 | OSC rate limiter | `1ee3a05d25fb` | `feature/osc-009` |
+| OSC-010 | OSC schema export | `190204f6f729` | `feature/osc-010` |
 | OUT-001 | External display scene | `dfd5757fccd4` | `feature/out-001` |
 | OUT-002 | Display connect handling | `526c47e9` | `None` |
 | OUT-003 | Independent output resolution | `5fb23871c944` | `feature/out-003` |
@@ -2127,11 +2128,12 @@ None.
 - `swift test --package-path Packages/PerformanceControl`: pass at `f4291322e4b6` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-009/20261113T122631/swift-test_PerformanceControl.log`)
 - `post-merge: PerformanceControl xcodebuild test on iPhone 17 sim (89, incl. 100,000-datagram flood fixture); projectM-iOSTests 186; OSC UI tests 3 and SettingsUITests 4 (8.3-19.4 s)`: pass at `1ee3a05d25fb` (log `.autonomous/logs/integration/osc-009/perf-sim.log`)
 
-### OSC-010 OSC schema export (unit_passed)
+### OSC-010 OSC schema export (integrated)
 - `python3 scripts/check_compliance.py`: pass at `2a6ff82d11a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-010/20261114T235059/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `2a6ff82d11a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-010/20261114T235059/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `2a6ff82d11a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-010/20261114T235059/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `2a6ff82d11a7` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-010/20261114T235059/swift-test_PerformanceControl.log`)
+- `swift test PerformanceControl 329 (OSC send loopback test corrected); postmerge projectM-iOSTests 1248 + OSCSchemaExport/OSCRoutes UI tests 2`: pass at `190204f6f729` (log `.autonomous/logs/integration/batch117/app-tests.log`)
 
 ### OUT-001 External display scene (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a95a4a96502a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-001/20261113T133155/compliance.log`)
@@ -3508,6 +3510,19 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `e071cd355c86` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-010/20261114T230930/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `e071cd355c86` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-010/20261114T230930/swift-test_VisualGenerators.log`)
 - `conflicts with SHD-007 resolved (keep both); swift test VisualGenerators 339, RenderGoldens 97, LibraryBackup 87; postmerge projectM-iOSTests 1232 + ParticleTrail/ParticleEmitterEditor UI tests 2`: pass at `2bd46a45982d` (log `.autonomous/logs/integration/batch112/app-tests.log`)
+
+### VIS-011 Fluid ink (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/docs.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `e7e40014608f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-011/20261114T235258/swift-test_VisualGenerators.log`)
 
 ### VIS-013 Noise field (integrated)
 - `python3 scripts/check_compliance.py`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/compliance.log`)
