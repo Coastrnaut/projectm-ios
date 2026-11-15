@@ -12,14 +12,12 @@
   },
   "P1": {
    "audited": 5,
-   "implementing": 1,
-   "integrated": 144,
-   "unit_passed": 1
+   "built": 1,
+   "integrated": 145
   },
   "P2": {
    "audited": 43,
-   "built": 1,
-   "integrated": 34,
+   "integrated": 35,
    "unit_passed": 1
   },
   "P3": {
@@ -29,10 +27,9 @@
  "by_state": {
   "audited": 59,
   "built": 1,
-  "implementing": 1,
-  "integrated": 262,
+  "integrated": 264,
   "skipped_existing": 1,
-  "unit_passed": 2
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -56,7 +53,6 @@
    "FX-017",
    "FX-018",
    "MED-005",
-   "MED-007",
    "MED-008",
    "MED-011",
    "MED-012",
@@ -83,7 +79,6 @@
    "SHD-007",
    "SHD-008",
    "SHOW-009",
-   "SHOW-010",
    "SHOW-012",
    "SHOW-013",
    "SHOW-015",
@@ -106,7 +101,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "63 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
+   "61 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)"
   ]
  },
  "features": {
@@ -1365,10 +1360,10 @@
    "branch": "feature/med-007",
    "branch_sha": "2ca8a1db733a66e61f7646e525b65f0288d0facb",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5ec1a2e59b212f5fb32d2fcfb59bf2e2ee6d4560",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "MED-008": {
    "attempts": 0,
@@ -1883,12 +1878,12 @@
   "OUT-003": {
    "attempts": 0,
    "branch": "feature/out-003",
-   "branch_sha": "897d67930265f3b08cef7416945758fb23231cac",
+   "branch_sha": "dfd3efe61278713647ac5e08d02a39b29c322e08",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "OUT-004": {
    "attempts": 0,
@@ -2965,10 +2960,10 @@
    "branch": "feature/show-010",
    "branch_sha": "af23b55a39446d4b616a9919d83de1e4f18c8bec",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "5ec1a2e59b212f5fb32d2fcfb59bf2e2ee6d4560",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SHOW-011": {
    "attempts": 0,
@@ -3293,12 +3288,12 @@
   "VIS-013": {
    "attempts": 0,
    "branch": "feature/vis-013",
-   "branch_sha": null,
+   "branch_sha": "a7c91f2f2257323bb8cd6929f1f2f71757d72ba6",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "VIS-014": {
    "attempts": 0,
@@ -3916,6 +3911,11 @@
    "branch": "feature/med-006",
    "id": "MED-006",
    "sha": "d6ec9dc5e426223ea4d7bc64c1f730c372dc9a53"
+  },
+  {
+   "branch": "feature/med-007",
+   "id": "MED-007",
+   "sha": "5ec1a2e59b212f5fb32d2fcfb59bf2e2ee6d4560"
   },
   {
    "branch": "feature/med-009",
@@ -4578,6 +4578,11 @@
    "sha": "e4ad41bb"
   },
   {
+   "branch": "feature/show-010",
+   "id": "SHOW-010",
+   "sha": "5ec1a2e59b212f5fb32d2fcfb59bf2e2ee6d4560"
+  },
+  {
    "branch": "feature/show-011",
    "id": "SHOW-011",
    "sha": "11329d52e6dc05d820e8ee931de4167b14b3d1ab"
@@ -4708,5 +4713,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T01:45:38Z"
+ "updated": "2026-11-15T01:49:54Z"
 }
