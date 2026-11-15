@@ -125,6 +125,13 @@ and writes the verdict next to the pulled reports.
 
 ## Clarifications
 
+### Device measurements 2026-11-15 (ADR-0124)
+
+- The first full device measurements (QA-011) corrected three budgets in `thresholds.json` version 2: audio age
+  ≤ 100 ms on every class (the metric is PERF-013's analysis-to-presentation age, not ring residency), D2 and D3 peak
+  memory scaled by pixel count (600 MB and 400 MB; SC-008's 300 MB stays for D1), and `perf001` now samples 60
+  one-second windows so the 5th percentile is not a single second.
+
 ### Session 2026-11-14 (speckit-clarify)
 
 Answered by Claude under the owner's standing approval (owner rules 4 and 9); each answer is the conservative,

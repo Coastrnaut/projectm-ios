@@ -63,13 +63,16 @@ def case(id: str, kind: str, title: str, closes: list[str], timeout: int, **para
 CASES: list[dict] = [
     case("autorun-perf001", "autorun", "AutomationRunner perf001: per-stage frame timings, 1 s frame-rate windows, "
          "PERF-007 drops", ["PERF-001-T16", "PERF-002-T13", "QA-010-T12"], 300, mode="perf001",
-         prefix="automation-perf001", wait=180),
+         prefix="automation-perf001", wait=240),
     case("launches-sc015", "launches", "sc015 cold launches (10 recorded) for the QA-010 launch budget",
          ["QA-010-T12"], 400, mode="sc015", repeat=10),
     case("warmstart-perf009", "warmstart", "PERF-009 cold and warm launches (10 each), medians",
          ["PERF-009-T16"], 600, repeat=10),
     case("autorun-sc009", "autorun", "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
          ["AUD-014-T32"], 600, mode="sc009", prefix="automation-sc009", wait=540, permission="microphone"),
+    case("autorun-perf012", "autorun", "AutomationRunner perf012: a 1-minute overlay session, then the PERF-012 "
+         "report (frame-interval percentiles, peak memory, audio age) for the QA-010 judge", [], 300,
+         partOf=["QA-010-T12"], mode="perf012", prefix="performance-perf012", wait=180),
     case("thresholds", "thresholds", "QA-010 judge over the pulled perf001 and sc015 reports (plus any PERF-012 "
          "export given with --perf012-report)", ["QA-010-T12"], 120),
     case("xctest-goldens", "xctest", "RenderGoldens suite on the device GPU (goldens report pending without a "
@@ -438,6 +441,7 @@ DEVICE_TEST_BUNDLES = {
     "GeneratorGraphTests": "GeneratorGraphDeviceTests",
     "ParameterExpressionTests": "ExpressionDeviceTests",
     "RenderGoldensTests": "RenderGoldensDeviceTests",
+    "ANGLERenderingTests": "ANGLEDeviceTests",
 }
 
 

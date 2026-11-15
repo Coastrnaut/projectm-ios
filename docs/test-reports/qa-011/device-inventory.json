@@ -117,6 +117,21 @@
       "timeoutSeconds": 600
     },
     {
+      "id": "autorun-perf012",
+      "kind": "autorun",
+      "title": "AutomationRunner perf012: a 1-minute overlay session, then the PERF-012 report (frame-interval percentiles, peak memory, audio age) for the QA-010 judge",
+      "closes": [],
+      "partOf": [
+        "QA-010-T12"
+      ],
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "timeoutSeconds": 300
+    },
+    {
       "id": "thresholds",
       "kind": "thresholds",
       "title": "QA-010 judge over the pulled perf001 and sc015 reports (plus any PERF-012 export given with --perf012-report)",
@@ -4388,6 +4403,7 @@
       "matrixCases": [
         "autorun-perf001",
         "launches-sc015",
+        "autorun-perf012",
         "thresholds"
       ],
       "estimatedMinutes": 15,

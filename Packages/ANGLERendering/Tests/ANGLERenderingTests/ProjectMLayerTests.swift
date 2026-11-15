@@ -11,10 +11,15 @@ import Metal
 @testable import ProjectMLayer
 
 final class ProjectMLayerTests: XCTestCase {
-    private static let presets = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
-        .deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("Vendor/projectM/presets/tests")
+    /// The engine's test presets in the source tree; on a device (QA-011, DeviceTests.yml) the test bundle's copy.
+    private static let presets: URL = {
+        let source = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("Vendor/projectM/presets/tests")
+        if FileManager.default.fileExists(atPath: source.path) { return source }
+        return Bundle(for: ProjectMLayerTests.self).resourceURL?.appendingPathComponent("tests") ?? source
+    }()
 
     private var device: MTLDevice!
     private var queue: MTLCommandQueue!

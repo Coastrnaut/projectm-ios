@@ -9,6 +9,8 @@
 //           install acknowledges the photosensitivity notice and records nothing.
 //   sc007   In-App Playback, then 50 × Next: time from the request to the new preset's first
 //           presented frame. Report: Documents/automation-sc007-<time>.json.
+//   perf012 1 minute of In-App Playback (projectM, then 20 s Circular Spectrum) with the overlay shown, then the
+//           PERF-012 report (QA-010 judge input).
 //   sc009   50 start/switch/stop cycles at 200 ms (In-App Playback ↔ Microphone), then a scripted
 //           background/foreground/lock/unlock/interruption/route-change sequence per mode, posting
 //           the same notifications iOS posts. Report: Documents/automation-sc009-<time>.json.
@@ -100,6 +102,7 @@ enum AutomationRunner {
             case "entitlement": await entitlement(coordinator)
             case "privacy": await privacy(coordinator)
             case "perf001": await perf001(coordinator)
+            case "perf012": await perf012(coordinator)
             default: write("unknown", ["error": "unknown PROJECTM_AUTORUN \(mode)"])
             }
         }
@@ -411,6 +414,34 @@ enum AutomationRunner {
         ]
     }
 
+    // MARK: - PERF-012 for the QA-010 judge (QA-011, 2026-11-15)
+
+    /// A 1-minute In-App Playback session on projectM with the performance overlay shown, then 20 s on the Circular
+    /// Spectrum (audio age is measured by the native visuals only, PERF-013), then the PERF-012 report the Export
+    /// button builds (`performanceReportData`), written to Documents as `performance-perf012-<time>.json` for the
+    /// matrix's threshold judge. The share sheet is skipped: this is the same document, not a test of the export.
+    private static func perf012(_ coordinator: AppCoordinator) async {
+        let overlayWas: Bool = coordinator.settings.showsPerformanceOverlay
+        let visualWas: VisualChoice = coordinator.settings.visual
+        coordinator.settings.showsPerformanceOverlay = true
+        coordinator.select(.inAppPlayback)
+        try? await Task.sleep(for: .seconds(60))
+        coordinator.settings.visual = .circularSpectrum
+        try? await Task.sleep(for: .seconds(20))
+        let now = Date()
+        let stamp = ISO8601DateFormatter().string(from: now).replacingOccurrences(of: ":", with: "")
+        let url = URL.documentsDirectory.appendingPathComponent("performance-perf012-\(stamp).json")
+        do {
+            let data: Data = try coordinator.performanceReportData(exportedAt: now)
+            try data.write(to: url)
+        } catch {
+            write("perf012", ["error": "report not built: \(error)"])
+        }
+        coordinator.settings.showsPerformanceOverlay = overlayWas
+        coordinator.settings.visual = visualWas
+        exitSoon()
+    }
+
     // MARK: - PERF-001
 
     private static func fpsSamples(_ coordinator: AppCoordinator, seconds: Int) async -> [Double] {
@@ -426,7 +457,9 @@ enum AutomationRunner {
         coordinator.select(.inAppPlayback)
         try? await Task.sleep(for: .seconds(3))
         guard let visual = coordinator.activeStageTimedVisual else { return write("perf001", ["error": "no visual shown"]) }
-        let fpsOff = await fpsSamples(coordinator, seconds: 5)
+        // 60 one-second windows from the same start (ADR-0124): SC-005 asks for 95% of 1 s windows, and with 5
+        // windows the 5th percentile was the single worst second (a cold shader cache's first second on D2).
+        let fpsOff = await fpsSamples(coordinator, seconds: 60)
         let timer = FrameStageTimer()
         visual.stageTimer = timer
         let drops: (any FrameDropCounted)? = visual as? any FrameDropCounted   // PERF-007: the same window's frame drops

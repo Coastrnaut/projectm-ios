@@ -24,6 +24,7 @@ python3 scripts/run_device_matrix.py --device D3    # then: python3 scripts/run_
 | `launches-sc015` | D1, D2, D3 | QA-010-T12 | 400 s |
 | `warmstart-perf009` | D1 | PERF-009-T16 | 600 s |
 | `autorun-sc009` | D1, D3 | AUD-014-T32 | 600 s |
+| `autorun-perf012` | D1, D2, D3 | part of QA-010-T12 | 300 s |
 | `thresholds` | D1, D2, D3 | QA-010-T12 | 120 s |
 | `xctest-goldens` | D1 | QA-003-T17 | 900 s |
 | `xctest-soak-600` | D1 | QA-006-T13 | 1200 s |
@@ -47,7 +48,7 @@ Tasks the matrix closes when its cases pass on the named devices:
 - [ ] `PERF-002-T13` (D1) — autorun-perf001
 - [ ] `CMP-008-T19` (D1) — bench-cmp008
 - [ ] `CMP-009-T19` (D1) — bench-cmp009
-- [ ] `QA-010-T12` (D1, D2, D3) — autorun-perf001, launches-sc015, thresholds
+- [ ] `QA-010-T12` (D1, D2, D3) — autorun-perf001, launches-sc015, autorun-perf012, thresholds
 - [ ] `PERF-009-T16` (D1) — warmstart-perf009
 - [ ] `CMP-010-T19` (D1) — bench-cmp010
 - [ ] `SHD-004-T20` (D2, D3) — xctest-materials

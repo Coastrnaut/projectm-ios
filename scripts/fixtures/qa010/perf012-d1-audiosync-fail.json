@@ -8,7 +8,7 @@
   "driftDetected": false,
   "maxMs": 100.0,
   "p50Ms": 24.1,
-  "p95Ms": 80.0,
+  "p95Ms": 120.0,
   "sampleCount": 3600
  },
  "device": {

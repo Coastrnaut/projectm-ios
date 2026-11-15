@@ -2028,7 +2028,7 @@ class PerformanceThresholdsTests(unittest.TestCase):
         verdict = self.check(*self.PASS)
         self.assertEqual(verdict["overall"], "pass")
         self.assertEqual(set(self.verdicts(verdict).values()), {"pass"})
-        self.assertEqual((verdict["deviceClass"], verdict["evidence"], verdict["thresholdsVersion"]), ("D1", True, 1))
+        self.assertEqual((verdict["deviceClass"], verdict["evidence"], verdict["thresholdsVersion"]), ("D1", True, 2))
         self.assertEqual(cpt.exit_code(verdict), 0)
 
     def test_audio_age_is_read_from_the_perf013_section_of_a_performance_report(self):
@@ -2069,7 +2069,7 @@ class PerformanceThresholdsTests(unittest.TestCase):
             (self.check("perf012-unknown-model.json"), "unknown device class: model iPhone18,3"),
             (self.check(*self.PASS, thresholds_path=self.F / "thresholds-wrong-schema.json"),
              "unsupported thresholds schemaVersion 2"),
-            (self.check(*self.PASS, pinned=2), "thresholds version mismatch: file has 1, caller pinned 2"),
+            (self.check(*self.PASS, pinned=3), "thresholds version mismatch: file has 2, caller pinned 3"),
             (self.check("perf012-d3-pass.json", "perf001-d1-pass.json"), "mixed device models"),
             (self.check("sc015-pass.json"), "no device model"),
         ]
@@ -2282,9 +2282,11 @@ class QA011MatrixTests(unittest.TestCase):
                          ["CompositorDeviceTests/LayerGradientCompositeTests/testX"])
         self.assertEqual(rdm.device_only_testing([], "RenderGoldens"), ["RenderGoldensDeviceTests"],
                          "an unfiltered case runs its package's bundle, never the whole scheme")
-        self.assertIsNone(rdm.device_only_testing(["ANGLERenderingTests/ProjectMLayerTests"]))
+        self.assertEqual(rdm.device_only_testing(["ANGLERenderingTests/ProjectMLayerTests"]),
+                         ["ANGLEDeviceTests/ProjectMLayerTests"])
+        self.assertIsNone(rdm.device_only_testing(["SomeOtherTests/X"]))
         target = rdm.MatrixTarget("D1", "ID", False, Path("/tmp/x"), "UDID")
-        case = next(c for c in rdm.CASES if c["id"] == "xctest-angle-layer")
+        case = dict(next(c for c in rdm.CASES if c["id"] == "xctest-angle-layer"), only=["SomeOtherTests/X"])
         with self.assertRaises(rdm.NoDeviceHost):
             rdm.xctest_command(case, target, Path("/tmp/d"), Path("/tmp/b.xcresult"))
 

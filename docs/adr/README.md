@@ -79,5 +79,6 @@
 | [0121](0121-pixel-sort.md) | Pixel sort is one compute dispatch before Vignette: stable sort of qualifying runs inside fixed tiles, hard per-frame workload budget (amends ADR-0117, ADR-0116) | Accepted 2026-11-15 (FX-011; owner rule 4) |
 | [0122](0122-film-grain.md) | Film grain is its own output pass, last in the effect chain: integer PCG hash, exact noise, bounded zero-mean additive blend, grain clock ≤ 24 Hz, static under Reduce Motion and Reduce flashing (amends ADR-0116) | Accepted 2026-11-15 (FX-017; owner rule 4) |
 | [0123](0123-scanline-texture.md) | Scanlines are their own output pass after Vignette: an integer line rule (row mod spacing < thickness) anchored at pixel 0, one darkening factor, identity when off (amends ADR-0116) | Accepted 2026-11-15 (FX-018; owner rule 4) |
+| [0124](0124-device-budget-corrections.md) | QA-010 budgets corrected from the first device measurements: audio age 100 ms (SC-006 analysis-to-presentation share), D2/D3 peak memory scaled by pixels (600/400 MB), perf001 samples 60 one-second windows | Accepted 2026-11-15 (QA-011; owner rule 12) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

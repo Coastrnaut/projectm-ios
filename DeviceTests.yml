@@ -27,6 +27,11 @@ targetTemplates:
         BUNDLE_LOADER: "$(TEST_HOST)"
         SWIFT_STRICT_CONCURRENCY: minimal
 targets:
+  projectM-iOS:
+    # This project declares FlashSafety as a package of its own (RenderGoldensDeviceTests imports it), which stops
+    # the app from getting it through Compositor alone: link it directly here (D1 device build, 2026-11-15).
+    dependencies:
+      - package: FlashSafety
   CompositorDeviceTests:
     templates: [DeviceTestBundle]
     sources: [Packages/Compositor/Tests/CompositorTests]
@@ -97,6 +102,32 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.RenderGoldensDeviceTests
+  ANGLEDeviceTests:
+    templates: [DeviceTestBundle]
+    sources:
+      - Packages/ANGLERendering/Tests/ANGLERenderingTests
+      - path: Vendor/projectM/presets/tests   # ProjectMLayerTests falls back to the bundle's copy on a device
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: ANGLERendering
+      - package: Compositor
+      - package: Rendering
+        product: Rendering
+      - package: Rendering
+        product: CFlashLimiter
+      - package: AudioCore
+      - package: ProjectMBridge
+      - package: PresentationLifecycle
+      - package: FlashSafety
+      # The tests call EGL directly: link ANGLE's frameworks (the host app already embeds them).
+      - framework: Build/ANGLEFrameworks/libEGL.xcframework
+        embed: false
+      - framework: Build/ANGLEFrameworks/libGLESv2.xcframework
+        embed: false
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.ANGLEDeviceTests
 schemes:
   DeviceTests:
     build:
@@ -110,3 +141,4 @@ schemes:
         - GeneratorGraphDeviceTests
         - ExpressionDeviceTests
         - RenderGoldensDeviceTests
+        - ANGLEDeviceTests

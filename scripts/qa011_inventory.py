@@ -46,7 +46,7 @@ CATEGORY_A: dict[str, list[str]] = {
     "PERF-001-T16": ["autorun-perf001"],
     "PERF-002-T13": ["autorun-perf001"],
     "PERF-009-T16": ["warmstart-perf009"],
-    "QA-010-T12": ["autorun-perf001", "launches-sc015", "thresholds"],
+    "QA-010-T12": ["autorun-perf001", "launches-sc015", "autorun-perf012", "thresholds"],
     "AUD-014-T32": ["autorun-sc009"],
     "QA-003-T17": ["xctest-goldens"],
     "QA-006-T13": ["xctest-soak-600"],

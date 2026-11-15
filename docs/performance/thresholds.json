@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "thresholdsVersion": 1,
-  "updated": "2026-11-14",
+  "thresholdsVersion": 2,
+  "updated": "2026-11-15",
   "description": "QA-010 performance budgets per device class. Raise thresholdsVersion by one whenever a limit, class or metric changes. Simulator and host results are never evidence.",
   "metrics": {
     "fps1sP5": {
@@ -32,7 +32,7 @@
     "audioAgeP95Ms": {
       "unit": "ms",
       "direction": "max",
-      "description": "p95 age of audio when the renderer reads it; top-level audioAgeP95Ms of an AutomationRunner report (no mode writes it yet)"
+      "description": "p95 age of the audio features on screen: from the audio entering analysis to the presented frame (PERF-013 audioSync.p95Ms of a PERF-012 report, measured by the native visuals)"
     },
     "coldLaunchMs": {
       "unit": "ms",
@@ -70,8 +70,8 @@
           "basis": "SC-008 peak < 300 MB (reference device)"
         },
         "audioAgeP95Ms": {
-          "limit": 50,
-          "basis": "R-06 normalized residency budget (<= 50 ms)"
+          "limit": 100,
+          "basis": "ADR-0124: SC-006's analysis-to-presentation share (normalized ring <= 50 ms + engine frame and display <= 50 ms, R-06); PERF-013-S5 plausibility < 100 ms"
         },
         "coldLaunchMs": {
           "limit": 2000,
@@ -104,12 +104,12 @@
           "basis": "SC-005 95% share"
         },
         "peakMemoryMB": {
-          "limit": 300,
-          "basis": "decided QA-010 2026-11-14: SC-008 budget (D2, D3 measured and published)"
+          "limit": 600,
+          "basis": "ADR-0124: SC-008's 300 MB reference budget scaled by pixels (iPad Pro 13-inch M5 2752x2064 = 1.88x iPhone 15), rounded up to 50 MB; SC-008 asks D2 to be measured and published"
         },
         "audioAgeP95Ms": {
-          "limit": 50,
-          "basis": "R-06 normalized residency budget (<= 50 ms)"
+          "limit": 100,
+          "basis": "ADR-0124: SC-006's analysis-to-presentation share (normalized ring <= 50 ms + engine frame and display <= 50 ms, R-06); PERF-013-S5 plausibility < 100 ms"
         },
         "coldLaunchMs": {
           "limit": 2000,
@@ -142,12 +142,12 @@
           "basis": "decided QA-010 2026-11-14: twice D1's share (oldest tier)"
         },
         "peakMemoryMB": {
-          "limit": 300,
-          "basis": "decided QA-010 2026-11-14: SC-008 budget (D2, D3 measured and published)"
+          "limit": 400,
+          "basis": "ADR-0124: SC-008's 300 MB reference budget scaled by pixels (iPad A16 2360x1640 = 1.28x iPhone 15), rounded up to 50 MB"
         },
         "audioAgeP95Ms": {
-          "limit": 50,
-          "basis": "R-06 normalized residency budget (<= 50 ms)"
+          "limit": 100,
+          "basis": "ADR-0124: SC-006's analysis-to-presentation share (normalized ring <= 50 ms + engine frame and display <= 50 ms, R-06); PERF-013-S5 plausibility < 100 ms"
         },
         "coldLaunchMs": {
           "limit": 4000,
@@ -185,8 +185,8 @@
           "basis": "rehearsal only, D1's limits; not evidence"
         },
         "audioAgeP95Ms": {
-          "limit": 50,
-          "basis": "rehearsal only, D1's limits; not evidence"
+          "limit": 100,
+          "basis": "ADR-0124: SC-006's analysis-to-presentation share (normalized ring <= 50 ms + engine frame and display <= 50 ms, R-06); PERF-013-S5 plausibility < 100 ms"
         },
         "coldLaunchMs": {
           "limit": 2000,
