@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Clarified 2026-11-15
+**Status**: Implemented 2026-11-15 (FX-005-T01-T13 verified on the Mac and an own iOS 27.2 simulator; T14 `{device}` open)
 
 **Input**: User description: "Implement FX-005 (Contrast curves) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Provide S-curve, filmic and linear presets." Acceptance, verbatim: "Neutral curve is identity
