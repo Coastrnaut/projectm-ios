@@ -26,14 +26,14 @@ Tests are requested by the spec (acceptance S1-S5). Budgets: unit tests ≤ 10 s
 
 **Independent test**: UI test plays the fixture twice and reads the same digest.
 
-- [ ] SHD-012-T08 [US1] `FixturePreviewStore` (session state: target, source, seed 1…99; background run with its own recorder; `rendering`/`ready`; loop frame index; stop on settings change (R9); summary text; without Metal the trajectory still runs and the summary has no digest) in Apps/projectM-iOS/Coordinators/FixturePreviewStore.swift
-- [ ] SHD-012-T09 [US1] Fixture preview section (pickers, seed stepper, Play/Stop, picture via `TimelineView` without `.animation`, Reduce Motion: no auto-play, frame slider with `.accessibleParameter`, summary) in Apps/projectM-iOS/Views/FixturePreviewSection.swift and wire it into Apps/projectM-iOS/Views/NoiseEditorView.swift
-- [ ] SHD-012-T10 [US1] App unit tests (default binding, summary text, same digest twice, seed change changes the trajectory, settings change stops the loop) in Apps/projectM-iOS/Tests/FixturePreviewStoreTests.swift
-- [ ] SHD-012-T11 [US1] UI test: open Noise editor, Play fixture, read summary "120 frames", play again, same digest, in Apps/projectM-iOS/UITests/FixturePreviewUITests.swift
+- [X] SHD-012-T08 [US1] `FixturePreviewStore` (session state: target, source, seed 1…99; background run with its own recorder; `rendering`/`ready`; loop frame index; stop on settings change (R9); summary text; without Metal the trajectory still runs and the summary has no digest) in Apps/projectM-iOS/Coordinators/FixturePreviewStore.swift — Verified 2026-11-14: FixturePreviewStoreTests (3 passed, 5.2 s) on the iOS 27.2 simulator
+- [X] SHD-012-T09 [US1] Fixture preview section (pickers, seed stepper, Play/Stop, picture via `TimelineView` without `.animation`, Reduce Motion: no auto-play, frame slider with `.accessibleParameter`, summary) in Apps/projectM-iOS/Views/FixturePreviewSection.swift and wire it into Apps/projectM-iOS/Views/NoiseEditorView.swift — Verified 2026-11-14: build-for-testing with the type-check warning flags: no warnings in the new files; FixturePreviewUITests passed; check_motion_policy OK
+- [X] SHD-012-T10 [US1] App unit tests (default binding, summary text, same digest twice, seed change changes the trajectory, settings change stops the loop) in Apps/projectM-iOS/Tests/FixturePreviewStoreTests.swift — Verified 2026-11-14: `xcodebuild test-without-building -only-testing:projectM-iOSTests/FixturePreviewStoreTests`, 3 passed (0.003 s, 4.95 s, 0.25 s)
+- [X] SHD-012-T11 [US1] UI test: open Noise editor, Play fixture, read summary "120 frames", play again, same digest, in Apps/projectM-iOS/UITests/FixturePreviewUITests.swift — Verified 2026-11-14: `-only-testing:projectM-iOSUITests/FixturePreviewUITests`, 1 passed in 26.7 s
 
 ## Phase 5: Polish
 
-- [ ] SHD-012-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, spec status
+- [X] SHD-012-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, spec status — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 179 OK; check_privacy_manifest OK; check_network_symbols OK; LibraryBackupAppTests 5 passed; NoiseEditorTests 5 passed
 - [ ] SHD-012-T13 {device} On D1: Settings › Noise editor › Play fixture; the loop plays smoothly, the warp follows the kicks, a second Play shows the same run digest
 
 ## Dependencies
@@ -47,3 +47,4 @@ T04 and T05 touch different files once T03 is in; T10 and T11 after T09.
 ## Implementation strategy
 
 MVP = US2 (the acceptance in the package), then US1 (the editor).
+

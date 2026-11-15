@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feature/shd-012` (spec directory `249-shd-012-authoring-preview-fixture`)
 **Created**: 2026-11-14
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHD-012-T01-T12 verified on the Mac: host GPU, Linux shape, iOS 27.2 simulator; device task T13 `{device}` open)
 **Input**: User description: "Implement SHD-012 (Authoring preview fixture) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Preview generator against deterministic sample audio and clock." Acceptance,
 verbatim: "Two preview runs yield same parameter trajectory and frame sequence." P1, depends on ANL-016
