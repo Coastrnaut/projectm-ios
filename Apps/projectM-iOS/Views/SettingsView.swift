@@ -899,6 +899,10 @@ struct SettingsView: View {
                 NavigationLink { OSCPeersView(peers: peers) } label: { LabeledContent("Approved Devices", value: peers.summaryText) }
                     .accessibilityIdentifier("oscPeersLink")
             }
+            if let send = osc.sender {   // OSC-005-R1
+                NavigationLink { OSCSendView(send: send) } label: { LabeledContent("Send OSC", value: send.summaryText) }
+                    .accessibilityIdentifier("oscSendLink")
+            }
         } header: {
             Text("OSC")
         } footer: {

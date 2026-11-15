@@ -47,6 +47,7 @@ final class LibraryBackupAppTests: XCTestCase {
             + SafeAreaGuideSetting.allKeys   // OUT-005-R6
             + RecentPresetsStore.allKeys   // PRE-006-R7
             + OSCPeersCoordinator.allKeys   // OSC-008-R10
+            + OSCSendCoordinator.allKeys   // OSC-005-R12 (excluded: this device's network)
             + HapticBeatCoordinator.allKeys   // ACC-007-R8
             + MotionModulationCoordinator.allKeys   // CAM-011-R12
             + FaceTrackingCoordinator.allKeys   // CAM-009-R3 (excluded: consent never travels)
@@ -70,7 +71,8 @@ final class LibraryBackupAppTests: XCTestCase {
                         SplitEditorSetting.key])   // UIX-007-R7
                        .union(RecordingQualitySetting.aspectKeys)   // REC-014-R7
                        .union(ExternalOutputSetting.keys)   // OUT-004-R8, OUT-003-R7
-                       .union(FaceTrackingCoordinator.allKeys))   // CAM-009-R3
+                       .union(FaceTrackingCoordinator.allKeys)   // CAM-009-R3
+                       .union(OSCSendCoordinator.allKeys))   // OSC-005-R12
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

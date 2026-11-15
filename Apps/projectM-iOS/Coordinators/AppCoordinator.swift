@@ -668,6 +668,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
+        OSCSendCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-005: Send OSC off, no destination
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
         try? FileManager.default.removeItem(at: PresetCollectionStore.defaultDirectory())   // PRE-007: UI tests start without collections
         try? FileManager.default.removeItem(at: UserPresetStore.defaultDirectory())         // PRE-012: and without imported presets
@@ -692,6 +693,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
         _ = hapticBeat   // ACC-007-R7: a stored "on" installs the tempo observer before any visual starts
         osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
+        osc.sender = OSCSendCoordinator(osc: osc, defaults: defaults) { [weak self] () -> (anchor: UInt64, period: UInt64)? in   // OSC-005
+            guard let snapshot = self?.tempo.snapshot, let anchor = snapshot.anchorNanoseconds, let period = snapshot.periodNanoseconds else { return nil }
+            return (anchor: anchor, period: period)
+        }
         if let routes = osc.routes {   // OSC-004: learn on OSC Routes, announced on the .osc lane
             let announcer: AccessibilityAnnouncer = statusEvents.announcer
             osc.learn = OSCLearnCoordinator(osc: osc, routes: routes) { (text: String) -> Void in announcer.announce(text, kind: .osc) }
@@ -940,6 +945,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         resumeActiveVisual()
         showControls()
         updateIdleTimer()
+        osc.sender?.post(.status(.started))   // OSC-005-R6
         Task { await manager.select(mode) }
     }
 
@@ -993,6 +999,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         screen = .chooser
         lifecycleCoordinator.visualizationEnded()
         updateIdleTimer()
+        osc.sender?.post(.status(.stopped))   // OSC-005-R6
         Task { await manager.stop() }
     }
 
