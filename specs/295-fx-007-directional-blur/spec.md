@@ -192,7 +192,8 @@ the same blur back when the scene or preset is opened.
 - **FX-007-S1**: Off and on-with-radius-0 outputs are bit-identical to the output without the feature on random
   content, in the stack result and the screen output; no picture is held; all existing RenderGoldens pass unchanged.
 - **FX-007-S2**: At angle 0°, a short vertical line spreads only horizontally: 100% of pixels in the rows outside the
-  line are unchanged, and each row's total brightness is kept within 1%. At 90° the same holds with rows and columns
+  line are unchanged, and each row's total brightness is kept within 1% (line further than the radius from the frame edges, where
+  clamped samples repeat the border). At 90° the same holds with rows and columns
   swapped.
 - **FX-007-S3**: The kernel has exactly 16 taps at every tested radius (including the maximum), with weights summing
   to 1.

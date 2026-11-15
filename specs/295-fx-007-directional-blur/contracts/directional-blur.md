@@ -14,7 +14,8 @@ For pixel p (index space) in a w × h frame: if the own value is non-finite, out
 q_i = clamp(p + u_i × radiusPx × d, [0, w−1] × [0, h−1]); s_i = bilinear(q_i); the output is Σ w_i s_i over finite
 s_i divided by Σ w_i over finite s_i (no finite sample → own value). Exactly 16 samples, weights fixed (research D2).
 The GPU uses hardware linear filtering, so it matches the CPU within filtering precision (≤ 1/256 per channel on
-values in 0…1).
+values in 0…1). Non-finite handling is tested on the CPU reference only: hardware filtering may
+turn a weight-0 non-finite neighbour into a non-finite sample, which the skip rule then drops (both never spread).
 
 ## C3 Scene list
 
