@@ -215,12 +215,12 @@ local-first option.
   ClientBufferSpikeTests), the benches `bench-shd002`, `bench-cmp008`, `bench-cmp009`, `bench-cmp010`,
   `bench-expression`, and the app-hosted `xctest-offline-export` (REC-013). Each case runs only on the devices of
   the tasks it closes.
-- Q: How many owner sessions, and in what order? → A: Twelve, ordered so that no-extra-hardware sessions on one
+- Q: How many owner sessions, and in what order? → A: Thirteen, ordered so that no-extra-hardware sessions on one
   Debug install come first and hardware is added one kind at a time: B01 visuals and effects, B02 shows/presets/
   scenes/ergonomics, B03 Debug fault injection, B04 accessibility, B05 audio routes and calls, B06 camera and
   sensors, B07 pickers, files and sharing, B08 recording, B09 network and Airplane Mode (starts with a fresh
   install), B10 MIDI hardware, B11 external display, AirPlay and projector, B12 iPad multitasking, then B13
-  Xcode/Instruments-attached measurements last (a Release build attached to Xcode). Thirteen including the
+  Xcode/Instruments-attached measurements last (a Release build attached to Xcode). Including the
   Instruments session, which revises QA-011-S5 to "at most 13 sessions". Estimated duration: 5 minutes per task
   and device, plus any duration named in the step (for example "5 min"), rounded up to 5 minutes per session.
 - Q: Does this feature run anything on D1-D3? → A: No. Agents never touch the devices (owner rule; CLAUDE.md).
