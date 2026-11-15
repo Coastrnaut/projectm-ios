@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-008-T01-T13 verified on the Mac, simulator "SHOW8 iPhone 17", iOS 27.2;
+T14 `{device}` open; no device claim). ShowControl 135 tests (1.2 s; 7 new); app `ShowKeyframeAcceptanceTests` 6 (0.08 s, the
+roadmap acceptance); `ShowKeyframeUITests` 1 (19.2 s).
 
 **Input**: Roadmap row SHOW-008 (P1, size L, depends on SHOW-007 and MOD-001, both integrated). Observable behavior,
 verbatim: "Animate numeric and color parameters along timeline." Acceptance, verbatim: "At keyframe timestamps values
