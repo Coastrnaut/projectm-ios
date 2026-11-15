@@ -634,6 +634,7 @@ struct SettingsView: View {
         }
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
+        if let external = externalOutput?.external { OutputDiagnosticsSection(external: external).id("outputDiagnostics") }   // OUT-011-R1
         Section {
             NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013, REC-010
                 StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia,
