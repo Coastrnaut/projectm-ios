@@ -28,7 +28,40 @@ Identifiers carry the roadmap ID: requirements `SHD-008-R1…`, success criteria
 ### Session 2026-11-14
 
 Answered by Claude under the owner's standing approval (owner rule 4: best judgement, no human
-interaction); each answer is the recommended, conservative option. See `/speckit-clarify` below.
+interaction); each answer is the recommended, conservative option.
+
+- Q: Should a path allow curves (quadratic/cubic Bézier segments) or only straight segments? → A:
+  **Straight segments only (polygon)** in this row. The mask shader and the validation are exact for
+  polygons; curves would need flattening with a tolerance, would multiply the point count past CMP-007's
+  32-point shader block and add a second validation surface. Curves can be a later row that flattens into
+  the same polygon model. Rejected: cubic segments flattened to polylines (more code and tests, no row
+  requirement).
+- Q: What are the point cap, the coordinate space and the minimum area? → A: **3…32 points** (CMP-007's
+  polygon cap, so path masks reuse the shader's fixed 32-point block unchanged; the brief's 64 would need a
+  shader change), coordinates in the **unit square 0…1, y down** (as on screen), minimum absolute area
+  **1e-4** of the unit square (a 1 % × 1 % square; anything smaller is refused as "too small"), and
+  consecutive points closer than **1e-6** are "duplicate". Mask: the unit square maps onto the mask's local
+  box (local = point − 0.5), so the CMP-007 mask transform, feather and invert apply unchanged. Emitter: the
+  unit square spans the emitter's shape width × height (R) centred on the emitter point, y flipped to
+  the fountain's y up.
+- Q: What exactly counts as self-intersecting? → A: Any two **non-adjacent** edges that intersect or touch
+  (proper crossing, a vertex lying on another edge, or a shared point between non-adjacent edges), and any
+  **collinear overlap** of two edges, adjacent ones included (a spike that doubles back). Adjacent edges
+  may only share their common endpoint. Tests use exact orientation signs with a small tolerance
+  (|cross| ≤ 1e-12 treated as collinear). Even-odd and non-zero fill agree for every path that passes.
+- Q: What happens to a saved invalid path, in a scene and in the emitter settings? → A: **Scene**: the
+  path mask is **dropped** with a `droppedField` warning naming the reason (the layer draws unmasked; the
+  scene opens; SCN-012 lists it), exactly as CMP-007 drops an unusable polygon. Rejected: keep-but-disabled
+  (a second "disabled mask" state every mask consumer would need to learn). **Emitter settings**: lenient
+  like every other emitter field: an invalid or missing path reads as the **default path** (a diamond of 4
+  points: (0.5, 0), (1, 0.5), (0.5, 1), (0, 0.5)). Nothing ever crashes.
+- Q: How does the path emitter spawn particles: inside the area or along the outline? → A: **Uniformly
+  inside the area**: the validated polygon is triangulated once (ear clipping), a triangle is picked by
+  area with one seeded draw and a point inside it with two more (two uniform numbers, reflected when their sum
+  exceeds 1), so every path spawn uses exactly three draws, then direction, speed and lifetime as SHD-007.
+  The triangulation is computed when the path is created, so spawning allocates nothing (Constitution VII).
+  Rejected: outline spawning (the line shape already covers thin emitters) and rejection sampling (a
+  variable number of draws).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -160,7 +193,6 @@ polygon, the spawn count equals the SHD-007 formula, two runs are identical.
 
 ## Assumptions
 
-- Polygon segments only (no curves) in this row; see Clarifications.
-- The point cap matches CMP-007's polygon cap so no shader change is needed.
+- Polygon segments only (no curves), 3…32 points; see Clarifications.
 - Undo for mask edits comes from the existing scene history (each committed path change is one step).
 - No device evidence is needed for acceptance; one `{device}` look on D1 is left open.
