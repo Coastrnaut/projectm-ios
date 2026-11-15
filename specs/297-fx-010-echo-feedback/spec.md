@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-010-T01-T16 verified on the Mac and an own iOS 27.2 simulator; T17 `{device}` open)
 
 **Input**: User description: "Implement FX-010 (Echo feedback) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Render multiple delayed echoes using bounded history buffers." Acceptance, verbatim: "Echo count
@@ -181,7 +181,8 @@ echo back when the scene or preset is opened.
   test bound is 4 × the device's allocation size of one picture at the current history size.
 - **FX-010-R8**: Echo is active only when on, the count is at least 1 and the weight cap is above 0; otherwise no pass
   runs and the output is bit-identical to the output before this feature.
-- **FX-010-R9**: Echo is an FX-020 reorderable output effect (`fx.echo`), appended to the standard order. The flash
+- **FX-010-R9**: Echo is an FX-020 reorderable output effect (`fx.echo`), appended to the standard order (Trails, Color,
+  Chromatic split, Directional blur, Radial blur, Echo after FX-008 merged). The flash
   guard and the tone map always run after it.
 - **FX-010-R10**: ACC-012: a profile that caps intensity scales the weight cap by its intensity limit; Reduce flashing
   caps it at 0.5; a cap of 0 turns Echo off.

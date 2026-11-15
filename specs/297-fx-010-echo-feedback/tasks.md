@@ -73,9 +73,9 @@ round trip, app and UI tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI te
 
 ## Phase 6: Polish
 
-- [ ] FX-010-T16 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`,
+- [X] FX-010-T16 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`,
   `check_status_events`, `test_scripts`, `check_privacy_manifest`, `check_network_symbols`), type-check budget, test
-  report `docs/test-reports/echo-feedback.md`, spec status
+  report `docs/test-reports/echo-feedback.md`, spec status — Verified 2026-11-15: all six repo checks OK (186 script tests), check_privacy_manifest and check_network_symbols OK on the Debug app, no FX-010 type-check warning; docs/test-reports/echo-feedback.md
 - [ ] FX-010-T17 {device} On D1 open Camera, turn on Echo with 4 echoes at 200 ms, wave a hand: four fading copies
   trail it and the frame rate stays at the visual's normal rate (FX-010-S7)
 

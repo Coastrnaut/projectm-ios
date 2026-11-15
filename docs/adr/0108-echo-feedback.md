@@ -37,8 +37,9 @@ history; at 4 echoes 500 ms apart and 60 fps that is 120 full-size pictures (gig
 6. **Resets**: the history empties (no echo of earlier content) on turning on, a history-size change, a scene change
    (`resetFeedback`, `resetFlashHistory`), a render-health reset, an output-format change, a transition start and an
    unfinished frame, as for Trails. CMP-013 composite reuse stays allowed: the echo pass runs every frame.
-7. **Chain and storage**: `OutputEffectKind.echo` (`fx.echo`) appended after the existing kinds (FX-008 appends its
-   own in parallel; neither reorders). Global setting `settings.echo.*`; scenes and presets carry an `fx.echo` entry
+7. **Chain and storage**: `OutputEffectKind.echo` (`fx.echo`) appended after the existing kinds; with FX-008 merged the
+   standard order is Trails → Color → Chromatic split → Directional blur → Radial blur → Echo. Global setting
+   `settings.echo.*`; scenes and presets carry an `fx.echo` entry
    (`count`, `delay`, `decay`); a disabled echo counts as default.
 
 ## Consequences
