@@ -3,7 +3,7 @@
 // Color, OSC, MIDI, Show or Storage rows without a dozen drags down a long list (owner rule 7: a UI test
 // under 30 s, 2026-11-14). The tests still reveal and assert the same rows. `-uitestSettingsSectionOnce`
 // limits it to the first Settings of a launch. The IDs are the `.id(...)`
-// strings on SettingsView's sections, top to bottom: "video", "color", "trails", "chromatic" (FX-006), "effects", "safety",
+// strings on SettingsView's sections, top to bottom: "video", "color", "trails", "chromatic" (FX-006), "directionalBlur" (FX-007), "effects", "safety",
 // "reduceFlashing", "haptics", "performance", "oneHanded", "motion" (CAM-011), "trim", "channel", "gate", "balance", "latency", "osc", "midi", "quality",
 // "recording", "recordingFrameRate", "show", "guide", "recentPresets", "storage", "clock" (MED-011), "countdown" (MED-012) (the rest added 2026-11-14 so every UI test that
 // works below the first screens opens there; an ID whose section is not shown, such as "video" before a video

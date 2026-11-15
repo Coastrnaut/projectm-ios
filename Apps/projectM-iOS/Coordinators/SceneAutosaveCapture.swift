@@ -292,17 +292,20 @@ enum SceneAutosaveCapture {
     /// range rules; ACC-012 caps still apply when rendering); nil restores the standard order only.
     @MainActor
     static func applyEffects(_ entries: [SceneEffectEntry]?, chain: EffectChainSetting, grade: ColorGradeSetting,
-                             trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil) {
+                             trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
+                             directionalBlur: DirectionalBlurSetting? = nil) {
         guard let entries else {
             chain.order = .standard
             return
         }
-        applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic)
+        applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic,
+                     directionalBlur: directionalBlur)
     }
 
     @MainActor
     static func applyEffects(_ settings: SceneEffectSettings, chain: EffectChainSetting, grade: ColorGradeSetting,
-                             trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil) {
+                             trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
+                             directionalBlur: DirectionalBlurSetting? = nil) {
         chain.order = settings.order
         if let g = settings.grade {
             if grade.temperature != g.temperature { grade.temperature = g.temperature }
@@ -320,6 +323,7 @@ enum SceneAutosaveCapture {
             trails.isEnabled = t.isEnabled
         }
         if let c = settings.chromatic { chromatic?.apply(c) }   // FX-006
+        if let b = settings.directionalBlur { directionalBlur?.apply(b) }   // FX-007
     }
 
     /// The seven app-held values as MOD-001 values.
