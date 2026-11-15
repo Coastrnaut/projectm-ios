@@ -1,7 +1,7 @@
 // ShowKeyframeTracksView.swift — SHOW-008 Settings → Show → Keyframe Tracks (specs/246-show-008-keyframe-tracks; R8;
 // contract K6, K7).
 //
-// * The playhead (SHOW-007's position, 0:00 at Standby), Add Track (the targets without a track), and per track a section
+// * The playhead (SHOW-007's position, 0:00 at Standby), Add Track… (a dialog of the targets without a track), and per track a section
 //   with its keyframes in time order ("0:30, 0.90, Linear"; VoiceOver reads the same), Add Keyframe at Playhead and
 //   Delete Track. A keyframe opens `ShowKeyframeEditView`: an ACC-005 slider over the parameter's range (numbers) or the
 //   system colour picker (colours), the interpolation to the next keyframe, and Delete Keyframe.
@@ -12,6 +12,7 @@ import SwiftUI
 
 struct ShowKeyframeTracksView: View {
     let keyframes: ShowKeyframeCoordinator
+    @State private var choosingTarget = false
 
     private var locked: Bool { keyframes.isEditLocked }
 
@@ -39,16 +40,17 @@ struct ShowKeyframeTracksView: View {
         }
     }
 
+    /// A button and a dialog of the targets without a track (a Menu inside a List did not open under XCUITest).
     private var addTrackMenu: some View {
-        Menu {
-            ForEach(keyframes.unusedTargets) { (target: ShowKeyframeTarget) in
-                Button(target.name) { keyframes.addTrack(target) }
+        Button("Add Track…") { choosingTarget = true }
+            .disabled(locked || keyframes.unusedTargets.isEmpty || keyframes.tracks.tracks.count >= ShowKeyframeTracks.maximumTracks)
+            .accessibilityIdentifier("showKeyframeAddTrack")
+            .confirmationDialog("Add Track", isPresented: $choosingTarget, titleVisibility: .visible) {
+                ForEach(keyframes.unusedTargets) { (target: ShowKeyframeTarget) in
+                    Button(target.name) { keyframes.addTrack(target) }
+                }
+                Button("Cancel", role: .cancel) {}
             }
-        } label: {
-            Text("Add Track…")
-        }
-        .disabled(locked || keyframes.unusedTargets.isEmpty || keyframes.tracks.tracks.count >= ShowKeyframeTracks.maximumTracks)
-        .accessibilityIdentifier("showKeyframeAddTrack")
     }
 
     private func trackName(_ track: ShowKeyframeTrack) -> String {

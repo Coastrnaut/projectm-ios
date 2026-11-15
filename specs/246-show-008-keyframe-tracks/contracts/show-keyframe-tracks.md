@@ -12,5 +12,5 @@
   at Standby or off the timeline the output is empty (manual values). MIDI/OSC values win over track numbers.
 - **K6 Edit.** Add Keyframe at Playhead replaces a keyframe at the same time; numbers are clamped to the target's range
   when stored; every edit is refused while the scene is locked.
-- **K7 UI.** `showKeyframeTracks` list; `showKeyframeAddTrack` menu; per track `showKeyframeAddKey`; keyframe rows
+- **K7 UI.** `showKeyframeTracks` list; `showKeyframeAddTrack` button opening a dialog of targets; per track `showKeyframeAddKey`; keyframe rows
   `showKeyframeRow` with label "0:30, 0.90, Linear"; `showKeyframePlayhead` text.

@@ -26,7 +26,7 @@ numbers overlaid by MIDI/OSC live values (`hostExternalValues`), so MOD-002 bind
 before; `effectiveSpectrumPalette` returns a one-colour palette for Visual Colour unless ACC-003's colour-blind-safe
 switch is on (D6).
 
-**UI.** `ShowKeyframeTracksView` (Settings → Show → Keyframe Tracks…): the playhead time, Add Track (a menu of the
+**UI.** `ShowKeyframeTracksView` (Settings → Show → Keyframe Tracks…): the playhead time, Add Track… (a dialog of the
 targets not used yet), per track a section with its keyframes ("0:30, 0.90, Linear"), Add Keyframe at Playhead and
 Delete Track; a keyframe opens `ShowKeyframeEditView` (ACC-005 slider or the system colour picker, interpolation
 picker, Delete Keyframe). Edits hidden while locked (SCN-015-R6).
