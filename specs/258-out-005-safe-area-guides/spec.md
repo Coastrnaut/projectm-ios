@@ -114,7 +114,7 @@ the choice is restored after relaunch.
 - **OUT-005-R2**: The guides MUST show an action-safe ("stage-safe") outline and a title-safe outline, centred in the output frame, at configurable percentages of its width and height (defaults 93 % and 90 %).
 - **OUT-005-R3**: The percentages MUST be bounded (action-safe 80…100 %, title-safe 70…100 %), title-safe MUST never be drawn outside action-safe, and an optional centre cross (default off) MUST be available.
 - **OUT-005-R4**: The output frame MUST be the device's visual area when the device shows the visual, and the external display's physical shape (with OUT-004's resolved pixel aspect), fitted and centred, when an external display shows it.
-- **OUT-005-R5**: The guides MUST be off by default and MUST NOT change the visual, its frame rate source, its layout or any scene data.
+- **OUT-005-R5**: The guides MUST be off by default and MUST NOT change the visual, its layout, its drawable or any scene data.
 - **OUT-005-R6**: The choices MUST persist in UserDefaults keys listed in the device test allow-list, the library backup policy and the UI-test reset.
 - **OUT-005-R7**: Settings MUST offer the controls with VoiceOver labels and Dynamic Type; the guides themselves MUST be hidden from accessibility and MUST NOT take touches.
 - **OUT-005-R8**: Public APIs only (Constitution I); builds for iOS 26 and 27; the guide geometry is pure Swift tested on the host and Linux.

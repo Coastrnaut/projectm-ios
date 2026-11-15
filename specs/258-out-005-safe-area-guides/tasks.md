@@ -37,7 +37,7 @@ wall-clock assertions.
 
 ## Phase 6: Polish & device
 
-- [ ] OUT-005-T11 Regression (OUT-005-S5) and repo checks: `SceneHUDAppTests`, `ExternalOutputCorrectionTests`, `ExternalOutputResolutionAppTests`, `LibraryBackupAppTests`; PresentationLifecycle and LibraryBackup packages; the six repo scripts; `check_privacy_manifest.py`; `check_network_symbols`; type-check budget; spec status.
+- [ ] OUT-005-T11 Regression (OUT-005-S5) and repo checks (PresentationLifecycle stays free of Foundation and UIKit so it builds on Linux, OUT-005-R8): `SceneHUDAppTests`, `ExternalOutputCorrectionTests`, `ExternalOutputResolutionAppTests`, `LibraryBackupAppTests`; PresentationLifecycle and LibraryBackup packages; the six repo scripts; `check_privacy_manifest.py`; `check_network_symbols`; type-check budget; spec status.
 - [ ] OUT-005-T12 {device} D1 with a real external display (quickstart B): the phone shows the display-shaped guides, the display and a 10 s recording show none.
 
 ## Dependencies
