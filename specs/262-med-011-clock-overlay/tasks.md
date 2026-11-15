@@ -23,7 +23,7 @@ runs them.
 - [ ] MED-011-T05 [US1] `ClockLayerTests.swift` (Metal, real compositor, 64 × 64): same clock → identical rendering checksum and read-back pixels on two renders; +1 minute → different (S2); 60 one-second ticks within a minute without seconds → one rasterization and one render (S3) (contract C3)
 - [ ] MED-011-T06 [US1] `ClockOverlayStore` (`settings.clock.overlay`) and `ClockOverlayCoordinator` (settings saved on change, `attach(to:)` with `Compositor.attachClock`, `tick()`, aligned tick task while shown and a layer is live, hidden → empty spec) in `Apps/projectM-iOS/Coordinators/` (R1, R5, R6, R8; contract C4)
 - [ ] MED-011-T07 [US1] `AppCoordinator`: create the coordinator, attach the clock in the four compositor prepare functions after the logo; DEBUG `-uitestClockFixed` fixture and `clockProbe` in `VisualizerView` (R6)
-- [ ] MED-011-T08 [US1] Keys: `settings.clock.overlay` in `AppSettings.allKeys` (UI-test reset), `SettingsTests.testOnlyTheSettingsKeysAreWritten` (written by its own store), `LibrarySettingsPolicy.includedKeys` (backup; erased with Settings), `ALLOWED_KEYS` in `scripts/run_device_tests.py`; `LibraryBackupAppTests` passes via `AppSettings.allKeys` (R9)
+- [ ] MED-011-T08 [US1] Keys: `settings.clock.overlay` in `AppSettings.allKeys` (UI-test reset), `SettingsTests.testOnlyTheSettingsKeysAreWritten` (written by its own store), `LibrarySettingsPolicy.includedKeys` (backup; erased with Settings), `ALLOWED_KEYS` in `scripts/run_device_tests.py`; `LibraryBackupAppTests` passes via `AppSettings.allKeys` (R9; FILE-011 Settings erase derives from `includedKeys`)
 
 ## Phase 4: User Story 2 - Choose the format and position (P2)
 
@@ -33,7 +33,7 @@ runs them.
 
 ## Phase 5: Polish
 
-- [ ] MED-011-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard count after; report `docs/test-reports/clock-overlay.md`; spec status
+- [ ] MED-011-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard count after (R10: no networking API, no permission); report `docs/test-reports/clock-overlay.md`; spec status
 - [ ] MED-011-T13 {device} On D1 and D3: Show Clock on the Text and Photo visuals; the clock matches the status bar, changes at the minute, is readable; 12-hour with seconds updates each second; a REC-003 recording contains the clock
 
 ## Dependencies
