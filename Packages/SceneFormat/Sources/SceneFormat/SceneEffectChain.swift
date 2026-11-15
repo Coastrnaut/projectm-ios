@@ -3,7 +3,8 @@
 //
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
-// unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`) gives that effect's
+// unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
+// `fx.chromatic`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 import Compositor
@@ -76,12 +77,16 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var gradeEnabled: Bool?
     /// `isEnabled` is the entry's flag.
     public var trails: MotionFeedback?
+    /// FX-006 (ADR-0104): `isEnabled` is the entry's flag.
+    public var chromatic: ChromaticSplit?
 
-    public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil) {
+    public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
+                chromatic: ChromaticSplit? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
         self.trails = trails
+        self.chromatic = chromatic
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -95,12 +100,19 @@ public struct SceneEffectSettings: Sendable, Equatable {
     static let trailsParameters: [SceneEffectParameter] = [
         SceneEffectParameter(name: "halfLife", range: MotionFeedback.halfLifeRange, fallback: MotionFeedback.defaultHalfLife),
     ]
+    /// FX-006: `radial` is 0 or 1 (≥ 0.5 reads as on).
+    static let chromaticParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "amount", range: ChromaticSplit.amountRange, fallback: ChromaticSplit.defaultAmount),
+        SceneEffectParameter(name: "angle", range: ChromaticSplit.angleRange, fallback: ChromaticSplit.defaultAngle),
+        SceneEffectParameter(name: "radial", range: 0...1, fallback: 0),
+    ]
 
     /// Standard order, Trails off (or absent), Color on and neutral (or absent): nothing to save (research FX-020-D7).
     public var isDefault: Bool {
         let trailsOff: Bool = !(trails?.isEnabled ?? false)
         let gradeNeutral: Bool = grade?.isNeutral ?? true
-        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral
+        let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
+        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff
     }
 
     // MARK: Reading
@@ -127,6 +139,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .trails:
                     let v = values(entry, trailsParameters, path, &issues)
                     settings.trails = MotionFeedback(isEnabled: entry.enabled, halfLifeSeconds: v[0])
+                case .chromatic:   // FX-006
+                    let v = values(entry, chromaticParameters, path, &issues)
+                    settings.chromatic = ChromaticSplit(isEnabled: entry.enabled, amount: v[0], angleDegrees: v[1], isRadial: v[2] >= 0.5)
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -197,6 +212,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
             guard let t = trails else { return stored }
             entry.enabled = t.isEnabled
             entry.parameters["halfLife"] = .double(t.halfLifeSeconds)
+        case .chromatic:   // FX-006
+            guard let c = chromatic else { return stored }
+            entry.enabled = c.isEnabled
+            entry.parameters["amount"] = .double(c.amount)
+            entry.parameters["angle"] = .double(c.angleDegrees)
+            entry.parameters["radial"] = .double(c.isRadial ? 1 : 0)
         }
         return entry
     }
