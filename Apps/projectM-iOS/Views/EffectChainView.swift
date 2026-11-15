@@ -30,7 +30,7 @@ struct EffectChainView: View {
     @State private var naming = false
     @State private var presetName = ""
 
-    static let footer = "Effects run from top to bottom on the Camera, Photo, Video and Text visuals. The order matters only while both are on. Always last: Flash safety, then Tone map."
+    static let footer = "Effects run from top to bottom on the Camera, Photo, Video and Text visuals. The order matters only while more than one is on. Always last: Flash safety, then Tone map."
 
     var body: some View {
         List {
@@ -45,7 +45,7 @@ struct EffectChainView: View {
             Button("Save") { save() }
             Button("Cancel", role: .cancel) { presetName = "" }
         } message: {
-            Text("Saves the order and the Color and Trails settings.")
+            Text("Saves the order and the Color, Trails and Chromatic split settings.")
         }
     }
 
@@ -95,11 +95,14 @@ private struct EffectChainRow: View {
     private var isOn: Binding<Bool> {
         let grade: ColorGradeSetting = coordinator.colorGrade
         let trails: MotionFeedbackSetting = coordinator.motionFeedback
+        let chromatic: ChromaticSplitSetting = coordinator.chromaticSplit
         switch kind {
         case .grade:
             return Binding<Bool>(get: { () -> Bool in grade.isEnabled }, set: { (on: Bool) -> Void in grade.isEnabled = on })
         case .trails:
             return Binding<Bool>(get: { () -> Bool in trails.isEnabled }, set: { (on: Bool) -> Void in trails.isEnabled = on })
+        case .chromatic:   // FX-006
+            return Binding<Bool>(get: { () -> Bool in chromatic.isEnabled }, set: { (on: Bool) -> Void in chromatic.isEnabled = on })
         }
     }
 }

@@ -44,7 +44,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again, document)
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
-        XCTAssertEqual(settings.order.effects, [.grade, .trails])
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic])   // FX-006 appended
         XCTAssertEqual(settings.grade, ColorGrade(gamma: 1.6, saturation: 0.4))
         XCTAssertEqual(settings.trails, MotionFeedback(isEnabled: true, halfLifeSeconds: 0.3))
         XCTAssertFalse(settings.isDefault)
@@ -98,6 +98,34 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(read.settings.entries(over: [entry])[0].parameters["contrast"], .string("posterize"), "kept as written")
         let wrongType = SceneEffectEntry(kind: "fx.grade", parameters: ["contrast": .integer(2)])
         XCTAssertEqual(SceneEffectSettings.read([wrongType]).issues.map(\.code), [.valueClamped])
+    }
+
+    // MARK: FX-006 chromatic split
+
+    func testChromaticEntryRoundTripsAndIsClamped() throws {
+        let split = ChromaticSplit(isEnabled: true, amount: 0.012, angleDegrees: 135, isRadial: true)
+        let live = SceneEffectSettings(order: OutputEffectOrder([.chromatic, .trails, .grade]), chromatic: split)
+        XCTAssertFalse(live.isDefault)
+        let document = try minimal(live.entries(over: nil))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.encoded(), document.encoded())
+        let settings = try XCTUnwrap(again.effectSettings)
+        XCTAssertEqual(settings.chromatic, split)
+        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade])
+        let wild = SceneEffectEntry(kind: "fx.chromatic", enabled: false, parameters: ["amount": .double(1), "angle": .string("up")])
+        let read = SceneEffectSettings.read([trails, grade, wild])
+        XCTAssertEqual(read.settings.chromatic, ChromaticSplit(isEnabled: false, amount: 0.02, angleDegrees: 0))
+        XCTAssertEqual(read.issues.map(\.path), ["$.effects[2].parameters.amount", "$.effects[2].parameters.angle"])
+        XCTAssertFalse(read.settings.isDefault, "the trails and grade entries are on")
+        XCTAssertTrue(SceneEffectSettings(chromatic: ChromaticSplit(isEnabled: false, amount: 0.02)).isDefault,
+                      "a disabled split is the default")
+    }
+
+    func testFX020ListsReadWithTheSplitLastAndUntouched() throws {
+        let settings = SceneEffectSettings.read([grade, trails]).settings
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic])
+        XCTAssertNil(settings.chromatic, "no entry: the current split stays")
+        XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
     }
 
     // MARK: Unknown, repeated and fixed entries

@@ -96,6 +96,9 @@
 // comes first, Trails are active and the grade is not neutral does `OutputGradePass` grade the composite before Trails
 // (the guard and outputs then use the neutral block); otherwise the single-pass output above runs unchanged. The flash
 // guard and the tone map always come after both. `encodeScene` never runs the grade pass (CMP-014's bus grades itself).
+// FX-006 (contracts/chromatic-split.md in specs/293, ADR-0104): while `chromaticSplit` is active, `ChromaticSplitPass`
+// shifts red and blue at its place in `outputEffectOrder` (the walk in `encodeOutputEffects`); a non-neutral Color
+// listed before an active Trails or split is folded into the grade pass right before the first of them.
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -273,6 +276,8 @@ public final class Compositor {
     private let gradePass: OutputGradePass
     private var outputGradeBlock = CompositorShaders.GradeBlock.neutral
     private var trailsHistoryGraded = false
+    /// FX-006: the chromatic split pass and its pooled picture.
+    private let chromaticPass: ChromaticSplitPass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -281,6 +286,16 @@ public final class Compositor {
     public var outputEffectOrder: OutputEffectOrder = .standard {
         didSet { if outputEffectOrder != oldValue { trails.resetPending = true } }
     }
+
+    /// FX-006 (ADR-0104): the chromatic split, set between frames. Inactive (the default, or a zero amount) adds no
+    /// pass and holds no picture: output bit-identical to before FX-006.
+    public var chromaticSplit: ChromaticSplit = .off {
+        didSet { if !chromaticSplit.isEnabled { chromaticPass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-006: frames drawn through the split pass, and whether its picture is held (tests, diagnostics).
+    public var chromaticFrames: Int { chromaticPass.frames }
+    public var holdsChromaticPicture: Bool { chromaticPass.holdsPicture }
 
     /// FX-020: frames that ran the Color-first grade pass (tests, diagnostics).
     public var gradePassFrames: Int { gradePass.frames }
@@ -363,10 +378,11 @@ public final class Compositor {
             LayerRecord(id: nil, layer: layer, settings: layer.compositeSettings)
         }
         library = try CompositorShaders.library(device: device, source: CompositorShaders.source + TrailsPass.source
-                                                + OutputGradePass.source)   // FX-009, FX-020
+                                                + OutputGradePass.source + ChromaticSplitPass.source)   // FX-009, FX-020, FX-006
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
+        chromaticPass = try ChromaticSplitPass(device: device, library: library, vertex: fullScreen)   // FX-006
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -396,6 +412,7 @@ public final class Compositor {
         for record in records { texturePool.recycle(record.pictures, after: lastCommandBuffer) }
         trails.release(to: texturePool, after: lastCommandBuffer)   // FX-009
         gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020
+        chromaticPass.release(to: texturePool, after: lastCommandBuffer)   // FX-006
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -771,21 +788,10 @@ public final class Compositor {
         }
 
         // FX-009: the trails frame replaces the composite for the guard and every output (research FX-009-D3).
-        var shown: MTLTexture = composite
+        // FX-020, FX-006: Trails, Color and the split run in `outputEffectOrder`.
         outputGradeBlock = gradeBlock
-        if motionFeedback.isActive {
-            guard let trailsInput = gradeBeforeTrails(composite, allowed: allowGradePass, commandBuffer: commandBuffer) else {
-                return false
-            }
-            let decay: Double = motionFeedback.decay(frameDuration: frame.frameDuration)
-            let taken: Int = trails.allocations
-            guard let trailed = trails.encode(composite: trailsInput, decay: decay, pool: texturePool, fence: lastCommandBuffer,
-                                              commandBuffer: commandBuffer) else { return false }
-            pictureAllocations += trails.allocations - taken   // PERF-004: the pair, at its allocation points
-            shown = trailed
-        } else if gradePass.holdsPicture {
-            gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020: not used while Trails are off
-        }
+        guard var shown: MTLTexture = encodeOutputEffects(composite, allowGradePass: allowGradePass, frame: frame,
+                                                          commandBuffer: commandBuffer) else { return false }
         if allowGradePass, let pass = outputTransition, pass.isActive {   // XFADE-R2: `composite(into:)` only, never the bus's
             shown = pass.shown(live: shown, commandBuffer: commandBuffer, presentationTimeNanoseconds: presentationTimeNanoseconds,
                                pool: texturePool, fence: lastCommandBuffer)
@@ -798,20 +804,62 @@ public final class Compositor {
         return true
     }
 
-    /// FX-020: the Trails input. Color first with a non-neutral grade: the graded composite (and the neutral block for
-    /// the guard and outputs); otherwise the composite. A change between the two resets the trails history.
-    private func gradeBeforeTrails(_ composite: MTLTexture, allowed: Bool, commandBuffer: MTLCommandBuffer) -> MTLTexture? {
-        let graded: Bool = allowed && outputEffectOrder.gradeBeforeTrails && gradeBlock.flags != 0
-        if graded != trailsHistoryGraded {
-            trails.resetPending = true
-            trailsHistoryGraded = graded
+    /// FX-020, FX-006 (ADR-0104): Trails and the split in `outputEffectOrder`. A non-neutral Color listed before an active
+    /// Trails or split is applied by the grade pass right before the first of them (the guard and outputs then use the
+    /// neutral block); otherwise Color stays in the output pass. A change in whether the trails input is graded resets
+    /// the trails history. Passes not used this frame return their pictures.
+    private func encodeOutputEffects(_ composite: MTLTexture, allowGradePass: Bool, frame: LayerFrameContext,
+                                     commandBuffer: MTLCommandBuffer) -> MTLTexture? {
+        var shown: MTLTexture = composite
+        let gradeable: Bool = allowGradePass && gradeBlock.flags != 0
+        var gradeListed = false
+        var graded = false
+        var splitRan = false
+        for kind in outputEffectOrder.effects {
+            switch kind {
+            case .grade:
+                gradeListed = gradeable
+            case .trails:
+                guard motionFeedback.isActive else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                if graded != trailsHistoryGraded {
+                    trails.resetPending = true
+                    trailsHistoryGraded = graded
+                }
+                let decay: Double = motionFeedback.decay(frameDuration: frame.frameDuration)
+                let taken: Int = trails.allocations
+                guard let trailed = trails.encode(composite: shown, decay: decay, pool: texturePool, fence: lastCommandBuffer,
+                                                  commandBuffer: commandBuffer) else { return nil }
+                pictureAllocations += trails.allocations - taken   // PERF-004: the pair, at its allocation points
+                shown = trailed
+            case .chromatic:
+                guard chromaticSplit.isActive(width: shown.width, height: shown.height) else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                let taken: Int = chromaticPass.allocations
+                guard let split = chromaticPass.encode(input: shown, split: chromaticSplit, pool: texturePool,
+                                                       fence: lastCommandBuffer, commandBuffer: commandBuffer) else { return nil }
+                pictureAllocations += chromaticPass.allocations - taken   // PERF-004
+                shown = split
+                splitRan = true
+            }
         }
-        guard graded else {
-            if gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
-            return composite
-        }
+        if !graded, gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
+        if !splitRan, chromaticPass.holdsPicture { chromaticPass.release(to: texturePool, after: lastCommandBuffer) }
+        return shown
+    }
+
+    /// FX-020: `input` graded by the grade pass; the guard and outputs then use the neutral block.
+    private func encodeGradePass(_ input: MTLTexture, commandBuffer: MTLCommandBuffer) -> MTLTexture? {
         let taken: Int = gradePass.allocations
-        guard let output = gradePass.encode(composite: composite, grade: gradeBlock, pool: texturePool, fence: lastCommandBuffer,
+        guard let output = gradePass.encode(composite: input, grade: gradeBlock, pool: texturePool, fence: lastCommandBuffer,
                                             commandBuffer: commandBuffer) else { return nil }
         pictureAllocations += gradePass.allocations - taken   // PERF-004
         outputGradeBlock = .neutral
