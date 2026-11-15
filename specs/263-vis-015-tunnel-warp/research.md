@@ -9,9 +9,9 @@
 
 ## D2 Mapping and texture
 - Decision: p relative to the centre over the shorter side; r = max(|p|, 1e-3); u = atan2(p.y, p.x)/2π + 0.5;
-  v = 0.5 / r + phase. Ring = 0.55 + 0.45 cos(2πv). Texture t = blend over the angle cut of two octaves of
+  v = 0.5 / r + phase. Ring = 0.7 + 0.3 cos(2π·fract v) (implementation: a 0.4…1 swing keeps headroom under FX-019's envelope at the 3 rings/s cap). Texture t = blend over the angle cut of two octaves of
   `mat_snoise` at (8u, v) and (16u, 2v) (weights 0.65, 0.35; field key 3), so u = 0 and u = 1 read the same lattice
-  cells. Fog = smoothstep(0.02, 0.5, r). Colour = palette(t) × ring × fog × (0.35 + 0.65 t) × brightness.
+  cells. Fog = smoothstep(0.02, 0.5, r). Colour = palette((t − 0.2)/0.6, as the noise field) × ring × fog × (0.35 + 0.65 t) × brightness.
 - Rationale: integer cell counts around and integer lacunarity make the texture periodic in both directions
   (lattice wraps every 4096 cells), so the phase can wrap at 4096 rings without a jump; value noise is cheap.
 - Alternatives: fBm with lacunarity 2.03 (not periodic in depth); texture sampling (edge handling, compile of a
