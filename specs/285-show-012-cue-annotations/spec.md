@@ -59,6 +59,16 @@ local-first option.
   normalized and cut to 500 characters (counted warning "shortened notes"); anything that is not text is dropped (counted
   warning "dropped notes"). The show is never refused for a note.
 
+### Session 2026-11-15 (speckit-clarify)
+
+- Q: What happens when the operator types more than 500 characters in the note editor? → A: The text stays as typed, the
+  counter shows "501 / 500" in the warning style and Save is disabled until it fits; nothing is cut silently. Rejected:
+  cutting while typing (a paste would lose its end without notice).
+- Q: Does SHOW-006 cue rehearsal or the scene switcher show the note? → A: No. Notes appear only in Settings › Show (row
+  and editor sheet) for this row; other operator surfaces can adopt them later. Fewer surfaces, less to keep private.
+- Q: How much of the note does the row show? → A: An icon (note.text) and the first line, at most 60 characters,
+  followed by "…" when longer; the full text is in the editor and in VoiceOver's value.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Write a private note on a cue (Priority: P1)
@@ -119,8 +129,8 @@ the transport readout, captions, cue announcements and OSC send show or carry ex
 - **SHOW-012-R3**: Reading MUST be lenient: a text note is normalized and cut to 500 characters (counted warning), a
   non-text value is dropped (counted warning); the show is never refused because of a note.
 - **SHOW-012-R4**: The note MUST survive save/load, the FILE-005 backup and its exact restore byte for byte.
-- **SHOW-012-R5**: The show editor MUST show a note line (indicator and a one-line preview) on a cue with a note, and
-  offer Note… in the cue's More… dialog, context menu and VoiceOver actions, opening a note editor with a character count
+- **SHOW-012-R5**: The show editor MUST show a note line (indicator and the first line, at most 60 characters) on a cue with a note, and
+  offer Note… (Add Note… / Edit Note…) in the cue's More… dialog, context menu and VoiceOver actions, opening a note editor with a character count
   and Save/Cancel.
 - **SHOW-012-R6**: Saving a note MUST save the show at once and MUST NOT apply a scene, move the position or restart a
   countdown.
