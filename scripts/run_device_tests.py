@@ -107,6 +107,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   # FX-012-R9
                 "settings.edgeOutline.enabled", "settings.edgeOutline.threshold",   # FX-014-R10
                 "settings.edgeOutline.width", "settings.edgeOutline.color", "settings.edgeOutline.mode",
+                "settings.lensDistortion.enabled", "settings.lensDistortion.strength",   # FX-016-R9
+                "settings.lensDistortion.zoomToFill",
                 "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   # FX-015-R9
                 "settings.vignette.centerX", "settings.vignette.centerY",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",

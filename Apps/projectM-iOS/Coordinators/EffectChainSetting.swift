@@ -77,6 +77,7 @@ final class EffectChainSetting {
         case .echo: "Echo"   // FX-010
         case .mosaic: "Mosaic"   // FX-012
         case .edgeOutline: "Edge outline"   // FX-014
+        case .lensDistortion: "Lens distortion"   // FX-016
         case .vignette: "Vignette"   // FX-015
         }
     }

@@ -12,7 +12,7 @@
 // have rendered its own picture on a captured frame, or the run fails.
 // FX-020: a scene's `effects` list sets the compositor's output effect order, colour grade and Trails (and FX-006's
 // chromatic split, FX-007's directional blur, FX-008's radial blur, FX-010's echo, FX-012's mosaic, FX-014's edge outline,
-// FX-015's vignette)
+// FX-016's lens distortion, FX-015's vignette)
 // (`apply(effects:to:)`); without one the compositor keeps its defaults (Trails off, neutral grade), as before.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import AnalysisFeatures
@@ -204,6 +204,7 @@ public final class GoldenSceneRenderer {
         if let echo = effects.echo { compositor.echoFeedback = echo }   // FX-010
         if let mosaic = effects.mosaic { compositor.mosaic = mosaic }   // FX-012
         if let outline = effects.edgeOutline { compositor.edgeOutline = outline }   // FX-014
+        if let lens = effects.lensDistortion { compositor.lensDistortion = lens }   // FX-016
         if let vignette = effects.vignette { compositor.vignette = vignette }   // FX-015
     }
 }
