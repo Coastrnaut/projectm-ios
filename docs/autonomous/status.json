@@ -14,9 +14,10 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 3,
-   "implementing": 2,
-   "integrated": 74
+   "audited": 2,
+   "built": 1,
+   "implementing": 1,
+   "integrated": 75
   },
   "P3": {
    "audited": 4,
@@ -24,9 +25,10 @@
   }
  },
  "by_state": {
-  "audited": 9,
-  "implementing": 2,
-  "integrated": 314,
+  "audited": 8,
+  "built": 1,
+  "implementing": 1,
+  "integrated": 315,
   "skipped_existing": 1
  },
  "device_gate": {
@@ -43,13 +45,12 @@
    "OUT-008",
    "QA-011",
    "QA-012",
-   "VIS-017",
    "VIS-018",
    "VIS-019"
   ],
   "phase": "implementation",
   "reasons": [
-   "11 features are not implemented yet (first: FX-011, FX-015, FX-016, FX-017, FX-018)"
+   "10 features are not implemented yet (first: FX-011, FX-015, FX-016, FX-017, FX-018)"
   ]
  },
  "features": {
@@ -1186,22 +1187,22 @@
   "FX-015": {
    "attempts": 0,
    "branch": "feature/fx-015",
+   "branch_sha": "48216fb2",
+   "error_category": null,
+   "integrated_sha": null,
+   "priority": "P2",
+   "spec_dir": null,
+   "state": "built"
+  },
+  "FX-016": {
+   "attempts": 0,
+   "branch": "feature/fx-016",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
    "state": "implementing"
-  },
-  "FX-016": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
-   "error_category": null,
-   "integrated_sha": null,
-   "priority": "P2",
-   "spec_dir": null,
-   "state": "audited"
   },
   "FX-017": {
    "attempts": 0,
@@ -3276,12 +3277,12 @@
   "VIS-017": {
    "attempts": 0,
    "branch": "feature/vis-017",
-   "branch_sha": null,
+   "branch_sha": "094931c7c279ded6f011bd883424f3bb48daf134",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "49dc9035",
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "VIS-018": {
    "attempts": 0,
@@ -4881,6 +4882,11 @@
    "sha": "761e85e7ebc01077fb5539cdc4c41b825108eb3e"
   },
   {
+   "branch": "feature/vis-017",
+   "id": "VIS-017",
+   "sha": "49dc9035"
+  },
+  {
    "branch": "feature/vis-020",
    "id": "VIS-020",
    "sha": "7cdcce682ee8e5f2329dd6836c2bccf9dcb442b5"
@@ -4911,5 +4917,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T10:55:25Z"
+ "updated": "2026-11-15T11:06:53Z"
 }
