@@ -5,11 +5,11 @@
 
 ## Phase 1: Foundation (model and file)
 
-- [ ] SHOW-012-T01 `ShowCueNote` rules (500 characters, line feeds kept, other Cc removed, trimmed; `normalized`, `stored`) in Packages/ShowControl/Sources/ShowControl/ShowCueNote.swift (R1; research D3)
-- [ ] SHOW-012-T02 `ShowCue.operatorNote`, `ShowCueList.setOperatorNote`, `insert(…, operatorNote:)`, `ShowEditError.invalidNote`, normalized-note check in `init(id:name:cues:position:)` in Packages/ShowControl/Sources/ShowControl/ShowCueList.swift (R1, R10; data-model)
-- [ ] SHOW-012-T03 `show.json` cue key `note` (written only when set; lenient read; `droppedNotes`, `shortenedNotes` warnings) in Packages/ShowControl/Sources/ShowControl/ShowDocument.swift (R2, R3; contract N1-N3)
-- [ ] SHOW-012-T04 Package tests: rules, set/clear/too long, encode/decode byte-identical, missing → nil, older file bytes unchanged, lenient read warnings, store save/load round trip in Packages/ShowControl/Tests/ShowControlTests/ShowCueNoteTests.swift (R1-R4; S1)
-- [ ] SHOW-012-T05 Backup round trip: notes byte-identical through a FILE-005 archive write/read in Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupCueNoteTests.swift (R4, contract N5; S1)
+- [X] SHOW-012-T01 `ShowCueNote` rules (500 characters, line feeds kept, other Cc removed, trimmed; `normalized`, `stored`) in Packages/ShowControl/Sources/ShowControl/ShowCueNote.swift (R1; research D3) — Verified 2026-11-15: `ShowCueNoteTests` rule tests (cleaning, limit, preview) pass
+- [X] SHOW-012-T02 `ShowCue.operatorNote`, `ShowCueList.setOperatorNote`, `insert(…, operatorNote:)`, `ShowEditError.invalidNote`, normalized-note check in `init(id:name:cues:position:)` in Packages/ShowControl/Sources/ShowControl/ShowCueList.swift (R1, R10; data-model) — Verified 2026-11-15: `testSetClearAndRefuseNotesWithoutTouchingTheRest`, `testInsertCarriesTheNoteAndMoveKeepsIt` pass
+- [X] SHOW-012-T03 `show.json` cue key `note` (written only when set; lenient read; `droppedNotes`, `shortenedNotes` warnings) in Packages/ShowControl/Sources/ShowControl/ShowDocument.swift (R2, R3; contract N1-N3) — Verified 2026-11-15: `testNoteRoundTripsByteIdenticalAndMissingDecodesAsNil`, `testAShowWithoutNotesKeepsItsBytes`, `testLenientReadDropsNonTextAndShortensBadText` pass
+- [X] SHOW-012-T04 Package tests: rules, set/clear/too long, encode/decode byte-identical, missing → nil, older file bytes unchanged, lenient read warnings, store save/load round trip in Packages/ShowControl/Tests/ShowControlTests/ShowCueNoteTests.swift (R1-R4; S1) — Verified 2026-11-15: `swift test --package-path Packages/ShowControl`: 173 tests, 0 failures (ShowCueNoteTests 10), 3.3 s
+- [X] SHOW-012-T05 Backup round trip: notes byte-identical through a FILE-005 archive write/read in Packages/LibraryBackup/Tests/LibraryBackupTests/LibraryBackupCueNoteTests.swift (R4, contract N5; S1) — Verified 2026-11-15: `swift test --package-path Packages/LibraryBackup --filter LibraryBackupCueNoteTests|LibraryBackupNoteTests`: 4 pass, 0.12 s
 
 ## Phase 2: User Story 1 — write a note (P1)
 
