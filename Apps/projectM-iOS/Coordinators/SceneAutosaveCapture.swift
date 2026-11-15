@@ -318,6 +318,10 @@ enum SceneAutosaveCapture {
             if grade.hue != g.hue { grade.hue = g.hue }
             if grade.contrast != g.contrast { grade.contrast = g.contrast }   // FX-005
             if grade.contrastStrength != g.contrastStrength { grade.contrastStrength = g.contrastStrength }
+            if grade.posterize != g.posterize { grade.posterize = g.posterize }   // FX-013
+            let levels: Double = Double(g.posterizeLevels)
+            if grade.posterizeLevels != levels { grade.posterizeLevels = levels }
+            if grade.posterizeDither != g.posterizeDither { grade.posterizeDither = g.posterizeDither }
         }
         if let enabled = settings.gradeEnabled { grade.isEnabled = enabled }
         if let t = settings.trails {

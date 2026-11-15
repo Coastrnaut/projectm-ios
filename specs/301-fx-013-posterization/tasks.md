@@ -58,14 +58,14 @@ finish. Logs go to `.autonomous/logs-fx-013/`.
 - [X] FX-013-T10 [P] Scene fields in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift` (read, warn on
   malformed, write only when on or already present) and `SceneEffectChainTests.swift` (round-trip, old scenes off,
   malformed values). — Verified 2026-11-15: swift test SceneFormat 216 passed, 0 failed, incl. testPosterizeRoundTripsAndOldEntriesReadAsOff and testMalformedPosterizeValuesReadAsDefaultsAndAreReported (logs-fx-013/scene.log).
-- [ ] FX-013-T11 App setting in `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (three keys in `allKeys`,
+- [X] FX-013-T11 App setting in `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (three keys in `allKeys`,
   stored, read checked, reset), `SceneAutosaveCapture.swift` (apply from scenes), FILE-005 `LibrarySettings.swift`
   included keys, `scripts/run_device_tests.py` `ALLOWED_KEYS`; tests in `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`;
   run `LibraryBackupAppTests` and `SettingsTests`
-  (S6 backup and S7 relaunch: the setting test re-creates the setting from the same defaults).
-- [ ] FX-013-T12 Settings → Color rows in `Apps/projectM-iOS/Views/ColorGradeSection.swift` (Posterize toggle; Levels
+  (S6 backup and S7 relaunch: the setting test re-creates the setting from the same defaults). — Verified 2026-11-15: own simulator FX13 iPhone 17 (iOS 27.2): ColorGradeSettingTests 16/16 (3 new FX-013), LibraryBackupAppTests 5/5, LibraryEraseAppTests 3/3, SettingsTests 9/9; SceneAutosaveMigrationMatrixTests and EffectChainSettingTests 12/12 (logs-fx-013/test.log, test2.log).
+- [X] FX-013-T12 Settings → Color rows in `Apps/projectM-iOS/Views/ColorGradeSection.swift` (Posterize toggle; Levels
   slider via ACC-005 and Dither toggle while on) and a short UI test in
-  `Apps/projectM-iOS/UITests/ColorGradeUITests.swift` (toggle on shows "6 levels", reset turns it off).
+  `Apps/projectM-iOS/UITests/ColorGradeUITests.swift` (toggle on shows "6 levels", reset turns it off). — Verified 2026-11-15: ColorGradeUITests.testPosterizeSwitchShowsLevelsAndResets passed in 10.2 s (3/3 in the class); build with -warn-long-* flags shows no slow function or expression in the changed files (logs-fx-013/build.log).
 
 ## Phase 6: Polish
 
