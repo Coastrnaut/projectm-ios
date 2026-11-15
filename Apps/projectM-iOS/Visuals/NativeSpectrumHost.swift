@@ -79,6 +79,8 @@
 //   ANL-004 onset is queued as an impulse stamped with the frame's time, and the generator runs its fixed 1/60 s steps
 //   to the frame; switches with the other noise-field modes change only its configuration (the field starts at rest);
 //   `reduceMotion` slows the flow and spaces the impulses (R11).
+// * Starfield (VIS-016): its own generator on the flat-shape pass (`StarfieldHostSupport.swift`); Speed and Stars change
+//   only its configuration (the stars keep flying); the loop restart resets the stars; `reduceMotion` halves its speed.
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -243,6 +245,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         if let g = generator as? ParticleFountainGenerator { return g.configuration.palette }
         if let g = generator as? ParticleOrbitGenerator { return g.configuration.palette }
         if let g = generator as? NoiseFieldGenerator { return g.configuration.palette }   // VIS-013
+        if let g = generator as? StarfieldGenerator { return g.configuration.palette }   // VIS-016
         return nil
     }
 
@@ -287,11 +290,16 @@ final class NativeSpectrumHost: PresentationBoundResource {
             var configuration = field.configuration
             configuration.palette = palette
             field.configuration = configuration
+        } else if let stars = generator as? StarfieldGenerator {   // VIS-016
+            stars.apply(palette: palette)
         }
     }
 
     /// VIS-013: the noise field's generator (tests; nil for another visual).
     var noiseFieldGenerator: NoiseFieldGenerator? { generator as? NoiseFieldGenerator }
+
+    /// VIS-016: the starfield's generator (tests; nil for another visual).
+    var starfieldGenerator: StarfieldGenerator? { generator as? StarfieldGenerator }
 
     /// VIS-009: the particle orbit's generator (tests; nil for another visual).
     var particleOrbitGenerator: ParticleOrbitGenerator? { generator as? ParticleOrbitGenerator }
@@ -348,6 +356,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.reduceMotion = reduceMotion
             field.configuration = configuration
         }
+        (generator as? StarfieldGenerator)?.apply(reduceMotion: reduceMotion)   // VIS-016: half speed
         guard let mandala = generator as? MandalaGenerator, mandala.configuration.reduceMotion != reduceMotion else { return }
         var configuration = mandala.configuration
         configuration.reduceMotion = reduceMotion   // the layout re-anchors, so the angle stays continuous
@@ -597,6 +606,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                     configuration: NoiseFieldConfiguration.fluidInk())
             generator.barCount = barCount
             return generator
+        case let .starfield(speed, density):   // VIS-016
+            return try StarfieldGenerator.make(device: device, speed: speed, density: density, barCount: barCount)
         }
     }
 
@@ -702,6 +713,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
             // VIS-011: in place, from the next frame (the field starts at rest; storage kept)
             field.configuration = NoiseFieldConfiguration.fluidInk(reduceMotion: field.configuration.reduceMotion,
                                                                    palette: field.configuration.palette)
+        } else if case let .starfield(speed, density) = newStyle, let stars = generator as? StarfieldGenerator {
+            stars.apply(speed: speed, density: density)   // VIS-016: in place, from the next frame
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -946,6 +959,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .tunnel(pace): return "\(pace.title), \(glow)"   // VIS-015-R12
         case .waterfall: return "Newest at top, \(glow)"   // VIS-020-R12
         case .fluidInk: return "Ink from sudden sounds, \(glow)"   // VIS-011-R12
+        case let .starfield(speed, density): return StarfieldDescription.accessibilityValue(speed: speed, density: density, glow: glow)   // VIS-016-R11
         }
     }
 
@@ -1326,6 +1340,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case waterfall
     /// VIS-011: fluid ink (the noise field's generator in its fluid mode).
     case fluidInk
+    /// VIS-016: the starfield at `speed` with `density` stars requested.
+    case starfield(speed: StarfieldSpeed, density: Int)
 
     /// VIS-006, VIS-008, VIS-009, VIS-011: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1359,6 +1375,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .tunnel: VisualChoice.tunnel.title
         case .waterfall: VisualChoice.spectrumWaterfall.title
         case .fluidInk: VisualChoice.fluidInk.title
+        case .starfield: VisualChoice.starfield.title
         }
     }
 
@@ -1378,6 +1395,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .tunnel: "tunnel"
         case .waterfall: "spectrumWaterfall"
         case .fluidInk: "fluidInk"
+        case .starfield: "starfield"
         }
     }
 }
