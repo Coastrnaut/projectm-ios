@@ -54,6 +54,12 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: What happens to a version whose text file is missing or damaged? → A: An entry whose file is missing is dropped at load (it cannot be restored). A damaged file (size or SHA-256 differs) is found when Preview or Revert reads it: "This version could not be read." and nothing changes.
 - Q: How is the earlier text decoded for Preview? → A: As the editor decodes texts (UTF-8, else Latin-1 with the editor's note), shown read-only in a monospaced, selectable, scrollable text view that follows Dynamic Type.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- A1: R4 and the "stored text missing" edge case disagreed; R4 now refuses only when an intact replaced text cannot be kept, and saves without a version when the replaced text is missing or damaged.
+- A2: R9 had no task; T13 now checks that no diagnostics or export source reads `history.json` or `versions/`.
+- A4: S1 names exactly which files change.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Revert an edit (Priority: P1) — MVP
@@ -111,7 +117,7 @@ device's versions.
 - **PRE-017-R1**: Each saved text change of a user preset (PRE-015 edit or revert) MUST keep the replaced text as a version of that preset: content hash, size, the time it was replaced and the preset's name then. A rename alone keeps none. The same text MUST appear at most once per preset (the newest occurrence).
 - **PRE-017-R2**: Versions MUST be bounded: at most 10 per preset, 500 in total and 50 MB of distinct version texts; the oldest are dropped first. Pruning MUST NOT delete a version text that any remaining version of any preset names.
 - **PRE-017-R3**: Version texts MUST be stored content-addressed in `UserPresets/versions/` and listed in `UserPresets/history.json` (schema version 1; newer = unavailable and untouched, unreadable = set aside as `history.unreadable.json`, written atomically). Every file operation MUST go through the store's path guard.
-- **PRE-017-R4**: Saving an edit with a version MUST be one transaction: the version text and list are written before the record; if the record cannot be saved, the list and every file this edit added are restored and nothing changed. If the version cannot be kept the edit MUST be refused (no text is lost silently). The version list being unavailable (newer format) MUST NOT block edits; they save without a version.
+- **PRE-017-R4**: Saving an edit with a version MUST be one transaction: the version text and list are written before the record; if the record cannot be saved, the list and every file this edit added are restored and nothing changed. If the replaced text is intact but its version cannot be written (file or list save failure), the edit MUST be refused (no text is lost silently); if the replaced text itself is missing or damaged, the edit saves without a version (there are no trustworthy bytes to keep). The version list being unavailable (newer format) MUST NOT block edits; they save without a version.
 - **PRE-017-R5**: Revert MUST read the version text, check its size and SHA-256, and save it through the PRE-015 edit path (static checks, engine trial, `edit.json`, "changed meanwhile"). It MUST restore the exact bytes of the version.
 - **PRE-017-R6**: A revert MUST NOT remove or change any file except the preset's live text, `index.json`, `history.json` and version texts it adds or leaves unnamed.
 - **PRE-017-R7**: Removing a user preset MUST remove its versions and every version text no remaining version names. At load, version texts no version names MUST be deleted (left by an interrupted save) — only in `versions/`, only names of the form `<sha256>.milk`, and only when the list was read (never after it was set aside or is newer). List entries for preset IDs the record no longer has MUST be dropped.
@@ -129,7 +135,7 @@ device's versions.
 
 ### Measurable Outcomes
 
-- **PRE-017-S1**: After edits A→B→C, reverting to A stores bytes whose SHA-256 equals A's, and the sorted list of every file (path, size, hash) under the library folders before and after differs only in `files/` (C added to versions, A live), `index.json`, `history.json` and `versions/` — every other file is identical (package test).
+- **PRE-017-S1**: After edits A→B→C, reverting to A stores bytes whose SHA-256 equals A's, and the sorted list of every file (path, size, hash) under the library folders before and after differs only in `files/` (C's file removed, A's added), `index.json`, `history.json` and `versions/` (C's text added) — every other file, including other presets' texts and versions and every `PresetCollections` file, is identical (package test).
 - **PRE-017-S2**: The per-preset and total bounds drop the oldest versions; a text named by another remaining version is never deleted (package test).
 - **PRE-017-S3**: Presets with no history edit and revert normally; a newer list is untouched; an unreadable list is set aside; a failed record save restores everything (package tests).
 - **PRE-017-S4**: A library backup and restore keeps the preset's versions and its reverted text (LibraryBackup test).

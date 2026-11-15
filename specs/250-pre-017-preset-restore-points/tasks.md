@@ -37,7 +37,7 @@ Budgets (owner rule 7): unit tests 1-2 s, suites under 1 minute, the UI test und
 
 ## Phase 6: Polish
 
-- [ ] PRE-017-T13 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), privacy manifest and network symbol checks on the Debug app, type-check budget flags; no new UserDefaults keys
+- [ ] PRE-017-T13 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), privacy manifest and network symbol checks on the Debug app, type-check budget flags; no new UserDefaults keys; `grep` shows no diagnostics, export or backup source names `history.json` or `versions/` (R9)
 - [ ] PRE-017-T14 Delete the simulator and derived data; count PosterBoard reports; spec status
 
 ## Dependencies
