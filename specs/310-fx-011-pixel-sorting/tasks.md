@@ -57,7 +57,8 @@ trip, settings, one UI test). Budgets: unit test ≤ 10 s, suite < 1 min, UI tes
 - [ ] FX-011-T10 [US1] `PixelSortSetting` (four keys), `AppCoordinator+PixelSort.swift`, coordinator wiring (push to the
   compositors, scene and preset apply, autosave capture, effect-chain toggle), keys in `LibrarySettings`,
   `scripts/run_device_tests.py` ALLOWED_KEYS, the UI-test reset, `LibraryBackupAppTests`, `LibraryEraseAppTests`;
-  `PixelSortSettingTests` (defaults, clamping, persistence through a reloaded store) (FX-011-R10, S7)
+  `PixelSortSettingTests` (defaults, clamping, persistence through a reloaded store); run `SettingsTests`,
+  `LibraryBackupAppTests` and `LibraryEraseAppTests` before committing (FX-011-R10, S7)
 - [ ] FX-011-T11 [US1] Settings → Pixel sort section (`PixelSortSection.swift`: toggle, ACC-005 Threshold slider, Span
   and Direction pickers, footer) and the Effect order row (`EffectChainSetting`, `EffectChainView`) (FX-011-R9)
 - [ ] FX-011-T12 [US1] `PixelSortUITests` (find, turn on, change threshold; < 30 s) and existing app tests that list the

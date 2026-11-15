@@ -86,6 +86,16 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   has luminance 0 and qualifies only at threshold 0. No tone map or display encoding is applied before judging. Applied
   to FX-011-R3.
 
+### Session 2026-11-15 (speckit-analyze)
+
+- Finding A1 (coverage): R1's "every output" is met by the shared output chain (screen, external display, recording and
+  capture all read `encodeOutputEffects`), as for FX-014 to FX-016; the GPU tests drive that chain. Finding A2
+  (underspecification): the budget skip is tested on small frames by lowering the compositor's internal budget
+  (`@testable import Compositor`), since a 16384-pixel frame is too large for a short test; the model tests cover the
+  real B over all sizes. Finding A3 (coverage): T10 now runs `SettingsTests`, `LibraryBackupAppTests` and
+  `LibraryEraseAppTests` before committing (agent rules). No constitution conflicts; 14/14 requirements and 8/8 success
+  criteria have tasks (S8 is the `{device}` task T16).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Sort bright streaks (Priority: P1)
