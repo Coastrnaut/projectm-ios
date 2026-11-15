@@ -36,8 +36,8 @@ production change. Budgets (owner rule 7): each unit test ≲ 1-2 s, each suite 
 
 **Independent test**: `SceneLFOTests` random walk round trip; `LFOBindingAppTests.testRandomWalkBindingDrivesTheGlowAlongItsTimeline`.
 
-- [ ] MOD-016-T07 [US3] Synced continuity and Reduce flashing (`RandomWalkTests.swift`): a 1-beat synced random walk at 120 → 90 BPM continues without a jump (the change at the switch frame within the continuity bound, the step count continues); a 20 Hz random walk capped at 3 Hz reaches at most 3 new targets in one second.
-- [ ] MOD-016-T08 [US3] Scene field in `Packages/SceneFormat/Sources/SceneFormat/SceneLFOs.swift` with tests in `Packages/SceneFormat/Tests/SceneFormatTests/SceneLFOTests.swift`: round trip keeps shape, smoothness and seed; smoothness 1 and every other shape write no `smoothness`; `smoothness` 1.5, −1, "x" → `invalidLFO`, entry kept; QA-004 meta-test passes.
+- [ ] MOD-016-T07 [US3] Synced continuity and Reduce flashing (`RandomWalkTests.swift`): a 1-beat synced random walk at 120 → 90 BPM continues without a jump (every frame's change within the continuity bound at the larger of the two rates, the step count continues: the targets after the switch are those of the following steps, none repeated); a 20 Hz random walk capped at 3 Hz reaches at most 3 new targets in one second.
+- [ ] MOD-016-T08 [US3] Scene field in `Packages/SceneFormat/Sources/SceneFormat/SceneLFOs.swift` with tests in `Packages/SceneFormat/Tests/SceneFormatTests/SceneLFOTests.swift`: round trip keeps shape, rate, sync, phase, amplitude (depth), centre, smoothness and seed exactly; smoothness 1 and every other shape write no `smoothness`; `smoothness` 1.5, −1, "x" → `invalidLFO`, entry kept; QA-004 meta-test passes.
 - [ ] MOD-016-T09 [US3] App unit test in `Apps/projectM-iOS/Tests/LFOBindingAppTests.swift`: a seeded 2 Hz random walk on the glow through `NativeSpectrumHost` gives, every frame for 2 s, `lfo.value` at the frame's elapsed time (slot 0), stays within its bounds and changes by at most the continuity bound; run on the private iOS 27.2 simulator "MOD16 iPhone 17".
 
 ## Phase 6: Polish
