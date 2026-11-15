@@ -242,14 +242,14 @@ struct SceneEditorOpacityRow: View {
 /// runs (`-uitestResetNotice`), closes an editor window the system restored from an earlier run and brings the main
 /// window back, so every UI test starts on the main window.
 struct SceneEditorSessionMarker: UIViewRepresentable {
-    static let userInfoKey = "uix008.sceneEditor"
+    static let sessionMark = "uix008.sceneEditor"   // a scene-session userInfo entry, not a UserDefaults key
 
     final class Probe: UIView {
         override func didMoveToWindow() {
             super.didMoveToWindow()
             guard let scene = window?.windowScene else { return }
             var info: [String: Any] = scene.session.userInfo ?? [:]
-            info[SceneEditorSessionMarker.userInfoKey] = true
+            info[SceneEditorSessionMarker.sessionMark] = true
             scene.session.userInfo = info
             #if DEBUG
             closeIfRestoredInUITest(scene)
@@ -262,7 +262,7 @@ struct SceneEditorSessionMarker: UIViewRepresentable {
                   !SceneEditorWindowRouter.openedThisLaunch else { return }
             let application: UIApplication = UIApplication.shared
             let main: UISceneSession? = application.openSessions.first { (session: UISceneSession) -> Bool in
-                session.role == .windowApplication && session.userInfo?[SceneEditorSessionMarker.userInfoKey] == nil
+                session.role == .windowApplication && session.userInfo?[SceneEditorSessionMarker.sessionMark] == nil
             }
             application.requestSceneSessionActivation(main, userActivity: nil, options: nil, errorHandler: nil)
             application.requestSceneSessionDestruction(scene.session, options: nil, errorHandler: nil)

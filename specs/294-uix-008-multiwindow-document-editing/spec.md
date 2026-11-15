@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (UIX-008-T01-T15 verified on the Mac: app tests and a UI test on the own iOS 27.2
+iPad simulator "UIX8 iPad Pro"; T16 `{device}` open, D2/D3 with Stage Manager)
 
 **Input**: User description: "Implement UIX-008 (Multiwindow document editing) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Allow multiple scene documents where iPadOS
@@ -79,6 +80,19 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
   silently.
 - Q: Is the number of editor windows limited? → A: No app limit beyond iPadOS's; each editor holds one scene
   document (at most 1 MiB) and its SCN-010-bounded history (at most 4 MB).
+
+### Session 2026-11-15 (speckit-implement)
+
+- Q: Are editor windows restored after a relaunch? → A: Yes, by the system from the scene ID; a restored window
+  reads the file again (unsaved edits are gone, as on close). DEBUG UI-test runs (`-uitestResetNotice`) close a
+  restored editor window and bring the main window back, so each UI test starts on the main window (ADR-0105
+  decision 7).
+- Q: Does the feature add stored settings? → A: No UserDefaults keys. Editor windows are marked in their scene
+  session's `userInfo` only, which the system keeps with the window.
+- Q: Is the two-window case automated on the simulator? → A: Partly. The UI test opens an editor window from
+  Scene Folders, edits and saves it and checks the stored file; with no Stage Manager on the simulator the second
+  window takes the screen, so two editor windows side by side are checked on D2 and D3 (UIX-008-T16 `{device}`).
+  Two editors editing and saving independently is proven by the app tests.
 
 ## User Scenarios & Testing *(mandatory)*
 
