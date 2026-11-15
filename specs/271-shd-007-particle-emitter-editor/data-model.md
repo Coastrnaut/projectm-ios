@@ -20,7 +20,7 @@ Lengths in R (half the output's shorter side) from the fountain's emitter point,
 | boxHeight | Double (above the bottom edge) | 0.5…5 | 2.5 |
 | action | `bounce`, `kill` | — | `bounce` |
 | restitution | Double | 0…1 | 0.6 |
-| seed | UInt64 | any | 0x5EED_0007 |
+| seed | UInt64 | any (the editor offers 0…65535) | 7 |
 
 Rules: `clamped()` puts every value in range, non-finite → default, swaps an inverted min/max pair. Decoding
 reads each field optionally (missing → default) and clamps. `rateMilli = UInt64((rate·1000).rounded())`.

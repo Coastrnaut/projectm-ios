@@ -30,8 +30,8 @@ public struct ParticleEmitterSettings: Sendable, Hashable, Codable {
     public static let boxHalfWidthRange: ClosedRange<Double> = 0.2...3
     public static let boxHeightRange: ClosedRange<Double> = 0.5...5
     public static let restitutionRange: ClosedRange<Double> = 0...1
-    /// "SHD-007" in hex-speak.
-    public static let defaultSeed: UInt64 = 0x5EED_0007
+    /// SHD-007 (inside the editor's 0…65535 seed control).
+    public static let defaultSeed: UInt64 = 7
     /// One particle in the spawn accumulator: thousandths of a particle per second × steps per second.
     public static let accumulatorUnit: UInt64 = 1000 * UInt64(ParticleFountainConfiguration.stepsPerSecond)
 

@@ -101,6 +101,7 @@ public enum LibrarySettingsPolicy {
         "settings.beatRings.life",   // VIS-006-R9
         "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   // VIS-007-R9
         "settings.particleFountain.gravity",   // VIS-008-R10
+        "settings.particleFountain.emitter",   // SHD-007-R8: the Particle emitter editor (absent at defaults)
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   // VIS-013-R9
         "settings.kaleidoscope.wedges",   // VIS-014-R9

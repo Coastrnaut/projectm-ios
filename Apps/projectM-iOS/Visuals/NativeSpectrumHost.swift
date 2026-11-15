@@ -513,9 +513,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                                                      petalStyle: petal))
             generator.barCount = barCount
             return generator
-        case let .particleFountain(gravity):   // VIS-008
+        case let .particleFountain(gravity, emitter):   // VIS-008, SHD-007: the edited emitter when on
             let generator = try ParticleFountainGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
-                                                          configuration: ParticleFountainConfiguration(gravity: gravity.value))
+                                                          configuration: ParticleFountainConfiguration(gravity: gravity.value,
+                                                                                                       emitter: emitter))
             generator.barCount = barCount
             return generator
         case let .particleOrbit(radius):   // VIS-009
@@ -610,10 +611,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.mirror = mirror
             configuration.petalStyle = petal
             mandala.configuration = configuration
-        } else if case let .particleFountain(gravity) = newStyle, let fountain = generator as? ParticleFountainGenerator {
+        } else if case let .particleFountain(gravity, emitter) = newStyle, let fountain = generator as? ParticleFountainGenerator {
             var configuration = fountain.configuration   // VIS-008: later bursts, no rebuild
             configuration.gravity = gravity.value
+            let restart: Bool = configuration.emitter?.seed != emitter?.seed   // SHD-007: a new seed or on/off replays
+            configuration.emitter = emitter
             fountain.configuration = configuration
+            if restart { fountain.restartLoop() }
         } else if case let .particleOrbit(radius) = newStyle, let orbit = generator as? ParticleOrbitGenerator {
             var configuration = orbit.configuration   // VIS-009: the base radius, eased in by the simulation
             configuration.radius = radius.value
@@ -862,7 +866,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .beatRings(life): return "\(life.title) ring life, \(glow)"   // VIS-006-R11
         case let .mandala(symmetry, mirror, petal):   // VIS-007-R11
             return "\(symmetry)-fold, Mirror \(mirror ? "on" : "off"), \(petal.title), \(glow)"
-        case let .particleFountain(gravity): return "\(gravity.title) gravity, \(glow)"   // VIS-008-R12
+        case let .particleFountain(gravity, emitter):   // VIS-008-R12, SHD-007
+            return emitter == nil ? "\(gravity.title) gravity, \(glow)" : "Custom emitter, \(glow)"
         case let .particleOrbit(radius): return "\(radius.title) radius, \(glow)"   // VIS-009-R12
         case let .noiseField(frequency, octaves, seed):   // VIS-013-R12
             return "\(frequency.title) frequency, \(octaves) octaves, seed \(seed), \(glow)"
@@ -1213,7 +1218,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     /// VIS-007: the mandala.
     case mandala(symmetry: Int, mirror: Bool, petal: MandalaPetalStyle)
     /// VIS-008: the particle fountain.
-    case particleFountain(gravity: ParticleGravity)
+    case particleFountain(gravity: ParticleGravity, emitter: ParticleEmitterSettings? = nil)   // SHD-007: emitter
     /// VIS-009: the particle orbit.
     case particleOrbit(radius: ParticleOrbitRadius)
     /// VIS-013: the noise field.

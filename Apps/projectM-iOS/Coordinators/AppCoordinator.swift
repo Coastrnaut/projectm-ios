@@ -1192,7 +1192,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
-        case .particleFountain: .particleFountain(gravity: settings.particleGravity)   // VIS-008
+        case .particleFountain: .particleFountain(gravity: settings.particleGravity, emitter: settings.particleEmitter.effective)   // VIS-008, SHD-007
         case .particleOrbit: .particleOrbit(radius: settings.particleOrbitRadius)   // VIS-009
         case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014

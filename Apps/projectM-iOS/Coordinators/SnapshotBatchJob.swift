@@ -150,7 +150,7 @@ enum SnapshotBatchPlanner {
         case .radialWaveform: return .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)
         case .beatRings: return .beatRings(life: settings.beatRingsLife)
         case .mandala: return .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)
-        case .particleFountain: return .particleFountain(gravity: settings.particleGravity)
+        case .particleFountain: return .particleFountain(gravity: settings.particleGravity, emitter: settings.particleEmitter.effective)   // SHD-007
         case .particleOrbit: return .particleOrbit(radius: settings.particleOrbitRadius)
         case .noiseField: return .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: return .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
