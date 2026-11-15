@@ -12,6 +12,8 @@
 // `externalResources` probe reads what the external side holds.
 // OUT-004-T08: the hidden `externalPlacement` probe reads the visual's placement on the fake display
 // ("fit=… shape=… par=… frame=W×H bars=…", or "none" while the visual is on the device).
+// OUT-003-T08: the hidden `externalResolution` probe reads the visual's resolved output on the fake display
+// ("mode=… scale=… drawable=W×H clamped=…", or "none" while the visual is on the device).
 #if DEBUG
 import PresentationLifecycle
 import SwiftUI
@@ -77,6 +79,11 @@ struct UITestExternalDisplayPanel: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("externalPlacement")
                     .accessibilityValue(placement)
+                let resolution: String = coordinator.externalResolutionSummary ?? "none"
+                Text(resolution)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalResolution")
+                    .accessibilityValue(resolution)
             }
         }
         .font(.caption2)

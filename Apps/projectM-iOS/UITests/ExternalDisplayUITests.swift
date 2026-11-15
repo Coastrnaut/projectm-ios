@@ -8,6 +8,8 @@
 // through the hidden `externalPlacement` probe (pillarbox bars with the portrait device shape and Fit).
 // One Settings visit keeps it near the 30 s budget; Fill and Stretch are covered by
 // ExternalOutputCorrectionTests.
+// OUT-003-T09: Settings › External Display › Resolution 720p makes the fake 1920 × 1080 display (scale 1)
+// render 1280 × 720 pixels, read through the hidden `externalResolution` probe.
 import XCTest
 
 @MainActor
@@ -79,9 +81,10 @@ final class ExternalDisplayUITests: XCTestCase {
         let row = app.buttons[picker]
         XCTAssertTrue(app.reveal(row), "\(picker) is reachable")
         row.tap()
-        let item = app.buttons[option].firstMatch.exists ? app.buttons[option].firstMatch : app.staticTexts[option].firstMatch
-        XCTAssertTrue(item.appears(within: 3), "\(option) is listed")
-        item.tap()
+        // The menu animates in: wait for the option as either type, then tap whichever exists.
+        let button = app.buttons[option].firstMatch, text = app.staticTexts[option].firstMatch
+        XCTAssertTrue(poll(3) { button.exists || text.exists }, "\(option) is listed")
+        (button.exists ? button : text).tap()
     }
 
     private func closeSettings() {
@@ -110,5 +113,28 @@ final class ExternalDisplayUITests: XCTestCase {
         app.buttons["uitestDisconnectExternal"].tap()
         XCTAssertTrue(note.disappears(within: 5))
         XCTAssertTrue(poll(3) { self.placement == "none" })
+    }
+
+    // MARK: - OUT-003-T09
+
+    private var resolution: String? { app.descendants(matching: .any)["externalResolution"].firstMatch.value as? String }
+
+    func testTheResolutionSettingChangesTheExternalDrawable() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestExternalDisplay", "-uitestSettingsSection", "externalDisplay"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(projectM.appears(within: 15))
+        app.buttons["uitestConnectExternal"].tap()
+        XCTAssertTrue(note.appears(within: 5))
+        XCTAssertTrue(poll(3) { self.resolution == "mode=native scale=1.00 drawable=1920x1080 clamped=no" },
+                      "native on the fake display: \(resolution ?? "nil")")
+
+        openSettings()
+        choose("externalResolutionPicker", "720p")
+        closeSettings()
+        XCTAssertTrue(poll(3) { self.resolution == "mode=720p scale=0.67 drawable=1280x720 clamped=no" },
+                      "720p, live: \(resolution ?? "nil")")
+        XCTAssertTrue(note.exists, "the visual stays on the external display")
     }
 }
