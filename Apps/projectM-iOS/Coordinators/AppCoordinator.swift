@@ -370,6 +370,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         return FrameCaptureCoordinator.Context(source: self.activeFrameCaptureSource,
                                                outputLive: self.externalDisplay.blackoutPhase == .live, paused: self.userPaused)
     }
+    /// UIX-012: the touch colour sampler (AppCoordinator+ColorSampler.swift).
+    @ObservationIgnored private(set) lazy var colorSampler: ColorSamplerCoordinator = makeColorSampler()
     /// REC-012: Share… for an offered frame or recording; created with the app so its sweep of
     /// leftover share copies runs at launch (REC-012-R6).
     @ObservationIgnored let captureShare = CaptureShareCoordinator()
