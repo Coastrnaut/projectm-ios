@@ -624,6 +624,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.noiseFieldFrequency) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.noiseFieldOctaves) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.noiseFieldSeed) { coordinator.visualSettingsChanged() }   // VIS-013
+        .onChange(of: coordinator.settings.kaleidoscopeWedges) { coordinator.visualSettingsChanged() }   // VIS-014
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
