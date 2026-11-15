@@ -25,9 +25,17 @@ final class LibraryCheckUITests: XCTestCase {
 
         app.tapFreshControl("presets")
         let node = app.buttons["node:myPresets"]
-        _ = app.reveal(node)
-        node.tap()
         let link = app.buttons["libraryCheckLink"]
+        _ = app.reveal(node)
+        // Once thumbnails exist (any earlier run on this simulator), the PRE-004/005 facet chips push the home list
+        // down and this row ends under the floating search field at the bottom, where a tap lands on the field:
+        // lift the row into the upper part of the screen first (a drag in the right margin, as `reveal` does).
+        let window = app.windows.firstMatch
+        if node.frame.maxY > window.frame.maxY * 0.75 {
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.7))
+                .press(forDuration: 0.1, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.35)))
+        }
+        node.tap()
         XCTAssertTrue(link.appears(within: 5) || app.reveal(link), "Check Library is offered in My Presets")
         _ = app.reveal(link)
         link.tap()
