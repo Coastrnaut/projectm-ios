@@ -468,6 +468,7 @@ final class RenderCacheCompositeTests: XCTestCase {
         assertAll(try rig.pixels(), equal: blue, tolerance: 0, "never the garbage picture")
     }
 
+    #if DEBUG   // `faultInjection` exists in DEBUG builds only (Release benches build this bundle, QA-011)
     func testAHeldFaultIsNotReusedAndRendersOnceAtItsRetry() throws {
         let layer = StillLayer("s", color: red, fallback: .lastGoodFrame)
         let rig = try cachedRig(layer)
@@ -514,6 +515,7 @@ final class RenderCacheCompositeTests: XCTestCase {
         try expect(rig, layer, renders: 1, "after the failed frame") {}
         assertAll(try rig.pixels(), equal: red, tolerance: 0, "")
     }
+    #endif
 
     /// Stack, group and solo/mute changes redraw the composite but never render a cached layer.
     func testStackGroupAndSoloMuteChangesRedrawTheCompositeOnly() throws {

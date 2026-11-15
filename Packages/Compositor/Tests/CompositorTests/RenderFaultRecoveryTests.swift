@@ -2,7 +2,8 @@
 // and the flash check). GPU tests at 64 × 64 (32 × 32 for the long runs); skipped without a Metal
 // device. Faults are injected through the compositor's DEBUG `faultInjection` (creation or the status
 // check fails; no faulty shader) or by test layers that fail. Ticks are counted, never wall time.
-#if canImport(Metal) && !COMPOSITOR_NO_METAL
+// DEBUG only: `Compositor.faultInjection` exists in DEBUG builds, and the Release benches (QA-011) build this bundle.
+#if canImport(Metal) && !COMPOSITOR_NO_METAL && DEBUG
 import Compositor
 import FlashSafety
 import Metal

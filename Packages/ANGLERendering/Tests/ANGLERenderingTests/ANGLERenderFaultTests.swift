@@ -8,6 +8,8 @@ import ProjectMBridge
 import Rendering
 @testable import ANGLERendering
 
+// DEBUG only: the renderer's `faultInjection` exists in DEBUG builds (Release test builds, QA-011).
+#if DEBUG
 @MainActor
 final class ANGLERenderFaultTests: XCTestCase {
     private static let testPresets = URL(fileURLWithPath: #filePath)
@@ -106,3 +108,5 @@ final class ANGLERenderFaultTests: XCTestCase {
         XCTAssertEqual(renderer.health.recoveries, 1)
     }
 }
+
+#endif
