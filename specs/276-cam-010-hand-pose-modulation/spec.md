@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Clarified 2026-11-14
+**Status**: Implemented 2026-11-14 (CAM-010-T01-T16, T18, T19 verified on the Mac: ParameterGraph, Compositor and LibraryBackup package tests on the host, app unit and UI tests on a private iOS 27.2 simulator with stub and recorded hand detectors; ADR-0087; T17 open `{device}`)
 
 **Input**: User description: "Implement CAM-010 (Hand pose modulation) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Map on-device hand joints to scene parameters." Acceptance, verbatim: "Recorded
@@ -144,5 +144,6 @@ performance reports and the hand sources for hand data, logging, file and networ
 
 ## Assumptions
 
+- The Camera visual applies bindings only to the circular spectrum it draws (inner radius, gap); bindings to other targets have no effect there, LFO, band-envelope and motion sources read their no-input values there, and threshold triggers stay with the native visuals (research CAM-010-D7).
 - Route creation in the UI stays out of scope (MOD-012-D6); hand sources are bound through scenes, the modulation matrix's existing edits and DEBUG seeds.
 - Real hands on D1, the frame rate with hand tracking on and the system camera indicator are `{device}` checks; the simulator has no camera and cannot run hand detection.
