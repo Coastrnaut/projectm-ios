@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MIDI-010-T01-T11 verified on the Mac with the scripted MIDI system; device task T12 `{device}` open)
 
 **Input**: User description: "Implement MIDI-010 (MIDI clock receive) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Sync show tempo to external MIDI clock when available." Acceptance, verbatim: "24 pulses per quarter
@@ -39,7 +39,7 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: When is the clock lost? → A: No pulse for 0.5 s, or a Stop message. After Stop the clock does not set the tempo until Start or Continue (the show follows the master's transport); pulses received meanwhile keep the measurement warm without moving the beat position, so the tempo returns at once. Losing the clock never changes the stored settings.
 - Q: Which tempos are accepted? → A: 20–300 BPM (0.1 BPM allowance for measurement); a clock outside the range is ignored and the status says so ("MIDI clock out of range").
 - Q: Beat phase? → A: Start sets the next pulse to position 0 (a downbeat); Song Position (in sixteenths, 6 pulses each) received before Continue sets the position Continue resumes from; Continue without one resumes counting. Every 24th position is a beat; the anchor given to the tempo snapshot is the fitted time of the latest beat pulse. A clock that never sent Start or Continue gives a BPM without phase.
-- Q: What does the status row show? → A: "MIDI clock: 120.0 BPM" while locked, "MIDI clock: stopped" after Stop, "MIDI clock: out of range", "No MIDI clock" otherwise, and nothing extra while the toggle is off. The tempo readout's source becomes "MIDI clock" ("120 BPM, MIDI clock" spoken).
+- Q: What does the status row show? → A: "MIDI clock: 120.0 BPM" while locked, "MIDI clock: measuring" while acquiring, "MIDI clock: stopped" after Stop, "MIDI clock: out of range", "No MIDI clock" otherwise, and nothing extra while the toggle is off. The tempo readout's source becomes "MIDI clock" ("120 BPM, MIDI clock" spoken).
 
 ### Session 2026-11-14 (speckit-clarify)
 

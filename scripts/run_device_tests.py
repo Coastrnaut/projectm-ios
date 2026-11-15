@@ -110,6 +110,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   # OSC-008 (user-approved local hosts)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
+                "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)
                 "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
                 "settings.scene.locked",  # SCN-015 (scene lock; absent = unlocked)
                 "settings.modulation.quantize",  # MOD-017 (quantize mode; absent = off)

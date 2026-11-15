@@ -30,7 +30,7 @@ final class ShowBeatGridCoordinator {
         else { return nil }
         let source: BeatGridTempo.Source
         switch snapshot.origin {
-        case .manual: source = .manual
+        case .manual, .midiClock: source = .manual   // MIDI-010: the clock counts as a manual tempo
         case .estimated: source = .estimated
         case .none: return nil
         }

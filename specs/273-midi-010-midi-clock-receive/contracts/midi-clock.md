@@ -16,7 +16,7 @@
 
 ## C4 App
 - `MIDIClockCoordinator.followKey = "settings.midi.followClock"`; `isFollowing`, `setFollowing(_:)`, `status`,
-  `statusText` ("MIDI clock: 120.0 BPM", "MIDI clock: stopped", "MIDI clock: out of range", "No MIDI clock",
+  `statusText` ("MIDI clock: 120.0 BPM", "MIDI clock: measuring", "MIDI clock: stopped", "MIDI clock: out of range", "No MIDI clock",
   "Turn on Listen for MIDI devices"), `tick()`.
 - Identifiers: toggle `midiFollowClockToggle`, status `midiClockStatus`; DEBUG `midiFakeClockToggle`.
 - Readout: state "MIDI clock", spoken "<n> BPM, MIDI clock"; scene HUD source "MIDI clock"; tap notice "MIDI clock is

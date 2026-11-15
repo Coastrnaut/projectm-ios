@@ -135,6 +135,7 @@ public enum LibrarySettingsPolicy {
     /// Read by the app but deliberately left out (documented; a test checks none is included).
     public static let excludedKeys: [String] = [
         "settings.osc.enabled", "settings.midi.enabled",
+        "settings.midi.followClock",   // MIDI-010-R6: this device's MIDI setup (Follow MIDI clock), like Listen for MIDI
         "settings.scene.locked",   // SCN-015: a performance lock is session state of this device
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device

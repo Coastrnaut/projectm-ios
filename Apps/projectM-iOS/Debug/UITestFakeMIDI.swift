@@ -63,6 +63,36 @@ enum UITestFakeMIDI {
         send([0xB0, 0x14, 0x7F, 0xB0, 0x14, 0x00], timestamp: DispatchTime.now().uptimeNanoseconds)
     }
 
+    /// MIDI-010 (research D9): Timing Clock (0xF8) at 120 BPM from a 10 ms main-actor timer; every pulse due on the grid
+    /// is sent with its grid timestamp, so the reading is exact. Start (0xFA) goes first.
+    @MainActor private static var clockTimer: Timer?
+    @MainActor private static var clockStart: UInt64 = 0
+    @MainActor private static var clockPulses: UInt64 = 0
+
+    @MainActor static var isClockRunning: Bool { clockTimer != nil }
+
+    @MainActor static func setClockRunning(_ running: Bool) {
+        clockTimer?.invalidate()
+        clockTimer = nil
+        guard running else { return }
+        let now: UInt64 = DispatchTime.now().uptimeNanoseconds
+        send([0xFA], timestamp: now)
+        clockStart = now + 1_000
+        clockPulses = 0
+        clockTimer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { (_: Timer) -> Void in
+            MainActor.assumeIsolated { sendDueClockPulses() }
+        }
+    }
+
+    @MainActor private static func sendDueClockPulses() {
+        let period: UInt64 = 20_833_333   // 60 s / (24 × 120)
+        let now: UInt64 = DispatchTime.now().uptimeNanoseconds
+        while clockStart + clockPulses * period <= now {
+            send([0xF8], timestamp: clockStart + clockPulses * period)
+            clockPulses += 1
+        }
+    }
+
     /// Fake Keys' input sends these bytes now.
     private static func send(_ bytes: [UInt8], timestamp: UInt64) {
         inputProvider.send(bytes, from: keysInputID, timestamp: timestamp)
@@ -117,6 +147,22 @@ struct UITestFakeMIDIInputPanel: View {
             .accessibilityIdentifier("midiFakeSendProgram")
         Button("Send CC Button") { UITestFakeMIDI.sendControlButton() }   // MIDI-008
             .accessibilityIdentifier("midiFakeSendCCButton")
+    }
+}
+#endif
+
+#if DEBUG
+/// MIDI-010: "Fake Clock 120" — runs the stand-in clock while on.
+struct UITestFakeMIDIClockToggle: View {
+    @State private var running: Bool = UITestFakeMIDI.isClockRunning
+
+    var body: some View {
+        Toggle("Fake Clock 120", isOn: Binding<Bool>(get: { () -> Bool in running },
+                                                     set: { (on: Bool) -> Void in
+                                                         running = on
+                                                         UITestFakeMIDI.setClockRunning(on)
+                                                     }))
+            .accessibilityIdentifier("midiFakeClockToggle")
     }
 }
 #endif

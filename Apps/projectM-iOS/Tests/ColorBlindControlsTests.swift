@@ -107,8 +107,9 @@ final class ColorBlindControlsTests: XCTestCase {
                 }
             }
         }
-        // 6 groups: source 10 states (45 pairs), recording 3, camera 3, blackout 3, osc 1, tempo 6 → 61 × 2.
-        XCTAssertEqual(checked, 122)
+        // 6 groups: source 10 states (45 pairs), recording 3, camera 3, blackout 3, osc 1, tempo 10 (MIDI-010: five
+        // states with MIDI clock) → 65 × 2.
+        XCTAssertEqual(checked, 130)
     }
 
     /// The measure ignores hue: one symbol in a red and a green of equal luminance is not distinguishable.

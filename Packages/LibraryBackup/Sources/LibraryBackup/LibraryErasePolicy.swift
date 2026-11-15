@@ -134,7 +134,11 @@ public enum LibraryErasePolicy {
             + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
             + [showLoopKey]   // SHOW-007: erasing Settings turns Loop off
             + [sceneRotationKey]   // SHOW-013: erasing Settings resets rotation's choices
+            + [midiFollowClockKey]   // MIDI-010: erasing Settings stops following the MIDI clock
     }()
+
+    /// MIDI-010: Follow MIDI clock (excluded from backups; erased with Settings).
+    public static let midiFollowClockKey = "settings.midi.followClock"
 
     /// SCN-015: the scene lock (excluded from backups; erased with Settings).
     public static let sceneLockKey = "settings.scene.locked"
