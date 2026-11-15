@@ -17,7 +17,7 @@ acceptance; owner rule 7 budgets).
 
 - [ ] SHOW-013-T04 [US1] `SceneRotationCoordinator` (C3: settings storage, on/off, seed, tick loop, holds, pick → step path, `sceneChanged`, status texts) in Apps/projectM-iOS/Coordinators/SceneRotationCoordinator.swift
 - [ ] SHOW-013-T05 [US1] Wiring: lazy `sceneRotation` in Apps/projectM-iOS/Coordinators/AppCoordinator.swift; holds, tempo, Reduce flashing and the `cueStarted` chain in Apps/projectM-iOS/Coordinators/AppCoordinator+Show.swift; DEBUG `-uitestSceneRotation`
-- [ ] SHOW-013-T06 [US1] App acceptance tests (no switch at 29 s, real switch at 30 s through the step path, manual Go restarts, holds and a running countdown pause, 50 rotations never apply a disabled scene, bars mode steps at once) in Apps/projectM-iOS/Tests/SceneRotationAcceptanceTests.swift
+- [ ] SHOW-013-T06 [US1] App acceptance tests (no switch at 29 s, real switch at 30 s through the step path, manual Go restarts, holds and a running countdown pause, 50 rotations never apply a disabled scene, bars mode steps at once, status texts for zero and one enabled scene and the timer) in Apps/projectM-iOS/Tests/SceneRotationAcceptanceTests.swift
 
 ## Phase 4: User Story 2 — Collection and disabled scenes (P1)
 

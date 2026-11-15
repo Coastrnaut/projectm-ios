@@ -54,6 +54,11 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Q: What if a timer switch is waiting for the beat (SHOW-003) when the performer steps? → A: The quantizer's rules apply unchanged (a timed request never cancels or replaces a manual one); whichever step moves the show rearms rotation.
 - Q: Is there a performance-pad or MIDI control for rotation? → A: Not in this row. Settings is the only control; the cue path's announcements say each switch, and the status line says what rotation waits for.
 
+### Session 2026-11-14 (speckit-analyze)
+
+- Consistency pass: R1 → T02, T03; R2 → T02, T03; R3 → T02, T03, T10; R4 → T04, T06; R5 → T04, T06; R6 → T04, T06; R7 → T07, T06, T09; R8 → T04, T08; R9 → T03, T11. S1 → T03; S2 → T03, T06, T10; S3 → T06; S4 → T09. No constitution conflict (no network, one excluded preference key, public APIs, ShowControl stays Foundation + ParameterGraph).
+- Fix applied: R7's status texts had no test; T06 now asserts the idle texts ("No scenes are in rotation.", "Only one scene is in rotation.") and the timer status.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Rotate scenes on a timer (Priority: P1) — MVP
