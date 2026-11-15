@@ -1,8 +1,10 @@
-// FX-003-T12, T14, T15, FX-004-T09: the colour grade setting (and FX-004's hue), its ACC-012 gain cap, the Settings section's targets and the hosts
+// FX-003-T12, T14, T15, FX-004-T09, FX-005-T09: the colour grade setting (and FX-004's hue), its ACC-012 gain cap, the Settings section's targets and the hosts
 // (FX-003-R1, R8, R9).
 import Compositor
 import FlashSafety
+import LibraryBackup
 import Metal
+import SceneFormat
 import XCTest
 @testable import projectM_iOS
 
@@ -94,9 +96,89 @@ final class ColorGradeSettingTests: XCTestCase {
             let result = AccessibleParameterAdjuster.adjust(ColorGradeParameterSpecs.gain, target: target, direction: .increment)
             XCTAssertTrue(result.moved)
             XCTAssertEqual(setting.gain, 1.05, accuracy: 1e-9, "one VoiceOver step")
-            XCTAssertEqual(ColorGradeParameterSpecs.all.count, 6)
+            XCTAssertEqual(ColorGradeParameterSpecs.all.count, 7)   // FX-005: + contrast strength
             for spec in ColorGradeParameterSpecs.all { XCTAssertLessThanOrEqual(spec.stepCount, 60, spec.id) }
         }
+    }
+
+    // MARK: - FX-005: contrast curve
+
+    func testContrastPersistsClampsResetsAndAppliesFromScenes() {
+        withDefaults { (defaults: UserDefaults) -> Void in
+            let setting = ColorGradeSetting(defaults: defaults)
+            XCTAssertEqual(setting.contrast, .linear)
+            XCTAssertEqual(setting.contrastStrength, 0.5)
+            XCTAssertEqual(ColorGradeSetting.contrastKey, "settings.colorGrade.contrast")
+            XCTAssertEqual(ColorGradeSetting.contrastStrengthKey, "settings.colorGrade.contrastStrength")
+            XCTAssertTrue(ColorGradeSetting.allKeys.contains(ColorGradeSetting.contrastKey), "the UI-test reset and erase remove it")
+            XCTAssertTrue(ColorGradeSetting.allKeys.contains(ColorGradeSetting.contrastStrengthKey))
+            var reported: ColorGrade?
+            setting.onChange = { (grade: ColorGrade) -> Void in reported = grade }
+            setting.contrast = .filmic
+            XCTAssertEqual(reported, ColorGrade(contrast: .filmic))
+            XCTAssertFalse(setting.isNeutral)
+            setting.contrastStrength = 0.8
+            XCTAssertEqual(defaults.string(forKey: ColorGradeSetting.contrastKey), "filmic")
+            let relaunched = ColorGradeSetting(defaults: defaults)
+            XCTAssertEqual(relaunched.contrast, .filmic, "kept across a relaunch")
+            XCTAssertEqual(relaunched.contrastStrength, 0.8)
+            setting.contrastStrength = 7
+            XCTAssertEqual(setting.contrastStrength, 1, "clamped")
+            setting.contrastStrength = .nan
+            XCTAssertEqual(setting.contrastStrength, 0.5, "NaN → 0.5")
+            setting.resetToNeutral()
+            XCTAssertEqual(setting.contrast, .linear)
+            XCTAssertNil(defaults.object(forKey: ColorGradeSetting.contrastKey), "Reset to neutral removes the curve")
+            XCTAssertNil(defaults.object(forKey: ColorGradeSetting.contrastStrengthKey))
+            defaults.set("sepia", forKey: ColorGradeSetting.contrastKey)
+            XCTAssertEqual(ColorGradeSetting(defaults: defaults).contrast, .linear, "unknown name → Linear")
+            defaults.set(3, forKey: ColorGradeSetting.contrastKey)
+            XCTAssertEqual(ColorGradeSetting(defaults: defaults).contrast, .linear, "not a string → Linear")
+            defaults.set(true, forKey: ColorGradeSetting.contrastStrengthKey)
+            XCTAssertEqual(ColorGradeSetting(defaults: defaults).contrastStrength, 0.5, "a Bool → 0.5")
+        }
+    }
+
+    func testContrastRoundTripsThroughAScene() {
+        withDefaults { (defaults: UserDefaults) -> Void in
+            let setting = ColorGradeSetting(defaults: defaults)
+            setting.contrast = .sCurve
+            setting.contrastStrength = 0.75
+            let live = SceneEffectSettings(order: .standard, grade: setting.grade, gradeEnabled: true, trails: .off)
+            let written: [SceneEffectEntry]? = SceneAutosaveCapture.effects(live, carry: nil)
+            XCTAssertNotNil(written, "a curve makes the grade worth saving")
+            setting.resetToNeutral()
+            let chain = EffectChainSetting(defaults: defaults)
+            let trails = MotionFeedbackSetting(defaults: defaults)
+            SceneAutosaveCapture.applyEffects(written, chain: chain, grade: setting, trails: trails)
+            XCTAssertEqual(setting.contrast, .sCurve)
+            XCTAssertEqual(setting.contrastStrength, 0.75)
+            let old: [SceneEffectEntry] = [SceneEffectEntry(kind: "fx.grade", parameters: ["gamma": .double(1.2)])]
+            SceneAutosaveCapture.applyEffects(old, chain: chain, grade: setting, trails: trails)
+            XCTAssertEqual(setting.contrast, .linear, "a scene saved before FX-005 restores Linear")
+        }
+        let included = Set(LibrarySettingsPolicy.includedKeys)
+        for key in [ColorGradeSetting.contrastKey, ColorGradeSetting.contrastStrengthKey] {
+            XCTAssertTrue(included.contains(key), "\(key) is backed up and erased with Settings")
+        }
+    }
+
+    func testContrastReadoutSliderAndSafetyProfile() {
+        XCTAssertEqual(ColorGradeSetting.contrastStrengthText(0.5), "50%")
+        XCTAssertEqual(ColorGradeSetting.contrastStrengthText(1), "100%")
+        let spec: AccessibleParameterSpec = ColorGradeParameterSpecs.contrastStrength
+        XCTAssertEqual(spec.label, "Contrast strength")
+        XCTAssertEqual(spec.id, "colorContrastStrengthSlider")
+        XCTAssertEqual(spec.stepCount, 20)
+        withDefaults { (defaults: UserDefaults) -> Void in
+            let setting = ColorGradeSetting(defaults: defaults)
+            let target: ParameterTarget = ColorGradeSection.target(setting, \.contrastStrength)
+            XCTAssertTrue(AccessibleParameterAdjuster.adjust(spec, target: target, direction: .increment).moved)
+            XCTAssertEqual(setting.contrastStrength, 0.55, accuracy: 1e-9, "one VoiceOver step is 5%")
+        }
+        let strict = SafetyClamp(profile: SensorySafetyProfile(preset: .strict), reduceFlashingSetting: false)
+        let grade = ColorGrade(contrast: .sCurve, contrastStrength: 1)
+        XCTAssertEqual(ColorGradeSetting.effective(grade, clamp: strict), grade, "ACC-012 leaves the curve (white stays white)")
     }
 
     // MARK: - FX-004: hue
