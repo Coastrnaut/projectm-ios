@@ -40,6 +40,16 @@ local-first option.
 - Q: How do track values reach the output without changing the scene? → A: Through a live-value layer like MIDI-003/OSC-003: track values replace the manual glow values, MIDI and OSC live values replace track values (the performer's hands win), then MOD-002 bindings and ACC-012's clamp apply as before. Numbers are clamped to the registry range (values entered in the editor are clamped when stored, so the clamp never changes a keyframe's value). The stored scene and the settings are never rewritten; MOD-017 quantize does not apply to tracks.
 - Q: When are tracks sampled? → A: Whenever the show has a position on the timeline: every display frame while playing, once after a seek (or a scrub's release, a loop wrap or a cue step) and once when paused (the time is frozen, so the look holds). A value is applied only when it differs from the last applied one, so a seek to a keyframe time applies that value exactly once. At Standby or off the timeline, tracks release their parameters (manual values return).
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered with the recommended option (owner rules 4 and 9).
+
+- Q: What value does Add Keyframe at Playhead store? → A: The track's evaluated value at the playhead when it has keyframes; otherwise the value the output uses now (the manual glow setting, clamped to the registry range; white for Visual Colour). The time is the transport's position rounded to whole milliseconds, or 0:00 at Standby or off the timeline.
+- Q: Does an edit change the output at once? → A: Yes. After every track edit the tracks are sampled once at the current position (an unchanged value applies nothing), so the performer sees the edited value without a seek.
+- Q: Do scenes capture track values? → A: No. Track values are a live layer like MIDI and OSC: scene capture, autosave and scene history read the manual settings, which tracks never write.
+- Q: How are values edited? → A: Numbers with an ACC-005 accessible slider over the parameter's range (one swipe = one registry step, or 1/100 of the range) and the value as text; colours with the system colour picker (sRGB, opacity kept); interpolation with a three-way picker (Hold, Linear, Ease). A keyframe's time is set only by Add Keyframe at Playhead (move the playhead, add, delete the old one); the list is in time order.
+- Q: Does Visual Colour use the colour's alpha? → A: The colour is stored and evaluated with alpha (exactness covers all four components); the visual uses red, green and blue (bars are opaque), so alpha has no visible effect in this version.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Glow rises along the show (Priority: P1) — MVP
