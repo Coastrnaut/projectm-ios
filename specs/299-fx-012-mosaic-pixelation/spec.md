@@ -71,6 +71,14 @@ Five questions, each answered by Claude with the recommended option (owner rule 
 - Q: What does VoiceOver say for the block size? → A: "Block size", the whole number ("8"), one pixel per swipe; the
   on-screen readout is "8 px". Applied to FX-012-R8.
 
+### Session 2026-11-15 (speckit-analyze)
+
+- Finding A1 (coverage): R9's "removed by the UI-test reset" had no check; T12 names the reset and T14 runs
+  `SettingsTests`. Finding A2 (consistency): R5's "pixel containing the centre" is ⌊centre⌋, as in contract C2; the
+  hexagon tests compare only pixels whose four neighbours share the cell (ties at borders may round differently on
+  the GPU), as in S3/S4. Finding A3: no settings key may contain "focus", "exposure" or "whitebalance" (CAM-005 and
+  siblings); the `settings.mosaic.*` keys do not.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pixelate the picture (Priority: P1)
