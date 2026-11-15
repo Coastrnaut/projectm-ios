@@ -7,12 +7,12 @@ the spec's success criteria. Budgets (owner rule 7): unit test ≤ 10 s, UI test
 
 ## Phase 1: Setup
 
-- [ ] ACC-010-T01 Create the private simulator "ACC10 iPhone 17" (iOS 27.2), run `xcodegen generate`, and confirm the `Build` symlink and preset submodules are in place (worktree root)
+- [X] ACC-010-T01 Create the private simulator "ACC10 iPhone 17" (iOS 27.2), run `xcodegen generate`, and confirm the `Build` symlink and preset submodules are in place (worktree root) — Verified 2026-11-14: simulator 691CCD13 created, xcodegen generated, submodules checked out
 
 ## Phase 2: Foundational (pure placement, blocks all stories)
 
-- [ ] ACC-010-T02 Add `ControlsSide` (`right`, `left`, `resolve(oneHanded:leftHanded:)`), `PadTarget` (identifiers `perfPreviousCue`, `perfNextCue`, `perfTapTempo`, `perfBlackout`), `PadPlacement` and `PerformanceLayout.placement(_:)` / `targetFrames(width:height:side:readoutHeight:)` per contract C1 and research ACC-010-D3 in Packages/ShowControl/Sources/ShowControl/HandedPlacement.swift
-- [ ] ACC-010-T03 [P] Geometry tests in Packages/ShowControl/Tests/ShowControlTests/HandedPlacementTests.swift: for bar, grid and side columns at three sizes each, Black out and Tap tempo left frames equal the horizontal mirror of the right frames within 1 pt, the cue pair's union mirrors and Previous stays left of / above Next, the identifier sets are equal; side resolution (S1, R3, R5, R6)
+- [X] ACC-010-T02 Add `ControlsSide` (`right`, `left`, `resolve(oneHanded:leftHanded:)`), `PadTarget` (identifiers `perfPreviousCue`, `perfNextCue`, `perfTapTempo`, `perfBlackout`), `PadPlacement` and `PerformanceLayout.placement(_:)` / `targetFrames(width:height:side:readoutHeight:)` per contract C1 and research ACC-010-D3 in Packages/ShowControl/Sources/ShowControl/HandedPlacement.swift — Verified 2026-11-14: ShowControl package builds; HandedPlacementTests pass
+- [X] ACC-010-T03 [P] Geometry tests in Packages/ShowControl/Tests/ShowControlTests/HandedPlacementTests.swift: for bar, grid and side columns at three sizes each, Black out and Tap tempo left frames equal the horizontal mirror of the right frames within 1 pt, the cue pair's union mirrors and Previous stays left of / above Next, the identifier sets are equal; side resolution (S1, R3, R5, R6) — Verified 2026-11-14: `swift test --package-path Packages/ShowControl` 139 tests pass (HandedPlacementTests 4, 0.001 s)
 
 ## Phase 3: User Story 1 — Pad and emergency button on the left (P1) 🎯 MVP
 
