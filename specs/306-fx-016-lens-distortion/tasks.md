@@ -38,7 +38,7 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   the `.lensDistortion` case in `encodeOutputEffects` (Color folded before it), release in deinit; add the source to
   `CompositorShaderSources.archived` in `CompositorShaders.swift` (FX-016-R6, R11, R13)
 - [ ] FX-016-T07 [US1] [US2] `LensDistortionCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and
-  strength 0 bit-identical with no pass and no picture; the pass encoded directly at strength 0 bit-identical; ±1 with
+  strength 0 bit-identical with no pass and no picture; the pass encoded directly at strength 0 bit-identical (`@testable import Compositor`, as `OutputEffectOrderTests`); ±1 with
   zoom on and off equals the reference within half-float rounding, all finite, middle pixel exact; corners transparent
   black at +1 with zoom off; order and pool (FX-016-S1, S2, S4)
 - [ ] FX-016-T08 [US1] Existing compositor tests still pass (`EdgeOutlineCompositeTests`, `EffectOrderCompositeTests`,
@@ -74,8 +74,8 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 6: Polish
 
-- [ ] FX-016-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), type
-  check budget; test report in `docs/test-reports/lens-distortion.md`; spec status
+- [ ] FX-016-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
+  privacy manifest and network symbols on the Debug app, type check budget; test report in `docs/test-reports/lens-distortion.md`; spec status
 - [ ] FX-016-T17 {device} On D1: Camera visual, Lens distortion at +100 % and −100 %, zoom on and off: bulge and pinch,
   corners show picture (black only at barrel with zoom off), no sparkles; frame rate with and without recorded
   (FX-016-S8)

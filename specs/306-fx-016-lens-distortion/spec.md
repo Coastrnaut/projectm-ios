@@ -80,6 +80,14 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   a sample inside it, including the half-pixel border band, is interpolated with its taps clamped to the edge pixels; a
   sample beyond it is outside (transparent black, barrel with zoom off only). Applied to FX-016-R4, R5.
 
+### Session 2026-11-15 (speckit-analyze)
+
+- Finding A1 (coverage): the app changes, so FX-016-T16 also runs the privacy manifest and network-symbol checks on the
+  Debug app (agent rules). Finding A2 (underspecification): the direct strength-0 run of the pass in T07 uses the
+  internal `LensDistortionPass` through `@testable import Compositor`, as existing compositor tests do. Finding A3
+  (inconsistency): contract C2 treats a non-finite sample position as outside; the Edge Cases now say so. No
+  constitution conflicts; 13/13 requirements and 8/8 success criteria have tasks (S8 is the `{device}` task T17).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bend the picture like a lens (Priority: P1)
@@ -138,6 +146,7 @@ the same warp back when the scene or preset is opened.
 - Extreme aspect ratios (a frame 2 pixels wide and thousands tall, or the reverse): the corners are still at radius 1,
   every sample stays in range and every value is finite.
 - Transparent areas: premultiplied colour and alpha are interpolated together.
+- A non-finite sample position (impossible for valid values, but checked) counts as outside the picture.
 - Non-finite picture values: the warp only moves and averages values; FX-002 handles a non-finite value downstream.
 - Sensory safety: no cap is needed (no brightness is added); the flash guard still judges the shown frame.
 - Visuals that are not compositor-backed: unchanged; the help text names the visuals.
