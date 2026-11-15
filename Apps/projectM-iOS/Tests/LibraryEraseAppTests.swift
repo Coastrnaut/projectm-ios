@@ -48,6 +48,7 @@ final class LibraryEraseAppTests: XCTestCase {
             + ChromaticSplitSetting.allKeys   // FX-006
             + DirectionalBlurSetting.allKeys   // FX-007
             + RadialBlurSetting.allKeys   // FX-008
+            + EchoSetting.allKeys   // FX-010
             + MosaicSetting.allKeys   // FX-012
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, VideoStore.idKey, VideoStore.loopKey, TextOverlayStore.key,

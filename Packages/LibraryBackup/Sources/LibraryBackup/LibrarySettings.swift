@@ -99,6 +99,7 @@ public enum LibrarySettingsPolicy {
         "settings.chromatic.enabled", "settings.chromatic.amount", "settings.chromatic.angle", "settings.chromatic.radial",   // FX-006-R9
         "settings.directionalBlur.enabled", "settings.directionalBlur.radius", "settings.directionalBlur.angle",   // FX-007-R10
         "settings.radialBlur.enabled", "settings.radialBlur.strength", "settings.radialBlur.centerX", "settings.radialBlur.centerY",   // FX-008-R9
+        "settings.echo.enabled", "settings.echo.count", "settings.echo.delay", "settings.echo.decay",   // FX-010-R13
         "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   // FX-012-R9
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11

@@ -17,7 +17,9 @@ public enum OutputEffectKind: String, CaseIterable, Sendable, Hashable {
     case directionalBlur = "fx.directionalBlur"
     /// FX-008 Radial blur (appended: stored orders without it read with it last; ADR-0107).
     case radialBlur = "fx.radialBlur"
-    /// FX-012 Mosaic pixelation (appended: stored orders without it read with it last; ADR-0110).
+    /// FX-010 Echo (appended last: stored orders without it read with it last; ADR-0108).
+    case echo = "fx.echo"
+    /// FX-012 Mosaic pixelation (appended after Echo: stored orders without it read with it last; ADR-0110).
     case mosaic = "fx.mosaic"
 }
 
@@ -33,9 +35,9 @@ public enum FixedOutputStage: String, CaseIterable, Sendable, Hashable {
 public struct OutputEffectOrder: Sendable, Hashable, CustomStringConvertible {
     public let effects: [OutputEffectKind]
 
-    /// Today's order: Trails, then Color (FX-020-R1), then FX-006's Chromatic split, FX-007's Directional blur and
-    /// FX-008's Radial blur, then FX-012's Mosaic.
-    public static let standard = OutputEffectOrder([.trails, .grade, .chromatic, .directionalBlur, .radialBlur, .mosaic])
+    /// Today's order: Trails, then Color (FX-020-R1), then FX-006's Chromatic split, FX-007's Directional blur,
+    /// FX-008's Radial blur, FX-010's Echo and FX-012's Mosaic.
+    public static let standard = OutputEffectOrder([.trails, .grade, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic])
 
     /// Repeats are dropped (the first counts); missing kinds are appended in standard order.
     public init(_ kinds: [OutputEffectKind]) {
@@ -68,7 +70,7 @@ public struct OutputEffectOrder: Sendable, Hashable, CustomStringConvertible {
         return OutputEffectOrder(rest)
     }
 
-    /// `fx.trails,fx.grade,fx.chromatic,fx.directionalBlur,fx.radialBlur,fx.mosaic` (the app's stored form).
+    /// `fx.trails,fx.grade,fx.chromatic,fx.directionalBlur,fx.radialBlur` (the app's stored form).
     public var storageText: String { effects.map(\.rawValue).joined(separator: ",") }
 
     /// Reads `storageText`; unknown tokens are ignored, so anything reads as a valid order.

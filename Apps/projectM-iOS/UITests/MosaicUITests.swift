@@ -35,8 +35,14 @@ final class MosaicUITests: XCTestCase {
         XCTAssertTrue(poll(5) { self.mosaicIsOn() })
         XCTAssertTrue(mosaicSize.appears(within: 3) || app.reveal(mosaicSize), "Block size appears once on")
         XCTAssertEqual(app.staticTexts["mosaicSizeSliderValue"].label, "8 px", "the default block size")
-        mosaicSize.dragSlider(from: 7.0 / 63.0, to: 1)   // the thumb starts at 8 px on 1…64
-        XCTAssertTrue(poll(6) { self.app.staticTexts["mosaicSizeSliderValue"].label == "64 px" }, "capped at 64 px")
+        // Drag from the thumb's current place (read from the readout) to the end; a drag that lands off the thumb while
+        // the row settles is retried (at most three drags).
+        for _ in 0..<3 where app.staticTexts["mosaicSizeSliderValue"].label != "64 px" {
+            let shown: Int = Int(app.staticTexts["mosaicSizeSliderValue"].label.split(separator: " ").first ?? "8") ?? 8
+            mosaicSize.dragSlider(from: CGFloat(shown - 1) / 63, to: 1)
+            _ = poll(3) { self.app.staticTexts["mosaicSizeSliderValue"].label == "64 px" }
+        }
+        XCTAssertEqual(app.staticTexts["mosaicSizeSliderValue"].label, "64 px", "capped at 64 px")
         let hexagon: XCUIElement = app.segmentedControls["mosaicShapePicker"].buttons["Hexagon"]
         XCTAssertTrue(hexagon.exists || app.reveal(hexagon), "the shape choice")
         hexagon.tap()

@@ -162,7 +162,8 @@ mosaic back when the scene or preset is opened.
 - **FX-012-R6**: Each output pixel costs one exact read whatever the size or shape; every output value equals an input
   value.
 - **FX-012-R7**: Mosaic is an FX-020 reorderable output effect (`fx.mosaic`), appended after Radial blur in the
-  standard order. Its position is honoured; the flash guard and the tone map always run after it.
+  standard order; merged after FX-010 (2026-11-15), the standard order is Trails, Color, Chromatic split, Directional
+  blur, Radial blur, Echo, Mosaic. Its position is honoured; the flash guard and the tone map always run after it.
 - **FX-012-R8**: Settings has a "Mosaic" section: an on/off toggle, a Block size slider ("8 px") with ACC-005 spoken
   values, a Square/Hexagon choice, and help text. The Effect order screen lists it with its own on/off switch.
 - **FX-012-R9**: The values are saved on the device, restored at launch, included in library backups, erased with the

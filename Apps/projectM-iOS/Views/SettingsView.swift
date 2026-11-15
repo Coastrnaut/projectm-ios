@@ -531,7 +531,7 @@ struct SettingsView: View {
         if let layerInspector { layersSection(layerInspector) }   // CMP-015
         if let shelf = layerInspector?.parameterShelf { ParameterShelfSection(shelf: shelf) }   // UIX-004-R6
         if let coordinator = layerInspector, !coordinator.macros.isEmpty { macrosSection(coordinator) }   // MOD-010-R10
-        ParameterSearchLinkSection(settings: settings, open: inspectParameter).id("parameterSearch")   // UIX-009-R5
+        ParameterSearchLinkSection(settings: settings, open: inspectParameter, history: history, announcer: announcer).id("parameterSearch")   // UIX-009-R5, UIX-010
         if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
         QuantizeChangesSection(quantizer: settings.parameterQuantizer).id("quantize")   // MOD-017-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
@@ -565,6 +565,7 @@ struct SettingsView: View {
         if let layerInspector { ChromaticSplitSection(setting: layerInspector.chromaticSplit).id("chromatic") }   // FX-006-R8
         if let layerInspector { DirectionalBlurSection(setting: layerInspector.directionalBlur).id("directionalBlur") }   // FX-007-R9
         if let layerInspector { RadialBlurSection(setting: layerInspector.radialBlur).id("radialBlur") }   // FX-008-R8
+        if let layerInspector { EchoSection(setting: layerInspector.echoFeedback).id("echo") }   // FX-010-R12
         if let layerInspector { MosaicSection(setting: layerInspector.mosaic).id("mosaic") }   // FX-012-R8
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
     }

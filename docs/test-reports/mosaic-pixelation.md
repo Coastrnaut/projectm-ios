@@ -39,3 +39,21 @@ PosterBoard crash reports: 25 before and 25 after the simulator runs.
 
 - FX-012-T18 `{device}`: on D1, the Photo visual with Mosaic at 8 and 64 px in both shapes: blocks are flat and
   discrete, and the frame rate with and without it is recorded.
+
+## Merge with FX-010 (echo feedback), 2026-11-15
+
+`autonomous/integration` (with FX-010) merged into `feature/fx-012`: 26 files conflicted. They were resolved by keeping
+both features, with `fx.echo` before `fx.mosaic`: Trails → Color → Chromatic split → Directional blur → Radial blur →
+Echo → Mosaic. The order checks now use `firstIndex` (radial blur at 4, Echo at 5, Mosaic at 6), so they still hold
+when another kind is appended. `MosaicUITests` now drags from the thumb's position as read from the readout and retries
+up to three times: one run after the merge had missed the thumb.
+
+| Suite | Where | Result |
+|-------|-------|--------|
+| Compositor `--filter "Mosaic|Echo|OutputEffectOrder|RadialBlur"` | host | 42 tests, 0 failures |
+| SceneFormat | host | 216, 0 failures |
+| RenderGoldens `--filter Golden` | host | 113, 0 failures, 1 skipped |
+| LibraryBackup | host | 88, 0 failures |
+| App: EffectChain, Echo, Mosaic, Radial/Directional/Chromatic settings, LibraryBackupApp, LibraryEraseApp, Settings | own simulator | 48 tests, 0 failures |
+| `EchoUITests`, `EffectChainUITests` | own simulator | pass (27.5 s, 13.2 s) |
+| `MosaicUITests` | own simulator | pass after the drag fix, three runs (22.9 s, 24.5 s, 22.9 s) |

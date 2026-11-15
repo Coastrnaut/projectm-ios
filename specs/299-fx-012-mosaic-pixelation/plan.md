@@ -10,7 +10,7 @@ spliced into the compositor's existing reviewed compile site and listed in `Comp
 FX-012-D1). Per pixel it finds its cell (square block anchored at the top-left, or pointy-top hexagon with a cell
 centred on the top-left corner) and copies the cell's centre pixel with one exact `read`, clamped to the frame
 (D2-D4). `Mosaic` (new file, plain Swift, Linux-buildable) holds the value, its ranges, the cell assignment and the CPU
-reference (D5). Mosaic is a new FX-020 reorderable kind `fx.mosaic`, appended after Radial blur; `encodeOutputEffects`
+reference (D5). Mosaic is a new FX-020 reorderable kind `fx.mosaic`, appended after Radial blur (after FX-010's Echo since the 2026-11-15 merge); `encodeOutputEffects`
 gains one case (Color folded before it like before the blurs). Block size 1, off, or a frame under 2 × 2 adds no pass
 and holds no picture, so output is bit-identical to today.
 

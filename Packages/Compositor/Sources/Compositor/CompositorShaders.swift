@@ -13,7 +13,7 @@ public enum CompositorShaderSources {
         [CompositorShaders.source, CompositorShaders.toneMapSource, CompositorShaders.displaySource, TrailsPass.source,
          OutputGradePass.source, OutputTransitionPass.source, SceneTransitionBus.mixSource,
          ChromaticSplitPass.source, DirectionalBlurPass.source, RadialBlurPass.source,
-         MosaicPass.source]   // FX-006, FX-007, FX-008, FX-012
+         EchoPass.source, MosaicPass.source]   // FX-006, FX-007, FX-008, FX-010, FX-012
     }
 }
 

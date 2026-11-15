@@ -48,7 +48,7 @@ All decisions by Claude under owner rule 4 (best judgement); 2026-11-15.
 
 ## FX-012-D6: Chain position and storage
 
-- **Decision**: kind `fx.mosaic`, appended after `fx.radialBlur` (stored orders without it read with it last); scene
+- **Decision**: kind `fx.mosaic`, appended after `fx.radialBlur`, and after FX-010's `fx.echo` since the merge (stored orders without it read with it last); scene
   entry parameters `size` (1…64, rounded) and `shape` (0 square, 1 hexagon; ≥ 0.5 hexagon); settings keys
   `settings.mosaic.enabled`, `settings.mosaic.size` (integer), `settings.mosaic.shape` (`square`/`hexagon`).
 - **Rationale**: the FX-020 rules; appending keeps older orders, scenes and presets valid.

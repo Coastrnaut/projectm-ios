@@ -1,11 +1,11 @@
-# ADR-0110: Mosaic Pixelation Is Its Own Output Pass, Sixth in the Effect Chain, Showing Each Cell's Centre Pixel
+# ADR-0110: Mosaic Pixelation Is Its Own Output Pass, Last in the Effect Chain, Showing Each Cell's Centre Pixel
 
 - **Status**: Accepted 2026-11-15 (decided by Claude under the owner's best-judgement rule, owner rule 4)
 - **Feature**: FX-012 (`specs/299-fx-012-mosaic-pixelation`)
 - **Constitution**: I (public APIs; shader policy of ADR-0024), VI (modular boundaries), VIII (default output
   bit-identical), X (evidence-based quality)
-- **Builds on and amends**: ADR-0104 (FX-006's spatial-pass pattern; the standard order gains a sixth kind,
-  `fx.mosaic`, after ADR-0106's directional blur and ADR-0107's radial blur), ADR-0054 (FX-020 effect chains),
+- **Builds on and amends**: ADR-0104 (FX-006's spatial-pass pattern; the standard order gains a kind, `fx.mosaic`,
+  after ADR-0106's directional blur, ADR-0107's radial blur and ADR-0108's echo), ADR-0054 (FX-020 effect chains),
   ADR-0024 (no new compile site), ADR-0009 (run-time compiled module constant)
 
 ## Context
@@ -29,7 +29,9 @@ blurs it needs its own pass. FX-010 (echo feedback) is built in parallel and app
 4. **Bounds**: block size 1…64 whole pixels of the composite, default 8; shape square (default) or hexagon. No ACC-012
    cap (copying adds no brightness); the flash guard measures the shown frame.
 5. **Chain**: `OutputEffectKind.mosaic` is appended, so stored orders read with the mosaic last; a non-neutral Color
-   listed before an active mosaic is folded into the grade pass right before it (FX-006's rule).
+   listed before an active mosaic is folded into the grade pass right before it (FX-006's rule). Merged after
+   FX-010 (2026-11-15): the standard order is Trails → Color → Chromatic split → Directional blur → Radial blur → Echo →
+   Mosaic.
 6. **Storage**: a global setting (`settings.mosaic.enabled`, `.size`, `.shape`); scenes and presets carry an
    `fx.mosaic` entry (`size`, `shape` 0/1); a disabled mosaic counts as default, so older scenes save
    byte-identically.

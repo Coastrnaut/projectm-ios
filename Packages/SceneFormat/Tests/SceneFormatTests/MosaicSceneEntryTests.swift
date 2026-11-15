@@ -39,7 +39,7 @@ final class MosaicSceneEntryTests: XCTestCase {
 
     func testMosaicOlderListsReadWithItLastAndUntouched() throws {
         let settings = SceneEffectSettings.read([mosaicGrade, mosaicTrails]).settings
-        XCTAssertEqual(settings.order.effects.firstIndex(of: .mosaic), 5, "appended after the radial blur")
+        XCTAssertEqual(settings.order.effects.firstIndex(of: .mosaic), 6, "appended after Echo (FX-010)")
         XCTAssertNil(settings.mosaic, "no entry: the current mosaic stays")
         XCTAssertEqual(settings.entries(over: [mosaicGrade, mosaicTrails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
     }

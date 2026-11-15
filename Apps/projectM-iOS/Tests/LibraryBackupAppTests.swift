@@ -32,6 +32,7 @@ final class LibraryBackupAppTests: XCTestCase {
             + ChromaticSplitSetting.allKeys   // FX-006
             + DirectionalBlurSetting.allKeys   // FX-007
             + RadialBlurSetting.allKeys   // FX-008
+            + EchoSetting.allKeys   // FX-010
             + MosaicSetting.allKeys   // FX-012
             + NoiseEditorStore.allKeys   // SHD-006-R7
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
