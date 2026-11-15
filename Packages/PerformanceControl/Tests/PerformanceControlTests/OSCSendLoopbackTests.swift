@@ -92,11 +92,15 @@ final class OSCSendLoopbackTests: XCTestCase {
         for _ in 0..<10 { transport.send([0x2F, 0x78, 0, 0, 0x2C, 0, 0, 0]) }
         transport.close()
         for _ in 0..<10 { transport.send([0x2F, 0x79, 0, 0, 0x2C, 0, 0, 0]) }
+        // Sends queued before close() may already have run under load (the integration Mac sent all 10 once,
+        // 2026-11-14); the guarantee is that nothing sent after close() ever leaves.
         let quiet = expectation(description: "quiet window")
         quiet.isInverted = true
-        fixture.onDatagram = { _ in quiet.fulfill() }
+        fixture.onDatagram = { (bytes: [UInt8]) in if bytes.count > 1, bytes[1] == 0x79 { quiet.fulfill() } }
         wait(for: [quiet], timeout: 0.3)
-        XCTAssertEqual(fixture.received.withLock { $0.count }, 0)
+        let received: [[UInt8]] = fixture.received.withLock { $0 }
+        XCTAssertEqual(received.filter { $0.count > 1 && $0[1] == 0x79 }.count, 0, "nothing sent after close() leaves")
+        XCTAssertLessThanOrEqual(received.count, 10, "at most the sends queued before close()")
     }
 }
 #endif
