@@ -18,6 +18,7 @@
 // * The buttons in the controls restart the controls' hide delay; the keyboard shortcuts do not show
 //   the controls.
 import FlashSafety
+import PerformanceControl
 import Foundation
 import ParameterGraph
 import SceneFormat
@@ -200,6 +201,7 @@ extension AppCoordinator {
     func makeShowTransport(defaults: UserDefaults) -> ShowTransportCoordinator {
         let transport = ShowTransportCoordinator(show: show, driver: showAutoAdvance, defaults: defaults)
         transport.setHold = { [weak self] (held: Bool) -> Void in self?.setShowHold(held) }   // SHOW-005's announcements
+        transport.beatGrid.tempo = { [weak self] () -> TempoSnapshot in self?.tempo.snapshot ?? .none }   // SHOW-010
         return transport
     }
 
