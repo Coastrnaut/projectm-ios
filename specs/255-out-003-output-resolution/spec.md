@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: In progress (tasks OUT-003-T01-T11)
+**Status**: Implemented 2026-11-14 (OUT-003-T01-T09, T11 verified on the Mac, iOS 27.2 simulator; T10 `{device}` open)
 
 **Input**: User description: "Implement OUT-003 (Independent output resolution) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Set a safe drawable scale for
