@@ -386,6 +386,24 @@ extension AudioFeatureSource {
         case let .bandEnvelope(index, profile): return "Band \(index + 1) \(profile.rawValue)"   // MOD-015
         case let .motion(axis): return axis.inspectorName   // CAM-011
         case let .face(feature): return feature.inspectorName   // CAM-009
+        case let .hand(feature): return feature.inspectorName   // CAM-010
+        }
+    }
+}
+
+extension HandFeature {
+    /// CAM-010-R8: the hand source's name for people.
+    var inspectorName: String {
+        switch self {
+        case .present: "Hand present"
+        case .x: "Hand left–right"
+        case .y: "Hand up–down"
+        case .pinch: "Pinch"
+        case .open: "Hand open"
+        case .size: "Hand size"
+        case .second: "Second hand present"
+        case .secondX: "Second hand left–right"
+        case .secondY: "Second hand up–down"
         }
     }
 }

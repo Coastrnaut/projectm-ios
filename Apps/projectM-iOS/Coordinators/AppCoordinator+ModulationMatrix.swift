@@ -40,6 +40,7 @@ extension AppCoordinator {
             }
         }
         sceneAutosave?.replaceCarriedBindings(next)
+        cameraVisual?.modulation.load(next)   // CAM-010-R16: the Camera visual's ring follows the same routes
         return true
     }
 

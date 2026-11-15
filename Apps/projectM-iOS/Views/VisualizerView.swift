@@ -180,7 +180,8 @@ struct VisualizerView: View {
                                  onShown: { () -> Void in coordinator.announceRecoveryOffer() })
         let indicator: CameraIndicator = coordinator.cameraIndicator
         if indicator.isShown {   // CAM-012-R1 to R3: never hidden with the controls
-            CameraIndicatorBadge(indicator: indicator, faceTracking: coordinator.cameraFaceTrackingShown) { () -> Void in coordinator.stopCamera() }   // CAM-009
+            CameraIndicatorBadge(indicator: indicator, faceTracking: coordinator.cameraFaceTrackingShown,   // CAM-009
+                                 handTracking: coordinator.cameraHandTrackingShown) { () -> Void in coordinator.stopCamera() }   // CAM-010
                 .transition(.opacity)
         }
         if coordinator.externalDisplay.blackoutPhase != .live {   // OUT-010-R9: never hidden with the controls
@@ -269,7 +270,7 @@ struct VisualizerView: View {
     private var performanceOverlay: some View {
         let overlay = PerformanceOverlay(metrics: { coordinator.activeVisualMetrics }, manager: coordinator.manager,
                                          renderHealth: { coordinator.renderHealthOverlayLine },
-                                         stageLines: { () -> [String] in coordinator.frameStageLines() + coordinator.faceTrackingOverlayLines },   // CAM-009
+                                         stageLines: { () -> [String] in coordinator.frameStageLines() + coordinator.faceTrackingOverlayLines + coordinator.handTrackingOverlayLines },   // CAM-009, CAM-010
                                          stereoLine: { () -> String? in coordinator.stereoOverlayLine })   // ANL-013
         return VStack { HStack { Spacer(); overlay }; Spacer() }
             .padding(.top, 2)
@@ -526,6 +527,7 @@ struct VisualizerView: View {
                      cameraWhiteBalance: coordinator.cameraWhiteBalanceChoice,   // CAM-006
                      cameraPersonMask: coordinator.cameraPersonMaskChoice,   // CAM-008
                      cameraFaceTracking: coordinator.faceTracking,   // CAM-009
+                     cameraHandTracking: coordinator.handTracking,   // CAM-010
                      cameraCanFocus: { () -> Bool in coordinator.cameraFocus.canFocus },   // CAM-005
                      recentPresets: coordinator.presets.recent,   // PRE-006
                      powerProfile: coordinator.powerProfile,   // PERF-008

@@ -136,11 +136,14 @@ public enum LibraryErasePolicy {
             + [showLoopKey]   // SHOW-007: erasing Settings turns Loop off
             + [sceneRotationKey]   // SHOW-013: erasing Settings resets rotation's choices
             + faceTrackingKeys   // CAM-009-R3: erasing Settings turns face tracking off and forgets the consent
+            + handTrackingKeys   // CAM-010-R3: likewise for hand tracking
             + [midiFollowClockKey]   // MIDI-010: erasing Settings stops following the MIDI clock
     }()
 
     /// CAM-009-R3: the face tracking switch and its consent (never backed up; erased with Settings).
     public static let faceTrackingKeys: [String] = ["settings.camera.faceTracking", "settings.camera.faceTrackingConsent"]
+    /// CAM-010-R3: the hand tracking switch and its consent (never backed up; erased with Settings).
+    public static let handTrackingKeys: [String] = ["settings.camera.handTracking", "settings.camera.handTrackingConsent"]
 
     /// MIDI-010: Follow MIDI clock (excluded from backups; erased with Settings).
     public static let midiFollowClockKey = "settings.midi.followClock"
