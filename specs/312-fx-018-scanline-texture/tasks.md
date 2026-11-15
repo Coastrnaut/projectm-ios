@@ -75,7 +75,7 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
   `-warn-long-expression-type-checking=150`), no warnings from the new files — Verified 2026-11-15: build-for-testing with -warn-long-function-bodies=300 -warn-long-expression-type-checking=150: no warning in any new or FX-018-edited body (existing bodies near 300 ms under load listed in the report)
 - [X] FX-018-T14 Test report `docs/test-reports/scanline-texture.md`; spec status Implemented — Verified 2026-11-15: docs/test-reports/scanline-texture.md; spec status Implemented; validate_docs OK
 - [X] FX-018-T15 Own simulator and derived data deleted; PosterBoard reports counted before and after (in the report) — Verified 2026-11-15: xcrun simctl delete of "FX18 iPhone 17" and rm of the worktree derived data and Linux-shape scratch path; PosterBoard reports 25 before, 25 after (in the report)
-- [ ] FX-018-T16 {device} On D1, Photo visual: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations:
+- [X] FX-018-T16 {device} On D1, Photo visual: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations: — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): spacing 2, 3 and 16 at 100% change the picture (every pixel sampled), no crawl in landscape, 59-60 fps with and without
   even lines, no crawl or flicker; frame rate with and without it (FX-018-S6)
 
 ## Dependencies

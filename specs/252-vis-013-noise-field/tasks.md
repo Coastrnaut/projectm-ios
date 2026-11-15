@@ -27,7 +27,7 @@
 ## Phase 4: Polish
 
 - [X] VIS-013-T14 Full touched package suites, Linux shape, repo checks, privacy manifest and network symbol scans, type-check budget. — Verified 2026-11-14: VisualGenerators swift test 279 passed (43 s); Linux shape VisualGenerators 11 and Compositor ProceduralMaterialsTests 32 passed; Compositor ProceduralMaterialsTests 66 passed on host; RenderGoldens 'Golden' 90 passed (1 on-demand skip); check_compliance (after ADR-0066 allowlist entry), validate_docs, check_motion_policy, check_permission_catalog, check_status_events, test_scripts all exit 0; check_privacy_manifest OK; check_network_symbols OK (19 images); no type-check warning in touched code
-- [ ] VIS-013-T15 {device} On D1 with music, Noise Field holds the display's frame rate on the PERF-001/007 overlay.
+- [X] VIS-013-T15 {device} On D1 with music, Noise Field holds the display's frame rate on the PERF-001/007 overlay. — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): Noise Field with music: 60 fps median, the display's rate
 
 ## Dependencies
 

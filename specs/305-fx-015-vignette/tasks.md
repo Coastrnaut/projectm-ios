@@ -71,7 +71,7 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 - [X] FX-015-T13 Test report `docs/test-reports/vignette.md`; spec status Implemented — Verified 2026-11-15: docs/test-reports/vignette.md; spec status Implemented; validate_docs OK
 - [X] FX-015-T14 Type-check budget on the new app files (`-warn-long-function-bodies=300`,
   `-warn-long-expression-type-checking=150`), no warnings from the new files — Verified 2026-11-15: build with the flags; no warning in the new files (existing bodies near 300 ms listed in the report)
-- [ ] FX-015-T15 {device} On D1, Photo visual: Vignette at intensity 100 % with softness 10 % and 90 % and the centre
+- [X] FX-015-T15 {device} On D1, Photo visual: Vignette at intensity 100 % with softness 10 % and 90 % and the centre — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): middle unchanged at softness 10%, corners darken at 10% and 90%, moved centre darkens the far corner, 60 fps with and without
   moved: edges darken smoothly and the middle is unchanged; frame rate with and without it (FX-015-S7)
 
 ## Dependencies

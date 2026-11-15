@@ -72,7 +72,7 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 - [X] FX-012-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
   privacy manifest and network symbols on the Debug app, type-check budget — Verified 2026-11-15: all repo checks OK, 186 script tests, privacy manifest and network symbols OK; no FX-012 type-check warnings
 - [X] FX-012-T17 Test report in `docs/test-reports/mosaic-pixelation.md`; spec status — Verified 2026-11-15: docs/test-reports/mosaic-pixelation.md
-- [ ] FX-012-T18 {device} On D1: Photo visual, Mosaic at 8 and 64 in both shapes, blocks flat and discrete, frame rate
+- [X] FX-012-T18 {device} On D1: Photo visual, Mosaic at 8 and 64 in both shapes, blocks flat and discrete, frame rate — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): 8 and 64 in both shapes change the picture, 59-60 fps with and without recorded
   with and without recorded (FX-012-S7)
 
 ## Dependencies

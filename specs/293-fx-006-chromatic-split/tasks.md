@@ -69,7 +69,7 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 - [X] FX-006-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
   privacy manifest and network symbols on the Debug app, type-check budget — Verified 2026-11-15: all repo checks OK, 186 script tests, privacy manifest and network symbols OK; type-check note in the report
 - [X] FX-006-T17 Test report in `docs/test-reports/chromatic-split.md`; spec status — Verified 2026-11-15: docs/test-reports/chromatic-split.md
-- [ ] FX-006-T18 {device} On D1: Photo visual, split at 2% and radial, fringes look right, frame rate recorded
+- [X] FX-006-T18 {device} On D1: Photo visual, split at 2% and radial, fringes look right, frame rate recorded — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): split 2% radial changes the picture (screenshots attached), 60 fps median recorded
   (FX-006-S7)
 
 ## Dependencies

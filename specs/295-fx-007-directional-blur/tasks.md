@@ -76,7 +76,7 @@ trip, app and UI tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 3
 - [X] FX-007-T16 Repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`,
   `check_status_events`, `test_scripts`, `check_privacy_manifest`, `check_network_symbols`), type-check budget, test
   report `docs/test-reports/directional-blur.md`, spec status — Verified 2026-11-15: all six repo checks OK, check_privacy_manifest and check_network_symbols OK on the Debug app; docs/test-reports/directional-blur.md
-- [ ] FX-007-T17 {device} On D1 open Photo, turn on Directional blur at 2% and 45°: the streak looks right and the
+- [X] FX-007-T17 {device} On D1 open Photo, turn on Directional blur at 2% and 45°: the streak looks right and the — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): 2% at 45° changes the picture (screenshots attached), 60 fps median, the visual's normal rate
   frame rate stays at the visual's normal rate (FX-007-S8)
 
 ## Dependencies

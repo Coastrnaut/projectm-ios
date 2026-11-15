@@ -69,7 +69,7 @@ finish. Logs go to `.autonomous/logs-fx-005/`.
 - [X] FX-005-T13 Amend `docs/adr/0050-output-color-grade.md` (operator, block, flags); repo checks
   (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`,
   `test_scripts`), `LibraryBackupAppTests`, `SettingsTests`, type-check budget, Linux shape of Compositor/SceneFormat. — Verified 2026-11-15: ADR-0050 amended; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 186 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; no slow type-check warnings in touched files. Full suites on the host: Compositor (all pass, logs-fx-005/compositor-all.log), LibraryBackup 88/88, SceneFormat 207/207, RenderGoldens 104 (host and simulator).
-- [ ] FX-005-T14 {device} On D1: Photo visual with S-curve and Filmic at 100%; frame rate unchanged within noise
+- [X] FX-005-T14 {device} On D1: Photo visual with S-curve and Filmic at 100%; frame rate unchanged within noise — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): S-curve and Filmic at 100% change the picture, 60 fps median unchanged
   (FX-005-S7).
 
 ## Dependencies

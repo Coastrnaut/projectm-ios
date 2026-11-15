@@ -34,7 +34,7 @@ marks work the Mac cannot finish.
 ## Phase 6: Polish
 
 - [X] VIS-011-T12 Repo checks, Linux shape build, type-check budget, privacy manifest and network symbols, PosterBoard counts, docs match the implementation — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; VisualGenerators full suite 356 passed (57 s, under load average ~140; the new fluid tests about 4.5 s of it); Linux shape (-DVISUAL_NO_METAL) builds and its 8 fluid CPU tests pass; RenderGoldens Golden 100 passed on the macOS host; fluid package tests 17 (1 on-demand skip) on the iOS 27.2 simulator; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; type-check warnings only in lines this feature does not touch; spec, plan, research, data model and contract updated to the implementation (rgba32Float ink, 1.06 MiB, `VisualFluidReference` target)
-- [ ] VIS-011-T13 {device} D1: Fluid Ink with music; ink follows onsets, frame rate holds on the PERF-001/007 overlay, no flashing with Reduce flashing on
+- [X] VIS-011-T13 {device} D1: Fluid Ink with music; ink follows onsets, frame rate holds on the PERF-001/007 overlay, no flashing with Reduce flashing on — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): Fluid Ink with music and Reduce flashing on: 60 fps median, ink moves with the music
 
 ## Dependencies
 

@@ -34,7 +34,7 @@ Tests are requested by the spec (determinism, never-NaN, iteration bound, alloca
 ## Phase 6: Polish
 
 - [X] VIS-012-T12 Repo checks, Linux shape build, type-check budget, privacy manifest and network symbols, PosterBoard counts, docs (RenderGoldens README) match the implementation — Verified 2026-11-15: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK (1 skip); VisualGenerators full suite 381 passed (1 on-demand skip) in 48 s on the macOS host (the new reaction tests about 1.6 s of it); Linux shape (-DVISUAL_NO_METAL) builds and its 7 reaction CPU tests pass; reaction package tests 15/15 on the iOS 27.2 simulator; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; type-check warnings only in lines this feature does not touch; PosterBoard reports 25 before and 25 after; RenderGoldens README, spec (stripes wording) and contract match the implementation
-- [ ] VIS-012-T13 {device} D1: Reaction Diffusion with music; patterns grow per preset, bass plants growth, frame rate holds at Speed 16 on the PERF-001/007 overlay, no flashing on reloads with Reduce flashing on
+- [ ] VIS-012-T13 {device} D1: Reaction Diffusion with music; patterns grow per preset, bass plants growth, frame rate holds at Speed 16 on the PERF-001/007 overlay, no flashing on reloads with Reduce flashing on — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): Reaction Diffusion at Speed 16 with music 60 fps median, moving; growth per preset not yet compared
 
 ## Dependencies
 

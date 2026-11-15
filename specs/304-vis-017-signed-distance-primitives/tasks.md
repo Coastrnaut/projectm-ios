@@ -28,7 +28,7 @@
 ## Phase 5: Polish
 
 - [X] VIS-017-T12 Touched package suites, Linux shape, RenderGoldens, repo checks, privacy manifest and network symbol scans, type-check budget, PosterBoard counts. — Verified 2026-11-15: VisualGenerators swift test 402 passed, 1 skipped (79.5 s on a loaded machine; the SignedDistance suites add about 0.8 s); Linux shape 321 passed, 1 skipped; LibraryBackup 88 passed; RenderGoldens noise-field family + integrity 31 passed; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 186 OK; check_privacy_manifest OK; check_network_symbols OK (19 images); PosterBoard reports 25 before and after
-- [ ] VIS-017-T13 {device} On D1 with music, SDF Shapes at each quality: frame rate on the PERF-001/007 overlay, look, Reduce Motion calm; binary archive hit on second launch (PERF-009).
+- [ ] VIS-017-T13 {device} On D1 with music, SDF Shapes at each quality: frame rate on the PERF-001/007 overlay, look, Reduce Motion calm; binary archive hit on second launch (PERF-009). — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): SDF Shapes at low, medium and high 60 fps median (screenshots); binary archive hit on second launch not yet checked
 
 ## Dependencies
 

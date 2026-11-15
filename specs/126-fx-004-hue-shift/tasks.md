@@ -77,7 +77,7 @@ finish. Logs go to `.autonomous/logs-fx-004/`.
 - [X] FX-004-T14 App on an own iOS 27.2 simulator: `-only-testing:projectM-iOSTests` and
   `-only-testing:projectM-iOSUITests/ColorGradeUITests`, with the long-body warnings flags; LibraryBackup package
   tests; Compositor package suite under 1 minute. — Verified 2026-11-14: app unit 578/578 and ColorGradeUITests pass on the own simulator with the warning flags; LibraryBackup 44, Compositor 426 + 3 (10.5 s), RenderGoldens 39 pass.
-- [ ] FX-004-T15 `{device}` (open: needs D1) On D1 (quickstart step 5): hue +120 on the Photo visual, greys unchanged, frame rate
+- [ ] FX-004-T15 `{device}` (open: needs D1) On D1 (quickstart step 5): hue +120 on the Photo visual, greys unchanged, frame rate — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): hue +120 changes the picture and 60 fps is unchanged; greys unchanged not yet checked
   unchanged.
 
 Note (2026-11-14, not FX-004's): `SettingsUITests.testLicensesScreen` and

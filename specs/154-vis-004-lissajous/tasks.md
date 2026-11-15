@@ -40,7 +40,7 @@ Format: `- [ ] VIS-004-Txx [P?] [Story] description`. `{device}` = needs a physi
 ## Phase 6: Polish
 
 - [X] VIS-004-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, Linux shape build, PosterBoard count; delete the derived data and the simulator. — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 153 OK; check_privacy_manifest OK and check_network_symbols OK on the Debug simulator app; LibraryBackup 68 tests pass; no type-check warning in changed code (the warnings seen are in untouched files under a load average near 700); PosterBoard 25 before and after; derived data and the simulator deleted.
-- [ ] VIS-004-T13 {device} On D1 with stereo music, choose Lissajous and check frame time in the performance overlay with Persistence on.
+- [X] VIS-004-T13 {device} On D1 with stereo music, choose Lissajous and check frame time in the performance overlay with Persistence on. — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): Lissajous with Persistence on, music: 60 fps median, draws and moves
 
 ## Dependencies
 

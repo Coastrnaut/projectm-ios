@@ -42,7 +42,7 @@ Format: `- [ ] VIS-006-Txx [P?] [Story] description`. `{device}` = needs a physi
 ## Phase 6: Polish
 
 - [X] VIS-006-T13 Full VisualGenerators suite on the host and in the Linux shape, RenderGoldens on the host (VIS-006-R13, S7); repo checks, privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard count; delete the derived data and the simulator. — Verified 2026-11-14: VisualGenerators 202 tests pass on the host (40.8 s) and 169 in the Linux shape (34.1 s); RenderGoldens 73; LibraryBackup 74; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; PosterBoard 25 before and after; derived data and the simulator deleted.
-- [ ] VIS-006-T14 {device} On D1 with music, choose Beat Rings: rings follow the beat; frame time in the performance overlay.
+- [X] VIS-006-T14 {device} On D1 with music, choose Beat Rings: rings follow the beat; frame time in the performance overlay. — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): Beat Rings with music: 60 fps median, the rings move with the music (screenshots)
 
 ## Dependencies
 

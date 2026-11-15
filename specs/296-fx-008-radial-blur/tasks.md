@@ -70,7 +70,7 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 - [X] FX-008-T16 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests),
   privacy manifest and network symbols on the Debug app, type-check budget — Verified 2026-11-15: all repo checks OK, 186 script tests, privacy manifest and network symbols OK; no FX-008 type-check warnings
 - [X] FX-008-T17 Test report in `docs/test-reports/radial-blur.md`; spec status — Verified 2026-11-15: docs/test-reports/radial-blur.md
-- [ ] FX-008-T18 {device} On D1: Photo visual, Radial blur at 25% with the focus centred and moved, streaks radiate
+- [X] FX-008-T18 {device} On D1: Photo visual, Radial blur at 25% with the focus centred and moved, streaks radiate — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): 25% centred and moved both change the picture, 60 fps with and without recorded
   from the focus, frame rate with and without recorded (FX-008-S7)
 
 ## Dependencies

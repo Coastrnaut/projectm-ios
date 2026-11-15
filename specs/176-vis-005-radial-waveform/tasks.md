@@ -39,7 +39,7 @@ Format: `- [ ] VIS-005-Txx [P?] [Story] description`. `{device}` = needs a physi
 ## Phase 6: Polish
 
 - [X] VIS-005-T11 Full VisualGenerators suite on the host and in the Linux shape, full RenderGoldens suite on the host (VIS-005-R13, S7); repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, Linux shape build, PosterBoard count; delete the derived data and the simulator. — Verified 2026-11-14: VisualGenerators 169 tests pass on the host (67.3 s at load average ≈ 900) and 138 in the Linux shape (89.2 s); RenderGoldens 71 on the host; LibraryBackup 74; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK; check_privacy_manifest OK and check_network_symbols OK on the Debug simulator app; no type-check warning in changed code (warnings of 211-220 ms appear across untouched files at load average ≈ 900, including SettingsView.swift:251, a pre-existing closure); PosterBoard 25 before and after; derived data and the simulator deleted.
-- [ ] VIS-005-T12 {device} On D1 with music, choose Radial Waveform and check frame time in the performance overlay.
+- [X] VIS-005-T12 {device} On D1 with music, choose Radial Waveform and check frame time in the performance overlay. — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): Radial Waveform with music: 60 fps median, draws and moves
 
 ## Dependencies
 

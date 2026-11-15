@@ -30,7 +30,7 @@
 ## Phase 6: Polish
 
 - [X] VIS-020-T11 Touched package suites, Linux shape, RenderGoldens, repo checks, privacy manifest and network symbol scans, type-check budget, PosterBoard counts. — Verified 2026-11-14: VisualGenerators swift test 317 passed (45 s); Linux shape 264 passed (32 s); RenderGoldens Golden 96 passed; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 179 OK; check_privacy_manifest OK; check_network_symbols OK (19 images); type-check warnings only in untouched files (none in VIS-020's); PosterBoard reports 30 before and 30 after
-- [ ] VIS-020-T12 {device} On D1 with music, Spectrum Waterfall holds the display's frame rate on the PERF-001/007 overlay and falls steadily, newest at the top.
+- [ ] VIS-020-T12 {device} On D1 with music, Spectrum Waterfall holds the display's frame rate on the PERF-001/007 overlay and falls steadily, newest at the top. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): Spectrum Waterfall with music 60 fps median, moving; 'newest at the top' not yet checked
 
 ## Dependencies
 

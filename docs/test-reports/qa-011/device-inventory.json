@@ -4,30 +4,30 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 264,
-    "specs": 223,
+    "total": 245,
+    "specs": 204,
     "byStatus": {
-      "open": 247,
+      "open": 228,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 240
+      "b": 221
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 251
+      "b": 232
     },
     "byDevice": {
-      "D1": 243,
+      "D1": 224,
       "D2": 54,
       "D3": 54
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 12,
-        "b": 231
+        "b": 212
       },
       "D2": {
         "a": 3,
@@ -39,7 +39,7 @@
       }
     },
     "bySession": {
-      "B01": 37,
+      "B01": 18,
       "B02": 12,
       "B03": 5,
       "B04": 18,
@@ -294,43 +294,24 @@
         "020-fx-001-bloom:FX-001-T27",
         "024-anl-016-analysis-event-bus:ANL-016-T20",
         "025-vis-002-linear-spectrum:VIS-002-T16",
-        "123-fx-003-color-grading:FX-003-T22",
         "126-fx-004-hue-shift:FX-004-T15",
         "132-pre-001-thumbnail-cache:PRE-001-T14",
         "142-fx-020-effect-chains:FX-020-T19",
-        "154-vis-004-lissajous:VIS-004-T13",
-        "176-vis-005-radial-waveform:VIS-005-T12",
-        "186-vis-006-beat-rings:VIS-006-T14",
-        "195-vis-007-mandala:VIS-007-T13",
         "202-anl-015-section-energy-change:ANL-015-T12",
-        "203-vis-008-particle-fountain:VIS-008-T14",
         "209-perf-012-performance-report:PERF-012-T17",
         "211-vis-009-particle-orbit:VIS-009-T10",
         "236-shd-005-gradient-editor:SHD-005-T13",
-        "252-vis-013-noise-field:VIS-013-T15",
         "259-vis-014-kaleidoscope-field:VIS-014-T12",
         "263-vis-015-tunnel-warp:VIS-015-T12",
         "267-vis-020-spectrum-waterfall:VIS-020-T12",
         "271-shd-007-particle-emitter-editor:SHD-007-T13",
-        "272-vis-010-particle-trails:VIS-010-T16",
         "279-shd-008-vector-path-editor:SHD-008-T18",
-        "280-vis-011-fluid-ink:VIS-011-T13",
         "286-vis-012-reaction-diffusion:VIS-012-T13",
-        "287-vis-016-starfield-flight:VIS-016-T13",
-        "292-fx-005-contrast-curves:FX-005-T14",
-        "293-fx-006-chromatic-split:FX-006-T18",
-        "295-fx-007-directional-blur:FX-007-T17",
-        "296-fx-008-radial-blur:FX-008-T18",
-        "299-fx-012-mosaic-pixelation:FX-012-T18",
-        "301-fx-013-posterization:FX-013-T14",
         "304-vis-017-signed-distance-primitives:VIS-017-T13",
-        "305-fx-015-vignette:FX-015-T15",
-        "311-fx-017-film-grain:FX-017-T17",
-        "312-fx-018-scanline-texture:FX-018-T16",
         "314-qa-012-release-evidence-manifest:QA-012-T08"
       ],
       "optionalTasks": 1,
-      "estimatedMinutes": 220
+      "estimatedMinutes": 125
     },
     {
       "id": "B02",
@@ -1606,7 +1587,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "FX-001-T27 {device} (open: final device phase) On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row."
+      "text": "FX-001-T27 {device} (open: final device phase) On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: glow off 60 / on 59-60 / max radius with Reduce flashing 60 fps, landscape 59-60 and drawing; D2 and D3 open"
     },
     {
       "id": "FX-019-T22",
@@ -1704,7 +1685,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "VIS-002-T16 `{device}` On D1-D3: Linear Spectrum renders in both orientations, glow on, Reduce flashing on; frame time within the VIS-001 budget. Final device phase only."
+      "text": "VIS-002-T16 `{device}` On D1-D3: Linear Spectrum renders in both orientations, glow on, Reduce flashing on; frame time within the VIS-001 budget. Final device phase only. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: portrait and landscape with glow and Reduce flashing 60 fps median, drawing and moving; D2 and D3 open"
     },
     {
       "id": "AUD-007-T16",
@@ -3205,25 +3186,6 @@
       "text": "FX-002-T18 {device} On D1, a scene with a glowing spectrum layer over a bright photo: no hue-shifted clipping or broken pixels; frame rate as before (FX-002-S6, last stage)."
     },
     {
-      "id": "FX-003-T22",
-      "spec": "123-fx-003-color-grading",
-      "feature": "FX-003",
-      "line": 101,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-003-T22 {device} On D1: Photo visual graded (warm, gain 1.5, saturation 0 → grey), reset → identical; frame rate unchanged in the performance overlay (FX-003-S7)."
-    },
-    {
       "id": "MED-004-T22",
       "spec": "124-med-004-video-playback-speed",
       "feature": "MED-004",
@@ -3279,7 +3241,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "FX-004-T15 `{device}` (open: needs D1) On D1 (quickstart step 5): hue +120 on the Photo visual, greys unchanged, frame rate unchanged."
+      "text": "FX-004-T15 `{device}` (open: needs D1) On D1 (quickstart step 5): hue +120 on the Photo visual, greys unchanged, frame rate — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): hue +120 changes the picture and 60 fps is unchanged; greys unchanged not yet checked unchanged."
     },
     {
       "id": "MED-006-T22",
@@ -3554,25 +3516,6 @@
       "text": "PERF-001-T16 [US2] {device} Run `perf001` on D1 and record per-stage numbers and the overhead in `docs/test-reports/performance.md`."
     },
     {
-      "id": "VIS-004-T13",
-      "spec": "154-vis-004-lissajous",
-      "feature": "VIS-004",
-      "line": 43,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-004-T13 {device} On D1 with stereo music, choose Lissajous and check frame time in the performance overlay with Persistence on."
-    },
-    {
       "id": "QA-006-T13",
       "spec": "155-qa-006-render-soak",
       "feature": "QA-006",
@@ -3790,25 +3733,6 @@
       "text": "REC-007-T13 {device} On D1: 3 s countdown with VoiceOver on, let it complete and cancel once; the recording starts after \"1\" and a cancel leaves no file"
     },
     {
-      "id": "VIS-005-T12",
-      "spec": "176-vis-005-radial-waveform",
-      "feature": "VIS-005",
-      "line": 42,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-005-T12 {device} On D1 with music, choose Radial Waveform and check frame time in the performance overlay."
-    },
-    {
       "id": "QA-009-T10",
       "spec": "177-qa-009-accessibility-suite",
       "feature": "QA-009",
@@ -3904,25 +3828,6 @@
       "text": "OUT-012-T11 {device} Quickstart C on D1 with an HDMI projector"
     },
     {
-      "id": "VIS-006-T14",
-      "spec": "186-vis-006-beat-rings",
-      "feature": "VIS-006",
-      "line": 45,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-006-T14 {device} On D1 with music, choose Beat Rings: rings follow the beat; frame time in the performance overlay."
-    },
-    {
       "id": "REC-009-T11",
       "spec": "190-rec-009-status-overlay",
       "feature": "REC-009",
@@ -3998,25 +3903,6 @@
       "matrixCases": [],
       "estimatedMinutes": 10,
       "text": "UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking"
-    },
-    {
-      "id": "VIS-007-T13",
-      "spec": "195-vis-007-mandala",
-      "feature": "VIS-007",
-      "line": 44,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-007-T13 {device} On D1 with music, choose Mandala: petals follow the music, the slow turn; frame time in the performance overlay."
     },
     {
       "id": "ANL-013-T14",
@@ -4113,25 +3999,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "ANL-015-T12 {device} Play a track with a quiet intro and a loud chorus on D1 with a native visual and a \"Section change\" binding on the glow: one flash about 2 s into the chorus, none on drum hits (quickstart)"
-    },
-    {
-      "id": "VIS-008-T14",
-      "spec": "203-vis-008-particle-fountain",
-      "feature": "VIS-008",
-      "line": 45,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-008-T14 {device} On D1 with music, choose Particle Fountain: bursts follow onsets, arcs under gravity and drag, Reduce Motion fewer and slower; frame time in the performance overlay."
     },
     {
       "id": "CAM-003-T11",
@@ -4249,7 +4116,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "VIS-009-T10 {device} On D1 with music, choose Particle Orbit: ring swells on kicks, centre pulses on beats, Reduce Motion slower; the PERF-001/007 overlay shows the frame rate within budget (no more drops than the Mandala)."
+      "text": "VIS-009-T10 {device} On D1 with music, choose Particle Orbit: ring swells on kicks, centre pulses on beats, Reduce Motion slower; the PERF-001/007 overlay shows the frame rate within budget (no more drops than the Mandala). — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): Particle Orbit with music 60 fps median, Reduce Motion slower (0.027→0.008); drops against the Mandala not yet compared"
     },
     {
       "id": "REC-014-T15",
@@ -4804,25 +4671,6 @@
       "text": "MED-007-T16 {device} On D1: a photo with Zoom in over 10 s moves smoothly and holds; a slideshow restarts the movement at each slide; Reduce Motion stops it"
     },
     {
-      "id": "VIS-013-T15",
-      "spec": "252-vis-013-noise-field",
-      "feature": "VIS-013",
-      "line": 30,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-013-T15 {device} On D1 with music, Noise Field holds the display's frame rate on the PERF-001/007 overlay."
-    },
-    {
       "id": "SHOW-010-T12",
       "spec": "254-show-010-beat-grid",
       "feature": "SHOW-010",
@@ -4934,7 +4782,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "VIS-014-T12 {device} On D1 with music, Kaleidoscope holds the display's frame rate on the PERF-001/007 overlay and shows no seam at 2, 7 and 24 wedges."
+      "text": "VIS-014-T12 {device} On D1 with music, Kaleidoscope holds the display's frame rate on the PERF-001/007 overlay and shows no seam at 2, 7 and 24 wedges. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): Kaleidoscope at 2, 7 and 24 wedges 60 fps median (screenshots); no-seam check not yet automated"
     },
     {
       "id": "SHOW-015-T12",
@@ -5011,7 +4859,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "VIS-015-T12 {device} On D1 with music, Tunnel holds the display's frame rate on the PERF-001/007 overlay, and a tapped tempo speeds it up smoothly; Reset eases it back."
+      "text": "VIS-015-T12 {device} On D1 with music, Tunnel holds the display's frame rate on the PERF-001/007 overlay, and a tapped tempo speeds it up smoothly; Reset eases it back. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): not yet automated (tapped tempo)"
     },
     {
       "id": "OUT-007-T12",
@@ -5087,7 +4935,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "VIS-020-T12 {device} On D1 with music, Spectrum Waterfall holds the display's frame rate on the PERF-001/007 overlay and falls steadily, newest at the top."
+      "text": "VIS-020-T12 {device} On D1 with music, Spectrum Waterfall holds the display's frame rate on the PERF-001/007 overlay and falls steadily, newest at the top. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): Spectrum Waterfall with music 60 fps median, moving; 'newest at the top' not yet checked"
     },
     {
       "id": "OUT-009-T14",
@@ -5164,25 +5012,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "SHD-007-T13 {device} Look at a box-bounce emitter at rate 120 on D1: particles stay inside the box, frame rate steady"
-    },
-    {
-      "id": "VIS-010-T16",
-      "spec": "272-vis-010-particle-trails",
-      "feature": "VIS-010",
-      "line": 39,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-010-T16 {device} (open: needs D1 and a person) D1: Particle Fountain and Particle Orbit with Trails Short/Long; streaks fade, frame rate unchanged within noise, no flashing with Reduce flashing"
     },
     {
       "id": "MIDI-010-T12",
@@ -5318,25 +5147,6 @@
       "text": "SHD-008-T18 {device} On D1, draw a path mask and a path emitter; look at the mask edge and the spawn area"
     },
     {
-      "id": "VIS-011-T13",
-      "spec": "280-vis-011-fluid-ink",
-      "feature": "VIS-011",
-      "line": 37,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-011-T13 {device} D1: Fluid Ink with music; ink follows onsets, frame rate holds on the PERF-001/007 overlay, no flashing with Reduce flashing on"
-    },
-    {
       "id": "OUT-013-T12",
       "spec": "281-out-013-frame-pacing",
       "feature": "OUT-013",
@@ -5449,26 +5259,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "VIS-012-T13 {device} D1: Reaction Diffusion with music; patterns grow per preset, bass plants growth, frame rate holds at Speed 16 on the PERF-001/007 overlay, no flashing on reloads with Reduce flashing on"
-    },
-    {
-      "id": "VIS-016-T13",
-      "spec": "287-vis-016-starfield-flight",
-      "feature": "VIS-016",
-      "line": 34,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "VIS-016-T13 {device} On D1 with music, Starfield at 2000 stars and Fast holds the display's frame rate on the PERF-001/007 overlay, and looks calm with Reduce Motion."
+      "text": "VIS-012-T13 {device} D1: Reaction Diffusion with music; patterns grow per preset, bass plants growth, frame rate holds at Speed 16 on the PERF-001/007 overlay, no flashing on reloads with Reduce flashing on — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): Reaction Diffusion at Speed 16 with music 60 fps median, moving; growth per preset not yet compared"
     },
     {
       "id": "OUT-014-T13",
@@ -5550,44 +5341,6 @@
       "text": "OSC-012-T22 {device} Two devices on one Wi-Fi follow quickstart \"Two devices\": B follows A's cues and recovers after a 10 s Wi-Fi outage within about 2 s"
     },
     {
-      "id": "FX-005-T14",
-      "spec": "292-fx-005-contrast-curves",
-      "feature": "FX-005",
-      "line": 72,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-005-T14 {device} On D1: Photo visual with S-curve and Filmic at 100%; frame rate unchanged within noise (FX-005-S7)."
-    },
-    {
-      "id": "FX-006-T18",
-      "spec": "293-fx-006-chromatic-split",
-      "feature": "FX-006",
-      "line": 72,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-006-T18 {device} On D1: Photo visual, split at 2% and radial, fringes look right, frame rate recorded (FX-006-S7)"
-    },
-    {
       "id": "UIX-008-T16",
       "spec": "294-uix-008-multiwindow-document-editing",
       "feature": "UIX-008",
@@ -5606,44 +5359,6 @@
       "matrixCases": [],
       "estimatedMinutes": 10,
       "text": "UIX-008-T16 {device} D2 (iPadOS 27.2) and D3 (iPadOS 26.5) with Stage Manager: two editor windows beside the main window; edit and save each; the live output never changes; the external display still follows the main window."
-    },
-    {
-      "id": "FX-007-T17",
-      "spec": "295-fx-007-directional-blur",
-      "feature": "FX-007",
-      "line": 79,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-007-T17 {device} On D1 open Photo, turn on Directional blur at 2% and 45°: the streak looks right and the frame rate stays at the visual's normal rate (FX-007-S8)"
-    },
-    {
-      "id": "FX-008-T18",
-      "spec": "296-fx-008-radial-blur",
-      "feature": "FX-008",
-      "line": 73,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-008-T18 {device} On D1: Photo visual, Radial blur at 25% with the focus centred and moved, streaks radiate from the focus, frame rate with and without recorded (FX-008-S7)"
     },
     {
       "id": "FX-010-T17",
@@ -5684,25 +5399,6 @@
       "text": "UIX-010-T10 {device} On D1 with VoiceOver: each row reads as a toggle with its state, the reset button reads its count, and \"Reset 2 parameters\" is announced after a reset"
     },
     {
-      "id": "FX-012-T18",
-      "spec": "299-fx-012-mosaic-pixelation",
-      "feature": "FX-012",
-      "line": 75,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-012-T18 {device} On D1: Photo visual, Mosaic at 8 and 64 in both shapes, blocks flat and discrete, frame rate with and without recorded (FX-012-S7)"
-    },
-    {
       "id": "UIX-012-T13",
       "spec": "300-uix-012-touch-color-sampler",
       "feature": "UIX-012",
@@ -5721,25 +5417,6 @@
       "matrixCases": [],
       "estimatedMinutes": 10,
       "text": "UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear \"<name> set to …\" and cancel with the escape gesture; on D2 sample in the split editor"
-    },
-    {
-      "id": "FX-013-T14",
-      "spec": "301-fx-013-posterization",
-      "feature": "FX-013",
-      "line": 75,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-013-T14 {device} On D1: a compositor-backed visual with Posterize at 6 levels and Dither on; frame rate within 1 fps of off; bands visible, no shimmer on a still picture."
     },
     {
       "id": "UIX-014-T12",
@@ -5796,26 +5473,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "VIS-017-T13 {device} On D1 with music, SDF Shapes at each quality: frame rate on the PERF-001/007 overlay, look, Reduce Motion calm; binary archive hit on second launch (PERF-009)."
-    },
-    {
-      "id": "FX-015-T15",
-      "spec": "305-fx-015-vignette",
-      "feature": "FX-015",
-      "line": 74,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-015-T15 {device} On D1, Photo visual: Vignette at intensity 100 % with softness 10 % and 90 % and the centre moved: edges darken smoothly and the middle is unchanged; frame rate with and without it (FX-015-S7)"
+      "text": "VIS-017-T13 {device} On D1 with music, SDF Shapes at each quality: frame rate on the PERF-001/007 overlay, look, Reduce Motion calm; binary archive hit on second launch (PERF-009). — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): SDF Shapes at low, medium and high 60 fps median (screenshots); binary archive hit on second launch not yet checked"
     },
     {
       "id": "FX-016-T17",
@@ -5912,44 +5570,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "FX-011-T16 {device} GPU frame time with Pixel sort on (span 32 and 64, both directions) on D1, and on a 4K external display if available (FX-011-S8)"
-    },
-    {
-      "id": "FX-017-T17",
-      "spec": "311-fx-017-film-grain",
-      "feature": "FX-017",
-      "line": 83,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-017-T17 {device} On D1: Photo visual, Film grain at 100 %, sizes 1-3, colour and monochrome, Vary over time on (gentle, no strobing) and with Reduce Motion on (still); frame rate with and without recorded (FX-017-S7)"
-    },
-    {
-      "id": "FX-018-T16",
-      "spec": "312-fx-018-scanline-texture",
-      "feature": "FX-018",
-      "line": 78,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "FX-018-T16 {device} On D1, Photo visual: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations: even lines, no crawl or flicker; frame rate with and without it (FX-018-S6)"
     },
     {
       "id": "QA-012-T08",

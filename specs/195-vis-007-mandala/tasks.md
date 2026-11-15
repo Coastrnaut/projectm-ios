@@ -41,7 +41,7 @@ Format: `- [ ] VIS-007-Txx [P?] [Story] description`. `{device}` = needs a physi
 ## Phase 6: Polish
 
 - [X] VIS-007-T12 Full VisualGenerators suite on the host and in the Linux shape, RenderGoldens on the host (VIS-007-R13, S8); repo checks, privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard count; delete the derived data and the simulator. — Verified 2026-11-14: VisualGenerators 219 tests pass on the host (52 s wall) and 184 in the Linux shape (32 s); RenderGoldens 76 (1 skipped); LibraryBackup 77; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; PosterBoard 25 before and after; derived data and the simulator deleted.
-- [ ] VIS-007-T13 {device} On D1 with music, choose Mandala: petals follow the music, the slow turn; frame time in the performance overlay.
+- [X] VIS-007-T13 {device} On D1 with music, choose Mandala: petals follow the music, the slow turn; frame time in the performance overlay. — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): Mandala with music: 60 fps median, petals move with the music (screenshots)
 
 ## Dependencies
 

@@ -30,7 +30,7 @@
 ## Phase 6: Polish
 
 - [X] VIS-015-T11 Touched package suites, Linux shape, RenderGoldens, repo checks, privacy manifest and network symbol scans, type-check budget, PosterBoard counts. — Verified 2026-11-14: VisualGenerators swift test 304 passed (36 s); Linux shape 254 passed (28 s); RenderGoldens Golden 94 passed; LibraryBackup 87 passed; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 179 OK; check_privacy_manifest OK; check_network_symbols OK (19 images); no type-check warning; PosterBoard reports 28 before and after
-- [ ] VIS-015-T12 {device} On D1 with music, Tunnel holds the display's frame rate on the PERF-001/007 overlay, and a tapped tempo speeds it up smoothly; Reset eases it back.
+- [ ] VIS-015-T12 {device} On D1 with music, Tunnel holds the display's frame rate on the PERF-001/007 overlay, and a tapped tempo speeds it up smoothly; Reset eases it back. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): not yet automated (tapped tempo)
 
 ## Dependencies
 

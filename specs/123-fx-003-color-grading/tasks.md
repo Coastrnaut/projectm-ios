@@ -98,7 +98,7 @@ reference per operator; setting tests; UI test.
 - [X] FX-003-T21 Regressions: Compositor (host and Linux shape), VisualGenerators, RenderGoldens, SceneFormat,
   ImportFuzz, LibraryBackup; app unit tests and the Color UI test on an own iOS 27.2 simulator; the six repo
   checks (compliance, docs, motion policy, permission catalog, status events, script tests). — Verified 2026-11-14: Compositor host 602 tests (7 skipped, 0 failures, 30 s), Linux shape 367/367 (7 s), VisualGenerators 136/136 (41 s), RenderGoldens 39/39, SceneFormat 112/112, ImportFuzz 16/16, LibraryBackup 44/44, app unit 575/575 (39 s) and the Color UI test on an own simulator (deleted after; PosterBoard reports 25 → 25); compliance, docs, motion policy, permission catalog, status events OK; script tests 153 OK.
-- [ ] FX-003-T22 {device} On D1: Photo visual graded (warm, gain 1.5, saturation 0 → grey), reset → identical;
+- [X] FX-003-T22 {device} On D1: Photo visual graded (warm, gain 1.5, saturation 0 → grey), reset → identical; — Verified 2026-11-15 (QA-011 automated on D1, docs/test-reports/qa-011/acceptance/D1-B01.md): warm/gain 1.5/saturation 0 turns the photo grey (saturation 0.81→0), reset matches neutral, 60 fps median unchanged
   frame rate unchanged in the performance overlay (FX-003-S7).
 
 ## Analysis fixes (speckit-analyze, 2026-11-14)

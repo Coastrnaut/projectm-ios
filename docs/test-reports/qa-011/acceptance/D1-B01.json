@@ -1,0 +1,1937 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "9e44ec8bf62f4148bce5176049866b1237658bce0731739fee3c12c9da872690",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 10,
+   "step": "glow off",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "glow on, default radius",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 59,
+   "samples": 10,
+   "step": "glow on, maximum radius, Reduce flashing on",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "landscape",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.031,
+   "meanSaturation": 0.045,
+   "nonBlack": 0.072,
+   "step": "landscape a",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.031,
+   "meanSaturation": 0.077,
+   "nonBlack": 0.088,
+   "step": "landscape b",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.008,
+   "step": "landscape",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "offMinusOnDefault": 0,
+   "offMinusOnMax": 0,
+   "step": "glow cost",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "portrait",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.056,
+   "meanSaturation": 0.283,
+   "nonBlack": 0.247,
+   "step": "portrait a",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.063,
+   "meanSaturation": 0.169,
+   "nonBlack": 0.193,
+   "step": "portrait b",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.056,
+   "step": "portrait",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "landscape",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.042,
+   "meanSaturation": 0.213,
+   "nonBlack": 0.203,
+   "step": "landscape a",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.058,
+   "meanSaturation": 0.365,
+   "nonBlack": 0.299,
+   "step": "landscape b",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.017,
+   "step": "landscape",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "lissajous",
+   "task": "VIS-004-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.028,
+   "meanSaturation": 0.012,
+   "nonBlack": 0.041,
+   "step": "lissajous a",
+   "task": "VIS-004-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.026,
+   "meanSaturation": 0.006,
+   "nonBlack": 0.036,
+   "step": "lissajous b",
+   "task": "VIS-004-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.03,
+   "step": "lissajous",
+   "task": "VIS-004-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "radialWaveform",
+   "task": "VIS-005-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.026,
+   "meanSaturation": 0.005,
+   "nonBlack": 0.035,
+   "step": "radialWaveform a",
+   "task": "VIS-005-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.026,
+   "meanSaturation": 0.005,
+   "nonBlack": 0.035,
+   "step": "radialWaveform b",
+   "task": "VIS-005-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.03,
+   "step": "radialWaveform",
+   "task": "VIS-005-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 10,
+   "step": "beatRings",
+   "task": "VIS-006-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.025,
+   "meanSaturation": 0.02,
+   "nonBlack": 0.045,
+   "step": "beatRings a",
+   "task": "VIS-006-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.027,
+   "meanSaturation": 0.011,
+   "nonBlack": 0.041,
+   "step": "beatRings b",
+   "task": "VIS-006-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.032,
+   "step": "beatRings",
+   "task": "VIS-006-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "mandala",
+   "task": "VIS-007-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.038,
+   "meanSaturation": 0.03,
+   "nonBlack": 0.06,
+   "step": "mandala a",
+   "task": "VIS-007-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.033,
+   "meanSaturation": 0.022,
+   "nonBlack": 0.052,
+   "step": "mandala b",
+   "task": "VIS-007-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.016,
+   "step": "mandala",
+   "task": "VIS-007-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 10,
+   "step": "particleFountain",
+   "task": "VIS-008-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.025,
+   "meanSaturation": 0.005,
+   "nonBlack": 0.035,
+   "step": "particleFountain a",
+   "task": "VIS-008-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.026,
+   "meanSaturation": 0.006,
+   "nonBlack": 0.036,
+   "step": "particleFountain b",
+   "task": "VIS-008-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.025,
+   "meanSaturation": 0.002,
+   "nonBlack": 0.044,
+   "step": "particleFountain reduce motion a",
+   "task": "VIS-008-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.025,
+   "meanSaturation": 0.002,
+   "nonBlack": 0.044,
+   "step": "particleFountain reduce motion b",
+   "task": "VIS-008-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "normal": 0.005,
+   "reduceMotion": 0.001,
+   "step": "particleFountain motion",
+   "task": "VIS-008-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "particleOrbit",
+   "task": "VIS-009-T10"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.027,
+   "meanSaturation": 0.01,
+   "nonBlack": 0.04,
+   "step": "particleOrbit a",
+   "task": "VIS-009-T10"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.028,
+   "meanSaturation": 0.01,
+   "nonBlack": 0.041,
+   "step": "particleOrbit b",
+   "task": "VIS-009-T10"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.029,
+   "meanSaturation": 0.011,
+   "nonBlack": 0.054,
+   "step": "particleOrbit reduce motion a",
+   "task": "VIS-009-T10"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.029,
+   "meanSaturation": 0.011,
+   "nonBlack": 0.054,
+   "step": "particleOrbit reduce motion b",
+   "task": "VIS-009-T10"
+  },
+  {
+   "device": "iPhone15,4",
+   "normal": 0.027,
+   "reduceMotion": 0.008,
+   "step": "particleOrbit motion",
+   "task": "VIS-009-T10"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 54,
+   "samples": 6,
+   "step": "particleFountain trails short",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.044,
+   "meanSaturation": 0.094,
+   "nonBlack": 0.11,
+   "step": "particleFountain trails short",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "particleFountain trails long",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.057,
+   "meanSaturation": 0.086,
+   "nonBlack": 0.125,
+   "step": "particleFountain trails long",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 55,
+   "samples": 6,
+   "step": "particleOrbit trails short",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.048,
+   "meanSaturation": 0.067,
+   "nonBlack": 0.104,
+   "step": "particleOrbit trails short",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "particleOrbit trails long",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.06,
+   "meanSaturation": 0.057,
+   "nonBlack": 0.113,
+   "step": "particleOrbit trails long",
+   "task": "VIS-010-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 55,
+   "samples": 10,
+   "step": "fluidInk",
+   "task": "VIS-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.107,
+   "meanSaturation": 0.636,
+   "nonBlack": 0.478,
+   "step": "fluidInk a",
+   "task": "VIS-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.113,
+   "meanSaturation": 0.619,
+   "nonBlack": 0.499,
+   "step": "fluidInk b",
+   "task": "VIS-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.053,
+   "step": "fluidInk",
+   "task": "VIS-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "reactionDiffusion",
+   "task": "VIS-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.225,
+   "meanSaturation": 0.587,
+   "nonBlack": 0.625,
+   "step": "reactionDiffusion a",
+   "task": "VIS-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.224,
+   "meanSaturation": 0.587,
+   "nonBlack": 0.626,
+   "step": "reactionDiffusion b",
+   "task": "VIS-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.024,
+   "step": "reactionDiffusion",
+   "task": "VIS-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "noiseField",
+   "task": "VIS-013-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.354,
+   "meanSaturation": 0.963,
+   "nonBlack": 0.981,
+   "step": "noiseField a",
+   "task": "VIS-013-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.346,
+   "meanSaturation": 0.965,
+   "nonBlack": 0.979,
+   "step": "noiseField b",
+   "task": "VIS-013-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.092,
+   "step": "noiseField",
+   "task": "VIS-013-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "2 wedges",
+   "task": "VIS-014-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.35,
+   "meanSaturation": 0.964,
+   "nonBlack": 0.974,
+   "step": "2 wedges",
+   "task": "VIS-014-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "7 wedges",
+   "task": "VIS-014-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.341,
+   "meanSaturation": 0.964,
+   "nonBlack": 0.979,
+   "step": "7 wedges",
+   "task": "VIS-014-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 59,
+   "samples": 6,
+   "step": "24 wedges",
+   "task": "VIS-014-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.325,
+   "meanSaturation": 0.961,
+   "nonBlack": 0.972,
+   "step": "24 wedges",
+   "task": "VIS-014-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "2000 stars, Fast",
+   "task": "VIS-016-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.027,
+   "meanSaturation": 0.002,
+   "nonBlack": 0.037,
+   "step": "fast a",
+   "task": "VIS-016-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.026,
+   "meanSaturation": 0.002,
+   "nonBlack": 0.036,
+   "step": "fast b",
+   "task": "VIS-016-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.028,
+   "meanSaturation": 0.003,
+   "nonBlack": 0.05,
+   "step": "reduce motion a",
+   "task": "VIS-016-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.027,
+   "meanSaturation": 0.003,
+   "nonBlack": 0.049,
+   "step": "reduce motion b",
+   "task": "VIS-016-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "normal": 0.032,
+   "reduceMotion": 0.007,
+   "step": "motion",
+   "task": "VIS-016-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "quality low",
+   "task": "VIS-017-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.046,
+   "meanSaturation": 0.075,
+   "nonBlack": 0.104,
+   "step": "quality low",
+   "task": "VIS-017-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "quality medium",
+   "task": "VIS-017-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.046,
+   "meanSaturation": 0.075,
+   "nonBlack": 0.104,
+   "step": "quality medium",
+   "task": "VIS-017-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "quality high",
+   "task": "VIS-017-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.046,
+   "meanSaturation": 0.075,
+   "nonBlack": 0.104,
+   "step": "quality high",
+   "task": "VIS-017-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "spectrumWaterfall",
+   "task": "VIS-020-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.06,
+   "meanSaturation": 0.146,
+   "nonBlack": 0.157,
+   "step": "spectrumWaterfall a",
+   "task": "VIS-020-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.064,
+   "meanSaturation": 0.164,
+   "nonBlack": 0.171,
+   "step": "spectrumWaterfall b",
+   "task": "VIS-020-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.016,
+   "step": "spectrumWaterfall",
+   "task": "VIS-020-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "neutral",
+   "task": "FX-003-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "neutral",
+   "task": "FX-003-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "graded",
+   "task": "FX-003-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.456,
+   "meanSaturation": 0,
+   "nonBlack": 0.99,
+   "step": "warm, gain 1.5, saturation 0",
+   "task": "FX-003-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "gradedSaturation": 0,
+   "neutralSaturation": 0.81,
+   "step": "photo region",
+   "task": "FX-003-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "reset",
+   "task": "FX-003-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.795,
+   "nonBlack": 0.988,
+   "step": "reset",
+   "task": "FX-003-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-004-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-004-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "hue +120",
+   "task": "FX-004-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.664,
+   "nonBlack": 0.945,
+   "step": "hue +120",
+   "task": "FX-004-T15"
+  },
+  {
+   "changeFromOff": 0.319,
+   "device": "iPhone15,4",
+   "step": "hue +120",
+   "task": "FX-004-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 59,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-005-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-005-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 55,
+   "samples": 6,
+   "step": "S-curve 100%",
+   "task": "FX-005-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.309,
+   "meanSaturation": 0.941,
+   "nonBlack": 0.87,
+   "step": "S-curve 100%",
+   "task": "FX-005-T14"
+  },
+  {
+   "changeFromOff": 0.086,
+   "device": "iPhone15,4",
+   "step": "S-curve 100%",
+   "task": "FX-005-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "Filmic 100%",
+   "task": "FX-005-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.365,
+   "meanSaturation": 0.882,
+   "nonBlack": 0.95,
+   "step": "Filmic 100%",
+   "task": "FX-005-T14"
+  },
+  {
+   "changeFromOff": 0.078,
+   "device": "iPhone15,4",
+   "step": "Filmic 100%",
+   "task": "FX-005-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-006-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-006-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "split 2% radial",
+   "task": "FX-006-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "split 2% radial",
+   "task": "FX-006-T18"
+  },
+  {
+   "changeFromOff": 0.027,
+   "device": "iPhone15,4",
+   "step": "split 2% radial",
+   "task": "FX-006-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-007-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-007-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "2% at 45\u00b0",
+   "task": "FX-007-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.342,
+   "meanSaturation": 0.776,
+   "nonBlack": 0.988,
+   "step": "2% at 45\u00b0",
+   "task": "FX-007-T17"
+  },
+  {
+   "changeFromOff": 0.019,
+   "device": "iPhone15,4",
+   "step": "2% at 45\u00b0",
+   "task": "FX-007-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-008-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-008-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "25% centred",
+   "task": "FX-008-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.355,
+   "meanSaturation": 0.773,
+   "nonBlack": 0.989,
+   "step": "25% centred",
+   "task": "FX-008-T18"
+  },
+  {
+   "changeFromOff": 0.134,
+   "device": "iPhone15,4",
+   "step": "25% centred",
+   "task": "FX-008-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "25% moved",
+   "task": "FX-008-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.363,
+   "meanSaturation": 0.745,
+   "nonBlack": 0.99,
+   "step": "25% moved",
+   "task": "FX-008-T18"
+  },
+  {
+   "changeFromOff": 0.082,
+   "device": "iPhone15,4",
+   "step": "25% moved",
+   "task": "FX-008-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 54,
+   "samples": 6,
+   "step": "square 8",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "square 8",
+   "task": "FX-012-T18"
+  },
+  {
+   "changeFromOff": 0.007,
+   "device": "iPhone15,4",
+   "step": "square 8",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 54,
+   "samples": 6,
+   "step": "square 64",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.337,
+   "meanSaturation": 0.795,
+   "nonBlack": 0.988,
+   "step": "square 64",
+   "task": "FX-012-T18"
+  },
+  {
+   "changeFromOff": 0.081,
+   "device": "iPhone15,4",
+   "step": "square 64",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "hexagon 8",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "hexagon 8",
+   "task": "FX-012-T18"
+  },
+  {
+   "changeFromOff": 0.008,
+   "device": "iPhone15,4",
+   "step": "hexagon 8",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "hexagon 64",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.989,
+   "step": "hexagon 64",
+   "task": "FX-012-T18"
+  },
+  {
+   "changeFromOff": 0.056,
+   "device": "iPhone15,4",
+   "step": "hexagon 64",
+   "task": "FX-012-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-013-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-013-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "6 levels, dither",
+   "task": "FX-013-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.343,
+   "meanSaturation": 0.798,
+   "nonBlack": 0.952,
+   "step": "still a",
+   "task": "FX-013-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.346,
+   "meanSaturation": 0.806,
+   "nonBlack": 0.956,
+   "step": "still b",
+   "task": "FX-013-T14"
+  },
+  {
+   "change": 0,
+   "device": "iPhone15,4",
+   "step": "shimmer",
+   "task": "FX-013-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "off",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "off",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "softness 0.1",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.338,
+   "meanSaturation": 0.795,
+   "nonBlack": 0.988,
+   "step": "softness 0.1",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "edgeLuma": 0.239,
+   "middleLuma": 0.357,
+   "offEdgeLuma": 0.352,
+   "offMiddleLuma": 0.357,
+   "step": "softness 0.1",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 55,
+   "samples": 6,
+   "step": "softness 0.9",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.241,
+   "meanSaturation": 0.827,
+   "nonBlack": 0.892,
+   "step": "softness 0.9",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "edgeLuma": 0.016,
+   "middleLuma": 0.344,
+   "offEdgeLuma": 0.352,
+   "offMiddleLuma": 0.357,
+   "step": "softness 0.9",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "centre moved",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.253,
+   "meanSaturation": 0.728,
+   "nonBlack": 0.772,
+   "step": "centre moved",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "farCornerLuma": 0,
+   "offFarCornerLuma": 0.281,
+   "step": "centre moved",
+   "task": "FX-015-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.34,
+   "meanSaturation": 0.794,
+   "nonBlack": 0.988,
+   "step": "photo, no effect",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "size 1",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.333,
+   "meanSaturation": 0.778,
+   "nonBlack": 0.911,
+   "step": "size 1",
+   "task": "FX-017-T17"
+  },
+  {
+   "changeFromOff": 0.073,
+   "device": "iPhone15,4",
+   "step": "size 1",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "size 2",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.338,
+   "meanSaturation": 0.771,
+   "nonBlack": 0.909,
+   "step": "size 2",
+   "task": "FX-017-T17"
+  },
+  {
+   "changeFromOff": 0.074,
+   "device": "iPhone15,4",
+   "step": "size 2",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "size 3",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.77,
+   "nonBlack": 0.913,
+   "step": "size 3",
+   "task": "FX-017-T17"
+  },
+  {
+   "changeFromOff": 0.074,
+   "device": "iPhone15,4",
+   "step": "size 3",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 6,
+   "step": "monochrome",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.337,
+   "meanSaturation": 0.772,
+   "nonBlack": 0.911,
+   "step": "monochrome",
+   "task": "FX-017-T17"
+  },
+  {
+   "changeFromOff": 0.073,
+   "device": "iPhone15,4",
+   "step": "monochrome",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.305,
+   "meanSaturation": 0.738,
+   "nonBlack": 0.935,
+   "step": "vary a",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.344,
+   "meanSaturation": 0.756,
+   "nonBlack": 0.92,
+   "step": "vary b",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.329,
+   "meanSaturation": 0.768,
+   "nonBlack": 0.911,
+   "step": "reduce motion a",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.316,
+   "meanSaturation": 0.767,
+   "nonBlack": 0.91,
+   "step": "reduce motion b",
+   "task": "FX-017-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "reduceMotion": 0.007,
+   "step": "grain motion",
+   "task": "FX-017-T17",
+   "vary": 0.173
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 6,
+   "step": "photo, no effect",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.334,
+   "meanSaturation": 0.8,
+   "nonBlack": 0.987,
+   "step": "photo, no effect",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 6,
+   "step": "spacing 2",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.175,
+   "meanSaturation": 0.404,
+   "nonBlack": 0.501,
+   "step": "spacing 2",
+   "task": "FX-018-T16"
+  },
+  {
+   "changeFromOff": 0.203,
+   "device": "iPhone15,4",
+   "step": "spacing 2",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "spacing 3",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.228,
+   "meanSaturation": 0.536,
+   "nonBlack": 0.66,
+   "step": "spacing 3",
+   "task": "FX-018-T16"
+  },
+  {
+   "changeFromOff": 0.135,
+   "device": "iPhone15,4",
+   "step": "spacing 3",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 6,
+   "step": "spacing 16",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.314,
+   "meanSaturation": 0.75,
+   "nonBlack": 0.927,
+   "step": "spacing 16",
+   "task": "FX-018-T16"
+  },
+  {
+   "changeFromOff": 0.025,
+   "device": "iPhone15,4",
+   "step": "spacing 16",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 6,
+   "step": "landscape spacing 3",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.235,
+   "meanSaturation": 0.401,
+   "nonBlack": 0.661,
+   "step": "landscape a",
+   "task": "FX-018-T16"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.233,
+   "meanSaturation": 0.41,
+   "nonBlack": 0.651,
+   "step": "landscape b",
+   "task": "FX-018-T16"
+  },
+  {
+   "change": 0,
+   "device": "iPhone15,4",
+   "step": "crawl",
+   "task": "FX-018-T16"
+  }
+ ],
+ "passed": 26,
+ "schemaVersion": 1,
+ "session": "B01",
+ "tasks": {
+  "FX-001-T27": {
+   "checks": {
+    "landscape: motion": 0.008
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 4
+  },
+  "FX-003-T22": {
+   "checks": {
+    "photo region: gradedSaturation": 0
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 3
+  },
+  "FX-004-T15": {
+   "checks": {
+    "hue +120: changeFromOff": 0.319
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 2
+  },
+  "FX-005-T14": {
+   "checks": {
+    "Filmic 100%: changeFromOff": 0.078,
+    "S-curve 100%: changeFromOff": 0.086
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 55,
+   "steps": 3
+  },
+  "FX-006-T18": {
+   "checks": {
+    "split 2% radial: changeFromOff": 0.027
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 58,
+   "steps": 2
+  },
+  "FX-007-T17": {
+   "checks": {
+    "2% at 45\u00b0: changeFromOff": 0.019
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 2
+  },
+  "FX-008-T18": {
+   "checks": {
+    "25% centred: changeFromOff": 0.134,
+    "25% moved: changeFromOff": 0.082
+   },
+   "fpsMedians": [
+    60,
+    59,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 3
+  },
+  "FX-012-T18": {
+   "checks": {
+    "hexagon 64: changeFromOff": 0.056,
+    "hexagon 8: changeFromOff": 0.008,
+    "square 64: changeFromOff": 0.081,
+    "square 8: changeFromOff": 0.007
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    60,
+    59
+   ],
+   "fpsMin": 54,
+   "steps": 5
+  },
+  "FX-013-T14": {
+   "checks": {
+    "shimmer: change": 0
+   },
+   "fpsMedians": [
+    59,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 2
+  },
+  "FX-015-T15": {
+   "checks": {
+    "centre moved: farCornerLuma": 0,
+    "softness 0.1: edgeLuma": 0.239,
+    "softness 0.1: middleLuma": 0.357,
+    "softness 0.9: edgeLuma": 0.016,
+    "softness 0.9: middleLuma": 0.344
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 55,
+   "steps": 4
+  },
+  "FX-017-T17": {
+   "checks": {
+    "grain motion: reduceMotion": 0.007,
+    "grain motion: vary": 0.173,
+    "monochrome: changeFromOff": 0.073,
+    "size 1: changeFromOff": 0.073,
+    "size 2: changeFromOff": 0.074,
+    "size 3: changeFromOff": 0.074
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    59,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 5
+  },
+  "FX-018-T16": {
+   "checks": {
+    "crawl: change": 0,
+    "spacing 16: changeFromOff": 0.025,
+    "spacing 2: changeFromOff": 0.203,
+    "spacing 3: changeFromOff": 0.135
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 5
+  },
+  "VIS-002-T16": {
+   "checks": {
+    "landscape: motion": 0.017,
+    "portrait: motion": 0.056
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 60,
+   "steps": 2
+  },
+  "VIS-004-T13": {
+   "checks": {
+    "lissajous: motion": 0.03
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 60,
+   "steps": 1
+  },
+  "VIS-005-T12": {
+   "checks": {
+    "radialWaveform: motion": 0.03
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 60,
+   "steps": 1
+  },
+  "VIS-006-T14": {
+   "checks": {
+    "beatRings: motion": 0.032
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 1
+  },
+  "VIS-007-T13": {
+   "checks": {
+    "mandala: motion": 0.016
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 1
+  },
+  "VIS-008-T14": {
+   "checks": {
+    "particleFountain motion: normal": 0.005,
+    "particleFountain motion: reduceMotion": 0.001
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 1
+  },
+  "VIS-009-T10": {
+   "checks": {
+    "particleOrbit motion: normal": 0.027,
+    "particleOrbit motion: reduceMotion": 0.008
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 58,
+   "steps": 1
+  },
+  "VIS-010-T16": {
+   "checks": {},
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 54,
+   "steps": 4
+  },
+  "VIS-011-T13": {
+   "checks": {
+    "fluidInk: motion": 0.053
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 55,
+   "steps": 1
+  },
+  "VIS-012-T13": {
+   "checks": {
+    "reactionDiffusion: motion": 0.024
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 1
+  },
+  "VIS-013-T15": {
+   "checks": {
+    "noiseField: motion": 0.092
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 1
+  },
+  "VIS-014-T12": {
+   "checks": {},
+   "fpsMedians": [
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 3
+  },
+  "VIS-016-T13": {
+   "checks": {
+    "motion: normal": 0.032,
+    "motion: reduceMotion": 0.007
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 60,
+   "steps": 1
+  },
+  "VIS-017-T13": {
+   "checks": {},
+   "fpsMedians": [
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 3
+  },
+  "VIS-020-T12": {
+   "checks": {
+    "spectrumWaterfall: motion": 0.016
+   },
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 1
+  }
+ },
+ "tests": [
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 71.837,
+   "test": "testFX001GlowFrameRateRotationAndReduceFlashing"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 35.088,
+   "test": "testVIS002LinearSpectrumBothOrientations"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 20.159,
+   "test": "testVIS004LissajousWithPersistence"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 20.808,
+   "test": "testVIS005RadialWaveform"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 19.87,
+   "test": "testVIS006BeatRings"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 19.909,
+   "test": "testVIS007Mandala"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 58.118,
+   "test": "testVIS008VIS009ParticlesAndReduceMotion"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 57.301,
+   "test": "testVIS010ParticleTrails"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 18.976,
+   "test": "testVIS011FluidInk"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 21.457,
+   "test": "testVIS012ReactionDiffusionSpeed16"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 20.888,
+   "test": "testVIS013NoiseField"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 46.115,
+   "test": "testVIS014KaleidoscopeWedges"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 28.365,
+   "test": "testVIS016StarfieldFastAndReduceMotion"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 43.62,
+   "test": "testVIS017SignedDistanceQualities"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 18.922,
+   "test": "testVIS020SpectrumWaterfall"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 43.902,
+   "test": "testFX003GradeGreyAndReset"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 29.624,
+   "test": "testFX004Hue"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 43.155,
+   "test": "testFX005ContrastCurves"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 28.79,
+   "test": "testFX006ChromaticSplit"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 29.7,
+   "test": "testFX007DirectionalBlur"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 44.373,
+   "test": "testFX008RadialBlur"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 74.217,
+   "test": "testFX012Mosaic"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 29.665,
+   "test": "testFX013PosterizeNoShimmer"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 58.021,
+   "test": "testFX015VignetteCentreUnchanged"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 97.202,
+   "test": "testFX017FilmGrain"
+  },
+  {
+   "class": "B01PhotoEffectDeviceTests",
+   "result": "passed",
+   "seconds": 81.704,
+   "test": "testFX018Scanlines"
+  }
+ ],
+ "xcresult": "Build/device-acceptance/b01-D1-final.xcresult"
+}
