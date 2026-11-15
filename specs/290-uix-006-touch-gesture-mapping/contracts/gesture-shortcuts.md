@@ -1,0 +1,7 @@
+# Contract: Gesture shortcuts (UIX-006)
+
+- **G1 Resolver.** `resolve(recognised, configuration, voiceOverRunning)`: nil if `!configuration.isEnabled` or `voiceOverRunning`; otherwise the first gesture in precedence order (three-finger tap, swipe left, right, up, down, two-finger tap) that is in `recognised` and whose action is not `none`, with that action; nil if none.
+- **G2 Classifier.** fingers < 2 or > 3 → ∅. Tap candidates when max displacement ≤ 20 pt and duration ≤ 0.5 s: two-finger tap (2 or 3 fingers) and three-finger tap (3 fingers). Swipe candidate when exactly 2 fingers, duration ≤ 1.0 s, dominant-axis average translation ≥ 50 pt: the one direction (screen coordinates, y down: negative dy = up).
+- **G3 App.** `AppCoordinator.performGestureShortcut(_ action)` runs the action's existing path without `showControls()`; `handleGestureShortcut(_ recognised)` resolves with the stored configuration and the live VoiceOver state, performs the winner, and returns it.
+- **G4 Settings.** Settings › Performance › "Gesture shortcuts": switch `gestureShortcutsToggle`; one picker per gesture, identifier `gestureShortcut.<raw>`; footer explains precedence and the VoiceOver pause; while locked, disabled with the note `gestureShortcutsLockNote`. Section id `gestureShortcuts` (for `-uitestSettingsSection`).
+- **G5 Probe (DEBUG, `-uitestDiagnostics`).** Static text `gestureShortcutLast`, value `"<action raw>:<count>"` (`"none:0"` before any).
