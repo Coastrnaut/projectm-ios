@@ -4,7 +4,7 @@
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
-// `fx.chromatic`, FX-008's `fx.radialBlur`) gives that effect's
+// `fx.chromatic`, FX-008's `fx.radialBlur`, FX-012's `fx.mosaic`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
@@ -86,9 +86,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var directionalBlur: DirectionalBlur?
     /// FX-008 (ADR-0107): `isEnabled` is the entry's flag.
     public var radialBlur: RadialBlur?
+    /// FX-012 (ADR-0110): `isEnabled` is the entry's flag (`SceneEffectChain+Mosaic.swift`).
+    public var mosaic: Mosaic?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
-                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil) {
+                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil,
+                mosaic: Mosaic? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
@@ -96,6 +99,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
         self.chromatic = chromatic
         self.directionalBlur = directionalBlur
         self.radialBlur = radialBlur
+        self.mosaic = mosaic   // FX-012
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -134,7 +138,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
         let blurOff: Bool = !(directionalBlur?.isEnabled ?? false)   // FX-007
         let radialBlurOff: Bool = !(radialBlur?.isEnabled ?? false)   // FX-008
+        let mosaicOff: Bool = !(mosaic?.isEnabled ?? false)   // FX-012
         return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && radialBlurOff
+            && mosaicOff
     }
 
     // MARK: Reading
@@ -172,6 +178,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .radialBlur:   // FX-008
                     let v = values(entry, radialBlurParameters, path, &issues)
                     settings.radialBlur = RadialBlur(isEnabled: entry.enabled, strength: v[0], focusX: v[1], focusY: v[2])
+                case .mosaic:   // FX-012
+                    settings.mosaic = readMosaic(entry, path, &issues)
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -260,6 +268,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.parameters["strength"] = .double(r.strength)
             entry.parameters["focusX"] = .double(r.focusX)
             entry.parameters["focusY"] = .double(r.focusY)
+        case .mosaic:   // FX-012
+            guard let m = mosaic else { return stored }
+            Self.writeMosaic(m, into: &entry)
         }
         return entry
     }

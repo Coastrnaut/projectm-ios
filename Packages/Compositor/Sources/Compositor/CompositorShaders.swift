@@ -12,7 +12,8 @@ public enum CompositorShaderSources {
     public static var archived: [String] {
         [CompositorShaders.source, CompositorShaders.toneMapSource, CompositorShaders.displaySource, TrailsPass.source,
          OutputGradePass.source, OutputTransitionPass.source, SceneTransitionBus.mixSource,
-         ChromaticSplitPass.source, DirectionalBlurPass.source, RadialBlurPass.source]   // FX-006, FX-007, FX-008
+         ChromaticSplitPass.source, DirectionalBlurPass.source, RadialBlurPass.source,
+         MosaicPass.source]   // FX-006, FX-007, FX-008, FX-012
     }
 }
 

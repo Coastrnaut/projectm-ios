@@ -103,6 +103,8 @@
 // blurs along its axis with 16 taps at its place in `outputEffectOrder`, after the split in the standard order.
 // FX-008 (specs/296-fx-008-radial-blur, ADR-0107): while `radialBlur` is active, `RadialBlurPass` blurs towards the
 // focus at its place in `outputEffectOrder` (Color folded before it the same way).
+// FX-012 (specs/299-fx-012-mosaic-pixelation, ADR-0110): while `mosaic` is active, `MosaicPass` shows each cell's centre
+// pixel at its place in `outputEffectOrder` (Color folded before it the same way).
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -286,6 +288,8 @@ public final class Compositor {
     private let directionalBlurPass: DirectionalBlurPass
     /// FX-008: the radial blur pass and its pooled picture.
     private let radialBlurPass: RadialBlurPass
+    /// FX-012: the mosaic pass and its pooled picture.
+    private let mosaicPass: MosaicPass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -323,6 +327,16 @@ public final class Compositor {
     /// FX-008: frames drawn through the blur pass, and whether its picture is held (tests, diagnostics).
     public var radialBlurFrames: Int { radialBlurPass.frames }
     public var holdsRadialBlurPicture: Bool { radialBlurPass.holdsPicture }
+
+    /// FX-012 (ADR-0110): the mosaic, set between frames. Inactive (the default, or block size 1) adds no pass and
+    /// holds no picture: output bit-identical to before FX-012.
+    public var mosaic: Mosaic = .off {
+        didSet { if !mosaic.isEnabled { mosaicPass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-012: frames drawn through the mosaic pass, and whether its picture is held (tests, diagnostics).
+    public var mosaicFrames: Int { mosaicPass.frames }
+    public var holdsMosaicPicture: Bool { mosaicPass.holdsPicture }
 
     /// FX-020: frames that ran the Color-first grade pass (tests, diagnostics).
     public var gradePassFrames: Int { gradePass.frames }
@@ -407,13 +421,15 @@ public final class Compositor {
         library = try CompositorShaders.library(device: device, source: CompositorShaders.source + TrailsPass.source
                                                 + OutputGradePass.source + ChromaticSplitPass.source
                                                 + DirectionalBlurPass.source
-                                                + RadialBlurPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008
+                                                + RadialBlurPass.source
+                                                + MosaicPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-012
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
         chromaticPass = try ChromaticSplitPass(device: device, library: library, vertex: fullScreen)   // FX-006
         directionalBlurPass = try DirectionalBlurPass(device: device, library: library, vertex: fullScreen)   // FX-007
         radialBlurPass = try RadialBlurPass(device: device, library: library, vertex: fullScreen)   // FX-008
+        mosaicPass = try MosaicPass(device: device, library: library, vertex: fullScreen)   // FX-012
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -446,6 +462,7 @@ public final class Compositor {
         chromaticPass.release(to: texturePool, after: lastCommandBuffer)   // FX-006
         directionalBlurPass.release(to: texturePool, after: lastCommandBuffer)   // FX-007
         radialBlurPass.release(to: texturePool, after: lastCommandBuffer)   // FX-008
+        mosaicPass.release(to: texturePool, after: lastCommandBuffer)   // FX-012
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -850,6 +867,7 @@ public final class Compositor {
         var splitRan = false
         var blurRan = false   // FX-007
         var radialRan = false   // FX-008
+        var mosaicRan = false   // FX-012
         for kind in outputEffectOrder.effects {
             switch kind {
             case .grade:
@@ -912,6 +930,19 @@ public final class Compositor {
                 pictureAllocations += radialBlurPass.allocations - taken   // PERF-004
                 shown = blurred
                 radialRan = true
+            case .mosaic:   // FX-012
+                guard mosaic.isActive(width: shown.width, height: shown.height) else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                let taken: Int = mosaicPass.allocations
+                guard let tiled = mosaicPass.encode(input: shown, mosaic: mosaic, pool: texturePool,
+                                                    fence: lastCommandBuffer, commandBuffer: commandBuffer) else { return nil }
+                pictureAllocations += mosaicPass.allocations - taken   // PERF-004
+                shown = tiled
+                mosaicRan = true
             }
         }
         if !graded, gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
@@ -920,6 +951,7 @@ public final class Compositor {
             directionalBlurPass.release(to: texturePool, after: lastCommandBuffer)
         }
         if !radialRan, radialBlurPass.holdsPicture { radialBlurPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-008
+        if !mosaicRan, mosaicPass.holdsPicture { mosaicPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-012
         return shown
     }
 

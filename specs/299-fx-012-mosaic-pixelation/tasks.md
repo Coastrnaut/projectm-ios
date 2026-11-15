@@ -8,47 +8,47 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
 
 ## Phase 1: Setup
 
-- [ ] FX-012-T01 ADR-0110 (mosaic pass, centre-pixel rule, grid anchors, chain position) in
-  `docs/adr/0110-mosaic-pixelation.md` and its row in `docs/adr/README.md`
+- [X] FX-012-T01 ADR-0110 (mosaic pass, centre-pixel rule, grid anchors, chain position) in
+  `docs/adr/0110-mosaic-pixelation.md` and its row in `docs/adr/README.md` — Verified 2026-11-15: docs/adr/0110-mosaic-pixelation.md and README row; validate_docs OK
 
 ## Phase 2: Foundational
 
-- [ ] FX-012-T02 [P] `Mosaic` value and `MosaicShape` in `Packages/Compositor/Sources/Compositor/Mosaic.swift`:
+- [X] FX-012-T02 [P] `Mosaic` value and `MosaicShape` in `Packages/Compositor/Sources/Compositor/Mosaic.swift`:
   blockSize 1…64 (default 8; Double clamp: NaN → default, rounded, nearest bound), shape square/hexagon; `isActive`
   (on, size ≥ 2, ≥ 2 × 2), `squareCell`, `hexCell`, `samplePixel`, `block`, `reference` (contract C2); plain Swift
-  (Linux)
-- [ ] FX-012-T03 [P] `MosaicModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; inactive cases
+  (Linux) — Verified 2026-11-15: MosaicModelTests 6/6 on the host; no-Metal (Linux-shape) build with tests OK
+- [X] FX-012-T03 [P] `MosaicModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamps; inactive cases
   (size 1); square cell assignment and centre pixels incl. partial edge blocks; hex cell assignment (centres map to
   themselves, a pixel at a known offset maps to the expected neighbour), every sample pixel inside the frame;
-  reference identity at size 1 (FX-012-R2 to R6, R12)
-- [ ] FX-012-T04 `OutputEffectKind.mosaic` (`fx.mosaic`, appended) in
-  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-012-R7)
+  reference identity at size 1 (FX-012-R2 to R6, R12) — Verified 2026-11-15: swift test --filter MosaicModelTests, 6 pass
+- [X] FX-012-T04 `OutputEffectKind.mosaic` (`fx.mosaic`, appended) in
+  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-012-R7) — Verified 2026-11-15: OutputEffectOrderTests 5/5 (host)
 
 ## Phase 3: User Stories 1-2 — the pass (P1)
 
 **Goal**: flat squares or hexagons on every compositor output, exact identity at size 1 and off.
 **Independent test**: GPU tests through the real compositor.
 
-- [ ] FX-012-T05 [US1] `MosaicPass` with `cmp_mosaic` in `Packages/Compositor/Sources/Compositor/MosaicPass.swift`
-  (one pooled picture, released when unused)
-- [ ] FX-012-T06 [US1] `Compositor.swift`: `mosaic` property, splice the source at the existing compile site, the
+- [X] FX-012-T05 [US1] `MosaicPass` with `cmp_mosaic` in `Packages/Compositor/Sources/Compositor/MosaicPass.swift`
+  (one pooled picture, released when unused) — Verified 2026-11-15: MosaicCompositeTests 4/4 on the host (real Metal device)
+- [X] FX-012-T06 [US1] `Compositor.swift`: `mosaic` property, splice the source at the existing compile site, the
   `.mosaic` case in `encodeOutputEffects` (Color folded before it), release in deinit; add the source to
-  `CompositorShaderSources.archived` (FX-012-R4, R7, R11, R13)
-- [ ] FX-012-T07 [US1] [US2] `MosaicCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and size 1
+  `CompositorShaderSources.archived` (FX-012-R4, R7, R11, R13) — Verified 2026-11-15: Compositor suite on the host, 717 tests, 0 failures (10 skipped); CompositorPipelineArchiveTests pass
+- [X] FX-012-T07 [US1] [US2] `MosaicCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`: off and size 1
   (both shapes) bit-identical on random content with no picture held; size 8 squares on random content: every 8 × 8
   block uniform and equal to its centre pixel, adjacent blocks differ; hexagons at size 12: cells uniform at points
   away from borders; GPU = reference (squares exact everywhere, hexagons away from borders); order and pool
-  (FX-012-S1 to S4)
-- [ ] FX-012-T08 [US1] Existing compositor tests still pass (`RadialBlurCompositeTests`, `EffectOrderCompositeTests`,
-  `CompositorPipelineArchiveTests`)
+  (FX-012-S1 to S4) — Verified 2026-11-15: MosaicCompositeTests 4/4 (host): size 1 and off bit-identical, 8 × 8 blocks uniform and adjacent differ, hexagon interior exact, GPU = reference
+- [X] FX-012-T08 [US1] Existing compositor tests still pass (`RadialBlurCompositeTests`, `EffectOrderCompositeTests`,
+  `CompositorPipelineArchiveTests`) — Verified 2026-11-15: RadialBlurCompositeTests, EffectOrderCompositeTests, CompositorPipelineArchiveTests pass in the full host run
 
 ## Phase 4: User Story 3 — chain, scenes, goldens (P2)
 
-- [ ] FX-012-T09 [US3] `SceneEffectSettings.mosaic` and the `fx.mosaic` entry (read, clamp, write, `isDefault`) in
+- [X] FX-012-T09 [US3] `SceneEffectSettings.mosaic` and the `fx.mosaic` entry (read, clamp, write, `isDefault`) in
   `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift`; round-trip tests in a new
-  `MosaicSceneEntryTests` and order updates in `SceneEffectChainTests` (FX-012-R10, S5)
-- [ ] FX-012-T10 [US3] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the mosaic; size 1 renders as no
-  chain and a mosaic scene round-trips in `EffectChainSceneTests`; existing goldens unchanged (FX-012-S1)
+  `MosaicSceneEntryTests` and order updates in `SceneEffectChainTests` (FX-012-R10, S5) — Verified 2026-11-15: SceneFormat 215 tests on the host (MosaicSceneEntryTests 2/2)
+- [X] FX-012-T10 [US3] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the mosaic; size 1 renders as no
+  chain and a mosaic scene round-trips in `EffectChainSceneTests`; existing goldens unchanged (FX-012-S1) — Verified 2026-11-15: RenderGoldens 112 tests on the host (MosaicSceneGoldenTests 2/2)
 
 ## Phase 5: App (US1, US3)
 
