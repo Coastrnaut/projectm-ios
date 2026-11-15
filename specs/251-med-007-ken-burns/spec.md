@@ -29,6 +29,26 @@ and erase).
 | Scene | A `photo` asset carries optional fields verbatim (`slideshow`, MED-006); new fields need no version bump. |
 | Pan / zoom | **None.** A photo is always static. |
 
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: How is a crop rectangle expressed and validated? → A: x, y, width, height as fractions of the image (0…1, top-left origin). Valid when every value is finite, width and height are at least 0.05 (at most 20× zoom) and the rectangle lies inside the image (tolerance 1e-9). Edits clamp (size first, then position); a stored rectangle that is invalid makes the whole stored movement read as absent (MED-007-R2).
+- Q: What happens when a rectangle's shape differs from the screen's? → A: The rectangle is treated as the layer's content and fitted with the layer's own CMP-006 fit: fill (the default) crops the overflow around the anchor, fit letterboxes with transparent bars, stretch fills; pixel-accurate reads as fit (a zoom cannot be pixel-accurate). Presets and Custom produce rectangles of the image's own shape, so at fill the first frame of "Zoom in" looks like the plain photo. The acceptance uses rectangles of the output's shape, so the frame shows exactly the rectangle in every mode (MED-007-R3).
+- Q: How is the rectangle between start and end computed? → A: Each edge (x, y, width, height) moves linearly with an eased fraction u = elapsed / duration, computed from integer nanoseconds (SHOW-008's segment-relative fraction): elapsed 0 gives the stored start values exactly, elapsed ≥ duration the stored end values exactly. Easing Linear or Ease in and out (smoothstep 3u² − 2u³; default Ease in and out); both are monotonic, so every edge moves monotonically (MED-007-R3, R4).
+- Q: Which clock drives the movement, and what happens after the end? → A: Elapsed time starts at 0 on the first drawn frame of a picture and adds each frame's duration from the injected frame clock (already clamped to 0.1 s per frame), so a pause, the background or a stall never makes it jump. After the duration the end rectangle holds (no loop, no reverse: no sudden cut back) until the picture or the movement changes, which restarts it (MED-007-R5).
+- Q: How long does the movement last? → A: Duration 2…60 whole seconds, default 10, for a single photo. In a slideshow every slide's movement lasts its dwell: Time mode the slideshow's seconds; Beats mode beats × the beat period while a reliable tempo grid exists, else the seconds setting (MED-007-R8).
+- Q: What does Reduce Motion do? → A: The layer shows the start rectangle and does not move (the user's chosen framing, no animation); the photo is cached as a still. Settings notes "Reduce Motion is on: the photo stays at its start framing." (MED-007-R7).
+- Q: Is there a movement per slide? → A: No: one setting for the photo layer, shared by the single photo and every slide (each slide restarts it). Per-slide movements are out of scope; the stored shape (one object) can gain a per-slide map later without a version change.
+- Q: Which movements does Settings offer? → A: A Ken Burns switch, then Movement: Zoom in (whole image → the centre 2/3), Zoom out (the reverse), Pan left to right (80 % of the image, from its left edge to its right edge, vertically centred), Pan right to left (the reverse), Custom. Custom shows for Start and End a Zoom slider (100…400 %) and Horizontal and Vertical position sliders (0…100 %), all through ACC-005's accessible parameter helper; a preset's values become Custom's starting values. Then Duration (stepper, seconds) and Easing (MED-007-R11).
+- Q: Where is the setting stored, backed up and erased? → A: One UserDefaults key `settings.photo.kenBurns` (JSON; absent = off), written by its own store; included in FILE-005 settings backups; erased with Settings (a preference, not media) by FILE-011; removed by the UI-test reset (`AppSettings.allKeys`) (MED-007-R9).
+- Q: How do scenes record it? → A: The optional object `kenBurns` on the `photo` asset: `{"start": {"x","y","width","height"}, "end": {…}, "durationMilliseconds": int, "easing": "linear"|"easeInOut"}`, written only when Ken Burns is on; carried verbatim by older versions (`SceneAsset.extra`), no version change. Restoring a document with a photo layer applies it, or turns Ken Burns off when absent or malformed; documents of other visuals leave it unchanged (MED-007-R10).
+- Q: How does render caching treat it? → A: While moving, the photo layer declares a time dependency (rendered every frame); while holding (finished, start = end, Reduce Motion, or off) it declares itself still, with a parameter generation that changes whenever the movement, Reduce Motion or the fit changes (MED-007-R6).
+- Q: How is acceptance proven? → A: GPU read-back on the Mac through the real compositor with injected frame times: the first frame against the image cropped on the CPU to a 1:1 start rectangle (every pixel within 1/255 in linear light), the frame at the end time against a 2× zoomed end rectangle of a block-coloured image (every pixel not next to a block edge within 1/255), plus a CPU test that every edge is monotonic over a run, a scene round trip, a Reduce Motion GPU test and one UI test under 30 s (MED-007-S1 to S5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A photo slowly zooms and pans (Priority: P1)
@@ -82,7 +102,9 @@ With the system's Reduce Motion on, the photo does not move.
 ### Edge Cases
 
 - A rectangle outside the image, with zero or negative size, or non-finite: refused by the editor (clamped) and read as absent from a scene.
-- Rectangle aspect different from the output: the layer's fit mode decides (fill crops the overflow, fit letterboxes); the acceptance uses rectangles of the output's aspect.
+- Rectangle aspect different from the output: the layer's fit mode decides (fill crops the overflow, fit letterboxes, pixel-accurate reads as fit); the acceptance uses rectangles of the output's aspect.
+- Beats mode without a reliable tempo: the movement lasts the slideshow's seconds setting.
+- The movement finished: the end rectangle holds until the picture changes.
 - Start equals end: a still crop.
 - The app paused or in the background: the movement holds and continues on return (frame-duration clamp), it never jumps.
 - The photo changes (new photo, slide change, scene restore): the movement starts again from the start rectangle.
