@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented (OSC-011-T19 {device} open)
 
 **Input**: User description: "Implement roadmap row OSC-011 (Local peer discovery) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Discover nearby compatible devices using permitted Bonjour service."
