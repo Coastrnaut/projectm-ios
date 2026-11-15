@@ -54,3 +54,12 @@ Four new reports (14:52, 15:14, 15:17 twice; total 26 → 28 counted with the tw
 `EXC_BREAKPOINT` in PosterBoard under `launchd_sim`, each while a feature agent booted a fresh
 per-feature simulator (VIS-008, CAM-003, UIX-007 iPad). Same signature as above; no burst on a
 long-lived simulator, so no simulator was erased. No action beyond this note.
+
+## 2026-11-14 evening (autonomous run)
+
+Two new reports at 22:02:40 and 22:03:07 (28 → 30), `EXC_BREAKPOINT` in PosterBoard, naming simulators
+`A6B9C9B0…` and `DDC43B29…`. Neither is a long-lived simulator: both were per-feature simulators that agents
+had just booted (MIDI-005, VIS-020); the integration simulator was not involved. Same signature as above, so no
+simulator was erased. At the same time one integration UI test (`ExternalOutputModeUITests`, OUT-007 post-merge)
+waited 3 minutes for the app to go idle; it passed on both reruns (15.5 s, 12.0 s), so it is recorded as load,
+not an app hang.

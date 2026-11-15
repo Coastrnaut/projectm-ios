@@ -15,6 +15,11 @@
 // visual's drawable has the chosen pixel count while its bounds, centre and transform (the scene's
 // coordinate space) stay exactly as OUT-004 placed them. The slot's own scale is left alone, so its
 // geometry still reports the screen. The device slot and `removeVisuals()` remove the override.
+// OUT-007 (spec specs/264-out-007-corner-pin, contract C2; research OUT-007-D1, D4): an external slot shows
+// everything it holds (the visual as OUT-004 placed it, the bars, the calibration card, the cover) through the
+// corner pin's projective transform, set as its layer's `sublayerTransform` (Core Animation composites it: no
+// extra render pass, any kind of layer content). The device slot never takes one. While the corner-pin editor
+// is open the slot shows OUT-012's test card as a layer between the visual and the cover.
 import PresentationLifecycle
 import SwiftUI
 import UIKit
@@ -50,6 +55,21 @@ final class VisualSlotView: UIView {
     }
     /// OUT-003: the output last applied to the held visual (nil on the device or without a size).
     private(set) var resolvedOutput: ResolvedExternalOutput?
+    /// OUT-007: the corner pin (applied on external slots only) and the calibration card.
+    var cornerPin: CornerPin = .identity {
+        didSet { if cornerPin != oldValue { applyCornerPin() } }
+    }
+    var showsCalibrationCard = false {
+        didSet {
+            guard showsCalibrationCard != oldValue else { return }
+            syncCoverFrame()
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            card.isHidden = !showsCalibrationCard
+            CATransaction.commit()
+        }
+    }
+    private let card = CornerPinCardLayer()
 
     init(role: Role) {
         self.role = role
@@ -64,6 +84,7 @@ final class VisualSlotView: UIView {
         cover.zPosition = 10_000   // above the visual's layer whatever the subview order
         cover.actions = ["opacity": NSNull(), "bounds": NSNull(), "position": NSNull(), "hidden": NSNull()]
         layer.addSublayer(cover)
+        layer.addSublayer(card)   // OUT-007: hidden until the corner-pin editor opens
         if role == .external {
             registerForTraitChanges([UITraitDisplayScale.self]) { (slot: VisualSlotView, _: UITraitCollection) in
                 slot.reportGeometry()
@@ -90,6 +111,7 @@ final class VisualSlotView: UIView {
         super.layoutSubviews()
         applyPlacement()
         syncCoverFrame()
+        applyCornerPin()
         if role == .external { reportGeometry() } else { reportSize() }
     }
 
@@ -227,11 +249,43 @@ final class VisualSlotView: UIView {
     }
 
     private func syncCoverFrame() {
-        guard cover.frame != layer.bounds else { return }
+        guard cover.frame != layer.bounds || card.frame != layer.bounds else { return }
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         cover.frame = layer.bounds
+        card.frame = layer.bounds
         CATransaction.commit()
+    }
+
+    /// OUT-007: the pin's projective transform for the current bounds about the layer's anchor (the device
+    /// slot: identity), set without animation, so a change shows at the next composited frame.
+    private func applyCornerPin() {
+        let target: CATransform3D = Self.transform(role == .external ? cornerPin : .identity, bounds: layer.bounds,
+                                                   anchor: layer.anchorPoint)
+        guard !CATransform3DEqualToTransform(layer.sublayerTransform, target) else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        layer.sublayerTransform = target
+        CATransaction.commit()
+    }
+
+    /// OUT-007-D1, D2: `pin`'s homography as a Core Animation matrix for a layer of `bounds` and `anchor`.
+    static func transform(_ pin: CornerPin, bounds: CGRect, anchor: CGPoint) -> CATransform3D {
+        guard !pin.isIdentity, bounds.width > 0, bounds.height > 0 else { return CATransform3DIdentity }
+        let ax = Double(bounds.minX + anchor.x * bounds.width), ay = Double(bounds.minY + anchor.y * bounds.height)
+        let m: [Double] = pin.homography.layerMatrix(width: Double(bounds.width), height: Double(bounds.height),
+                                                     anchorX: ax - Double(bounds.minX), anchorY: ay - Double(bounds.minY))
+        var t = CATransform3DIdentity
+        t.m11 = CGFloat(m[0]); t.m12 = CGFloat(m[1]); t.m13 = CGFloat(m[2]); t.m14 = CGFloat(m[3])
+        t.m21 = CGFloat(m[4]); t.m22 = CGFloat(m[5]); t.m23 = CGFloat(m[6]); t.m24 = CGFloat(m[7])
+        t.m31 = CGFloat(m[8]); t.m32 = CGFloat(m[9]); t.m33 = CGFloat(m[10]); t.m34 = CGFloat(m[11])
+        t.m41 = CGFloat(m[12]); t.m42 = CGFloat(m[13]); t.m43 = CGFloat(m[14]); t.m44 = CGFloat(m[15])
+        return t
+    }
+
+    /// OUT-007 (tests, DEBUG probe): the calibration card is shown, opaque and filling the slot.
+    var isCalibrationCardShown: Bool {
+        !card.isHidden && card.superlayer === layer && card.frame == layer.bounds
     }
 
     /// OUT-010 (tests, DEBUG probe): the slot shows only black: the cover is fully opaque, fills

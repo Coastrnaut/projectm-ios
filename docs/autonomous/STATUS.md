@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T03:03:30Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T03:20:12Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,24 @@
 
 | State | Features |
 |---|---|
-| audited | 48 |
-| implementing | 2 |
-| built | 1 |
-| integrated | 274 |
+| audited | 45 |
+| implementing | 3 |
+| integrated | 277 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 1 | 0 | 0 | 150 | 0 |
-| P2 | 36 | 2 | 1 | 40 | 0 |
-| P3 | 9 | 0 | 0 | 0 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 0 | 1 | 150 | 0 |
+| P2 | 34 | 2 | 43 | 0 |
+| P3 | 9 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 51 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
+- 48 features are not implemented yet (first: CAM-009, CAM-010, FX-005, FX-006, FX-007)
 
 ## Integrated
 
@@ -147,12 +146,14 @@ The physical-device suite may **not** start:
 | MED-009 | Text overlay | `beca43d66718` | `feature/med-009` |
 | MED-010 | Logo overlay | `6ac0c21c` | `feature/med-010` |
 | MED-011 | Clock overlay | `12cfdd4372a5` | `feature/med-011` |
+| MED-012 | Countdown overlay | `3f55e4031279` | `feature/med-012` |
 | MED-013 | Media asset relinking | `52fabb13` | `feature/med-013` |
 | MED-014 | Safe media decoder | `31e16534f057` | `feature/med-014` |
 | MIDI-001 | MIDI endpoint discovery | `5e7bcff1` | `feature/midi-001` |
 | MIDI-002 | MIDI input monitor | `c7cd1169` | `feature/midi-002` |
 | MIDI-003 | MIDI learn | `d6ec9dc5e426` | `feature/midi-003` |
 | MIDI-004 | MIDI CC scaling | `6ac0c21c` | `None` |
+| MIDI-005 | MIDI 14-bit controls | `1fe57ef32ec9` | `feature/midi-005` |
 | MIDI-006 | MIDI note triggers | `4bad23aa` | `None` |
 | MIDI-007 | MIDI scene selection | `42658ec3d3d7` | `feature/midi-007` |
 | MIDI-008 | MIDI transport mapping | `265ddd1401f9` | `feature/midi-008` |
@@ -188,6 +189,7 @@ The physical-device suite may **not** start:
 | OUT-004 | Aspect correction | `5e533a80` | `feature/out-004` |
 | OUT-005 | Safe-area guides | `2279477acc0a` | `feature/out-005` |
 | OUT-006 | Output mirroring toggle | `eeb64861aa81` | `feature/out-006` |
+| OUT-007 | Corner-pin warp | `e097e3500ac0` | `feature/out-007` |
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
 | OUT-012 | External display rehearsal | `25f9c7db` | `feature/out-012` |
 | PERF-001 | Per-stage frame timings | `2c4317ae` | `feature/perf-001` |
@@ -1603,6 +1605,21 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `d488c36349cf` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-011/20261114T214456/swift-test_ShowControl.log`)
 - `swift test Compositor 1060, LibraryBackup 87; postmerge projectM-iOSTests 1185 + Clock/Logo UI tests 2`: pass at `12cfdd4372a5` (log `.autonomous/logs/integration/batch100/app-tests.log`)
 
+### MED-012 Countdown overlay (integrated)
+- `python3 scripts/check_compliance.py`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `bd402e8ddc4e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-012/20261114T221239/swift-test_ShowControl.log`)
+- `swift test Compositor 1069, SceneFormat 203, LibraryBackup 87; postmerge projectM-iOSTests 1204 + Countdown/Clock UI tests 2`: pass at `3f55e4031279` (log `.autonomous/logs/integration/batch105/app-tests.log`)
+
 ### MED-013 Media asset relinking (integrated)
 - `python3 scripts/check_compliance.py`: pass at `3e9e52be2928` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-013/20261114T094349/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `3e9e52be2928` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-013/20261114T094349/docs.log`)
@@ -1661,6 +1678,15 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `baadcbe1ee17` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-004/20261114T070939/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `baadcbe1ee17` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-004/20261114T070939/swift-test_PerformanceControl.log`)
 - `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
+
+### MIDI-005 MIDI 14-bit controls (integrated)
+- `python3 scripts/check_compliance.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `d48019e95b65` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-005/20261114T221035/swift-test_PerformanceControl.log`)
+- `swift test PerformanceControl 271; postmerge projectM-iOSTests 1201 + MIDIHighResolution/MIDICCScaling UI tests 2`: pass at `1fe57ef32ec9` (log `.autonomous/logs/integration/batch104/app-tests.log`)
 
 ### MIDI-006 MIDI note triggers (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc7e11f8e2cd` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-006/20261114T084721/compliance.log`)
@@ -2068,6 +2094,18 @@ None.
 - `swift test --package-path Packages/PresentationLifecycle`: pass at `7a884e5a618e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-006/20261114T213544/swift-test_PresentationLifecycle.log`)
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `7a884e5a618e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-006/20261114T213544/sim-test_Rendering.log`)
 - `swift test PresentationLifecycle 101, LibraryBackup 87; postmerge projectM-iOSTests 1182 + ExternalOutputMode/ExternalDisplay UI tests 4`: pass at `eeb64861aa81` (log `.autonomous/logs/integration/batch99/app-tests.log`)
+
+### OUT-007 Corner-pin warp (integrated)
+- `python3 scripts/check_compliance.py`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PresentationLifecycle`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/swift-test_PresentationLifecycle.log`)
+- `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `2f1a7d50e6ab` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-007/20261114T220131/sim-test_Rendering.log`)
+- `swift test PresentationLifecycle 109, LibraryBackup 87; postmerge projectM-iOSTests 1196 + CornerPinUITests 1; ExternalOutputModeUITests timed out once under load, 2/2 reruns pass`: pass at `e097e3500ac0` (log `.autonomous/logs/integration/batch103b-2/app-tests.log`)
 
 ### OUT-010 Output blackout isolation (integrated)
 - `python3 scripts/check_compliance.py`: pass at `e7b40368ae98` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-010/20261113T140140/compliance.log`)

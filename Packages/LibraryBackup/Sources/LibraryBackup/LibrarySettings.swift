@@ -120,6 +120,7 @@ public enum LibrarySettingsPolicy {
         "settings.photo.kenBurns",   // MED-007-R9: a preference (the photo's pan and zoom); erased with Settings
         logoKey, logoPlacementKey,   // MED-010
         "settings.clock.overlay",   // MED-011-R9: a preference (shown, format, placement); erased with Settings
+        "settings.countdown.overlay",   // MED-012-R10: a preference (shown, duration, cues, placement); erased with Settings
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
         "settings.visualizer.sceneHUD",   // UIX-013-R11: a preference (Bool); erased with Settings
@@ -149,6 +150,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.pixelAspect",
         "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   // OUT-003-R7: likewise
         "settings.externalDisplay.outputMode",   // OUT-006-R7: likewise
+        "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device

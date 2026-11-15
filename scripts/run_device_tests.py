@@ -74,6 +74,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.logo.id",   # MED-010
                 "settings.logo.placement",   # MED-010
                 "settings.clock.overlay",   # MED-011 (clock overlay; off by default)
+                "settings.countdown.overlay",   # MED-012 (countdown overlay; off by default)
                 "settings.presetScope", "notice.photosensitivityAcknowledged",
                 "settings.visual", "settings.circularSpectrum.bars",
                 "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
@@ -137,6 +138,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.externalDisplay.pixelAspect",   # OUT-004-R8
                 "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   # OUT-003-R7
                 "settings.externalDisplay.outputMode",   # OUT-006-R7
+                "settings.externalDisplay.cornerPin",   # OUT-007-R9 (corner pin; identity = absent)
                 "settings.recording.timedStop",   # REC-008-R9 (stop recording after a length; Off by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11

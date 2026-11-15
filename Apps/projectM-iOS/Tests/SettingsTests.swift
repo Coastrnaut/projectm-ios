@@ -103,7 +103,8 @@ final class SettingsTests: XCTestCase {
                                                                    AppSettings.slideshowKey,   // MED-006: SlideshowStore
                                                                    AppSettings.kenBurnsKey,   // MED-007: KenBurnsStore
                                                                    AppSettings.logoIDKey, AppSettings.logoPlacementKey,   // MED-010: LogoStore
-                                                                   AppSettings.clockOverlayKey]), "FR-065")   // MED-011: ClockOverlayStore
+                                                                   AppSettings.clockOverlayKey,   // MED-011: ClockOverlayStore
+                                                                   AppSettings.countdownOverlayKey]), "FR-065")   // MED-012: CountdownOverlayStore
     }
 
     /// VIS-001-T19 (VIS-001-R11): the visual choice and the bar count, with safe readings of bad values.

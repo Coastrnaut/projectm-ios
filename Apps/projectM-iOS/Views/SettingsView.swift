@@ -46,6 +46,8 @@ struct SettingsView: View {
     var logo: LogoCoordinator?
     /// MED-011: the clock overlay (nil hides its section).
     var clock: ClockOverlayCoordinator? = nil
+    /// MED-012: the countdown overlay (nil hides its section).
+    var countdown: CountdownOverlayCoordinator? = nil
     /// MED-002: the imported video (nil hides the Video section).
     var videos: VideoCoordinator?
     /// MED-009: the Text visual's message and style (nil hides the Text section).
@@ -527,6 +529,7 @@ struct SettingsView: View {
         }
         if let logo { LogoSection(logo: logo) }   // MED-010: every visual (the help names those that show it)
         if let clock { ClockSection(clock: clock).id("clock") }   // MED-011: after the logo (the help names the visuals)
+        if let countdown { CountdownSection(countdown: countdown).id("countdown") }   // MED-012: after the clock
         if settings.visual.usesText, let texts {
             textSection(texts)
         }

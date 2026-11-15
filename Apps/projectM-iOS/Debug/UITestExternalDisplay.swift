@@ -16,6 +16,8 @@
 // ("mode=… scale=… drawable=W×H clamped=…", or "none" while the visual is on the device).
 // OUT-006-T09: the hidden `externalOutputMode` probe reads the output mode's routing
 // ("mode=… target=… overlays=… externalViews=…").
+// OUT-007-T11: the hidden `externalCornerPin` probe reads the corner pin on the fake display
+// ("pin=… card=… corners=…", or "none" without a display).
 #if DEBUG
 import PresentationLifecycle
 import SwiftUI
@@ -91,6 +93,11 @@ struct UITestExternalDisplayPanel: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("externalOutputMode")
                     .accessibilityValue(mode)
+                let pin: String = coordinator.cornerPinSummary
+                Text(pin)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalCornerPin")
+                    .accessibilityValue(pin)
             }
         }
         .font(.caption2)

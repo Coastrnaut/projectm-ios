@@ -491,6 +491,7 @@ struct VisualizerView: View {
                      kenBurns: coordinator.kenBurns,   // MED-007
                      logo: coordinator.logo,   // MED-010
                      clock: coordinator.clock,   // MED-011
+                     countdown: coordinator.countdown,   // MED-012
                      videos: coordinator.videos, texts: coordinator.texts,
                      show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
                      libraryBackup: coordinator.libraryBackup,   // FILE-005

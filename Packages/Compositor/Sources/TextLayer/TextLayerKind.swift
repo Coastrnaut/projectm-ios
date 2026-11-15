@@ -13,3 +13,9 @@ extension LayerKind {
     /// visual's stack. One per stack.
     public static let clock = LayerKind("clock", maximumInstances: 1)
 }
+
+extension LayerKind {
+    /// MED-012: the countdown overlay, a MED-009 text layer fed the remaining time, above the clock on a compositor
+    /// visual's stack. One per stack.
+    public static let countdown = LayerKind("countdown", maximumInstances: 1)
+}
