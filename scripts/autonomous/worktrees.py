@@ -10,6 +10,7 @@ resets and branch deletion.
 """
 from __future__ import annotations
 
+import shutil
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -110,13 +111,71 @@ class Worktrees:
 
     def remove(self, feature_id: str) -> None:
         """Remove the checkout only when it is clean. The branch and its commits stay."""
-        path = self.path(feature_id)
+        self.remove_path(self.path(feature_id))
+
+    def remove_path(self, path: Path) -> None:
+        """Remove one worktree checkout, never forced (owner rule 10, 2026-11-14). A checkout with
+        uncommitted work (its submodules included) is kept and raises GitError."""
         if not path.exists():
             return
         if not self.is_clean(path):
             raise GitError(["worktree", "remove"], 1,
                            f"{path} has uncommitted work; it is preserved")
+        self._drop_submodules(path)
         git(["worktree", "remove", str(path)], self.repo)
+
+    def _drop_submodules(self, path: Path) -> None:
+        """`git worktree remove` refuses a checkout whose submodules were initialised (their git
+        dirs live in the worktree's private git dir). Deinitialise them without force, which stops
+        on a submodule with local changes, then delete that worktree's private submodule clones.
+        The main checkout's own submodules (.git/modules) are never touched."""
+        gitdir = Path(git(["rev-parse", "--absolute-git-dir"], path).stdout.strip())
+        modules = gitdir / "modules"
+        if gitdir.parent.name != "worktrees" or not modules.is_dir():
+            return
+        if git(["submodule", "status"], path, check=False).stdout.strip():
+            git(["submodule", "deinit", "--all"], path)
+        shutil.rmtree(modules)
+
+    def merged_worktrees(self) -> list[tuple[Path, str]]:
+        """Worktrees under WORKTREE_DIR whose branch (or, when detached, whose commit) is already in
+        the integration branch."""
+        out = git(["worktree", "list", "--porcelain"], self.repo).stdout
+        found: list[tuple[Path, str]] = []
+        root = (self.repo / WORKTREE_DIR).resolve()
+        record: dict[str, str] = {}
+        for line in out.splitlines() + [""]:
+            if line:
+                key, _, value = line.partition(" ")
+                record[key] = value
+                continue
+            path = Path(record["worktree"]).resolve() if "worktree" in record else None
+            ref = record.get("branch", "").removeprefix("refs/heads/") or record.get("HEAD", "")
+            if path is not None and ref and path.parent == root and git(
+                    ["merge-base", "--is-ancestor", ref, self.integration_branch], self.repo,
+                    check=False).returncode == 0:
+                found.append((path, ref))
+            record = {}
+        return found
+
+    def sweep(self, active: set[str]) -> tuple[list[str], dict[str, str]]:
+        """Remove every merged worktree that no running agent uses (`active`: worktree folder names,
+        lowercase). Returns (removed, kept: name -> reason). Branches always stay."""
+        removed: list[str] = []
+        kept: dict[str, str] = {}
+        for path, _branch in self.merged_worktrees():
+            name = path.name
+            if name in active:
+                kept[name] = "in use by a running agent"
+                continue
+            try:
+                self.remove_path(path)
+                removed.append(name)
+            except GitError as exc:
+                kept[name] = exc.output.strip()[:200]
+        if removed:
+            git(["worktree", "prune"], self.repo)
+        return removed, kept
 
     def changed_files(self, feature_id: str) -> list[str]:
         """Files the feature branch changed since it left the integration branch."""

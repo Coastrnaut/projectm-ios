@@ -82,6 +82,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8
                 "settings.haptics.beatPulses", "settings.haptics.beatEvent", "settings.haptics.strength",   # ACC-007-R8
+                "settings.motion.range",   # CAM-011-R12
                 "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   # FX-003-R8
                 "settings.colorGrade.gain", "settings.colorGrade.saturation", "settings.colorGrade.hue",   # FX-004-R8
                 "settings.feedback.enabled", "settings.feedback.halfLife",   # FX-009-R11 (Trails, off by default)

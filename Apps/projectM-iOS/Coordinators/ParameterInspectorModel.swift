@@ -384,6 +384,19 @@ extension AudioFeatureSource {
         case .sectionChange: return "Section change"   // ANL-015
         case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
         case let .bandEnvelope(index, profile): return "Band \(index + 1) \(profile.rawValue)"   // MOD-015
+        case let .motion(axis): return axis.inspectorName   // CAM-011
+        }
+    }
+}
+
+extension MotionAxis {
+    /// CAM-011-R2: the motion source's name for people.
+    var inspectorName: String {
+        switch self {
+        case .pitch: "Tilt forward"
+        case .roll: "Tilt sideways"
+        case .yaw: "Turn"
+        case .shake: "Shake"
         }
     }
 }

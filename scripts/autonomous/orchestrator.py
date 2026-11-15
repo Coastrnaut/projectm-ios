@@ -130,9 +130,33 @@ def cmd_init(args) -> int:
     return 0
 
 
+def retire_worktree(wt: Worktrees, fid: str) -> bool:
+    """Owner rule 10 (2026-11-14): remove a feature's worktree once it is integrated and its gates
+    passed. Never forced; uncommitted work keeps the checkout. The branch always stays."""
+    try:
+        wt.remove(fid)
+        return True
+    except GitError as exc:
+        print(f"worktree kept for {fid}: {exc.output.strip()[:200]}", file=sys.stderr)
+        return False
+
+
+def sweep_worktrees(wt: Worktrees, store) -> list[str]:
+    """Pre-batch sweep: remove merged worktrees that no running agent uses."""
+    active = {fid.lower() for fid in store.in_flight()}
+    removed, kept = wt.sweep(active)
+    if removed:
+        print(f"swept {len(removed)} merged worktrees", file=sys.stderr)
+    for name, reason in sorted(kept.items()):
+        if reason != "in use by a running agent":
+            print(f"worktree kept: {name}: {reason}", file=sys.stderr)
+    return removed
+
+
 def cmd_next(args) -> int:
     roadmap, store = load(args)
     scheduler = Scheduler(roadmap, args.concurrency)
+    sweep_worktrees(Worktrees(ROOT, store.data["integration_branch"]), store)
     states = store.states()
     running = {fid for fid in store.in_flight()}
     selection = scheduler.select(states, running)
@@ -163,6 +187,8 @@ def cmd_set(args) -> int:
                            "note": args.audit_note, "verdict": args.state}
     for fid in args.ids:
         store.set_state(fid, args.state, note=args.note, **fields)
+        if args.state == "integrated":   # recorded after the post-merge gates passed
+            retire_worktree(Worktrees(ROOT, store.data["integration_branch"]), fid)
     write_report(roadmap, store)
     return 0
 
@@ -270,6 +296,7 @@ def cmd_integrate(args) -> int:
         return 1
     store.set_state(args.id, "integrated", integrated_sha=result.sha,
                     note="already merged" if result.already_merged else "merged")
+    retire_worktree(wt, args.id)
     write_report(roadmap, store)
     print(result.sha)
     return 0
@@ -294,6 +321,7 @@ def cmd_run(args) -> int:
             print(f"stopping: {exc}; state is checkpointed, rerun to resume", file=sys.stderr)
             write_report(roadmap, store)
             return 3
+        sweep_worktrees(wt, store)
         selection = scheduler.select(store.states(), set())
         if not selection.start:
             break
@@ -328,6 +356,7 @@ def cmd_run(args) -> int:
             merged = wt.integrate(fid, gates_passed=True)
             if merged.ok and gate_feature(roadmap, store, None, args.simulator):
                 store.set_state(fid, "integrated", integrated_sha=merged.sha)
+                retire_worktree(wt, fid)
                 done += 1
             elif merged.ok:
                 store.record_attempt(fid, "test", "integration gates failed after the merge")
