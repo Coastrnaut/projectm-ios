@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T05:04:55Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T05:08:38Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,10 +9,10 @@
 
 | State | Features |
 |---|---|
-| audited | 28 |
+| audited | 27 |
 | implementing | 4 |
 | unit_passed | 1 |
-| integrated | 292 |
+| integrated | 293 |
 | skipped_existing | 1 |
 
 ## Counts by priority
@@ -21,13 +21,13 @@
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 20 | 3 | 1 | 55 | 0 |
+| P2 | 19 | 3 | 1 | 56 | 0 |
 | P3 | 6 | 1 | 0 | 2 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 33 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
+- 32 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
 
 ## Integrated
 
@@ -203,6 +203,7 @@ The physical-device suite may **not** start:
 | OUT-010 | Output blackout isolation | `1def5a80ab64` | `feature/out-010` |
 | OUT-011 | Output connection diagnostics | `6dfc93d47185` | `feature/out-011` |
 | OUT-012 | External display rehearsal | `25f9c7db` | `feature/out-012` |
+| OUT-013 | Frame pacing per output | `52bcf7343619` | `feature/out-013` |
 | PERF-001 | Per-stage frame timings | `2c4317ae` | `feature/perf-001` |
 | PERF-002 | GPU budget meter | `0c570bb94ccc` | `None` |
 | PERF-003 | Adaptive effect quality | `53c913bd` | `feature/perf-003` |
@@ -2251,7 +2252,7 @@ None.
 - `xcodebuild -scheme Rendering-Package -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `8a95827d08f8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-012/20261114T123014/sim-test_Rendering.log`)
 - `post-merge: projectM-iOSTests 865 + UI 5 (rehearsal, external display, MIDI panic, transport)`: pass at `25f9c7db` (log `.autonomous/logs/integration/batch36/app-tests.log`)
 
-### OUT-013 Frame pacing per output (unit_passed)
+### OUT-013 Frame pacing per output (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d1225d61257b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-013/20261114T235805/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d1225d61257b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-013/20261114T235805/docs.log`)
 - `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `d1225d61257b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-013/20261114T235805/sim-test_ANGLERendering.log`)
@@ -2262,6 +2263,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `d1225d61257b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-013/20261114T235805/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `d1225d61257b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-013/20261114T235805/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `d1225d61257b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-013/20261114T235805/swift-test_ShowControl.log`)
+- `CameraVisualHost conflict with CAM-010 resolved (keep both); gate incl. ANGLERendering sim tests; FrameTimingTests 62; postmerge projectM-iOSTests 1253 + ExternalDisplay/CameraPersonMask UI tests 5`: pass at `52bcf7343619` (log `.autonomous/logs/integration/batch119/app-tests.log`)
 
 ### PERF-001 Per-stage frame timings (integrated)
 - `python3 scripts/check_compliance.py`: pass at `9d87d289ba61` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/PERF-001/20261114T093307/compliance.log`)
@@ -3238,6 +3240,13 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_ShowControl.log`)
 - `post-merge batch90: ShowControl 146, Compositor 1027, PresetLibrary 349, LibraryBackup 87, projectM-iOSTests 1142, UI 9 (keyframes, fixture preview, left-handed 2, one-handed 3, preset versions, noise editor after test fix)`: pass at `2310995d` (log `.autonomous/logs/integration/batch90/app-tests.log`)
+
+### SHOW-009 Keyframe easing (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/docs.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/swift-test_ShowControl.log`)
 
 ### SHOW-010 Beat grid (integrated)
 - `python3 scripts/check_compliance.py`: pass at `af23b55a3944` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-010/20261114T204005/compliance.log`)
