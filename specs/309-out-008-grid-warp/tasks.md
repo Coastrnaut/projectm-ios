@@ -16,13 +16,15 @@ Format: `[ID] [P?] [Story] Description`. `{device}` = needs a physical device an
 
 ## Phase 2: Output passes (US1, P1)
 
-- [ ] OUT-008-T03 [US1] `OutputWarpMesh` and `OutputWarpReceiver` in `Packages/Compositor/Sources/Compositor/OutputWarp.swift`;
+- [X] OUT-008-T03 [US1] `OutputWarpMesh` and `OutputWarpReceiver` in `Packages/Compositor/Sources/Compositor/OutputWarp.swift`;
   `GridWarpPass.swift` (MSL vertex surface from `vertex_id`, bilinear fragment, guides) spliced into
-  `CompositorShaders.source`; `Compositor.outputWarp` hook in `composite(into:)` (C2).
-- [ ] OUT-008-T04 [US1] `GridWarpOutputTests.swift` on the real compositor: `.none` = no pass and identical bytes; a
+  `CompositorShaders.source`; `Compositor.outputWarp` hook in `composite(into:)` (C2). — Verified 2026-11-15: GridWarpOutputTests (T04).
+- [X] OUT-008-T04 [US1] `GridWarpOutputTests.swift` on the real compositor: `.none` = no pass and identical bytes; a
   forced identity mesh byte-exact on `bgra8Unorm_srgb`; an affine and a curved warp match an independent CPU reference
   (OUT-008-S2); uncovered pixels black; guides on the identity draw white lines only on grid lines; `encodeOutput` unwarped
-  (OUT-008-S1, S4).
+  (OUT-008-S1, S4). — Verified 2026-11-15: `swift test --package-path Packages/Compositor` 767 tests, 0 failures
+  (10 skipped as before), 47.8 s; GridWarpOutputTests 4 tests 0.74 s on the host GPU; a flipped-sampling mutation
+  fails all four.
 - [ ] OUT-008-T05 [US1] FX-019 warp step in `Packages/Rendering/Sources/CFlashLimiter/` (`PMFlashLimiterSetWarp`, warp
   program, display flag) and `ANGLERenderer` (receiver, per-frame mesh, unwarped REC-001 capture) (C3).
 - [ ] OUT-008-T06 [US1] `GridWarpGLTests.swift` (ANGLERendering, simulator): identity mesh exact, a warp moves a known

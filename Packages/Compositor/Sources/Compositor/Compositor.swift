@@ -116,6 +116,8 @@
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
+// OUT-008 (specs/309-out-008-grid-warp, contract C2): while `outputWarp` is active, the screen pass of `composite(into:)`
+// draws into one pooled picture and `GridWarpPass` draws it through the mesh into the output; `.none` keeps the old pass.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import FlashSafety
@@ -434,6 +436,17 @@ public final class Compositor {
     /// Screen passes drawn with the calibration (tests, diagnostics).
     public private(set) var calibratedFrames = 0
     private var calibratedOutputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
+    /// OUT-008 (specs/309-out-008-grid-warp, contract C2): the external display's grid warp, drawn by the screen pass of
+    /// `composite(into:)` only (never by `encodeOutput`, captures or `encodeScene`); `.none` (any inactive mesh) keeps the
+    /// exact pre-OUT-008 pass. Turning it off returns the warp's picture to the pool.
+    public var outputWarp: OutputWarpMesh = .none {
+        didSet { if !outputWarp.isActive { gridWarpPass?.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+    /// OUT-008: created on the first warped frame.
+    private var gridWarpPass: GridWarpPass?
+    /// OUT-008: screen passes drawn through a mesh, and whether the warp holds its picture (tests, diagnostics).
+    public var warpedFrames: Int { gridWarpPass?.frames ?? 0 }
+    public var holdsWarpPicture: Bool { gridWarpPass?.holdsPicture ?? false }
 
     public var colorGrade: ColorGrade = .neutral {
         didSet { gradeBlock = CompositorShaders.GradeBlock(colorGrade.coefficients) }
@@ -532,6 +545,7 @@ public final class Compositor {
         mosaicPass.release(to: texturePool, after: lastCommandBuffer)   // FX-012
         edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer)   // FX-014
         vignettePass.release(to: texturePool, after: lastCommandBuffer)   // FX-015
+        gridWarpPass?.release(to: texturePool, after: lastCommandBuffer)   // OUT-008
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -752,8 +766,9 @@ public final class Compositor {
             guard flashGuard.encode(composite: composite, commandBuffer: commandBuffer, frameDuration: frame.frameDuration,
                                     reduceFlashing: reduceFlashing, flashLimits: flashLimits, grade: grade) else { return false }
             shownGradeBlock = grade
+            let warp: MTLTexture? = warpTarget(like: output)   // OUT-008: the screen pass draws here, then the mesh
             let out = MTLRenderPassDescriptor()
-            out.colorAttachments[0].texture = output
+            out.colorAttachments[0].texture = warp ?? output
             out.colorAttachments[0].loadAction = .dontCare
             out.colorAttachments[0].storeAction = .store
             guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: out) else { return false }
@@ -770,6 +785,8 @@ public final class Compositor {
             }
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             encoder.endEncoding()
+            if let warp, let pass = gridWarpPass,
+               !pass.encode(source: warp, mesh: outputWarp, into: output, commandBuffer: commandBuffer) { return false }   // OUT-008
             outputCommandBuffer = commandBuffer   // REC-003: `encodeOutput` may follow in this command buffer
             if let handler = pendingCapture {
                 pendingCapture = nil
@@ -1708,6 +1725,14 @@ public final class Compositor {
         }
         outputPipelines.append((format, state))
         return state
+    }
+
+    /// OUT-008: the picture the screen pass draws into while the grid warp is active (nil: draw into the output as
+    /// before; also when the pass or its picture cannot be made, so the display is never left empty).
+    private func warpTarget(like output: MTLTexture) -> MTLTexture? {
+        guard outputWarp.isActive else { return nil }
+        if gridWarpPass == nil { gridWarpPass = try? GridWarpPass(device: device, library: library) }
+        return gridWarpPass?.target(like: output, pool: texturePool, fence: lastCommandBuffer)
     }
 
     /// OUT-009: the screen pass with the display calibration (created the first time it is used at a format).
