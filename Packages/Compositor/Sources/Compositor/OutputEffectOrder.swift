@@ -19,6 +19,8 @@ public enum OutputEffectKind: String, CaseIterable, Sendable, Hashable {
     case radialBlur = "fx.radialBlur"
     /// FX-010 Echo (appended last: stored orders without it read with it last; ADR-0108).
     case echo = "fx.echo"
+    /// FX-012 Mosaic pixelation (appended after Echo: stored orders without it read with it last; ADR-0110).
+    case mosaic = "fx.mosaic"
 }
 
 /// A stage that always runs after every `OutputEffectKind` (FX-020-R2).
@@ -34,8 +36,8 @@ public struct OutputEffectOrder: Sendable, Hashable, CustomStringConvertible {
     public let effects: [OutputEffectKind]
 
     /// Today's order: Trails, then Color (FX-020-R1), then FX-006's Chromatic split, FX-007's Directional blur,
-    /// FX-008's Radial blur and FX-010's Echo.
-    public static let standard = OutputEffectOrder([.trails, .grade, .chromatic, .directionalBlur, .radialBlur, .echo])
+    /// FX-008's Radial blur, FX-010's Echo and FX-012's Mosaic.
+    public static let standard = OutputEffectOrder([.trails, .grade, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic])
 
     /// Repeats are dropped (the first counts); missing kinds are appended in standard order.
     public init(_ kinds: [OutputEffectKind]) {

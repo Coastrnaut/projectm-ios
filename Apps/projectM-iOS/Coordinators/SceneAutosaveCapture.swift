@@ -294,20 +294,20 @@ enum SceneAutosaveCapture {
     static func applyEffects(_ entries: [SceneEffectEntry]?, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
                              directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil,
-                             echo: EchoSetting? = nil) {
+                             echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil) {
         guard let entries else {
             chain.order = .standard
             return
         }
         applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic,
-                     directionalBlur: directionalBlur, radialBlur: radialBlur, echo: echo)
+                     directionalBlur: directionalBlur, radialBlur: radialBlur, echo: echo, mosaic: mosaic)
     }
 
     @MainActor
     static func applyEffects(_ settings: SceneEffectSettings, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
                              directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil,
-                             echo: EchoSetting? = nil) {
+                             echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil) {
         chain.order = settings.order
         if let g = settings.grade {
             if grade.temperature != g.temperature { grade.temperature = g.temperature }
@@ -328,6 +328,7 @@ enum SceneAutosaveCapture {
         if let b = settings.directionalBlur { directionalBlur?.apply(b) }   // FX-007
         if let r = settings.radialBlur { radialBlur?.apply(r) }   // FX-008
         if let e = settings.echo { echo?.apply(e) }   // FX-010
+        if let m = settings.mosaic { mosaic?.apply(m) }   // FX-012
     }
 
     /// The seven app-held values as MOD-001 values.
