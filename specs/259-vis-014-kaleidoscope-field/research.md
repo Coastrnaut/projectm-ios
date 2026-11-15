@@ -19,3 +19,7 @@
 - **VIS-014-D5 Symmetry measure.** Render 128 × 128 rgba16Float with 1 octave, frequency 2 (smooth source);
   for pixels with 0.08 ≤ r ≤ 0.45, compare with the bilinear sample of the rotated (2π/N) and mirrored point; mean
   abs difference ≤ 1/255; the other count's rotation must give ≥ 4 times that.
+- **VIS-014-D6 Two entry points.** First tried: a `if (u.wedges >= 1.5)` branch inside `vis_noise_fragment`. The
+  64 × 64 digests still matched, but the noise field's goldens showed 1 and 3 pixels changed by 1/255 (the compiler
+  scheduled the plain path differently). Decision: a separate `vis_kaleido_fragment` entry point; the plain entry
+  point's output is again identical to VIS-013's goldens.

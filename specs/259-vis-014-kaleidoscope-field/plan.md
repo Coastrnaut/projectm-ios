@@ -10,8 +10,11 @@ An eleventh native visual: VIS-013's seeded noise field, folded into N mirrored 
 and turned by the bass. The fold is one shared module in `VisualGenerators`, `KaleidoscopeFold` (CPU mirror:
 `fold(_:)`, plus the turning drive constants) and `KaleidoscopeFoldShader.function` (MSL text of `vis_kfold`). The
 noise field's existing reviewed generator gains the fold: `NoiseFieldConfiguration.wedges` (0 = no fold, else
-2…24) and two uniforms in the block's former padding (wedges, rotation), so the uniform layout keeps its size;
-with wedges 0 the shader takes exactly the old path and the recorded digests still match. `NoiseFieldDrive`
+2…24), two uniforms in the block's former padding (wedges, rotation; the layout keeps its size) and a second
+fragment entry point `vis_kaleido_fragment` beside the untouched `vis_noise_fragment` (both call one shared shading
+helper), each with its own pipeline (the initial mode's built in `init`, the other on first use); the plain field's
+frames stay byte-identical (its digests and goldens match exactly; a branch inside one entry point changed 1-3
+golden pixels by 1/255, so it was rejected). `NoiseFieldDrive`
 gains the smoothed bass spin and the rotation angle (advanced only when folded). `NoiseFieldFlashAreas` folds its
 64 sample points the same way. The app adds the Visual choice "Kaleidoscope" with one key
 (`settings.kaleidoscope.wedges`) and a Wedges stepper. Proof: GPU N-fold rotation and mirror symmetry tests that

@@ -42,9 +42,13 @@ final class KaleidoscopeRenderTests: XCTestCase {
         }
     }
 
-    private func render(_ rig: RenderRig, _ configuration: NoiseFieldConfiguration, width: Int, height: Int) throws -> Frame {
+    private func render(_ rig: RenderRig, _ configuration: NoiseFieldConfiguration, width: Int, height: Int,
+                        builtAs initial: NoiseFieldConfiguration? = nil) throws -> Frame {
         let format: MTLPixelFormat = .rgba16Float
-        let generator = try rig.build { try NoiseFieldGenerator(device: rig.device, pixelFormat: format, configuration: configuration) }
+        let generator = try rig.build {
+            try NoiseFieldGenerator(device: rig.device, pixelFormat: format, configuration: initial ?? configuration)
+        }
+        generator.configuration = configuration
         let texture = try rig.makeTexture(width: width, height: height, format: format)
         let commands = try XCTUnwrap(rig.queue.makeCommandBuffer())
         for f in 0..<Self.frames {
@@ -169,6 +173,11 @@ final class KaleidoscopeRenderTests: XCTestCase {
         var differing = 0
         for i in 0..<plain.image.pixels.count where abs(plain.image.pixels[i].y - frame.image.pixels[i].y) > 0.01 { differing += 1 }
         XCTAssertGreaterThan(differing, plain.image.pixels.count / 4, "the fold changes the picture")
+        // Switching an existing generator between the plain field and the kaleidoscope gives the fresh generator's frames.
+        let switched = try render(rig, c, width: 64, height: 64, builtAs: NoiseFieldConfiguration(palette: .ice))
+        XCTAssertEqual(switched.image, frame.image, "plain → kaleidoscope in place")
+        let back = try render(rig, NoiseFieldConfiguration(palette: .ice), width: 64, height: 64, builtAs: c)
+        XCTAssertEqual(back.image, plain.image, "kaleidoscope → plain in place")
     }
 }
 #endif
