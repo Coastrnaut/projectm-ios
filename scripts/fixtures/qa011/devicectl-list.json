@@ -1,0 +1,8 @@
+{"result": {"devices": [
+ {"identifier": "SIM-1", "hardwareProperties": {"productType": "iPhone15,4", "reality": "simulated", "udid": "SIMUDID"},
+  "deviceProperties": {"name": "Sim", "osVersionNumber": "27.2", "osBuildUpdate": "24B8117"}, "connectionProperties": {"tunnelState": "connected"}},
+ {"identifier": "DEV-D1", "hardwareProperties": {"productType": "iPhone15,4", "reality": "physical", "udid": "00008120-D1"},
+  "deviceProperties": {"name": "Phone", "osVersionNumber": "27.0.1", "osBuildUpdate": "24A446"}, "connectionProperties": {"tunnelState": "disconnected"}},
+ {"identifier": "DEV-D3", "hardwareProperties": {"productType": "iPad15,7", "reality": "physical", "udid": "00008120-D3"},
+  "deviceProperties": {"name": "Pad", "osVersionNumber": "26.5", "osBuildUpdate": "23F77"}, "connectionProperties": {"tunnelState": "unavailable"}}
+]}}

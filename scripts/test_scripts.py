@@ -36,6 +36,8 @@ import check_performance_thresholds as cpt  # noqa: E402
 import setup_mac  # noqa: E402
 import validate_docs  # noqa: E402
 import qa009_manifest_check as qa009  # noqa: E402
+import qa011_inventory as qa011  # noqa: E402
+import run_device_matrix as rdm  # noqa: E402
 import verify_environment  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -2115,6 +2117,224 @@ class PerformanceThresholdsTests(unittest.TestCase):
             self.assertEqual(again["inputs"], ["automation-perf001-2026-11-14T110000Z.json", "sc015.json"])
             sim = rdt.judge_thresholds(d, label="sim", simulator=True, write=False)
             self.assertFalse(sim["evidence"])
+
+
+QA011_FIXTURES = Path(__file__).resolve().parent / "fixtures" / "qa011"
+
+
+class QA011InventoryTests(unittest.TestCase):
+    """QA-011-T06, T16: parser, devices, status, classifier, sessions, checklist (specs/313)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tasks = qa011.collect(QA011_FIXTURES / "specs")
+        cls.by_id = {t["id"]: t for t in cls.tasks}
+
+    def test_only_unchecked_tagged_tasks_are_listed(self):
+        self.assertEqual(sorted(self.by_id), sorted([
+            "PERF-001-T16", "PERF-001-T17", "PERF-001-T18", "PERF-001-T20", "OSC-001-T26", "OSC-001-T27",
+            "REL-001-T05", "REL-001-T06", "T050", "T087"]))   # no format line, checked task or untagged task
+
+    def test_continuation_lines_join_the_task(self):
+        t = self.by_id["PERF-001-T16"]
+        self.assertIn("`docs/test-reports/performance.md`", t["text"])
+        self.assertEqual((t["spec"], t["feature"], t["line"]), ("101-perf-001-stage-timings", "PERF-001", 6))
+        self.assertIn("recovers after a 10 s", self.by_id["OSC-001-T26"]["text"])
+
+    def test_devices(self):
+        cases = {"PERF-001-T16": ["D1"], "PERF-001-T17": ["D1", "D2", "D3"], "PERF-001-T20": ["D2", "D3"],
+                 "OSC-001-T26": ["D1", "D2"], "OSC-001-T27": ["D3"], "T087": ["D1", "D2", "D3"]}
+        for task_id, devices in cases.items():
+            self.assertEqual(self.by_id[task_id]["devices"], devices, task_id)
+        self.assertTrue(self.by_id["REL-001-T05"]["devicesInferred"])
+        self.assertFalse(self.by_id["PERF-001-T20"]["devicesInferred"], "quickstart D3, D4 are sections, not devices")
+        self.assertEqual(qa011.devices_of("On D1 and D3: x — Open: also D2 later")[0], ["D1", "D3"])
+        self.assertEqual(qa011.devices_of("On D1–D3: x")[0], ["D1", "D2", "D3"])
+
+    def test_status(self):
+        self.assertEqual(self.by_id["T050"]["status"], "waived")
+        self.assertIsNone(self.by_id["T050"]["session"])
+        self.assertEqual(self.by_id["PERF-001-T18"]["status"], "optional")
+        self.assertEqual(self.by_id["PERF-001-T16"]["status"], "open")
+
+    def test_classifier(self):
+        expect = {"PERF-001-T16": ("a", "MATRIX"), "PERF-001-T17": ("b", "B01"), "PERF-001-T18": ("b", "B13"),
+                  "PERF-001-T20": ("b", "B02"), "OSC-001-T26": ("b", "B09"), "OSC-001-T27": ("b", "B10"),
+                  "REL-001-T05": ("c", None), "REL-001-T06": ("b", "B13"), "T087": ("b", "B13")}
+        for task_id, (category, session) in expect.items():
+            t = self.by_id[task_id]
+            self.assertEqual((t["category"], t["session"]), (category, session), task_id)
+        self.assertEqual(self.by_id["PERF-001-T16"]["matrixCases"], ["autorun-perf001"])
+        self.assertEqual(qa011.classify("CMP-001-T20", "On D1-D3: the spike tests", ["device"])[2],
+                         ["xctest-angle-layer"], "a scripted part is linked")
+
+    def test_every_category_a_case_exists_and_sessions_are_known(self):
+        for task_id, cases in qa011.CATEGORY_A.items():
+            self.assertTrue(set(cases) <= set(rdm.CASE_IDS), task_id)
+        rules = [sid for sid, _ in qa011.HARDWARE_RULES + qa011.KEYWORD_RULES]
+        rules += list(qa011.PREFIX_SESSIONS.values()) + list(qa011.SESSION_OVERRIDES.values())
+        self.assertTrue(set(rules) <= set(qa011.SESSION_IDS))
+        self.assertLessEqual(len(qa011.SESSIONS), 13)   # QA-011-S5
+
+    def test_inventory_is_deterministic_and_checklist_covers_every_b_task(self):
+        text1, checklist1 = qa011.generate(QA011_FIXTURES / "specs")
+        text2, checklist2 = qa011.generate(QA011_FIXTURES / "specs")
+        self.assertEqual((text1, checklist1), (text2, checklist2))
+        inv = json.loads(text1)
+        self.assertEqual(inv["counts"]["total"], 10)
+        self.assertEqual(inv["counts"]["byCategory"], {"a": 1, "b": 7, "c": 1})
+        in_sessions = [k for s in inv["sessions"] for k in s["tasks"]]
+        b_tasks = [f"{t['spec']}:{t['id']}" for t in inv["tasks"] if t["category"] == "b" and t["status"] != "waived"]
+        self.assertEqual(sorted(in_sessions), sorted(b_tasks), "each (b) task in exactly one session")
+        for t in inv["tasks"]:
+            if t["category"] == "b" and t["status"] != "waived":
+                self.assertIn(f"`{t['id']}`", checklist1)
+        self.assertIn("python3 scripts/run_device_matrix.py --device D2", checklist1)
+
+    def test_check_detects_a_stale_inventory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            args = ["--specs", str(QA011_FIXTURES / "specs"), "--out-dir", tmp]
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(qa011.main(args), 0)
+                self.assertEqual(qa011.main(args + ["--check"]), 0)
+                inv = Path(tmp) / "device-inventory.json"
+                inv.write_text(inv.read_text().replace('"open"', '"waived"', 1))
+                self.assertEqual(qa011.main(args + ["--check"]), 1)
+
+    def test_committed_inventory_is_current(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(qa011.main(["--check"]), 0, "run python3 scripts/qa011_inventory.py")
+
+
+class QA011MatrixTests(unittest.TestCase):
+    """QA-011-T12: case plan, dry run, lock detection, codesign, hashing, record writer (specs/313)."""
+
+    def inventory(self):
+        return {"tasks": [
+            {"status": "open", "devices": ["D1"], "matrixCases": ["xctest-soak-600", "autorun-perf001"]},
+            {"status": "open", "devices": ["D1", "D3"], "matrixCases": ["autorun-sc009"]},
+            {"status": "waived", "devices": ["D2"], "matrixCases": ["bench-cmp008"]},
+            {"status": "open", "devices": ["D1"], "matrixCases": ["bench-cmp008"]}]}
+
+    def test_plan_per_device(self):
+        devices = rdm.case_devices(self.inventory())
+        d1 = [c["id"] for c in rdm.plan("D1", devices)]
+        d2 = [c["id"] for c in rdm.plan("D2", devices)]
+        d3 = [c["id"] for c in rdm.plan("D3", devices)]
+        self.assertIn("xctest-soak-600", d1)
+        self.assertNotIn("xctest-soak-600", d2)
+        self.assertIn("autorun-sc009", d3)
+        self.assertNotIn("bench-cmp008", d2, "a waived task adds no device")
+        self.assertEqual(d2, ["autorun-perf001", "launches-sc015", "thresholds"])
+        self.assertEqual([c["id"] for c in rdm.plan(None, devices)], rdm.CASE_IDS)
+        order = rdm.CASE_IDS
+        self.assertEqual(order[-1], "xctest-offline-export", "the app-hosted suite replaces the app: last")
+        self.assertLess(order.index("thresholds"), order.index("xctest-goldens"))
+
+    def test_committed_inventory_drives_every_case(self):
+        devices = rdm.case_devices(rdm.load_inventory())
+        for c in rdm.CASES:
+            self.assertTrue(devices[c["id"]], f"{c['id']} runs on no device")
+
+    def test_dry_run_prints_commands_and_writes_nothing(self):
+        before = sorted(p for p in rdm.RUNS.rglob("*")) if rdm.RUNS.exists() else []
+        out = io.StringIO()
+        try:
+            with contextlib.redirect_stdout(out):
+                code = rdm.main(["--device", "D1", "--dry-run", "--only", "autorun-perf001,xctest-soak-600"])
+        finally:
+            rdt.DRY_RUN = False
+            rdt.LOCKED_WAIT = 30 * 60
+        text = out.getvalue()
+        self.assertEqual(code, 0)
+        self.assertIn('"PROJECTM_AUTORUN": "perf001"', text)
+        self.assertIn("devicectl device install app", text)
+        self.assertIn("TEST_RUNNER_QA006_SOAK_SECONDS=600", text)
+        self.assertIn("-only-testing:RenderGoldensTests/RenderSoakTests/testOnDemandLongSoak", text)
+        self.assertIn("-allowProvisioningUpdates", text)
+        self.assertIn("Configs/Signing.xcconfig", text)
+        self.assertIn("platform=iOS,id=<UDID>", text)
+        after = sorted(p for p in rdm.RUNS.rglob("*")) if rdm.RUNS.exists() else []
+        self.assertEqual(before, after)
+
+    def test_xctest_command_on_a_simulator_is_unsigned(self):
+        target = rdm.MatrixTarget("sim", "SIM-UDID", True, Path("/tmp/x"), "SIM-UDID")
+        case = next(c for c in rdm.CASES if c["id"] == "bench-expression")
+        cmd, cwd = rdm.xctest_command(case, target, Path("/tmp/dd"), Path("/tmp/r.xcresult"))
+        self.assertIn("CODE_SIGNING_ALLOWED=NO", cmd)
+        self.assertNotIn("-allowProvisioningUpdates", cmd)
+        self.assertEqual(cmd[cmd.index("-configuration") + 1], "Release")
+        self.assertEqual(cmd[cmd.index("-destination") + 1], "id=SIM-UDID")
+        self.assertEqual(cwd.name, "ParameterGraph")
+
+    def test_lock_detection(self):
+        self.assertTrue(rdm.is_locked("error: Unable to launch: the device is locked"))
+        self.assertTrue(rdm.is_locked('{"error": "Locked"}'))
+        self.assertFalse(rdm.is_locked("Test Case testSceneLocked passed\nExecuted 3 tests, with 0 failures"))
+        self.assertFalse(rdm.is_locked("** TEST FAILED ** 1 failure"))
+
+    def test_codesign_parsing(self):
+        signed = rdm.parse_codesign("Executable=/x\nAuthority=Apple Development: Owner (ABCDE12345)\n"
+                                    "Authority=Apple Worldwide Developer Relations Certification Authority\n"
+                                    "TeamIdentifier=TEAM123456\n")
+        self.assertEqual((signed["signed"], signed["identity"], signed["team"], signed["adhoc"]),
+                         (True, "Apple Development: Owner (ABCDE12345)", "TEAM123456", False))
+        adhoc = rdm.parse_codesign("Signature=adhoc\nTeamIdentifier=not set\n")
+        self.assertEqual((adhoc["signed"], adhoc["adhoc"], adhoc["team"]), (True, True, None))
+        unsigned = rdm.parse_codesign("/x.app: code object is not signed at all\n")
+        self.assertFalse(unsigned["signed"])
+
+    def test_devicectl_facts(self):
+        listing = json.loads((QA011_FIXTURES / "devicectl-list.json").read_text())
+        d1 = rdm.device_facts(rdm.device_entry(listing, "D1"))
+        self.assertEqual((d1["identifier"], d1["udid"], d1["osVersion"], d1["osBuild"]),
+                         ("DEV-D1", "00008120-D1", "27.0.1", "24A446"), "the simulated iPhone15,4 is skipped")
+        self.assertEqual(rdm.device_facts(rdm.device_entry(listing, "D3"))["state"], "unavailable")
+        self.assertEqual(rdm.device_facts(rdm.device_entry(listing, "D2"))["state"], "not listed")
+
+    def test_folder_hash_is_stable_and_sensitive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a, b = Path(tmp) / "a.xcresult", Path(tmp) / "b.xcresult"
+            for root in (a, b):
+                (root / "Data").mkdir(parents=True)
+                (root / "Info.plist").write_text("x")
+                (root / "Data" / "1").write_bytes(b"\x00\x01")
+            self.assertEqual(rdm.sha256_path(a), rdm.sha256_path(b))
+            (b / "Data" / "1").write_bytes(b"\x00\x02")
+            self.assertNotEqual(rdm.sha256_path(a), rdm.sha256_path(b))
+            self.assertEqual(rdm.sha256_path(a / "Info.plist"), hashlib.sha256(b"x").hexdigest())
+
+    def test_record_round_trip_and_tamper_detection(self):
+        with tempfile.TemporaryDirectory(dir=rdm.ROOT / "scripts" / "fixtures" / "qa011") as tmp:
+            d = Path(tmp)
+            report = d / "artifacts" / "automation-perf001-1.json"
+            report.parent.mkdir()
+            report.write_text('{"ok": true}\n')
+            record = {"kind": rdm.RECORD_KIND, "schemaVersion": 1, "runId": "20261115T000000Z", "label": "sim",
+                      "evidence": False, "evidenceNote": "simulator rehearsal, not evidence", "dryRun": False,
+                      "target": {"kind": "simulator", "name": "QA11"}, "app": {"commit": "abc"},
+                      "signing": {"signed": False}, "host": {"xcode": "Xcode"}, "startedAt": "s", "finishedAt": "f",
+                      "stopReason": None,
+                      "cases": [{"id": "autorun-perf001", "status": "pass", "closes": ["PERF-001-T16"], "partOf": [],
+                                 "durationSeconds": 1.0, "detail": "", "artifacts": [rdm.artifact(report, True)]}]}
+            path = rdm.write_record(record, d)
+            self.assertEqual(rdm.verify_record(path), [])
+            self.assertEqual(json.loads(path.read_text())["summary"]["pass"], 1)
+            self.assertIn("SIMULATOR REHEARSAL, NOT EVIDENCE", (d / "record.md").read_text())
+            self.assertTrue((d / "record.json.sha256").read_text().startswith(record["recordSha256"]))
+            report.write_text('{"ok": false}\n')
+            self.assertEqual(rdm.verify_record(path), [f"artifact changed: {rdm.display_path(report)}"])
+            report.unlink()
+            self.assertEqual(rdm.verify_record(path), [f"missing artifact {rdm.display_path(report)}"])
+            data = json.loads(path.read_text())
+            data["label"] = "D1"
+            path.write_text(json.dumps(data))
+            self.assertIn("record hash does not match its content", rdm.verify_record(path))
+
+    def test_device_runner_forwards_matrix(self):
+        with mock.patch.object(rdm, "main", return_value=0) as forwarded:
+            self.assertEqual(rdt.main(["--dry-run", "matrix", "--device", "D2"]), 0)
+        forwarded.assert_called_once_with(["--dry-run", "--device", "D2"])
 
 
 if __name__ == "__main__":
