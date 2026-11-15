@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Clarified 2026-11-14
 
 **Input**: User description: "Implement CAM-010 (Hand pose modulation) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Map on-device hand joints to scene parameters." Acceptance, verbatim: "Recorded
@@ -26,6 +26,19 @@ erase), SCN-002 (scene capture), PERF-012 (performance report).
 | Face tracking | CAM-009: Settings › Camera › Face tracking, off by default, consent sheet first, analysis created lazily behind the gate, 15 Hz (10 Hz reduced, paused warm), `audio.face.*` sources smoothed with MOD-005's envelope; nothing stored or sent (ADR-0081). |
 | Where camera-derived sources act | Only the native spectrum host evaluates bindings. The camera runs only in the Camera visual, which evaluates no binding, so face values reach no parameter in the app today (CAM-009-D8). |
 | Hand analysis | **None.** |
+
+## Clarifications
+
+### Session 2026-11-14
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
+interaction); each answer is the conservative, local-first option, recommended option first.
+
+- Q: How is hand tracking turned on, and does it share face tracking's consent? → A: A separate "Hand tracking" switch in Settings › Camera, below Face tracking, **off by default**, with its own explanation sheet ("Turn On Hand Tracking" / "Cancel") and its own stored consent; face consent never implies hand consent. Consent and switch stay on the device: excluded from the settings backup, removed by Settings erase and the UI-test reset; turning the switch off keeps consent. No new permission and no second capture session: it analyses only the Camera visual's pictures under the existing camera permission and never starts the camera. Both features share one consent model and one analysis host (CAM-010-R1 to R5).
+- Q: What exactly is measured, and how is it normalised? → A: From at most two hands (the larger is the first hand), using only joints whose confidence is at least 0.3, and only hands with at least 6 confident joints: **present** (0/1); **x, y** = the wrist in the shown picture (0 left/bottom … 1 right/top, x mirrored with the picture); **pinch** = 1 − (thumb tip–index tip distance ÷ palm length − 0.2) ÷ 0.6, clamped (touching reads 1, a gap of 0.8 palm lengths or more reads 0); **open** = (mean fingertip–wrist distance ÷ palm length − 1.0) ÷ 0.9, clamped (a fist reads 0, a spread hand 1); **size** = palm length ÷ 0.4 of the picture height, clamped (the roadmap brief's "hand height": the wrist y already gives the position); **second, secondX, secondY** = the second hand's present and wrist. Palm length is wrist → middle knuckle; distances are measured with the picture's aspect, so a turn of the device does not change them. A value the joints cannot give (missing wrist, zero palm, non-finite) holds its previous value (CAM-010-R6, R7).
+- Q: How are values smoothed so recorded poses give deterministic results? → A: MOD-005's one-pole, 80 ms toward a seen hand and 300 ms toward neutral (present 0, x and y 0.5, the rest 0) without one, on the analysis clock. Each measurement is held as the target from its arrival until the next one (the value moves toward the previous target over the elapsed time, then the new target takes over), so values at a given time depend only on the poses and their times, not on how many frames arrived in between. The first hand after a reset snaps; one step applies at most 0.25 s (CAM-010-R9).
+- Q: What are the source IDs and names, and where can they act? → A: Nine sources `audio.hand.<present|x|y|pinch|open|size|second|secondX|secondY>` (the `audio.` binding prefix as CAM-009 and CAM-011), named "Hand present", "Hand left–right", "Hand up–down", "Pinch", "Hand open", "Hand size", "Second hand present", "Second hand left–right", "Second hand up–down". Bindings, layers and threshold triggers accept them; expressions do not. The Camera visual now evaluates the scene's bindings itself on its frame clock with the native visuals' modulator, and applies those that target what it draws: its circular spectrum's inner radius and gap (`visual.circularSpectrum.innerRadius`, `.gap`). So hand and face sources move real parameters while the camera runs; bindings to targets the Camera visual does not draw (the glow it does not render, other visuals' parameters) have no effect there, as before (CAM-010-R8, R16; research CAM-010-D7).
+- Q: How often, what is shown, and what must never be kept? → A: At most 15 analyses a second (10 under Low Power Mode or a power profile below 60 fps), one at a time, on its own utility queue, paused when serious or critical warm, the same plan as face tracking. While it analyses, the camera badge reads "Hand tracking" and the performance overlay "Hand tracking on/off" (Camera visual only). No picture, joint, value or hand count is stored, logged, put in scenes, diagnostics, reports or recordings, or sent; each picture is released after its analysis; no network code (CAM-010-R10 to R13).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -79,7 +92,7 @@ performance reports and the hand sources for hand data, logging, file and networ
 
 ### Edge Cases
 
-- Several hands: at most two are measured; the larger is the first hand, the other the second hand.
+- Several hands: at most two are measured; the larger (palm length) is the first hand, the other the second hand.
 - Joints below the confidence floor are ignored; a hand with too few confident joints counts as absent.
 - Non-finite or degenerate joints (zero hand size): that value holds, never NaN.
 - Camera switch, stop or interruption: values return to neutral.
