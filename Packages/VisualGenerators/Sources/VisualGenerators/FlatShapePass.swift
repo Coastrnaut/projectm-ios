@@ -18,6 +18,8 @@ final class FlatShapePass {
 
     let pixelFormat: MTLPixelFormat
     let maximumVertexCount: Int
+    /// VIS-010: the compiled module constant, kept so the trail pass builds its pipelines from it (no second compile).
+    let library: MTLLibrary
     private let pipeline: MTLRenderPipelineState
     private let buffers: [MTLBuffer]
     private var lastReaders: [MTLCommandBuffer?]
@@ -28,14 +30,13 @@ final class FlatShapePass {
         guard Self.supportedPixelFormats.contains(pixelFormat) else { throw .unsupportedPixelFormat(pixelFormat.rawValue) }
         self.pixelFormat = pixelFormat
         self.maximumVertexCount = maximumVertexCount
-        let library: MTLLibrary
         do {
             library = try device.makeLibrary(source: Self.shaderSource, options: nil)
         } catch {
             throw .pipelineUnavailable("shader compile: \(error.localizedDescription)")
         }
-        guard let vertex = library.makeFunction(name: "vis_flat_vertex"),
-              let fragment = library.makeFunction(name: "vis_flat_fragment") else {
+        guard let vertex = self.library.makeFunction(name: "vis_flat_vertex"),
+              let fragment = self.library.makeFunction(name: "vis_flat_fragment") else {
             throw .pipelineUnavailable("shader functions missing")
         }
         let descriptor = MTLRenderPipelineDescriptor()
@@ -87,9 +88,18 @@ final class FlatShapePass {
         buffers[slot].contents().bindMemory(to: SpectrumVertex.self, capacity: maximumVertexCount)
     }
 
+    /// The vertex buffer of `slot` (VIS-010: the trail pass draws the same particles into its accumulation).
+    func buffer(_ slot: Int) -> MTLBuffer { buffers[slot] }
+
     /// Clears `target` to `background` and draws `count` vertices of `slot`. False, encoding
     /// nothing, when no encoder could be made.
     func draw(slot: Int, count: Int, into target: MTLTexture, background: LinearColor, commandBuffer: MTLCommandBuffer) -> Bool {
+        draw(slot: slot, count: count, into: target, background: background, commandBuffer: commandBuffer) { (_: MTLRenderCommandEncoder) -> Void in }
+    }
+
+    /// The same, with `underlay` encoded after the clear and before the shapes (VIS-010: the decayed trail).
+    func draw(slot: Int, count: Int, into target: MTLTexture, background: LinearColor, commandBuffer: MTLCommandBuffer,
+              underlay: (MTLRenderCommandEncoder) -> Void) -> Bool {
         let attachment = pass.colorAttachments[0]!
         attachment.texture = target
         attachment.clearColor = MTLClearColor(red: Double(background.red), green: Double(background.green),
@@ -98,6 +108,7 @@ final class FlatShapePass {
             attachment.texture = nil
             return false
         }
+        underlay(encoder)
         if count > 0 {
             encoder.setRenderPipelineState(pipeline)
             encoder.setVertexBuffer(buffers[slot], offset: 0, index: 0)
@@ -110,8 +121,11 @@ final class FlatShapePass {
         return true
     }
 
-    /// Positions arrive in normalized device coordinates; colors are linear and premultiplied.
-    static let shaderSource = """
+    /// Positions arrive in normalized device coordinates; colors are linear and premultiplied. VIS-010 appends the
+    /// trail functions (module constants; SHD-011), compiled in the same library.
+    static let shaderSource: String = flatShaderSource + ParticleTrailShader.functions
+
+    static let flatShaderSource = """
     #include <metal_stdlib>
     using namespace metal;
 

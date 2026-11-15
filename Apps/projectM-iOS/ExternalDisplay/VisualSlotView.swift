@@ -24,6 +24,7 @@
 // no public colour transform on iOS, so an external slot hands its display calibration to the held visual's view
 // when it is a `DisplayCalibrationReceiver` (projectM's ANGLE view, a compositor host's view), whose renderer applies
 // it in its final pass. The device slot, and a visual leaving any slot, get the identity.
+// OUT-011 (spec specs/275-out-011-output-diagnostics, contract C2): `standInReadings` for the DEBUG fake display.
 import Compositor
 import PresentationLifecycle
 import SwiftUI
@@ -204,6 +205,10 @@ final class VisualSlotView: UIView {
     var standInPixelAspect: Double? {
         didSet { if standInPixelAspect != oldValue { setNeedsLayout() } }
     }
+
+    /// OUT-011-D4: a stand-in display's screen readings (DEBUG fake, tests), used instead of the screen's own, whose window
+    /// sits on the device's screen. Real external scenes never set it.
+    var standInReadings: OutputReadings?
 
     /// OUT-004-D3: the screen's current mode's pixel aspect ratio (nil off screen), or the stand-in.
     var screenPixelAspect: Double? {

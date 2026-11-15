@@ -49,6 +49,9 @@
 // * OUT-009 (spec specs/268-out-009-output-color-calibration, contract C4): the display calibration is pushed to
 //   every external slot inside the set and to each newly connected slot, never deferred by the hold; the slot hands
 //   it to the held visual's view (calibrated final pass on projectM and compositor visuals; native spectra not).
+// * OUT-011 (spec specs/275-out-011-output-diagnostics, contract C2): `outputDiagnostics` is built at every read from the
+//   routed (else first) settled display's live slot and its screen, or is `.disconnected`. Nothing is stored, so an
+//   unplugged display can never show stale values; the disconnect removes the routing entry and the slot in its call.
 import Compositor
 import OSLog
 import PresentationLifecycle
@@ -463,6 +466,38 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         }
         let applied: String = holding?.calibrationState ?? "none"
         return "cal=" + kind + " applied=" + applied + " values=" + displayCalibration.stored
+    }
+
+    // MARK: - Output diagnostics (OUT-011)
+
+    /// OUT-011-R4: a fresh snapshot on every read; `.disconnected` without a settled display whose slot is on a screen.
+    var outputDiagnostics: OutputDiagnostics {
+        guard let slot = diagnosedSlot else { return .disconnected }
+        var readings: OutputReadings
+        if let standIn: OutputReadings = slot.standInReadings {
+            readings = standIn
+        } else if let screen: UIScreen = slot.window?.windowScene?.screen {
+            readings = OutputScreenReader.readings(screen: screen)
+        } else {
+            return .disconnected
+        }
+        if visual?.superview === slot, let output: ResolvedExternalOutput = slot.resolvedOutput {   // OUT-003, in use only
+            readings.drawableWidth = output.pixelWidth
+            readings.drawableHeight = output.pixelHeight
+        }
+        readings.pixelAspect = slot.correction.pixelAspect.resolved(screen: slot.screenPixelAspect)   // OUT-004
+        readings.outputMode = ExternalOutputSetting.title(outputMode)   // OUT-006
+        return .make(readings)
+    }
+
+    /// The routed external display's slot, else the first settled one's; nil while none is settled (OUT-011 Clarifications).
+    private var diagnosedSlot: VisualSlotView? {
+        let settled: [String] = routing.displays.map { (d: ExternalDisplay) -> String in d.id }
+        if case let .external(id) = effectiveTarget, settled.contains(id), let slot = externalSlots[id]?.slot { return slot }
+        for id in settled {
+            if let slot = externalSlots[id]?.slot { return slot }
+        }
+        return nil
     }
 
     // MARK: - Output mode (OUT-006)
