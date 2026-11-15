@@ -285,7 +285,10 @@ struct SceneFoldersView: View {
     private func canOpenWindow(_ missing: Bool) -> Bool { supportsMultipleWindows && !missing }
 
     /// UIX-008-R6: an open editor window for the scene is brought forward instead of a second one.
-    private func openSceneWindow(_ sceneID: String) { openWindow(value: SceneEditorWindowID(sceneID: sceneID)) }
+    private func openSceneWindow(_ sceneID: String) {
+        SceneEditorWindowRouter.openedThisLaunch = true
+        openWindow(value: SceneEditorWindowID(sceneID: sceneID))
+    }
 
     /// SCN-014: packs the scene with its media and opens the share sheet.
     private func exportScene(_ sceneID: String) { show.scenePacks?.export(sceneID: sceneID) }

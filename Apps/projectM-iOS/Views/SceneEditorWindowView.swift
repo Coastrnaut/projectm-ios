@@ -9,6 +9,7 @@
 // and layer opacities, read again after each save (UI test evidence of the file, not of the model).
 import SceneFormat
 import SwiftUI
+import UIKit
 
 struct SceneEditorWindowView: View {
     let windowID: SceneEditorWindowID?
@@ -25,6 +26,7 @@ struct SceneEditorWindowView: View {
         }
         .onAppear { resolve() }
         .onDisappear { router.release(window: window) }
+        .background(SceneEditorSessionMarker())
     }
 
     @ViewBuilder private var content: some View {
@@ -234,4 +236,46 @@ struct SceneEditorOpacityRow: View {
             .accessibleParameter(spec, target: target, didStep: { [editor] () -> Void in editor.endCoalescing() })
         }
     }
+}
+
+/// Marks the editor window's scene session (so the main window's session can be told apart) and, in DEBUG UI-test
+/// runs (`-uitestResetNotice`), closes an editor window the system restored from an earlier run and brings the main
+/// window back, so every UI test starts on the main window.
+struct SceneEditorSessionMarker: UIViewRepresentable {
+    static let userInfoKey = "uix008.sceneEditor"
+
+    final class Probe: UIView {
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            guard let scene = window?.windowScene else { return }
+            var info: [String: Any] = scene.session.userInfo ?? [:]
+            info[SceneEditorSessionMarker.userInfoKey] = true
+            scene.session.userInfo = info
+            #if DEBUG
+            closeIfRestoredInUITest(scene)
+            #endif
+        }
+
+        #if DEBUG
+        private func closeIfRestoredInUITest(_ scene: UIWindowScene) {
+            guard ProcessInfo.processInfo.arguments.contains("-uitestResetNotice"),
+                  !SceneEditorWindowRouter.openedThisLaunch else { return }
+            let application: UIApplication = UIApplication.shared
+            let main: UISceneSession? = application.openSessions.first { (session: UISceneSession) -> Bool in
+                session.role == .windowApplication && session.userInfo?[SceneEditorSessionMarker.userInfoKey] == nil
+            }
+            application.requestSceneSessionActivation(main, userActivity: nil, options: nil, errorHandler: nil)
+            application.requestSceneSessionDestruction(scene.session, options: nil, errorHandler: nil)
+        }
+        #endif
+    }
+
+    func makeUIView(context: Context) -> Probe {
+        let view = Probe()
+        view.isUserInteractionEnabled = false
+        view.isAccessibilityElement = false
+        return view
+    }
+
+    func updateUIView(_ uiView: Probe, context: Context) {}
 }

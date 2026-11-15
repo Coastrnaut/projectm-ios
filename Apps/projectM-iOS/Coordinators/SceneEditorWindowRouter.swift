@@ -61,6 +61,9 @@ final class SceneEditorWindowRouter {
     private var owners: [String: UUID] = [:]
     @ObservationIgnored private var editors: [String: SceneDocumentEditor] = [:]
 
+    /// An editor window was opened by the user in this process (UI tests close restored ones; SceneEditorWindowView).
+    static var openedThisLaunch = false
+
     init(library: any SceneDocumentLibrary) {
         self.library = library
     }
