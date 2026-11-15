@@ -14,7 +14,7 @@
 - [ ] UIX-012-T05 [US1] `ColorSampleTarget` and `ColorSamplerCoordinator` (begin/refusals, one in-flight request with a token, injected timeout, map with the captured size, write between `endCoalescing()` and `recordStep(label: "Sample <name>")`, unchanged colour records nothing, alpha kept, announce on `.parameter`, cancel, end after a write) in `Apps/projectM-iOS/Coordinators/ColorSamplerCoordinator.swift` (R2, R5-R9, R11, C3)
 - [ ] UIX-012-T06 [US1] Wiring in `Apps/projectM-iOS/Coordinators/AppCoordinator+ColorSampler.swift` (context: capture source, external, blackout, paused, lock; the three MED-009 text targets in sRGB; Settings closed while sampling as a sheet and reopened after; DEBUG `-uitestColorSampleFixture r,g,b` source) plus one lazy property in `AppCoordinator.swift` (R2, R3, D7)
 - [ ] UIX-012-T07 [US1] Views in `Apps/projectM-iOS/Views/ColorSamplingViews.swift`: `EyedropperButton` (`eyedropper.<key>`, label "Pick <name> from the picture", value the spoken colour), `ColorSamplingLayer` (window-coordinate `SpatialTapGesture`, banner with message and Cancel, escape action), `SplitPlacementReporter`; small edits in `VisualizerView.swift` (layer above the tap target, reporter in the backdrop, split availability) and `SettingsView.swift` (eyedroppers by Color, Outline color, Box color) (R1, R3, R8, C4)
-- [ ] UIX-012-T08 [US1] App unit tests in `Apps/projectM-iOS/Tests/ColorSamplerTests.swift` with a fake capture source and the real `SceneHistoryCoordinator`: a tap writes the expected sRGB text colour (alpha kept) and is one undo step "Sample Text color"; Undo restores the previous colour exactly, Redo re-applies; Cancel records nothing; out-of-picture tap rejected and mode kept; nil frame and timeout keep mode with the failure text; refusals (no source, external, blacked out, paused, locked); announcement text (S3)
+- [ ] UIX-012-T08 [US1] App unit tests in `Apps/projectM-iOS/Tests/ColorSamplerTests.swift` with a fake capture source and the real `SceneHistoryCoordinator`: a tap writes the expected sRGB text colour (alpha kept) and is one undo step "Sample Text color"; Undo restores the previous colour exactly, Redo re-applies; Cancel records nothing; out-of-picture tap rejected and mode kept; nil frame and timeout keep mode with the failure text; refusals (no source, external, blacked out, paused, locked); a frame arriving after Cancel or after the visual changed is ignored; announcement text (S3)
 - [ ] UIX-012-T09 [US1] UI test `Apps/projectM-iOS/UITests/ColorSamplerUITests.swift`: Text visual, fixture colour, tap the eyedropper by Color, tap the preview, Settings returns and `eyedropper.textColor` reads the fixture colour; under 30 s (S4)
 
 ## Phase 3: User Story 2 — sample in the split editor (P2)
@@ -38,3 +38,8 @@ T01 and T02 are separate files; T04 (package) can run while T05 is written.
 ## Implementation strategy
 
 MVP is Phase 1 + US1 (T01-T09); US2 adds a test over the same code path.
+
+## speckit-analyze (2026-11-15)
+
+Coverage: R1→T07/T09, R2→T05/T06/T08, R3→T06/T07/T09, R4→T01/T03/T04, R5→T05/T08, R6→T02/T03/T04, R7→T05/T08, R8→T07/T08/T13, R9→T05/T08, R10→T11, R11→T05/T08; S1→T04, S2→T03, S3→T08, S4→T09.
+Findings applied: (1) MEDIUM: the edge case "late frame after the visual changed or Cancel is dropped" had no test → added to T08. (2) LOW: R11 was listed before R9 in the spec → moved after R10. (3) LOW: the VoiceOver escape action is verified only on a device (T13); the unit tests cover `cancel()` it calls. No constitution conflict, no critical issue.

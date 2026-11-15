@@ -102,9 +102,9 @@ is the pixel under my finger in the full-size output.
 - **UIX-012-R6**: The read value is converted to straight linear RGB in 0…1 (halves: clamp, unpremultiply; 8-bit sRGB: decode), then to the target's space (linear for `ParameterColor`, sRGB-encoded for `TextColor`); the target's alpha is kept.
 - **UIX-012-R7**: The write is one undo step named "Sample <name>"; edits before it stay their own steps; an unchanged colour records nothing.
 - **UIX-012-R8**: VoiceOver announces the result on the parameter lane ("<name> set to red R%, green G%, blue B%", sRGB-encoded whole percents) or the refusal; the eyedropper's accessibility value is the target's current colour in the same words; sampling mode has an escape action that cancels.
-- **UIX-012-R11**: Sampling mode ends after a written (or unchanged) sample and on Cancel; a rejected tap or failed read keeps it. While it is on, the visualizer's own tap, double-tap and gesture shortcuts do not act.
 - **UIX-012-R9**: A failed or late capture (1 s) reports "Couldn't read the picture. Try again." and keeps sampling mode.
 - **UIX-012-R10**: Nothing is stored beyond the target's own value; no new settings keys, no network, no files.
+- **UIX-012-R11**: Sampling mode ends after a written (or unchanged) sample and on Cancel; a rejected tap or failed read keeps it. While it is on, the visualizer's own tap, double-tap and gesture shortcuts do not act.
 
 ### Key Entities
 
