@@ -50,9 +50,9 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   (read, clamp, write, `isDefault`) in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift` and
   `SceneEffectChain+LensDistortion.swift`; `LensDistortionSceneEntryTests`; whole-order updates in
   `SceneEffectChainTests`; the new file in `SceneSourceSafetyTests` (FX-016-R10, S6) — Verified 2026-11-15: SceneFormat 222 tests on the host, 0 failures (LensDistortionSceneEntryTests 2/2, SceneEffectChainTests, SceneSourceSafetyTests)
-- [ ] FX-016-T10 [US3] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the warp;
+- [X] FX-016-T10 [US3] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the warp;
   `LensDistortionSceneGoldenTests` (off and strength 0 render as no chain; a lens scene round-trips and differs from the
-  plain one); `EffectChainSceneTests` order update; existing goldens unchanged (FX-016-S5)
+  plain one); `EffectChainSceneTests` order update; existing goldens unchanged (FX-016-S5) — Verified 2026-11-15: RenderGoldens 117 tests on the host, 0 failures, 1 skipped (LensDistortionSceneGoldenTests 2/2, EffectChainSceneTests), 33.9 s
 
 ## Phase 5: App (US1, US3)
 
