@@ -91,6 +91,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   # FX-003-R8
                 "settings.colorGrade.gain", "settings.colorGrade.saturation", "settings.colorGrade.hue",   # FX-004-R8
                 "settings.colorGrade.contrast", "settings.colorGrade.contrastStrength",   # FX-005-R8
+                "settings.colorGrade.posterize", "settings.colorGrade.posterizeLevels",   # FX-013-R8
+                "settings.colorGrade.posterizeDither",   # FX-013-R8
                 "settings.feedback.enabled", "settings.feedback.halfLife",   # FX-009-R11 (Trails, off by default)
                 "settings.noiseEditor.values",   # SHD-006-R7 (Noise editor values, absent at defaults)
                 "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   # FX-020-R8, R10
@@ -102,6 +104,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.radialBlur.centerY",
                 "settings.echo.enabled", "settings.echo.count", "settings.echo.delay",   # FX-010-R13
                 "settings.echo.decay",
+                "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   # FX-012-R9
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11

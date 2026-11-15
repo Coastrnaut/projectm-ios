@@ -44,7 +44,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again, document)
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
-        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo])   // FX-006, FX-007, FX-008 appended
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic])   // FX-006, FX-007, FX-008 appended
         XCTAssertEqual(settings.grade, ColorGrade(gamma: 1.6, saturation: 0.4))
         XCTAssertEqual(settings.trails, MotionFeedback(isEnabled: true, halfLifeSeconds: 0.3))
         XCTAssertFalse(settings.isDefault)
@@ -84,7 +84,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.chromatic, split)
-        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur, .echo])
+        XCTAssertEqual(settings.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur, .echo, .mosaic])
         let wild = SceneEffectEntry(kind: "fx.chromatic", enabled: false, parameters: ["amount": .double(1), "angle": .string("up")])
         let read = SceneEffectSettings.read([trails, grade, wild])
         XCTAssertEqual(read.settings.chromatic, ChromaticSplit(isEnabled: false, amount: 0.02, angleDegrees: 0))
@@ -96,7 +96,7 @@ final class SceneEffectChainTests: XCTestCase {
 
     func testFX020ListsReadWithTheSplitLastAndUntouched() throws {
         let settings = SceneEffectSettings.read([grade, trails]).settings
-        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo])
+        XCTAssertEqual(settings.order.effects, [.grade, .trails, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic])
         XCTAssertNil(settings.chromatic, "no entry: the current split stays")
         XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
     }
@@ -105,14 +105,14 @@ final class SceneEffectChainTests: XCTestCase {
 
     func testRadialBlurEntryRoundTripsAndIsClamped() throws {
         let blur = RadialBlur(isEnabled: true, strength: 0.2, focusX: 0.25, focusY: 0.75)
-        let live = SceneEffectSettings(order: OutputEffectOrder([.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo]), radialBlur: blur)
+        let live = SceneEffectSettings(order: OutputEffectOrder([.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic]), radialBlur: blur)
         XCTAssertFalse(live.isDefault)
         let document = try minimal(live.entries(over: nil))
         let again = try SceneDocument.decode(document.encoded()).document
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.radialBlur, blur)
-        XCTAssertEqual(settings.order.effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo])
+        XCTAssertEqual(settings.order.effects, [.radialBlur, .trails, .grade, .chromatic, .directionalBlur, .echo, .mosaic])
         let wild = SceneEffectEntry(kind: "fx.radialBlur", enabled: true,
                                     parameters: ["strength": .double(4), "focusX": .string("left"), "focusY": .double(-1)])
         let read = SceneEffectSettings.read([trails, wild])
@@ -125,7 +125,8 @@ final class SceneEffectChainTests: XCTestCase {
 
     func testOlderListsReadWithTheRadialBlurLastAndUntouched() throws {
         let settings = SceneEffectSettings.read([grade, trails]).settings
-        XCTAssertEqual(settings.order.effects.suffix(2), [.radialBlur, .echo], "the radial blur, then FX-010's Echo, last")
+        XCTAssertEqual(settings.order.effects.firstIndex(of: .radialBlur), 4, "the radial blur appended after the FX-007 blur")
+        XCTAssertEqual(settings.order.effects.firstIndex(of: .echo), 5, "then FX-010's Echo")
         XCTAssertNil(settings.radialBlur, "no entry: the current blur stays")
         XCTAssertEqual(settings.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
     }
@@ -172,7 +173,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.directionalBlur, blur)
-        XCTAssertEqual(settings.order.effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur, .echo])
+        XCTAssertEqual(settings.order.effects, [.directionalBlur, .trails, .grade, .chromatic, .radialBlur, .echo, .mosaic])
         let wild = SceneEffectEntry(kind: "fx.directionalBlur", enabled: false, parameters: ["radius": .double(1), "angle": .string("up")])
         let read = SceneEffectSettings.read([trails, grade, wild])
         XCTAssertEqual(read.settings.directionalBlur, DirectionalBlur(isEnabled: false, radius: 0.02, angleDegrees: 0))
@@ -205,7 +206,7 @@ final class SceneEffectChainTests: XCTestCase {
         XCTAssertEqual(again.encoded(), document.encoded())
         let settings = try XCTUnwrap(again.effectSettings)
         XCTAssertEqual(settings.echo, echo)
-        XCTAssertEqual(settings.order.effects, [.echo, .trails, .grade, .chromatic, .directionalBlur, .radialBlur])
+        XCTAssertEqual(settings.order.effects, [.echo, .trails, .grade, .chromatic, .directionalBlur, .radialBlur, .mosaic])
         let wild = SceneEffectEntry(kind: "fx.echo", parameters: ["count": .integer(12), "delay": .double(9), "decay": .string("x")])
         let read = SceneEffectSettings.read([trails, grade, wild])
         XCTAssertEqual(read.settings.echo, EchoFeedback(isEnabled: true, count: 4, delaySeconds: 0.5, decay: 0.6),
@@ -216,6 +217,38 @@ final class SceneEffectChainTests: XCTestCase {
         let older = SceneEffectSettings.read([grade, trails]).settings
         XCTAssertNil(older.echo, "no entry: the current echo stays")
         XCTAssertEqual(older.entries(over: [grade, trails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
+    }
+
+    // MARK: FX-013 posterize (FX-013-R8, S6)
+
+    func testPosterizeRoundTripsAndOldEntriesReadAsOff() throws {
+        let old = SceneEffectSettings.read([grade]).settings.grade
+        XCTAssertEqual(old?.posterize, false, "an entry without the fields")
+        XCTAssertEqual(old?.posterizeLevels, 6)
+        XCTAssertEqual(old?.posterizeDither, false)
+        let live = SceneEffectSettings(order: .standard, grade: ColorGrade(gamma: 1.2, posterize: true, posterizeLevels: 4,
+                                                                          posterizeDither: true), gradeEnabled: true)
+        let document = try minimal(live.entries(over: nil))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.encoded(), document.encoded())
+        XCTAssertEqual(again.effectSettings?.grade, ColorGrade(gamma: 1.2, posterize: true, posterizeLevels: 4, posterizeDither: true))
+        XCTAssertEqual(again.effects?[0].parameters["posterize"], .bool(true))
+        let off = SceneEffectSettings(order: .standard, grade: ColorGrade(gamma: 1.2), gradeEnabled: true)
+        XCTAssertNil(off.entries(over: nil)[0].parameters["posterize"], "off is not written into scenes that never had it")
+        XCTAssertEqual(off.entries(over: again.effects)[0].parameters["posterize"], .bool(false), "but turns a stored one off")
+    }
+
+    func testMalformedPosterizeValuesReadAsDefaultsAndAreReported() {
+        let entry = SceneEffectEntry(kind: "fx.grade", parameters: ["posterize": .string("yes"), "posterizeLevels": .double(80),
+                                                                    "posterizeDither": .integer(1)])
+        let read = SceneEffectSettings.read([entry])
+        XCTAssertEqual(read.settings.grade?.posterize, false)
+        XCTAssertEqual(read.settings.grade?.posterizeLevels, 32, "clamped")
+        XCTAssertEqual(read.settings.grade?.posterizeDither, false)
+        XCTAssertEqual(read.issues.map(\.path), ["$.effects[0].parameters.posterizeLevels", "$.effects[0].parameters.posterize",
+                                                  "$.effects[0].parameters.posterizeDither"])
+        let fractional = SceneEffectEntry(kind: "fx.grade", parameters: ["posterize": .bool(true), "posterizeLevels": .double(7.6)])
+        XCTAssertEqual(SceneEffectSettings.read([fractional]).settings.grade?.posterizeLevels, 8, "rounded")
     }
 
     // MARK: Unknown, repeated and fixed entries

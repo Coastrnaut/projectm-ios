@@ -93,6 +93,8 @@ public enum LibrarySettingsPolicy {
         "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   // FX-003-R8
         "settings.colorGrade.gain", "settings.colorGrade.saturation", "settings.colorGrade.hue",   // FX-004-R8
         "settings.colorGrade.contrast", "settings.colorGrade.contrastStrength",   // FX-005-R8
+        "settings.colorGrade.posterize", "settings.colorGrade.posterizeLevels",   // FX-013-R8
+        "settings.colorGrade.posterizeDither",   // FX-013-R8
         "settings.feedback.enabled", "settings.feedback.halfLife",   // FX-009-R11: Trails
         "settings.noiseEditor.values",   // SHD-006-R7: the Noise editor's values
         "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   // FX-020-R8, R10
@@ -100,6 +102,7 @@ public enum LibrarySettingsPolicy {
         "settings.directionalBlur.enabled", "settings.directionalBlur.radius", "settings.directionalBlur.angle",   // FX-007-R10
         "settings.radialBlur.enabled", "settings.radialBlur.strength", "settings.radialBlur.centerX", "settings.radialBlur.centerY",   // FX-008-R9
         "settings.echo.enabled", "settings.echo.count", "settings.echo.delay", "settings.echo.decay",   // FX-010-R13
+        "settings.mosaic.enabled", "settings.mosaic.size", "settings.mosaic.shape",   // FX-012-R9
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9

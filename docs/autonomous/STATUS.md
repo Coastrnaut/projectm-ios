@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T07:58:34Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T08:10:34Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,25 @@
 
 | State | Features |
 |---|---|
-| audited | 13 |
-| implementing | 1 |
-| built | 1 |
-| integrated | 310 |
+| audited | 11 |
+| implementing | 2 |
+| unit_passed | 1 |
+| integrated | 311 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 7 | 1 | 1 | 70 | 0 |
+| P2 | 5 | 2 | 1 | 71 | 0 |
 | P3 | 4 | 0 | 0 | 5 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 15 features are not implemented yet (first: FX-011, FX-012, FX-013, FX-014, FX-015)
+- 14 features are not implemented yet (first: FX-011, FX-013, FX-014, FX-015, FX-016)
 
 ## Integrated
 
@@ -142,6 +142,7 @@ The physical-device suite may **not** start:
 | FX-008 | Radial blur | `292f2a8e72e5` | `feature/fx-008` |
 | FX-009 | Motion feedback | `6ac0c21c` | `feature/fx-009` |
 | FX-010 | Echo feedback | `198fb9535f79` | `feature/fx-010` |
+| FX-012 | Mosaic pixelation | `192e64b350e4` | `feature/fx-012` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | FX-020 | Effect chain presets | `4bad23aa` | `None` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
@@ -1610,6 +1611,35 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_ShowControl.log`)
 - `swift test Compositor 1161, SceneFormat 214, LibraryBackup 88, RenderGoldens 110; postmerge projectM-iOSTests 1328 + Echo/EffectChain UI tests 2`: pass at `198fb9535f79` (log `.autonomous/logs/integration/batch135/app-tests.log`)
+
+### FX-012 Mosaic pixelation (integrated)
+- `python3 scripts/check_compliance.py`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `34a0cb11f002` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-012/20261115T025809/swift-test_ShowControl.log`)
+- `26-file conflict with FX-010 resolved by its agent; regate pass; swift test Compositor 1180, SceneFormat 216, LibraryBackup 88, RenderGoldens 112; postmerge projectM-iOSTests 1339 + Mosaic/Echo/EffectChain UI tests 3`: pass at `192e64b350e4` (log `.autonomous/logs/integration/batch137/app-tests.log`)
+
+### FX-013 Posterization (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `e486ddf3997b` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-013/20261115T030509/swift-test_ShowControl.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)

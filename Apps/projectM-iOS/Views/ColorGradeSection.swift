@@ -5,6 +5,8 @@
 // (disabled at neutral). Each row is its own small view; strings come from `ColorGradeSetting`'s typed readouts.
 // FX-005 (specs/292-fx-005-contrast-curves, FX-005-R9): a segmented "Contrast" picker (Linear, S-curve, Filmic) and,
 // while a curve is chosen, a "Contrast strength" slider (percent, 5% per VoiceOver swipe).
+// FX-013 (specs/301-fx-013-posterization, FX-013-R9): a "Posterize" switch and, while it is on, a "Posterize levels"
+// slider (2…32, one level per VoiceOver swipe, readout "6 levels") and a "Dither" switch.
 import Compositor
 import SwiftUI
 
@@ -30,7 +32,12 @@ enum ColorGradeParameterSpecs {
     static let contrastStrength = AccessibleParameterSpec(id: "colorContrastStrengthSlider", label: "Contrast strength",
                                                           range: ContrastCurve.strengthRange, step: ContrastCurve.strengthStep * 5,
                                                           unit: .percent(decimals: 0))
-    static var all: [AccessibleParameterSpec] { [temperature, lift, gamma, gain, saturation, hue, contrastStrength] }
+    /// FX-013-R9: one level per VoiceOver swipe (30 steps), spoken as a whole number.
+    static let posterizeLevels = AccessibleParameterSpec(
+        id: "colorPosterizeLevelsSlider", label: "Posterize levels",
+        range: Double(Posterize.levelsRange.lowerBound)...Double(Posterize.levelsRange.upperBound), step: 1,
+        unit: .number(decimals: 0))
+    static var all: [AccessibleParameterSpec] { [temperature, lift, gamma, gain, saturation, hue, contrastStrength, posterizeLevels] }
 }
 
 struct ColorGradeSection: View {
@@ -61,6 +68,7 @@ struct ColorGradeSection: View {
             ColorGradeRow(spec: ColorGradeParameterSpecs.hue, value: $setting.hue,
                           text: ColorGradeSetting.hueText(setting.hue), target: Self.target(setting, \.hue))
             ColorContrastRows(setting: setting)   // FX-005
+            ColorPosterizeRows(setting: setting)   // FX-013
             ColorGradeResetButton(setting: setting)
         } header: {
             Text(Self.header)
@@ -132,5 +140,37 @@ private struct ColorContrastRows: View {
         ColorGradeRow(spec: ColorGradeParameterSpecs.contrastStrength, value: $setting.contrastStrength,
                       text: ColorGradeSetting.contrastStrengthText(setting.contrastStrength),
                       target: ColorGradeSection.target(setting, \.contrastStrength))
+    }
+}
+
+/// FX-013-R9: the Posterize switch and, while it is on, the levels slider and the Dither switch.
+private struct ColorPosterizeRows: View {
+    @Bindable var setting: ColorGradeSetting
+
+    static let title = "Posterize"
+    static let ditherTitle = "Dither"
+
+    var body: some View {
+        toggle
+        if setting.posterize {
+            levels
+            dither
+        }
+    }
+
+    private var toggle: some View {
+        Toggle(Self.title, isOn: $setting.posterize)
+            .accessibilityIdentifier("colorPosterizeToggle")
+    }
+
+    private var levels: some View {
+        ColorGradeRow(spec: ColorGradeParameterSpecs.posterizeLevels, value: $setting.posterizeLevels,
+                      text: ColorGradeSetting.posterizeLevelsText(setting.posterizeLevels),
+                      target: ColorGradeSection.target(setting, \.posterizeLevels))
+    }
+
+    private var dither: some View {
+        Toggle(Self.ditherTitle, isOn: $setting.posterizeDither)
+            .accessibilityIdentifier("colorPosterizeDitherToggle")
     }
 }

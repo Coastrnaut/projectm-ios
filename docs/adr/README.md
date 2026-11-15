@@ -72,5 +72,6 @@
 | [0106](0106-directional-blur.md) | The directional blur is its own output pass with a fixed 16-tap kernel, fourth in the effect chain (amends ADR-0104) | Accepted 2026-11-15 (FX-007; owner rule 4) |
 | [0107](0107-radial-blur.md) | The radial blur is its own output pass, fifth in the effect chain, gathering 16 samples towards the focus (amends ADR-0104) | Accepted 2026-11-15 (FX-008; owner rule 4) |
 | [0108](0108-echo-feedback.md) | Echo feedback keeps a ring of exactly four half-size history pictures, stored once per delay (amends ADR-0106) | Accepted 2026-11-15 (FX-010; owner rule 4) |
+| [0110](0110-mosaic-pixelation.md) | Mosaic pixelation is its own output pass, last in the effect chain (after Echo), showing each cell's centre pixel (amends ADR-0104) | Accepted 2026-11-15 (FX-012; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

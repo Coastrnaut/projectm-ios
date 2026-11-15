@@ -4,12 +4,15 @@
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
-// `fx.chromatic`, FX-008's `fx.radialBlur`) gives that effect's
+// `fx.chromatic`, FX-008's `fx.radialBlur`, FX-012's `fx.mosaic`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
 // name) and `contrastStrength` (0…1). Missing → Linear and 0.5; an unknown or non-string name → Linear with a warning.
 // They are written only when the curve is not Linear or the stored entry already had them, so other scenes are unchanged.
+// FX-013 (specs/301-fx-013-posterization, research FX-013-D8): `posterize` (bool), `posterizeLevels` (2…32, rounded) and
+// `posterizeDither` (bool). Missing → off, 6, off; a malformed value → its default with a warning. Written only while
+// posterize is on or when the stored entry already had any of them.
 import Compositor
 
 /// One saved effect.
@@ -88,10 +91,12 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var radialBlur: RadialBlur?
     /// FX-010 (ADR-0108): `isEnabled` is the entry's flag; the weight cap is not stored (ACC-012 sets it live).
     public var echo: EchoFeedback?
+    /// FX-012 (ADR-0110): `isEnabled` is the entry's flag (`SceneEffectChain+Mosaic.swift`).
+    public var mosaic: Mosaic?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
                 chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil,
-                echo: EchoFeedback? = nil) {
+                echo: EchoFeedback? = nil, mosaic: Mosaic? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
@@ -100,6 +105,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
         self.directionalBlur = directionalBlur
         self.radialBlur = radialBlur
         self.echo = echo
+        self.mosaic = mosaic   // FX-012
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -145,8 +151,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let blurOff: Bool = !(directionalBlur?.isEnabled ?? false)   // FX-007
         let radialBlurOff: Bool = !(radialBlur?.isEnabled ?? false)   // FX-008
         let echoOff: Bool = !(echo?.isEnabled ?? false)   // FX-010
+        let mosaicOff: Bool = !(mosaic?.isEnabled ?? false)   // FX-012
         return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && radialBlurOff
-            && echoOff
+            && echoOff && mosaicOff
     }
 
     // MARK: Reading
@@ -170,6 +177,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
                     let v = values(entry, gradeParameters, path, &issues)
                     var g = ColorGrade(temperature: v[0], lift: v[1], gamma: v[2], gain: v[3], saturation: v[4], hue: v[5])
                     readContrast(entry, path, &issues, into: &g)   // FX-005
+                    readPosterize(entry, path, &issues, into: &g)   // FX-013
                     settings.grade = g
                     settings.gradeEnabled = entry.enabled
                 case .trails:
@@ -188,6 +196,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
                     let v = values(entry, echoParameters, path, &issues)
                     settings.echo = EchoFeedback(isEnabled: entry.enabled, count: EchoFeedback.clampCount(v[0]),
                                                  delaySeconds: v[1], decay: v[2])
+                case .mosaic:   // FX-012
+                    settings.mosaic = readMosaic(entry, path, &issues)
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -255,6 +265,7 @@ public struct SceneEffectSettings: Sendable, Equatable {
             let values: [Double] = [g.temperature, g.lift, g.gamma, g.gain, g.saturation, g.hue]
             for (p, v) in zip(Self.gradeParameters, values) { entry.parameters[p.name] = .double(v) }
             Self.writeContrast(g, into: &entry)   // FX-005
+            Self.writePosterize(g, into: &entry)   // FX-013
         case .trails:
             guard let t = trails else { return stored }
             entry.enabled = t.isEnabled
@@ -282,6 +293,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.parameters["count"] = .double(Double(e.count))
             entry.parameters["delay"] = .double(e.delaySeconds)
             entry.parameters["decay"] = .double(e.decay)
+        case .mosaic:   // FX-012
+            guard let m = mosaic else { return stored }
+            Self.writeMosaic(m, into: &entry)
         }
         return entry
     }
@@ -327,5 +341,45 @@ extension SceneEffectSettings {
            ContrastCurve(rawValue: raw.stringValue ?? "") == nil { return }   // an unknown name read as Linear is kept
         entry.parameters[contrastKey] = .string(grade.contrast.rawValue)
         entry.parameters[contrastStrengthParameter.name] = .double(grade.contrastStrength)
+    }
+}
+
+// MARK: - FX-013 posterize in the grade entry
+
+extension SceneEffectSettings {
+    static let posterizeKey = "posterize"
+    static let posterizeDitherKey = "posterizeDither"
+    static let posterizeLevelsParameter = SceneEffectParameter(
+        name: "posterizeLevels",
+        range: Double(Posterize.levelsRange.lowerBound)...Double(Posterize.levelsRange.upperBound),
+        fallback: Double(Posterize.defaultLevels))
+
+    /// Reads `posterize`, `posterizeLevels` and `posterizeDither` (research FX-013-D8).
+    static func readPosterize(_ entry: SceneEffectEntry, _ path: String, _ issues: inout [SceneIssue], into grade: inout ColorGrade) {
+        let levels: Double = values(entry, [posterizeLevelsParameter], path, &issues)[0]
+        grade.posterizeLevels = Posterize.levels(from: levels)
+        grade.posterize = flag(entry, posterizeKey, path, &issues)
+        grade.posterizeDither = flag(entry, posterizeDitherKey, path, &issues)
+    }
+
+    /// A Bool parameter: missing → off; not a Bool → off with a warning.
+    private static func flag(_ entry: SceneEffectEntry, _ key: String, _ path: String, _ issues: inout [SceneIssue]) -> Bool {
+        guard let raw = entry.parameters[key] else { return false }
+        guard let value = raw.boolValue else {
+            let location: String = path + ".parameters." + key
+            issues.append(SceneIssue(.valueClamped, path: location, "\(location) is not true or false; read as false."))
+            return false
+        }
+        return value
+    }
+
+    /// Writes the three fields while posterize is on or when the entry already had any of them.
+    static func writePosterize(_ grade: ColorGrade, into entry: inout SceneEffectEntry) {
+        let names: [String] = [posterizeKey, posterizeLevelsParameter.name, posterizeDitherKey]
+        let had: Bool = names.contains { (name: String) -> Bool in entry.parameters[name] != nil }
+        guard had || grade.posterize else { return }
+        entry.parameters[posterizeKey] = .bool(grade.posterize)
+        entry.parameters[posterizeLevelsParameter.name] = .double(Double(Posterize.clampLevels(grade.posterizeLevels)))
+        entry.parameters[posterizeDitherKey] = .bool(grade.posterizeDither)
     }
 }
