@@ -14,10 +14,9 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 17,
-   "implementing": 1,
-   "integrated": 60,
-   "unit_passed": 1
+   "audited": 16,
+   "implementing": 2,
+   "integrated": 61
   },
   "P3": {
    "audited": 4,
@@ -26,11 +25,10 @@
   }
  },
  "by_state": {
-  "audited": 23,
-  "implementing": 2,
-  "integrated": 299,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 22,
+  "implementing": 3,
+  "integrated": 300,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -60,14 +58,13 @@
    "UIX-010",
    "UIX-012",
    "UIX-014",
-   "VIS-012",
    "VIS-017",
    "VIS-018",
    "VIS-019"
   ],
   "phase": "implementation",
   "reasons": [
-   "26 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
+   "25 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
   ]
  },
  "features": {
@@ -1103,13 +1100,13 @@
   },
   "FX-005": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-005",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FX-006": {
    "attempts": 0,
@@ -3246,10 +3243,10 @@
    "branch": "feature/vis-012",
    "branch_sha": "b9f55409bb092e16e4b962a0825b9069eef2c64c",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "b9c6de49eb5788b5e39e594b5036737803362ff8",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "VIS-013": {
    "attempts": 0,
@@ -4804,6 +4801,11 @@
    "sha": "11bb488744c7bf370d842b8c5fcdd6121c84c5d9"
   },
   {
+   "branch": "feature/vis-012",
+   "id": "VIS-012",
+   "sha": "b9c6de49eb5788b5e39e594b5036737803362ff8"
+  },
+  {
    "branch": "feature/vis-013",
    "id": "VIS-013",
    "sha": "a6c2cf3cfd3be712c036f3384cb29372846ffc22"
@@ -4854,5 +4856,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T05:43:31Z"
+ "updated": "2026-11-15T05:48:15Z"
 }
