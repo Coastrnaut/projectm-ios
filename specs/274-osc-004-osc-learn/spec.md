@@ -97,7 +97,7 @@ messages binds exactly the first address; a later message to it drives the param
 - **OSC-004-R3**: Learn MUST capture only a decoded message whose address passes OSC-003's alias rules, is outside `/projectm/`, and that has exactly one finite numeric argument (`f`, `i`, `h`, `d`).
 - **OSC-004-R4**: A datagram refused by OSC-008's allow list MUST never be learned and MUST NOT approve its host.
 - **OSC-004-R5**: Learn MUST record at most one address per session: the first eligible message in arrival order; later messages MUST NOT create another binding.
-- **OSC-004-R6**: The captured message MUST NOT apply a value; it is otherwise dispatched as usual.
+- **OSC-004-R6**: Learning MUST only create the route: the captured message is dispatched with the routes as they were when it arrived, so it never applies a value through the new route.
 - **OSC-004-R7**: The captured address MUST be bound to the selected parameter as an OSC-003 user alias (enabled), replacing a user alias of the same address to another parameter; an address that already reaches the parameter is left unchanged; a full alias list ends learn without binding.
 - **OSC-004-R8**: Learn MUST end after 10 s (injected monotonic clock) without a binding, and on Cancel; starting learn for another parameter restarts it; leaving OSC Routes cancels it.
 - **OSC-004-R9**: Learn MUST end when the receiver stops listening.
