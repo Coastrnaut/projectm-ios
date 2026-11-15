@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T05:08:38Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T05:23:58Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,25 +9,26 @@
 
 | State | Features |
 |---|---|
-| audited | 27 |
+| audited | 25 |
 | implementing | 4 |
+| built | 1 |
 | unit_passed | 1 |
-| integrated | 293 |
+| integrated | 294 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 19 | 3 | 1 | 56 | 0 |
-| P3 | 6 | 1 | 0 | 2 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 0 | 0 | 151 | 0 |
+| P2 | 18 | 3 | 1 | 0 | 57 | 0 |
+| P3 | 5 | 1 | 0 | 1 | 2 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 32 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
+- 31 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)
 
 ## Integrated
 
@@ -296,6 +297,7 @@ The physical-device suite may **not** start:
 | SHOW-006 | Cue rehearsal mode | `fda100be` | `feature/show-006` |
 | SHOW-007 | Timeline transport | `0e123e55` | `feature/show-007` |
 | SHOW-008 | Keyframe tracks | `e4ad41bb` | `feature/show-008` |
+| SHOW-009 | Keyframe easing | `c13a236e462f` | `feature/show-009` |
 | SHOW-010 | Beat grid | `5ec1a2e59b21` | `feature/show-010` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | SHOW-013 | Auto scene rotation | `100b6d662165` | `feature/show-013` |
@@ -1577,6 +1579,20 @@ None.
 - `swift test --package-path Packages/SceneFormat`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `281df3269c3f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-004/20261114T052941/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 581 + VideoSpeed/VideoLoop/VideoLayer UI tests 4`: pass at `c61dedd2` (log `.autonomous/logs/integration/med-004/app-tests.log`)
+
+### MED-005 Video reverse playback (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `c6f39cbb2192` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-005/20261115T001522/swift-test_ShowControl.log`)
 
 ### MED-006 Image slideshow (integrated)
 - `python3 scripts/check_compliance.py`: pass at `c2f29e10032e` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MED-006/20261114T060820/compliance.log`)
@@ -3241,12 +3257,13 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `4eefb9c27a2a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-008/20261114T200454/swift-test_ShowControl.log`)
 - `post-merge batch90: ShowControl 146, Compositor 1027, PresetLibrary 349, LibraryBackup 87, projectM-iOSTests 1142, UI 9 (keyframes, fixture preview, left-handed 2, one-handed 3, preset versions, noise editor after test fix)`: pass at `2310995d` (log `.autonomous/logs/integration/batch90/app-tests.log`)
 
-### SHOW-009 Keyframe easing (unit_passed)
+### SHOW-009 Keyframe easing (integrated)
 - `python3 scripts/check_compliance.py`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `67f0451e6fba` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-009/20261115T000539/swift-test_ShowControl.log`)
+- `swift test ShowControl 170; postmerge projectM-iOSTests 1255 + ShowKeyframeEasing/ShowKeyframe UI tests 2`: pass at `c13a236e462f` (log `.autonomous/logs/integration/batch120/app-tests.log`)
 
 ### SHOW-010 Beat grid (integrated)
 - `python3 scripts/check_compliance.py`: pass at `af23b55a3944` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-010/20261114T204005/compliance.log`)
