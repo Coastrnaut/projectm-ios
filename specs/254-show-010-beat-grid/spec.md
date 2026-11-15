@@ -37,6 +37,16 @@ local-first option.
 - Q: How are bars numbered? → A: 0:00 always lies in bar 1; bars count up from there (bar 1 may start just before 0:00 when the anchor is not on 0:00), beats 1 to 4 within a bar.
 - Q: Snap keyframe add or seek to the nearest beat? → A: Not in this row. Seeks and keyframe adds keep SHOW-007/SHOW-008 behavior; SHOW-003 and MOD-017 already quantize cue and parameter changes to the grid. The model offers the nearest-beat time for a later row.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Five questions, each answered with the recommended option (owner rules 4 and 9).
+
+- Q: Where is the grid shown when the show has no timed cue (no SHOW-007 row)? → A: Nowhere. The grid needs a show timeline; without one there is no row and nothing is drawn (no new control elsewhere).
+- Q: What does the readout follow while the performer drags the scrub bar? → A: The scrub preview time (the same time the position text shows), so the performer sees the bar and beat they would land on; otherwise the playhead.
+- Q: How often does the grid update? → A: With the timeline row's existing redraw (twice a second while on screen and not dragging) and on any tempo change; no new timer and no per-frame work.
+- Q: Is the anchor placement smoothed? → A: No. While playing it is recomputed on every redraw from the playhead and the tempo's anchor (both monotonic clocks, differences only); the error is far below one point at timeline scale, and smoothing would lag behind new taps.
+- Q: How is the tempo source worded? → A: Manual is "tap tempo" and an accepted estimate is "detected" (VoiceOver: "120 BPM, tap tempo, bar 3 beat 2"); an estimate below the 0.5 confidence floor is no tempo ("No tempo"), exactly as SHOW-011's snapshot reports it.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the beats on the show timeline (Priority: P1) — MVP
@@ -80,7 +90,7 @@ tempo").
 - **SHOW-010-R2**: The grid MUST return no ticks when there is no tempo, and MUST never return more than 512 ticks for a window; when the drawn spacing would be under 4 points it MUST draw only bars, then every 2nd, 4th, 8th… bar.
 - **SHOW-010-R3**: The grid MUST give the bar and beat at a time (bar 1 contains 0:00; beats 1–4) and the nearest beat time.
 - **SHOW-010-R4**: The app MUST place the tempo's anchor on the show timeline through the playhead while the show plays, keep the last placement while paused or at Standby, and use 0:00 with no anchor or before any placement.
-- **SHOW-010-R5**: The SHOW-007 timeline row MUST draw the ticks over its scrub track at x = inset + (time / duration) × usable width (bars taller than beats) without changing the scrub gesture, and show a readout "Bar B · Beat b · N BPM" or "No tempo".
+- **SHOW-010-R5**: The SHOW-007 timeline row MUST draw the ticks over its scrub track at x = inset + (time / duration) × usable width (bars taller than beats) without changing the scrub gesture, and show a readout "Bar B · Beat b · N BPM" or "No tempo" for the displayed time (the scrub preview while dragging, else the playhead), refreshed with the row's existing twice-a-second redraw.
 - **SHOW-010-R6**: The readout MUST be a VoiceOver element with the value "N BPM, tap tempo|detected, bar B beat b" or "No tempo".
 - **SHOW-010-R7**: No network access, no new UserDefaults key, no stored state, no wall-clock assertions in tests; ShowControl MUST keep building on Linux.
 
@@ -101,4 +111,4 @@ tempo").
 
 - Simulator results prove behavior only; a `{device}` task checks the grid against audible beats on D1.
 - Time signatures other than 4/4, snapping, and a grid in the keyframe editor are out of scope.
-- The grid is drawn only where the SHOW-007 row is shown (a show with timed cues).
+- The grid is drawn only where the SHOW-007 row is shown (a show with timed cues); without a timeline nothing is shown.
