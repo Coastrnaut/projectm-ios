@@ -208,7 +208,9 @@ final class FaceTrackingAppTests: XCTestCase {
         guard let walk = FileManager.default.enumerator(at: root, includingPropertiesForKeys: keys) else { return files }
         for case let url as URL in walk {
             let path: String = url.path.replacingOccurrences(of: root.path, with: "")
-            if path.hasPrefix("/Library/Caches") || path.hasPrefix("/tmp") { continue }
+            // Library/Preferences: other suites' UserDefaults files are flushed asynchronously and can land mid-test
+            // (ColorGradeSettingTests, OUT-013 run 2026-11-14); preference writes are checked through the defaults domain.
+            if path.hasPrefix("/Library/Caches") || path.hasPrefix("/tmp") || path.hasPrefix("/Library/Preferences") { continue }
             let values = try? url.resourceValues(forKeys: Set(keys))
             guard values?.isRegularFile == true else { continue }
             files[path] = values?.fileSize ?? -1
