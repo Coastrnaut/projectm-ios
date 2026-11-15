@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (SHOW-009-T01-T12 verified on the Mac, simulator "SHOW9 iPhone 17", iOS 27.2;
+T13 `{device}` open; no device claim). ShowControl 170 tests (1.4 s; 6 new); app `ShowKeyframeEasingAcceptanceTests` 2
+(the roadmap acceptance through the live path); `ShowKeyframeEasingUITests` 1 (22.5 s).
 
 **Input**: Roadmap row SHOW-009 (P2, size M, depends on SHOW-008, integrated). Observable behavior, verbatim: "Support
 linear, stepped, cubic and hold interpolation." Acceptance, verbatim: "Reference midpoints match expected interpolation
