@@ -11,7 +11,8 @@ import VisualGenerators
 public enum CompositorShaderSources {
     public static var archived: [String] {
         [CompositorShaders.source, CompositorShaders.toneMapSource, CompositorShaders.displaySource, TrailsPass.source,
-         OutputGradePass.source, OutputTransitionPass.source, SceneTransitionBus.mixSource]
+         OutputGradePass.source, OutputTransitionPass.source, SceneTransitionBus.mixSource,
+         ChromaticSplitPass.source]   // FX-006
     }
 }
 
