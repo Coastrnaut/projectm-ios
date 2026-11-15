@@ -1,0 +1,51 @@
+# Tasks: VIS-010 Particle Trails
+
+**Input**: `specs/272-vis-010-particle-trails/` (spec, plan, research, data-model, contracts/particle-trails.md, quickstart)
+
+Tests are requested by the spec (acceptance fixture, goldens, UI test). `{device}` marks work the Mac cannot finish.
+
+## Phase 1: Setup
+
+- [ ] VIS-010-T01 Create simulator "VIS10 iPhone 17" (iOS 27.2), init preset submodules, `xcodegen generate` in the worktree
+
+## Phase 2: Foundational (CPU model, every platform)
+
+- [ ] VIS-010-T02 `ParticleTrailLength`, half-life (Short 0.1 s, Long 0.3 s; × 0.5 Reduce Motion; ≤ 0.25 s Reduce flashing), `ParticleTrails.decay` (`min(0.5^(Δt/h), 0.99)`, Δt clamped 0…0.1 s), cap 0.8, cut 1/512, `accumulate` pixel reference, `ParticleTrailFlashBound`, `ParticleTrailModel` in Packages/VisualGenerators/Sources/VisualGenerators/ParticleTrails.swift
+- [ ] VIS-010-T03 [P] Model tests: frame-rate independence (30 vs 120 fps within 0.01 at 0.5 s), cap under continuous emission, cut to exact 0, Reduce Motion/flashing half-lives, flash bound recurrence, fixed storage over a 36 000-frame CPU fixture in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailModelTests.swift
+
+## Phase 3: US1 + US2 Streaks with constant memory (P1)
+
+- [ ] VIS-010-T04 [US1] `FlatShapePass`: keep `library`, `buffer(_:)`, `markRead`, optional underlay closure in `draw`; append `ParticleTrailShader.functions` to `shaderSource` in Packages/VisualGenerators/Sources/VisualGenerators/FlatShapePass.swift
+- [ ] VIS-010-T05 [US1] `ParticleTrailPass` (two private 512² `rgba16Float` textures made once, decay/accumulate/present pipelines via `NativePipelineArchive`, reset rule, `encode`) and `ParticleTrailShader` in Packages/VisualGenerators/Sources/VisualGenerators/ParticleTrailPass.swift
+- [ ] VIS-010-T06 [US1] `trails` property and trail branch in Packages/VisualGenerators/Sources/VisualGenerators/ParticleFountainGenerator.swift and ParticleOrbitGenerator.swift (Off path unchanged)
+- [ ] VIS-010-T07 [US2] GPU tests: 10-minute fixture (36 000 frames at 60 Hz, resizes, setting changes) asserting texture count, identities and total `allocatedSize` constant; Off allocates nothing; GPU streak matches CPU reference; cap holds on readback in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailRenderTests.swift
+- [ ] VIS-010-T08 [US1] Golden of the seeded fountain with Long trails at 0.6 s, macOS host and iOS Simulator, in Packages/RenderGoldens/Tests/RenderGoldensTests/ParticleTrailGoldenTests.swift (+ GeneratorGoldens/ParticleTrails/); existing fountain/orbit goldens unchanged
+
+## Phase 4: US3 Safe brightness (P1)
+
+- [ ] VIS-010-T09 [US3] Flash tests: envelope sees the trail bound, gain scales the trail, Reduce flashing budget held with strobing bursts, bound ≥ measured trail luminance in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailFlashTests.swift
+
+## Phase 5: US4 Choose it (P2)
+
+- [ ] VIS-010-T10 [US4] App setting `settings.particleTrails` (`ParticleTrailSetting`, unknown → Off) in Apps/projectM-iOS/Coordinators/AppSettings.swift; key in scripts/run_device_tests.py `ALLOWED_KEYS` and Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift `includedKeys`
+- [ ] VIS-010-T11 [US4] `NativeSpectrumHost.particleTrails` applied to fountain/orbit (also after a rebuild), accessibility value suffix, coordinator wiring and `onChange` in Apps/projectM-iOS/Visuals/NativeSpectrumHost.swift, Coordinators/AppCoordinator.swift, Views/VisualizerView.swift
+- [ ] VIS-010-T12 [US4] "Trails" picker (`particleTrailsPicker`) in both particle options in Apps/projectM-iOS/Views/SettingsView.swift
+- [ ] VIS-010-T13 [US4] App tests (persistence, unknown → Off, key lists, host applies to generator) in Apps/projectM-iOS/Tests/ParticleTrailAppTests.swift; SettingsTests `testOnlyTheSettingsKeysAreWritten`; LibraryBackupAppTests
+- [ ] VIS-010-T14 [US4] UI test (≤ 30 s): choose Particle Fountain, set Trails Long in Apps/projectM-iOS/UITests/ParticleTrailUITests.swift
+
+## Phase 6: Polish
+
+- [ ] VIS-010-T15 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), Linux shape build, type-check budget, privacy manifest and network symbols on the Debug app
+- [ ] VIS-010-T16 {device} D1: Particle Fountain and Particle Orbit with Trails Short/Long; streaks fade, frame rate unchanged within noise, no flashing with Reduce flashing
+
+## Dependencies
+
+T02 → T03, T04 → T05 → T06 → T07, T08, T09; T10 → T11 → T12 → T13, T14; T15 last. US4 depends on T06.
+
+## Parallel examples
+
+T03 alongside T04; T08 and T09 after T06; T10 alongside T07.
+
+## Implementation strategy
+
+MVP = T02-T07 (the acceptance fixture). Then safety (T09), golden (T08), app (T10-T14).
