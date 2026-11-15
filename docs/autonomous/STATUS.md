@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T07:38:59Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T07:44:44Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -11,23 +11,22 @@
 |---|---|
 | audited | 14 |
 | implementing | 2 |
-| unit_passed | 1 |
-| integrated | 308 |
+| integrated | 309 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
-|---|---|---|---|---|---|
-| P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 0 | 151 | 0 |
-| P2 | 8 | 2 | 1 | 68 | 0 |
-| P3 | 4 | 0 | 0 | 5 | 0 |
+| Priority | audited | implementing | integrated | skipped_existing |
+|---|---|---|---|---|
+| P0 | 2 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 151 | 0 |
+| P2 | 8 | 2 | 69 | 0 |
+| P3 | 4 | 0 | 5 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 17 features are not implemented yet (first: FX-010, FX-011, FX-012, FX-013, FX-014)
+- 16 features are not implemented yet (first: FX-011, FX-012, FX-013, FX-014, FX-015)
 
 ## Integrated
 
@@ -141,6 +140,7 @@ The physical-device suite may **not** start:
 | FX-007 | Directional blur | `735bf65d0b5c` | `feature/fx-007` |
 | FX-008 | Radial blur | `292f2a8e72e5` | `feature/fx-008` |
 | FX-009 | Motion feedback | `6ac0c21c` | `feature/fx-009` |
+| FX-010 | Echo feedback | `198fb9535f79` | `feature/fx-010` |
 | FX-019 | Strobe safety envelope | `6cfcbaabc8d0` | `feature/fx-019` |
 | FX-020 | Effect chain presets | `4bad23aa` | `None` |
 | MED-001 | Import photo layer | `dd604d0b1d51` | `feature/med-001` |
@@ -1594,7 +1594,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `f58cffa49d37` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-009/20261114T070607/swift-test_ShowControl.log`)
 - `post-merge: projectM-iOSTests 658 + UI 13 (trails, MIDI, logo, photo, slideshow, backup, settings suites)`: pass at `6ac0c21c` (log `.autonomous/logs/integration/batch4/app-tests.log`)
 
-### FX-010 Echo feedback (unit_passed)
+### FX-010 Echo feedback (integrated)
 - `python3 scripts/check_compliance.py`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/script-tests.log`)
@@ -1607,6 +1607,7 @@ None.
 - `swift test --package-path Packages/SceneArchive`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_SceneArchive.log`)
 - `swift test --package-path Packages/SceneFormat`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_SceneFormat.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `d42f4a17d569` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-010/20261115T023406/swift-test_ShowControl.log`)
+- `swift test Compositor 1161, SceneFormat 214, LibraryBackup 88, RenderGoldens 110; postmerge projectM-iOSTests 1328 + Echo/EffectChain UI tests 2`: pass at `198fb9535f79` (log `.autonomous/logs/integration/batch135/app-tests.log`)
 
 ### FX-019 Strobe safety envelope (integrated)
 - `python3 scripts/check_compliance.py`: pass at `bc80d4775650` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/FX-019/20261113T095545/compliance.log`)
