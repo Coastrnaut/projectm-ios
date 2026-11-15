@@ -9,6 +9,7 @@
 //   state's video is the stored one.
 // * The keyboard shortcuts (⌘Z, ⇧⌘Z) do not show the controls.
 import Foundation
+import SceneFormat
 import VisualGenerators
 
 extension AppCoordinator {
@@ -23,7 +24,30 @@ extension AppCoordinator {
     }
 
     /// Sets a history state through the Settings path (R7).
+    /// (Split into typed steps for the type-check budget; the order of the steps is unchanged.)
     func applySceneInputs(_ inputs: SceneInputs) {
+        applySceneLookSettings(inputs)
+        if texts.spec != inputs.text { texts.spec = inputs.text }
+        if let composites = inputs.layerComposites { layers.restore(composites) }   // CMP-015-R6
+        if let id = inputs.videoID {
+            videos.restoreLoop(storeID: id.uuidString, loop: inputs.videoLoop)   // MED-003-R8
+            videos.restoreSpeed(storeID: id.uuidString, speedPercent: inputs.videoSpeedPercent)   // MED-004-R7
+        }
+        if let effects = inputs.effects { applySceneEffects(effects) }   // FX-020: order, Color and Trails
+        macros.restore(inputs.macros)   // MOD-010: the macro values (targets come back with the settings above)
+        modulationMatrix.restore(inputs.bindings)   // MOD-012: the routes' order and on/off
+        if let palette = inputs.palette { palettes.restore(palette.id) }   // UIX-011-R7
+        slideshow.restore(inputs.slideshow)   // MED-006-R12: order, on/off and timing (pictures are not undone)
+        kenBurns.restore(inputs.kenBurns)   // MED-007-R10
+        let recorded: VisualChoice = SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
+        if recorded != inputs.visual { settings.visual = inputs.visual }
+        resetTrailsHistory()   // FX-009-R5: an undone or redone scene state starts without trails
+        visualSettingsChanged()
+        glowSettingsChanged()
+    }
+
+    /// R7: the spectra's options and the glow, each set only when it differs.
+    private func applySceneLookSettings(_ inputs: SceneInputs) {
         if settings.circularSpectrumBars != inputs.bars { settings.circularSpectrumBars = inputs.bars }
         if settings.linearSpectrumOrientation != inputs.orientation { settings.linearSpectrumOrientation = inputs.orientation }
         if settings.linearSpectrumSpacing != inputs.spacing { settings.linearSpectrumSpacing = inputs.spacing }
@@ -31,29 +55,16 @@ extension AppCoordinator {
         if settings.glowIntensity != inputs.glowIntensity { settings.glowIntensity = inputs.glowIntensity }
         if settings.glowRadius != inputs.glowRadius { settings.glowRadius = inputs.glowRadius }
         if settings.glowThreshold != inputs.glowThreshold { settings.glowThreshold = inputs.glowThreshold }
-        if texts.spec != inputs.text { texts.spec = inputs.text }
-        if let composites = inputs.layerComposites { layers.restore(composites) }   // CMP-015-R6
-        if let id = inputs.videoID {
-            videos.restoreLoop(storeID: id.uuidString, loop: inputs.videoLoop)   // MED-003-R8
-            videos.restoreSpeed(storeID: id.uuidString, speedPercent: inputs.videoSpeedPercent)   // MED-004-R7
-        }
-        if let effects = inputs.effects {   // FX-020: order, Color and Trails
-            SceneAutosaveCapture.applyEffects(effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
-                                              directionalBlur: directionalBlur, radialBlur: radialBlur,
-                                          echo: echoFeedback, mosaic: mosaic,
-                                          edgeOutline: edgeOutline, lensDistortion: lensDistortion,
-                                          vignette: vignette, pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018, FX-017
-        }
-        macros.restore(inputs.macros)   // MOD-010: the macro values (targets come back with the settings above)
-        modulationMatrix.restore(inputs.bindings)   // MOD-012: the routes' order and on/off
-        if let palette = inputs.palette { palettes.restore(palette.id) }   // UIX-011-R7
-        slideshow.restore(inputs.slideshow)   // MED-006-R12: order, on/off and timing (pictures are not undone)
-        kenBurns.restore(inputs.kenBurns)   // MED-007-R10
-        let recorded = SceneAutosaveCapture.recordedVisual(settings.visual, beforeCamera: settings.visualBeforeCamera)
-        if recorded != inputs.visual { settings.visual = inputs.visual }
-        resetTrailsHistory()   // FX-009-R5: an undone or redone scene state starts without trails
-        visualSettingsChanged()
-        glowSettingsChanged()
+    }
+
+    /// FX-020 and every FX-0xx setting of a history state (FX-007, FX-008, FX-010, FX-012, FX-014, FX-016,
+    /// FX-015, FX-011, FX-018, FX-017).
+    private func applySceneEffects(_ effects: SceneEffectSettings) {
+        SceneAutosaveCapture.applyEffects(effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
+                                          chromatic: chromaticSplit, directionalBlur: directionalBlur, radialBlur: radialBlur,
+                                          echo: echoFeedback, mosaic: mosaic, edgeOutline: edgeOutline,
+                                          lensDistortion: lensDistortion, vignette: vignette, pixelSort: pixelSort,
+                                          scanlines: scanlines, filmGrain: filmGrain)
     }
 
     func undoSceneEdit() { sceneHistory.undo() }
