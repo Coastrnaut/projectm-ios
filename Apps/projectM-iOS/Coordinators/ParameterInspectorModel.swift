@@ -385,6 +385,23 @@ extension AudioFeatureSource {
         case let .lfo(index): return "LFO \(index + 1)"   // MOD-007
         case let .bandEnvelope(index, profile): return "Band \(index + 1) \(profile.rawValue)"   // MOD-015
         case let .motion(axis): return axis.inspectorName   // CAM-011
+        case let .face(feature): return feature.inspectorName   // CAM-009
+        }
+    }
+}
+
+extension FaceFeature {
+    /// CAM-009-R8: the face source's name for people.
+    var inspectorName: String {
+        switch self {
+        case .present: "Face present"
+        case .x: "Face left–right"
+        case .y: "Face up–down"
+        case .size: "Face size"
+        case .roll: "Head tilt"
+        case .yaw: "Head turn"
+        case .mouth: "Mouth open"
+        case .eyes: "Eyes open"
         }
     }
 }

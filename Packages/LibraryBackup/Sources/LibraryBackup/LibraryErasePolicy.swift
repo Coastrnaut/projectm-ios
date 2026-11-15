@@ -134,7 +134,11 @@ public enum LibraryErasePolicy {
             + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
             + [showLoopKey]   // SHOW-007: erasing Settings turns Loop off
             + [sceneRotationKey]   // SHOW-013: erasing Settings resets rotation's choices
+            + faceTrackingKeys   // CAM-009-R3: erasing Settings turns face tracking off and forgets the consent
     }()
+
+    /// CAM-009-R3: the face tracking switch and its consent (never backed up; erased with Settings).
+    public static let faceTrackingKeys: [String] = ["settings.camera.faceTracking", "settings.camera.faceTrackingConsent"]
 
     /// SCN-015: the scene lock (excluded from backups; erased with Settings).
     public static let sceneLockKey = "settings.scene.locked"
