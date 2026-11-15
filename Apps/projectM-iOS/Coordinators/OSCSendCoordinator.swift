@@ -11,6 +11,8 @@
 //   `conditionsChanged()` for the switch and the foreground; every event re-checks too (the allow list can change).
 // * Beats (R8): while active with Beats on, a main-actor task polls the tempo grid every 50 ms; `OSCBeatGate`
 //   decides. Scene and status events come from AppCoordinator (show cues, source start and stop).
+// * OSC-012 (specs/291-osc-012-peer-cue-sync, ADR-0102): `postCue` carries peer cue sync's `/projectm/cue` on the same
+//   flow and cap; every re-evaluation tells `OSCCueSyncCoordinator` (leading needs this sender active).
 // * Counts are memory only; traffic is never announced. The flow itself is `NetworkOSCSender` in PerformanceControl's
 //   `OSCTransport/`, the only folder where FR-068 (ADR-0008) allows the Network framework.
 import AudioCore
@@ -144,6 +146,7 @@ final class OSCSendCoordinator {
         sender.configure(destination: target)
         updateBeatPoll(active: target != nil && kinds.contains(.beat))
         refresh()
+        osc?.cueSync?.conditionsChanged()   // OSC-012: leading follows Send OSC's gates
     }
 
     private func updateBeatPoll(active: Bool) {
@@ -171,6 +174,16 @@ final class OSCSendCoordinator {
         guard sender.destination != nil else { return }
         sender.post(event)
         refresh()
+    }
+
+    /// OSC-012 (ADR-0102): one `/projectm/cue` message on the active flow; false when not sent. Never re-evaluates the
+    /// conditions itself (cue sync calls it from its own re-evaluation).
+    @discardableResult
+    func postCue(_ cue: OSCCueSyncMessage) -> Bool {
+        guard let target = activeDestination, sender.destination == target else { return false }
+        let sent: Bool = sender.postCue(cue) == .sent
+        refresh()
+        return sent
     }
 
     /// One beat poll (R8).

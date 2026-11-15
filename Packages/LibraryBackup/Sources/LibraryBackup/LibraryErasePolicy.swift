@@ -86,6 +86,8 @@ public enum LibraryErasePolicy {
                                                "settings.osc.send.kinds", "settings.osc.send.sceneNames"]
     /// OSC-011-R10: the Nearby Devices switches (this device's network: not backed up, erased with Settings).
     public static let oscDiscoveryKeys: [String] = ["settings.osc.discovery.browse", "settings.osc.discovery.advertise"]
+    /// OSC-012-R12: the Cue Sync role (this device's network: not backed up, erased with Settings).
+    public static let oscCueSyncKeys: [String] = ["settings.osc.cueSync.role"]
 
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
@@ -137,7 +139,7 @@ public enum LibraryErasePolicy {
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
             + recordingAspectKeys   // REC-014-R7
-            + externalDisplayKeys + [sceneLockKey] + oscPeerKeys + oscSendKeys + oscDiscoveryKeys + [splitEditorWidthKey]   // SCN-015: erasing Settings unlocks the scene; OSC-008; UIX-007
+            + externalDisplayKeys + [sceneLockKey] + oscPeerKeys + oscSendKeys + oscDiscoveryKeys + oscCueSyncKeys + [splitEditorWidthKey]   // SCN-015: erasing Settings unlocks the scene; OSC-008; UIX-007
             + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
             + [showLoopKey]   // SHOW-007: erasing Settings turns Loop off
             + [sceneRotationKey]   // SHOW-013: erasing Settings resets rotation's choices
