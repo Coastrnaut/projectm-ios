@@ -63,5 +63,6 @@
 | [0066](0066-noise-field-shared-seeded-noise.md) | The noise field compiles a module-constant shader built from SHD-006's shared seeded noise (tenth reviewed Metal compile site) | Accepted 2026-11-14 (VIS-013; owner rule 4) |
 | [0080](0080-midi-feedback-output.md) | MIDI feedback sends bounded control changes to paired local destinations (opt-in per mapping; amends ADR-0038) | Accepted 2026-11-14 (MIDI-009; owner rule 4) |
 | [0081](0081-on-device-face-landmarks.md) | Face landmark emitters run only after explicit consent, on the device, from pictures the camera already captures; only eight scalars, memory only | Accepted 2026-11-14 (CAM-009; owner rule 4) |
+| [0088](0088-osc-send-outbound.md) | OSC send is an opt-in UDP flow to one literal local address (amends OSC-001-R19 and the network symbol scan) | Accepted 2026-11-14 (OSC-005; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

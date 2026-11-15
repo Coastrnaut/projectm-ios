@@ -13,8 +13,9 @@ symbols and the library each comes from). It fails on:
 * any Network.framework import (or linkage) outside the image that defines the OSC transport
   (`NetworkDatagramTransport`), any C-level `nw_*` import, and any Network Swift API that is not on the
   listener-side allowlist. The outbound pair `NWConnection(host:port:using:)` and `NWConnection.send`
-  passes only in an image that also defines the DEBUG-only `OSCLoopbackSender`; `--release` fails when
-  any image defines it.
+  passes only in an image that also defines the DEBUG-only `OSCLoopbackSender` or the reviewed OSC-005
+  sender `NetworkOSCSender` (ADR-0088: opt-in, literal local addresses only, also in Release); `--release`
+  fails when any image defines the DEBUG loopback sender.
 
 StoreKit linkage is reported as allowed: purchase and restore requests are made by iOS's store service.
 What this scan cannot see (system daemons, URL-taking Foundation APIs) is listed in
@@ -85,6 +86,8 @@ DEBUG_LOOPBACK_APIS = [re.compile(p) for p in (
     r"^NWConnection\.SendCompletion(\.|$)",
 )]
 OSC_TRANSPORT_MARKER = "NetworkDatagramTransport"
+# OSC-005 (ADR-0088): the reviewed, opt-in sender to one literal local address; allowed in Release.
+REVIEWED_SENDER_MARKER = "NetworkOSCSender"
 LOOPBACK_SENDER_MARKER = "OSCLoopbackSender"
 DESCRIPTOR_PREFIX = re.compile(r"^.*? for (?=\S)")
 
@@ -157,7 +160,7 @@ def classify_library(path: str, image_has_osc: bool) -> tuple[str, bool] | None:
 
 
 def classify_import(symbol: str, library: str, demangled: str, image_has_osc: bool,
-                    image_has_loopback: bool) -> tuple[str, bool] | None:
+                    image_has_loopback: bool, image_has_sender: bool = False) -> tuple[str, bool] | None:
     """(rule, allowed) for an imported symbol that matters, else None."""
     bare = symbol[1:] if symbol.startswith("_") else symbol
     bare = bare.split("$", 1)[0] if not bare.startswith("$s") else bare
@@ -175,9 +178,11 @@ def classify_import(symbol: str, library: str, demangled: str, image_has_osc: bo
         if any(rule.search(api) for rule in LISTENER_SIDE_APIS):
             return ("allowed: OSC listener-side Network API", True)
         if any(rule.search(api) for rule in DEBUG_LOOPBACK_APIS):
+            if image_has_sender:
+                return ("allowed: reviewed OSC-005 sender to a local address (ADR-0088)", True)
             if image_has_loopback:
                 return ("allowed: DEBUG-only loopback sender (OSC-001-R19)", True)
-            return ("outbound Network API in a build without the DEBUG loopback sender", False)
+            return ("outbound Network API in a build without the OSC-005 sender or the DEBUG loopback sender", False)
         return (f"Network API not on the listener-side allowlist: {api}", False)
     return None
 
@@ -187,13 +192,14 @@ def evaluate_image(image: str, arch: str, libraries: list[str], imports: list[tu
     """Findings for one image and architecture. `defined` holds the image's defined symbol names."""
     has_osc = any(OSC_TRANSPORT_MARKER in name for name in defined)
     has_loopback = any(LOOPBACK_SENDER_MARKER in name for name in defined)
+    has_sender = has_osc and any(REVIEWED_SENDER_MARKER in name for name in defined)
     findings: list[Finding] = []
     for path in libraries:
         verdict = classify_library(path, has_osc)
         if verdict:
             findings.append(Finding(image, arch, "library", library_name(path), verdict[0], verdict[1]))
     for symbol, library in imports:
-        verdict = classify_import(symbol, library, demangled.get(symbol, ""), has_osc, has_loopback)
+        verdict = classify_import(symbol, library, demangled.get(symbol, ""), has_osc, has_loopback, has_sender)
         if verdict:
             findings.append(Finding(image, arch, "symbol", demangled.get(symbol) or symbol, verdict[0], verdict[1]))
     return findings
