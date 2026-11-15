@@ -25,10 +25,12 @@ Format: `[ID] [P?] [Story] Description`. `{device}` = needs a physical device an
   (OUT-008-S1, S4). — Verified 2026-11-15: `swift test --package-path Packages/Compositor` 767 tests, 0 failures
   (10 skipped as before), 47.8 s; GridWarpOutputTests 4 tests 0.74 s on the host GPU; a flipped-sampling mutation
   fails all four.
-- [ ] OUT-008-T05 [US1] FX-019 warp step in `Packages/Rendering/Sources/CFlashLimiter/` (`PMFlashLimiterSetWarp`, warp
-  program, display flag) and `ANGLERenderer` (receiver, per-frame mesh, unwarped REC-001 capture) (C3).
-- [ ] OUT-008-T06 [US1] `GridWarpGLTests.swift` (ANGLERendering, simulator): identity mesh exact, a warp moves a known
-  frame as the reference says, capture unwarped.
+- [X] OUT-008-T05 [US1] FX-019 warp step in `Packages/Rendering/Sources/CFlashLimiter/` (`PMFlashLimiterSetWarp`, warp
+  program, display flag) and `ANGLERenderer` (receiver, per-frame mesh, unwarped REC-001 capture) (C3). — Verified 2026-11-15: GridWarpGLTests (T06); ANGLERendering suite 84 tests, 0 failures, 36 s.
+- [X] OUT-008-T06 [US1] `GridWarpGLTests.swift` (ANGLERendering, simulator): identity mesh exact, a warp moves a known
+  frame as the reference says, capture unwarped. — Verified 2026-11-15: `xcodebuild -scheme ANGLERendering
+  test` on "OUT08 iPhone 17" (iOS 27.2 simulator): GridWarpGLTests 3 tests, 0 failures, 3.9 s (identity 3 × 3 and 9 × 9
+  byte-exact; half-size mesh ≥ 99 % within 5/255; guides). Simulator, not device evidence.
 
 ## Phase 3: App wiring and editor (US1, US3, US4)
 
