@@ -34,7 +34,7 @@
 
 ## Phase 6: Polish
 
-- [ ] SHD-006-T13 Linux shape (Compositor `-DCOMPOSITOR_NO_METAL`), package suites (Compositor incl. MaterialFlashSafetyTests, SceneFormat), iOS simulator run of ProceduralMaterialsTests, type-check budget, repo checks, privacy manifest and network symbols on the Debug app; spec status
+- [X] SHD-006-T13 Linux shape (Compositor `-DCOMPOSITOR_NO_METAL`), package suites (Compositor incl. MaterialFlashSafetyTests, SceneFormat), iOS simulator run of ProceduralMaterialsTests, type-check budget, repo checks, privacy manifest and network symbols on the Debug app; spec status — Verified 2026-11-14: Linux shape (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) builds and the CPU suites pass; host suites: Compositor all targets pass (ProceduralMaterials 64, ShaderParameterMetadata 14, CompositorTests 605, GeneratorGraph 47 …; 48.7 s), SceneFormat 195 (21.6 s), LibraryBackup 83 (41.5 s), RenderGoldens scene goldens 15 (plasma/gradient scenes unchanged); ProceduralMaterialsTests 64 on the iOS 27.2 simulator (13.5 s); MaterialInspectorUITests passes; type-check flags clean; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 177 OK; check_privacy_manifest OK and check_network_symbols OK on the Debug app
 - [ ] SHD-006-T14 {device} Look at the Noise editor preview on D1 (seed, octaves, warp)
 
 ## Analysis (speckit-analyze, 2026-11-14)

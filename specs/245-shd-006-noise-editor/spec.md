@@ -2,7 +2,7 @@
 
 **Feature Branch**: `feature/shd-006` (spec directory `245-shd-006-noise-editor`)
 **Created**: 2026-11-14
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHD-006-T01-T13 verified on the Mac: host GPU, iOS 27.2 simulator, Linux shape; device task T14 `{device}` open)
 **Input**: User description: "Implement SHD-006 (Noise editor) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Configure octaves, seed, lacunarity and warp for procedural textures." Acceptance, verbatim:
 "Fixed seed produces stable reference texture on same GPU class." P1, depends on SHD-001 (integrated)."
