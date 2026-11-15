@@ -40,8 +40,8 @@ UI test on "VIS12 iPhone 17". Long CPU sweeps behind `VIS012_LONG=1`.
 
 **Target Platform**: iOS/iPadOS 26.0+ (app); macOS 15+ and Linux for the CPU parts.
 
-**Performance Goals**: ≤ 64 iterations of one 128² pass per frame (≈ 1 M fragment invocations worst case, 8 per frame
-at the default Speed 8 and 60 fps... 8 iterations per step); one display pass; D1 frame rate `{device}`.
+**Performance Goals**: at most 64 iterations of one 128² pass per frame (≈ 1 M fragment invocations in the worst
+case; 8 per frame at the default Speed 8 and 60 fps); one display pass; D1 frame rate `{device}`.
 
 **Constraints**: owner rule 7; VisualGenerators suite near its budget, so new host tests ≈ 5 s; type-check budget;
 existing goldens unchanged; no new compile site.

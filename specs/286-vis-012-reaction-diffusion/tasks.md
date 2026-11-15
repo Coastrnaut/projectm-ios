@@ -18,7 +18,7 @@ Tests are requested by the spec (determinism, never-NaN, iteration bound, alloca
 
 - [ ] VIS-012-T04 [US1] `ReactionDiffusionShader.functions` (iterate with injection, health, display; exponent-bit guard) appended to `NoiseFieldGenerator.shaderSource`; `ReactionDiffusionPass` (state pair + health made once, staging buffer, seeding blit, iterations, health readback, display) in Packages/VisualGenerators/Sources/VisualGenerators/ReactionDiffusionPass.swift
 - [ ] VIS-012-T05 [US1] `NoiseFieldConfiguration.reactionDiffusion` (forces the other modes off) and mode `.reaction` in `NoiseFieldGenerator` (lazy pass, reload on entry, preset/pattern/seed change, restart and health flag; gain from the bound) in NoiseFieldConfiguration.swift, NoiseFieldGenerator.swift
-- [ ] VIS-012-T06 [US2] GPU tests: initial state readback bit-identical across two reloads (generator recreated; settings decoded from JSON/defaults) and equal to the CPU seed, other seed differs; every preset at Speed 16 for 3 000 iterations at 128² with strong bass kicks every 0.25 s → full readback finite and in [0, 1], health clean; GPU follows the CPU reference for a few iterations; texture count, identities and allocatedSize constant over resizes, mode switches and reloads in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ReactionDiffusionRenderTests.swift
+- [ ] VIS-012-T06 [US2] GPU tests: initial state readback bit-identical across two reloads (generator recreated; settings decoded from their stored raw values via `ReactionDiffusionSettings(stored…)`; the UserDefaults round trip is in T10) and equal to the CPU seed, other seed differs; every preset at Speed 16 for 3 000 iterations at 128² with strong bass kicks every 0.25 s → full readback finite and in [0, 1], health clean; GPU follows the CPU reference for a few iterations; texture count, identities and allocatedSize constant over resizes, mode switches and reloads in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ReactionDiffusionRenderTests.swift
 - [ ] VIS-012-T07 [US1] Golden of a scripted run (Coral, Centre square, seed 1, speed 8, two bass kicks, 2 s), macOS host and iOS Simulator, in Packages/RenderGoldens/Tests/RenderGoldensTests/ReactionDiffusionGoldenTests.swift (+ GeneratorGoldens/ReactionDiffusion)
 
 ## Phase 4: US3 Bounded work, safe light (P1)
@@ -47,3 +47,12 @@ T03 alongside T04; T07 and T08 after T05; T10 and T11 after T09.
 ## Implementation strategy
 
 MVP = T02-T06 (the acceptance: reload reproduces the initial pattern; no NaN on the GPU). Then golden and safety, then the app.
+
+## Analyze notes (speckit-analyze, 2026-11-15)
+
+- Coverage: R1, R10 T04-T05; R2, R5, R7, R8, R12 T02-T03; R3, R4, R6, R9 T02-T06; R11, R12 T08; R13, R14 T09-T11;
+  R15 T07. S1-S7 each have a test task (S3 in T03). No constitution conflict (no new compile site, no compute, no
+  networking, nothing reaches projectM). 15 requirements, 13 tasks, 100 % coverage, 0 critical.
+- Fix applied (ambiguity): plan's Performance Goals line rewritten (worst case 64 iterations per frame).
+- Fix applied (underspecification): T06's "settings decoded from storage" names the stored raw values decoder; the
+  UserDefaults round trip is asserted in T10.
