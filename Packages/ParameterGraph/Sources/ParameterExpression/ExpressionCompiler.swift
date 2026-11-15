@@ -222,6 +222,7 @@ struct ExpressionCompiler {
             case .sectionChange: ExpressionInstruction(opcode: .sectionChange)
             case .lfo: ExpressionInstruction(opcode: .constant, literal: 0)   // unreachable: the catalog refuses LFO names
             case .bandEnvelope: ExpressionInstruction(opcode: .constant, literal: 0)   // unreachable: MOD-015-D5
+            case .motion: ExpressionInstruction(opcode: .constant, literal: 0)   // unreachable: CAM-011-R2
             }
             try append(instruction, at: position)
         case let .binding(slot, position):

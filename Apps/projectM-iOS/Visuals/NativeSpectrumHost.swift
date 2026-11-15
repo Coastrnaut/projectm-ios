@@ -385,6 +385,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private let bandEnvelopeBank = BandEnvelopeBank()
     /// MOD-009: the BPM tempo-synced oscillators follow (nil: their stored rate); read once per frame while one exists.
     var lfoTempoBPM: (@MainActor () -> Double?)?
+    /// CAM-011: true while a binding or trigger reads a motion source (recomputed when they change, never per frame).
+    private(set) var usesMotion = false
+    /// CAM-011: the motion tracker's current values, read once per evaluated frame while `usesMotion`.
+    var motionValues: (@MainActor () -> MotionFeatureValues)?
+    /// CAM-011: called when `usesMotion` changes, so the motion coordinator starts or stops the sensor.
+    var onMotionDemandChange: (@MainActor (Bool) -> Void)?
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
@@ -616,6 +622,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         guard let modulator else { throw .unknownTarget(binding.target) }
         try modulator.bind(binding)
         resolveEffectiveGlow()
+        refreshMotionDemand()   // CAM-011
     }
 
     /// MOD-011: adds `binding` as its parameter's next layer (applied after the ones already bound); the
@@ -624,6 +631,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         guard let modulator else { throw .unknownTarget(binding.target) }
         try modulator.addLayer(binding)
         resolveEffectiveGlow()
+        refreshMotionDemand()   // CAM-011
     }
 
     /// The live bindings in order (SCN-002 captures them into the current scene).
@@ -648,6 +656,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         guard let modulator else { throw .unknownTarget(list.first?.target ?? VisualParameterIDs.bloomIntensity) }
         try modulator.replaceBindings(list)
         resolveEffectiveGlow()
+        refreshMotionDemand()   // CAM-011
     }
 
     /// MOD-012-R7: the current 0…1 signal of `target`'s `layer`-th binding (the route detail's live value).
@@ -664,12 +673,27 @@ final class NativeSpectrumHost: PresentationBoundResource {
     func unbind(_ target: ParameterID) -> Bool {
         let removed = modulator?.unbind(target) ?? false
         resolveEffectiveGlow()
+        refreshMotionDemand()   // CAM-011
         return removed
     }
 
     /// MOD-006: replaces the threshold triggers (validated; each starts armed). Effective from the next frame.
     func setTriggers(_ bindings: [ThresholdTriggerBinding]) throws(ThresholdTriggerError) {
         try triggerBank.set(bindings)
+        refreshMotionDemand()   // CAM-011
+    }
+
+    /// CAM-011: recomputes whether any binding or trigger reads a motion source and reports a change.
+    private func refreshMotionDemand() {
+        let isMotion: (AudioFeatureSource) -> Bool = { (source: AudioFeatureSource) -> Bool in
+            if case .motion = source { return true }
+            return false
+        }
+        let uses: Bool = bindings.contains { (b: AudioFeatureBinding) -> Bool in isMotion(b.source) }
+            || triggerBank.bindings.contains { (t: ThresholdTriggerBinding) -> Bool in isMotion(t.source) }
+        guard uses != usesMotion else { return }
+        usesMotion = uses
+        onMotionDemandChange?(uses)
     }
 
     /// MOD-007: replaces the scene's oscillators by position (validated); their shared origin restarts at the next frame.
@@ -709,7 +733,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         let frame = AudioFeatureFrame(bands: bands, kick: kick, centroid: centroid, loudness: loudness, midTransient: midTransient,
                                       highTransient: highTransient, rolloff: rolloff, flatness: flatness,
                                       correlation: correlation, sectionChange: sectionChange, lfos: lfos,
-                                      bandEnvelopes: bandEnvelopeBank.values)
+                                      bandEnvelopes: bandEnvelopeBank.values,
+                                      motion: usesMotion ? motionValues?() : nil)   // CAM-011: a struct, no allocation
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)
