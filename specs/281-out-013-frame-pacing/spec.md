@@ -47,6 +47,21 @@ each answer is the conservative, local-first option.
 - Q: Is any user interface added? → A: No. The counts are kept in memory for tests, the DEBUG probe and later
   diagnostics; no new setting, no new UserDefaults key, no new screen.
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Does the pacing apply only to the external output? → A: No: every output uses the same per-screen link and gate
+  (the device output too). One mechanism, so moving the visual never changes its rules.
+- Q: When does a frame stop being "in flight"? → A: When the GPU has completed it: the command buffer's completion for
+  the Metal visuals, a GL fence that has signalled for projectM on ANGLE. The display's own hold on a drawable is covered
+  by pacing from that display's link (OUT-013-R1) and the drawable-wait back-off (OUT-013-R7).
+- Q: What does a dropped projectM tick do with the audio? → A: It reads nothing; the normalized PCM ring is bounded and
+  overwrites its oldest samples, and the next rendered frame reads at most one frame's maximum (no catch-up backlog).
+- Q: Where are the counts shown? → A: Nowhere new: in memory on each visual, readable by tests and the DEBUG probe
+  (`outputPacing`). PERF-007's counters already show the skipped refresh slots a drop causes. No user interface change,
+  so no UI test.
+- Q: Are counts reset when the visual moves to another screen? → A: No. The gate is the visual's; frames in flight
+  complete wherever they were submitted, and the counts are cumulative for the visual's life (tests read deltas).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The device stays responsive while the external output struggles (Priority: P1)
@@ -108,7 +123,8 @@ frame-rate range and pause state.
 - **OUT-013-R4**: Nothing between analysis, render and output may grow with time: no frame queue, no backlog of
   dispatched work per tick; the maximum depth of every pacing structure is a constant independent of run length.
 - **OUT-013-R5**: Every drop MUST be counted per cause (frames in flight, no drawable, back-off), with the frames begun
-  and completed and the largest number in flight seen; counts are local and in memory only.
+  and completed and the largest number in flight seen; counts are local, in memory only, and cumulative for the visual's
+  life (a screen move does not reset them).
 - **OUT-013-R6**: The visual layers MUST state their drawable policy explicitly: three drawables and a bounded drawable
   wait.
 - **OUT-013-R7**: A drawable wait longer than half of the output's refresh interval MUST skip the output's next tick.
