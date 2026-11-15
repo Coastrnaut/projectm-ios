@@ -45,3 +45,12 @@ T03 and T05 (different test files) after T04; T10 and T11 after T09.
 
 MVP = T01-T03 (the acceptance: density limit and deterministic reset, proven by pure simulation tests); then the
 picture (T04-T08), then the app (T09-T11).
+
+## Analyze notes (speckit-analyze, 2026-11-15)
+
+- Coverage: R1 T06; R2-R4, R6 T02-T03; R5, R7 T04-T05; R8, R10, R11 T09-T11; R9 T08; R12 T12. S1, S2 T03; S3 T07-T08;
+  S4 T05; S5 T10-T11; S6 T12. No constitution conflict (no shader, no dependency, no networking, nothing reaches
+  projectM).
+- Fix applied (inconsistency): US1 scenario 1 said brightness never decreases as a star approaches, but the
+  clarified near-plane fade-out lowers it just before a respawn; the scenario now excludes both fades, as T05 does.
+- Fix applied (coverage): US2 scenario 3 (speed change in place, no restart) is asserted in T10.

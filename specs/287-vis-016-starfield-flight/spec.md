@@ -62,7 +62,7 @@ and brightness grow as its depth shrinks; a star that passes the viewer reappear
 
 **Acceptance Scenarios**:
 
-1. **Given** the starfield running, **When** frames are drawn, **Then** every active star's depth decreases at the set speed, and its drawn size and brightness never decrease as it approaches.
+1. **Given** the starfield running, **When** frames are drawn, **Then** every active star's depth decreases at the set speed, and its drawn size never decreases as it approaches, and its brightness never decreases between the far-plane fade-in and the near-plane fade-out.
 2. **Given** a star reaches the near plane, **When** the next step runs, **Then** it reappears at the far plane at a new position drawn from the seeded sequence.
 3. **Given** a fixed seed, time and band timeline, **When** rendered, **Then** the frame matches the committed golden image (macOS host and iOS Simulator), and two renders are identical.
 
