@@ -17,7 +17,7 @@ final class ShowKeyframeTrackTests: XCTestCase {
         try ShowKeyframeTrack(id: UUID(), parameter: glow, keyframes: [
             ShowKeyframe(time: 0, value: .number(0.2), interpolation: .linear),
             ShowKeyframe(time: 7_333, value: .number(0.30000000000000004), interpolation: .ease),
-            ShowKeyframe(time: 30_000, value: .number(1.5), interpolation: .hold),
+            ShowKeyframe(time: 30_000, value: .number(1.5), interpolation: .stepped),
             ShowKeyframe(time: 60_001, value: .number(0.1), interpolation: .linear),
             ShowKeyframe(time: 921_600_000, value: .number(1.9999999), interpolation: .linear),
         ])
@@ -27,7 +27,7 @@ final class ShowKeyframeTrackTests: XCTestCase {
         try ShowKeyframeTrack(id: UUID(), parameter: colorID, keyframes: [
             ShowKeyframe(time: 0, value: .color(color(0.05, 0.1, 0.6)), interpolation: .linear),
             ShowKeyframe(time: 30_000, value: .color(color(0.9, 0.12345678901234, 0.7, 0.5)), interpolation: .ease),
-            ShowKeyframe(time: 45_500, value: .color(color(0.0, 1.0, 0.333, 0.25)), interpolation: .hold),
+            ShowKeyframe(time: 45_500, value: .color(color(0.0, 1.0, 0.333, 0.25)), interpolation: .stepped),
         ])
     }
 
@@ -53,7 +53,7 @@ final class ShowKeyframeTrackTests: XCTestCase {
         let track = try ShowKeyframeTrack(id: UUID(), parameter: glow, keyframes: [
             ShowKeyframe(time: 10_000, value: .number(0), interpolation: .linear),
             ShowKeyframe(time: 20_000, value: .number(1), interpolation: .ease),
-            ShowKeyframe(time: 30_000, value: .number(2), interpolation: .hold),
+            ShowKeyframe(time: 30_000, value: .number(2), interpolation: .stepped),
             ShowKeyframe(time: 40_000, value: .number(3), interpolation: .linear),
         ])
         XCTAssertEqual(track.value(at: .seconds(0)), .number(0))            // before the first: first value
@@ -96,7 +96,7 @@ final class ShowKeyframeTrackTests: XCTestCase {
         XCTAssertNil(track.value(at: .zero))
         try track.setKeyframe(ShowKeyframe(time: 5_000, value: .number(0.4)))
         XCTAssertEqual(track.value(at: .seconds(99)), .number(0.4))   // one key holds everywhere
-        try track.setKeyframe(ShowKeyframe(time: 5_000, value: .number(0.9), interpolation: .hold))
+        try track.setKeyframe(ShowKeyframe(time: 5_000, value: .number(0.9), interpolation: .stepped))
         XCTAssertEqual(track.keyframes.count, 1)
         XCTAssertEqual(track.keyframes[0].value, .number(0.9))
         try track.setKeyframe(ShowKeyframe(time: 1_000, value: .number(0.1)))
