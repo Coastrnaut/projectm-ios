@@ -11,6 +11,10 @@
 // `SpectrumWaterfallHistory`, the rows it wrote are copied ring → staging → texture by a blit in the frame's own command
 // buffer before the draw, and the newest row's index goes in the phase slot. Entering the mode or a loop restart clears
 // the history (same storage).
+// VIS-011: `configuration.fluidInk` draws fluid ink: `enqueueImpulse` queues onsets, `fluidScheduler` plans the fixed
+// 1/60 s steps up to the frame's time (≤ 4), `fluidBound` bounds the ink for the envelope (all 64 samples), and
+// `FluidInkPass` (made on the first fluid frame, never replaced) runs the steps, its health check and the display.
+// Entering the mode or a loop restart starts at rest (same storage).
 // Per frame: VIS-007's band groups of the input bands → `NoiseFieldDrive` (smoothed warp and brightness, drift on the
 // frame context's clock) → the CPU mirror's 64 samples → the strobe safety envelope's gain over 17 areas (after the
 // downstream stages when `downstreamLuminance` is set; FX-001-R10, FX-019-R9) → one full-screen triangle whose
@@ -50,6 +54,12 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     public let waterfallCells = WaterfallFlashCells()
     private let historyStaging: MTLBuffer
     private var waterfallPipeline: MTLRenderPipelineState?
+    /// VIS-011: the fluid's step clock and impulse queue, the ink bound, and the GPU pass (nil until the first fluid frame).
+    public let fluidScheduler = FluidStepScheduler()
+    public private(set) var fluidBound = FluidInkBound()
+    public private(set) var fluidPass: FluidInkPass?
+    /// VIS-011: field resets the GPU health check forced (VIS-011-R7).
+    public private(set) var fluidHealthResets = 0
     /// The mode of the last frame drawn (VIS-020: entering the waterfall clears its history).
     private var lastMode: Mode?
     /// VIS-020: the cells' sums were made with an older palette.
@@ -65,7 +75,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         }
     }
 
-    private let library: MTLLibrary
+    /// The compiled module constant (VIS-011: the fluid pass builds its pipelines from it; tests).
+    let library: MTLLibrary
     /// The plain field's, the kaleidoscope's and the tunnel's pipelines (VIS-014, VIS-015: separate entry points); the
     /// one the initial configuration needs is built in `init`, the others on the first frame that needs them.
     private var plainPipeline: MTLRenderPipelineState?
@@ -73,9 +84,10 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     private var tunnelPipeline: MTLRenderPipelineState?
 
     /// Which entry point draws.
-    enum Mode { case plain, folded, tunnel, waterfall }
+    enum Mode { case plain, folded, tunnel, waterfall, fluid }
 
     static func mode(_ c: NoiseFieldConfiguration) -> Mode {
+        if c.fluidInk { return .fluid }   // VIS-011
         if c.waterfall { return .waterfall }   // VIS-020
         if c.isTunnel { return .tunnel }
         return c.isKaleidoscope ? .folded : .plain
@@ -95,13 +107,19 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         } catch {
             throw .pipelineUnavailable("shader compile: \(error.localizedDescription)")
         }
-        let initial: MTLRenderPipelineState = try Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat,
-                                                                   mode: Self.mode(self.configuration))
-        switch Self.mode(self.configuration) {
-        case .plain: plainPipeline = initial
-        case .folded: foldedPipeline = initial
-        case .tunnel: tunnelPipeline = initial
-        case .waterfall: waterfallPipeline = initial
+        let initialMode: Mode = Self.mode(self.configuration)
+        if initialMode == .fluid {   // VIS-011: its pass is its pipelines
+            fluidPass = try FluidInkPass(device: device, library: library, targetFormat: pixelFormat)
+        } else {
+            let initial: MTLRenderPipelineState = try Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat,
+                                                                       mode: initialMode)
+            switch initialMode {
+            case .plain: plainPipeline = initial
+            case .folded: foldedPipeline = initial
+            case .tunnel: tunnelPipeline = initial
+            case .waterfall: waterfallPipeline = initial
+            case .fluid: break
+            }
         }
         // VIS-020: the history's GPU copy and staging rows, once; independent of any output size.
         let d = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: SpectrumWaterfallHistory.columns,
@@ -128,7 +146,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
                                      mode: Mode) throws(VisualGeneratorError) -> MTLRenderPipelineState {
         let name: String
         switch mode {
-        case .plain: name = "vis_noise_fragment"
+        case .plain, .fluid: name = "vis_noise_fragment"   // VIS-011: the fluid draws through FluidInkPass
         case .folded: name = "vis_kaleido_fragment"
         case .tunnel: name = "vis_tunnel_fragment"
         case .waterfall: name = "vis_waterfall_fragment"
@@ -155,6 +173,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .folded: "VIS-014 Kaleidoscope"
         case .tunnel: "VIS-015 Tunnel"
         case .waterfall: "VIS-020 Spectrum waterfall"
+        case .fluid: "VIS-011 Fluid ink"
         }
     }
 
@@ -170,6 +189,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .waterfall:
             if waterfallPipeline == nil { waterfallPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .waterfall) }
             return waterfallPipeline
+        case .fluid:
+            return nil   // VIS-011: FluidInkPass
         case .plain:
             if plainPipeline == nil { plainPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .plain) }
             return plainPipeline
@@ -184,6 +205,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     private func fillPalette() {
         let n: Int = NoiseFieldConfiguration.paletteColors
         for k in 0..<n { palette[k] = configuration.palette.color(bar: k, of: n).clamped }
+        for k in 0..<min(n, FluidStepScheduler.paletteCount) {   // VIS-011: the splats' colours
+            fluidScheduler.palette[k] = SIMD3<Float>(palette[k].red, palette[k].green, palette[k].blue)
+        }
     }
 
     /// The host's loop restart: drift and smoothing start over; the envelope's history is kept (FX-019-R11).
@@ -192,6 +216,63 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         drive.reset()
         tunnelDrive.reset()   // VIS-015
         waterfallHistory.clear()   // VIS-020: storage kept
+        resetFluid()   // VIS-011
+    }
+
+    /// VIS-011: queues an impulse for an ANL-004 onset at the frame's time. False when ignored or the queue is full.
+    @discardableResult
+    public func enqueueImpulse(atNanoseconds nanoseconds: UInt64, strength: Float, threshold: Float) -> Bool {
+        fluidScheduler.enqueue(atNanoseconds: nanoseconds, strength: strength, threshold: threshold)
+    }
+
+    /// VIS-011: the field starts at rest, the clock and queue start over (storage kept).
+    private func resetFluid() {
+        fluidScheduler.reset()
+        fluidBound.reset()
+        fluidPass?.reset()
+    }
+
+    /// VIS-011: the fluid's frame (contracts/fluid-ink.md C2).
+    private func encodeFluid(into target: MTLTexture, commandBuffer: MTLCommandBuffer, context: VisualFrameContext) -> Bool {
+        if fluidPass == nil {
+            guard let made = try? FluidInkPass(device: device, library: library, targetFormat: pixelFormat) else { return false }
+            fluidPass = made
+        }
+        guard let pass = fluidPass else { return false }
+        let c: NoiseFieldConfiguration = configuration
+        if lastMode != .fluid { resetFluid() }
+        let speedCap: Float = FluidInk.effectiveSpeedCap(reduceMotion: c.reduceMotion)
+        if pass.pollHealth(speedCap: speedCap) {
+            fluidHealthResets += 1
+            fluidBound.reset()
+            pass.reset()
+        }
+        fluidScheduler.reduceMotion = c.reduceMotion
+        let steps: Int = fluidScheduler.advance(toNanoseconds: context.timeNanoseconds)
+        for s in 0..<steps {
+            var sum = SIMD3<Float>(0, 0, 0)
+            for k in 0..<fluidScheduler.splatCount(step: s) {
+                let splat: FluidSplat = fluidScheduler.splat(step: s, k)
+                sum += SIMD3<Float>(splat.red, splat.green, splat.blue)
+            }
+            fluidBound.step(splatSum: sum)
+        }
+        let level: SIMD3<Float> = fluidBound.level
+        flashAreas.loadUniform(LinearColor(red: level.x, green: level.y, blue: level.z, alpha: 1))
+        let gain: Float
+        if let downstream = downstreamLuminance {
+            gain = flashAreas.gain(envelope: limiter.envelope, transfer: downstream, frameTime: context.frameDuration,
+                                   configuration: context.flashConfiguration)
+        } else {
+            gain = flashAreas.gain(envelope: limiter.envelope, transfer: IdentityLuminanceTransfer(), frameTime: context.frameDuration,
+                                   configuration: context.flashConfiguration)
+        }
+        lastGain = gain
+        lastMode = .fluid
+        let shown: Bool = target.width > 0 && target.height > 0   // size 0: the steps still run, nothing is drawn
+        let encoded: Bool = pass.encode(scheduler: fluidScheduler, speedCap: speedCap, commandBuffer: commandBuffer,
+                                        target: shown ? target : nil, gain: gain)
+        return encoded && shown
     }
 
     public func encode(into target: MTLTexture, commandBuffer: MTLCommandBuffer,
@@ -199,6 +280,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         guard target.pixelFormat == pixelFormat else { return false }
         let c: NoiseFieldConfiguration = configuration
         let mode: Mode = Self.mode(c)
+        if mode == .fluid { return encodeFluid(into: target, commandBuffer: commandBuffer, context: context) }   // VIS-011
         guard let state = pipeline(mode) else { return false }
         if mode == .waterfall {   // VIS-020
             if lastMode != .waterfall { waterfallHistory.clear() }
@@ -291,7 +373,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     /// Module-authored shader: SHD-006's shared noise functions, VIS-014's fold, VIS-015's tunnel, then the field (no user
     /// text; SHD-011).
     public static let shaderSource: String = shaderHeader + SeededNoiseShader.functions + KaleidoscopeFoldShader.function
-        + TunnelShader.function + WaterfallShader.function + shaderBody
+        + TunnelShader.function + WaterfallShader.function + shaderBody + FluidInkShader.functions   // VIS-011: after the body
 
     static let shaderHeader = """
     #include <metal_stdlib>

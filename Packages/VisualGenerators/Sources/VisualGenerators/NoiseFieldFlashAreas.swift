@@ -130,6 +130,14 @@ public final class NoiseFieldFlashAreas {
         }
     }
 
+    /// VIS-011: every sample takes `color` (the ink bound, linear; ACC-012 caps it at 0.8), values its luminance.
+    public func loadUniform(_ color: LinearColor) {
+        for k in 0..<Self.sampleCount {
+            values[k] = color.relativeLuminance
+            colors[k] = LinearColor(red: color.red, green: color.green, blue: color.blue, alpha: 1)
+        }
+    }
+
     /// The 17 area levels at `gain`, after `transfer`. No allocation.
     public func levels<Transfer: FrameLuminanceTransfer>(gain: Float, transfer: Transfer, into out: UnsafeMutableBufferPointer<FlashLevels>) {
         guard out.count >= FlashZones.count else { return }
