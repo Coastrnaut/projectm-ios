@@ -57,6 +57,6 @@ All decisions by Claude under owner rule 4 (best judgement); 2026-11-15.
 
 ## FX-008-D8: Settings and storage
 
-- **Decision**: `settings.radialBlur.enabled` (Bool), `.strength`, `.focusX`, `.focusY` (Double), written only when
+- **Decision**: `settings.radialBlur.enabled` (Bool), `.strength`, `.centerX`, `.centerY` (Double), written only when
   changed; included in FILE-005 backups and FILE-011 erase; scenes store `fx.radialBlur` (`strength`, `focusX`,
   `focusY`) only while on (a disabled blur counts as default). No ACC-012 cap (averaging adds no brightness).

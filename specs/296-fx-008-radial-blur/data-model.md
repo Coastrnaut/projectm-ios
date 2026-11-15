@@ -15,8 +15,8 @@ strength float, pad).
 
 ## Settings keys (app)
 
-`settings.radialBlur.enabled`, `settings.radialBlur.strength`, `settings.radialBlur.focusX`,
-`settings.radialBlur.focusY`: absent at defaults, written when changed, backed up and erased (FILE-005/011).
+`settings.radialBlur.enabled`, `settings.radialBlur.strength`, `settings.radialBlur.centerX`,
+`settings.radialBlur.centerY`: absent at defaults, written when changed, backed up and erased (FILE-005/011).
 
 ## Scene entry (SceneFormat, FX-020 `effects`)
 

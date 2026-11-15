@@ -38,7 +38,8 @@ extension AppCoordinator {
             videos.restoreSpeed(storeID: id.uuidString, speedPercent: inputs.videoSpeedPercent)   // MED-004-R7
         }
         if let effects = inputs.effects {   // FX-020: order, Color and Trails
-            SceneAutosaveCapture.applyEffects(effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit)
+            SceneAutosaveCapture.applyEffects(effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
+                                              radialBlur: radialBlur)   // FX-008
         }
         macros.restore(inputs.macros)   // MOD-010: the macro values (targets come back with the settings above)
         modulationMatrix.restore(inputs.bindings)   // MOD-012: the routes' order and on/off

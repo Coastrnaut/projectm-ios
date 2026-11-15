@@ -24,7 +24,7 @@ an `fx.radialBlur` entry (`SceneEffectSettings.radialBlur`). ADR-0107.
 
 **Language/Version**: Swift 6.4.2 (Xcode 27.2); Metal Shading Language compiled at run time (ADR-0009)
 **Primary Dependencies**: Metal (existing pipelines, `TexturePool`), SceneFormat (FX-020 list), SwiftUI
-**Storage**: four UserDefaults keys (`settings.radialBlur.enabled`, `.strength`, `.focusX`, `.focusY`); scene
+**Storage**: four UserDefaults keys (`settings.radialBlur.enabled`, `.strength`, `.centerX`, `.centerY`); scene
 `effects` entry `fx.radialBlur`
 **Testing**: XCTest. Compositor: `RadialBlurModelTests` (CPU: ranges, sample positions, spread linearity, bounds,
 fixed tap count, reference), `RadialBlurCompositeTests` (GPU: zero identity on random content, focus stable, streak

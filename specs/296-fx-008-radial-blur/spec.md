@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (FX-008-T01-T17 verified on the Mac and an own iOS 27.2 simulator; T18 `{device}` open)
 
 **Input**: User description: "Implement FX-008 (Radial blur) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Blur outward from an adjustable focus point." Acceptance, verbatim: "Center remains stable while
@@ -76,6 +76,13 @@ Five questions, each answered by Claude with the recommended option (owner rule 
 - Q: Which way does Focus Y run, and is there a reset? → A: 0% is the top and 100% the bottom (as on screen, like
   Focus X running left to right); no separate reset button: both sliders' default is the centre and VoiceOver steps
   are 5%. Applied to FX-008-R4, R8.
+
+### Session 2026-11-15 (speckit-implement)
+
+- Q: CAM-005 requires that no stored setting key contains "focus" (camera focus is never saved); what are the
+  blur's focus keys called? → A: `settings.radialBlur.centerX` and `settings.radialBlur.centerY` (the blur's centre);
+  the user-facing labels stay "Focus X" and "Focus Y", and the scene entry keeps `focusX`/`focusY` (scene parameters
+  are not settings keys). Found by `CameraFocusAppTests.testNotesAndNoStoredKey`. Applied to FX-008-R9.
 
 ## User Scenarios & Testing *(mandatory)*
 
