@@ -16,19 +16,18 @@
   "P2": {
    "audited": 18,
    "built": 2,
-   "integrated": 58,
-   "unit_passed": 1
+   "integrated": 59
   },
   "P3": {
    "audited": 5,
-   "built": 1,
-   "integrated": 3
+   "integrated": 3,
+   "unit_passed": 1
   }
  },
  "by_state": {
   "audited": 25,
-  "built": 3,
-  "integrated": 296,
+  "built": 2,
+  "integrated": 297,
   "skipped_existing": 1,
   "unit_passed": 1
  },
@@ -54,7 +53,6 @@
    "OSC-011",
    "OSC-012",
    "OUT-008",
-   "OUT-014",
    "QA-011",
    "QA-012",
    "UIX-006",
@@ -70,7 +68,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "29 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
+   "28 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
   ]
  },
  "features": {
@@ -1812,7 +1810,7 @@
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
-   "state": "built"
+   "state": "unit_passed"
   },
   "OSC-012": {
    "attempts": 0,
@@ -1959,10 +1957,10 @@
    "branch": "feature/out-014",
    "branch_sha": "595e332387fe06b7fd1e9c3fdf671ca925cf5767",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "b3be8f4ad4e0f9ecec81cfdfdaa4881ff820484d",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PERF-001": {
    "attempts": 0,
@@ -4197,6 +4195,11 @@
    "sha": "52bcf73436190f724daca2c35e625365557b85b3"
   },
   {
+   "branch": "feature/out-014",
+   "id": "OUT-014",
+   "sha": "b3be8f4ad4e0f9ecec81cfdfdaa4881ff820484d"
+  },
+  {
    "branch": "feature/perf-001",
    "id": "PERF-001",
    "sha": "2c4317ae"
@@ -4842,5 +4845,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T05:33:02Z"
+ "updated": "2026-11-15T05:35:51Z"
 }
