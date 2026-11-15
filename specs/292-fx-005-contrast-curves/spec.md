@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Clarified 2026-11-15
 
 **Input**: User description: "Implement FX-005 (Contrast curves) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Provide S-curve, filmic and linear presets." Acceptance, verbatim: "Neutral curve is identity
@@ -48,6 +48,31 @@ each answer is the conservative option.
   row; a pivot or point editor is a later row. Applied to FX-005-R1 and the Assumptions.
 - Q: What is "neutral"? → A: Linear, or any curve at strength 0. Neutral is skipped entirely, so the picture is
   bit-identical to the output without this feature. Applied to FX-005-R4.
+
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Where does the contrast curve run in the grade's operator order? → A: Last, after FX-004's hue. Colours
+  above display white are first brought into range with FX-002's luminance-keeping step, then the curve is applied
+  to the display-range values; FX-002's tone map that follows is then an exact identity. The curve therefore runs
+  exactly once whether the grade is in the output pass or in FX-020's pass before Trails, and every earlier result
+  is unchanged. Applied to FX-005-R6 and Edge Cases.
+- Q: Does the curve act on each colour channel or on brightness only? → A: On each channel with the same curve
+  (the film convention): a grey stays exactly grey, and each channel stays inside 0…1 by construction. Applied to
+  FX-005-R2, R5.
+- Q: Where is the S-curve's pivot, and how steep can it get? → A: Mid-grey 0.18 in linear light, a fixed point;
+  the slope at the pivot is 1 + strength (up to twice the contrast at full strength). Filmic is a toe-and-shoulder
+  curve blended with the identity by strength. Applied to FX-005-R5.
+- Q: What strength and steps do the controls use? → A: Strength 0…1, default 0.5 (so choosing a preset has a
+  visible effect), parameter step hint 0.01, one VoiceOver swipe 0.05 (20 steps), readout and spoken value in
+  percent ("50%", "50 percent"). The strength slider is shown only while a curve other than Linear is chosen.
+  Applied to FX-005-R7, R9.
+- Q: How are the curve and strength stored in a scene? → A: In the existing `fx.grade` entry's parameters, as
+  `contrast` (the preset name: `linear`, `sCurve` or `filmic`) and `contrastStrength` (a number); a missing name
+  reads as Linear, an unknown name reads as Linear with a warning and is kept in the file, and the strength follows
+  the other values' rules (missing → 0.5, not a number → 0.5 with a warning, out of range → clamped). No format
+  version bump. Applied to FX-005-R8.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -108,7 +133,8 @@ contrast curve gives a finite colour inside the display range, and the flash lim
 - Colours brighter than display white: compressed into range first (FX-002's luminance-keeping step), then curved,
   so the curve always works on display-range values.
 - Premultiplied, partly transparent pixels: curved as the colour shown over black, as the rest of the grade does.
-- Stored values missing, unknown curve names, NaN or out of range: Linear; strength clamped to 0…1 (NaN → 0).
+- Stored values missing, unknown curve names, NaN or out of range: Linear; strength missing → 0.5, NaN → 0.5,
+  out of range → clamped to 0…1.
 - Old scenes and settings without contrast: read as Linear.
 - Visuals that are not compositor-backed (native spectra, projectM): unchanged (FX-003's scope).
 
@@ -124,18 +150,21 @@ contrast curve gives a finite colour inside the display range, and the flash lim
 - **FX-005-R4**: Linear or strength 0 skips the curve: with every other control neutral the output is
   bit-identical to the ungraded output; with other controls active it is bit-identical to the grade without the
   curve.
-- **FX-005-R5**: S-curve raises contrast around a fixed mid-grey pivot (the pivot maps to itself); Filmic is a
-  toe-and-shoulder curve distinct from S-curve and from FX-002's tone map, with documented parameters.
-- **FX-005-R6**: The curve's place in the grade's operator order is documented; the flash limiter measures the
-  curved, graded, tone-mapped colour; it applies exactly once whether the grade runs in the output pass or before
-  Trails.
+- **FX-005-R5**: The curve acts on each colour channel alike (greys stay grey). S-curve raises contrast around
+  mid-grey 0.18 (linear light), which maps to itself, with slope 1 + strength there; Filmic is a toe-and-shoulder
+  curve distinct from S-curve and from FX-002's tone map, blended with the identity by strength, with documented
+  parameters.
+- **FX-005-R6**: The curve runs last in the grade (after hue), on colours first brought into display range by
+  FX-002's luminance-keeping step; the flash limiter measures the curved colour; it applies exactly once whether the
+  grade runs in the output pass or before Trails.
 - **FX-005-R7**: The curve and strength are registered parameters (MOD-001) with stable IDs, cases or range,
   defaults and step hints.
 - **FX-005-R8**: Curve and strength are saved on the device with the other grade values, restored at launch,
   included in library backups, erased with the other settings, checked on read, and reset by "Reset to neutral".
-  A scene's grade entry saves and restores them; scenes without them read as Linear.
-- **FX-005-R9**: Settings → Color has a "Contrast" picker and a "Contrast strength" slider with readout and spoken
-  value, VoiceOver-adjustable.
+  A scene's `fx.grade` entry saves and restores them (`contrast`, `contrastStrength`); scenes without them read as
+  Linear, and an unknown curve name reads as Linear with a warning.
+- **FX-005-R9**: Settings → Color has a "Contrast" picker (Linear, S-curve, Filmic) and, while a curve is chosen, a
+  "Contrast strength" slider with a percent readout and spoken value, VoiceOver-adjustable in 5% steps.
 - **FX-005-R10**: A plain-software reference of the curves exists, testable without a GPU (Linux), and the GPU
   output matches it within FX-003's tolerances.
 - **FX-005-R11**: No new render pass, texture or per-frame allocation; every existing golden image is unchanged.
