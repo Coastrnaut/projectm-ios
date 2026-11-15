@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T00:20:37Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T00:26:10Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -10,24 +10,24 @@
 | State | Features |
 |---|---|
 | audited | 69 |
-| implementing | 2 |
-| unit_passed | 2 |
-| integrated | 252 |
+| built | 2 |
+| unit_passed | 1 |
+| integrated | 253 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+| Priority | audited | built | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
-| P1 | 9 | 1 | 1 | 140 | 0 |
+| P1 | 9 | 1 | 0 | 141 | 0 |
 | P2 | 49 | 1 | 1 | 28 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
 
 The physical-device suite may **not** start:
-- 73 features are not implemented yet (first: ACC-009, ACC-010, CAM-009, CAM-010, CAM-011)
+- 72 features are not implemented yet (first: ACC-009, ACC-010, CAM-009, CAM-010, CAM-011)
 
 ## Integrated
 
@@ -264,6 +264,7 @@ The physical-device suite may **not** start:
 | SHOW-004 | Cue transition override | `96ee68c7` | `feature/show-004` |
 | SHOW-005 | Cue hold and skip | `1a2c439a` | `feature/show-005` |
 | SHOW-006 | Cue rehearsal mode | `fda100be` | `feature/show-006` |
+| SHOW-007 | Timeline transport | `0e123e55` | `feature/show-007` |
 | SHOW-011 | Tap tempo | `11329d52e6dc` | `feature/show-011` |
 | SHOW-014 | Emergency blackout | `c3886d1cb0bb` | `feature/show-014` |
 | UIX-001 | Guided first scene | `f8f54e2ac938` | `feature/uix-001` |
@@ -2816,7 +2817,7 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `3e3bb9a78d99` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-006/20261114T183641/swift-test_ShowControl.log`)
 - `post-merge batch79: ShowControl 123, projectM-iOSTests 1087, UI 4 (preset compare, preset audition, cue rehearsal, cue hold/skip); ANGLERendering comparison runner tests in the merge gate`: pass at `fda100be` (log `.autonomous/logs/integration/batch79/app-tests.log`)
 
-### SHOW-007 Timeline transport (unit_passed)
+### SHOW-007 Timeline transport (integrated)
 - `python3 scripts/check_compliance.py`: pass at `532c35165ceb` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-007/20261114T191237/compliance.log`)
 - `python3 scripts/validate_docs.py`: pass at `532c35165ceb` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-007/20261114T191237/docs.log`)
 - `python3 scripts/test_scripts.py`: pass at `532c35165ceb` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-007/20261114T191237/script-tests.log`)
@@ -2824,6 +2825,7 @@ None.
 - `swift test --package-path Packages/ImportFuzz`: pass at `532c35165ceb` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-007/20261114T191237/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/LibraryBackup`: pass at `532c35165ceb` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-007/20261114T191237/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/ShowControl`: pass at `532c35165ceb` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-007/20261114T191237/swift-test_ShowControl.log`)
+- `post-merge batch86/86b: ShowControl 128, LibraryBackup 86, projectM-iOSTests 1118, UI 3 (show timeline, cue hold/skip, auto advance)`: pass at `2ae941b3` (log `.autonomous/logs/integration/batch86b/app-tests.log`)
 
 ### SHOW-011 Tap tempo (integrated)
 - `python3 scripts/check_compliance.py`: pass at `725551081f5c` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/SHOW-011/20261113T104510/compliance.log`)
