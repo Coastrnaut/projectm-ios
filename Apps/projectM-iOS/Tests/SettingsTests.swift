@@ -71,6 +71,7 @@ final class SettingsTests: XCTestCase {
         settings.noiseFieldFrequency = .high   // VIS-013-R9
         settings.noiseFieldOctaves = 6
         settings.noiseFieldSeed = 7
+        settings.kaleidoscopeWedges = 9         // VIS-014-R9
         settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
@@ -109,7 +110,7 @@ final class SettingsTests: XCTestCase {
         settings.visual = .circularSpectrum
         XCTAssertEqual(defaults.string(forKey: "settings.visual"), "circularSpectrum")
         XCTAssertEqual(AppSettings(defaults: defaults, systemReduceMotion: false).visual, .circularSpectrum, "persisted")
-        defaults.set("kaleidoscope", forKey: AppSettings.visualKey)
+        defaults.set("hologram", forKey: AppSettings.visualKey)   // VIS-014 made "kaleidoscope" a real choice
         XCTAssertEqual(AppSettings(defaults: defaults, systemReduceMotion: false).visual, .projectM, "unknown → projectM")
     }
 
@@ -151,7 +152,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013, VIS-014
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

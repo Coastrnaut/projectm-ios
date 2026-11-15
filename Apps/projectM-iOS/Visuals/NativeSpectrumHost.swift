@@ -67,6 +67,8 @@
 //   bound: the modulator's value and no bass). Radius changes only its configuration; `reduceMotion` slows it (R9).
 // * Noise field (VIS-013): reads the frame's bands (ANL-002) like the spectra; frequency, octaves and seed change only its
 //   configuration; `reduceMotion` halves its drift and band warp (R8).
+// * Kaleidoscope (VIS-014): the same generator with `wedges` set (folded); Wedges and switches to and from Noise Field
+//   change only its configuration; `reduceMotion` also halves its turning (R8).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -518,6 +520,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                     configuration: NoiseFieldConfiguration(frequency: frequency.cells, octaves: octaves, seed: seed))
             generator.barCount = barCount
             return generator
+        case let .kaleidoscope(wedges):   // VIS-014: the noise field's generator with the fold on
+            let generator = try NoiseFieldGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                    configuration: NoiseFieldConfiguration.kaleidoscope(wedges: wedges))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -598,7 +605,12 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.frequency = frequency.cells
             configuration.octaves = octaves
             configuration.seed = seed
+            configuration.wedges = 0   // VIS-014: from the kaleidoscope, the fold turns off
             field.configuration = configuration
+        } else if case let .kaleidoscope(wedges) = newStyle, let field = generator as? NoiseFieldGenerator {
+            // VIS-014: in place, from the next frame (from Noise Field too: the kaleidoscope's own source settings)
+            field.configuration = NoiseFieldConfiguration.kaleidoscope(wedges: wedges, reduceMotion: field.configuration.reduceMotion,
+                                                                       palette: field.configuration.palette)
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -819,6 +831,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .particleOrbit(radius): return "\(radius.title) radius, \(glow)"   // VIS-009-R12
         case let .noiseField(frequency, octaves, seed):   // VIS-013-R12
             return "\(frequency.title) frequency, \(octaves) octaves, seed \(seed), \(glow)"
+        case let .kaleidoscope(wedges): return "\(wedges) wedges, \(glow)"   // VIS-014-R12
         }
     }
 
@@ -1167,6 +1180,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case particleOrbit(radius: ParticleOrbitRadius)
     /// VIS-013: the noise field.
     case noiseField(frequency: NoiseFieldFrequency, octaves: Int, seed: Int)
+    /// VIS-014: the kaleidoscope (the noise field folded into `wedges`).
+    case kaleidoscope(wedges: Int)
 
     /// VIS-006, VIS-008, VIS-009: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1196,6 +1211,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .particleFountain: VisualChoice.particleFountain.title
         case .particleOrbit: VisualChoice.particleOrbit.title
         case .noiseField: VisualChoice.noiseField.title
+        case .kaleidoscope: VisualChoice.kaleidoscope.title
         }
     }
 
@@ -1211,6 +1227,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .particleFountain: "particleFountain"
         case .particleOrbit: "particleOrbit"
         case .noiseField: "noiseField"
+        case .kaleidoscope: "kaleidoscope"
         }
     }
 }
