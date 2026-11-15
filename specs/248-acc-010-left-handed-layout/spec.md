@@ -40,6 +40,14 @@ each answer is the conservative, local-first option.
 - Q: What is never mirrored? → A: The rendered visual, the external display, recordings, Save Frame, text direction, symbols and the layout direction of any text; no view is flipped and the app does not change the system layout direction (`ACC-010-R4`).
 - Q: Do identifiers, labels or VoiceOver change? → A: No: every identifier, label, value, hint and keyboard shortcut is unchanged. VoiceOver's order follows the visual order (left to right, top to bottom), as it does today; no announcement on the switch (`ACC-010-R5`).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: When does a change of the switch take effect? → A: At once, on the next layout pass, while Settings is open beside or over the visualizer; no extra animation (moves follow the existing Reduce Motion-aware transitions) and no relaunch (`ACC-010-R1`).
+- Q: Do the pad's readouts change their text alignment? → A: Each readout moves with its group and aligns toward the screen edge on its side (the cue readout is trailing-aligned when its group is on the right); the characters, reading direction and wrapping rules are unchanged (`ACC-010-R3`, `ACC-010-R4`).
+- Q: Where exactly is the switch, and what does its footer say? → A: Its own section in Settings → Performance, directly before One-handed layout, with the footer "Moves the performance pad's Black out and Tap tempo buttons and the emergency Black out button to the left side. The visualization is never mirrored. While the one-handed layout is on, its hand decides." (`ACC-010-R1`, `ACC-010-R6`).
+- Q: Does the UIX-013 HUD, the status badges, the performance overlay or the controls card move? → A: No. They are full-width or top-anchored and keep their places; only the pad and the emergency button are edge-anchored performance controls (`ACC-010-R2`, `ACC-010-R3`).
+- Q: How do tests turn the switch on? → A: Through the argument domain (`-settings.controls.leftHanded YES`), as other preferences do; `-uitestResetNotice` removes the stored value first, and a launch argument still overrides it (`ACC-010-R7`).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pad and emergency button on the left (Priority: P1) — MVP
