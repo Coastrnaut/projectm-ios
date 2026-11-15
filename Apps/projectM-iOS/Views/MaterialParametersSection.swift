@@ -78,7 +78,11 @@ struct MaterialParameterControlView: View {
                                          set: { (v: Double) -> Void in send(.continuous(v)) })
             VStack(alignment: .leading, spacing: 2) {
                 header
-                Slider(value: Binding<Double>(get: target.get, set: target.set), in: spec.range, step: spec.step)
+                // Closure literals, not `target.get`/`target.set` passed as values: converting the @MainActor
+                // function values to Binding's closures crashed Xcode 26.6's IR generation (CI run 43673306095).
+                Slider(value: Binding<Double>(get: { () -> Double in target.get() },
+                                              set: { (v: Double) -> Void in target.set(v) }),
+                       in: spec.range, step: spec.step)
                     .accessibleParameter(spec, target: target)
             }
         }
