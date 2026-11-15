@@ -50,6 +50,14 @@ interaction); each answer is the conservative, local-first option.
 - Q: Safety and the performance lock? → A: Cue sync only moves the show position. It never changes a setting, edits or deletes a cue, scene or file, and never turns another switch on. Following is a cue step, which the scene/performance lock (SHOW-015) allows; blackout, the repair report and Reduce flashing apply exactly as for a manual step (OSC-012-R11).
 - Q: What is stored? → A: One key, `settings.osc.cueSync.role` (absent → Off), this device's network setup: excluded from the FILE-005 backup, removed by the FILE-011 Settings erase and by the UI-test reset. Sequence, session and follower state are memory only (OSC-012-R12).
 
+### Session 2026-11-15 (speckit-clarify)
+
+- Q: When does a leader start a new burst besides a cue change? → A: Whenever leading becomes active with an active cue: choosing Lead, Send OSC becoming active (switch, receiver, foreground, approval), or returning to the foreground. Each start counts as a cue change (new seq, 3 sends), so a follower that missed everything while the leader was paused recovers at once (OSC-012-R5).
+- Q: Does cue sync need one of Send OSC's message kinds (scene, beat, status)? → A: No. Cue messages are their own class, controlled by the role alone; Send OSC's switch and destination are still needed. The kind choices and Include scene names do not affect them (OSC-012-R3).
+- Q: Which `/projectm/cue` messages are malformed? → A: Anything but exactly the types `s i i i`; a cue ID that is empty or over 64 UTF-8 bytes; a negative seq or offset. Malformed messages are ignored and counted, and never change the last accepted seq (OSC-012-R7).
+- Q: Is anything spoken to VoiceOver for sync? → A: No new announcements. A follower's step announces through SHOW-001's cue lane exactly like a manual step; the Cue Sync status line ("Following cue 3", "Waiting for the leader", "The leader's cue isn't in this show") is an ordinary label (OSC-012-R14).
+- Q: How does a follower show the synchronized offset? → A: The status line shows the cue and how long ago it started on the leader, rounded to the second ("Following cue 3 · started 12 s ago"), computed from the aligned start on the follower's own clock (OSC-012-R8, R14).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A follower iPad stays on the leader's cue (Priority: P3)
@@ -106,15 +114,16 @@ leader is applied on the follower; with real UDP on 127.0.0.1 the same holds thr
 - **OSC-012-R2**: A leader MUST send only `/projectm/cue` with exactly the cue ID string (≤ 64 bytes), seq (int32), offset in milliseconds (int32, ≥ 0) and session (int32).
 - **OSC-012-R3**: A leader MUST send through OSC-005's sender to its one destination, under every OSC-005 gate and its 60/s cap; it MUST NOT open any other flow.
 - **OSC-012-R4**: A leader MUST send only while the allow list is on and the destination is approved.
-- **OSC-012-R5**: Per cue change a leader MUST send at most 3 messages (0, 100, 300 ms), then at most one heartbeat per 2 s while leading with an active cue; no acknowledgements or other retries.
+- **OSC-012-R5**: Per cue change a leader MUST send at most 3 messages (0, 100, 300 ms), then at most one heartbeat per 2 s while leading with an active cue; no acknowledgements or other retries. Leading becoming active with an active cue counts as a cue change.
 - **OSC-012-R6**: A follower MUST act on `/projectm/cue` only while Follow is chosen and the allow list is on (so only approved hosts reach it); otherwise the message is ignored.
-- **OSC-012-R7**: A follower MUST apply only a message newer than the last accepted (same session and greater seq, or a different session); older and duplicate messages are ignored.
+- **OSC-012-R7**: A follower MUST apply only a message newer than the last accepted (same session and greater seq, or a different session); older and duplicate messages are ignored. Malformed messages (types other than `s i i i`, a cue ID empty or over 64 bytes, a negative seq or offset) are ignored and counted.
 - **OSC-012-R8**: A follower MUST go to the received cue at once through SHOW-001's step path (not quantized), unless already on it, and MUST record the cue's start as its own monotonic receipt time minus the offset.
 - **OSC-012-R9**: A cue ID that the follower's show does not have MUST be reported and counted, never applied.
 - **OSC-012-R10**: While following is active the follower's timed advance MUST be held.
 - **OSC-012-R11**: Cue sync MUST NOT change settings, edit or delete show material or files, or turn any switch on; the scene/performance lock MUST NOT block following.
 - **OSC-012-R12**: The role MUST be stored on this device only (excluded from backup, removed by the Settings erase and the UI-test reset); all other sync state MUST stay in memory.
 - **OSC-012-R13**: Traffic MUST NOT schedule main-thread work per message (OSC-009-R11): received cue messages are coalesced into a bounded inbox with at most one pending hop.
+- **OSC-012-R14**: Cue Sync MUST show a status line for the role (why it is not active, "Sending cue 3", "Following cue 3 · started 12 s ago", "Waiting for the leader", "The leader's cue isn't in this show") and add no VoiceOver announcements of its own.
 
 ### Key Entities
 
