@@ -302,6 +302,24 @@ enum CompositorShaders {
         float g = clamp(gain[0], 0.0, 1.0);
         return float4(t.rgb * g, t.a);
     }
+
+    // OUT-009 (specs/268, contract C2): `cmp_output` for an external display, then its calibration on the
+    // display-encoded value e (exact sRGB curve): e' = clamp(trim × e^(exponent), 0, 1), decoded again so the sRGB
+    // target re-encodes it. Used only by the screen pass while the calibration is not the identity.
+    struct CMPCalibration { float4 gain; float4 params; };
+
+    fragment float4 cmp_output_calibrated(FullScreenOut in [[stage_in]], texture2d<float, access::read> composite [[texture(0)]],
+                                          device const float *gain [[buffer(0)]], device atomic_uint *nonFinite [[buffer(1)]],
+                                          constant CMPGrade &grade [[buffer(2)]], constant CMPCalibration &cal [[buffer(3)]]) {
+        float4 c = composite.read(uint2(in.position.xy));
+        if (any(isnan(c) || isinf(c))) atomic_fetch_add_explicit(nonFinite, 1u, memory_order_relaxed);
+        float4 t = cmp_display(c, grade);
+        float g = clamp(gain[0], 0.0, 1.0);
+        float3 o = t.rgb * g;
+        float3 e = float3(cmp_encode(o.r), cmp_encode(o.g), cmp_encode(o.b));
+        e = clamp(cal.gain.rgb * pow(max(e, float3(0.0)), float3(cal.params.x)), 0.0, 1.0);
+        return float4(cmp_decode(e.r), cmp_decode(e.g), cmp_decode(e.b), t.a);
+    }
     """
 
     /// FX-002 (contracts/tone-map.md in specs/122, research FX-002-D1; ADR-0047): the output tone map, the same
@@ -392,6 +410,19 @@ enum CompositorShaders {
             hue = SIMD4<Float>(Float(k.hueMatrix.x), Float(k.hueMatrix.y), Float(k.hueMatrix.z), Float(k.hueMatrix.w))
             saturation = Float(k.saturation)
             flags = k.flags
+        }
+    }
+
+    /// OUT-009: `CMPCalibration` in the shader (32 bytes, copied by `setFragmentBytes` at fragment buffer 3).
+    struct CalibrationBlock: Equatable {
+        /// (red, green, blue trims, unused).
+        var gain: SIMD4<Float>
+        /// (exponent = 1 / gamma, unused…).
+        var params: SIMD4<Float>
+
+        init(_ c: DisplayCalibration) {
+            gain = SIMD4<Float>(Float(c.red), Float(c.green), Float(c.blue), 1)
+            params = SIMD4<Float>(Float(c.exponent), 0, 0, 0)
         }
     }
 

@@ -96,6 +96,9 @@
 // comes first, Trails are active and the grade is not neutral does `OutputGradePass` grade the composite before Trails
 // (the guard and outputs then use the neutral block); otherwise the single-pass output above runs unchanged. The flash
 // guard and the tone map always come after both. `encodeScene` never runs the grade pass (CMP-014's bus grades itself).
+// OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
+// screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
+// encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import FrameCapture
 import FlashSafety
@@ -306,6 +309,16 @@ public final class Compositor {
     /// FX-003 (contracts/color-grade.md in specs/123, ADR-0050): the colour grade every output pass applies before the
     /// tone map, and the flash guard measures. Set between frames; neutral (the default) bypasses grading bit for bit.
     /// Never invalidates CMP-013's caches (grading runs after the composite).
+    /// OUT-009 (specs/268, contract C2): the external display's calibration, applied by the screen pass of
+    /// `composite(into:)` only (never by `encodeOutput`, captures or `encodeScene`); the identity keeps `cmp_output`.
+    public var displayCalibration: DisplayCalibration = .identity {
+        didSet { calibrationBlock = CompositorShaders.CalibrationBlock(displayCalibration) }
+    }
+    private var calibrationBlock = CompositorShaders.CalibrationBlock(.identity)
+    /// Screen passes drawn with the calibration (tests, diagnostics).
+    public private(set) var calibratedFrames = 0
+    private var calibratedOutputPipelines: [(format: MTLPixelFormat, state: MTLRenderPipelineState)] = []
+
     public var colorGrade: ColorGrade = .neutral {
         didSet { gradeBlock = CompositorShaders.GradeBlock(colorGrade.coefficients) }
     }
@@ -583,8 +596,10 @@ public final class Compositor {
     /// output, an unsupported format or when Metal cannot create an encoder.
     public func composite(into output: MTLTexture, commandBuffer: MTLCommandBuffer, presentationTimeNanoseconds: UInt64,
                           contentScale: Double, reduceFlashing: Bool, audio: LayerAudioContext) -> Bool {
+        let calibrated: Bool = !displayCalibration.isIdentity   // OUT-009
         guard let size = LayerPictureDescriptor(width: output.width, height: output.height),
-              let outputPipeline = outputPipeline(for: output.pixelFormat) else { return false }
+              let outputPipeline = calibrated ? calibratedOutputPipeline(for: output.pixelFormat)
+                : outputPipeline(for: output.pixelFormat) else { return false }
         if let last = lastOutputFormat, last != output.pixelFormat { trails.resetPending = true }   // FX-009-R5
         lastOutputFormat = output.pixelFormat
         lastOutputPassStartNanoseconds = 0
@@ -607,6 +622,11 @@ public final class Compositor {
             encoder.setFragmentBuffer(flashGuard.gainBuffer, offset: 0, index: 0)
             encoder.setFragmentBuffer(nonFiniteCounter.counter, offset: 0, index: 1)   // FX-002: the screen pass counts
             Self.bindGrade(grade, encoder)
+            if calibrated {   // OUT-009: `cmp_output_calibrated` reads buffer 3
+                var block = calibrationBlock
+                encoder.setFragmentBytes(&block, length: MemoryLayout<CompositorShaders.CalibrationBlock>.size, index: 3)
+                calibratedFrames &+= 1
+            }
             encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
             encoder.endEncoding()
             outputCommandBuffer = commandBuffer   // REC-003: `encodeOutput` may follow in this command buffer
@@ -1413,6 +1433,19 @@ public final class Compositor {
             return nil
         }
         outputPipelines.append((format, state))
+        return state
+    }
+
+    /// OUT-009: the screen pass with the display calibration (created the first time it is used at a format).
+    private func calibratedOutputPipeline(for format: MTLPixelFormat) -> MTLRenderPipelineState? {
+        for entry in calibratedOutputPipelines where entry.format == format { return entry.state }
+        guard Self.supportedOutputFormats.contains(format),
+              let fragment = library.makeFunction(name: "cmp_output_calibrated"),
+              let state = try? CompositorShaders.pipeline(device: device, vertex: fullScreen, fragment: fragment, format: format,
+                                                          blendOver: false, label: "OUT-009 calibrated output \(format.rawValue)") else {
+            return nil
+        }
+        calibratedOutputPipelines.append((format, state))
         return state
     }
 }

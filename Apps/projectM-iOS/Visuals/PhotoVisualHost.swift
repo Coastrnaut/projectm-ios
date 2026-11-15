@@ -163,6 +163,9 @@ final class PhotoVisualHost: PresentationBoundResource, CompositorVisualHost {
         bands.initialize(repeating: 0, count: SpectrumBarCount.maximum)
         view = NativeSpectrumLayerView(device: device)
         view.onLayout = { [weak self] in self?.layoutDrawable() }
+        view.onDisplayCalibrationChange = { [weak self] (c: DisplayCalibration) -> Void in   // OUT-009: the screen pass
+            self?.compositor.displayCalibration = c
+        }
         photo.onStateChange = { [weak self] (state: ImageLayerState) in self?.imageStateChanged(state) }
         observeSystem()
         updateAccessibility()

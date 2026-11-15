@@ -14,20 +14,22 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 31,
+   "audited": 30,
    "implementing": 4,
-   "integrated": 44
+   "integrated": 44,
+   "unit_passed": 1
   },
   "P3": {
    "audited": 8,
-   "implementing": 1
+   "unit_passed": 1
   }
  },
  "by_state": {
-  "audited": 41,
-  "implementing": 5,
+  "audited": 40,
+  "implementing": 4,
   "integrated": 279,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 2
  },
  "device_gate": {
   "blocked": [],
@@ -751,12 +753,12 @@
   "CAM-009": {
    "attempts": 0,
    "branch": "feature/cam-009",
-   "branch_sha": null,
+   "branch_sha": "60cc3e3c14a43c3076a80ee1042ef5f1e6ce0e3a",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "CAM-010": {
    "attempts": 0,
@@ -1750,13 +1752,13 @@
   },
   "OSC-004": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/osc-004",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "OSC-005": {
    "attempts": 0,
@@ -1921,12 +1923,12 @@
   "OUT-009": {
    "attempts": 0,
    "branch": "feature/out-009",
-   "branch_sha": null,
+   "branch_sha": "a5ea892238efabe572c810c3c1022217475845c0",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "OUT-010": {
    "attempts": 0,
@@ -4771,5 +4773,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:38:44Z"
+ "updated": "2026-11-15T03:54:21Z"
 }

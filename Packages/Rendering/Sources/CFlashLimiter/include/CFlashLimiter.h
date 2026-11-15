@@ -34,6 +34,14 @@ unsigned int PMFlashLimiterBegin(PMFlashLimiter *_Nonnull limiter, int width, in
 /// `targetFramebuffer`.
 void PMFlashLimiterFinish(PMFlashLimiter *_Nonnull limiter, unsigned int targetFramebuffer,
                           const PMFlashEnvelopeParameters *_Nonnull parameters);
+/// OUT-009 (specs/268-out-009-output-color-calibration, contract C3): the external display's calibration, applied
+/// by the output step after the gain on the encoded value: clamp(gain_c × e^exponent, 0, 1). `enabled` 0 (the
+/// default): the output step is unchanged. Kept until changed (a new size or Reset keeps it).
+void PMFlashLimiterSetCalibration(PMFlashLimiter *_Nonnull limiter, int enabled, float exponent, float red, float green,
+                                  float blue);
+/// Draws the output step of the last Finish once more into `targetFramebuffer` from the current envelope state (no
+/// update): calibrated when `calibrated` is non-zero and a calibration is enabled, else uncalibrated (REC-001 reads).
+void PMFlashLimiterDrawOutput(PMFlashLimiter *_Nonnull limiter, unsigned int targetFramebuffer, int calibrated);
 /// The gain applied by the last Finish (tests; reads back one texel, so it waits for the GPU).
 float PMFlashLimiterLastGain(PMFlashLimiter *_Nonnull limiter);
 unsigned int PMFlashLimiterSceneFramebuffer(PMFlashLimiter *_Nonnull limiter);
