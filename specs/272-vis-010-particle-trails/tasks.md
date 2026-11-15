@@ -10,20 +10,20 @@ Tests are requested by the spec (acceptance fixture, goldens, UI test). `{device
 
 ## Phase 2: Foundational (CPU model, every platform)
 
-- [ ] VIS-010-T02 `ParticleTrailLength`, half-life (Short 0.1 s, Long 0.3 s; × 0.5 Reduce Motion; ≤ 0.25 s Reduce flashing), `ParticleTrails.decay` (`min(0.5^(Δt/h), 0.99)`, Δt clamped 0…0.1 s), cap 0.8, cut 1/512, `accumulate` pixel reference, `ParticleTrailFlashBound`, `ParticleTrailModel` in Packages/VisualGenerators/Sources/VisualGenerators/ParticleTrails.swift
-- [ ] VIS-010-T03 [P] Model tests: frame-rate independence (30 vs 120 fps within 0.01 at 0.5 s), cap under continuous emission, cut to exact 0, Reduce Motion/flashing half-lives, flash bound recurrence, fixed storage over a 36 000-frame CPU fixture in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailModelTests.swift
+- [X] VIS-010-T02 `ParticleTrailLength`, half-life (Short 0.1 s, Long 0.3 s; × 0.5 Reduce Motion; ≤ 0.25 s Reduce flashing), `ParticleTrails.decay` (`min(0.5^(Δt/h), 0.99)`, Δt clamped 0…0.1 s), cap 0.8, cut 1/512, `accumulate` pixel reference, `ParticleTrailFlashBound`, `ParticleTrailModel` in Packages/VisualGenerators/Sources/VisualGenerators/ParticleTrails.swift — Verified 2026-11-14: swift build (host and -DVISUAL_NO_METAL) and ParticleTrailModelTests
+- [X] VIS-010-T03 [P] Model tests: frame-rate independence (30 vs 120 fps within 0.01 at 0.5 s), cap under continuous emission, cut to exact 0, Reduce Motion/flashing half-lives, flash bound recurrence, fixed storage over a 36 000-frame CPU fixture in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailModelTests.swift — Verified 2026-11-14: ParticleTrailModelTests 6/6 on the macOS host (1.3 s)
 
 ## Phase 3: US1 + US2 Streaks with constant memory (P1)
 
-- [ ] VIS-010-T04 [US1] `FlatShapePass`: keep `library`, `buffer(_:)`, `markRead`, optional underlay closure in `draw`; append `ParticleTrailShader.functions` to `shaderSource` in Packages/VisualGenerators/Sources/VisualGenerators/FlatShapePass.swift
-- [ ] VIS-010-T05 [US1] `ParticleTrailPass` (two private 512² `rgba16Float` textures made once, decay/accumulate/present pipelines via `NativePipelineArchive`, reset rule, `encode`) and `ParticleTrailShader` in Packages/VisualGenerators/Sources/VisualGenerators/ParticleTrailPass.swift
-- [ ] VIS-010-T06 [US1] `trails` property and trail branch in Packages/VisualGenerators/Sources/VisualGenerators/ParticleFountainGenerator.swift and ParticleOrbitGenerator.swift (Off path unchanged)
-- [ ] VIS-010-T07 [US2] GPU tests: 10-minute fixture (36 000 frames at 60 Hz, resizes, setting changes) asserting texture count, identities and total `allocatedSize` constant; Off allocates nothing; GPU streak matches CPU reference; cap holds on readback in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailRenderTests.swift
+- [X] VIS-010-T04 [US1] `FlatShapePass`: keep `library`, `buffer(_:)`, `markRead`, optional underlay closure in `draw`; append `ParticleTrailShader.functions` to `shaderSource` in Packages/VisualGenerators/Sources/VisualGenerators/FlatShapePass.swift — Verified 2026-11-14: VisualGenerators suite 330/330 on the macOS host (archive and spectra tests unchanged)
+- [X] VIS-010-T05 [US1] `ParticleTrailPass` (two private 512² `rgba16Float` textures made once, decay/accumulate/present pipelines via `NativePipelineArchive`, reset rule, `encode`) and `ParticleTrailShader` in Packages/VisualGenerators/Sources/VisualGenerators/ParticleTrailPass.swift — Verified 2026-11-14: ParticleTrailRenderTests 5/5 on the macOS host
+- [X] VIS-010-T06 [US1] `trails` property and trail branch in Packages/VisualGenerators/Sources/VisualGenerators/ParticleFountainGenerator.swift and ParticleOrbitGenerator.swift (Off path unchanged) — Verified 2026-11-14: ParticleTrailRenderTests (fountain fixture, orbit resize/restart/off) and the full suite 330/330
+- [X] VIS-010-T07 [US2] GPU tests: 10-minute fixture (36 000 frames at 60 Hz, resizes, setting changes) asserting texture count, identities and total `allocatedSize` constant; Off allocates nothing; GPU streak matches CPU reference; cap holds on readback in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailRenderTests.swift — Verified 2026-11-14: ParticleTrailRenderTests 5/5 on the macOS host; fixture 6.9 s, 3 694 of 36 000 frames encoded, 2 textures, 4 227 072 bytes constant
 - [ ] VIS-010-T08 [US1] Golden of the seeded fountain with Long trails at 0.6 s, macOS host and iOS Simulator, in Packages/RenderGoldens/Tests/RenderGoldensTests/ParticleTrailGoldenTests.swift (+ GeneratorGoldens/ParticleTrails/); existing fountain/orbit goldens unchanged
 
 ## Phase 4: US3 Safe brightness (P1)
 
-- [ ] VIS-010-T09 [US3] Flash tests: envelope sees the trail bound, gain scales the trail, Reduce flashing budget held with strobing bursts, bound ≥ measured trail luminance in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailFlashTests.swift
+- [X] VIS-010-T09 [US3] Flash tests: envelope sees the trail bound, gain scales the trail, Reduce flashing budget held with strobing bursts, bound ≥ measured trail luminance in Packages/VisualGenerators/Tests/VisualGeneratorsTests/ParticleTrailFlashTests.swift — Verified 2026-11-14: ParticleTrailFlashTests and ParticleTrailBoundRenderTests on the macOS host (worst transitions 1/4 Reduce flashing on, 6/6 off)
 
 ## Phase 5: US4 Choose it (P2)
 
