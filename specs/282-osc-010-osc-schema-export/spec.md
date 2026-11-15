@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (OSC-010-T01-T08 verified on the Mac: host and the iOS 27.2 simulator; device task T09 `{device}` open)
 
 **Input**: User description: "Implement roadmap row OSC-010 (OSC schema export) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Export a local text file documenting active
