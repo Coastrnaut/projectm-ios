@@ -18,6 +18,9 @@
 //   approved is dropped and counted (`droppedUnapproved`) before it reaches the dispatcher.
 // * OSC-006 (specs/278-osc-006-osc-bundles): every stop and launch clears the dispatcher's bundle schedule, so a
 //   message scheduled before the switch went off never applies later.
+// * OSC-011 (specs/289-osc-011-local-peer-discovery, ADR-0100): `setAdvertisement(_:)` keeps the name to announce;
+//   the current transport gets it at once and every later transport right after its start, so a port change or
+//   restart keeps announcing; nil withdraws it.
 import ParameterGraph
 import Synchronization
 
@@ -37,6 +40,8 @@ public final class OSCReceiver: Sendable {
         var active: Active?
         var generation: UInt64 = 0
         var handlers: [StateHandler] = []
+        /// OSC-011: the name to announce, nil for none.
+        var advertisement: String?
     }
 
     /// What to do after the lock is released.
@@ -44,6 +49,8 @@ public final class OSCReceiver: Sendable {
         var stop: (any OSCDatagramTransport)?
         var start: (transport: any OSCDatagramTransport, port: UInt16, generation: UInt64)?
         var notify: OSCReceiverState?
+        /// OSC-011: the advertisement for the started transport.
+        var advertisement: String?
     }
 
     public let dispatcher: OSCDispatcher
@@ -162,6 +169,19 @@ public final class OSCReceiver: Sendable {
         perform(effects)
     }
 
+    /// OSC-011-R7: announces the listener as `name` (nil withdraws). Kept for every later transport.
+    public func setAdvertisement(_ name: String?) {
+        let transport = lockedState.withLock { s -> (any OSCDatagramTransport)? in
+            s.advertisement = name
+            guard let active = s.active, !active.stopRequested else { return nil }
+            return active.transport
+        }
+        transport?.advertise(name)
+    }
+
+    /// OSC-011: the name currently requested (tests).
+    public var advertisement: String? { lockedState.withLock { $0.advertisement } }
+
     // MARK: Events
 
     private func handle(_ event: OSCTransportEvent, generation: UInt64) {
@@ -236,7 +256,7 @@ public final class OSCReceiver: Sendable {
         dispatcher.resetLimits()                      // every listener starts with full buckets (OSC-009-R5)
         dispatcher.clearScheduled()                   // and an empty bundle schedule (OSC-006-R10)
         s.phase = .starting(port: port)
-        return Effects(start: (transport, port, s.generation), notify: s.phase)
+        return Effects(start: (transport, port, s.generation), notify: s.phase, advertisement: s.advertisement)
     }
 
     private func perform(_ effects: Effects) {
@@ -250,6 +270,7 @@ public final class OSCReceiver: Sendable {
             start.transport.start(port: start.port) { [weak self] event in
                 self?.handle(event, generation: generation)
             }
+            if let name = effects.advertisement { start.transport.advertise(name) }   // OSC-011
         }
     }
 }

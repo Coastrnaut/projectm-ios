@@ -52,10 +52,10 @@ final class ShowKeyframeAcceptanceTests: XCTestCase {
         keyframes.apply = { [unowned self] (output: ShowTrackOutput) -> Void in self.applied.append(output) }
     }
 
-    /// Glow intensity: 0.2 at 0:00 (Linear) → 0.9 at 0:30 (Hold) → 0.4 at 1:00 (Ease) → 0.7 at 1:15.
+    /// Glow intensity: 0.2 at 0:00 (Linear) → 0.9 at 0:30 (Stepped) → 0.4 at 1:00 (Ease) → 0.7 at 1:15.
     private let stored: [ShowKeyframe] = [
         ShowKeyframe(time: 0, value: .number(0.2), interpolation: .linear),
-        ShowKeyframe(time: 30_000, value: .number(0.9), interpolation: .hold),
+        ShowKeyframe(time: 30_000, value: .number(0.9), interpolation: .stepped),
         ShowKeyframe(time: 60_000, value: .number(0.4), interpolation: .ease),
         ShowKeyframe(time: 75_000, value: .number(0.7000000000000001), interpolation: .linear),
     ]
@@ -139,7 +139,7 @@ final class ShowKeyframeAcceptanceTests: XCTestCase {
 
         settings.sceneLock.lock()
         XCTAssertNil(keyframes.addKeyframeAtPlayhead(track: id))
-        XCTAssertFalse(keyframes.setInterpolation(.hold, track: id, time: 0))
+        XCTAssertFalse(keyframes.setInterpolation(.stepped, track: id, time: 0))
         XCTAssertFalse(keyframes.removeTrack(id))
         XCTAssertEqual(show.list.tracks.track(id)?.keyframes.count, 2)
         settings.sceneLock.unlock()

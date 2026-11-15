@@ -54,6 +54,7 @@ public enum LibraryErasePolicy {
     public static let videoKey = "settings.video.id"
     public static let videoLoopKey = "settings.video.loop"
     public static let videoSpeedKey = "settings.video.speed"   // MED-004
+    public static let videoReverseKey = "settings.video.reverse"   // MED-005
     public static let reduceFlashingKey = "settings.reduceFlashing"
     public static let colorBlindSafePaletteKey = "settings.visual.colorBlindSafePalette"
     public static let oscEnabledKey = "settings.osc.enabled"
@@ -83,6 +84,8 @@ public enum LibraryErasePolicy {
     /// OSC-005-R12: Send OSC, its destination and message choices (this device's network: not backed up, erased with Settings).
     public static let oscSendKeys: [String] = ["settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",
                                                "settings.osc.send.kinds", "settings.osc.send.sceneNames"]
+    /// OSC-011-R10: the Nearby Devices switches (this device's network: not backed up, erased with Settings).
+    public static let oscDiscoveryKeys: [String] = ["settings.osc.discovery.browse", "settings.osc.discovery.advertise"]
 
     /// Folder names under the library root (FILE-011-R4).
     public static func folders(_ category: LibraryEraseCategory) -> [String] {
@@ -104,7 +107,7 @@ public enum LibraryErasePolicy {
         switch category {
         case .scenes, .presets, .importedAudio, .recordings: []
         case .collections: [LibrarySettingsPolicy.favoritesKey, LibrarySettingsPolicy.recentPresetsKey]   // PRE-006-R7
-        case .media: [LibrarySettingsPolicy.photoKey, LibrarySettingsPolicy.slideshowKey, videoKey, videoLoopKey, videoSpeedKey,   // MED-006
+        case .media: [LibrarySettingsPolicy.photoKey, LibrarySettingsPolicy.slideshowKey, videoKey, videoLoopKey, videoSpeedKey, videoReverseKey,   // MED-006, MED-005
                       LibrarySettingsPolicy.logoKey, LibrarySettingsPolicy.logoPlacementKey]   // MED-010
         case .settings: settingsCategoryKeys
         }
@@ -134,7 +137,7 @@ public enum LibraryErasePolicy {
         let included: [String] = LibrarySettingsPolicy.includedKeys.filter { (key: String) -> Bool in !owned.contains(key) }
         return included + [oscEnabledKey, midiEnabledKey, recordingMicrophoneKey, recordingQualityKey, recordingFrameRateKey]
             + recordingAspectKeys   // REC-014-R7
-            + externalDisplayKeys + [sceneLockKey] + oscPeerKeys + oscSendKeys + [splitEditorWidthKey]   // SCN-015: erasing Settings unlocks the scene; OSC-008; UIX-007
+            + externalDisplayKeys + [sceneLockKey] + oscPeerKeys + oscSendKeys + oscDiscoveryKeys + [splitEditorWidthKey]   // SCN-015: erasing Settings unlocks the scene; OSC-008; UIX-007
             + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
             + [showLoopKey]   // SHOW-007: erasing Settings turns Loop off
             + [sceneRotationKey]   // SHOW-013: erasing Settings resets rotation's choices

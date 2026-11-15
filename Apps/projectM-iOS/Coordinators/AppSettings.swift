@@ -155,6 +155,8 @@ final class AppSettings {
     static let videoLoopKey = VideoStore.loopKey
     /// MED-004: the stored video's playback speed (written by VideoStore).
     static let videoSpeedKey = VideoStore.speedKey
+    /// MED-005: reverse playback of the stored video (written by VideoStore only).
+    static let videoReverseKey = VideoStore.reverseKey
     /// MED-009: the Text visual's message and style (written by TextOverlayStore).
     static let textOverlayKey = TextOverlayStore.key
     /// MED-010: the logo's identifier and placement (written by LogoStore).
@@ -166,7 +168,7 @@ final class AppSettings {
     static let countdownOverlayKey = CountdownOverlayStore.key
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey,
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey, videoReverseKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleEmitterKey, particleTrailsKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, starfieldSpeedKey, starfieldDensityKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,

@@ -383,6 +383,85 @@ class ComplianceNotesPrivacyTests(unittest.TestCase):
             self.assertTrue(source.exists(), source)
 
 
+class ComplianceDiscoveryTests(unittest.TestCase):
+    """OSC-011-T15 (ADR-0100): reviewed discovery files, one Bonjour type, no other endpoint, NSBonjourServices."""
+
+    BROWSER = ("import Network\nlet b = NWBrowser(for: .bonjour(type: OSCDiscovery.serviceType, domain: OSCDiscovery.domain),"
+               " using: p)\nif case let .hostPort(_, port) = remote {}\n")
+
+    def write(self, folder: Path, name: str, text: str) -> Path:
+        folder.mkdir(parents=True, exist_ok=True)
+        path = folder / name
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def test_reviewed_files_pass_and_others_fail(self):
+        with tempfile.TemporaryDirectory() as d:
+            allowed = Path(d) / "OSCTransport"
+            with mock.patch.object(check_compliance, "OSC_ALLOWED", allowed):
+                self.assertEqual(check_compliance.check_file(self.write(allowed, "NetworkOSCPeerBrowser.swift", self.BROWSER)), [])
+                listener = "import Network\nlet s = NWListener.Service(name: n, type: OSCDiscovery.serviceType)\n"
+                self.assertEqual(check_compliance.check_file(self.write(allowed, "NetworkDatagramTransport.swift", listener)), [])
+                other = check_compliance.check_file(self.write(allowed, "Other.swift", self.BROWSER + listener))
+                self.assertEqual(sum("local discovery" in f for f in other), 2, other)
+
+    def test_browser_names_no_host_address_url_or_other_type(self):
+        with tempfile.TemporaryDirectory() as d:
+            allowed = Path(d) / "OSCTransport"
+            with mock.patch.object(check_compliance, "OSC_ALLOWED", allowed):
+                for extra in ('let h = NWEndpoint.Host("relay.example.com")\n', 'let e = NWEndpoint.hostPort(host: h, port: p)\n',
+                              'let a = "203.0.113.5"\n', 'let u = URL(string: s)\n', 'let r = DNSServiceBrowse()\n',
+                              'let t = ".bonjour(type: \\"_x._tcp\\", domain: nil)"\nlet d2 = NWBrowser.Descriptor.bonjour(type: t, domain: nil)\n'):
+                    found = check_compliance.check_file(self.write(allowed, "NetworkOSCPeerBrowser.swift", self.BROWSER + extra))
+                    self.assertTrue(any("local discovery" in f for f in found), extra)
+                no_descriptor = "import Network\nlet b = NWBrowser(for: d, using: p)\n"
+                found = check_compliance.check_file(self.write(allowed, "NetworkOSCPeerBrowser.swift", no_descriptor))
+                self.assertTrue(any("must browse exactly" in f for f in found))
+
+    def test_only_one_bonjour_type_anywhere(self):
+        with tempfile.TemporaryDirectory() as d:
+            ok = self.write(Path(d), "A.swift", 'static let serviceType = "_projectm-osc._udp"\n')
+            self.assertEqual(check_compliance.check_file(ok), [])
+            bad = check_compliance.check_file(self.write(Path(d), "B.swift", 'let t = "_airplay._tcp"\n'))
+            self.assertTrue(any("Bonjour type _airplay._tcp" in f for f in bad), bad)
+
+    def test_bonjour_services_in_project_yml(self):
+        path = Path("project.yml")
+        good = "    info:\n      properties:\n        NSBonjourServices:\n          - _projectm-osc._udp\n        NSOther: x\n"
+        self.assertEqual(check_compliance.check_bonjour_services(good, path), [])
+        self.assertEqual(check_compliance.check_bonjour_services("NSBonjourServices: [_projectm-osc._udp]\n", path), [])
+        self.assertEqual(check_compliance.check_bonjour_services("NSFoo: 1\n", path), [])
+        for bad in ("        NSBonjourServices:\n          - _projectm-osc._udp\n          - _http._tcp\n",
+                    "NSBonjourServices: [_http._tcp]\n", "        NSBonjourServices:\n        NSOther: x\n"):
+            self.assertEqual(len(check_compliance.check_bonjour_services(bad, path)), 1, bad)
+
+
+class ComplianceCueNotesPrivacyTests(unittest.TestCase):
+    """SHOW-012-R11: a source outside the show editor that names a cue's note fails; the editor and tests pass."""
+
+    def test_cue_notes_outside_the_editor_are_flagged(self):
+        with tempfile.TemporaryDirectory() as d:
+            hud = Path(d) / "SceneHUD.swift"
+            hud.write_text("let line = cue.operatorNote ?? \"\"\n", encoding="utf-8")
+            comment = Path(d) / "Comment.swift"
+            comment.write_text("// never reads operatorNote\nlet x = 1\n", encoding="utf-8")
+            tests = Path(d) / "Tests"
+            tests.mkdir()
+            test = tests / "NoteTests.swift"
+            test.write_text("let n = ShowCueNote.maximumCharacters\n", encoding="utf-8")
+            self.assertIn("private cue note", "\n".join(check_compliance.check_file(hud)))
+            self.assertEqual(check_compliance.check_file(comment), [])
+            self.assertEqual(check_compliance.check_file(test), [])
+            editor = check_compliance.ROOT / "Apps" / "projectM-iOS" / "Views" / "ShowEditorView.swift"
+            self.assertTrue(check_compliance.is_cue_note_allowed(editor))
+            osc = check_compliance.ROOT / "Apps" / "projectM-iOS" / "Coordinators" / "OSCSendCoordinator.swift"
+            self.assertFalse(check_compliance.is_cue_note_allowed(osc))
+
+    def test_the_allowed_sources_exist(self):
+        for source in check_compliance.CUE_NOTES_ALLOWED:
+            self.assertTrue(source.exists(), source)
+
+
 class ComplianceOSCExceptionTests(unittest.TestCase):
     """FR-068 as amended 2026-11-12: the Network framework only in the OSC transport folder."""
 
@@ -1569,6 +1648,30 @@ class NetworkSymbolScanTests(unittest.TestCase):
         self.assertFalse(alone["NWConnection.__allocating_init(host:port:using:)"], "the sender marker outside the OSC image")
         self.assertEqual(cns.release_findings("img", "arm64", {"NetworkDatagramTransport", "NetworkOSCSender"}), [])
 
+    def test_discovery_apis_pass_only_next_to_the_reviewed_browser(self):
+        """OSC-011-T16 (ADR-0100): NWBrowser, service announcing and resolution need the browser's image."""
+        apis = ["NWBrowser.__allocating_init(for:using:)", "NWBrowser.Descriptor.bonjour(_:)",
+                "type metadata accessor for NWListener.Service", "NWListener.service.setter",
+                "NWConnection.__allocating_init(to:using:)", "NWConnection.currentPath.getter",
+                "NWPath.remoteEndpoint.getter", "dispatch thunk of NWProtocolIP.Options.version.setter"]
+        imports = [(f"_$sD{i}", "Network") for i in range(len(apis))]
+        demangled = {f"_$sD{i}": api for i, api in enumerate(apis)}
+        osc_only = self.findings(imports, demangled, {"NetworkDatagramTransport", "NetworkOSCSender"})
+        self.assertEqual(len(osc_only), len(apis))
+        self.assertTrue(all(not f.allowed for f in osc_only), "the receiver and sender images may not browse or announce")
+        reviewed = self.findings(imports, demangled, {"NetworkDatagramTransport", "_$s18PerformanceControl21NetworkOSCPeerBrowserC"})
+        self.assertTrue(all(f.allowed for f in reviewed), [f.name for f in reviewed if not f.allowed])
+        alone = self.findings(imports, demangled, {"NetworkOSCPeerBrowser"})
+        self.assertTrue(all(not f.allowed for f in alone), "the browser marker outside the OSC image")
+        # Other Network APIs stay off the list next to the browser, and lookalikes are not admitted.
+        other = {f.name: f.allowed for f in self.findings(
+            [("_$sX1", "Network"), ("_$sX2", "Network"), ("_$sX3", "Network")],
+            {"_$sX1": "NWPathMonitor.start(queue:)", "_$sX2": "NWConnection.__allocating_init(host:port:using:)",
+             "_$sX3": "NWEthernetChannel.start(queue:)"},
+            {"NetworkDatagramTransport", "NetworkOSCPeerBrowser"})}
+        self.assertEqual(other, {"NWPathMonitor.start(queue:)": False, "NWConnection.__allocating_init(host:port:using:)": False,
+                                 "NWEthernetChannel.start(queue:)": False})
+
     def test_network_linkage_outside_the_osc_image_fails(self):
         path = "/System/Library/Frameworks/Network.framework/Network"
         self.assertFalse(self.findings([], libraries=[path])[0].allowed)
@@ -1578,6 +1681,8 @@ class NetworkSymbolScanTests(unittest.TestCase):
         self.assertEqual(cns.network_api_name("enum case for NWConnection.State.ready(_:)"), "NWConnection.State.ready(_:)")
         self.assertEqual(cns.network_api_name("static NWParameters.udp.getter"), "NWParameters.udp.getter")
         self.assertEqual(cns.network_api_name("protocol conformance descriptor for NWError"), "NWError")
+        self.assertEqual(cns.network_api_name("dispatch thunk of NWParameters.ProtocolStack.internetProtocol.getter"),
+                         "NWParameters.ProtocolStack.internetProtocol.getter")
 
     def test_release_flag_rejects_the_loopback_sender(self):
         self.assertEqual(len(cns.release_findings("img", "arm64", {"_$s18PerformanceControl17OSCLoopbackSenderO"})), 1)

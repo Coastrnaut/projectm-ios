@@ -48,6 +48,7 @@ final class LibraryBackupAppTests: XCTestCase {
             + RecentPresetsStore.allKeys   // PRE-006-R7
             + OSCPeersCoordinator.allKeys   // OSC-008-R10
             + OSCSendCoordinator.allKeys   // OSC-005-R12 (excluded: this device's network)
+            + OSCDiscoveryCoordinator.allKeys   // OSC-011-R10 (excluded: this device's network)
             + HapticBeatCoordinator.allKeys   // ACC-007-R8
             + MotionModulationCoordinator.allKeys   // CAM-011-R12
             + FaceTrackingCoordinator.allKeys   // CAM-009-R3 (excluded: consent never travels)
@@ -60,7 +61,7 @@ final class LibraryBackupAppTests: XCTestCase {
         XCTAssertEqual(appKeys.subtracting(included).subtracting(excluded), [], "every app key is included or deliberately left out")
         XCTAssertEqual(appKeys.intersection(excluded),
                        Set<String>([AppSettings.oscEnabledKey, AppSettings.midiEnabledKey, RecordingAudioSetting.includeMicrophoneKey,
-                        VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey,   // MED-004, REC-004-R3
+                        VideoStore.idKey, VideoStore.loopKey, VideoStore.speedKey, VideoStore.reverseKey,   // MED-004, MED-005, REC-004-R3
                         RecentPresetsStore.historyKey,   // PRE-006-R7: history never travels
                         SceneLock.key,   // SCN-015: the lock is session state of this device
                         OSCPeersCoordinator.enabledKey, OSCPeersCoordinator.approvedKey,   // OSC-008-R10: this device's network
@@ -74,7 +75,8 @@ final class LibraryBackupAppTests: XCTestCase {
                        .union(ExternalOutputSetting.keys)   // OUT-004-R8, OUT-003-R7
                        .union(FaceTrackingCoordinator.allKeys)   // CAM-009-R3
                        .union(HandTrackingCoordinator.allKeys)   // CAM-010-R3
-                       .union(OSCSendCoordinator.allKeys))   // OSC-005-R12
+                       .union(OSCSendCoordinator.allKeys)   // OSC-005-R12
+                       .union(OSCDiscoveryCoordinator.allKeys))   // OSC-011-R10
         XCTAssertEqual(LibraryFolders.Folder.show.rawValue, StorageLocations.showFolderName)
         XCTAssertEqual(LibraryFolders.Folder.currentScene.rawValue, SceneAutosaveStore.folderName)
         XCTAssertEqual(LibraryFolders.Folder.presets.rawValue, UserPresetStore.directoryName)

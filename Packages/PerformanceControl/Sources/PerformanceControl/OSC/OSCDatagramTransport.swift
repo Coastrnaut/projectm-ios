@@ -41,6 +41,14 @@ public protocol OSCDatagramTransport: AnyObject, Sendable {
     /// Cancels the listener and every peer; reports `.cancelled` exactly once afterwards and no
     /// `.datagram` after it.
     func stop()
+    /// OSC-011-R7 (ADR-0100): announces this listener on the local link as `name` (Bonjour type
+    /// `OSCDiscovery.serviceType`), or withdraws the announcement for nil. Applies before or after `start`.
+    func advertise(_ name: String?)
+}
+
+extension OSCDatagramTransport {
+    /// Transports that cannot announce (fakes, Linux) ignore it.
+    public func advertise(_ name: String?) {}
 }
 
 /// The receiver's lifecycle (data-model.md, OSCReceiverState).

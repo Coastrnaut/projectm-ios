@@ -115,6 +115,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   # OSC-008 (user-approved local hosts)
                 "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   # OSC-005 (Send OSC)
                 "settings.osc.send.kinds", "settings.osc.send.sceneNames",
+                "settings.osc.discovery.browse", "settings.osc.discovery.advertise",   # OSC-011 (Nearby Devices switches)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)
@@ -154,6 +155,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.photo.id", "settings.video.id", "settings.text.overlay",   # MED-001, MED-008, MED-009
                 "settings.video.loop",   # MED-003 (the stored video's loop region)
                 "settings.video.speed",  # MED-004 (the stored video's playback speed)
+                "settings.video.reverse",  # MED-005 (reverse playback of the stored video)
                 "guide.firstScene",   # UIX-001
                 "permission.explained.camera", "permission.explained.localNetwork",   # UIX-015 (a yes each)
                 "session.recovery.open", "session.recovery.sessionsSinceReopen",

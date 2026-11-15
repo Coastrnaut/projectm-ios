@@ -103,6 +103,7 @@ final class SettingsTests: XCTestCase {
         // reset) but written by PhotoStore, VideoStore and TextOverlayStore only.
         XCTAssertEqual(keys, Set(AppSettings.allKeys).subtracting([AppSettings.photoIDKey, AppSettings.videoIDKey,
                                                                    AppSettings.videoLoopKey, AppSettings.videoSpeedKey,
+                                                                   AppSettings.videoReverseKey,   // MED-005: VideoStore
                                                                    AppSettings.textOverlayKey,
                                                                    AppSettings.slideshowKey,   // MED-006: SlideshowStore
                                                                    AppSettings.kenBurnsKey,   // MED-007: KenBurnsStore
