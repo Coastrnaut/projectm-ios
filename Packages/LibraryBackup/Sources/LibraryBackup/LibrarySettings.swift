@@ -95,6 +95,7 @@ public enum LibrarySettingsPolicy {
         "settings.feedback.enabled", "settings.feedback.halfLife",   // FX-009-R11: Trails
         "settings.noiseEditor.values",   // SHD-006-R7: the Noise editor's values
         "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   // FX-020-R8, R10
+        "settings.chromatic.enabled", "settings.chromatic.amount", "settings.chromatic.angle", "settings.chromatic.radial",   // FX-006-R9
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9

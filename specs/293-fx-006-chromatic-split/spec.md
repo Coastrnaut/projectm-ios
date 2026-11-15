@@ -215,8 +215,8 @@ effect-chain preset, and gets the same split back when the scene or preset is op
 - **FX-006-S4**: The GPU output matches the software reference within half-float precision.
 - **FX-006-S5**: A scene and a preset with the split round-trip to the same values; a scene from before the
   feature encodes byte-identically.
-- **FX-006-S6**: A user can find Chromatic split, turn it on, change the amount and see the value survive a relaunch
-  (UI test under 30 s).
+- **FX-006-S6**: A user can find Chromatic split, turn it on and change the amount (UI test under 30 s); the values
+  survive a relaunch (setting test with a reloaded store, as FX-009 does, keeping the UI test short).
 - **FX-006-S7**: The device frame rate with the split on is checked in the last stage (`{device}`).
 
 ## Assumptions

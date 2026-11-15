@@ -214,6 +214,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let motionFeedback: MotionFeedbackSetting
     /// FX-020: the order of Trails and Color, and the chain presets.
     let effectChain: EffectChainSetting
+    /// FX-006: the chromatic split (Settings → Chromatic split) of the compositor-backed visuals.
+    let chromaticSplit: ChromaticSplitSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
     private(set) var nativeVisual: NativeSpectrumHost?
     /// MIDI-003 and OSC-003 live values, merged (newest change wins per parameter; OSC-003-R5).
@@ -449,6 +451,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         colorGrade = ColorGradeSetting(defaults: defaults)   // FX-003
         motionFeedback = MotionFeedbackSetting(defaults: defaults)   // FX-009
         effectChain = EffectChainSetting(defaults: defaults)   // FX-020
+        chromaticSplit = ChromaticSplitSetting(defaults: defaults)   // FX-006
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
         // reopens the listener; a pending offer holds the scene instead of restoring it.
@@ -515,7 +518,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             recovery.hold(recovery.decision.isCrashLoop ? nil : sceneAutosave?.holdCommittedScene(assets: stored))
         } else if let values = sceneAutosave?.restore(assets: stored) {
             SceneAutosaveCapture.apply(values, to: settings)
-            SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback)   // FX-020
+            SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
+                                              chromatic: chromaticSplit)   // FX-020, FX-006
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
@@ -667,6 +671,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         HandTrackingCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // CAM-010: off, no consent
         NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
+        ChromaticSplitSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-006: off
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
@@ -725,6 +730,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         colorGrade.onChange = { [weak self] (_: ColorGrade) in self?.applyColorGrade() }   // FX-003
         connectMotionFeedback()   // FX-009
         connectEffectChain()   // FX-020
+        connectChromaticSplit()   // FX-006
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
         manager.onSessionMode = { [weak self] (mode: AudioSourceMode) in
@@ -1301,6 +1307,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
+            host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1348,6 +1355,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
+            host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1407,6 +1415,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
+            host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1463,6 +1472,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.colorGrade = colorGrade.effectiveGrade(clamp: settings.safetyClamp)   // FX-003, ACC-012 gain cap
             host.compositor.motionFeedback = effectiveMotionFeedback   // FX-009, ACC-012 length cap
             host.compositor.outputEffectOrder = effectChain.order   // FX-020
+            host.compositor.chromaticSplit = chromaticSplit.split   // FX-006
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
             host.compositor.faultInjection = armedRenderFaults
@@ -1797,7 +1807,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let held = replacement ?? marked
         if let values = sceneAutosave?.reopen(held) {
             SceneAutosaveCapture.apply(values, to: settings)
-            SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback)   // FX-020
+            SceneAutosaveCapture.applyEffects(values.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback,
+                                              chromatic: chromaticSplit)   // FX-020, FX-006
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
