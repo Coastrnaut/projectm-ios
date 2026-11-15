@@ -157,6 +157,7 @@ enum SnapshotBatchPlanner {
         case .tunnel: return .tunnel(pace: settings.tunnelPace)   // VIS-015
         case .spectrumWaterfall: return .waterfall   // VIS-020
         case .fluidInk: return .fluidInk   // VIS-011
+        case .reactionDiffusion: return .reactionDiffusion(settings.reactionDiffusion)   // VIS-012
         default: return .circular
         }
     }

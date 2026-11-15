@@ -1223,6 +1223,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .tunnel: .tunnel(pace: settings.tunnelPace)   // VIS-015
         case .spectrumWaterfall: .waterfall   // VIS-020
         case .fluidInk: .fluidInk   // VIS-011
+        case .reactionDiffusion: .reactionDiffusion(settings.reactionDiffusion)   // VIS-012
         default: .circular
         }
     }

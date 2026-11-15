@@ -79,6 +79,10 @@
 //   ANL-004 onset is queued as an impulse stamped with the frame's time, and the generator runs its fixed 1/60 s steps
 //   to the frame; switches with the other noise-field modes change only its configuration (the field starts at rest);
 //   `reduceMotion` slows the flow and spaces the impulses (R11).
+// * Reaction diffusion (VIS-012): the same generator in its reaction mode with the stored preset, pattern, seed and
+//   speed; it reads bass from the frame's bands (no bus subscription); switches with the other noise-field modes and
+//   settings changes change only its configuration (a preset, pattern or seed change re-seeds); `reduceMotion` halves
+//   the iterations and spaces the injections (R12).
 // * REC-001 (research REC-001-D1): `captureFrame` turns the layer's `framebufferOnly` off until the
 //   next readable drawable is drawn, blits that drawable (the frame as shown: glow and Reduce
 //   flashing included) into a shared buffer and delivers 8-bit sRGB BGRA on the main actor; then
@@ -594,6 +598,11 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                                     configuration: NoiseFieldConfiguration.fluidInk())
             generator.barCount = barCount
             return generator
+        case let .reactionDiffusion(settings):   // VIS-012: likewise, in its reaction mode
+            let generator = try NoiseFieldGenerator(device: device, pixelFormat: .bgra8Unorm_srgb,
+                                                    configuration: NoiseFieldConfiguration.reactionDiffusion(settings))
+            generator.barCount = barCount
+            return generator
         }
     }
 
@@ -681,6 +690,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
             configuration.tunnelPace = 0   // VIS-015: from the tunnel, back to the field
             configuration.waterfall = false   // VIS-020: from the waterfall, back to the field
             configuration.fluidInk = false   // VIS-011: from fluid ink, back to the field
+            configuration.reactionDiffusion = nil   // VIS-012: from reaction diffusion, back to the field
             field.configuration = configuration
         } else if case let .kaleidoscope(wedges) = newStyle, let field = generator as? NoiseFieldGenerator {
             // VIS-014: in place, from the next frame (from Noise Field too: the kaleidoscope's own source settings)
@@ -698,6 +708,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
             // VIS-011: in place, from the next frame (the field starts at rest; storage kept)
             field.configuration = NoiseFieldConfiguration.fluidInk(reduceMotion: field.configuration.reduceMotion,
                                                                    palette: field.configuration.palette)
+        } else if case let .reactionDiffusion(settings) = newStyle, let field = generator as? NoiseFieldGenerator {
+            // VIS-012: in place, from the next frame (entering, or a preset/pattern/seed change, re-seeds; storage kept)
+            field.configuration = NoiseFieldConfiguration.reactionDiffusion(settings, reduceMotion: field.configuration.reduceMotion,
+                                                                            palette: field.configuration.palette)
         } else {
             let replacement = try Self.makeGenerator(device: device, style: newStyle, barCount: generator.barCount)
             generator = replacement
@@ -942,6 +956,7 @@ final class NativeSpectrumHost: PresentationBoundResource {
         case let .tunnel(pace): return "\(pace.title), \(glow)"   // VIS-015-R12
         case .waterfall: return "Newest at top, \(glow)"   // VIS-020-R12
         case .fluidInk: return "Ink from sudden sounds, \(glow)"   // VIS-011-R12
+        case let .reactionDiffusion(settings): return settings.accessibilityDescription + ", \(glow)"   // VIS-012-R13
         }
     }
 
@@ -1307,6 +1322,8 @@ enum NativeSpectrumStyle: Equatable, Sendable {
     case waterfall
     /// VIS-011: fluid ink (the noise field's generator in its fluid mode).
     case fluidInk
+    /// VIS-012: reaction diffusion (the noise field's generator in its reaction mode).
+    case reactionDiffusion(ReactionDiffusionSettings)
 
     /// VIS-006, VIS-008, VIS-009, VIS-011: the host drains its analysis bus subscription into the generator.
     var drainsAnalysisEvents: Bool {
@@ -1340,6 +1357,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .tunnel: VisualChoice.tunnel.title
         case .waterfall: VisualChoice.spectrumWaterfall.title
         case .fluidInk: VisualChoice.fluidInk.title
+        case .reactionDiffusion: VisualChoice.reactionDiffusion.title
         }
     }
 
@@ -1359,6 +1377,7 @@ enum NativeSpectrumStyle: Equatable, Sendable {
         case .tunnel: "tunnel"
         case .waterfall: "spectrumWaterfall"
         case .fluidInk: "fluidInk"
+        case .reactionDiffusion: "reactionDiffusion"
         }
     }
 }
@@ -1370,5 +1389,13 @@ extension LinearSpectrumOrientation {
         case .vertical: "Vertical"
         case .horizontal: "Horizontal"
         }
+    }
+}
+
+extension ReactionDiffusionSettings {
+    /// VIS-012-R13: VoiceOver's description, e.g. "Coral, Centre Square, seed 1, speed 8".
+    var accessibilityDescription: String {
+        let parts: [String] = [preset.title, pattern.title, "seed \(seed)", "speed \(speed)"]
+        return parts.joined(separator: ", ")
     }
 }
