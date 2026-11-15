@@ -28,7 +28,7 @@
 
 ## Phase 5: Polish
 
-- [ ] VIS-018-T13 Touched package suites, Linux shape, RenderGoldens, repo checks, privacy manifest and network symbol scans, type-check budget, PosterBoard counts.
+- [X] VIS-018-T13 Touched package suites, Linux shape, RenderGoldens, repo checks, privacy manifest and network symbol scans, type-check budget, PosterBoard counts. — Verified 2026-11-15: VisualGenerators swift test 422 passed, 2 skipped (63.4 s; the Tessellation suites add about 5.5 s); Linux shape 336 passed, 2 skipped (59.3 s); LibraryBackup 88 passed (18.8 s); RenderGoldens noise-field family + integrity 34 passed (4.2 s); check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 186 OK (1 skipped); check_privacy_manifest OK; check_network_symbols OK (19 images); type-check budget: no warning in a touched function; PosterBoard reports 25 before and after
 - [ ] VIS-018-T14 {device} On D1, D2 and an external display: Tessellation at N 2 → 16 in portrait and landscape: centre fixed, seams straight; frame rate on the PERF-001/007 overlay; Reduce Motion calm.
 
 ## Dependencies
