@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (OUT-005-T01-T11 verified on the Mac, iOS 27.2 simulator; T12 `{device}` open)
 
 **Input**: User description: "Implement OUT-005 (Safe-area guides) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Overlay configurable stage-safe and title-safe guides in editor only."
