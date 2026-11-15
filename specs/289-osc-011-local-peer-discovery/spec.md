@@ -49,6 +49,14 @@ interaction); each answer is the conservative, local-first option.
 - Q: Is anything stored? → A: Only the two switches, on this device: excluded from the FILE-005 backup, removed by the FILE-011 Settings erase and by the UI-test reset. Found devices and the announced name are memory only (OSC-011-R10).
 - Q: Permission? → A: The existing Local Network permission; its usage string and the privacy policy mention discovery and announcing. `NSBonjourServices` declares only `_projectm-osc._udp` (OSC-011-R11).
 
+### Session 2026-11-15 (speckit-clarify)
+
+- Q: When is this device announced: as soon as the switch is on, or only while the receiver is actually listening? → A: Only while the receiver is listening: the announcement is part of the listening port, so it carries the real port and disappears with the listener (OSC-011-R5, R7).
+- Q: Are newly found devices announced to VoiceOver? → A: No. Discovery is not an event; the list and the status line ("Looking for nearby devices…", "2 devices found") are ordinary accessible labels, so nothing is spoken per change.
+- Q: Which address is shown when a device has both IPv4 and IPv6? → A: IPv4 is preferred. If only an address that OSC-005 cannot send to is found (IPv6 link-local), the device is listed with "Allow" only and "Use as send destination" is disabled (OSC-011-R8, R9).
+- Q: Does discovery follow PERF-010's recovery, which turns OSC off after an abnormal exit? → A: Yes, automatically: OSC off stops both activities (R5); the two switches keep their stored values.
+- Q: Is "Allow" offered while "Only approved devices" is off? → A: Yes. It adds the device to Approved Devices for when the user turns the allow list on; it never turns the allow list on.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Find another projectM or OSC controller nearby (Priority: P3)
@@ -96,6 +104,7 @@ OSC: iPad B now receives A's scene messages.
 - More than 16 devices: the first 16 by name are kept.
 - A device that cannot be resolved: listed by name with "Resolving…", without actions.
 - The Local Network permission denied: the status line says local network access is off; no retry.
+- A device found only at an IPv6 link-local address: listed with "Allow" only ("Use as send destination" disabled).
 - The approved list is full (16): "Allow" is disabled.
 - Another device announces the same name: both are listed (Bonjour renames one).
 
