@@ -38,6 +38,7 @@ final class LibraryBackupAppTests: XCTestCase {
             + LensDistortionSetting.allKeys   // FX-016
             + VignetteSetting.allKeys   // FX-015
             + PixelSortSetting.allKeys   // FX-011
+            + ScanlinesSetting.allKeys   // FX-018
             + FilmGrainSetting.allKeys   // FX-017
             + NoiseEditorStore.allKeys   // SHD-006-R7
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,

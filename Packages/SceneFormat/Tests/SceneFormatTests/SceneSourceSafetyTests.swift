@@ -17,6 +17,7 @@ final class SceneSourceSafetyTests: XCTestCase {
                                "SceneEffectChain+LensDistortion.swift",   // FX-016
                                "SceneEffectChain+Mosaic.swift",   // FX-012
                                "SceneEffectChain+PixelSort.swift",   // FX-011
+                               "SceneEffectChain+Scanlines.swift",   // FX-018
                                "SceneEffectChain+Vignette.swift",   // FX-015
                                "SceneEffectChain.swift", "SceneEffectChainPresets.swift",   // FX-020
                                "SceneEncoding.swift", "SceneGroup.swift",   // CMP-011

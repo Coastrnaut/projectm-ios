@@ -299,14 +299,14 @@ enum SceneAutosaveCapture {
                              echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil,
                              edgeOutline: EdgeOutlineSetting? = nil, lensDistortion: LensDistortionSetting? = nil,
                              vignette: VignetteSetting? = nil, pixelSort: PixelSortSetting? = nil,
-                             filmGrain: FilmGrainSetting? = nil) {
+                             scanlines: ScanlinesSetting? = nil, filmGrain: FilmGrainSetting? = nil) {
         guard let entries else {
             chain.order = .standard
             return
         }
         applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic,
                      directionalBlur: directionalBlur, radialBlur: radialBlur, echo: echo, mosaic: mosaic,
-                     edgeOutline: edgeOutline, lensDistortion: lensDistortion, vignette: vignette, pixelSort: pixelSort, filmGrain: filmGrain)
+                     edgeOutline: edgeOutline, lensDistortion: lensDistortion, vignette: vignette, pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)
     }
 
     @MainActor
@@ -316,7 +316,7 @@ enum SceneAutosaveCapture {
                              echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil,
                              edgeOutline: EdgeOutlineSetting? = nil, lensDistortion: LensDistortionSetting? = nil,
                              vignette: VignetteSetting? = nil, pixelSort: PixelSortSetting? = nil,
-                             filmGrain: FilmGrainSetting? = nil) {
+                             scanlines: ScanlinesSetting? = nil, filmGrain: FilmGrainSetting? = nil) {
         chain.order = settings.order
         if let g = settings.grade {
             if grade.temperature != g.temperature { grade.temperature = g.temperature }
@@ -346,6 +346,7 @@ enum SceneAutosaveCapture {
         if let l = settings.lensDistortion { lensDistortion?.apply(l) }   // FX-016
         if let v = settings.vignette { vignette?.apply(v) }   // FX-015
         if let p = settings.pixelSort { pixelSort?.apply(p) }   // FX-011
+        if let s = settings.scanlines { scanlines?.apply(s) }   // FX-018
         if let f = settings.filmGrain { filmGrain?.apply(f) }   // FX-017
     }
 

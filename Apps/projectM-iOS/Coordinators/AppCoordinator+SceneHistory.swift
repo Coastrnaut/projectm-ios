@@ -42,7 +42,7 @@ extension AppCoordinator {
                                               directionalBlur: directionalBlur, radialBlur: radialBlur,
                                           echo: echoFeedback, mosaic: mosaic,
                                           edgeOutline: edgeOutline, lensDistortion: lensDistortion,
-                                          vignette: vignette, pixelSort: pixelSort, filmGrain: filmGrain)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-017
+                                          vignette: vignette, pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018, FX-017
         }
         macros.restore(inputs.macros)   // MOD-010: the macro values (targets come back with the settings above)
         modulationMatrix.restore(inputs.bindings)   // MOD-012: the routes' order and on/off

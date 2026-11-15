@@ -41,7 +41,8 @@ final class VignetteSceneEntryTests: XCTestCase {
 
     func testVignetteOlderListsReadWithItLastAndUntouched() throws {
         let settings = SceneEffectSettings.read([vignetteGrade, vignetteTrails]).settings
-        XCTAssertEqual(settings.order.effects.firstIndex(of: .vignette), 10, "appended after FX-011's pixel sort, before FX-017's film grain")
+        let readOrder: [OutputEffectKind] = settings.order.effects
+        XCTAssertEqual(readOrder.firstIndex(of: .vignette), (readOrder.firstIndex(of: .pixelSort) ?? 0) + 1, "appended directly after FX-011's pixel sort (FX-018 Scanlines and FX-017 Film grain follow)")
         XCTAssertNil(settings.vignette, "no entry: the current vignette stays")
         XCTAssertEqual(settings.entries(over: [vignetteGrade, vignetteTrails]).map(\.kind), ["fx.grade", "fx.trails"], "nothing added")
         let old = try vignetteDocument([vignetteGrade, vignetteTrails])

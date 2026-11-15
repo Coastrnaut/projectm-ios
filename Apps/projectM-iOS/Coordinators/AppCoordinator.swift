@@ -232,6 +232,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let vignette: VignetteSetting
     /// FX-011: the pixel sort (Settings → Pixel sort) of the compositor-backed visuals.
     let pixelSort: PixelSortSetting
+    /// FX-018: the scanlines (Settings → Scanlines) of the compositor-backed visuals.
+    let scanlines: ScanlinesSetting
     /// FX-017: the film grain (Settings → Film grain) of the compositor-backed visuals.
     let filmGrain: FilmGrainSetting
     /// The native spectra (VIS-001 circular, VIS-002 linear), created the first time one is needed.
@@ -491,6 +493,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         lensDistortion = LensDistortionSetting(defaults: defaults)   // FX-016
         vignette = VignetteSetting(defaults: defaults)   // FX-015
         pixelSort = PixelSortSetting(defaults: defaults)   // FX-011
+        scanlines = ScanlinesSetting(defaults: defaults)   // FX-018
         filmGrain = FilmGrainSetting(defaults: defaults)   // FX-017
         self.externalDisplay.reduceFlashing = settings.effectiveReduceFlashing   // OUT-010-R6, ACC-012-R7
         // PERF-010 (contract C1): decide before the OSC receiver exists, so an abnormal exit never
@@ -563,7 +566,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                               radialBlur: radialBlur, echo: echoFeedback,
                                               mosaic: mosaic, edgeOutline: edgeOutline,
                                               lensDistortion: lensDistortion, vignette: vignette,
-                                              pixelSort: pixelSort, filmGrain: filmGrain)   // FX-020, FX-006 to FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-017
+                                              pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)   // FX-020, FX-006 to FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018, FX-017
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8
@@ -725,6 +728,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         LensDistortionSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-016: off
         VignetteSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-015: off
         PixelSortSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-011: off
+        ScanlinesSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-018: off
         FilmGrainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-017: off
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
         MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
@@ -794,6 +798,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         connectLensDistortion()   // FX-016
         connectVignette()   // FX-015
         connectPixelSort()   // FX-011
+        connectScanlines()   // FX-018
         connectFilmGrain()   // FX-017
         routes.context = { [weak self] in self?.routeContext }   // AUD-007
         // AUD-012-R12: the noise gate's microphone flag changes when a session (or a switch) begins.
@@ -1387,6 +1392,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.lensDistortion = lensDistortion.lens   // FX-016
             host.compositor.vignette = vignette.vignette   // FX-015
             host.compositor.pixelSort = pixelSort.sort   // FX-011
+            host.compositor.scanlines = scanlines.scanlines   // FX-018
             host.compositor.filmGrain = effectiveFilmGrain   // FX-017 (static under Reduce Motion)
             host.onRenderHealthChange = observeRenderHealth(of: "camera")   // PERF-014
             #if DEBUG
@@ -1444,6 +1450,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.lensDistortion = lensDistortion.lens   // FX-016
             host.compositor.vignette = vignette.vignette   // FX-015
             host.compositor.pixelSort = pixelSort.sort   // FX-011
+            host.compositor.scanlines = scanlines.scanlines   // FX-018
             host.compositor.filmGrain = effectiveFilmGrain   // FX-017 (static under Reduce Motion)
             host.onRenderHealthChange = observeRenderHealth(of: "photo")   // PERF-014
             #if DEBUG
@@ -1513,6 +1520,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.lensDistortion = lensDistortion.lens   // FX-016
             host.compositor.vignette = vignette.vignette   // FX-015
             host.compositor.pixelSort = pixelSort.sort   // FX-011
+            host.compositor.scanlines = scanlines.scanlines   // FX-018
             host.compositor.filmGrain = effectiveFilmGrain   // FX-017 (static under Reduce Motion)
             host.onRenderHealthChange = observeRenderHealth(of: "video")   // PERF-014
             #if DEBUG
@@ -1579,6 +1587,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.compositor.lensDistortion = lensDistortion.lens   // FX-016
             host.compositor.vignette = vignette.vignette   // FX-015
             host.compositor.pixelSort = pixelSort.sort   // FX-011
+            host.compositor.scanlines = scanlines.scanlines   // FX-018
             host.compositor.filmGrain = effectiveFilmGrain   // FX-017 (static under Reduce Motion)
             host.onRenderHealthChange = observeRenderHealth(of: "text")   // PERF-014
             #if DEBUG
@@ -1919,7 +1928,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                                               radialBlur: radialBlur, echo: echoFeedback,
                                               mosaic: mosaic, edgeOutline: edgeOutline,
                                               lensDistortion: lensDistortion, vignette: vignette,
-                                              pixelSort: pixelSort, filmGrain: filmGrain)   // FX-020, FX-006 to FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-017
+                                              pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)   // FX-020, FX-006 to FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018, FX-017
             layers.restore(values.layerComposites)   // CMP-015-R5
             if let text = values.text { texts.spec = text }
             videos.restoreLoop(storeID: values.videoStoreID, loop: values.videoLoop)   // MED-003-R8

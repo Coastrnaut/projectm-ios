@@ -36,6 +36,8 @@ enum SpokenUnit: Sendable, Equatable {
     case signedDegrees
     /// AUD-010: "centered", "30 percent left", "30 percent right".
     case balance
+    /// FX-018: whole pixels, "1 pixel", "3 pixels".
+    case pixels
 }
 
 enum SpokenValueFormatter {
@@ -51,7 +53,14 @@ enum SpokenValueFormatter {
         case .multiplier: return value.formatted(.number.precision(.fractionLength(2))) + " times"
         case .signedDegrees: return signedDegrees(value)
         case .balance: return PlaybackBalanceSetting.spokenText(for: value)
+        case .pixels: return pixels(value)
         }
+    }
+
+    /// "1 pixel", "3 pixels" (whole pixels; FX-018).
+    static func pixels(_ value: Double) -> String {
+        let whole: Int = Int(value.rounded())
+        return String(whole) + (whole == 1 ? " pixel" : " pixels")
     }
 
     /// "30 degrees", "minus 1 degree" (whole degrees; CMP-015).
