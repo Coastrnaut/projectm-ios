@@ -38,6 +38,7 @@ final class LibraryBackupAppTests: XCTestCase {
                RecordingCountdownSetting.key,   // REC-007-R8
                SceneHUDSetting.key,   // UIX-013-R11
                OneHandedSetting.key,   // ACC-009-R9
+               OneHandedSetting.leftHandedKey,   // ACC-010-R7
                RecordingTimedStopSetting.key,   // REC-008-R9
                SplitEditorSetting.key,   // UIX-007-R7 (excluded: this device's screen)
                OSCRoutesCoordinator.disabledRoutesKey, OSCRoutesCoordinator.aliasesKey,   // OSC-003-R9

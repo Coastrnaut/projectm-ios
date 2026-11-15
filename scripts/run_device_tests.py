@@ -122,6 +122,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.recording.countdown",   # REC-007-R8 (recording countdown; Off by default)
                 "settings.visualizer.sceneHUD",   # UIX-013-R11 (scene performance HUD; off by default)
                 "settings.controls.oneHanded",   # ACC-009-R9 (one-handed layout; Off by default)
+                "settings.controls.leftHanded",   # ACC-010-R7 (left-handed controls; off by default)
                 "settings.performance.powerProfile",   # PERF-008-R6 (power profile; Standard by default)
                 "settings.externalDisplay.fit", "settings.externalDisplay.shape",   # OUT-004-R8 (external output correction)
                 "settings.externalDisplay.pixelAspect",   # OUT-004-R8

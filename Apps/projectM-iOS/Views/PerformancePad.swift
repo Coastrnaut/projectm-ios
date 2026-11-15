@@ -18,6 +18,10 @@
 // ACC-009-R7: with the one-handed layout active, the four targets sit at `OneHandedLayout`'s pad frames in the thumb
 // zone (the same layout the one-handed cluster computes) and the readouts in its readout strip; the pad still reports
 // the bar or columns' edges, which VisualizerView uses only while one-handed is off.
+// ACC-010-R3, R5 (specs/248-acc-010-left-handed-layout): the bar, grid and columns are drawn from
+// `PerformanceLayout.placement(side)`: left-handed mirrors the slots (Previous cue stays left of Next cue), the columns
+// swap, and each readout follows its group and aligns toward its screen edge. No layout-direction flip (research
+// ACC-010-D1): identifiers, labels, values, hints, symbols and the B key are unchanged.
 import PerformanceControl
 import PresentationLifecycle
 import ShowControl
@@ -72,6 +76,8 @@ struct PerformancePadLayer: View {
     var oneHanded: OneHandedHand? = nil
     /// ACC-009: the critical actions the one-handed layout places now (contract C2's `displayed`).
     var oneHandedActions: [CriticalAction] = []
+    /// ACC-010-R6: the side the bar, grid and columns favour (`OneHandedSetting.controlsSide`).
+    var side: ControlsSide = .right
     /// SHOW-005: turns the performer's Hold on or off (announced by AppCoordinator); nil in previews.
     var onSetHold: ((Bool) -> Void)? = nil
     /// The edges the pad uses (UIX-005-R4, research UIX-005-D3).
@@ -90,6 +96,8 @@ struct PerformancePadLayer: View {
         let regular: Bool = horizontalClass == .regular && verticalClass == .regular
         return PerformanceLayout(width: Double(area.width), height: Double(area.height), regular: regular)
     }
+
+    private var placement: PadPlacement { layout.placement(side) }
 
     private var reserved: PerformanceLayout.Insets { layout.reservedInsets(barHeight: Double(barHeight)) }
 
@@ -140,14 +148,44 @@ struct PerformancePadLayer: View {
                 }
             }
             HStack(alignment: .bottom, spacing: 8) {
-                cueReadout
+                cueReadout(.leading)
                 Spacer(minLength: 0)
-                tempoReadout
+                tempoReadout(.trailing)
             }
             .frame(width: max(0, aside.width - 2 * OneHandedLayout.margin), height: max(0, aside.height), alignment: .bottom)
             .position(x: aside.midX, y: aside.midY)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// ACC-010: the view for one placed target.
+    @ViewBuilder private func target(_ item: PadTarget) -> some View {
+        switch item {
+        case .previousCue: previousTarget
+        case .nextCue: nextTarget
+        case .tapTempo: tapTarget
+        case .blackout: blackoutTarget
+        }
+    }
+
+    /// ACC-010: one row of placed targets, left to right.
+    private func targetRow(_ items: [PadTarget]) -> some View {
+        HStack(spacing: layout.spacing) {
+            ForEach(items, id: \.self) { (item: PadTarget) in target(item) }
+        }
+    }
+
+    /// The cue and tempo readouts, each on its group's side (ACC-010-R3).
+    @ViewBuilder private var readoutRow: some View {
+        if placement.cueReadoutLeading {
+            cueReadout(.leading)
+            Spacer(minLength: 0)
+            tempoReadout(.trailing)
+        } else {
+            tempoReadout(.leading)
+            Spacer(minLength: 0)
+            cueReadout(.trailing)
+        }
     }
 
     @ViewBuilder private func padTarget(_ action: CriticalAction) -> some View {
@@ -173,27 +211,32 @@ struct PerformancePadLayer: View {
 
     private var barContent: some View {
         VStack(spacing: 8) {
-            HStack(alignment: .bottom, spacing: 8) {
-                cueReadout
-                Spacer(minLength: 0)
-                tempoReadout
-            }
-            if layout.arrangement == .bottomGrid {
-                VStack(spacing: layout.spacing) {
-                    HStack(spacing: layout.spacing) { previousTarget; nextTarget }
-                    HStack(spacing: layout.spacing) { tapTarget; blackoutTarget }
+            HStack(alignment: .bottom, spacing: 8) { readoutRow }
+            VStack(spacing: layout.spacing) {
+                ForEach(Array(placement.rows.enumerated()), id: \.offset) { (entry: (offset: Int, element: [PadTarget])) in
+                    targetRow(entry.element)
                 }
-            } else {
-                HStack(spacing: layout.spacing) { previousTarget; nextTarget; tapTarget; blackoutTarget }
             }
         }
     }
 
     private var columns: some View {
         HStack(spacing: 0) {
-            column { cueReadout.layoutPriority(-1); previousTarget; nextTarget }
+            placedColumn(placement.leadingColumn, alignment: .leading)
             Spacer(minLength: 0)
-            column { tempoReadout.layoutPriority(-1); tapTarget; blackoutTarget }
+            placedColumn(placement.trailingColumn, alignment: .trailing)
+        }
+    }
+
+    /// ACC-010: a side column of placed targets under its group's readout.
+    private func placedColumn(_ items: [PadTarget], alignment: HorizontalAlignment) -> some View {
+        let cues: Bool = items.contains(.previousCue)
+        return column {
+            Group {
+                if cues { cueReadout(alignment) } else { tempoReadout(alignment) }
+            }
+            .layoutPriority(-1)
+            ForEach(items, id: \.self) { (item: PadTarget) in target(item) }
         }
     }
 
@@ -256,7 +299,7 @@ struct PerformancePadLayer: View {
 
     // MARK: Readouts
 
-    private var cueReadout: some View {
+    private func cueReadout(_ alignment: HorizontalAlignment) -> some View {
         let list: ShowCueList = show.list
         var top: String
         var bottom: String
@@ -285,18 +328,18 @@ struct PerformancePadLayer: View {
             spoken += ", hold on"
         }
         let readout = PerformanceReadout(top: top, bottom: bottom, label: "Show", value: spoken, identifier: "perfCueReadout",
-                                         alignment: .leading)
+                                         alignment: alignment)
         return readout.accessibilityAction(named: held ? "Release Hold" : "Hold") { () -> Void in setHold(!held) }
     }
 
     /// SHOW-005: the pad's Hold action (set by the visualizer; nil in previews).
     private func setHold(_ held: Bool) { onSetHold?(held) }
 
-    private var tempoReadout: some View {
+    private func tempoReadout(_ alignment: HorizontalAlignment) -> some View {
         let readout: TempoReadout = tempo.readout
         return PerformanceReadout(top: TempoCoordinator.readoutText(readout), bottom: TempoCoordinator.stateText(readout),
                                   label: "Tempo", value: TempoCoordinator.accessibilityValue(readout),
-                                  identifier: "perfTempoReadout", alignment: .trailing)
+                                  identifier: "perfTempoReadout", alignment: alignment)
     }
 
     /// Contract C1 (`-uitestDiagnostics` only, research UIX-005-D7): the safe-area frame in window
