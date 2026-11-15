@@ -6,12 +6,12 @@
 
 ## Phase 1: Setup
 
-- [ ] OUT-014-T01 Create simulator "OUT14 iPhone 17" (iOS 27.2) and run `xcodegen generate` in the worktree
+- [X] OUT-014-T01 Create simulator "OUT14 iPhone 17" (iOS 27.2) and run `xcodegen generate` in the worktree — Verified 2026-11-15: simulator 871D2B57 created; `xcodegen generate` OK
 
 ## Phase 2: Foundational (C1)
 
-- [ ] OUT-014-T02 Add `OutputProfile`, `OutputProfile.Calibration` ("gamma 0.5…2.5, trims 0.5…1.5, finite"), `OutputDisplayClass` ("nativeWidth/Height ≥ 1, ≤ 32768; pixelAspect 0.5…2; refreshRate 1…1000 when present; gamut sRGB or displayP3 when present"), `OutputDisplayClassMatch`, `OutputProfileDocument` (format `org.projectmios.output-profile`, version 1, `.pmoutput`, max 16384 bytes, sorted-key JSON, no unknown or missing field, "percent integer in 50…100", corner pin `CornerPin.isValid`) and `OutputProfileImportError` in Packages/PresentationLifecycle/Sources/PresentationLifecycle/OutputProfile.swift
-- [ ] OUT-014-T03 [P] Pure tests: round trip of every field bit for bit (with and without display); version checks (newer → `newerVersion`, 0 → `notAProfile`); invalid files change nothing (bow-tie pin, out-of-range calibration, truncated, oversized, unknown field, missing field, bad enum, fractional percent); display-class match (same, different size/aspect/gamut, refresh ignored, unknown) in Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/OutputProfileTests.swift
+- [X] OUT-014-T02 Add `OutputProfile`, `OutputProfile.Calibration` ("gamma 0.5…2.5, trims 0.5…1.5, finite"), `OutputDisplayClass` ("nativeWidth/Height ≥ 1, ≤ 32768; pixelAspect 0.5…2; refreshRate 1…1000 when present; gamut sRGB or displayP3 when present"), `OutputDisplayClassMatch`, `OutputProfileDocument` (format `org.projectmios.output-profile`, version 1, `.pmoutput`, max 16384 bytes, sorted-key JSON, no unknown or missing field, "percent integer in 50…100", corner pin `CornerPin.isValid`) and `OutputProfileImportError` in Packages/PresentationLifecycle/Sources/PresentationLifecycle/OutputProfile.swift — Verified 2026-11-15: `swift test` PresentationLifecycle 120 tests pass (0.26 s)
+- [X] OUT-014-T03 [P] Pure tests: round trip of every field bit for bit (with and without display); version checks (newer → `newerVersion`, 0 → `notAProfile`); invalid files change nothing (bow-tie pin, out-of-range calibration, truncated, oversized, unknown field, missing field, bad enum, fractional percent); display-class match (same, different size/aspect/gamut, refresh ignored, unknown) in Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/OutputProfileTests.swift — Verified 2026-11-15: OutputProfileTests 6/6 pass on the Mac host
 
 ## Phase 3: User Story 1 — export (P1)
 
