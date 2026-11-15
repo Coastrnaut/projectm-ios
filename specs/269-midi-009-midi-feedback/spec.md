@@ -38,6 +38,16 @@ Answered by Claude under the owner's standing approval (owner rules 4 and 9).
 - Q: How is it bounded? → A: Per control at most 30 updates per second, coalesced to the latest value; only a change of the 7-bit (or 14-bit) controller value is sent; at most 16 messages per 30 Hz tick in total, round-robin so no control starves.
 - Q: How are feedback loops prevented? → A: A value received from the controller marks that control's value as already shown on the controller and opens a 100 ms echo window in which nothing is sent for it; a received control change that exactly matches a byte we sent within the last 100 ms is treated as the device's echo and dropped. A loopback (output wired to input) settles after at most one message per change.
 
+### Session 2026-11-14 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: Which clock times the rate limit and the echo window? → A: The app's monotonic clock, injected (the mapping coordinator's `clock`), read when a batch is applied and at each 30 Hz tick; never the messages' own timestamps, so tests drive it by hand and nothing depends on wall time.
+- Q: How does the switch announce and how does the row show it? → A: "Glow intensity feedback on." / "… feedback off." on the `.midi` lane (no Undo step, like MIDI-004 and MIDI-005 options); the row's summary adds ", feedback" (for example "Linear, 14-bit, feedback").
+- Q: Does a 14-bit feedback mapping send both parts even if the controller only ever sent coarse values? → A: Yes: coarse then fine, every time the 14-bit value changes. A 7-bit controller ignores the fine controller or treats it as an unrelated control; sending only coarse would lose the resolution the user turned on.
+- Q: Is the current state sent when feedback starts? → A: Yes, once: when the switch is turned on, when the app starts sending (first tick with a paired destination), and when a paired destination is added; each control then follows R4-R6. Nothing is sent for a mapping whose parameter has no value yet (no native visual shown).
+- Q: Is anything about feedback logged, counted or stored? → A: No logging and no storage. The engine keeps an in-memory count of messages sent for tests and the DEBUG probe only; the stored line carries just `fb=1`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A controller's LEDs or motor faders follow the app (Priority: P1) — MVP
@@ -97,9 +107,9 @@ the output received.
 - **MIDI-009-R8**: A received control change that equals a byte sent on the same channel and controller within the last 100 ms MUST be dropped as an echo (once per sent byte).
 - **MIDI-009-R9**: Feedback MUST go only to online, non-network destinations paired with a listed online input (same device name; virtual: same name), through the public CoreMIDI output API with MIDI 1.0 Universal MIDI Packets; no network MIDI.
 - **MIDI-009-R10**: Feedback MUST stop while the input is not receiving (listening off, background) and on panic (pending dropped, current values taken as shown).
-- **MIDI-009-R11**: When paired destinations are added, the current value of every feedback mapping MUST be sent once (bounded by R5 and R6).
-- **MIDI-009-R12**: The options screen MUST offer a "Send feedback" switch that saves at once and announces on the `.midi` lane, with no Undo step; the curve summary MUST add ", feedback" when on.
-- **MIDI-009-R13**: The feedback logic MUST be pure Swift with an injected clock and an output protocol, and pass on Linux.
+- **MIDI-009-R11**: When feedback starts (switch turned on, first tick with a paired destination) or paired destinations are added, the current value of every feedback mapping MUST be sent once (bounded by R5 and R6).
+- **MIDI-009-R12**: The options screen MUST offer a "Send feedback" switch that saves at once and announces "<name> feedback on." / "… off." on the `.midi` lane, with no Undo step; the curve summary MUST add ", feedback" when on.
+- **MIDI-009-R13**: The feedback logic MUST be pure Swift with an injected monotonic clock (never message timestamps) and an output protocol, and pass on Linux; nothing about feedback is logged or stored beyond `fb=1`.
 
 ### Key Entities
 
