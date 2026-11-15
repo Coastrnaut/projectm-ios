@@ -17,13 +17,8 @@ import Foundation
 import Observation
 import ParameterGraph
 
-/// What the row says (CAM-009-R5).
-enum FaceTrackingStatus: Equatable {
-    case off
-    case needsCamera
-    case unavailable
-    case ready
-}
+/// What the row says (CAM-009-R5; shared with hand tracking, CAM-010).
+typealias FaceTrackingStatus = CameraAnalysisStatus
 
 @MainActor
 @Observable
@@ -34,12 +29,14 @@ final class FaceTrackingCoordinator {
     static let allKeys: [String] = [switchKey, consentKey]
     static let onAnnouncement = "Face tracking on"
 
+    /// CAM-010-D4: the switch, the stored consent and the sheet (the model hand tracking shares).
+    private var consent: CameraAnalysisConsent
     /// The switch as the user set it.
-    private(set) var isOn: Bool
+    var isOn: Bool { consent.isOn }
     /// The user confirmed the explanation sheet (stored).
-    private(set) var hasConsent: Bool
+    var hasConsent: Bool { consent.hasConsent }
     /// The explanation sheet is shown.
-    var consentSheetShown = false
+    var consentSheetShown: Bool { consent.sheetShown }
     private(set) var cameraAuthorized: Bool
     private(set) var availability: FaceAnalysisAvailability
 
@@ -53,8 +50,7 @@ final class FaceTrackingCoordinator {
         self.defaults = defaults
         self.analyzer = analyzer
         self.cameraPermission = cameraPermission
-        hasConsent = defaults.bool(forKey: Self.consentKey)
-        isOn = defaults.bool(forKey: Self.consentKey) && defaults.bool(forKey: Self.switchKey)
+        consent = CameraAnalysisConsent(defaults: defaults, switchKey: Self.switchKey, consentKey: Self.consentKey)
         cameraAuthorized = cameraPermission()
         availability = analyzer.availability
         analyzer.onAvailabilityChange = { [weak self] (now: FaceAnalysisAvailability) -> Void in self?.availability = now }
@@ -65,9 +61,7 @@ final class FaceTrackingCoordinator {
     var gate: FaceTrackingGate { FaceTrackingGate(switchOn: isOn, consented: hasConsent, cameraAuthorized: cameraAuthorized) }
 
     var status: FaceTrackingStatus {
-        guard isOn else { return .off }
-        guard cameraAuthorized else { return .needsCamera }
-        return availability == .available ? .ready : .unavailable
+        CameraAnalysisStatus(isOn: isOn, cameraAuthorized: cameraAuthorized, availability: availability)
     }
 
     /// The note under the switch, nil when none is needed.
@@ -84,31 +78,21 @@ final class FaceTrackingCoordinator {
 
     /// The switch's binding: on asks for consent first (R2); off stops at once.
     func setSwitch(_ on: Bool) {
-        if !on {
-            isOn = false
-            defaults.set(false, forKey: Self.switchKey)
-            applyGate()
-            return
-        }
-        guard hasConsent else {
-            consentSheetShown = true   // nothing analysed until Confirm
-            return
-        }
-        turnOn()
+        if consent.request(on, defaults: defaults) { cameraAuthorized = cameraPermission() }
+        applyGate()   // off: stops at once; sheet shown: still closed
     }
 
     /// The sheet's Confirm: consent is stored, then the switch turns on.
     func confirmConsent() {
-        hasConsent = true
-        defaults.set(true, forKey: Self.consentKey)
-        consentSheetShown = false
-        turnOn()
+        consent.confirm(defaults: defaults)
+        cameraAuthorized = cameraPermission()
+        applyGate()
         announce?(Self.onAnnouncement)
     }
 
     /// The sheet's Cancel (or dismissal): the switch stays off.
     func cancelConsent() {
-        consentSheetShown = false
+        consent.cancel()
     }
 
     /// Reads the camera permission again (scene activity, the camera's state changes).
@@ -119,25 +103,17 @@ final class FaceTrackingCoordinator {
         applyGate()
     }
 
-    private func turnOn() {
-        isOn = true
-        defaults.set(true, forKey: Self.switchKey)
-        cameraAuthorized = cameraPermission()
-        applyGate()
-    }
-
     private func applyGate() {
         analyzer.isEnabled = gate.allowsAnalysis
     }
 
     // MARK: Hosts
 
-    /// The Camera visual's provider offers its pictures to the analyzer (no second session).
+    /// The Camera visual's pictures reach the analyzer through the app's analysis group (CAM-010-D2; no second
+    /// session); here only the permission and the mirror are brought up to date.
     func connect(camera host: CameraVisualHost) {
         refreshPermission()
         analyzer.mirrored = host.mirrored
-        host.camera.provider.pictureAnalyzer = analyzer
-        host.updatePersonMaskPlan()   // also sets the face analysis rate (R10)
     }
 
     /// A native spectrum reads the face values per evaluated frame.

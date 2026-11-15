@@ -137,6 +137,7 @@ extension AppCoordinator {
         if let scene = apply.logo { logo.restore(storeID: scene.storeID, placement: scene.placement) }   // MED-010-R10
         if let seconds = apply.countdownSeconds { countdown.startFromCue(seconds: seconds) }   // MED-012-R8: a cue starts it
         sceneHistory.restart()   // SCN-010-R9: a cue is not an edit
+        osc.sender?.post(.scene(name: document.name))   // OSC-005-R6, R7: the name leaves only when the user chose it
         resetTrailsHistory()   // FX-009-R5: a cue's scene (and UIX-002's switcher) starts without trails
         if refresh {
             visualSettingsChanged()

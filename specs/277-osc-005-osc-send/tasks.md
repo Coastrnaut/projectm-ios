@@ -1,0 +1,59 @@
+# Tasks: OSC-005 OSC Send
+
+**Input**: `specs/277-osc-005-osc-send/` (spec, plan, research, data-model, contracts, quickstart)
+
+**Tests**: requested by the roadmap row (loopback fixture, disable stops traffic) and the brief. No wall-clock
+assertions except the short "nothing arrives" window of real UDP; unit tests about 1-2 s, package suite < 1 min,
+UI test < 30 s (owner rule 7). Tasks are ticked only when verified, with " — Verified 2026-11-14: <how>".
+
+## Phase 1: Setup
+
+- [X] OSC-005-T01 Audit OSC-001/002/003/004/007/008/009, the loopback tests, SHOW-001 scene application, SHOW-011 TempoSnapshot and MIDI-010; record the baseline table in `specs/277-osc-005-osc-send/spec.md`. — Verified 2026-11-14: spec.md Baseline table (encoder reused; only the DEBUG loopback sender existed; no outbound hooks).
+
+## Phase 2: Foundational (package)
+
+- [X] OSC-005-T02 `OSCSendDestination` ("literal, local, not link-local IPv6/unspecified/multicast; port 1024-65535"), `OSCSendDestinationError`, `OSCSendKind`, `OSCSendEvent`, `OSCSendStatus`, `OSCSendMessages` (names ≤ 64 UTF-8 bytes), `OSCSendRateCap` (60 per 1 s), `OSCBeatGate` (once per beat, ≥ 250 ms apart) in `Packages/PerformanceControl/Sources/PerformanceControl/OSC/OSCSend.swift` (R3, R6-R9, R13). — Verified 2026-11-14: OSCSendTests (7) pass; `swift test --package-path Packages/PerformanceControl` 313 tests, 0 failures, 17.0 s.
+- [X] OSC-005-T03 `OSCSendTransport`, `OSCSendTransportEvent`, `OSCSender` (configure, options, post, counters, state) in `Packages/PerformanceControl/Sources/PerformanceControl/OSC/OSCSender.swift` (R4, R5, R9). — Verified 2026-11-14: OSCSendTests.testSenderGatesKindsCapAndDisable passes (inactive, kindOff, 60 sent/41 dropped, nil closes, replace reopens).
+- [X] OSC-005-T04 `NetworkOSCSender` (UDP `NWConnection` to a literal local host, no cellular, generation-dropped queued sends, ≤ 16 in flight, cancel on close) in `Packages/PerformanceControl/Sources/PerformanceControl/OSCTransport/NetworkOSCSender.swift` (R3, R5); ADR-0088 and the `NetworkOSCSender` marker rule in `scripts/check_network_symbols.py` with tests in `scripts/test_scripts.py`. — Verified 2026-11-14: OSCSendLoopbackTests (2) pass on the macOS host (not skipped); ADR-0088 written; test_scripts 179 OK incl. the NetworkOSCSender marker cases; check_network_symbols OK on the Debug simulator app ("reviewed OSC-005 sender" findings allowed).
+
+## Phase 3: User Story 1 - Tell a lighting desk about scene changes and beats (P2)
+
+**Independent test**: a real UDP listener on 127.0.0.1 receives exactly the expected bytes for a scene change and a beat.
+
+- [X] OSC-005-T05 [US1] Pure tests in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCSendTests.swift`: message bytes for each kind match contract S1; encoder round trip through `OSCDecoder` for the three kinds plus a seeded pseudo-random property test (strings with multibyte text, ints, floats); name truncation at a character boundary; beat gate once per beat and ≥ 250 ms apart; rate cap 60 per window; sender with a fake transport (kind off, inactive, counters) (R6-R9, R13; S4). — Verified 2026-11-14: OSCSendTests: testWireBytesMatchTheContract, testEncoderRoundTripsThroughTheParser (200 seeded cases), testNameTruncatesAtACharacterBoundary, testBeatGateOncePerBeat, testRateCapSixtyPerSecond pass.
+- [X] OSC-005-T06 [US1] Loopback acceptance in `Packages/PerformanceControl/Tests/PerformanceControlTests/OSCSendLoopbackTests.swift` (macOS host): `NetworkDatagramTransport` on port 0 receives byte-exact `/projectm/scene ,s "Intro"` and `/projectm/beat ,i 1` from `OSCSender` + `NetworkOSCSender` (S1). — Verified 2026-11-14: OSCSendLoopbackTests.testLoopbackFixtureReceivesExpectedPayloadAndDisableStopsTraffic passes (byte-exact scene and beat, 0.31 s).
+- [X] OSC-005-T07 [US1] `OSCSendCoordinator` in `Apps/projectM-iOS/Coordinators/OSCSendCoordinator.swift` (five keys, conditions, beat poll, status text, counts) and the hooks: `OSCReceiverCoordinator.apply()` → `sender?.conditionsChanged()`, `AppCoordinator.connectAfterInit` wiring, `start(_:)`/`stop()` status events, `applyShowScene` scene event (R4, R6, R10). — Verified 2026-11-14: OSCSendCoordinatorTests (2) pass on "OSC5 iPhone 17" (iOS 27.2); wired in AppCoordinator.connectAfterInit, start/stop and applyShowScene.
+- [X] OSC-005-T08 [US1] `Apps/projectM-iOS/Views/OSCSendView.swift` and the "Send OSC" row in `Apps/projectM-iOS/Views/SettingsView.swift` `oscSection` (R1, R10). — Verified 2026-11-14: OSCSendUITests passes (screen reached from the oscSendLink row).
+- [X] OSC-005-T09 [US1] App test `Apps/projectM-iOS/Tests/OSCSendCoordinatorTests.swift`: with a loopback `NetworkDatagramTransport` listener, a scene and a beat (fake grid and clock) arrive byte-exact; defaults off (R2); status texts for off, receiver off, no destination, not approved and sending, and the sent/dropped counts (R10). — Verified 2026-11-14: OSCSendCoordinatorTests.testLoopbackReceivesSceneAndBeatAndEveryDisableStopsTraffic (byte-exact at a loopback NetworkDatagramTransport, 0.98 s) and testDestinationRulesAllowListAndStatusTexts pass.
+
+## Phase 4: User Story 2 - Disable stops traffic (P2)
+
+- [X] OSC-005-T10 [US2] Package loopback test: after `configure(destination: nil)` posts produce nothing at the listener over a 300 ms window; queued sends are dropped (S2). App test: Send OSC off, receiver switch off, background each stop traffic at the loopback listener (R5). — Verified 2026-11-14: package: the 300 ms quiet window after configure(nil) and testCloseDropsQueuedSends pass; app: Send OSC off, the badge Stop and the background each leave the fixture count unchanged.
+
+## Phase 5: User Story 3 - Only the local network (P2)
+
+- [X] OSC-005-T11 [US3] Tests in `OSCSendTests.swift`: 8.8.8.8, 100.64.0.1, 224.0.0.1, 255.255.255.255, 0.0.0.0, 2001:db8::1, fe80::1, `mixer.local`, port 80 and 70000 refused; 127.0.0.1, 10.0.0.2, 172.16.0.1, 192.168.1.40, 169.254.1.1, ::1, fd00::1 accepted (S3). App test: allow list on without the destination → nothing sent, status says so. — Verified 2026-11-14: OSCSendTests.testDestinationRules passes; app allow-list step passes (nothing sent, status "The destination is not an approved device.").
+- [X] OSC-005-T12 [US3] UI test `Apps/projectM-iOS/UITests/OSCSendUITests.swift` (< 30 s): open Send OSC, a public address shows the error, a LAN address is accepted, toggles exist; no network needed (S5). — Verified 2026-11-14: OSCSendUITests.testPublicAddressRefusedLocalAccepted passes in 21.9 s.
+
+## Phase 6: Polish
+
+- [X] OSC-005-T13 Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, `LibrarySettingsPolicy.excludedKeys`, `LibraryErasePolicy` (Settings erase), `-uitestResetNotice`, `LibraryBackupAppTests` app keys and excluded set (R12); LibraryBackup package tests, `LibraryBackupAppTests`, `SettingsTests` pass. — Verified 2026-11-14: LibraryBackup package 87 tests pass; LibraryBackupAppTests (5), SettingsTests (9) pass on the simulator.
+- [X] OSC-005-T14 Local Network usage string in `project.yml` and `PermissionCatalog.swift`, privacy policy section (R11); `check_permission_catalog.py`. — Verified 2026-11-14: check_permission_catalog OK; PermissionCatalogTests pass; privacy policy OSC section updated.
+- [X] OSC-005-T15 Repo checks, `check_network_symbols` and `check_privacy_manifest.py` on the Debug app, type-check budget build, PosterBoard counts. — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_network_symbols and check_privacy_manifest OK on the Debug app; type-check build shows no warning in changed code (four pre-existing warnings in untouched code); PosterBoard reports 32 before and after.
+- [ ] OSC-005-T16 {device} LAN receiver on D1 (quickstart step 4).
+
+## Dependencies
+
+T01 → T02 → T03 → T04 → T05, T06, T10, T11; T07 after T03; T08 after T07; T09 after T04 and T07; T12 after T08; T13-T15 last.
+
+## Parallel examples
+
+T05 with T07 (different files); T13 with T14.
+
+## Implementation strategy
+
+Package first (pure, Linux-safe), then the transport and loopback proof (MVP: US1 package acceptance), then the app coordinator, screen and tests.
+
+## Analysis (speckit-analyze, 2026-11-14)
+
+Coverage: R1 T08, T12; R2 T09; R3 T02, T04, T11; R4 T07, T10, T11; R5 T04, T10; R6 T02, T05; R7 T05; R8 T05; R9 T05; R10 T07-T09; R11 T14; R12 T13; R13 T05; S1 T06, T09; S2 T10; S3 T11; S4 T05; S5 T12. Fix applied: R10 had no test (status texts added to T09). The 300 ms "nothing arrives" window in S2 is the only real-time wait (a negative check on real UDP, as OSC-001's loopback tests). No constitution conflict: outbound traffic is opt-in, local only and recorded in ADR-0088 under ADR-0008's OSC ruling.

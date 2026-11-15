@@ -6,10 +6,16 @@
 // and by `ParticleFountainConfiguration.clamped()`); non-finite values take their defaults; an inverted min/max
 // pair is put in order. Decoding is lenient: every field is optional (missing → default). Parameters only: nothing
 // here is executable (SHD-011). Pure Swift (every platform).
+//
+// SHD-008: the `path` shape spawns uniformly inside `path` (a validated VectorPath in the unit square, y down), which
+// spans shapeWidth × shapeHeight centred on the emitter point. A missing or invalid stored path reads as
+// `VectorPath.default` (contract P3 in specs/279-shd-008-vector-path-editor).
 
 public struct ParticleEmitterSettings: Sendable, Hashable, Codable {
     public enum Shape: String, Sendable, Hashable, Codable, CaseIterable {
         case point, line, circle, rectangle
+        /// SHD-008: inside `path`.
+        case path
     }
 
     public enum Bounds: String, Sendable, Hashable, Codable, CaseIterable {
@@ -59,12 +65,15 @@ public struct ParticleEmitterSettings: Sendable, Hashable, Codable {
     public var action: Action
     public var restitution: Double
     public var seed: UInt64
+    /// SHD-008: the spawn area of the `path` shape.
+    public var path: VectorPath
 
     public init(shape: Shape = .point, shapeWidth: Double = 0.4, shapeHeight: Double = 0.2, rate: Double = 30,
                 minimumSpeed: Double = 2.5, maximumSpeed: Double = 3.5, direction: Double = 0, spread: Double = 20,
                 minimumLifetime: Double = 1.5, maximumLifetime: Double = 2.5, gravity: Double = 3,
                 bounds: Bounds = .floor, boxHalfWidth: Double = 1, boxHeight: Double = 2.5, action: Action = .bounce,
-                restitution: Double = 0.6, seed: UInt64 = ParticleEmitterSettings.defaultSeed) {
+                restitution: Double = 0.6, seed: UInt64 = ParticleEmitterSettings.defaultSeed,
+                path: VectorPath = .default) {
         self.shape = shape
         self.shapeWidth = shapeWidth
         self.shapeHeight = shapeHeight
@@ -82,6 +91,7 @@ public struct ParticleEmitterSettings: Sendable, Hashable, Codable {
         self.action = action
         self.restitution = restitution
         self.seed = seed
+        self.path = path
         self = clamped()
     }
 
@@ -128,6 +138,7 @@ public struct ParticleEmitterSettings: Sendable, Hashable, Codable {
         shape = .point; shapeWidth = 0.4; shapeHeight = 0.2; rate = 30; minimumSpeed = 2.5; maximumSpeed = 3.5
         direction = 0; spread = 20; minimumLifetime = 1.5; maximumLifetime = 2.5; gravity = 3; bounds = .floor
         boxHalfWidth = 1; boxHeight = 2.5; action = .bounce; restitution = 0.6; seed = Self.defaultSeed
+        path = .default
     }
 
     private static func clamp(_ value: Double, _ range: ClosedRange<Double>, _ fallback: Double) -> Double {
@@ -139,7 +150,7 @@ public struct ParticleEmitterSettings: Sendable, Hashable, Codable {
 
     private enum CodingKeys: String, CodingKey {
         case shape, shapeWidth, shapeHeight, rate, minimumSpeed, maximumSpeed, direction, spread, minimumLifetime,
-             maximumLifetime, gravity, bounds, boxHalfWidth, boxHeight, action, restitution, seed
+             maximumLifetime, gravity, bounds, boxHalfWidth, boxHeight, action, restitution, seed, path
     }
 
     public init(from decoder: any Decoder) throws {
@@ -162,6 +173,7 @@ public struct ParticleEmitterSettings: Sendable, Hashable, Codable {
         s.action = (try? c.decodeIfPresent(Action.self, forKey: .action)) ?? s.action
         s.restitution = Self.number(c, .restitution) ?? s.restitution
         s.seed = ((try? c.decodeIfPresent(UInt64.self, forKey: .seed)) ?? nil) ?? s.seed
+        s.path = ((try? c.decodeIfPresent(VectorPath.self, forKey: .path)) ?? nil) ?? s.path   // SHD-008: invalid → default
         self = s.clamped()
     }
 

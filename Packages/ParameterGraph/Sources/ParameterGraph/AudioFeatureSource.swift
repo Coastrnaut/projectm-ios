@@ -62,6 +62,9 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// CAM-009: one derived face scalar (present, centre, size, roll, yaw, mouth, eyes), 0…1, read from
     /// `AudioFeatureFrame.face` (an opt-in, on-device face analysis). The `audio.` prefix as for motion.
     case face(FaceFeature)
+    /// CAM-010: one derived hand scalar (present, wrist, pinch, openness, size, second hand), 0…1, read from
+    /// `AudioFeatureFrame.hand` (an opt-in, on-device hand pose analysis). The `audio.` prefix as for motion.
+    case hand(HandFeature)
 
     /// The highest band index (the largest band count is 128).
     public static let maximumBandIndex = 127
@@ -70,7 +73,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     /// `audio.onset`, `audio.beatConfidence`, `audio.kick`, `audio.centroid`, `audio.loudness`,
     /// `audio.midTransient`, `audio.highTransient`, `audio.rolloff`, `audio.flatness`, `audio.correlation`, `audio.sectionChange`, `audio.lfo.<index>` (MOD-007),
     /// `audio.bandEnvelope.<fast|medium|slow>.<index>` (MOD-015), `audio.motion.<pitch|roll|yaw|shake>` (CAM-011),
-    /// `audio.face.<present|x|y|size|roll|yaw|mouth|eyes>` (CAM-009).
+    /// `audio.face.<present|x|y|size|roll|yaw|mouth|eyes>` (CAM-009),
+    /// `audio.hand.<present|x|y|pinch|open|size|second|secondX|secondY>` (CAM-010).
     public var id: String {
         switch self {
         case let .band(index): "audio.band.\(index)"
@@ -90,6 +94,7 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
         case let .bandEnvelope(index, profile): "audio.bandEnvelope.\(profile.rawValue).\(index)"
         case let .motion(axis): "audio.motion." + axis.rawValue
         case let .face(feature): "audio.face." + feature.rawValue
+        case let .hand(feature): "audio.hand." + feature.rawValue
         }
     }
 
@@ -122,6 +127,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
                 self = .motion(axis)   // CAM-011
             } else if id.hasPrefix(Self.facePrefix), let feature = FaceFeature(rawValue: String(id.dropFirst(Self.facePrefix.count))) {
                 self = .face(feature)   // CAM-009
+            } else if id.hasPrefix(Self.handPrefix), let feature = HandFeature(rawValue: String(id.dropFirst(Self.handPrefix.count))) {
+                self = .hand(feature)   // CAM-010
             } else {
                 return nil
             }
@@ -132,6 +139,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
     static let motionPrefix = "audio.motion."
     /// CAM-009: the face sources' ID prefix.
     static let facePrefix = "audio.face."
+    /// CAM-010: the hand sources' ID prefix.
+    static let handPrefix = "audio.hand."
 
     /// MOD-007: the highest oscillator index (`LFOBank.maximumOscillators` − 1).
     public static let maximumLFOIndex = LFOBank.maximumOscillators - 1
@@ -213,6 +222,8 @@ public enum AudioFeatureSource: Sendable, Hashable, CustomStringConvertible {
             return (frame.motion ?? .neutral).value(axis)
         case let .face(feature):   // CAM-009: no face values fed reads the neutral value
             return (frame.face ?? .neutral).value(feature)
+        case let .hand(feature):   // CAM-010: no hand values fed reads the neutral value
+            return (frame.hand ?? .neutral).value(feature)
         }
     }
 
@@ -255,6 +266,9 @@ public struct AudioFeatureFrame {
     /// CAM-009: the face tracker's values; nil when no face analysis feeds the producer (every `.face` source then
     /// reads its neutral value).
     public var face: FaceFeatureValues?
+    /// CAM-010: the hand tracker's values; nil when no hand analysis feeds the producer (every `.hand` source then
+    /// reads its neutral value).
+    public var hand: HandFeatureValues?
 
     public init(bands: UnsafeBufferPointer<Float>, onset: Float? = nil, beatConfidence: Double? = nil, kick: Float? = nil,
                 centroid: Float? = nil, loudness: Float? = nil, midTransient: Float? = nil,
@@ -262,7 +276,7 @@ public struct AudioFeatureFrame {
                 sectionChange: Float? = nil,
                 lfos: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0),
                 bandEnvelopes: UnsafeBufferPointer<Double> = UnsafeBufferPointer(start: nil, count: 0),
-                motion: MotionFeatureValues? = nil, face: FaceFeatureValues? = nil) {
+                motion: MotionFeatureValues? = nil, face: FaceFeatureValues? = nil, hand: HandFeatureValues? = nil) {
         self.bands = bands
         self.onset = onset
         self.beatConfidence = beatConfidence
@@ -279,6 +293,7 @@ public struct AudioFeatureFrame {
         self.bandEnvelopes = bandEnvelopes
         self.motion = motion
         self.face = face
+        self.hand = hand
     }
 
     /// No audio: every feature reads 0.

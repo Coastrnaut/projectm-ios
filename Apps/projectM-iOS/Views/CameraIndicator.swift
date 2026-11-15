@@ -40,8 +40,11 @@ struct CameraIndicatorBadge: View {
     let indicator: CameraIndicator
     /// CAM-009-R13: face tracking analyses the pictures; the badge says so.
     var faceTracking = false
+    /// CAM-010-R13: hand tracking analyses the pictures; the badge says so.
+    var handTracking = false
     let onStop: () -> Void
     static let faceTrackingLabel = "Face tracking"
+    static let handTrackingLabel = "Hand tracking"
     @Environment(\.statusAppearance) private var appearance
 
     var body: some View {
@@ -55,6 +58,7 @@ struct CameraIndicatorBadge: View {
                 .accessibilityValue(indicator.accessibilityValue)
                 .accessibilityIdentifier("cameraIndicatorStatus")
             if faceTracking { faceTrackingLabel }
+            if handTracking { handTrackingLabel }
             Button(action: onStop) {
                 Label(CameraIndicator.stopTitle, systemImage: "stop.fill")
                     .font(.footnote.bold())
@@ -79,5 +83,12 @@ struct CameraIndicatorBadge: View {
             .font(.footnote)
             .accessibilityLabel(Self.faceTrackingLabel)
             .accessibilityIdentifier("cameraFaceTrackingStatus")
+    }
+
+    private var handTrackingLabel: some View {
+        Label(Self.handTrackingLabel, systemImage: "hand.raised")
+            .font(.footnote)
+            .accessibilityLabel(Self.handTrackingLabel)
+            .accessibilityIdentifier("cameraHandTrackingStatus")
     }
 }

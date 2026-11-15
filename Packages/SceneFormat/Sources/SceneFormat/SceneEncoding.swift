@@ -5,6 +5,7 @@
 // in; a known field of the same name wins.
 import Compositor
 import ParameterGraph
+import VisualGenerators
 
 enum SceneEncoder {
     static func document(_ d: SceneDocument) -> SceneJSON {
@@ -114,6 +115,7 @@ enum SceneEncoder {
             case .ellipse: break
             case let .rectangle(radius): o["cornerRadius"] = .double(radius)
             case let .polygon(points): o["points"] = .array(points.map(point))
+            case let .path(path): o["points"] = .array(path.points.map(vectorPoint))   // SHD-008
             }
             return .object(o)
         }
@@ -131,6 +133,8 @@ enum SceneEncoder {
     }
 
     static func point(_ p: LayerPoint) -> SceneJSON { .object(["x": .double(p.x), "y": .double(p.y)]) }
+
+    static func vectorPoint(_ p: VectorPoint) -> SceneJSON { .object(["x": .double(p.x), "y": .double(p.y)]) }
 
     /// MOD-001's tagged form.
     static func parameterValue(_ v: ParameterValue) -> SceneJSON {
