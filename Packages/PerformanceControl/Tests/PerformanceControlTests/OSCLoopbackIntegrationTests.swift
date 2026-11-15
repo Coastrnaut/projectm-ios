@@ -3,6 +3,7 @@
 // OSC-002-T11: a bundle holding the test message over the same listener (OSC-002-S4).
 // OSC-008-T08: the peer allowlist over the same listener: the real transport hands on the sender's host.
 // OSC-004-T05: learn over the same listener captures one address from a real datagram burst.
+// OSC-006-T06: a bundle scheduled 200 ms ahead over the same listener applies at its time (OSC-006-S4).
 //
 // macOS host and simulator only (the listener needs the Network framework; Linux compiles this out).
 // Deterministic: expectations with generous ceilings, no wall-clock assertions. The sender is the
@@ -166,6 +167,37 @@ final class OSCLoopbackIntegrationTests: XCTestCase {
         if receiver.counters.received >= 3 { done.fulfill() }
         wait(for: [done], timeout: 5)
         XCTAssertEqual(captured.withLock { $0 }, ["/lan/fader1"], "exactly one address, the first learnable one")
+        stopAndWaitOff(receiver)
+    }
+
+    func testScheduledBundleAppliesAtItsTimeOverLoopback() throws {
+        // The wall clock follows the receiver's monotonic clock from a fixed NTP base, so the due time is exact.
+        let clock = OSCMonotonicClock.continuous()
+        let base = OSCTimeTag(seconds: 3_950_000_000, fraction: 0)
+        let receiver = OSCReceiver(clock: clock,
+                                   wallClock: OSCWallClock(now: { () -> OSCTimeTag in base.adding(nanoseconds: Int64(clock.now())) }),
+                                   makeTransport: { NetworkDatagramTransport() })
+        let port = try listen(receiver, port: 0)
+        let expected = Double(Float(0.66))
+        let appliedAt = Mutex<UInt64?>(nil)
+        let changed = expectation(description: "test value 0.66")
+        changed.assertForOverFulfill = false
+        let observation = receiver.observeTestValue { value in
+            guard value == expected else { return }
+            appliedAt.withLock { $0 = $0 ?? clock.now() }
+            changed.fulfill()
+        }
+        let due = clock.now() + 200_000_000
+        let tag = base.adding(nanoseconds: Int64(due))
+        let message = OSCMessage(address: OSCReceiverCatalog.testAddress, arguments: [.float(0.66)])
+        send(OSCEncoder.encode(OSCPacket.bundle(OSCBundle(timeTag: tag, elements: [.message(message)]))), to: port)
+        wait(for: [changed], timeout: 5)
+        let at = try XCTUnwrap(appliedAt.withLock { $0 })
+        XCTAssertGreaterThanOrEqual(at, due, "never applied before its time tag")
+        XCTAssertLessThan(at, due + 1_000_000_000, "applied within 1 s after its time tag (generous ceiling)")
+        XCTAssertEqual(receiver.counters.scheduled, 1, "it waited in the schedule")
+        XCTAssertEqual(receiver.dispatcher.pendingScheduledCount, 0)
+        observation.cancel()
         stopAndWaitOff(receiver)
     }
 }
