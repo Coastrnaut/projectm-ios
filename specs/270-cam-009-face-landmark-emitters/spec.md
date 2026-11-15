@@ -146,5 +146,6 @@ scenes, diagnostics and logs for face data; check the built app for network symb
 ## Assumptions
 
 - Face values feed the native spectrum's modulation, as every binding source does; the camera runs only in the Camera visual today, so outside it the sources read neutral values. Combining a native visual with a camera layer is future work.
+- Update 2026-11-14 (CAM-010, ADR-0087): the Camera visual now evaluates the scene's bindings itself for the circular spectrum it draws (inner radius, gap), so face sources move that ring while the camera runs (CAM-010-D7).
 - Route creation in the UI stays out of scope (MOD-012-D6); face sources are bound through scenes and DEBUG seeds.
 - Real faces on D1, the indicator on a device and the frame rate with tracking on are `{device}` checks; the simulator has no camera and cannot run face detection.

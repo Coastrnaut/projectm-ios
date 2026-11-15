@@ -18,9 +18,13 @@
 // product (premultiplied colour and alpha × coverage) is exactly transparent outside and exactly the
 // unmasked layer inside. `CompositorShaders` evaluates the same steps from the same numbers.
 //
+// SHD-008: a `path` shape is a validated `VectorPath` (simple polygon, 3…32 points in the unit square); it maps
+// onto the local box by local = point − 0.5 and is drawn by the polygon kind (3), so the shader is unchanged.
+//
 // Every intermediate is a named, typed value: long mixed expressions time out the type checker on
 // Linux and Xcode 26 (research CMP-007-D6).
 import Foundation
+import VisualGenerators
 
 /// The three mask shapes, in the mask's local unit box (−0.5…0.5).
 public enum LayerMaskShape: Sendable, Equatable {
@@ -30,15 +34,18 @@ public enum LayerMaskShape: Sendable, Equatable {
     case rectangle(cornerRadius: Double)
     /// 3…32 points in the local frame (the box is a reference, not a limit); even-odd fill.
     case polygon([LayerPoint])
+    /// SHD-008: a simple closed path in the unit square (valid by construction), centred on the box.
+    case path(VectorPath)
 
     /// The saved names (SCN-001 `composite.mask.shape`).
-    public static let kindNames: Set<String> = ["ellipse", "rectangle", "polygon"]
+    public static let kindNames: Set<String> = ["ellipse", "rectangle", "polygon", "path"]
 
     public var kindName: String {
         switch self {
         case .ellipse: "ellipse"
         case .rectangle: "rectangle"
         case .polygon: "polygon"
+        case .path: "path"
         }
     }
 }
@@ -123,6 +130,8 @@ public struct LayerMask: Sendable, Equatable {
             }
             guard abs(Self.shoelaceArea(clamped)) > Self.minimumPolygonArea else { throw .zeroArea }
             self.shape = .polygon(clamped)
+        case let .path(path):
+            self.shape = .path(path)
         }
         self.transform = transform
         self.feather = LayerMaskTransform.clamp(feather, Self.featherRange, 0)
@@ -201,6 +210,12 @@ public struct LayerMaskGeometry: Sendable, Equatable {
             let sx: Double = t.scale.x * s
             let sy: Double = t.scale.y * s
             points = local.map { (p: LayerPoint) -> LayerPoint in LayerPoint(x: p.x * sx, y: p.y * sy) }
+        case let .path(path):
+            kind = 3
+            cornerRadius = 0
+            let sx: Double = t.scale.x * s
+            let sy: Double = t.scale.y * s
+            points = path.points.map { (p: VectorPoint) -> LayerPoint in LayerPoint(x: (p.x - 0.5) * sx, y: (p.y - 0.5) * sy) }
         }
     }
 

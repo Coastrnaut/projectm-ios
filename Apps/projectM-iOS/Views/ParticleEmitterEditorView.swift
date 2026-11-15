@@ -184,9 +184,10 @@ private struct ParticleEmitterShapeSection: View {
             if editing.values.shape != .point {
                 ParticleEmitterSlider(spec: ParticleEmitterSliders.shapeWidth, value: editing.binding(\.shapeWidth), editing: editing)
             }
-            if editing.values.shape == .rectangle {
+            if editing.values.shape == .rectangle || editing.values.shape == .path {
                 ParticleEmitterSlider(spec: ParticleEmitterSliders.shapeHeight, value: editing.binding(\.shapeHeight), editing: editing)
             }
+            if editing.values.shape == .path { ParticleEmitterPathLink(editing: editing) }   // SHD-008
             ParticleEmitterSlider(spec: ParticleEmitterSliders.rate, value: editing.binding(\.rate), editing: editing)
         }
     }
@@ -316,6 +317,23 @@ private struct ParticleEmitterPreviewCanvas: View {
             let rect = CGRect(x: q[0], y: q[1], width: q[2] - q[0], height: q[5] - q[1])
             let color = Color(.sRGBLinear, red: Double(c.red), green: Double(c.green), blue: Double(c.blue), opacity: Double(c.alpha))
             context.fill(Path(rect), with: .color(color))
+        }
+    }
+}
+
+/// SHD-008-T14: "Edit path" for the `path` spawn shape; each committed path is saved at once.
+private struct ParticleEmitterPathLink: View {
+    let editing: ParticleEmitterEditing
+
+    var body: some View {
+        NavigationLink { editor } label: { LabeledContent("Edit path", value: "\(editing.values.path.points.count) points") }
+            .accessibilityIdentifier("particleEmitterPathEdit")
+    }
+
+    private var editor: some View {
+        let target: ParticleEmitterEditing = editing
+        return VectorPathEditorView(title: "Spawn Path", path: editing.values.path) { (made: VectorPath) -> Void in
+            target.update { (s: inout ParticleEmitterSettings) -> Void in s.path = made }
         }
     }
 }

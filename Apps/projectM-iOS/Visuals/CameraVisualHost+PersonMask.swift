@@ -66,7 +66,11 @@ extension CameraVisualHost {
         let plan: PersonMaskPlan = Self.personMaskPlan(thermal: info.thermalState, lowPower: info.isLowPowerModeEnabled,
                                                        profile: PowerProfileState.current)
         camera.personMasker?.plan = plan
-        (camera.provider.pictureAnalyzer as? FaceLandmarkAnalyzer)?.interval = Self.faceInterval(plan)   // CAM-009-R10
+        let slot: (any CameraPictureAnalyzing)? = camera.provider.pictureAnalyzer
+        let members: [any CameraPictureAnalyzing] = (slot as? CameraPictureAnalyzerGroup)?.analyzers ?? (slot.map { [$0] } ?? [])
+        for case let analyzer as any CameraAnalysisRateControlled in members {
+            analyzer.interval = Self.faceInterval(plan)   // CAM-009-R10, CAM-010-R10: face and hand alike
+        }
     }
 
     /// CAM-009-R10: the same heat and power state → the face analysis interval (paused when warm; 10 Hz when reduced).

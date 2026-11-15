@@ -21,13 +21,14 @@ let package = Package(
     dependencies: [
         .package(path: "../ParameterGraph"),
         .package(path: "../Compositor"),
-        // Tests only: the visual parameter catalog (MOD-001) as a realistic registry.
+        // The visual parameter catalog (MOD-001) as a realistic registry in tests; SHD-008's VectorPath.
         .package(path: "../VisualGenerators"),
     ],
     targets: [
         .target(name: "SceneFormat",
                 dependencies: [.product(name: "ParameterGraph", package: "ParameterGraph"),
-                               .product(name: "Compositor", package: "Compositor")]),
+                               .product(name: "Compositor", package: "Compositor"),
+                               .product(name: "VisualGenerators", package: "VisualGenerators")]),   // SHD-008: VectorPath
         .testTarget(name: "SceneFormatTests",
                     dependencies: ["SceneFormat",
                                    .product(name: "ParameterGraph", package: "ParameterGraph"),

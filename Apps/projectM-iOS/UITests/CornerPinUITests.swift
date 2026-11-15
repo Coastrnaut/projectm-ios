@@ -16,14 +16,6 @@ final class CornerPinUITests: XCTestCase {
     private var editorProbe: String { (app.descendants(matching: .any)["cornerPinProbe"].firstMatch.value as? String) ?? "nil" }
     private var displayProbe: String { (app.descendants(matching: .any)["externalCornerPin"].firstMatch.value as? String) ?? "nil" }
 
-    private func showControls() {
-        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
-        if controls.exists { area.tap() }
-        area.tap()
-        if !controls.appears(within: 2) { area.tap() }
-        XCTAssertTrue(controls.appears(within: 5), "the controls are shown")
-    }
-
     func testTheEditorShowsTheCardNudgesResetsAndCloses() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
@@ -33,8 +25,7 @@ final class CornerPinUITests: XCTestCase {
         app.buttons["uitestConnectExternal"].tap()
         XCTAssertTrue(poll(5) { self.displayProbe.hasPrefix("pin=identity card=hidden") }, "identity: \(displayProbe)")
 
-        showControls()
-        app.buttons["settings"].tap()
+        app.tapFreshControl("settings")   // retries when the controls auto-hide mid-tap
         let row = app.buttons["externalCornerPinButton"]
         XCTAssertTrue(app.reveal(row), "Corner pin… is reachable")
         row.tap()

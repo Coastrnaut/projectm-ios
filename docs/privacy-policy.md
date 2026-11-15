@@ -28,7 +28,8 @@ and allow microphone access; other apps' audio (System/App Capture) is never rec
 recordings are silent; you then save it to Files, share it or discard it, and the app keeps nothing after
 the session. Share… sends a picture or video only to the app or person you pick in the share sheet. The only network traffic is Apple's own App Store traffic
 when you buy or restore the full preset library, and, only if you turn it on, OSC control messages
-that devices on your own local network send to the app.**
+that devices on your own local network send to the app and, only if you turn on Send OSC, short OSC
+messages the app sends to the one device on your local network that you enter.**
 
 ## The three audio sources and what each captures
 
@@ -95,9 +96,9 @@ app, and iOS shows its camera indicator whenever it runs. The app also shows its
 badge ("Front camera on" for the front camera) while the camera runs, with a Stop camera button that turns the camera off at once and returns
 to the visual you had before (CAM-012). Each picture is held in memory only until
 the next one replaces it and is drawn on your screen. The app never records, saves or sends camera
-pictures, and it analyses them only for two features you turn on yourself, both on your device: Person mask
-(CAM-008) finds the people in the picture to cut them out or keep only them, and Face tracking (CAM-009) measures
-your face. It does not remember the Camera
+pictures, and it analyses them only for features you turn on yourself, all on your device: Person mask
+(CAM-008) finds the people in the picture to cut them out or keep only them, Face tracking (CAM-009) measures
+your face, and Hand tracking (CAM-010) measures your hands. It does not remember the Camera
 choice: after a relaunch the camera starts only when you choose it again. A picture reaches a file
 only when you yourself tap Save Frame or Record, and then exactly as shown on screen, mirrored or
 not (CAM-002). The app remembers which camera you picked and the Mirror setting of each camera with
@@ -113,6 +114,17 @@ number is saved, recorded, written to scenes, settings backups or reports, or se
 anyone. It needs no extra permission and never starts the camera itself; while it runs the camera badge says "Face
 tracking". Turning the switch off stops it at once. Your confirmation is remembered only on this device: it is not
 included in backups, Settings erase removes it, and deleting the app deletes it.
+
+## Hand tracking (only if you turn it on)
+
+Hand tracking is off unless you turn it on in Settings › Camera and confirm its own explanation (agreeing to Face
+tracking does not turn it on). It then looks at the pictures the Camera visual already shows, on your device, and works
+out a few numbers from up to two hands: whether a hand is there, where the wrist is, how far apart your thumb and index
+finger are, how open the hand is and how large it appears. These numbers only move the visuals while the app runs. No
+picture, hand data or number is saved, recorded, written to scenes, settings backups or reports, or sent anywhere. It
+needs no extra permission and never starts the camera itself; while it runs the camera badge says "Hand tracking".
+Turning the switch off stops it at once. Your confirmation is remembered only on this device: it is not included in
+backups, Settings erase removes it, and deleting the app deletes it.
 
 ## A photo you choose
 
@@ -355,7 +367,7 @@ network) send control messages to the app. It is off until you turn it on.
 - While it is listening, the visualizer and the source screen show "OSC listening on port …" with a
   Stop button; Stop turns "OSC receiver" off and closes the port at once.
 - It accepts messages only from addresses on your local network (and from the device itself), never
-  over cellular data, and it never connects to anything: it only receives.
+  over cellular data; the receiver itself never connects to anything: it only receives.
 - A received message can change only the visual parameters listed under Settings › OSC › OSC Routes
   (today the glow's intensity, radius, threshold and knee) and a test value shown in Settings, so you
   can check that your controller reaches the app. These changes are kept in memory only and end when
@@ -370,6 +382,16 @@ network) send control messages to the app. It is off until you turn it on.
   messages it blocked, in memory only, so you can tap Allow; it forgets them when you turn OSC off. The
   local network addresses you approve are stored on your device only: they are never sent anywhere, are
   not included in a library backup, and are removed when you erase Settings.
+- "Send OSC" (Settings › OSC › Send OSC, off unless you turn it on) sends short OSC messages to one
+  device you enter by its numeric address on your local network (names are not looked up; internet
+  addresses are refused), never over cellular data, and only while "OSC receiver" is on and the app is
+  open in the foreground. It sends only what you choose: that a show cue changed the scene (with the
+  scene's name only if you turn on "Include scene names"), a beat count once per beat of the current
+  tempo, and "started" or "stopped" when an audio source starts or stops; at most 60 messages a second.
+  Nothing else about you, your device, your music or your library is sent. Turning it off, turning
+  "OSC receiver" off or leaving the app stops sending at once. The address, port and choices are stored
+  on your device only: they are not included in a library backup and are removed when you erase
+  Settings. The app keeps only counts of sent messages in memory while it runs.
 - If the app closed unexpectedly (a crash, or it was ended while open on screen), it turns "OSC
   receiver" off when it starts again and does not listen until you turn it on yourself. The camera is
   never turned back on by itself either.

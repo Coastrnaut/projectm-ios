@@ -275,6 +275,13 @@ public final class ParticleFountainSimulation {
         case .rectangle:
             x = (rng.unit() - 0.5) * e.shapeWidth
             y = (rng.unit() - 0.5) * e.shapeHeight
+        case .path:   // SHD-008-R7: three draws, uniform inside; the unit square (y down) spans width × height
+            let r1: Double = rng.unit()
+            let r2: Double = rng.unit()
+            let r3: Double = rng.unit()
+            let q: VectorPoint = e.path.sample(r1, r2, r3)
+            x = (q.x - 0.5) * e.shapeWidth
+            y = (0.5 - q.y) * e.shapeHeight
         }
         let box = Self.box(e)
         if e.bounds != .none {
