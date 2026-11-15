@@ -104,7 +104,7 @@ OSC: iPad B now receives A's scene messages.
 - More than 16 devices: the first 16 by name are kept.
 - A device that cannot be resolved: listed by name with "Resolving…", without actions.
 - The Local Network permission denied: the status line says local network access is off; no retry.
-- A device found only at an IPv6 link-local address: listed with "Allow" only ("Use as send destination" disabled).
+- A device found only at an IPv6 link-local address: listed with "Allow" only ("Use as send destination" disabled). The system browser resolves IPv4 only (research OSC-011-D3), so this arises only from other sources of results; the rule is kept for safety.
 - The approved list is full (16): "Allow" is disabled.
 - Another device announces the same name: both are listed (Bonjour renames one).
 
