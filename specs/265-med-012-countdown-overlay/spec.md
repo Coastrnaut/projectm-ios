@@ -74,6 +74,13 @@ human interaction); each answer is the conservative, local-first option.
   are saved; a running countdown is session state and starts stopped at the full duration after a
   relaunch.
 
+- Q: What is shown when Show Countdown is on but the countdown has not started? → A: The full
+  duration ("05:00"), stopped. A stopped, paused or finished countdown still shows its value.
+- Q: What happens when the duration is changed while it runs? → A: The countdown resets: stopped at
+  the new duration, re-armed (a change of the length is a new run, never a jump mid-run).
+- Q: What step do the duration steppers use? → A: Minutes 0–99 in steps of 1 and seconds 0–59 in
+  steps of 1; a total of 0 is raised to 1 s and anything above 99:00 is lowered to 99:00.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Run a countdown by hand (Priority: P1)
@@ -112,6 +119,7 @@ the countdown with its duration; a scene without it leaves the countdown alone.
 
 - Frames or ticks skip past zero, or the app is in the background at zero: the next update shows "00:00" and fires the finished event once.
 - Repeated updates after zero fire nothing and draw nothing new.
+- The duration changes while running: the countdown resets to the new duration, stopped.
 - Durations below 1 s or above 99 min are clamped (settings) or read as absent (scene field).
 - The device's wall clock or time zone changes during a run: the countdown is unaffected.
 - A damaged or newer stored setting reads as the defaults (off); a damaged one is removed.
