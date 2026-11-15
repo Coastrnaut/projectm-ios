@@ -61,6 +61,10 @@ def case(id: str, kind: str, title: str, closes: list[str], timeout: int, **para
 
 # In run order. `closes`: the tasks the case fully closes (category a); `partOf`: tasks of which it scripts a part.
 CASES: list[dict] = [
+    # First (2026-11-15, owner request): sc009 is the only case that needs a person, the one-time microphone prompt
+    # after the fresh install, so it runs before everything else and the owner can leave after one tap.
+    case("autorun-sc009", "autorun", "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
+         ["AUD-014-T32"], 600, mode="sc009", prefix="automation-sc009", wait=540, permission="microphone"),
     case("autorun-perf001", "autorun", "AutomationRunner perf001: per-stage frame timings, 1 s frame-rate windows, "
          "PERF-007 drops", ["PERF-001-T16", "PERF-002-T13", "QA-010-T12"], 300, mode="perf001",
          prefix="automation-perf001", wait=240),
@@ -68,8 +72,6 @@ CASES: list[dict] = [
          ["QA-010-T12"], 400, mode="sc015", repeat=10),
     case("warmstart-perf009", "warmstart", "PERF-009 cold and warm launches (10 each), medians",
          ["PERF-009-T16"], 600, repeat=10),
-    case("autorun-sc009", "autorun", "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
-         ["AUD-014-T32"], 600, mode="sc009", prefix="automation-sc009", wait=540, permission="microphone"),
     case("autorun-perf012", "autorun", "AutomationRunner perf012: a 1-minute overlay session, then the PERF-012 "
          "report (frame-interval percentiles, peak memory, audio age) for the QA-010 judge", [], 300,
          partOf=["QA-010-T12"], mode="perf012", prefix="performance-perf012", wait=180),

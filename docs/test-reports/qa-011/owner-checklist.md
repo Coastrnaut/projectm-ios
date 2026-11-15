@@ -20,10 +20,10 @@ python3 scripts/run_device_matrix.py --device D3    # then: python3 scripts/run_
 
 | Case | Devices | Closes | Limit |
 |---|---|---|---|
+| `autorun-sc009` | D1, D3 | AUD-014-T32 | 600 s |
 | `autorun-perf001` | D1, D2, D3 | PERF-001-T16, PERF-002-T13, QA-010-T12 | 300 s |
 | `launches-sc015` | D1, D2, D3 | QA-010-T12 | 400 s |
 | `warmstart-perf009` | D1 | PERF-009-T16 | 600 s |
-| `autorun-sc009` | D1, D3 | AUD-014-T32 | 600 s |
 | `autorun-perf012` | D1, D2, D3 | part of QA-010-T12 | 300 s |
 | `thresholds` | D1, D2, D3 | QA-010-T12 | 120 s |
 | `xctest-goldens` | D1 | QA-003-T17 | 900 s |

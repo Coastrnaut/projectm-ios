@@ -58,6 +58,20 @@
   },
   "matrixCases": [
     {
+      "id": "autorun-sc009",
+      "kind": "autorun",
+      "title": "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
+      "closes": [
+        "AUD-014-T32"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "timeoutSeconds": 600
+    },
+    {
       "id": "autorun-perf001",
       "kind": "autorun",
       "title": "AutomationRunner perf001: per-stage frame timings, 1 s frame-rate windows, PERF-007 drops",
@@ -99,20 +113,6 @@
       "partOf": [],
       "devices": [
         "D1"
-      ],
-      "timeoutSeconds": 600
-    },
-    {
-      "id": "autorun-sc009",
-      "kind": "autorun",
-      "title": "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts",
-      "closes": [
-        "AUD-014-T32"
-      ],
-      "partOf": [],
-      "devices": [
-        "D1",
-        "D3"
       ],
       "timeoutSeconds": 600
     },
