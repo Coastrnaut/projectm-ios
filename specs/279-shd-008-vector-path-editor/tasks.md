@@ -45,7 +45,7 @@
 
 ## Phase 7: Polish
 
-- [ ] SHD-008-T17 Linux shape (`-DVISUAL_NO_METAL` / `COMPOSITOR_NO_METAL` subsets), type-check budget on the app, SHD-007 and CMP-007 suites still pass, `SettingsTests` and `LibraryBackupAppTests` (no new keys), repo checks, privacy manifest and network symbols; report; spec status; delete simulator and derived data
+- [X] SHD-008-T17 Linux shape (`-DVISUAL_NO_METAL` / `COMPOSITOR_NO_METAL` subsets), type-check budget on the app, SHD-007 and CMP-007 suites still pass, `SettingsTests` and `LibraryBackupAppTests` (no new keys), repo checks, privacy manifest and network symbols; report; spec status; delete simulator and derived data — Verified 2026-11-14: VisualGenerators `-DVISUAL_NO_METAL` subset 18 tests and a `COMPOSITOR_NO_METAL` build with tests; SceneFormat 205 tests; app build with the type-check flags shows no warning in new or touched files; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_privacy_manifest OK and check_network_symbols OK on the Debug app; report `docs/test-reports/vector-path-editor.md`; simulator and derived data deleted
 - [ ] SHD-008-T18 {device} On D1, draw a path mask and a path emitter; look at the mask edge and the spawn area
 
 ## Dependencies

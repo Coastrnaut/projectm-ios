@@ -4,7 +4,8 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHD-008-T01-T17 verified on the Mac host, the Linux shape and the iOS 27.2
+simulator; no device run, T18 open; report `docs/test-reports/vector-path-editor.md`)
 
 **Input**: User description: "SHD-008 Vector path editor. Roadmap row: "Create closed paths for masks and
 particle emitters." P2, size L, depends on CMP-007. Acceptance, verbatim: "Saved path restores points and
