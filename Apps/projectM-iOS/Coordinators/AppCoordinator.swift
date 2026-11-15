@@ -376,6 +376,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var sceneHUD = SceneHUDSetting(defaults: defaults)
     /// SHOW-006: cue rehearsal (session only; device-only panel).
     @ObservationIgnored private(set) lazy var cueRehearsal: CueRehearsalCoordinator = makeCueRehearsal()
+    /// SHOW-007: the show timeline transport (Play/Pause over SHOW-005's Hold, seek, scrub, Loop).
+    @ObservationIgnored private(set) lazy var showTransport: ShowTransportCoordinator = makeShowTransport(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
     /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.

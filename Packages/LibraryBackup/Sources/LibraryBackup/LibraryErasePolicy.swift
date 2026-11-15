@@ -128,6 +128,7 @@ public enum LibraryErasePolicy {
             + recordingAspectKeys   // REC-014-R7
             + externalDisplayKeys + [sceneLockKey] + oscPeerKeys + [splitEditorWidthKey]   // SCN-015: erasing Settings unlocks the scene; OSC-008; UIX-007
             + [quantizeModeKey, cueQuantizeModeKey]   // MOD-017, SHOW-003: erasing Settings turns quantizing off
+            + [showLoopKey]   // SHOW-007: erasing Settings turns Loop off
     }()
 
     /// SCN-015: the scene lock (excluded from backups; erased with Settings).
@@ -136,6 +137,8 @@ public enum LibraryErasePolicy {
     public static let quantizeModeKey = "settings.modulation.quantize"
     /// SHOW-003: the cue step quantize mode (excluded from backups; erased with Settings).
     public static let cueQuantizeModeKey = "settings.show.quantizeCues"
+    /// SHOW-007: Loop the show timeline (excluded from backups; erased with Settings).
+    public static let showLoopKey = "settings.show.loop"
 
     /// Every key some category can remove.
     public static var erasableKeys: [String] {

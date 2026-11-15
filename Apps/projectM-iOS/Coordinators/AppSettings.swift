@@ -139,7 +139,8 @@ final class AppSettings {
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
-                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017, SHOW-003
+                          colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
+                          ShowTransportCoordinator.loopKey] + SensorySafetySetting.allKeys   // ACC-012-R8, MED-010, SCN-015, MOD-017, SHOW-003, SHOW-007
     /// VIS-002-R4: the spacings offered for the linear spectrum.
     static let linearSpectrumSpacingChoices: [(title: String, value: Double)] = [("None", 0), ("Narrow", 0.2), ("Wide", 0.5)]
     static let defaultLinearSpectrumSpacing = 0.2

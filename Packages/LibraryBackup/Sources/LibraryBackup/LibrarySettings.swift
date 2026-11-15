@@ -127,6 +127,7 @@ public enum LibrarySettingsPolicy {
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device
         "settings.show.quantizeCues",   // SHOW-003: a performance timing choice of this device
+        "settings.show.loop",   // SHOW-007: a performance choice of this device (Loop the show timeline)
         "settings.recording.includeMicrophone",   // REC-004-R3: a consent never travels to another device
         "settings.recording.qualityProfile",   // REC-005-R7: depends on this device's encoder and screen
         "settings.recording.frameRate",   // REC-006-R8: depends on this device's display and encoder
