@@ -55,24 +55,24 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
   `ScanlinesSceneGoldenTests` (intensity 0 and off render exactly as no chain; a scanline scene saved and reloaded
   renders the same picture with dark rows exactly at c mod p < t); update `EffectChainSceneTests` if it lists the order
   (FX-018-S1, S4) — Verified 2026-11-15: RenderGoldens suite 128 tests, 0 failures (1 on-demand skip), 39 s wall incl. build; ScanlinesSceneGoldenTests 2/2 (intensity 1 lines exactly black at the predicted rows/columns, all other pixels equal to the plain frame); EffectChainSceneTests with Scanlines in the order
-- [ ] FX-018-T10 [US1] [US3] App setting: `ScanlinesSetting` (five keys, "absent or malformed → default, out of range →
+- [X] FX-018-T10 [US1] [US3] App setting: `ScanlinesSetting` (five keys, "absent or malformed → default, out of range →
   nearest bound", lowering spacing lowers a larger thickness), `AppCoordinator+Scanlines.swift`, the compositor pushes
   in `AppCoordinator.swift`, the UI-test reset, scene and preset apply (`SceneAutosaveCapture`,
   `AppCoordinator+EffectChain`, `+SceneHistory`), keys in `LibrarySettings.swift`, `scripts/run_device_tests.py`,
-  `LibraryBackupAppTests`, `LibraryEraseAppTests` (FX-018-R1, R9)
-- [ ] FX-018-T11 [US1] [US3] UI: `ScanlinesSection.swift` (toggle, three ACC-005 sliders, orientation picker, help text)
+  `LibraryBackupAppTests`, `LibraryEraseAppTests` (FX-018-R1, R9) — Verified 2026-11-15: own iOS 27.2 simulator (FX18): ScanlinesSettingTests 5/5, LibraryBackupAppTests, LibraryEraseAppTests, SettingsTests pass (70 app tests in 13 suites, 0 failures, 0.66 s); LibraryBackup package 88 tests, 0 failures
+- [X] FX-018-T11 [US1] [US3] UI: `ScanlinesSection.swift` (toggle, three ACC-005 sliders, orientation picker, help text)
   in Settings, the Effect order row and name in `EffectChainSetting`/`EffectChainView`; `ScanlinesSettingTests`
   (persistence with a reloaded store, clamping, thickness follows spacing, scene apply); the spoken values ("3 pixels",
   "50 percent") and the disabled Thickness slider at spacing 2; update the order tests that
-  list every kind; `ScanlinesUITests` under 30 s; `EffectChainUITests` still pass (FX-018-R8, S5)
+  list every kind; `ScanlinesUITests` under 30 s; `EffectChainUITests` still pass (FX-018-R8, S5) — Verified 2026-11-15: ScanlinesUITests.testScanlinesControls passed in 13.4 s (readouts "3 px", "1 px", "50%", spoken "3 pixels", spacing dragged to "16 px"); EffectChainUITests.testReorderEffects passed (17.7 s); EffectChainSettingTests and the Chromatic/Directional/Radial/Echo/Mosaic/Lens/Vignette setting tests pass with Scanlines appended
 
 ## Phase 5: Polish
 
-- [ ] FX-018-T12 Repo checks (`test_scripts`, `check_compliance`, `validate_docs`, `check_motion_policy`,
+- [X] FX-018-T12 Repo checks (`test_scripts`, `check_compliance`, `validate_docs`, `check_motion_policy`,
   `check_permission_catalog`, `check_status_events`), package suites (Compositor, SceneFormat, LibraryBackup,
-  RenderGoldens), the Linux-shape build of the model, the app's `SettingsTests`, backup and erase tests
-- [ ] FX-018-T13 Type-check budget on the new app files (`-warn-long-function-bodies=300`,
-  `-warn-long-expression-type-checking=150`), no warnings from the new files
+  RenderGoldens), the Linux-shape build of the model, the app's `SettingsTests`, backup and erase tests — Verified 2026-11-15: six repo checks OK (test_scripts 186 tests OK), check_privacy_manifest OK and check_network_symbols OK on the Debug app; Compositor 787, SceneFormat 226, LibraryBackup 88, RenderGoldens 128 (0 failures); Linux-shape model tests 10/10; app SettingsTests, backup and erase tests pass
+- [X] FX-018-T13 Type-check budget on the new app files (`-warn-long-function-bodies=300`,
+  `-warn-long-expression-type-checking=150`), no warnings from the new files — Verified 2026-11-15: build-for-testing with -warn-long-function-bodies=300 -warn-long-expression-type-checking=150: no warning in any new or FX-018-edited body (existing bodies near 300 ms under load listed in the report)
 - [ ] FX-018-T14 Test report `docs/test-reports/scanline-texture.md`; spec status Implemented
 - [ ] FX-018-T15 Own simulator and derived data deleted; PosterBoard reports counted before and after (in the report)
 - [ ] FX-018-T16 {device} On D1, Photo visual: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations:

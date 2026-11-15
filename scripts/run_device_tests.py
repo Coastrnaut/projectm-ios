@@ -111,6 +111,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.lensDistortion.zoomToFill",
                 "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   # FX-015-R9
                 "settings.vignette.centerX", "settings.vignette.centerY",
+                "settings.scanlines.enabled", "settings.scanlines.spacing", "settings.scanlines.thickness",   # FX-018-R9
+                "settings.scanlines.intensity", "settings.scanlines.vertical",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11

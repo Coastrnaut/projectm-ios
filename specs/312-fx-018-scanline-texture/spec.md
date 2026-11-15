@@ -82,8 +82,8 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   leaves it alone. Applied to FX-018-R9, R10.
 - Q: What happens to the thickness when the spacing is lowered below it? → A: The renderer always uses
   min(thickness, spacing − 1); the Settings slider for thickness ranges 1…spacing − 1 and lowering the spacing lowers a
-  larger stored thickness with it, so what the slider shows is what is drawn. A scene or old stored value with a larger
-  thickness is kept and used as spacing − 1. Applied to FX-018-R2, R8.
+  larger stored thickness with it, so what the slider shows is what is drawn. A scene, preset or stored value with a
+  larger thickness is drawn as spacing − 1 (the renderer's rule) and the setting takes spacing − 1 when it is applied. Applied to FX-018-R2, R8.
 
 ### Session 2026-11-15 (speckit-analyze)
 
