@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft
+**Status**: Implemented 2026-11-15 (UIX-010-T01-T09 verified on the Mac: app unit and UI tests on a private iOS 27.2 simulator; T10 is a `{device}` VoiceOver check, open; no ADR)
 
 **Input**: User description: "Implement UIX-010 (Batch parameter reset) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Reset selected parameters to defaults with one undo step." Acceptance, verbatim:
