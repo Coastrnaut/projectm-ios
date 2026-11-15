@@ -60,6 +60,25 @@ human interaction); each answer is the conservative, local-first option.
 
 ### Session 2026-11-14 (speckit-clarify)
 
+Five questions, each answered by Claude with the recommended option (owner rules 4 and 9).
+
+- Q: Where does reverse start when it is turned on? → A: At the picture shown last (continuous: the
+  picture does not jump), or at out when nothing was shown yet or the shown picture lies outside
+  the loop region (MED-005-R4).
+- Q: What does the user see while the cache is prepared? → A: The clip keeps playing forward and
+  the Reverse row's caption reads "Preparing reverse…" until reverse starts; no notice and no
+  spinner over the visual (MED-005-R1, R6).
+- Q: How large are cached pictures? → A: As large as the budget allows for this clip, never larger
+  than the clip's own picture: every cached picture plus two transient ones must fit the budget
+  (for a 30 s 30 fps clip on a 6 GB device about 290 × 160); the forward picture is unchanged
+  (MED-005-R3).
+- Q: Do scenes, undo and show cues record the direction? → A: No. Direction is a playback choice
+  of the stored video, like the video itself in Settings; restoring a scene never changes it and
+  no scene field is added (no format change, QA-004 unaffected).
+- Q: How is the unsupported message delivered to VoiceOver? → A: Announced once, through the same
+  announcement path as the Video section's other notices (MED-002-R14), when it first appears, and shown as the Reverse row's caption while
+  Reverse is on (MED-005-R5).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Play a short clip backwards (Priority: P1)
@@ -140,6 +159,7 @@ records its peak.
 - A new video or Remove Video: reverse is off for the new video and the message disappears.
 - A stored reverse value for another video, or malformed: reads as off and is removed.
 - Scenes, undo and show cues do not record direction: restoring a scene never changes Reverse.
+- No video stored: the Reverse switch is hidden.
 - Reduce flashing (FR-072): the compositor's flash guard applies to reversed pictures as to any.
 
 ## Requirements *(mandatory)*
