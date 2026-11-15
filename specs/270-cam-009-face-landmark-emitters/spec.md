@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (CAM-009-T01-T15 verified on the Mac: ParameterGraph, Compositor and LibraryBackup package tests on the host, app unit and UI tests on a private iOS 27.2 simulator with a stub face detector; ADR-0081; T16 open `{device}`)
 
 **Input**: User description: "Implement CAM-009 (Face landmark emitters) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Generate normalized on-device face landmark events, opt-in." Acceptance, verbatim:
@@ -44,7 +44,7 @@ interaction); each answer is the conservative, local-first option, recommended o
 - Q: Smoothing and absence? → A: A one-pole of 80 ms (MOD-005's envelope) on the analysis clock; with no face, present falls to 0 and the others ease to neutral (x, y, roll, yaw 0.5; size, mouth 0; eyes 0) over 300 ms. Non-finite readings are ignored (CAM-009-R9).
 - Q: How often? → A: At most 15 analyses a second (10 under Low Power Mode or a power profile below 60 fps), never two in flight, on a utility queue; paused when the device is serious or critical warm. The render thread never waits (CAM-009-R10).
 - Q: What must never be kept or sent? → A: No picture, landmark list, face print or value is stored, logged, put in scenes, diagnostics or performance reports, recorded, or sent. Each picture is released right after its analysis. Saved frames and recordings contain the camera picture exactly as before (CAM-001), never face data. Logs carry no values. The feature adds no network code (CAM-009-R11, R12).
-- Q: How does the user know it is running? → A: While face tracking analyses pictures, the camera badge reads "Camera on · Face tracking" (iOS's own camera indicator also shows). The performance overlay and the performance report show only "Face tracking on/off" (CAM-009-R13).
+- Q: How does the user know it is running? → A: While face tracking analyses pictures, the camera badge reads "Camera on · Face tracking" (iOS's own camera indicator also shows). The performance overlay shows only "Face tracking on/off"; the performance report's fixed schema (PERF-012) gains nothing and holds no face data (CAM-009-R13).
 - Q: Turning it off? → A: The switch off stops analysis at once: no new analysis starts, a result still in flight is dropped, and all values return to neutral (CAM-009-R2).
 - Q: Does face tracking work with the back camera too? → A: Yes: it analyses whichever camera the Camera visual shows (front or back), since the user chose that camera; a camera switch resets the values to neutral (CAM-009-R6).
 - Q: What does the row show when face detection cannot run (the simulator, or an analysis error)? → A: The switch stays as chosen, no values are produced (sources read neutral) and the row says "Face tracking isn't available right now." An error stops face analysis until the camera visual is opened again (no retry every frame, as CAM-008) (CAM-009-R5).
@@ -122,7 +122,7 @@ scenes, diagnostics and logs for face data; check the built app for network symb
 - **CAM-009-R10**: Analyses MUST run at most 15 per second (10 under reduced power), one at a time, off the main and render threads, paused while the device is serious or critical warm.
 - **CAM-009-R11**: Pictures, landmarks, face prints and values MUST NOT be stored, logged, written to scenes, diagnostics, performance reports or recordings, or sent; each picture MUST be released right after its analysis.
 - **CAM-009-R12**: The face pipeline MUST contain no networking API; compliance and network-symbol checks MUST pass.
-- **CAM-009-R13**: While analysis runs, the camera badge MUST say "Face tracking"; the performance overlay and report MUST show only on/off.
+- **CAM-009-R13**: While analysis runs, the camera badge MUST say "Face tracking"; the performance overlay MUST show only "Face tracking on/off" while the Camera visual is shown; the performance report (PERF-012, a fixed schema) and diagnostics MUST contain no face data.
 - **CAM-009-R14**: The privacy policy MUST describe face tracking accurately.
 - **CAM-009-R15**: The plain parts (normalisation, smoothing, schedule, gate) MUST build and test on Linux.
 
