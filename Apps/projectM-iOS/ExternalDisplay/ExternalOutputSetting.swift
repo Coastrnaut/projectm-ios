@@ -19,6 +19,9 @@
 // OUT-009 (spec specs/268-out-009-output-color-calibration, contract C4): the display calibration, one more device-local
 // value with the same rules: `settings.externalDisplay.calibration` ("gamma,red,green,blue"); the identity removes it, a
 // missing or malformed value reads as the identity and out-of-range values are clamped. Applied live.
+// OUT-008 (spec specs/309-out-008-grid-warp, contract C4): the grid warp, one more device-local value with the same
+// rules: `settings.externalDisplay.gridWarp` ("CxR:x,y;…" row by row); the identity removes it, and a missing, malformed
+// or invalid value reads as the identity. Applied live.
 // OUT-014 (spec specs/288-out-014-output-profile-export, contract C2): `profiles` exports and imports these transforms
 // as a local `.pmoutput` file (ExternalOutputSetting+Profile.swift); no key of its own.
 import Compositor
@@ -38,8 +41,9 @@ final class ExternalOutputSetting {
     static let outputModeKey = "settings.externalDisplay.outputMode"   // OUT-006
     static let cornerPinKey = "settings.externalDisplay.cornerPin"   // OUT-007
     static let calibrationKey = "settings.externalDisplay.calibration"   // OUT-009
+    static let gridWarpKey = "settings.externalDisplay.gridWarp"   // OUT-008
     static let keys: [String] = [fitKey, shapeKey, pixelAspectKey, resolutionKey, resolutionPercentKey, outputModeKey,
-                                 cornerPinKey, calibrationKey]
+                                 cornerPinKey, calibrationKey, gridWarpKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// OUT-012: the rehearsal row reads and drives the coordinator's rehearsal flag.
@@ -97,6 +101,18 @@ final class ExternalOutputSetting {
         }
     }
 
+    // OUT-008
+    /// Only valid meshes are ever set (edits are refused by `GridWarp`; stored and imported values are validated).
+    var gridWarp: GridWarp {
+        didSet {
+            guard gridWarp != oldValue else { return }
+            if gridWarp.isIdentity { defaults.removeObject(forKey: Self.gridWarpKey) } else {
+                defaults.set(gridWarp.stored, forKey: Self.gridWarpKey)
+            }
+            external?.gridWarp = gridWarp
+        }
+    }
+
     // OUT-009
     /// Values are clamped by `DisplayCalibration`; the identity is stored as absent.
     var calibration: DisplayCalibration {
@@ -140,12 +156,14 @@ final class ExternalOutputSetting {
         cornerPin = defaults.string(forKey: Self.cornerPinKey).flatMap { (s: String) -> CornerPin? in CornerPin(stored: s) } ?? .identity
         calibration = defaults.string(forKey: Self.calibrationKey)
             .flatMap { (s: String) -> DisplayCalibration? in DisplayCalibration(stored: s) } ?? .identity
+        gridWarp = defaults.string(forKey: Self.gridWarpKey).flatMap { (s: String) -> GridWarp? in GridWarp(stored: s) } ?? .identity
         external.correction = correction
         external.pixelBudget = Self.devicePixelBudget
         external.resolution = resolution
         external.outputMode = outputMode
         external.cornerPin = cornerPin
         external.displayCalibration = calibration
+        external.gridWarp = gridWarp   // OUT-008
     }
 
     private func store(_ value: String, _ key: String) {
@@ -166,7 +184,8 @@ final class ExternalOutputSetting {
         + "Rehearse output previews a display that is not connected. "
         + "Corner pin moves the picture's four corners to fit a projector that is not square to the screen "
         + "(the display only; this device and recordings are unchanged). "
-        + "Color calibration adjusts gamma and red, green and blue for the display only."
+        + "Color calibration adjusts gamma and red, green and blue for the display only. "
+        + "Grid warp bends the picture to fit a curved or uneven surface (the display only)."
 
     // OUT-007
     static let cornerPinTitle = "Corner pin…"
@@ -196,6 +215,38 @@ final class ExternalOutputSetting {
         let magnitude: Int = abs(tenths)
         let whole: Int = magnitude / 10, fraction: Int = magnitude % 10
         return sign + (fraction == 0 ? "\(whole) %" : "\(whole).\(fraction) %")
+    }
+
+    // OUT-008
+    static let gridWarpTitle = "Grid warp…"
+    static let gridWarpEditorTitle = "Grid Warp"
+    static let gridWarpFooter = "Drag the points, or pick one and nudge it, until the guide lines on the display follow "
+        + "the surface. A connected display shows the guides while this is open. Shapes that would fold, cross or flip "
+        + "the picture are not accepted. Applies to projectM and to Camera, Photo, Video and Text visuals; the native "
+        + "spectra are shown unwarped. This device, scenes and recordings are never changed."
+
+    static func title(gridSize: Int) -> String { "\(gridSize) × \(gridSize)" }
+
+    /// OUT-008-R4: why an edit or a value was refused, in words.
+    static func reason(_ validity: GridWarpValidity) -> String {
+        switch validity {
+        case .valid: ""
+        case .badSize: "That grid size is not supported."
+        case .nonFinite, .outOfRange: "Points must stay near the picture."
+        case .cellFolded, .surfaceFolds: "This would fold the picture."
+        case .cellDegenerate: "This would squeeze part of the picture flat."
+        case .outlineCrosses: "This would make the picture overlap itself."
+        case .tooSmall: "This would make the picture too small."
+        }
+    }
+
+    /// "Row 2, column 3" (VoiceOver label of a handle, 1-based).
+    static func gridPointTitle(row: Int, column: Int) -> String { "Row \(row + 1), column \(column + 1)" }
+
+    /// "52 % across, 47.5 % down" (VoiceOver value, picture-relative percentages).
+    static func spokenValue(_ point: GridWarpPoint) -> String {
+        let x = Int((point.x * 1000).rounded()), y = Int((point.y * 1000).rounded())
+        return percent(x) + " across, " + percent(y) + " down"
     }
 
     // OUT-009

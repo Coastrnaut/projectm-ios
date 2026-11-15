@@ -148,6 +148,9 @@ final class TextVisualHost: PresentationBoundResource, CompositorVisualHost {
         view.onDisplayCalibrationChange = { [weak self] (c: DisplayCalibration) -> Void in   // OUT-009: the screen pass
             self?.compositor.displayCalibration = c
         }
+        view.onOutputWarpChange = { [weak self] (w: OutputWarpMesh) -> Void in   // OUT-008: the screen pass
+            self?.compositor.outputWarp = w
+        }
         text.onStateChange = { [weak self] (state: TextLayerState) in self?.textStateChanged(state) }
         observeSystem()
         updateAccessibility()

@@ -180,6 +180,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.outputMode",   // OUT-006-R7: likewise
         "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
         "settings.externalDisplay.calibration",   // OUT-009-R9: likewise (one display's colour response)
+        "settings.externalDisplay.gridWarp",   // OUT-008-R9: likewise (one projector's surface)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed", "settings.video.reverse",   // MED-005
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
