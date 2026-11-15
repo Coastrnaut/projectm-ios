@@ -78,7 +78,7 @@ final class VignetteSettingTests: XCTestCase {
         let included = Set(LibrarySettingsPolicy.includedKeys)
         for key in VignetteSetting.allKeys { XCTAssertTrue(included.contains(key), "\(key) is backed up and erased") }
         XCTAssertEqual(EffectChainSetting.name(.vignette), "Vignette")
-        XCTAssertEqual(OutputEffectOrder.standard.effects.last, .vignette, "appended last")
+        XCTAssertEqual(OutputEffectOrder.standard.effects.firstIndex(of: .vignette), 9, "appended after Lens distortion (FX-017 follows)")
     }
 
     func testVignetteSceneAndPresetRoundTripThroughTheAppPaths() {
