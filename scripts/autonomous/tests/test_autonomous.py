@@ -511,8 +511,17 @@ class WorktreeTests(unittest.TestCase):
         (path / "wip.txt").write_text("unsaved")
         self.assertFalse(orchestrator.retire_worktree(self.wt, "BBB-001"))
         self.assertTrue((path / "wip.txt").exists())
-        store = SimpleNamespace(in_flight=lambda: ["BBB-001"])
+        store = SimpleNamespace(states=lambda: {"AAA-001": "integrated", "BBB-001": "implementing"})
         self.assertEqual(orchestrator.sweep_worktrees(self.wt, store), [])
+        # A fresh checkout (no commits of its own, so "merged") of a feature that is not finished stays:
+        # SHD-007's and FX-005's were swept before their agents started (2026-11-14/15).
+        fresh = self.wt.create("CCC-001")
+        integrated = self.wt.create("DDD-001")
+        store = SimpleNamespace(states=lambda: {"BBB-001": "implementing", "CCC-001": "implementing",
+                                                "DDD-001": "integrated"})
+        self.assertEqual(orchestrator.sweep_worktrees(self.wt, store), ["ddd-001"])
+        self.assertTrue(fresh.exists())
+        self.assertFalse(integrated.exists())
 
     def test_dirty_or_wrong_branch_integration_checkout_is_refused(self):
         self.commit("AAA-001", "a.txt", "a\n")

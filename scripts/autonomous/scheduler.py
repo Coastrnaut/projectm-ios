@@ -65,6 +65,11 @@ AREA_LOCKS: dict[str, tuple[str, ...]] = {
 LOCK_CAPACITY: dict[str, int] = {
     "Packages/VisualGenerators": 2,
     "Packages/PerformanceControl": 2,
+    # 2026-11-15: 13 of the last 25 rows are FX effects, each locking Compositor and Rendering (the output pass,
+    # CompositorShaders, the effect chain). Two at a time halves the serial time; more would mostly trade time for
+    # conflicts in the shared shader and chain files.
+    "Packages/Compositor": 2,
+    "Packages/Rendering": 2,
 }
 
 
