@@ -18,6 +18,8 @@
 // ("mode=… target=… overlays=… externalViews=…").
 // OUT-007-T11: the hidden `externalCornerPin` probe reads the corner pin on the fake display
 // ("pin=… card=… corners=…", or "none" without a display).
+// OUT-009-T12: the hidden `externalCalibration` probe reads the display calibration and whether the visual on the fake
+// display applies it ("cal=… applied=… values=…").
 #if DEBUG
 import PresentationLifecycle
 import SwiftUI
@@ -98,6 +100,11 @@ struct UITestExternalDisplayPanel: View {
                     .opacity(0.01)
                     .accessibilityIdentifier("externalCornerPin")
                     .accessibilityValue(pin)
+                let calibration: String = coordinator.calibrationSummary
+                Text(calibration)
+                    .opacity(0.01)
+                    .accessibilityIdentifier("externalCalibration")
+                    .accessibilityValue(calibration)
             }
         }
         .font(.caption2)

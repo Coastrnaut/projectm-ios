@@ -16,6 +16,10 @@
 // OUT-007 (spec specs/264-out-007-corner-pin, contract C4): the corner pin, one more device-local value with the
 // same rules: `settings.externalDisplay.cornerPin` ("x,y;x,y;x,y;x,y", TL;TR;BR;BL); the identity removes it, and
 // a missing, malformed or invalid value reads as the identity. Applied live.
+// OUT-009 (spec specs/268-out-009-output-color-calibration, contract C4): the display calibration, one more device-local
+// value with the same rules: `settings.externalDisplay.calibration` ("gamma,red,green,blue"); the identity removes it, a
+// missing or malformed value reads as the identity and out-of-range values are clamped. Applied live.
+import Compositor
 import FrameRecording
 import Foundation
 import Observation
@@ -31,8 +35,9 @@ final class ExternalOutputSetting {
     static let resolutionPercentKey = "settings.externalDisplay.resolutionPercent"
     static let outputModeKey = "settings.externalDisplay.outputMode"   // OUT-006
     static let cornerPinKey = "settings.externalDisplay.cornerPin"   // OUT-007
+    static let calibrationKey = "settings.externalDisplay.calibration"   // OUT-009
     static let keys: [String] = [fitKey, shapeKey, pixelAspectKey, resolutionKey, resolutionPercentKey, outputModeKey,
-                                 cornerPinKey]
+                                 cornerPinKey, calibrationKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// OUT-012: the rehearsal row reads and drives the coordinator's rehearsal flag.
@@ -88,6 +93,18 @@ final class ExternalOutputSetting {
         }
     }
 
+    // OUT-009
+    /// Values are clamped by `DisplayCalibration`; the identity is stored as absent.
+    var calibration: DisplayCalibration {
+        didSet {
+            guard calibration != oldValue else { return }
+            if calibration.isIdentity { defaults.removeObject(forKey: Self.calibrationKey) } else {
+                defaults.set(calibration.stored, forKey: Self.calibrationKey)
+            }
+            external?.displayCalibration = calibration
+        }
+    }
+
     var resolution: ExternalOutputResolution {
         ExternalOutputResolution(mode: resolutionMode, percent: resolutionPercent)
     }
@@ -117,11 +134,14 @@ final class ExternalOutputSetting {
         resolutionPercent = ExternalOutputResolution.clampPercent(storedPercent ?? ExternalOutputResolution.defaultPercent)
         outputMode = ExternalOutputMode(stored: defaults.string(forKey: Self.outputModeKey))
         cornerPin = defaults.string(forKey: Self.cornerPinKey).flatMap { (s: String) -> CornerPin? in CornerPin(stored: s) } ?? .identity
+        calibration = defaults.string(forKey: Self.calibrationKey)
+            .flatMap { (s: String) -> DisplayCalibration? in DisplayCalibration(stored: s) } ?? .identity
         external.correction = correction
         external.pixelBudget = Self.devicePixelBudget
         external.resolution = resolution
         external.outputMode = outputMode
         external.cornerPin = cornerPin
+        external.displayCalibration = calibration
     }
 
     private func store(_ value: String, _ key: String) {
@@ -141,7 +161,8 @@ final class ExternalOutputSetting {
         + "(no logo) on the display, and recordings made meanwhile match it. The device always shows the whole scene. "
         + "Rehearse output previews a display that is not connected. "
         + "Corner pin moves the picture's four corners to fit a projector that is not square to the screen "
-        + "(the display only; this device and recordings are unchanged)."
+        + "(the display only; this device and recordings are unchanged). "
+        + "Color calibration adjusts gamma and red, green and blue for the display only."
 
     // OUT-007
     static let cornerPinTitle = "Corner pin…"
@@ -172,6 +193,14 @@ final class ExternalOutputSetting {
         let whole: Int = magnitude / 10, fraction: Int = magnitude % 10
         return sign + (fraction == 0 ? "\(whole) %" : "\(whole).\(fraction) %")
     }
+
+    // OUT-009
+    static let calibrationTitle = "Color calibration…"
+    static let calibrationEditorTitle = "Color Calibration"
+    static let calibrationFooter = "Adjusts the picture on a connected external display only, to match that display or "
+        + "projector. This device, scenes, recordings and saved frames are never changed. Applies to projectM and to "
+        + "Camera, Photo, Video and Text visuals; the native spectra (circular, linear, oscilloscope, Lissajous) and the "
+        + "corner-pin test card are shown uncalibrated."
 
     // OUT-012
     static let rehearseTitle = "Rehearse output…"
