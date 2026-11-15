@@ -4,16 +4,11 @@
 // * `FaceLandmarkDetecting` finds the largest face in one picture and returns only its scalars
 //   (`FaceObservationSample`). `VisionFaceLandmarkDetector` uses Vision's face landmarks on the device; it creates its
 //   request lazily, on its first detection. `StubFaceLandmarkDetector` stands in for tests and the simulator.
-// * `FaceLandmarkAnalyzer` is the camera's `CameraPictureAnalyzing`. While disabled (the consent gate is closed) an
-//   offer returns at once: no schedule step, no detector, no work. Enabled, an offer starts an analysis only when the
-//   schedule allows (15 Hz, one in flight) on a utility serial queue. The detector is made by the injected factory
-//   inside the first analysis, so with the gate closed the factory is never called. The picture is released when the
-//   analysis returns. Disabling or `reset()` bumps the generation (a result in flight is dropped) and returns the
-//   values to neutral. A detector error stops analysis for this analyzer's camera run (`failed`), as CAM-008 does.
+// * `FaceLandmarkAnalyzer` is the shared `CameraFeatureAnalyzer` (CameraFeatureAnalyzer.swift, CAM-010-D3) over the
+//   face tracker: the consent gate first, a lazy detector, 15 Hz, one in flight, results dropped after switching off.
 // * Nothing here writes a file, logs a value or uses the network. Values live in memory under one lock.
 import CameraLayer
 import CoreVideo
-import Dispatch
 import Foundation
 import ImageIO
 import os
@@ -109,174 +104,23 @@ enum FaceLandmarkError: Error, Equatable {
     case injected
 }
 
-/// Whether face values can be produced now.
-enum FaceAnalysisAvailability: Equatable, Sendable {
-    case available
-    /// Face detection cannot run on this device (or the simulator), or it failed during this camera run.
-    case unavailable
-}
+/// Whether face values can be produced now (CAM-010 shares the type with hand tracking).
+typealias FaceAnalysisAvailability = CameraFeatureAvailability
 
-/// A picture handed to the analysis queue (CoreVideo buffers are safe to read from another thread).
-private struct OfferedFacePicture: @unchecked Sendable {
-    let pixels: CVPixelBuffer
-    let rotation: CameraRotation
-    let generation: UInt64
-    let mirrored: Bool
-}
+/// CAM-009's analyzer is the shared camera feature analyzer over the face tracker (research CAM-010-D3).
+typealias FaceLandmarkAnalyzer = CameraFeatureAnalyzer<FaceFeatureTracker>
 
-final class FaceLandmarkAnalyzer: CameraPictureAnalyzing, @unchecked Sendable {
-    typealias Runner = @Sendable (@escaping @Sendable () -> Void) -> Void
-    typealias DetectorFactory = @Sendable () -> any FaceLandmarkDetecting
-
-    private struct State {
-        var enabled = false
-        var supported: Bool
-        var failed = false
-        var mirrored = false
-        var position: CameraPosition?
-        var schedule = FaceAnalysisSchedule(intervalNanoseconds: FaceTrackingRate.normalInterval)
-        var generation: UInt64 = 0
-        var started = 0
-        var detectorsMade = 0
-        var detector: (any FaceLandmarkDetecting)?
-        let tracker = FaceFeatureTracker()
-    }
-
-    private let lock: OSAllocatedUnfairLock<State>
-    private let runner: Runner
-    private let makeDetector: DetectorFactory
-    private let clock: @Sendable () -> UInt64
-    /// Main thread: called when `availability` changes.
-    var onAvailabilityChange: (@MainActor (FaceAnalysisAvailability) -> Void)?
-
+extension CameraFeatureAnalyzer where Tracker == FaceFeatureTracker {
     /// `makeDetector` is called at most once per analyzer, inside the first analysis after the gate opened.
-    init(supported: Bool, makeDetector: @escaping DetectorFactory, runner: Runner? = nil,
-         clock: (@Sendable () -> UInt64)? = nil) {
-        lock = OSAllocatedUnfairLock(uncheckedState: State(supported: supported))
-        self.makeDetector = makeDetector
-        self.clock = clock ?? { () -> UInt64 in DispatchTime.now().uptimeNanoseconds }
-        if let runner {
-            self.runner = runner
-        } else {
-            let queue = DispatchQueue(label: "org.projectmios.camera.faceLandmarks", qos: .utility)
-            self.runner = { (job: @escaping @Sendable () -> Void) -> Void in queue.async(execute: job) }
-        }
-    }
-
-    /// The consent gate's answer (main thread). Turning off drops any result in flight and resets the values.
-    var isEnabled: Bool {
-        get { lock.withLockUnchecked { $0.enabled } }
-        set {
-            lock.withLockUnchecked { (s: inout State) -> Void in
-                guard s.enabled != newValue else { return }
-                s.enabled = newValue
-                guard !newValue else { return }
-                s.generation &+= 1
-                s.schedule.reset()
-                s.tracker.reset()
-            }
-        }
-    }
-
-    /// The shown picture is mirrored (x and roll follow it). Main thread.
-    var mirrored: Bool {
-        get { lock.withLockUnchecked { $0.mirrored } }
-        set { lock.withLockUnchecked { $0.mirrored = newValue } }
-    }
-
-    /// CAM-009-R10: the analysis interval; nil pauses (main thread).
-    var interval: UInt64? {
-        get { lock.withLockUnchecked { $0.schedule.intervalNanoseconds } }
-        set { lock.withLockUnchecked { $0.schedule.setInterval(newValue) } }
-    }
-
-    var availability: FaceAnalysisAvailability {
-        lock.withLockUnchecked { (s: inout State) -> FaceAnalysisAvailability in s.supported && !s.failed ? .available : .unavailable }
-    }
-
-    /// Analyses started and detectors made so far (tests).
-    var analysesStarted: Int { lock.withLockUnchecked { $0.started } }
-    var detectorsMade: Int { lock.withLockUnchecked { $0.detectorsMade } }
-
-    /// The current values (neutral while disabled). Any thread; a struct copy.
-    var values: FaceFeatureValues {
-        lock.withLockUnchecked { (s: inout State) -> FaceFeatureValues in s.enabled ? s.tracker.values : .neutral }
-    }
-
-    /// True while enabled and able to analyse (the badge and the overlay say "Face tracking").
-    var isActive: Bool {
-        lock.withLockUnchecked { (s: inout State) -> Bool in s.enabled && s.supported && !s.failed }
-    }
-
-    // MARK: CameraPictureAnalyzing
-
-    func offer(_ pixels: CVPixelBuffer, rotation: CameraRotation, position: CameraPosition) {
-        let now: UInt64 = clock()
-        let job: OfferedFacePicture? = lock.withLockUnchecked { (s: inout State) -> OfferedFacePicture? in
-            guard s.enabled, s.supported, !s.failed else { return nil }   // CAM-009-R1: the gate first, before anything
-            if s.position != position {   // a camera switch starts from neutral
-                if s.position != nil { s.tracker.reset() }
-                s.position = position
-            }
-            guard s.schedule.offer(at: now) else { return nil }
-            s.started += 1
-            return OfferedFacePicture(pixels: pixels, rotation: rotation, generation: s.generation, mirrored: s.mirrored)
-        }
-        guard let job else { return }
-        runner { [self] () -> Void in analyse(job) }
-    }
-
-    /// The camera stopped or switched: values back to neutral; a result in flight is dropped. A failure is forgotten,
-    /// so the next camera run tries again.
-    func reset() {
-        let recovered: Bool = lock.withLockUnchecked { (s: inout State) -> Bool in
-            s.generation &+= 1
-            s.schedule.reset()
-            s.tracker.reset()
-            s.position = nil
-            defer { s.failed = false }
-            return s.failed && s.supported
-        }
-        if recovered { report(.available) }
-    }
-
-    private func analyse(_ job: OfferedFacePicture) {
-        let detector: (any FaceLandmarkDetecting)? = lock.withLockUnchecked { (s: inout State) -> (any FaceLandmarkDetecting)? in
-            guard s.enabled, job.generation == s.generation else { return nil }   // switched off meanwhile: no request
-            if s.detector == nil {
-                s.detector = makeDetector()
-                s.detectorsMade += 1
-            }
-            return s.detector
-        }
-        guard let detector else {
-            lock.withLockUnchecked { $0.schedule.finish() }
-            return
-        }
-        let result: Result<FaceObservationSample?, Error> = Result { () throws -> FaceObservationSample? in
-            try detector.detect(job.pixels, rotation: job.rotation)
-        }
-        let now: UInt64 = clock()
-        let failedNow: Bool = lock.withLockUnchecked { (s: inout State) -> Bool in
-            s.schedule.finish()
-            switch result {
-            case let .success(sample):
-                guard s.enabled, job.generation == s.generation else { return false }
-                s.tracker.ingest(sample, mirrored: job.mirrored, timeNanoseconds: now)
-                return false
-            case .failure:
-                guard !s.failed else { return false }
-                s.failed = true
-                s.tracker.reset()
-                return true
-            }
-        }
-        if failedNow { report(.unavailable) }
-    }
-
-    private func report(_ availability: FaceAnalysisAvailability) {
-        DispatchQueue.main.async { [self] () -> Void in
-            MainActor.assumeIsolated { onAvailabilityChange?(availability) }
-        }
+    convenience init(supported: Bool, makeDetector: @escaping @Sendable () -> any FaceLandmarkDetecting, runner: Runner? = nil,
+                     clock: (@Sendable () -> UInt64)? = nil) {
+        self.init(supported: supported, queueLabel: "org.projectmios.camera.faceLandmarks",
+                  makeDetect: { () -> Detect in
+                      let detector: any FaceLandmarkDetecting = makeDetector()
+                      return { (pixels: CVPixelBuffer, rotation: CameraRotation) throws -> FaceObservationSample? in
+                          try detector.detect(pixels, rotation: rotation)
+                      }
+                  },
+                  runner: runner, clock: clock)
     }
 }

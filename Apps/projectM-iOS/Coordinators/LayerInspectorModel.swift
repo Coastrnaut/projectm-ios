@@ -16,6 +16,7 @@ import Foundation
 import ParameterGraph
 import SceneFormat
 import ShaderParameterMetadata
+import VisualGenerators
 import VisualParameters
 
 // MARK: - Parameters and help (CMP-015-R7)
@@ -236,7 +237,7 @@ enum LayerCompositeEdit {
     static let fitTitles: [(name: String, title: String)] = [
         ("fill", "Fill"), ("fit", "Fit"), ("stretch", "Stretch"), ("pixelAccurate", "Pixel accurate"),
     ]
-    static let maskTitles: [(name: String, title: String)] = [("ellipse", "Ellipse"), ("rectangle", "Rectangle")]
+    static let maskTitles: [(name: String, title: String)] = [("ellipse", "Ellipse"), ("rectangle", "Rectangle"), ("path", "Path")]   // SHD-008: path
     static let defaultCornerRadius = 0.1
 
     static func range(_ parameter: LayerInspectorParameter) -> ClosedRange<Double> {
@@ -320,6 +321,7 @@ enum LayerCompositeEdit {
         switch mask {
         case let .known(live):
             if case let .polygon(points) = live.shape { return "Polygon (\(points.count) points)" }
+            if case let .path(path) = live.shape { return "Path (\(path.points.count) points)" }   // SHD-008
             return maskTitles.first { (entry: (name: String, title: String)) -> Bool in entry.name == live.shape.kindName }?.title ?? live.shape.kindName
         case let .unknown(shape, _):
             return "Other (\(shape))"
@@ -447,6 +449,7 @@ enum LayerCompositeEdit {
         switch name {
         case "ellipse": shape = .ellipse
         case "rectangle": shape = .rectangle(cornerRadius: defaultCornerRadius)
+        case "path": shape = .path(.default)   // SHD-008: edited in the path editor
         default: return composite   // polygons and unknown shapes come only from scene files
         }
         let made: LayerMask? = try? LayerMask(shape: shape, transform: current?.transform ?? .identity, feather: current?.feather ?? 0,

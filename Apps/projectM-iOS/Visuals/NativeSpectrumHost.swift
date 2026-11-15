@@ -449,6 +449,10 @@ final class NativeSpectrumHost: PresentationBoundResource {
     private(set) var usesFace = false
     /// CAM-009: the face analyzer's current values, read once per evaluated frame while `usesFace`.
     var faceValues: (@MainActor () -> FaceFeatureValues)?
+    /// CAM-010: true while a binding or trigger reads a hand source (recomputed with `usesMotion`).
+    private(set) var usesHand = false
+    /// CAM-010: the hand analyzer's current values, read once per evaluated frame while `usesHand`.
+    var handValues: (@MainActor () -> HandFeatureValues)?
     /// MOD-002: the luminance model the generator sees while the glow intensity is bound.
     private let glowLuminance = ModulatedGlowLuminance()
     /// REC-001: the handler waiting for the next readable frame.
@@ -801,6 +805,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
         }
         usesFace = bindings.contains { (b: AudioFeatureBinding) -> Bool in isFace(b.source) }
             || triggerBank.bindings.contains { (t: ThresholdTriggerBinding) -> Bool in isFace(t.source) }   // CAM-009
+        usesHand = bindings.contains { (b: AudioFeatureBinding) -> Bool in b.source.isHand }
+            || triggerBank.bindings.contains { (t: ThresholdTriggerBinding) -> Bool in t.source.isHand }   // CAM-010
         let uses: Bool = bindings.contains { (b: AudioFeatureBinding) -> Bool in isMotion(b.source) }
             || triggerBank.bindings.contains { (t: ThresholdTriggerBinding) -> Bool in isMotion(t.source) }
         guard uses != usesMotion else { return }
@@ -847,7 +853,8 @@ final class NativeSpectrumHost: PresentationBoundResource {
                                       correlation: correlation, sectionChange: sectionChange, lfos: lfos,
                                       bandEnvelopes: bandEnvelopeBank.values,
                                       motion: usesMotion ? motionValues?() : nil,   // CAM-011: a struct, no allocation
-                                      face: usesFace ? faceValues?() : nil)   // CAM-009: a struct, no allocation
+                                      face: usesFace ? faceValues?() : nil,   // CAM-009: a struct, no allocation
+                                      hand: usesHand ? handValues?() : nil)   // CAM-010: likewise
         if triggerBank.hasTriggers {   // MOD-006: one step per trigger, no allocation
             triggerBank.advance(frame: frame, timeNanoseconds: timeNanoseconds) { (action: ThresholdTriggerAction) -> Void in
                 onTrigger?(action)

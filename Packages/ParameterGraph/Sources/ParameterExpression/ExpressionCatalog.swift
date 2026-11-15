@@ -32,6 +32,7 @@ enum ExpressionCatalog {
             if case .bandEnvelope = source { return nil }   // MOD-015-D5: band envelopes likewise
             if case .motion = source { return nil }   // CAM-011-R2: motion sources likewise
             if case .face = source { return nil }   // CAM-009-R8: face sources likewise
+            if case .hand = source { return nil }   // CAM-010-R8: hand sources likewise
             return .audio(source)
         }
     }

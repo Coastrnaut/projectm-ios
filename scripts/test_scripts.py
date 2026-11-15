@@ -1560,6 +1560,14 @@ class NetworkSymbolScanTests(unittest.TestCase):
         debug = {f.name: f.allowed for f in self.findings(imports, demangled, {"NetworkDatagramTransport", "OSCLoopbackSender"})}
         self.assertTrue(debug["NWConnection.__allocating_init(host:port:using:)"], "the DEBUG loopback sender")
         self.assertFalse(debug["type metadata accessor for NWBrowser"])
+        # OSC-005 (ADR-0088): the reviewed sender allows the outbound pair, also in Release, and nothing more.
+        sender = {f.name: f.allowed for f in self.findings(imports, demangled, {"NetworkDatagramTransport", "_$s18PerformanceControl16NetworkOSCSenderC"})}
+        self.assertTrue(sender["NWConnection.__allocating_init(host:port:using:)"], "the OSC-005 sender")
+        self.assertFalse(sender["type metadata accessor for NWBrowser"])
+        self.assertFalse(sender["_nw_connection_create"])
+        alone = {f.name: f.allowed for f in self.findings(imports, demangled, {"NetworkOSCSender"})}
+        self.assertFalse(alone["NWConnection.__allocating_init(host:port:using:)"], "the sender marker outside the OSC image")
+        self.assertEqual(cns.release_findings("img", "arm64", {"NetworkDatagramTransport", "NetworkOSCSender"}), [])
 
     def test_network_linkage_outside_the_osc_image_fails(self):
         path = "/System/Library/Frameworks/Network.framework/Network"

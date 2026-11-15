@@ -82,6 +82,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.camera.lens",   # CAM-003
                 "settings.camera.personMask",   # CAM-008
                 "settings.camera.faceTracking", "settings.camera.faceTrackingConsent",   # CAM-009-R3
+                "settings.camera.handTracking", "settings.camera.handTrackingConsent",   # CAM-010-R3
                 "settings.visual.colorBlindSafePalette",   # ACC-003-R13
                 "settings.sensorySafety.profile", "settings.sensorySafety.flashesPerSecond",   # ACC-012-R8
                 "settings.sensorySafety.riseLimit", "settings.sensorySafety.intensityLimit",   # ACC-012-R8
@@ -111,6 +112,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)
                 "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   # OSC-008 (user-approved local hosts)
+                "settings.osc.send.enabled", "settings.osc.send.host", "settings.osc.send.port",   # OSC-005 (Send OSC)
+                "settings.osc.send.kinds", "settings.osc.send.sceneNames",
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
                 "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)

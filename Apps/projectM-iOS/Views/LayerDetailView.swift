@@ -11,6 +11,7 @@
 // Bodies stay small (Xcode 26 type-check budget): each section is its own property.
 import SceneFormat
 import SwiftUI
+import VisualGenerators
 
 struct LayerDetailView: View {
     let row: LayerInspectorRow
@@ -78,6 +79,7 @@ struct LayerDetailView: View {
     @ViewBuilder private var maskDetails: some View {
         parameter(.maskSize)
         if case .rectangle? = LayerCompositeEdit.knownMask(composite)?.shape { parameter(.maskCornerRadius) }
+        if let path = LayerMaskPathEdit.path(of: composite) { LayerMaskPathLink(path: path, row: row, layers: layers) }   // SHD-008
         parameter(.maskFeather)
         choice(.maskInverted) { invertToggle }
     }
@@ -161,7 +163,7 @@ struct LayerDetailView: View {
             ForEach(LayerCompositeEdit.maskTitles, id: \.name) { (entry: (name: String, title: String)) in
                 Text(entry.title).tag(String?.some(entry.name))
             }
-            if let name = composite.mask?.shape, !["ellipse", "rectangle"].contains(name) {
+            if let name = composite.mask?.shape, !["ellipse", "rectangle", "path"].contains(name) {
                 Text(LayerCompositeEdit.maskTitle(composite)).tag(String?.some(name))
             }
         }

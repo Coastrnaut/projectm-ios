@@ -38,6 +38,8 @@
 //   which stand-in cameras can focus on a point. Focusing never touches the frame loop or the audio.
 // * CAM-007: `crop` is forwarded to the camera layer the same way; the layer recomputes the fit every
 //   frame from the drawable's size and the picture's rotation, so a device rotation keeps it.
+// * CAM-010: `modulation` evaluates the scene's bindings each frame for the circular spectrum's inner radius and gap
+//   (CameraVisualHost+Modulation.swift), so face and hand sources move this visual while the camera runs.
 // * CAM-008: the camera layer gets a `PersonMasker` (CameraVisualHost+PersonMask.swift); its plan
 //   follows heat and power on the same notifications as the frame-rate governor.
 // * CAM-013 (ADR-0017 decisions 11-14): an interruption or a runtime error already clears the picture
@@ -78,14 +80,16 @@ enum CameraFocusTapOutcome: Equatable {
 final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     let view: NativeSpectrumLayerView
     let camera: CameraLayerSource
-    private let spectrum: SpectrumLayerSource
+    let spectrum: SpectrumLayerSource   // CAM-010: its ring takes the modulated geometry
     /// Internal for PERF-004's app tests (offscreen frames through the shared pool).
     let compositor: Compositor
     let queue: MTLCommandQueue   // XFADE: the freeze is encoded after this host's frames
     private let analyzer: LiveBandAnalyzer
     private let reader: (any NormalizedPCMReader)?
-    private let bands: UnsafeMutablePointer<Float>
-    private var bandCount = 0
+    let bands: UnsafeMutablePointer<Float>
+    private(set) var bandCount = 0
+    /// CAM-010-R16: the scene's bindings evaluated for the ring this visual draws (CameraVisualHost+Modulation.swift).
+    let modulation: CameraVisualModulation
     private var displayLink: ScreenDisplayLink?   // OUT-013: the screen that shows the view
     /// OUT-013: this visual's frames in flight and drops (contract C4).
     let outputPacing = MetalOutputPacing()
@@ -349,6 +353,7 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         self.queue = queue
         self.camera = camera
         self.spectrum = spectrum
+        modulation = CameraVisualModulation((spectrum.generator as? CircularSpectrumGenerator)?.configuration ?? CircularSpectrumConfiguration())
         self.compositor = compositor
         self.analyzer = analyzer
         self.reader = reader
@@ -568,6 +573,7 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
         guard outputPacing.begin() else { return }   // OUT-013: a full output drops the tick (counted), never waits
         guard let drawable = outputPacing.nextDrawable(from: layer, refreshInterval: link.targetTimestamp - link.timestamp) else { return }
         guard let commands = queue.makeCommandBuffer() else { return outputPacing.abandon() }
+        applyModulation(timeNanoseconds: UInt64(max(link.targetTimestamp, 0) * 1e9))   // CAM-010-R16
         let audio = LayerAudioContext(frame: nil, bands: UnsafeBufferPointer(start: bands, count: bandCount),
                                       events: UnsafeBufferPointer(start: nil, count: 0), droppedEvents: 0)
         let compositeStart: UInt64 = timer?.now() ?? 0
