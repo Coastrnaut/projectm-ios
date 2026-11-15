@@ -16,6 +16,7 @@
 import Compositor
 import Metal
 import ShaderParameterMetadata
+import VisualGenerators
 
 enum ProceduralMaterialShaders {
     static let vertexFunction = "mat_fullscreen"
@@ -83,12 +84,66 @@ enum ProceduralMaterialShaders {
         return sum / max(norm, 1e-4);
     }
 
+    // SHD-005: a multi-stop gradient (matches GradientRampUniforms, 272 bytes). info.x = stop count (0 = none),
+    // info.y = mode (0 smooth / linear light, 1 sRGB, 2 step). Stop i: lin[i] = linear RGBA, enc[i] = encoded RGB +
+    // position. Stops are sorted by position.
+    struct MatRamp {
+        int4 info;
+        float4 stops[16];
+    };
+
+    static float3 mat_srgb_decode(float3 c) {
+        c = clamp(c, 0.0, 1.0);
+        return select(pow((c + 0.055) / 1.055, float3(2.4)), c / 12.92, c <= 0.04045);
+    }
+
+    // Contract G2: before the first stop its value; at or after a stop that stop (equal positions: the later wins);
+    // else the fraction between the neighbours, per mode. Exact at every stop. Straight linear RGBA.
+    static float4 mat_ramp(float t, constant MatRamp &g) {
+        int n = clamp(g.info.x, 0, 8);
+        int index = -1;
+        for (int i = 0; i < 8; i++) {
+            if (i >= n || t < g.stops[2 * i + 1].w) break;
+            index = i;
+        }
+        if (index < 0) return g.stops[0];
+        float4 a = g.stops[2 * index];
+        if (index >= n - 1 || g.info.y == 2) return a;
+        float pa = g.stops[2 * index + 1].w;
+        float pb = g.stops[2 * index + 3].w;
+        float f = (t - pa) / (pb - pa);
+        if (!(f > 0.0)) return a;
+        float4 b = g.stops[2 * index + 2];
+        float alpha = mix(a.a, b.a, f);
+        if (g.info.y == 1) {
+            float3 e = mix(g.stops[2 * index + 1].rgb, g.stops[2 * index + 3].rgb, f);
+            return float4(mat_srgb_decode(e), alpha);
+        }
+        return float4(mix(a.rgb, b.rgb, f), alpha);
+    }
+
     // Gradient Field: 0 colorA, 1 colorB, 2 speed (turns/s), 3 brightness, 4 audioReactivity,
     // 5 shape (SHD-003 enum: 0 linear, 1 radial). Radial blends by distance from the centre; its boundary
-    // breathes once per phase cycle (the rotation's bound).
-    fragment float4 mat_gradient(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]]) {
+    // breathes once per phase cycle (the rotation's bound). SHD-005: with a ramp (g.info.x > 0) the axis maps
+    // linearly to t (0.5 + p·dir across the shorter side, or 2·radius) and the output is premultiplied
+    // ramp colour × brightness with the ramp's alpha.
+    fragment float4 mat_gradient(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]],
+                                 constant MatRamp &g [[buffer(1)]]) {
         float2 p = mat_point(in, u);
         float a = TAU * u.phase;
+        if (g.info.x > 0) {
+            float r;
+            if (u.slots[5].x > 0.5) {
+                r = 2.0 * length(p) * (1.0 + 0.15 * cos(a));
+            } else {
+                r = 0.5 + dot(p, float2(cos(a), sin(a)));
+            }
+            float4 c = mat_ramp(clamp(r, 0.0, 1.0), g);
+            float3 rgb = c.rgb * u.slots[3].x;
+            float alpha = clamp(c.a, 0.0, 1.0);
+            rgb = select(rgb, float3(0.0), isnan(rgb) || isinf(rgb));
+            return float4(clamp(rgb, 0.0, 1.0) * alpha, alpha);
+        }
         float t;
         if (u.slots[5].x > 0.5) {
             t = smoothstep(0.05, 0.75, length(p) * (1.0 + 0.15 * cos(a)));
@@ -209,6 +264,31 @@ extension MaterialGPUCapabilities {
         if device.supportsFamily(.apple8) { families.insert(.apple8) }
         if device.supportsFamily(.apple9) { families.insert(.apple9) }
         self.init(families: families)
+    }
+}
+
+/// SHD-005: matches `MatRamp` in the shader (272 bytes): count and mode, then per stop linear RGBA and encoded RGB +
+/// position. Count 0 draws the Gradient Field without a ramp.
+struct GradientRampUniforms {
+    var info: SIMD4<Int32>
+    var stops: (SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>,
+                SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>, SIMD4<Float>)
+
+    static let none = GradientRampUniforms(ramp: nil)
+
+    init(ramp: GradientRamp?) {
+        var values: [SIMD4<Float>] = Array(repeating: .zero, count: 16)
+        var count: Int32 = 0
+        if let ramp {
+            for (i, stop) in ramp.shaderStops.prefix(8).enumerated() {
+                values[2 * i] = stop.linear
+                values[2 * i + 1] = stop.encoded
+            }
+            count = Int32(min(ramp.stops.count, 8))
+        }
+        info = SIMD4<Int32>(count, ramp?.interpolation.shaderMode ?? 0, 0, 0)
+        stops = (values[0], values[1], values[2], values[3], values[4], values[5], values[6], values[7],
+                 values[8], values[9], values[10], values[11], values[12], values[13], values[14], values[15])
     }
 }
 

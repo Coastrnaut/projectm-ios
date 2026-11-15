@@ -111,6 +111,8 @@ struct SettingsView: View {
     var recentPresets: RecentPresetsCoordinator?
     /// PERF-008: the power profile (nil hides the rows, e.g. in previews).
     var powerProfile: PowerProfileSetting? = nil
+    /// ACC-007: haptic beat pulses (nil hides the section, e.g. in previews).
+    var hapticBeat: HapticBeatCoordinator? = nil
     /// PERF-012: Export performance report (Settings → Performance).
     var performanceReport: PerformanceReportExport? = nil
     /// ACC-005-R7: announces a VoiceOver swipe at a slider's end (nil: none, e.g. in previews).
@@ -362,6 +364,7 @@ struct SettingsView: View {
                 }
             }
             if let layerInspector { SceneSnapshotRows(snapshots: layerInspector.sceneSnapshots) }   // SCN-008-R9: under what it holds
+            if let layerInspector { OfflineExportRow(export: layerInspector.offlineExport) }   // REC-013-R1
         } header: {
             Text("Visual")
         } footer: {
@@ -530,6 +533,7 @@ struct SettingsView: View {
     @ViewBuilder private var safetySections: some View {
         SensorySafetySection(settings: settings, announcer: announcer).id("safety")   // ACC-012-R10
         ReduceFlashingSection(settings: settings, available: reduceFlashingAvailable).id("reduceFlashing")   // FR-072 (own view: ACC-012 body budget)
+        if let hapticBeat { HapticBeatSection(coordinator: hapticBeat).id("haptics") }   // ACC-007-R1
     }
 
     @ViewBuilder private var performanceSection: some View {

@@ -11,29 +11,24 @@
    "skipped_existing": 1
   },
   "P1": {
-   "audited": 11,
-   "implementing": 1,
-   "integrated": 138,
-   "unit_passed": 1
+   "audited": 9,
+   "implementing": 2,
+   "integrated": 140
   },
   "P2": {
-   "audited": 52,
-   "built": 1,
-   "implementing": 1,
-   "integrated": 24,
-   "unit_passed": 1
+   "audited": 49,
+   "implementing": 3,
+   "integrated": 27
   },
   "P3": {
    "audited": 9
   }
  },
  "by_state": {
-  "audited": 74,
-  "built": 1,
-  "implementing": 2,
-  "integrated": 246,
-  "skipped_existing": 1,
-  "unit_passed": 2
+  "audited": 69,
+  "implementing": 5,
+  "integrated": 251,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -41,7 +36,6 @@
   "implementation_complete": false,
   "infeasible": [],
   "pending": [
-   "ACC-007",
    "ACC-009",
    "ACC-010",
    "CAM-008",
@@ -85,18 +79,14 @@
    "OUT-011",
    "OUT-013",
    "OUT-014",
-   "PRE-009",
    "PRE-011",
    "PRE-017",
    "QA-011",
    "QA-012",
-   "REC-013",
-   "SHD-005",
    "SHD-006",
    "SHD-007",
    "SHD-008",
    "SHD-012",
-   "SHOW-006",
    "SHOW-007",
    "SHOW-008",
    "SHOW-009",
@@ -123,7 +113,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "79 features are not implemented yet (first: ACC-007, ACC-009, ACC-010, CAM-008, CAM-009)"
+   "74 features are not implemented yet (first: ACC-009, ACC-010, CAM-008, CAM-009, CAM-010)"
   ]
  },
  "features": {
@@ -190,12 +180,12 @@
   "ACC-007": {
    "attempts": 0,
    "branch": "feature/acc-007",
-   "branch_sha": "48333d58",
+   "branch_sha": "8eff9d44d8f47f9eb445b457f5de582d4951359a",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "03829784",
    "priority": "P2",
    "spec_dir": null,
-   "state": "built"
+   "state": "integrated"
   },
   "ACC-008": {
    "attempts": 0,
@@ -209,13 +199,13 @@
   },
   "ACC-009": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/acc-009",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "ACC-010": {
    "attempts": 0,
@@ -779,13 +769,13 @@
   },
   "CAM-008": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/cam-008",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "CAM-009": {
    "attempts": 0,
@@ -2242,10 +2232,10 @@
    "branch": "feature/pre-009",
    "branch_sha": "a6e0924ba9e5a8d84ee7d37d486df7ccf50cb7d6",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "0574c99c",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "PRE-010": {
    "attempts": 0,
@@ -2259,13 +2249,13 @@
   },
   "PRE-011": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/pre-011",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PRE-012": {
    "attempts": 0,
@@ -2580,12 +2570,12 @@
   "REC-013": {
    "attempts": 0,
    "branch": "feature/rec-013",
-   "branch_sha": null,
+   "branch_sha": "3e4c05c6814bae8a1c478d1097114a68f02fb1b4",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "1ca26c87",
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "integrated"
   },
   "REC-014": {
    "attempts": 0,
@@ -2810,22 +2800,22 @@
   "SHD-005": {
    "attempts": 0,
    "branch": "feature/shd-005",
+   "branch_sha": "8c516784eda171067193af25ea2c6e66e75994d3",
+   "error_category": null,
+   "integrated_sha": "5d186c3c",
+   "priority": "P1",
+   "spec_dir": null,
+   "state": "integrated"
+  },
+  "SHD-006": {
+   "attempts": 0,
+   "branch": "feature/shd-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
    "state": "implementing"
-  },
-  "SHD-006": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
-   "error_category": null,
-   "integrated_sha": null,
-   "priority": "P1",
-   "spec_dir": null,
-   "state": "audited"
   },
   "SHD-007": {
    "attempts": 0,
@@ -2942,20 +2932,20 @@
    "branch": "feature/show-006",
    "branch_sha": "3e3bb9a78d9904f16c0ef1d028550166df4922d3",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "fda100be",
    "priority": "P1",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SHOW-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/show-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P1",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHOW-008": {
    "attempts": 0,
@@ -3418,6 +3408,11 @@
    "branch": "feature/acc-006",
    "id": "ACC-006",
    "sha": "bb1439c7"
+  },
+  {
+   "branch": "feature/acc-007",
+   "id": "ACC-007",
+   "sha": "03829784"
   },
   {
    "branch": "feature/acc-008",
@@ -4225,6 +4220,11 @@
    "sha": "3cf788cf"
   },
   {
+   "branch": "feature/pre-009",
+   "id": "PRE-009",
+   "sha": "0574c99c"
+  },
+  {
    "branch": "feature/pre-010",
    "id": "PRE-010",
    "sha": "a653f631"
@@ -4365,6 +4365,11 @@
    "sha": "c3886d1cb0bb2fc8bfeec909a094332bdfb8ff71"
   },
   {
+   "branch": "feature/rec-013",
+   "id": "REC-013",
+   "sha": "1ca26c87"
+  },
+  {
    "branch": "feature/rec-014",
    "id": "REC-014",
    "sha": "9f17fcc3"
@@ -4475,6 +4480,11 @@
    "sha": "3b813137"
   },
   {
+   "branch": "feature/shd-005",
+   "id": "SHD-005",
+   "sha": "5d186c3c"
+  },
+  {
    "branch": "feature/shd-009",
    "id": "SHD-009",
    "sha": "d84b02f95a85719c9b5169329d94a1ad777e8990"
@@ -4513,6 +4523,11 @@
    "branch": "feature/show-005",
    "id": "SHOW-005",
    "sha": "1a2c439a"
+  },
+  {
+   "branch": "feature/show-006",
+   "id": "SHOW-006",
+   "sha": "fda100be"
   },
   {
    "branch": "feature/show-011",
@@ -4645,5 +4660,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-14T23:38:43Z"
+ "updated": "2026-11-14T23:57:57Z"
 }

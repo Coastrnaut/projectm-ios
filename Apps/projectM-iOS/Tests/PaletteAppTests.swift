@@ -112,4 +112,37 @@ final class PaletteAppTests: XCTestCase {
         XCTAssertEqual(palettes.lastError, PaletteEditError.readOnly.message)
         XCTAssertEqual(try Data(contentsOf: folder.appendingPathComponent(PaletteStore.fileName)), newer)
     }
+
+    // MARK: SHD-005-T10 (R4, R5; S3)
+
+    func testStopEditsSaveAndTheVisualDrawsTheStoredStops() throws {
+        let palettes = PaletteCoordinator(store: PaletteStore(directory: folder))
+        let id = try XCTUnwrap(palettes.create())
+        let plain = try XCTUnwrap(palettes.library.palette(id))
+        guard case let .custom(before) = PaletteCoordinator.visualPalette(for: plain) else { return XCTFail("custom") }
+        XCTAssertNil(before.gradient, "no stop detail: the UIX-011 ramp, unchanged")
+
+        palettes.setStopPosition(id, at: 0, to: 0.2)
+        palettes.setStopAlpha(id, at: 1, to: 0.5)
+        palettes.setInterpolation(id, .step)
+        let edited = try XCTUnwrap(palettes.library.palette(id))
+        XCTAssertEqual(edited.positions, [200, 1000])
+        XCTAssertEqual(edited.alphas, [255, 128])
+        XCTAssertEqual(edited.interpolation, .step)
+
+        let ramp = try XCTUnwrap(PaletteCoordinator.gradientRamp(for: edited))
+        for (i, c) in edited.colors.enumerated() {   // the acceptance on the CPU path: exact at every stop
+            let t: Float = Float(edited.stopPositions[i]) / 1000
+            let drawn: LinearColor = ramp.color(at: t)
+            let bytes: [Int] = [drawn.red, drawn.green, drawn.blue].map { (v: Float) -> Int in Int((SRGB.encode(v) * 255).rounded()) }
+            XCTAssertEqual(bytes, [Int(c.red), Int(c.green), Int(c.blue)])
+            XCTAssertEqual(drawn.alpha * 255, Float(edited.stopAlphas[i]), accuracy: 0.001)
+        }
+        guard case let .custom(after) = PaletteCoordinator.visualPalette(for: edited) else { return XCTFail("custom") }
+        XCTAssertEqual(after.gradient, ramp)
+        XCTAssertEqual(after.color(at: 0.1), ramp.colorOverBlack(at: 0.1), "Step holds stop 1 before stop 1's position")
+
+        let relaunched = PaletteCoordinator(store: PaletteStore(directory: folder))
+        XCTAssertEqual(relaunched.library.palette(id), edited, "saved at once")
+    }
 }

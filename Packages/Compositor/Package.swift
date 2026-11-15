@@ -99,7 +99,9 @@ let package = Package(
         // SHD-003: declarative shader parameter metadata (strict JSON reader, validator, slot check, MOD-001
         // descriptors, generic inspector controls). Foundation + ParameterGraph only; builds on Linux.
         .target(name: "ShaderParameterMetadata", dependencies: ["ParameterGraph"]),
-        .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph", "ShaderParameterMetadata"]),
+        // SHD-005: the Gradient Field evaluates a VisualGenerators `GradientRamp` (the shared CPU reference).
+        .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph", "ShaderParameterMetadata",
+                                                            .product(name: "VisualGenerators", package: "VisualGenerators")]),
         // FX-003: the colour grade's MOD-001 descriptors (the value and its shader live in Compositor).
         .target(name: "ColorGradeParameters", dependencies: ["Compositor", "ParameterGraph"]),
         .target(name: "GeneratorGraph", dependencies: ["Compositor"]),
@@ -113,7 +115,8 @@ let package = Package(
                                    .product(name: "VisualGenerators", package: "VisualGenerators"),
                                    .product(name: "LocalPortability", package: "LocalPortability")]),
         .testTarget(name: "ProceduralMaterialsTests",
-                    dependencies: ["ProceduralMaterials", "ShaderParameterMetadata", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures"]),
+                    dependencies: ["ProceduralMaterials", "ShaderParameterMetadata", "Compositor", "ParameterGraph", "FlashSafety", "AnalysisFeatures",
+                                   .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "ShaderParameterMetadataTests", dependencies: ["ShaderParameterMetadata", "ParameterGraph"]),
         .testTarget(name: "GeneratorGraphTests",
                     dependencies: ["GeneratorGraph", "Compositor", "FlashSafety", "AnalysisFeatures", "ProceduralMaterials"]),

@@ -6,8 +6,8 @@
 //   intensity limit (slider), both sliders VoiceOver-adjustable through ACC-005's `.accessibleParameter`.
 // * A profile change is announced through the shared announcer (`safety` lane, ACC-004); nothing is
 //   animated (the Custom rows appear instantly, so no MotionPolicy path is needed, ACC-001).
-// * The footer explains the limits, that Reduce flashing still raises the flash limit, and that the app
-//   has no haptics (ACC-012-R9).
+// * The footer explains the limits, that Reduce flashing still raises the flash limit, and that haptic beat
+//   pulses follow the profile (ACC-012-R9 as amended by ACC-007-R10).
 // * DEBUG: `sensorySafetyProbe` shows what the clamp hands the native visual for the current glow
 //   (`BloomParameters.limited(by:)`, the host's own function) and the flash envelope (UI tests).
 // A view of its own, built in typed steps, so SettingsView's body stays small (CI's Xcode 26 budget).
@@ -19,7 +19,7 @@ struct SensorySafetySection: View {
     @Bindable var settings: AppSettings
     var announcer: AccessibilityAnnouncer?
 
-    private static let footer = "Limits how often the picture may flash, how fast it may brighten, and how strong the glow and anything music drives may get. Reduced and Strict apply to every visual; projectM presets keep their own motion. Reduce flashing still applies its limits whatever you choose. The app uses no haptics."
+    private static let footer = "Limits how often the picture may flash, how fast it may brighten, and how strong the glow and anything music drives may get. Reduced and Strict apply to every visual; projectM presets keep their own motion. Reduce flashing still applies its limits whatever you choose. Haptic beat pulses follow the intensity limit and stop under Strict."
 
     static let riseSpec = AccessibleParameterSpec(id: "sensorySafetyRiseSlider", label: "Brightness rise limit",
                                                   range: SensorySafetySetting.riseSliderRange, step: SensorySafetySetting.riseStep,
