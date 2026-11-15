@@ -1,0 +1,60 @@
+# Tasks: MED-007 Image Ken Burns
+
+**Input**: Design documents from `specs/251-med-007-ken-burns/` (spec, plan, research, data-model,
+contracts/ken-burns.md, quickstart).
+
+**Tests**: requested by the spec (acceptance: "Start/end frames match specified crop rectangles"; MED-007-S1 to S5).
+Budgets (owner rule 7): unit test ≤ 2 s, package suite < 1 min, UI test < 30 s.
+
+## Phase 1: Setup
+
+- [X] MED-007-T01 Create the private simulator "MED7 iPhone 17" (iOS 27.2), count PosterBoard reports, check the `Build` symlink and the preset submodules, run `xcodegen generate` in the worktree — Verified 2026-11-14: simulator "MED7 iPhone 17" created (iOS 27.2), PosterBoard 26 reports before, `Build` symlink present, preset submodules initialised, `xcodegen generate` OK
+
+## Phase 2: Foundational (model)
+
+- [X] MED-007-T02 Add `KenBurnsRect` ("width/height ≥ 0.05, x, y ≥ 0, x + width ≤ 1, y + height ≤ 1 (1e-9 tolerance)", `clamped`, `init?(validating:)`, `full`, `lerp`), `KenBurnsEasing` (`linear`, `easeInOut` = 3u² − 2u³), `KenBurnsMotion` ("durationMilliseconds 2000…60000, default 10000", default easing easeInOut, `crop(elapsedNanoseconds:durationNanoseconds:)` exact at 0 and ≥ duration, presets `zoomIn`/`zoomOut`/`panLeftToRight`/`panRightToLeft`, Codable with the scene keys) and `KenBurnsPlayhead` in `Packages/Compositor/Sources/Compositor/KenBurns.swift` — Verified 2026-11-14: builds in `swift test --package-path Packages/Compositor` (KenBurnsModelTests)
+- [X] MED-007-T03 Model tests in `Packages/Compositor/Tests/CompositorTests/KenBurnsModelTests.swift`: exact start and end (bit-equal), monotonic edges over a run for both easings and every preset, intermediate rectangles valid, validation and clamping, playhead (frame durations, saturation, restart), JSON round trip and malformed JSON (MED-007-S2) — Verified 2026-11-14: KenBurnsModelTests 8 tests pass in 0.003 s on the host
+
+## Phase 3: User Story 1 - A photo zooms and pans (P1) 🎯 MVP
+
+**Goal**: the photo layer samples the interpolated crop on the injected clock.
+**Independent Test**: `swift test --package-path Packages/Compositor --filter KenBurns`.
+
+- [X] MED-007-T04 [US1] `ImagePictureGeometry(_ placement:, crop:)` and a `bounds` field (`Packages/Compositor/Sources/ImageLayer/ImagePictureGeometry.swift`); in `Packages/Compositor/Sources/ImageLayer/ImageLayerSource.swift`: `kenBurns`, `kenBurnsDurationNanoseconds`, `reduceMotion`, the playhead (restart on a new held picture or movement, advance in `render`), placement on the crop size (pixel-accurate read as fit), the `bounds` uniform in the shader, CMP-013 dependencies (time while moving; still with a parameter generation otherwise) — Verified 2026-11-14: KenBurnsLayerTests (4) and the whole Compositor suite on the host: 1030 tests pass, 0 failures, 39 s; the Linux shape (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`) builds
+- [X] MED-007-T05 [US1] GPU acceptance in `Packages/Compositor/Tests/CompositorTests/KenBurnsLayerTests.swift`: first frame vs. the CPU crop of a 1:1 start rectangle (every pixel within 1/255 in linear light), the frame at the end time vs. a 2× end rectangle of a block image (pixels away from block edges within 1/255), a middle frame differs from both; Reduce Motion frames equal the start; caching renders every frame while moving and reuses once holding; Ken Burns off draws as before (MED-007-S1, S4) — Verified 2026-11-14: KenBurnsLayerTests.testStartAndEndFramesMatchTheSpecifiedCropRectangles (1536 start pixels, 864 end pixels compared, 0 beyond 1/255; 0.03 s), testMovingFramesRenderAndTheHeldEndIsReused (21 renders for 21 moving frames, then one render and reuse), testReduceMotionHoldsTheStartRectangle, testTheDurationOverrideSetsTheEndTime; existing LayerFitCompositeTests and RenderCacheCompositeTests still pass (Ken Burns off draws as before)
+
+## Phase 4: User Story 2 - Choose the movement in Settings (P1)
+
+- [X] MED-007-T06 [US2] `KenBurnsStore` (`settings.photo.kenBurns`, absent = off) and `KenBurnsCoordinator` (on/off, preset choice, custom start/end zoom 100…400 % and position 0…100 %, duration 2…60 s, easing; announcements through the shared announcer; `onChange`) in `Apps/projectM-iOS/Coordinators/KenBurnsCoordinator.swift` — Verified 2026-11-14: KenBurnsAppTests.testEditsClampSaveAndSurviveARelaunch on "MED7 iPhone 17" (iOS 27.2)
+- [X] MED-007-T07 [US2] `Apps/projectM-iOS/Coordinators/AppCoordinator+KenBurns.swift`: `applyKenBurns()` sets the photo layer's movement, duration (slide dwell while the slideshow is active) and Reduce Motion; called from `refreshPhotoContent`, the slideshow tick, `systemReduceMotionChanged`, the coordinator's `onChange` and Photo visual creation (small edits in `AppCoordinator.swift`, `AppCoordinator+Slideshow.swift`); `PhotoVisualHost` exposes nothing new (the layer is `host.photo`) — Verified 2026-11-14: build-for-testing with the type-check flags (no warning in the new or edited files); KenBurnsAppTests.testTheSettingReachesThePhotoLayer; SlideshowTests (6) and SlideshowUITests still pass
+- [X] MED-007-T08 [US2] `KenBurnsSection` (switch, Movement picker, Custom start/end sliders through `.accessibleParameter`, Duration stepper, Easing picker, Reduce Motion note) in `Apps/projectM-iOS/Views/KenBurnsSection.swift`, added to `mediaSections` in `Apps/projectM-iOS/Views/SettingsView.swift` — Verified 2026-11-14: KenBurnsUITests drives the switch, the Movement menu and the duration slider (an ACC-005 adjustable element)
+- [X] MED-007-T09 [US2] UI test `Apps/projectM-iOS/UITests/KenBurnsUITests.swift`: Settings, Ken Burns on, Zoom out chosen, the summary reads it (< 30 s; MED-007-S5) — Verified 2026-11-14: KenBurnsUITests.testKenBurnsTurnsOnAndChangesItsMovement passed in 27.5 s (`-settings.visual photo`, `-uitestSettingsSection kenBurns`)
+
+## Phase 5: User Story 3 - Slideshow and scenes (P2)
+
+- [X] MED-007-T10 [P] [US3] `SceneKenBurns` and `SceneAsset.photoKenBurns` (optional `kenBurns` field of a `photo` asset, malformed → nil) in `Packages/SceneFormat/Sources/SceneFormat/SceneKenBurns.swift`; tests in `Packages/SceneFormat/Tests/SceneFormatTests/SceneKenBurnsTests.swift` (round trip through encode/decode, malformed values, other kinds ignored; MED-007-S3) — Verified 2026-11-14: SceneKenBurnsTests 3 pass; SceneFormat 199 tests pass on the host (SceneSourceSafetyTests list updated; QA-004 SceneMigrationMatrixMetaTests pass); the Linux shape builds
+- [X] MED-007-T11 [US3] Scene paths: `SceneInputs.kenBurns`, `SceneSlideshowRestore.kenBurns`, `SceneSlideshowBridge.photoAsset(photoID:slideshow:kenBurns:)` and `restore(in:)`; capture in `SceneAutosaveCapture.swift`, `ShowSceneSnapshot.swift`, `AppCoordinator.swift`, `AppCoordinator+Show.swift`; restore through one helper `restorePhotoMotion(_:)` at every `slideshow.restore` call site (`AppCoordinator.swift`, `AppCoordinator+Show.swift`, `AppCoordinator+SceneHistory.swift`) — Verified 2026-11-14: KenBurnsAppTests.testSceneCueAndUndoRoundTrips (autosave document, show cue, absent field → off, other visuals untouched); MediaRelinkAcceptanceTests, ScenePackAcceptanceTests and LayerInspectorRenderTests still pass
+- [X] MED-007-T12 [US3] App tests `Apps/projectM-iOS/Tests/KenBurnsAppTests.swift`: store round trip and clamping, scene capture/restore (absent → off), slideshow dwell (Time seconds, Beats with and without a grid), the photo layer receives the movement and Reduce Motion — Verified 2026-11-14: KenBurnsAppTests 5 tests pass in 1.74 s (store, scenes, dwell, layer wiring, key lists)
+
+## Phase 6: User Story 4 - Reduce Motion (P2)
+
+- [X] MED-007-T13 [US4] Reduce Motion end to end: `testReduceMotionHoldsTheStartRectangle` in `Packages/Compositor/Tests/CompositorTests/KenBurnsLayerTests.swift` (every frame equals the start frame; one render, then reuse) and `testTheSettingReachesThePhotoLayer` in `Apps/projectM-iOS/Tests/KenBurnsAppTests.swift` (`KenBurnsCoordinator.apply`, which `applyKenBurns` and `systemReduceMotionChanged` use, sets the movement, Reduce Motion and the dwell on a real Photo visual's layer) (MED-007-R7, S4) — Verified 2026-11-14: KenBurnsLayerTests.testReduceMotionHoldsTheStartRectangle (8 frames equal the start crop, 1 render) and KenBurnsAppTests.testTheSettingReachesThePhotoLayer
+
+## Phase 7: Polish & cross-cutting
+
+- [X] MED-007-T14 The new key in `Apps/projectM-iOS/Coordinators/AppSettings.swift` (`allKeys`), `Packages/LibraryBackup/Sources/LibraryBackup/LibrarySettings.swift` (included keys), `scripts/run_device_tests.py` (`ALLOWED_KEYS`), `Apps/projectM-iOS/Tests/SettingsTests.swift` (store-written keys); run `LibraryBackupAppTests`, `SettingsTests` and the LibraryBackup package tests — Verified 2026-11-14: SettingsTests 9, LibraryBackupAppTests 5 (testIncludedKeysAndFolderNamesAgreeWithTheStores) and SlideshowTests 6 pass on the simulator; LibraryBackup package 86 tests pass on the host
+- [X] MED-007-T15 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), the SceneFormat suite including the QA-004 meta-test (`SceneMigrationMatrixMetaTests`), Linux shape of Compositor and SceneFormat (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`), privacy manifest and network symbols on the built app, type-check budget, PosterBoard count; delete the simulator and derived data — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog (5 permissions, unchanged), check_status_events OK; test_scripts 179 tests OK; SceneFormat 199 (QA-004 meta-test included) and Compositor 1030 tests pass; Linux shapes of Compositor and SceneFormat build; check_privacy_manifest and check_network_symbols OK on the Debug app; PosterBoard reports 26 before, 27 after; simulator and derived data deleted
+- [ ] MED-007-T16 {device} On D1: a photo with Zoom in over 10 s moves smoothly and holds; a slideshow restarts the movement at each slide; Reduce Motion stops it
+
+## Dependencies
+
+T01 → T02 → T03 → T04 → T05; T06 → T07 → T08 → T09; T10 [P] after T02; T11 after T06 and T10 → T12; T14, T15 last.
+US2 depends on US1's layer API; US3 on US2's coordinator.
+
+## Parallel Example
+
+T03 and T10 (different packages) can be written together after T02.
+
+## Implementation Strategy
+
+MVP = Phases 1-3 (the model and the GPU acceptance); then the Settings UI, scenes, polish.

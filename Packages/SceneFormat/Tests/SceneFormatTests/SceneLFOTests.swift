@@ -2,6 +2,7 @@
 // the scene document and `audio.lfo.<index>` bindings. CPU only, runs on Linux.
 // MOD-009-T06 (MOD-009-R7, R8, S5; contract T5): the optional `sync` object of an entry.
 // MOD-008-T09 (MOD-008-R9, S3; contract S8): stepped shapes and the optional `duty`, `seed` and `glide` fields.
+// MOD-016-T08 (MOD-016-R9, S4; contract W8): the `randomWalk` shape and the optional `smoothness` field.
 import Foundation
 import ParameterGraph
 @testable import SceneFormat
@@ -195,6 +196,54 @@ final class SceneLFOTests: XCTestCase {
         let oscillators = document.lfoOscillators
         XCTAssertEqual(oscillators.prefix(6).compactMap { $0 }.count, 0, "unusable entries are nil, positions kept")
         XCTAssertEqual(oscillators[6], try LFO(shape: .sampleHold, rateHz: 1, seed: 12))
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.lfos, document.lfos, "entries are kept verbatim for re-save")
+    }
+
+    // MARK: MOD-016 random walk
+
+    func testRandomWalkRoundTripsEveryField() throws {
+        let walk = try LFO(shape: .randomWalk, rateHz: 0.75, phaseOffset: 0.125, amplitude: 0.6, center: 0.35,
+                           sync: LFOSync(beatsPerCycle: 4), seed: 2_026, smoothness: 0.4)
+        let plain = try LFO(shape: .randomWalk, rateHz: 1)
+        let entries: [SceneLFOEntry] = [SceneLFOEntry(walk), SceneLFOEntry(plain)]
+        XCTAssertEqual(entries[0].fields["shape"], .string("randomWalk"))
+        XCTAssertEqual(entries[0].fields["smoothness"], .double(0.4))
+        XCTAssertEqual(entries[0].fields["seed"], .integer(2_026))
+        XCTAssertNil(entries[1].fields["smoothness"], "the default smoothness 1 is not written")
+        XCTAssertNil(entries[1].fields["glide"])
+        XCTAssertNil(entries[1].fields["duty"])
+        for other in [LFOShape.sine, .triangle, .square, .sampleHold] {
+            let lfo = try LFO(shape: other, rateHz: 1, smoothness: 0.5)
+            XCTAssertNil(SceneLFOEntry(lfo).fields["smoothness"], "\(other) writes no smoothness")
+        }
+        var document = try SceneDocument.decode(Array(SceneFixtures.minimalText.utf8)).document
+        document.lfos = entries
+        let again = try SceneDocument.decode(document.encoded()).document
+        XCTAssertEqual(again.lfos, entries)
+        XCTAssertEqual(again.lfoOscillators, [walk, plain], "shape, rate, sync, phase, depth, centre, smoothness and seed kept")
+        XCTAssertTrue(again.validate(registry: registry).isEmpty, "\(again.validate(registry: registry))")
+        for t: UInt64 in [0, 333_333_333, 36_000_000_000_000] {
+            XCTAssertEqual(again.lfoOscillators[0]?.value(elapsedNanoseconds: t, tempoBPM: 128),
+                           walk.value(elapsedNanoseconds: t, tempoBPM: 128),
+                           "the same seed and timebase give identical values after a round trip")
+        }
+    }
+
+    func testInvalidSmoothnessIsReportedAndKept() throws {
+        let entries: [String] = [
+            #"{"rate":1,"shape":"randomWalk","smoothness":1.5}"#,
+            #"{"rate":1,"shape":"randomWalk","smoothness":-1}"#,
+            #"{"rate":1,"shape":"randomWalk","smoothness":"x"}"#,
+            #"{"rate":1,"shape":"randomWalk","smoothness":0}"#,
+        ]
+        let document = try decode(lfosJSON: "[" + entries.joined(separator: ",") + "]")
+        let issues = document.validate(registry: registry)
+        XCTAssertEqual(issues.map(\.code), Array(repeating: SceneIssue.Code.invalidLFO, count: 3))
+        XCTAssertEqual(issues.map(\.path), ["$.lfos[0]", "$.lfos[1]", "$.lfos[2].smoothness"])
+        let oscillators = document.lfoOscillators
+        XCTAssertEqual(oscillators.prefix(3).compactMap { $0 }.count, 0, "unusable entries are nil, positions kept")
+        XCTAssertEqual(oscillators[3], try LFO(shape: .randomWalk, rateHz: 1, smoothness: 0))
         let again = try SceneDocument.decode(document.encoded()).document
         XCTAssertEqual(again.lfos, document.lfos, "entries are kept verbatim for re-save")
     }

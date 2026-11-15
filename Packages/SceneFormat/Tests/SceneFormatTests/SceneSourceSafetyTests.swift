@@ -15,6 +15,7 @@ final class SceneSourceSafetyTests: XCTestCase {
                                "SceneEncoding.swift", "SceneGroup.swift",   // CMP-011
                                "SceneHistory.swift", "SceneIssue.swift",
                                "SceneJSON.swift", "SceneJSONParser.swift", "SceneJSONWriter.swift",
+                               "SceneKenBurns.swift",   // MED-007
                                "SceneLFOs.swift",   // MOD-007
                                "SceneLiveState.swift", "SceneLogo.swift",   // MED-010
                                "SceneMacros.swift",   // MOD-010

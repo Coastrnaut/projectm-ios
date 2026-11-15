@@ -33,6 +33,10 @@
 // * OUT-012 (spec specs/184-out-012-display-rehearsal, contract C3): the rehearsal flag. Settings'
 //   rehearsal cover is bound to `isRehearsing`; a newly settled real display clears it (the real output
 //   takes over), and it cannot start while one is connected. The rehearsal never touches the visual.
+// * OUT-003 (spec specs/255-out-003-output-resolution, contract C3): `resolution` and the device's
+//   `pixelBudget` are pushed with the correction to every external slot, which sets its visual's
+//   display scale (pixels only, never the scene's coordinates). Deferred while a recording holds the
+//   placement, so the recording's picture size never changes.
 import OSLog
 import PresentationLifecycle
 import SwiftUI
@@ -108,6 +112,15 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
     @ObservationIgnored var correction: ExternalOutputCorrection = .default {
         didSet { if correction != oldValue { pushCorrection() } }
     }
+    // OUT-003: output resolution.
+    /// The user's choice (ExternalOutputSetting sets it); applied to external slots unless held.
+    @ObservationIgnored var resolution: ExternalOutputResolution = .native {
+        didSet { if resolution != oldValue { pushCorrection() } }
+    }
+    /// This device class's safe pixel budget (REC-014's cap; set at launch).
+    @ObservationIgnored var pixelBudget: ExternalPixelBudget = .unlimited {
+        didSet { if pixelBudget != oldValue { pushCorrection() } }
+    }
     /// The device visualizer's shape (width ÷ height), from the device slot's size; nil until known.
     @ObservationIgnored private(set) var deviceAspect: Double?
 
@@ -175,6 +188,8 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         externalSlots[id] = WeakSlot(slot: slot)
         slot.correction = correction   // OUT-004: a new slot holds no visual yet, so even a hold allows it
         slot.deviceAspect = deviceAspect
+        slot.resolution = resolution   // OUT-003: likewise
+        slot.pixelBudget = pixelBudget
         slot.onGeometryChange = { [weak self] (geometry: ExternalDisplayGeometry) in self?.externalResized(id: id, geometry: geometry) }
         log.info("external display connected: \(geometry.width, privacy: .public) × \(geometry.height, privacy: .public) @\(geometry.scale, privacy: .public), foreground \(foreground, privacy: .public)")
         if routing.displays.contains(where: { (d: ExternalDisplay) -> Bool in d.id == id }) || settle.isImmediate {
@@ -295,9 +310,23 @@ final class ExternalDisplayCoordinator: ExternalDisplayEventSink {
         for slot in externalSlots.values.compactMap({ (w: WeakSlot) -> VisualSlotView? in w.slot }) {
             slot.correction = correction
             slot.deviceAspect = deviceAspect
+            slot.resolution = resolution
+            slot.pixelBudget = pixelBudget
             slot.applyPlacement()
         }
         if let summary = externalPlacementSummary { log.info("external placement: \(summary, privacy: .public)") }
+        if let summary = externalResolutionSummary { log.info("external resolution: \(summary, privacy: .public)") }
+    }
+
+    /// OUT-003: "mode=<mode> scale=<x.xx> drawable=<W>x<H> clamped=<yes|no>" for the external slot
+    /// holding the visual (the resolved pixel size); nil when the visual is not on an external display
+    /// (tests, DEBUG probe, log; sizes only).
+    var externalResolutionSummary: String? {
+        guard let slot = visual?.superview as? VisualSlotView, slot.role == .external,
+              let output = slot.resolvedOutput else { return nil }
+        let scale: String = String(format: "%.2f", output.scale)
+        let head: String = "mode=" + slot.resolution.mode.rawValue + " scale=" + scale
+        return head + " drawable=\(output.pixelWidth)x\(output.pixelHeight) clamped=" + (output.clamped ? "yes" : "no")
     }
 
     /// "fit=<fit> shape=<shape> par=<x.xx> frame=<W>x<H> bars=<none|pillarbox|letterbox>" for the

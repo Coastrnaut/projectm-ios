@@ -19,6 +19,10 @@
 //   with an optional linear glide from the previous level). The step is the whole-cycle count from the same exact sum
 //   as the phase (`cycle(…)`), and synced segments carry it across rate changes, so a level depends only on the seed
 //   and the step, never on frame timing. Without a stored seed the seed derives from the slot.
+// * MOD-016 (specs/253-mod-016-random-walk, research MOD-016-D1 to D5, contract W1 to W8): the random walk moves from the
+//   seeded target of its step, `SteppedRandom.level(seed, n)`, to the next one, `level(seed, n + 1)`, along
+//   `RandomWalk.ease(φ, smoothness:)` (monotone, so never beyond either target). The same exact step and phase, so the
+//   value is a pure function of seed and time: any frame chunking or seek gives identical values.
 // * Pure, allocation-free per sample; one owner (not `Sendable`), never from an audio callback
 //   (Constitution VII). Foundation-free (the C math library only): builds on Linux.
 #if canImport(Darwin)
@@ -37,14 +41,17 @@ public enum LFOShape: String, Sendable, Hashable, CaseIterable {
     case square
     /// MOD-008: one seeded level per cycle (stored name `sampleHold`).
     case sampleHold
+    /// MOD-016: smooth seeded motion from one cycle's random target to the next (stored name `randomWalk`).
+    case randomWalk
 
-    /// The bipolar waveform (−1…1) at phase `phi` in 0…<1. Square uses a 50% duty here and sample-and-hold, which
-    /// depends on the step and seed rather than the phase, reads 0 (the centre); `LFO.value(at:slot:)` evaluates both.
+    /// The bipolar waveform (−1…1) at phase `phi` in 0…<1. Square uses a 50% duty here; sample-and-hold and the random
+    /// walk, which depend on the step and seed rather than the phase, read 0 (the centre); `LFO.value(at:slot:)`
+    /// evaluates them.
     public func wave(_ phi: Double) -> Double {
         switch self {
         case .square:
             return phi < 0.5 ? 1 : -1
-        case .sampleHold:
+        case .sampleHold, .randomWalk:
             return 0
         case .sine:
             return sin(2 * Double.pi * phi)
@@ -118,6 +125,8 @@ public struct LFO: Sendable, Hashable {
     public var seed: UInt32?
     /// MOD-008: the fraction of a sample-and-hold step spent ramping from the previous level (0…1; 0 is a hard step).
     public var glide: Double
+    /// MOD-016: how a random walk moves between targets, from a constant speed (0) to easing in and out (1).
+    public var smoothness: Double
 
     public static let minimumRateHz = 0.01
     public static let maximumRateHz = 20.0
@@ -128,11 +137,13 @@ public struct LFO: Sendable, Hashable {
     public static let minimumDutyCycle = 0.05
     public static let maximumDutyCycle = 0.95
     public static let defaultGlide = 0.0
+    public static let defaultSmoothness = 1.0
 
     /// A validated oscillator; throws `LFOError.invalidSettings` when `validationProblem` is not nil.
     public init(shape: LFOShape, rateHz: Double, phaseOffset: Double = LFO.defaultPhaseOffset,
                 amplitude: Double = LFO.defaultAmplitude, center: Double = LFO.defaultCenter, sync: LFOSync? = nil,
-                dutyCycle: Double = LFO.defaultDutyCycle, seed: UInt32? = nil, glide: Double = LFO.defaultGlide) throws(LFOError) {
+                dutyCycle: Double = LFO.defaultDutyCycle, seed: UInt32? = nil, glide: Double = LFO.defaultGlide,
+                smoothness: Double = LFO.defaultSmoothness) throws(LFOError) {
         self.shape = shape
         self.rateHz = rateHz
         self.phaseOffset = phaseOffset
@@ -142,6 +153,7 @@ public struct LFO: Sendable, Hashable {
         self.dutyCycle = dutyCycle
         self.seed = seed
         self.glide = glide
+        self.smoothness = smoothness
         if let problem = validationProblem { throw .invalidSettings(reason: problem) }
     }
 
@@ -158,6 +170,7 @@ public struct LFO: Sendable, Hashable {
             return "the duty cycle must be \(Self.minimumDutyCycle)…\(Self.maximumDutyCycle)"
         }
         guard glide.isFinite, glide >= 0, glide <= 1 else { return "the glide must be 0…1" }
+        guard smoothness.isFinite, smoothness >= 0, smoothness <= 1 else { return "the smoothness must be 0…1" }   // MOD-016
         return nil
     }
 
@@ -228,6 +241,8 @@ public struct LFO: Sendable, Hashable {
             raw = center + amplitude / 2 * (cycle.phase < dutyCycle ? 1 : -1)
         case .sampleHold:
             raw = center + amplitude * (heldLevel(at: cycle, seed: effectiveSeed(slot: slot)) - 0.5)
+        case .randomWalk:
+            raw = center + amplitude * (walkLevel(at: cycle, seed: effectiveSeed(slot: slot)) - 0.5)
         }
         guard raw.isFinite else { return min(max(center, 0), 1) }
         return min(max(raw, 0), 1)
@@ -239,6 +254,15 @@ public struct LFO: Sendable, Hashable {
         guard glide > 0, cycle.phase < glide else { return current }
         let previous: Double = SteppedRandom.level(seed: seed, step: cycle.step &- 1)
         return previous + (current - previous) * (cycle.phase / glide)
+    }
+
+    /// MOD-016: the walk between the step's target and the next one (research MOD-016-D1, D2), kept between the two
+    /// targets exactly (the ease is monotone; the clamp only absorbs rounding).
+    private func walkLevel(at cycle: LFOCycle, seed: UInt64) -> Double {
+        let from: Double = SteppedRandom.level(seed: seed, step: cycle.step)
+        let to: Double = SteppedRandom.level(seed: seed, step: cycle.step &+ 1)
+        let walked: Double = from + (to - from) * RandomWalk.ease(cycle.phase, smoothness: smoothness)
+        return min(max(walked, min(from, to)), max(from, to))
     }
 
     /// The output (0…1) at phase `phi` (0…<1).

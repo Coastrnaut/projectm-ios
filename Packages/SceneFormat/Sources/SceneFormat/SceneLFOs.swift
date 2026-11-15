@@ -14,6 +14,9 @@
 // optional `duty` (written for square), `seed` (a whole number 0…4294967295, written when set) and `glide` (written for
 // sample-and-hold when not 0). Out of range or ill-typed: `invalidLFO`, entry kept. Sine and triangle entries write
 // nothing new, so their scenes encode byte-identically.
+// MOD-016 (specs/253-mod-016-random-walk, research MOD-016-D4, contract W8): the shape `randomWalk` and an optional
+// `smoothness` (0…1, written for a random walk when not 1); it reuses `seed`. Out of range or ill-typed: `invalidLFO`,
+// entry kept. Scenes without random walks encode byte-identically.
 import ParameterGraph
 
 /// One stored oscillator, as written.
@@ -38,6 +41,9 @@ public struct SceneLFOEntry: Sendable, Hashable {
         if lfo.shape == .square { fields["duty"] = .double(lfo.dutyCycle) }                              // MOD-008
         if let seed = lfo.seed { fields["seed"] = .integer(Int64(seed)) }
         if lfo.shape == .sampleHold, lfo.glide != 0 { fields["glide"] = .double(lfo.glide) }
+        if lfo.shape == .randomWalk, lfo.smoothness != LFO.defaultSmoothness {                       // MOD-016
+            fields["smoothness"] = .double(lfo.smoothness)
+        }
     }
 
     var json: SceneJSON { .object(fields) }
@@ -81,7 +87,8 @@ public struct SceneLFOEntry: Sendable, Hashable {
         var numbers: [Double] = []
         let keys: [(key: String, fallback: Double?)] = [("rate", nil), ("phase", LFO.defaultPhaseOffset),
                                                          ("amplitude", LFO.defaultAmplitude), ("center", LFO.defaultCenter),
-                                                         ("duty", LFO.defaultDutyCycle), ("glide", LFO.defaultGlide)]   // MOD-008
+                                                         ("duty", LFO.defaultDutyCycle), ("glide", LFO.defaultGlide),   // MOD-008
+                                                         ("smoothness", LFO.defaultSmoothness)]                          // MOD-016
         for entry in keys {
             guard let value = fields[entry.key] else {
                 guard let fallback = entry.fallback else { return invalid(entry.key, "is required") }
@@ -104,7 +111,7 @@ public struct SceneLFOEntry: Sendable, Hashable {
         }
         do {
             let lfo = try LFO(shape: shape, rateHz: numbers[0], phaseOffset: numbers[1], amplitude: numbers[2], center: numbers[3],
-                              dutyCycle: numbers[4], seed: seed, glide: numbers[5])
+                              dutyCycle: numbers[4], seed: seed, glide: numbers[5], smoothness: numbers[6])
             return (lfo, nil)
         } catch {
             let reason: String = switch error {

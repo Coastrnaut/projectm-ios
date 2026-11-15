@@ -98,6 +98,7 @@ final class SettingsTests: XCTestCase {
                                                                    AppSettings.videoLoopKey, AppSettings.videoSpeedKey,
                                                                    AppSettings.textOverlayKey,
                                                                    AppSettings.slideshowKey,   // MED-006: SlideshowStore
+                                                                   AppSettings.kenBurnsKey,   // MED-007: KenBurnsStore
                                                                    AppSettings.logoIDKey, AppSettings.logoPlacementKey]), "FR-065")   // MED-010: LogoStore
     }
 

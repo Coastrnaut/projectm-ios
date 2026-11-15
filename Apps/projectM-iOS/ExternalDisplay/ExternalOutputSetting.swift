@@ -7,6 +7,11 @@
 // is stored until changed. They describe the user's display hardware, so the library backup leaves them
 // out (excluded keys; erased with Settings) and `-uitestResetNotice` removes them. Every change is pushed
 // to the coordinator, which applies it to the external slots inside the call (or after a recording hold).
+// OUT-003 (spec specs/255-out-003-output-resolution, contract C4): the output resolution, two more
+// device-local values with the same rules: `settings.externalDisplay.resolution` (`native`, `1080p`,
+// `720p`, `custom`) and `settings.externalDisplay.resolutionPercent` (integer 50…100, default 75).
+// The device's pixel budget is REC-014's `RecordingOutputCap.device`.
+import FrameRecording
 import Foundation
 import Observation
 import PresentationLifecycle
@@ -17,7 +22,9 @@ final class ExternalOutputSetting {
     static let fitKey = "settings.externalDisplay.fit"
     static let shapeKey = "settings.externalDisplay.shape"
     static let pixelAspectKey = "settings.externalDisplay.pixelAspect"
-    static let keys: [String] = [fitKey, shapeKey, pixelAspectKey]
+    static let resolutionKey = "settings.externalDisplay.resolution"
+    static let resolutionPercentKey = "settings.externalDisplay.resolutionPercent"
+    static let keys: [String] = [fitKey, shapeKey, pixelAspectKey, resolutionKey, resolutionPercentKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// OUT-012: the rehearsal row reads and drives the coordinator's rehearsal flag.
@@ -33,6 +40,36 @@ final class ExternalOutputSetting {
         didSet { store(pixelAspect.rawValue, Self.pixelAspectKey) }
     }
 
+    // OUT-003
+    var resolutionMode: ExternalResolutionMode {
+        didSet {
+            guard resolutionMode != oldValue else { return }
+            defaults.set(resolutionMode.rawValue, forKey: Self.resolutionKey)
+            external?.resolution = resolution
+        }
+    }
+    /// Custom's percentage (50…100, 5 % steps in the slider).
+    var resolutionPercent: Int {
+        didSet {
+            let clamped: Int = ExternalOutputResolution.clampPercent(resolutionPercent)
+            if clamped != resolutionPercent { resolutionPercent = clamped }   // no second didSet
+            guard resolutionPercent != oldValue else { return }
+            defaults.set(resolutionPercent, forKey: Self.resolutionPercentKey)
+            external?.resolution = resolution
+        }
+    }
+
+    var resolution: ExternalOutputResolution {
+        ExternalOutputResolution(mode: resolutionMode, percent: resolutionPercent)
+    }
+
+    /// REC-014-R5's cap for this device class, as the external output's pixel budget (OUT-003-R3).
+    static var devicePixelBudget: ExternalPixelBudget {
+        let cap: RecordingOutputCap = RecordingOutputCap.device(physicalMemory: ProcessInfo.processInfo.physicalMemory,
+                                                                maxTextureSide: 16_384)
+        return ExternalPixelBudget(maxSide: cap.maxSide, maxPixels: cap.maxPixels)
+    }
+
     var correction: ExternalOutputCorrection {
         ExternalOutputCorrection(fit: fit, shape: shape, pixelAspect: pixelAspect)
     }
@@ -46,7 +83,12 @@ final class ExternalOutputSetting {
         fit = defaults.string(forKey: Self.fitKey).flatMap(ExternalOutputFit.init(rawValue:)) ?? .fit
         shape = defaults.string(forKey: Self.shapeKey).flatMap(ExternalOutputShape.init(rawValue:)) ?? .display
         pixelAspect = defaults.string(forKey: Self.pixelAspectKey).flatMap(ExternalPixelAspect.init(rawValue:)) ?? .automatic
+        resolutionMode = defaults.string(forKey: Self.resolutionKey).flatMap(ExternalResolutionMode.init(rawValue:)) ?? .native
+        let storedPercent: Int? = defaults.object(forKey: Self.resolutionPercentKey) as? Int
+        resolutionPercent = ExternalOutputResolution.clampPercent(storedPercent ?? ExternalOutputResolution.defaultPercent)
         external.correction = correction
+        external.pixelBudget = Self.devicePixelBudget
+        external.resolution = resolution
     }
 
     private func store(_ value: String, _ key: String) {
@@ -60,6 +102,8 @@ final class ExternalOutputSetting {
     static let footer = "Changes only the picture on a connected external display. Fit shows the whole picture "
         + "with black bars, Fill covers the screen and crops, Stretch fills the screen without correction. "
         + "Device keeps this device's shape; Pixel aspect keeps circles round on screens with non-square pixels. "
+        + "Resolution sets how many pixels are drawn for the display (never more than it has, and within "
+        + "this device's safe limit); the picture's layout stays the same. "
         + "Rehearse output previews a display that is not connected."
 
     // OUT-012
@@ -68,6 +112,19 @@ final class ExternalOutputSetting {
     static let rehearsalFooter = "A preview of what a display of this size would show: black bars, crop and "
         + "pixel aspect, with this app's output settings. The visualization keeps running on this device. "
         + "Nothing here is saved; connecting a real display ends the rehearsal."
+
+    // OUT-003
+    static let resolutionTitle = "Resolution"
+    static let resolutionPercentTitle = "Scale"
+
+    static func title(_ mode: ExternalResolutionMode) -> String {
+        switch mode {
+        case .native: "Native"
+        case .hd1080: "1080p"
+        case .hd720: "720p"
+        case .custom: "Custom"
+        }
+    }
 
     static func title(_ fit: ExternalOutputFit) -> String {
         switch fit {

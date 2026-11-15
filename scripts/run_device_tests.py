@@ -70,6 +70,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "recentPresets", "settings.recentPresets.enabled",   # PRE-006-R9 (preset IDs only; ADR-0055)
                 "settings.performanceOverlay", "settings.reduceFlashing",
                 "settings.photo.slideshow",   # MED-006
+                "settings.photo.kenBurns",   # MED-007
                 "settings.logo.id",   # MED-010
                 "settings.logo.placement",   # MED-010
                 "settings.presetScope", "notice.photosensitivityAcknowledged",
@@ -128,6 +129,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.performance.powerProfile",   # PERF-008-R6 (power profile; Standard by default)
                 "settings.externalDisplay.fit", "settings.externalDisplay.shape",   # OUT-004-R8 (external output correction)
                 "settings.externalDisplay.pixelAspect",   # OUT-004-R8
+                "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   # OUT-003-R7
                 "settings.recording.timedStop",   # REC-008-R9 (stop recording after a length; Off by default)
                 "settings.latencyOffset.microphone",   # AUD-013-R11 (per-source visual delay)
                 "settings.latencyOffset.inAppPlayback", "settings.latencyOffset.systemAppCapture",   # AUD-013-R11

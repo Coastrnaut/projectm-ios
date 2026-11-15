@@ -40,6 +40,8 @@ struct SettingsView: View {
     var photos: PhotoCoordinator?
     /// MED-006: the image slideshow (nil hides its section).
     var slideshow: SlideshowCoordinator?
+    /// MED-007: the photo's Ken Burns pan and zoom (nil hides its section).
+    var kenBurns: KenBurnsCoordinator? = nil
     /// MED-010: the logo overlay (nil hides its section).
     var logo: LogoCoordinator?
     /// MED-002: the imported video (nil hides the Video section).
@@ -506,6 +508,10 @@ struct SettingsView: View {
             photoSection(photos)
             if let slideshow {   // MED-006
                 SlideshowSection(slideshow: slideshow, endCoalescing: { [history] () -> Void in history?.endCoalescing() })
+            }
+            if let kenBurns {   // MED-007
+                KenBurnsSection(kenBurns: kenBurns, reduceMotion: settings.systemReduceMotion,
+                                endCoalescing: { [history] () -> Void in history?.endCoalescing() }).id("kenBurns")
             }
         }
         if settings.visual.usesVideo, let videos {

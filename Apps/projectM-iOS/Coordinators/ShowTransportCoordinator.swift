@@ -12,6 +12,7 @@
 // * Loop (`settings.show.loop`, absent = off) is a device preference: in `AppSettings.allKeys` (UI-test reset, Settings
 //   erase), excluded from backup. The driver reads it through `loops`.
 // * SHOW-008: `positionJumped` runs after every seek that moved the position, so keyframe tracks are sampled at once.
+// * SHOW-010: `beatGrid` places SHOW-011's tempo on this timeline for the row's ticks and readout.
 import Foundation
 import Observation
 import ShowControl
@@ -35,6 +36,8 @@ final class ShowTransportCoordinator {
     @ObservationIgnored var setHold: (Bool) -> Void
     /// SHOW-008-R6: a seek moved the position (the keyframe coordinator samples its tracks once).
     @ObservationIgnored var positionJumped: () -> Void = { () -> Void in }
+    /// SHOW-010: the beat grid on this timeline (AppCoordinator wires its tempo).
+    @ObservationIgnored let beatGrid = ShowBeatGridCoordinator()
 
     init(show: ShowCoordinator, driver: ShowAutoAdvanceCoordinator, defaults: UserDefaults) {
         self.show = show
@@ -43,6 +46,7 @@ final class ShowTransportCoordinator {
         loops = defaults.bool(forKey: Self.loopKey)
         setHold = { [weak driver] (held: Bool) -> Void in driver?.setOperatorHold(held) }
         driver.loops = { [weak self] () -> Bool in self?.loops ?? false }
+        beatGrid.transport = self
     }
 
     // MARK: - Reading

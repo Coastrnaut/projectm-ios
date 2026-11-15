@@ -128,6 +128,8 @@ final class AppSettings {
     static let photoIDKey = PhotoStore.idKey
     /// MED-006: the image slideshow (written by SlideshowStore).
     static let slideshowKey = SlideshowStore.key
+    /// MED-007: the photo's Ken Burns movement (written by KenBurnsStore).
+    static let kenBurnsKey = KenBurnsStore.key
     /// MED-002: the stored video's identifier (written by VideoStore).
     static let videoIDKey = VideoStore.idKey
     /// MED-003: the stored video's loop region (written by VideoStore).
@@ -141,7 +143,7 @@ final class AppSettings {
     static let logoPlacementKey = LogoStore.placementKey
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
-                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, videoIDKey, videoLoopKey, videoSpeedKey,
+                          linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey,
                           textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,

@@ -10,6 +10,11 @@
 // bars and the cover stays above both. The device slot always fills (identity) and reports its size.
 // OUT-012 (spec specs/184-out-012-display-rehearsal, contract C2): a slot with no screen (the
 // rehearsal preview, a test's fake display of a profile) takes a stand-in pixel aspect ratio.
+// OUT-003 (spec specs/255-out-003-output-resolution, contract C2): an external slot sets the display
+// scale its held visual reads (`traitOverrides.displayScale`) to the resolved output scale, so the
+// visual's drawable has the chosen pixel count while its bounds, centre and transform (the scene's
+// coordinate space) stay exactly as OUT-004 placed them. The slot's own scale is left alone, so its
+// geometry still reports the screen. The device slot and `removeVisuals()` remove the override.
 import PresentationLifecycle
 import SwiftUI
 import UIKit
@@ -36,6 +41,15 @@ final class VisualSlotView: UIView {
     private(set) var placement = ExternalOutputPlacement.filling(width: 0, height: 0)
     /// OUT-010: black, above every subview's layer; opacity 0 while the output is live.
     private let cover = CALayer()
+    /// OUT-003: the external output resolution and this device's pixel budget (external slots only).
+    var resolution: ExternalOutputResolution = .native {
+        didSet { if resolution != oldValue { setNeedsLayout() } }
+    }
+    var pixelBudget: ExternalPixelBudget = .unlimited {
+        didSet { if pixelBudget != oldValue { setNeedsLayout() } }
+    }
+    /// OUT-003: the output last applied to the held visual (nil on the device or without a size).
+    private(set) var resolvedOutput: ResolvedExternalOutput?
 
     init(role: Role) {
         self.role = role
@@ -84,6 +98,49 @@ final class VisualSlotView: UIView {
     func applyPlacement() {
         placement = currentPlacement()
         for view in subviews { lay(view) }
+        applyResolution()
+    }
+
+    /// OUT-003-D3: the choice is resolved against the screen (this slot's size and its own display
+    /// scale), then the device budget against the visual's own size (Fill renders the cropped
+    /// overflow too). Only the visual's display scale changes; never its bounds.
+    private func applyResolution() {
+        guard role == .external else {
+            resolvedOutput = nil
+            for view in subviews { Self.removeScale(view) }
+            return
+        }
+        let nativeScale: Double = Double(traitCollection.displayScale)
+        let chosen: ResolvedExternalOutput = resolution.resolve(width: Double(bounds.width), height: Double(bounds.height),
+                                                                nativeScale: nativeScale, budget: .unlimited)
+        let drawable: ResolvedExternalOutput = ExternalOutputResolution.native.resolve(
+            width: placement.boundsWidth, height: placement.boundsHeight, nativeScale: chosen.scale, budget: pixelBudget)
+        guard drawable.pixelWidth > 0, drawable.pixelHeight > 0 else {
+            resolvedOutput = nil
+            for view in subviews { Self.removeScale(view) }
+            return
+        }
+        let native: Bool = chosen.isNative && drawable.isNative
+        resolvedOutput = ResolvedExternalOutput(scale: drawable.scale, pixelWidth: drawable.pixelWidth,
+                                                pixelHeight: drawable.pixelHeight, clamped: drawable.clamped, isNative: native)
+        for view in subviews {
+            if native { Self.removeScale(view) } else { Self.setScale(drawable.scale, on: view) }
+        }
+    }
+
+    private static func setScale(_ scale: Double, on view: UIView) {
+        let value = CGFloat(scale)
+        guard !view.traitOverrides.contains(UITraitDisplayScale.self) || view.traitOverrides.displayScale != value else { return }
+        view.traitOverrides.displayScale = value
+        view.updateTraitsIfNeeded()   // the new scale is read by the layout that follows, inside the call
+        view.setNeedsLayout()
+    }
+
+    private static func removeScale(_ view: UIView) {
+        guard view.traitOverrides.contains(UITraitDisplayScale.self) else { return }
+        view.traitOverrides.remove(UITraitDisplayScale.self)
+        view.updateTraitsIfNeeded()
+        view.setNeedsLayout()
     }
 
     /// OUT-012-D3: used instead of the screen mode's ratio when set (a slot standing in for a display).
@@ -137,7 +194,10 @@ final class VisualSlotView: UIView {
     /// screen scale.
     @discardableResult
     func hold(_ visual: UIView) -> Bool {
-        for view in subviews where view !== visual { view.removeFromSuperview() }
+        for view in subviews where view !== visual {
+            Self.removeScale(view)
+            view.removeFromSuperview()
+        }
         let moved = visual.superview !== self
         if moved {
             visual.removeFromSuperview()
@@ -146,6 +206,7 @@ final class VisualSlotView: UIView {
         }
         placement = currentPlacement()
         lay(visual)
+        applyResolution()   // OUT-003: the external scale, or none on the device
         syncCoverFrame()
         visual.setNeedsLayout()
         return moved
@@ -181,7 +242,11 @@ final class VisualSlotView: UIView {
     }
 
     func removeVisuals() {
-        for view in subviews { view.removeFromSuperview() }
+        for view in subviews {
+            Self.removeScale(view)   // OUT-003: a visual leaving the external slot renders at its next host's scale
+            view.removeFromSuperview()
+        }
+        resolvedOutput = nil
     }
 }
 

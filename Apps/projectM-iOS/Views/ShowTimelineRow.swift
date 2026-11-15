@@ -6,6 +6,9 @@
 // * The slider is an ACC-005 accessible slider (5 s per swipe, each swipe one seek). A drag only moves the preview and
 //   commits one seek on release (R4).
 // * The row redraws the position twice a second only while it is on screen and not being dragged.
+// * SHOW-010-R5, R6: the scrub track carries the beat grid's ticks (`ShowBeatGridTicks`), and the readout
+//   `showBeatGridReadout` ("Bar 3 · Beat 2 · 120 BPM" / "No tempo"; VoiceOver "Beat grid", "120 BPM, tap tempo, bar 3
+//   beat 2") sits beside the position. DEBUG `-uitestBeatGridProbe`: `showBeatGridProbe` reports the drawn ticks.
 import ShowControl
 import SwiftUI
 
@@ -38,7 +41,10 @@ struct ShowTimelineRow: View {
             playButton
             VStack(spacing: 2) {
                 slider
-                positionText
+                HStack(spacing: 8) {
+                    positionText
+                    gridReadout
+                }
             }
             loopButton
         }
@@ -65,17 +71,47 @@ struct ShowTimelineRow: View {
             get: { () -> Double in transport.currentTime().map(ShowTransportCoordinator.seconds) ?? 0 },
             set: { (seconds: Double) -> Void in transport.seek(toSeconds: seconds) })
         let shown: Double = transport.displayedTime().map(ShowTransportCoordinator.seconds) ?? 0
-        return ShowScrubBar(value: shown, range: spec.range, transport: transport, touched: touched)
+        let grid: BeatGridTempo? = transport.beatGrid.gridTempo()   // SHOW-010: an input, so a tempo change redraws the bar
+        return ShowScrubBar(value: shown, range: spec.range, transport: transport, gridTempo: grid, touched: touched)
             .accessibleParameter(spec, target: target, didStep: touched)
     }
 
     private var positionText: some View {
         Text(transport.positionText())
             .font(.caption.monospacedDigit())
+            .layoutPriority(1)
             .foregroundStyle(.secondary)
             .lineLimit(1)
             .accessibilityIdentifier("showTimelinePosition")
     }
+
+    /// SHOW-010-R5, R6.
+    private var gridReadout: some View {
+        let grid: ShowBeatGridCoordinator = transport.beatGrid
+        return Text(grid.readoutText())
+            .font(.caption.monospacedDigit())
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
+            .accessibilityLabel("Beat grid")
+            .accessibilityValue(grid.accessibilityValue())
+            .accessibilityIdentifier("showBeatGridReadout")
+            .overlay { probe }
+    }
+
+    @ViewBuilder private var probe: some View {
+        #if DEBUG
+        if Self.showsProbe {
+            Text(transport.beatGrid.drawnSummary)
+                .font(.system(size: 1))
+                .opacity(0.01)
+                .accessibilityIdentifier("showBeatGridProbe")
+        }
+        #endif
+    }
+
+    #if DEBUG
+    private static let showsProbe: Bool = ProcessInfo.processInfo.arguments.contains("-uitestBeatGridProbe")
+    #endif
 
     private var loopButton: some View {
         let on: Bool = transport.loops
@@ -100,6 +136,8 @@ struct ShowScrubBar: View {
     let value: Double
     let range: ClosedRange<Double>
     let transport: ShowTransportCoordinator
+    /// SHOW-010: the beat grid on this timeline (nil: no ticks).
+    let gridTempo: BeatGridTempo?
     let touched: () -> Void
     @GestureState private var dragging = false
 
@@ -128,11 +166,17 @@ struct ShowScrubBar: View {
         return ZStack(alignment: .leading) {
             Capsule().fill(Color.secondary.opacity(0.35)).frame(height: 4).padding(.horizontal, inset)
             Capsule().fill(Color.accentColor).frame(width: max(x - inset, 0), height: 4).offset(x: inset)
+            ShowBeatGridTicks(marks: gridMarks(width: width, inset: inset))   // SHOW-010
             Circle().fill(Color.white).shadow(radius: 1).frame(width: Self.thumb, height: Self.thumb).offset(x: x - inset)
         }
         .frame(maxHeight: .infinity)
         .contentShape(Rectangle())
         .gesture(drag(inset: inset, usable: usable))
+    }
+
+    /// SHOW-010: the beat grid laid over this track.
+    private func gridMarks(width: CGFloat, inset: CGFloat) -> [BeatGridMark] {
+        transport.beatGrid.marks(gridTempo, width: Double(width), inset: Double(inset))
     }
 
     private func drag(inset: CGFloat, usable: CGFloat) -> some Gesture {

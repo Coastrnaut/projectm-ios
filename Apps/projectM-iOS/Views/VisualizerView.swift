@@ -484,6 +484,7 @@ struct VisualizerView: View {
                      nativeVisualUnavailable: coordinator.nativeVisualUnavailable,
                      glowUnavailable: coordinator.glowUnavailable, photos: coordinator.photos,
                      slideshow: coordinator.slideshow,   // MED-006
+                     kenBurns: coordinator.kenBurns,   // MED-007
                      logo: coordinator.logo,   // MED-010
                      videos: coordinator.videos, texts: coordinator.texts,
                      show: coordinator.show, addCurrentScene: { coordinator.addCurrentSceneToShow() },
