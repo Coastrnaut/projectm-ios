@@ -14,9 +14,10 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 34,
-   "implementing": 2,
-   "integrated": 43
+   "audited": 31,
+   "implementing": 4,
+   "integrated": 43,
+   "unit_passed": 1
   },
   "P3": {
    "audited": 8,
@@ -24,10 +25,11 @@
   }
  },
  "by_state": {
-  "audited": 44,
-  "implementing": 3,
+  "audited": 41,
+  "implementing": 5,
   "integrated": 278,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1502,22 +1504,22 @@
   "MIDI-009": {
    "attempts": 0,
    "branch": "feature/midi-009",
+   "branch_sha": "83672cf76d5d258195bbd76a6be1740421760298",
+   "error_category": null,
+   "integrated_sha": null,
+   "priority": "P2",
+   "spec_dir": null,
+   "state": "unit_passed"
+  },
+  "MIDI-010": {
+   "attempts": 0,
+   "branch": "feature/midi-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
    "state": "implementing"
-  },
-  "MIDI-010": {
-   "attempts": 0,
-   "branch": null,
-   "branch_sha": null,
-   "error_category": null,
-   "integrated_sha": null,
-   "priority": "P2",
-   "spec_dir": null,
-   "state": "audited"
   },
   "MIDI-011": {
    "attempts": 0,
@@ -2791,13 +2793,13 @@
   },
   "SHD-007": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/shd-007",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "SHD-008": {
    "attempts": 0,
@@ -3241,13 +3243,13 @@
   },
   "VIS-010": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/vis-010",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "VIS-011": {
    "attempts": 0,
@@ -4767,5 +4769,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T03:30:58Z"
+ "updated": "2026-11-15T03:34:49Z"
 }

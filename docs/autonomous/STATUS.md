@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T03:30:58Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T03:34:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,20 @@
 
 | State | Features |
 |---|---|
-| audited | 44 |
-| implementing | 3 |
+| audited | 41 |
+| implementing | 5 |
+| unit_passed | 1 |
 | integrated | 278 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 151 | 0 |
-| P2 | 34 | 2 | 43 | 0 |
-| P3 | 8 | 1 | 0 | 0 |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 0 | 151 | 0 |
+| P2 | 31 | 4 | 1 | 43 | 0 |
+| P3 | 8 | 1 | 0 | 0 | 0 |
 
 ## Final device gate
 
@@ -1711,6 +1712,14 @@ None.
 - `python3 scripts/validate_docs.py`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/docs.log`)
 - `swift test --package-path Packages/ImportFuzz`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/swift-test_ImportFuzz.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `21f8785505c8` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-008/20261114T100415/swift-test_PerformanceControl.log`)
+
+### MIDI-009 MIDI feedback (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `83672cf76d5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-009/20261114T223341/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `83672cf76d5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-009/20261114T223341/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `83672cf76d5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-009/20261114T223341/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `83672cf76d5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-009/20261114T223341/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `83672cf76d5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-009/20261114T223341/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `83672cf76d5d` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-009/20261114T223341/swift-test_PerformanceControl.log`)
 
 ### MIDI-011 MIDI hot-plug recovery (integrated)
 - `python3 scripts/check_compliance.py`: pass at `ea8c44c900aa` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/MIDI-011/20261114T104655/compliance.log`)
