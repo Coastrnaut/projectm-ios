@@ -53,6 +53,30 @@ interaction); each answer is the conservative, local-first option.
   visualizer, recordings, still captures, thumbnails, scene documents, saved layer parameters and autosaves
   are unchanged: a recording is content, and calibration is a property of the display (OUT-009-R4, R5).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Should calibration be stored per display (keyed by name or shape) or once for the app? → A: Once for
+  the app, like OUT-007's corner pin. iOS gives no public, stable display name or identity (a scene session
+  identifier changes per connection), and keying by shape would silently drop or swap a calibration when a
+  projector reports another mode. "Per display" is honoured as "the external display, not the device"; Reset
+  restores the defaults in one tap (OUT-009-R1, R9).
+- Q: Is the transfer function applied to linear light or to the display-encoded signal? → A: To the
+  display-encoded (sRGB) signal, as a display's own calibration curve works (and as projectM's pass already
+  works in encoded values); the compositor pass encodes, applies and decodes so its sRGB target encodes it
+  back. Gamma follows FX-003's convention (above 1 brightens mid-tones: exponent 1/gamma); the trims multiply
+  after the gamma, then the result is clamped to 0…1 (OUT-009-R2).
+- Q: Does calibration run before or after the flash safety envelope? → A: After it, as the last step of each
+  final pass. The envelope (FR-072, FX-019) judges and limits the intended picture; calibration is a fixed,
+  monotonic, per-channel curve that only compensates the display's response, so it never adds flashes or
+  changes their timing. Measuring after calibration would make the envelope's gain depend on the display
+  (OUT-009-R2, R3).
+- Q: projectM's still capture reads the window surface after the final pass: is a capture calibrated? → A: No.
+  When a capture is pending and calibration is not the identity, the output pass is drawn once uncalibrated
+  for the read-back and then drawn again calibrated for the display, from the same envelope state (no second
+  envelope update) (OUT-009-R5).
+- Q: Should a lift/offset control be included? → A: No. The row asks for gamma and RGB trims; a lift raises
+  black on a projector (it cannot lower it) and FX-003 already offers lift as a scene look (OUT-009-R1).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Match a projector's colour (Priority: P1)
