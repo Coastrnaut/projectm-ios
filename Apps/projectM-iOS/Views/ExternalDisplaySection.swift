@@ -7,11 +7,13 @@
 // OUT-003 (contract C4): a Resolution picker (Native, 1080p, 720p, Custom) and, for Custom only, a Scale
 // slider 50…100 % in 5 % steps with ACC-005's `.accessibleParameter`.
 // OUT-006 (contract C4): an Output picker (Same scene, Clean output), applied live.
+// OUT-007 (contract C4): "Corner pin…" opens `CornerPinEditorView` full screen (available with or without a display).
 import PresentationLifecycle
 import SwiftUI
 
 struct ExternalDisplaySection: View {
     @Bindable var setting: ExternalOutputSetting
+    @State private var editsCornerPin = false
 
     var body: some View {
         Section {
@@ -22,6 +24,7 @@ struct ExternalDisplaySection: View {
             resolutionPicker
             if setting.resolutionMode == .custom { resolutionPercentRow }
             rehearseRow
+            cornerPinRow
         } header: {
             Text(ExternalOutputSetting.sectionTitle)
         } footer: {
@@ -46,6 +49,17 @@ struct ExternalDisplaySection: View {
                 ExternalRehearsalView(setting: setting, deviceAspect: external.deviceAspect) { external.endRehearsal() }
             }
         }
+    }
+
+    // MARK: - OUT-007
+
+    private var cornerPinRow: some View {
+        Button(ExternalOutputSetting.cornerPinTitle) { editsCornerPin = true }
+            .accessibilityIdentifier("externalCornerPinButton")
+            .fullScreenCover(isPresented: $editsCornerPin) {
+                let aspect: Double = setting.external?.calibrationAspect ?? 16.0 / 9.0
+                CornerPinEditorView(setting: setting, aspect: aspect) { editsCornerPin = false }
+            }
     }
 
     private func rehearsalBinding(_ external: ExternalDisplayCoordinator) -> Binding<Bool> {

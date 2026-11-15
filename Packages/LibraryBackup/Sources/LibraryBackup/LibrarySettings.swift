@@ -149,6 +149,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.pixelAspect",
         "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   // OUT-003-R7: likewise
         "settings.externalDisplay.outputMode",   // OUT-006-R7: likewise
+        "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
