@@ -4,42 +4,42 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 263,
-    "specs": 222,
+    "total": 264,
+    "specs": 223,
     "byStatus": {
-      "open": 246,
+      "open": 247,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 14,
-      "b": 238
+      "b": 239
     },
     "byCategoryIncludingWaived": {
       "a": 14,
-      "b": 249
+      "b": 250
     },
     "byDevice": {
-      "D1": 242,
-      "D2": 53,
-      "D3": 53
+      "D1": 243,
+      "D2": 54,
+      "D3": 54
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 13,
-        "b": 229
+        "b": 230
       },
       "D2": {
         "a": 3,
-        "b": 50
+        "b": 51
       },
       "D3": {
         "a": 4,
-        "b": 49
+        "b": 50
       }
     },
     "bySession": {
-      "B01": 36,
+      "B01": 37,
       "B02": 12,
       "B03": 5,
       "B04": 18,
@@ -325,10 +325,11 @@
         "304-vis-017-signed-distance-primitives:VIS-017-T13",
         "305-fx-015-vignette:FX-015-T15",
         "311-fx-017-film-grain:FX-017-T17",
-        "312-fx-018-scanline-texture:FX-018-T16"
+        "312-fx-018-scanline-texture:FX-018-T16",
+        "314-qa-012-release-evidence-manifest:QA-012-T08"
       ],
       "optionalTasks": 1,
-      "estimatedMinutes": 205
+      "estimatedMinutes": 220
     },
     {
       "id": "B02",
@@ -5948,6 +5949,27 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "FX-018-T16 {device} On D1, Photo visual: Scanlines at spacing 2, 3 and 16, intensity 100 %, both orientations: even lines, no crawl or flicker; frame rate with and without it (FX-018-S6)"
+    },
+    {
+      "id": "QA-012-T08",
+      "spec": "314-qa-012-release-evidence-manifest",
+      "feature": "QA-012",
+      "line": 28,
+      "tags": [
+        "device"
+      ],
+      "status": "open",
+      "category": "b",
+      "session": "B01",
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
+      "devicesInferred": false,
+      "matrixCases": [],
+      "estimatedMinutes": 15,
+      "text": "QA-012-T08 {device} Rebuild the manifest after QA-011-T19 to T22 commit the D1-D3 records; release ready only when it lists no gaps"
     }
   ]
 }
