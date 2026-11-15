@@ -713,10 +713,12 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.content = .none   // MED-003: the new video's region applies from its first picture
             host.loopRegion = videos.loopRegion
             host.playbackSpeed = videos.speed   // MED-004
+            host.reverse = videos.reverse   // MED-005
             host.content = Self.videoContent(stored)
         }
         videos.onLoopRegionChange = { [weak self] (region: VideoLoopRegion?) in self?.videoVisual?.loopRegion = region }   // MED-003
         videos.onSpeedChange = { [weak self] (speed: VideoPlaybackSpeed) in self?.videoVisual?.playbackSpeed = speed }   // MED-004
+        videos.onReverseChange = { [weak self] (on: Bool) in self?.videoVisual?.reverse = on }   // MED-005
         texts.onSpecChange = { [weak self] (spec: TextOverlaySpec) in self?.textVisual?.spec = spec }   // MED-009
         colorGrade.onChange = { [weak self] (_: ColorGrade) in self?.applyColorGrade() }   // FX-003
         connectMotionFeedback()   // FX-009
@@ -1407,6 +1409,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.onVideoStateChange = { [weak self] (state: VideoLayerState) in self?.videoStateChanged(state) }
             host.loopRegion = videos.loopRegion   // MED-003: before the first start
             host.playbackSpeed = videos.speed     // MED-004
+            host.reverse = videos.reverse         // MED-005
+            host.onReverseStateChange = { [weak self] (state: VideoReverseState) in self?.videos.reverseStateChanged(state) }
             host.content = Self.videoContent(videos.video)
             presentation.register(host)   // PERF-011: starts suspended while the app cannot present
             videoVisual = host
