@@ -40,3 +40,8 @@ more).
   SHD-011 compliance contract name the exception.
 - The warm path for native and compositor pipelines skips compilation when the archive holds them; the effect on
   launch is measured on D1 by PERF-009-T16 (`{device}`).
+- Amendment 2026-11-14 (CI fix): simulators never use the archive (`NativePipelineArchive.archivesSupported` is
+  false there, so `open` reports `.unsupported` and pipelines are created plainly). On the iOS 26.5 simulator, and
+  on CI's iOS 26.5 and 27.2 simulators, Metal's archive loader aborted the test process ("Target device
+  architecture is nil"; runs 43662504217 and 43659130790), which made the VisualGenerators simulator jobs fail
+  after 101 tests. The macOS host tests still cover the archive, and devices keep it.
