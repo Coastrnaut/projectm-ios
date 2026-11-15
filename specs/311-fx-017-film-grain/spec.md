@@ -61,6 +61,26 @@ answer is the conservative option.
   whatever the toggle says; the grain itself stays visible. Static grain is a still texture, which neither setting
   restricts. Applied to FX-017-R4.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: Which clock time drives temporal grain: time since the effect was turned on, or the frame's presentation time? →
+  A: The frame's injected presentation time (CMP-001's `LayerFrameContext`), divided by a whole-number period of
+  41 666 667 ns (just over 1⁄24 s). It needs no state in the effect, so the same time always gives the same grain
+  (golden and test renders inject it) and a recording sees the same grain as the screen. Applied to FX-017-R4.
+- Q: How do monochrome and colour grain relate? → A: Monochrome uses hash channel 0 for red, green and blue alike;
+  colour uses channels 0, 1 and 2, so colour grain's red equals the monochrome grain of the same seed. Applied to
+  FX-017-R3.
+- Q: How is the seed chosen in Settings? → A: A stepper, whole numbers 0…9999 (default 1), step 1, spoken "Seed 1";
+  no random button (a random seed would break the "same settings, same picture" promise). Applied to FX-017-R2, R9.
+- Q: Is Film grain a global setting or a per-scene value? → A: Both, like FX-006 to FX-016: a global setting the
+  visuals use, which a scene or effect-chain preset with an `fx.filmGrain` entry overwrites when opened; a scene
+  without one leaves it alone. Applied to FX-017-R10, R11.
+- Q: Is the 0.08 amplitude adjustable, or capped by the sensory safety profile? → A: Fixed and not user-adjustable;
+  opacity is the only strength control. No ACC-012 cap: the mean brightness never changes and the peak change is
+  bounded; the flash guard judges the shown frame. Applied to FX-017-R3, R5 and the Assumptions.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Add a film texture (Priority: P1)
