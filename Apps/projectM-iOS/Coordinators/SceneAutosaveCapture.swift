@@ -294,20 +294,23 @@ enum SceneAutosaveCapture {
     static func applyEffects(_ entries: [SceneEffectEntry]?, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
                              directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil,
-                             echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil, vignette: VignetteSetting? = nil) {
+                             echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil,
+                             edgeOutline: EdgeOutlineSetting? = nil, vignette: VignetteSetting? = nil) {
         guard let entries else {
             chain.order = .standard
             return
         }
         applyEffects(SceneEffectSettings.read(entries).settings, chain: chain, grade: grade, trails: trails, chromatic: chromatic,
-                     directionalBlur: directionalBlur, radialBlur: radialBlur, echo: echo, mosaic: mosaic, vignette: vignette)
+                     directionalBlur: directionalBlur, radialBlur: radialBlur, echo: echo, mosaic: mosaic,
+                     edgeOutline: edgeOutline, vignette: vignette)
     }
 
     @MainActor
     static func applyEffects(_ settings: SceneEffectSettings, chain: EffectChainSetting, grade: ColorGradeSetting,
                              trails: MotionFeedbackSetting, chromatic: ChromaticSplitSetting? = nil,
                              directionalBlur: DirectionalBlurSetting? = nil, radialBlur: RadialBlurSetting? = nil,
-                             echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil, vignette: VignetteSetting? = nil) {
+                             echo: EchoSetting? = nil, mosaic: MosaicSetting? = nil,
+                             edgeOutline: EdgeOutlineSetting? = nil, vignette: VignetteSetting? = nil) {
         chain.order = settings.order
         if let g = settings.grade {
             if grade.temperature != g.temperature { grade.temperature = g.temperature }
@@ -333,6 +336,7 @@ enum SceneAutosaveCapture {
         if let r = settings.radialBlur { radialBlur?.apply(r) }   // FX-008
         if let e = settings.echo { echo?.apply(e) }   // FX-010
         if let m = settings.mosaic { mosaic?.apply(m) }   // FX-012
+        if let o = settings.edgeOutline { edgeOutline?.apply(o) }   // FX-014
         if let v = settings.vignette { vignette?.apply(v) }   // FX-015
     }
 

@@ -108,9 +108,11 @@
 // history empties on the Trails reset triggers. Appended last in the standard order.
 // FX-012 (specs/299-fx-012-mosaic-pixelation, ADR-0110): while `mosaic` is active, `MosaicPass` shows each cell's centre
 // pixel at its place in `outputEffectOrder` (Color folded before it the same way); appended after Echo.
+// FX-014 (specs/303-fx-014-edge-outline, ADR-0114): while `edgeOutline` is active, `EdgeOutlinePass` draws the Sobel
+// outline at its place in `outputEffectOrder` (Color folded before it the same way); appended after Mosaic.
 // FX-015 (specs/305-fx-015-vignette, ADR-0116): while `vignette` is active, `VignettePass` darkens towards the edges
 // (colour × (1 − intensity × w), the centre exact) at its place in `outputEffectOrder` (Color folded before it the same
-// way); appended last.
+// way); appended last (after Edge outline).
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -299,6 +301,8 @@ public final class Compositor {
     private var echoHistoryGraded = false
     /// FX-012: the mosaic pass and its pooled picture.
     private let mosaicPass: MosaicPass
+    /// FX-014: the edge outline pass and its pooled picture.
+    private let edgeOutlinePass: EdgeOutlinePass
     /// FX-015: the vignette pass and its pooled picture.
     private let vignettePass: VignettePass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
@@ -372,6 +376,15 @@ public final class Compositor {
     public var mosaicFrames: Int { mosaicPass.frames }
     public var holdsMosaicPicture: Bool { mosaicPass.holdsPicture }
 
+    /// FX-014 (ADR-0114): the edge outline, set between frames. Off (the default) adds no pass and holds no picture:
+    /// output bit-identical to before FX-014.
+    public var edgeOutline: EdgeOutline = .off {
+        didSet { if !edgeOutline.isEnabled { edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-014: frames drawn through the outline pass, and whether its picture is held (tests, diagnostics).
+    public var edgeOutlineFrames: Int { edgeOutlinePass.frames }
+    public var holdsEdgeOutlinePicture: Bool { edgeOutlinePass.holdsPicture }
     /// FX-015 (ADR-0116): the vignette, set between frames. Inactive (the default, or intensity 0) adds no pass and
     /// holds no picture: output bit-identical to before FX-015.
     public var vignette: Vignette = .off {
@@ -471,7 +484,8 @@ public final class Compositor {
                                                 + RadialBlurPass.source
                                                 + EchoPass.source
                                                 + MosaicPass.source
-                                                + VignettePass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-015
+                                                + EdgeOutlinePass.source
+                                                + VignettePass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-015
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
@@ -480,6 +494,7 @@ public final class Compositor {
         radialBlurPass = try RadialBlurPass(device: device, library: library, vertex: fullScreen)   // FX-008
         echoPass = try EchoPass(device: device, library: library, vertex: fullScreen)   // FX-010
         mosaicPass = try MosaicPass(device: device, library: library, vertex: fullScreen)   // FX-012
+        edgeOutlinePass = try EdgeOutlinePass(device: device, library: library, vertex: fullScreen)   // FX-014
         vignettePass = try VignettePass(device: device, library: library, vertex: fullScreen)   // FX-015
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
@@ -515,6 +530,7 @@ public final class Compositor {
         radialBlurPass.release(to: texturePool, after: lastCommandBuffer)   // FX-008
         echoPass.release(to: texturePool, after: lastCommandBuffer)   // FX-010
         mosaicPass.release(to: texturePool, after: lastCommandBuffer)   // FX-012
+        edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer)   // FX-014
         vignettePass.release(to: texturePool, after: lastCommandBuffer)   // FX-015
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
@@ -928,6 +944,7 @@ public final class Compositor {
         var radialRan = false   // FX-008
         var echoRan = false   // FX-010
         var mosaicRan = false   // FX-012
+        var outlineRan = false   // FX-014
         var vignetteRan = false   // FX-015
         for kind in outputEffectOrder.effects {
             switch kind {
@@ -1023,6 +1040,19 @@ public final class Compositor {
                 pictureAllocations += mosaicPass.allocations - taken   // PERF-004
                 shown = tiled
                 mosaicRan = true
+            case .edgeOutline:   // FX-014
+                guard edgeOutline.isActive(width: shown.width, height: shown.height) else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                let taken: Int = edgeOutlinePass.allocations
+                guard let outlined = edgeOutlinePass.encode(input: shown, outline: edgeOutline, pool: texturePool,
+                                                            fence: lastCommandBuffer, commandBuffer: commandBuffer) else { return nil }
+                pictureAllocations += edgeOutlinePass.allocations - taken   // PERF-004
+                shown = outlined
+                outlineRan = true
             case .vignette:   // FX-015
                 guard vignette.isActive(width: shown.width, height: shown.height) else { continue }
                 if gradeListed && !graded {
@@ -1046,6 +1076,7 @@ public final class Compositor {
         if !radialRan, radialBlurPass.holdsPicture { radialBlurPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-008
         if !echoRan, echoPass.holdsPictures { echoPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-010
         if !mosaicRan, mosaicPass.holdsPicture { mosaicPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-012
+        if !outlineRan, edgeOutlinePass.holdsPicture { edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-014
         if !vignetteRan, vignettePass.holdsPicture { vignettePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-015
         return shown
     }

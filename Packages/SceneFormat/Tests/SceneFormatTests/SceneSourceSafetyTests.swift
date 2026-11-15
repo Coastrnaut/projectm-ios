@@ -12,6 +12,7 @@ final class SceneSourceSafetyTests: XCTestCase {
         let names = try FileManager.default.contentsOfDirectory(atPath: directory.path).filter { $0.hasSuffix(".swift") }.sorted()
         XCTAssertEqual(names, ["SceneCountdown.swift",   // MED-012
                                "SceneDecoding.swift", "SceneDocument.swift", "SceneEditing.swift",
+                               "SceneEffectChain+EdgeOutline.swift",   // FX-014
                                "SceneEffectChain+Mosaic.swift",   // FX-012
                                "SceneEffectChain+Vignette.swift",   // FX-015
                                "SceneEffectChain.swift", "SceneEffectChainPresets.swift",   // FX-020
