@@ -1,6 +1,8 @@
 // NoiseFieldGenerator.swift — the noise field on Metal (VIS-013-R1, R3, R5 to R8; contracts/noise-field.md C2, C3;
 // research VIS-013-D2 to D4).
 //
+// VIS-014: `configuration.wedges` ≥ 2 draws with a second entry point that folds every pixel into one kaleidoscope wedge
+// first (`KaleidoscopeFold`, turned by the drive's rotation); 0 uses the plain entry point, frame for frame as before.
 // Per frame: VIS-007's band groups of the input bands → `NoiseFieldDrive` (smoothed warp and brightness, drift on the
 // frame context's clock) → the CPU mirror's 64 samples → the strobe safety envelope's gain over 17 areas (after the
 // downstream stages when `downstreamLuminance` is set; FX-001-R10, FX-019-R9) → one full-screen triangle whose
@@ -39,7 +41,11 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         }
     }
 
-    private let pipeline: MTLRenderPipelineState
+    private let library: MTLLibrary
+    /// The plain field's and the kaleidoscope's pipelines (VIS-014: separate entry points); the one the initial
+    /// configuration needs is built in `init`, the other on the first frame that needs it.
+    private var plainPipeline: MTLRenderPipelineState?
+    private var foldedPipeline: MTLRenderPipelineState?
     private let pass = MTLRenderPassDescriptor()
     private let uniforms: UnsafeMutablePointer<Float>
     private let palette: UnsafeMutablePointer<LinearColor>
@@ -50,25 +56,15 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         self.device = device
         self.pixelFormat = pixelFormat
         self.configuration = configuration.clamped()
-        let library: MTLLibrary
         do {
             library = try device.makeLibrary(source: Self.shaderSource, options: nil)
         } catch {
             throw .pipelineUnavailable("shader compile: \(error.localizedDescription)")
         }
-        guard let vertex = library.makeFunction(name: "vis_noise_vertex"),
-              let fragment = library.makeFunction(name: "vis_noise_fragment") else {
-            throw .pipelineUnavailable("shader functions missing")
-        }
-        let descriptor = MTLRenderPipelineDescriptor()
-        descriptor.label = "VIS-013 Noise field"
-        descriptor.vertexFunction = vertex
-        descriptor.fragmentFunction = fragment
-        descriptor.colorAttachments[0].pixelFormat = pixelFormat
-        do {
-            pipeline = try NativePipelineArchive.makeRenderPipelineState(device: device, descriptor: descriptor)   // PERF-009
-        } catch {
-            throw .pipelineUnavailable("pipeline: \(error.localizedDescription)")
+        if self.configuration.isKaleidoscope {
+            foldedPipeline = try Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, folded: true)
+        } else {
+            plainPipeline = try Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, folded: false)
         }
         uniforms = .allocate(capacity: Self.uniformFloats)
         uniforms.initialize(repeating: 0, count: Self.uniformFloats)
@@ -77,6 +73,34 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         pass.colorAttachments[0].loadAction = .dontCare
         pass.colorAttachments[0].storeAction = .store
         fillPalette()
+    }
+
+    private static func makePipeline(device: MTLDevice, library: MTLLibrary, pixelFormat: MTLPixelFormat,
+                                     folded: Bool) throws(VisualGeneratorError) -> MTLRenderPipelineState {
+        guard let vertex = library.makeFunction(name: "vis_noise_vertex"),
+              let fragment = library.makeFunction(name: folded ? "vis_kaleido_fragment" : "vis_noise_fragment") else {
+            throw .pipelineUnavailable("shader functions missing")
+        }
+        let descriptor = MTLRenderPipelineDescriptor()
+        descriptor.label = folded ? "VIS-014 Kaleidoscope" : "VIS-013 Noise field"
+        descriptor.vertexFunction = vertex
+        descriptor.fragmentFunction = fragment
+        descriptor.colorAttachments[0].pixelFormat = pixelFormat
+        do {
+            return try NativePipelineArchive.makeRenderPipelineState(device: device, descriptor: descriptor)   // PERF-009
+        } catch {
+            throw .pipelineUnavailable("pipeline: \(error.localizedDescription)")
+        }
+    }
+
+    /// The pipeline for this frame's mode, built once (nil when it cannot be built).
+    private func pipeline(folded: Bool) -> MTLRenderPipelineState? {
+        if folded {
+            if foldedPipeline == nil { foldedPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, folded: true) }
+            return foldedPipeline
+        }
+        if plainPipeline == nil { plainPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, folded: false) }
+        return plainPipeline
     }
 
     deinit {
@@ -99,6 +123,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
                        bands: UnsafeBufferPointer<Float>, context: VisualFrameContext) -> Bool {
         guard target.pixelFormat == pixelFormat else { return false }
         let c: NoiseFieldConfiguration = configuration
+        guard let state = pipeline(folded: c.isKaleidoscope) else { return false }
         drive.advance(groups: MandalaBandGroups.from(bands), timeNanoseconds: context.timeNanoseconds,
                       frameDuration: context.frameDuration, configuration: c)
         flashAreas.sample(configuration: c, drive: drive, paletteStops: palette, width: target.width, height: target.height)
@@ -114,8 +139,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         writeUniforms(width: target.width, height: target.height, gain: gain)
         pass.colorAttachments[0].texture = target
         guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: pass) else { return false }
-        encoder.label = "VIS-013 Noise field"
-        encoder.setRenderPipelineState(pipeline)
+        encoder.label = c.isKaleidoscope ? "VIS-014 Kaleidoscope" : "VIS-013 Noise field"
+        encoder.setRenderPipelineState(state)
         encoder.setFragmentBytes(uniforms, length: Self.uniformFloats * MemoryLayout<Float>.stride, index: 0)
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
@@ -135,6 +160,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         uniforms[7] = Float(c.seed)
         uniforms[8] = NoiseFieldConfiguration.lacunarity
         uniforms[9] = NoiseFieldConfiguration.gain
+        uniforms[10] = Float(c.wedges)   // VIS-014: 0 = no fold
+        uniforms[11] = Float(drive.rotation)
         for k in 0..<NoiseFieldConfiguration.paletteColors {
             let color: LinearColor = palette[k]
             uniforms[12 + 4 * k] = color.red
@@ -144,8 +171,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         }
     }
 
-    /// Module-authored shader: SHD-006's shared noise functions, then the field (no user text; SHD-011).
-    public static let shaderSource: String = shaderHeader + SeededNoiseShader.functions + shaderBody
+    /// Module-authored shader: SHD-006's shared noise functions, VIS-014's fold, then the field (no user text; SHD-011).
+    public static let shaderSource: String = shaderHeader + SeededNoiseShader.functions + KaleidoscopeFoldShader.function + shaderBody
 
     static let shaderHeader = """
     #include <metal_stdlib>
@@ -168,7 +195,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         float seed;
         float lacunarity;
         float gain;
-        float2 pad;
+        float wedges;
+        float rotation;
         float4 palette[16];
     };
 
@@ -179,12 +207,10 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         return o;
     }
 
-    fragment float4 vis_noise_fragment(NoiseOut in [[stage_in]], constant NoiseUniforms &u [[buffer(0)]]) {
-        float2 size = max(u.size, float2(1.0));
-        float2 p = (in.position.xy - 0.5 * size) / min(size.x, size.y);
+    // The field at domain point q (after scale and drift): warp, fBm, palette, brightness.
+    static float4 vis_noise_shade(float2 q, constant NoiseUniforms &u) {
         int octaves = clamp(int(u.octaves + 0.5), 1, 8);
         uint seed = uint(clamp(u.seed, 0.0, 65535.0) + 0.5);
-        float2 q = p * u.frequency + float2(u.phase, 0.5 * u.phase);
         if (u.warp > 0.0) {
             float2 wq = q;
             float wx = mat_sfbm(wq + float2(3.1, 7.7), octaves, u.lacunarity, u.gain, seed, 1u);
@@ -198,6 +224,19 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         float3 c = mix(u.palette[i].rgb, u.palette[i + 1].rgb, f) * (0.25 + 0.75 * n) * u.brightness;
         c = select(c, float3(0.0), isnan(c) || isinf(c));
         return float4(clamp(c, 0.0, 1.0), 1.0);
+    }
+
+    fragment float4 vis_noise_fragment(NoiseOut in [[stage_in]], constant NoiseUniforms &u [[buffer(0)]]) {
+        float2 size = max(u.size, float2(1.0));
+        float2 p = (in.position.xy - 0.5 * size) / min(size.x, size.y);
+        return vis_noise_shade(p * u.frequency + float2(u.phase, 0.5 * u.phase), u);
+    }
+
+    // VIS-014: the kaleidoscope folds p into one wedge first (its own entry point, so the plain field's code is untouched).
+    fragment float4 vis_kaleido_fragment(NoiseOut in [[stage_in]], constant NoiseUniforms &u [[buffer(0)]]) {
+        float2 size = max(u.size, float2(1.0));
+        float2 p = (in.position.xy - 0.5 * size) / min(size.x, size.y);
+        return vis_noise_shade(vis_kfold(p, u.wedges, u.rotation) * u.frequency + float2(u.phase, 0.5 * u.phase), u);
     }
     """
 }

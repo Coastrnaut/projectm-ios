@@ -4,7 +4,8 @@
 // The field is not flat geometry, so its light is estimated from the CPU mirror (`SeededNoise`): an 8 × 8 grid of
 // sample points (the cell centres; four per 4 × 4 safety tile) is evaluated with the frame's frequency, octaves,
 // seed, warp and drift, and each sample's colour at gain 1 (palette × (0.25 + 0.75 n) × brightness, as the shader) is
-// kept. `levels(gain:transfer:into:)` gives each tile the mean of its four samples after the downstream stages, and
+// kept. VIS-014: with the kaleidoscope on, each sample point is folded first, exactly as the shader does.
+// `levels(gain:transfer:into:)` gives each tile the mean of its four samples after the downstream stages, and
 // the whole frame the mean of all 64. Exact at the sample points; the field is smooth at these scales. All storage is
 // allocated in `init`; ≤ 64 × 3 × 6 noise evaluations per frame. Pure Swift (every platform). Not Sendable.
 import FlashSafety
@@ -56,6 +57,15 @@ public final class NoiseFieldFlashAreas {
                            blue: a.blue + (b.blue - a.blue) * f, alpha: 1)
     }
 
+    /// VIS-014: the domain point of pixel centre `pixel` folded into the kaleidoscope's first half-wedge, then scaled and
+    /// drifted (the shader: `p` relative to the centre over the shorter side → `vis_kfold` → × scale + (phase, phase / 2)).
+    public static func foldedDomainPoint(_ pixel: SIMD2<Float>, width: Int, height: Int, scale: Float, phase: Float,
+                                         fold: KaleidoscopeFold) -> SIMD2<Float> {
+        let size: SIMD2<Float> = SIMD2(Float(max(width, 1)), Float(max(height, 1)))
+        let p: SIMD2<Float> = (pixel - 0.5 * size) / min(size.x, size.y)
+        return fold.fold(p) * scale + SIMD2<Float>(phase, 0.5 * phase)
+    }
+
     /// Evaluates the 64 samples for this frame. `paletteStops` holds 16 colours.
     public func sample(configuration c: NoiseFieldConfiguration, drive: NoiseFieldDrive, paletteStops: UnsafePointer<LinearColor>,
                        width: Int, height: Int) {
@@ -63,12 +73,15 @@ public final class NoiseFieldFlashAreas {
         let seed: UInt32 = UInt32(c.seed)
         let warp: Float = Float(drive.warp)
         let lit: Float = Float(drive.brightness)
+        let fold = KaleidoscopeFold(wedges: c.wedges, rotation: Float(drive.rotation))   // VIS-014: identity when unfolded
         for row in 0..<Self.gridSide {
             for column in 0..<Self.gridSide {
                 let k: Int = row * Self.gridSide + column
                 let pixel: SIMD2<Float> = Self.samplePoint(column: column, row: row, width: w, height: h)
-                let q: SIMD2<Float> = SeededNoise.domainPoint(x: pixel.x, y: pixel.y, width: w, height: h, scale: Float(c.frequency),
-                                                              phase: Float(drive.phase))
+                let q: SIMD2<Float> = fold.wedges >= 2
+                    ? Self.foldedDomainPoint(pixel, width: w, height: h, scale: Float(c.frequency), phase: Float(drive.phase), fold: fold)
+                    : SeededNoise.domainPoint(x: pixel.x, y: pixel.y, width: w, height: h, scale: Float(c.frequency),
+                                              phase: Float(drive.phase))
                 let n: Float = SeededNoise.warped(q, octaves: c.octaves, lacunarity: NoiseFieldConfiguration.lacunarity,
                                                   gain: NoiseFieldConfiguration.gain, seed: seed, warpAmount: warp, warpFrequency: 1)
                 values[k] = n

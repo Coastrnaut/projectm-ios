@@ -624,6 +624,7 @@ struct VisualizerView: View {
         .onChange(of: coordinator.settings.noiseFieldFrequency) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.noiseFieldOctaves) { coordinator.visualSettingsChanged() }   // VIS-013
         .onChange(of: coordinator.settings.noiseFieldSeed) { coordinator.visualSettingsChanged() }   // VIS-013
+        .onChange(of: coordinator.settings.kaleidoscopeWedges) { coordinator.visualSettingsChanged() }   // VIS-014
         .onChange(of: coordinator.settings.spectrumSmoothing) { coordinator.visualSettingsChanged() }   // ANL-003
     }
 
@@ -690,7 +691,7 @@ struct VisualizerView: View {
                 .ignoresSafeArea()
                 .accessibilityElement()
                 .accessibilityLabel("Photo visualization")
-                .accessibilityValue(PhotoVisualHost.accessibilityValue(coordinator.photoState))   // MED-001-R15
+                .accessibilityValue(PhotoVisualHost.accessibilityValue(coordinator.photoState, frames: photo.photo.animationFrameCount))   // MED-001-R15, MED-008-R12
                 .accessibilityIdentifier("photoVisual")
         } else if coordinator.showsVideoVisual, let video = coordinator.videoVisual {
             VisualSlotHost(visual: video.view, external: coordinator.externalDisplay)   // OUT-001: like Photo
