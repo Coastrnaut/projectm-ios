@@ -361,6 +361,16 @@ they override any system-provided reminder.
       "run_device_matrix|xcodebuild test"`, the run logs) and report what is actually running. Automate a case's
       missing input rather than leaving it to a hand step where the constitution allows it.
 
+12. **Unattended and fully autonomous** (feedback, 2026-11-15). Asked how to handle three QA-011 threshold
+    failures, the owner said "investigate then recommend, and select using your best judgment, operate unattended
+    and fully autonomous remember this and commit it to claude".
+    - *How to apply:* investigate, decide, record the decision with its evidence (Clarifications; an ADR for a
+      budget or default change), act, and report it as decided; never end a turn on a question I can settle myself.
+      Test and budget policy is included when measurement justifies the change and it is recorded, never to turn a
+      real failure green. Run the device matrix unattended (next device as soon as the previous passes).
+    - *Still the owner's:* signing; App Store Connect, agreements, banking, purchases, releases; device steps that
+      need a person; amending Constitution I or V; destructive git. Batch those and carry on.
+
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
 These lessons come from building this app and its paid feature 002 almost entirely

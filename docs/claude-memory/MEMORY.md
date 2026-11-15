@@ -9,3 +9,4 @@
 - [Never stop](never-stop.md) — never stop the autonomous run under any circumstances; always keep work in flight
 - [Remove worktrees after merge](remove-worktrees-after-merge.md) — remove each feature worktree and its simulators once merged; keep branches
 - [Device runs: never idle unexplained](device-runs-never-idle-unexplained.md) — keep each device working until every case passes; say at once when a device is idle and why
+- [Unattended, fully autonomous](unattended-autonomous-device-stage.md) — investigate, decide with best judgement, act and keep going; batch owner-only steps
