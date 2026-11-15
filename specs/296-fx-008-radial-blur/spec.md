@@ -55,6 +55,28 @@ answer is the conservative option.
   reorderable entry of the FX-020 effect chain ("Radial blur", stored kind `fx.radialBlur`), appended after FX-006's
   split. The native spectra and projectM are unchanged. Applied to FX-008-R1, R7.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Five questions, each answered by Claude with the recommended option (owner rule 4).
+
+- Q: With a fixed 16 samples, a long streak shows as separate copies of a sharp point; how far may the strength go?
+  → A: Capped at 25% (a point at the corner of a centred focus moves at most a quarter of its distance), default 10%;
+  the fixed budget keeps the cost per pixel constant, and visualizer content is soft enough that the copies blend.
+  More samples or jitter are not part of this row. Applied to FX-008-R4, R6 and the Assumptions.
+- Q: Do the sensory safety profile or Reduce flashing limit the blur? → A: No cap: the blur only averages existing
+  colour (each output value lies between input values), so it adds no brightness or flashing; the flash guard still
+  judges the shown frame. Applied to the Assumptions.
+- Q: Is the blur a global setting or a per-scene value? → A: Both, like FX-006: a global setting the visuals use, which
+  a scene or effect-chain preset with an `fx.radialBlur` entry overwrites when opened; a scene without one leaves it
+  alone. Applied to FX-008-R9, R10.
+- Q: How are the samples filtered, and how exact must the GPU be? → A: With the GPU's own linear filter (one fetch per
+  sample, sixteen per pixel, instead of four reads by hand), clamped to the frame; the software reference uses exact
+  bilinear weights and the GPU must match it within 1/128 per channel. A pixel with zero spread skips filtering and is
+  passed through bit for bit. Applied to FX-008-R2, R5, S4.
+- Q: Which way does Focus Y run, and is there a reset? → A: 0% is the top and 100% the bottom (as on screen, like
+  Focus X running left to right); no separate reset button: both sliders' default is the centre and VoiceOver steps
+  are 5%. Applied to FX-008-R4, R8.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Zoom blur towards a point (Priority: P1)
