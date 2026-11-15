@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MIDI-009-T01-T14 verified on the Mac; device task T15 `{device}` open)
 
 **Input**: User description: "Implement MIDI-009 (MIDI feedback) from docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable
 behavior, verbatim: "Send optional parameter state back to capable controllers." Acceptance, verbatim: "Connected mock
