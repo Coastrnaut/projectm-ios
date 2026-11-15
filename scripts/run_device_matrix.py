@@ -311,7 +311,11 @@ def parse_codesign(text: str) -> dict:
 
 
 def capture(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
-    return subprocess.run(cmd, cwd=cwd, text=True, capture_output=True, check=False)
+    """Run for facts only; a missing tool (xcodebuild, codesign and xcrun on Linux CI) gives an empty result."""
+    try:
+        return subprocess.run(cmd, cwd=cwd, text=True, capture_output=True, check=False)
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(cmd, 127, stdout="", stderr=f"{cmd[0]}: not found")
 
 
 def app_facts(app: Path, configuration: str) -> dict:
