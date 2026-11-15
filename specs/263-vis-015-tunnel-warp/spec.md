@@ -44,6 +44,9 @@ local-first option.
 - Q: How is it kept safe? → A: (a) Speed is capped at 3 rings/s: at any pixel the ring pattern then alternates at most 3 times per second, WCAG's general flash limit, at every tempo and pace (2 rings per beat at 120 BPM caps at 3); (b) bass punch: brightness 0.5 + 0.3 × the low group, smoothed (attack τ 0.08 s, release τ 0.3 s), never above 0.8 (ACC-012); (c) the frame passes the FX-019 envelope over 17 areas from a CPU mirror at 64 points, as VIS-013; (d) Reduce Motion halves the speed (after the cap) and halves the bass punch. Rejected: a speed punch on beats (abrupt motion) (VIS-015-R6, R7, R8).
 - Q: Which controls and keys? → A: One setting, Pace (`settings.tunnel.pace`: `half`, `beat` or `double`; anything else → `beat`). Seed, palette and glow: the seed is VIS-013's default 1301 (fixed); palette and glow are shared; Bars hidden. Accessibility: identifier `tunnel`, label "Tunnel visualization", value "1 ring per beat, Glow off". Rejected: a free speed slider (tempo is the speed; one more unsafe range to cap) (VIS-015-R9, R12).
 
+- Q: The tempo snapshot updates only every 250 ms (SHOW-011's poll); does the tunnel need a faster tempo feed? → A: No. The host reads the snapshot once per frame; a new value is a step in the target that the 0.5 s speed smoother turns into a smooth ramp, and the phase never depends on the tempo directly. While the tunnel is shown the tempo analysis follows the tunnel's own analysis pipeline, as for every native visual (SHOW-011-D3) (VIS-015-R4, R5).
+- Q: Is the pace saved in scenes or the show's scene snapshot? → A: No, as VIS-013 and VIS-014: the tunnel is no SCN-001 layer kind; a scene captured while it is shown records no native layer, and the pace is a user setting in the FILE-005 backup only (VIS-015-R9, R11).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A tunnel that moves with the beat (Priority: P1)
