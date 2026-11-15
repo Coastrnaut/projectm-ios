@@ -82,14 +82,17 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var trails: MotionFeedback?
     /// FX-006 (ADR-0104): `isEnabled` is the entry's flag.
     public var chromatic: ChromaticSplit?
+    /// FX-007 (ADR-0106): `isEnabled` is the entry's flag.
+    public var directionalBlur: DirectionalBlur?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
-                chromatic: ChromaticSplit? = nil) {
+                chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil) {
         self.order = order
         self.grade = grade
         self.gradeEnabled = gradeEnabled
         self.trails = trails
         self.chromatic = chromatic
+        self.directionalBlur = directionalBlur
     }
 
     static let gradeParameters: [SceneEffectParameter] = [
@@ -109,13 +112,19 @@ public struct SceneEffectSettings: Sendable, Equatable {
         SceneEffectParameter(name: "angle", range: ChromaticSplit.angleRange, fallback: ChromaticSplit.defaultAngle),
         SceneEffectParameter(name: "radial", range: 0...1, fallback: 0),
     ]
+    /// FX-007: `radius` is a fraction of the shorter side, `angle` the blur axis in degrees.
+    static let directionalBlurParameters: [SceneEffectParameter] = [
+        SceneEffectParameter(name: "radius", range: DirectionalBlur.radiusRange, fallback: DirectionalBlur.defaultRadius),
+        SceneEffectParameter(name: "angle", range: DirectionalBlur.angleRange, fallback: DirectionalBlur.defaultAngle),
+    ]
 
     /// Standard order, Trails off (or absent), Color on and neutral (or absent): nothing to save (research FX-020-D7).
     public var isDefault: Bool {
         let trailsOff: Bool = !(trails?.isEnabled ?? false)
         let gradeNeutral: Bool = grade?.isNeutral ?? true
         let chromaticOff: Bool = !(chromatic?.isEnabled ?? false)   // FX-006
-        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff
+        let blurOff: Bool = !(directionalBlur?.isEnabled ?? false)   // FX-007
+        return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff
     }
 
     // MARK: Reading
@@ -147,6 +156,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
                 case .chromatic:   // FX-006
                     let v = values(entry, chromaticParameters, path, &issues)
                     settings.chromatic = ChromaticSplit(isEnabled: entry.enabled, amount: v[0], angleDegrees: v[1], isRadial: v[2] >= 0.5)
+                case .directionalBlur:   // FX-007
+                    let v = values(entry, directionalBlurParameters, path, &issues)
+                    settings.directionalBlur = DirectionalBlur(isEnabled: entry.enabled, radius: v[0], angleDegrees: v[1])
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -224,6 +236,11 @@ public struct SceneEffectSettings: Sendable, Equatable {
             entry.parameters["amount"] = .double(c.amount)
             entry.parameters["angle"] = .double(c.angleDegrees)
             entry.parameters["radial"] = .double(c.isRadial ? 1 : 0)
+        case .directionalBlur:   // FX-007
+            guard let b = directionalBlur else { return stored }
+            entry.enabled = b.isEnabled
+            entry.parameters["radius"] = .double(b.radius)
+            entry.parameters["angle"] = .double(b.angleDegrees)
         }
         return entry
     }

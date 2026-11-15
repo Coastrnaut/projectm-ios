@@ -99,6 +99,8 @@
 // FX-006 (contracts/chromatic-split.md in specs/293, ADR-0104): while `chromaticSplit` is active, `ChromaticSplitPass`
 // shifts red and blue at its place in `outputEffectOrder` (the walk in `encodeOutputEffects`); a non-neutral Color
 // listed before an active Trails or split is folded into the grade pass right before the first of them.
+// FX-007 (contracts/directional-blur.md in specs/295, ADR-0106): while `directionalBlur` is active, `DirectionalBlurPass`
+// blurs along its axis with 16 taps at its place in `outputEffectOrder`, after the split in the standard order.
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -278,6 +280,8 @@ public final class Compositor {
     private var trailsHistoryGraded = false
     /// FX-006: the chromatic split pass and its pooled picture.
     private let chromaticPass: ChromaticSplitPass
+    /// FX-007: the directional blur pass and its pooled picture.
+    private let directionalBlurPass: DirectionalBlurPass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -296,6 +300,16 @@ public final class Compositor {
     /// FX-006: frames drawn through the split pass, and whether its picture is held (tests, diagnostics).
     public var chromaticFrames: Int { chromaticPass.frames }
     public var holdsChromaticPicture: Bool { chromaticPass.holdsPicture }
+
+    /// FX-007 (ADR-0106): the directional blur, set between frames. Inactive (the default, or a zero radius) adds no
+    /// pass and holds no picture: output bit-identical to before FX-007.
+    public var directionalBlur: DirectionalBlur = .off {
+        didSet { if !directionalBlur.isEnabled { directionalBlurPass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-007: frames drawn through the blur pass, and whether its picture is held (tests, diagnostics).
+    public var directionalBlurFrames: Int { directionalBlurPass.frames }
+    public var holdsDirectionalBlurPicture: Bool { directionalBlurPass.holdsPicture }
 
     /// FX-020: frames that ran the Color-first grade pass (tests, diagnostics).
     public var gradePassFrames: Int { gradePass.frames }
@@ -378,11 +392,13 @@ public final class Compositor {
             LayerRecord(id: nil, layer: layer, settings: layer.compositeSettings)
         }
         library = try CompositorShaders.library(device: device, source: CompositorShaders.source + TrailsPass.source
-                                                + OutputGradePass.source + ChromaticSplitPass.source)   // FX-009, FX-020, FX-006
+                                                + OutputGradePass.source + ChromaticSplitPass.source
+                                                + DirectionalBlurPass.source)   // FX-009, FX-020, FX-006, FX-007
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
         chromaticPass = try ChromaticSplitPass(device: device, library: library, vertex: fullScreen)   // FX-006
+        directionalBlurPass = try DirectionalBlurPass(device: device, library: library, vertex: fullScreen)   // FX-007
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -413,6 +429,7 @@ public final class Compositor {
         trails.release(to: texturePool, after: lastCommandBuffer)   // FX-009
         gradePass.release(to: texturePool, after: lastCommandBuffer)   // FX-020
         chromaticPass.release(to: texturePool, after: lastCommandBuffer)   // FX-006
+        directionalBlurPass.release(to: texturePool, after: lastCommandBuffer)   // FX-007
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -815,6 +832,7 @@ public final class Compositor {
         var gradeListed = false
         var graded = false
         var splitRan = false
+        var blurRan = false   // FX-007
         for kind in outputEffectOrder.effects {
             switch kind {
             case .grade:
@@ -849,10 +867,28 @@ public final class Compositor {
                 pictureAllocations += chromaticPass.allocations - taken   // PERF-004
                 shown = split
                 splitRan = true
+            case .directionalBlur:   // FX-007
+                guard directionalBlur.isActive(width: shown.width, height: shown.height) else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                let taken: Int = directionalBlurPass.allocations
+                guard let blurred = directionalBlurPass.encode(input: shown, blur: directionalBlur, pool: texturePool,
+                                                               fence: lastCommandBuffer, commandBuffer: commandBuffer) else {
+                    return nil
+                }
+                pictureAllocations += directionalBlurPass.allocations - taken   // PERF-004
+                shown = blurred
+                blurRan = true
             }
         }
         if !graded, gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
         if !splitRan, chromaticPass.holdsPicture { chromaticPass.release(to: texturePool, after: lastCommandBuffer) }
+        if !blurRan, directionalBlurPass.holdsPicture {   // FX-007
+            directionalBlurPass.release(to: texturePool, after: lastCommandBuffer)
+        }
         return shown
     }
 

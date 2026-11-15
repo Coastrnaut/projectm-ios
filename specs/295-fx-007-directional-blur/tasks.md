@@ -8,48 +8,48 @@ trip, app and UI tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 3
 
 ## Phase 1: Setup
 
-- [ ] FX-007-T01 ADR-0106 (directional blur pass, fixed 16-tap kernel, clamped samples, chain position) in
-  `docs/adr/0106-directional-blur.md` and its row in `docs/adr/README.md`
+- [X] FX-007-T01 ADR-0106 (directional blur pass, fixed 16-tap kernel, clamped samples, chain position) in
+  `docs/adr/0106-directional-blur.md` and its row in `docs/adr/README.md` — Verified 2026-11-15: docs/adr/0106-directional-blur.md and README row
 
 ## Phase 2: Foundational
 
-- [ ] FX-007-T02 [P] `DirectionalBlur` value in `Packages/Compositor/Sources/Compositor/DirectionalBlur.swift`: fields
+- [X] FX-007-T02 [P] `DirectionalBlur` value in `Packages/Compositor/Sources/Compositor/DirectionalBlur.swift`: fields
   "radius 0…0.02, default 0.005", "angleDegrees 0…180, default 0, folds mod 180"; clamp (NaN → default),
   `radiusPixels`, `isActive`, `tapCount` 16, `unitOffsets`, Gaussian `weights` (σ = radius ÷ 2, sum 1), the shader
-  block, clamped sample positions and the CPU `referencePixel`/`reference` (contract C2); plain Swift (Linux)
-- [ ] FX-007-T03 [P] `DirectionalBlurModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamp and fold,
+  block, clamped sample positions and the CPU `referencePixel`/`reference` (contract C2); plain Swift (Linux) — Verified 2026-11-15: DirectionalBlurModelTests 8/8 on the host; Compositor builds in the Linux shape (-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE)
+- [X] FX-007-T03 [P] `DirectionalBlurModelTests` in `Packages/Compositor/Tests/CompositorTests/`: clamp and fold,
   zero/disabled inactive, 16 taps at every radius with weights summing to 1 and symmetric offsets reaching ±radius,
   0° taps vary only in x and 90° only in y, every sample position inside the frame at the maximum, reference zero
   identity, energy kept on a line, a non-finite own pixel passes and non-finite samples never spread
-  (FX-007-R2 to R7, R13, S3)
-- [ ] FX-007-T04 `OutputEffectKind.directionalBlur` (`fx.directionalBlur`, appended after `chromatic`) in
-  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-007-R8)
+  (FX-007-R2 to R7, R13, S3) — Verified 2026-11-15: swift test --filter DirectionalBlurModelTests, 8 pass
+- [X] FX-007-T04 `OutputEffectKind.directionalBlur` (`fx.directionalBlur`, appended after `chromatic`) in
+  `Packages/Compositor/Sources/Compositor/OutputEffectOrder.swift`; update `OutputEffectOrderTests` (FX-007-R8) — Verified 2026-11-15: OutputEffectOrderTests 5/5 on the host
 
 ## Phase 3: User Stories 1-3 — the pass (P1)
 
 **Goal**: the blur on every compositor output, exact identity at radius zero, horizontal at 0°, fixed cost.
 **Independent test**: GPU tests through the real compositor.
 
-- [ ] FX-007-T05 [US1] `DirectionalBlurPass` with `cmp_directional_blur` (constant `cmp_dirblur_taps = 16`) in
-  `Packages/Compositor/Sources/Compositor/DirectionalBlurPass.swift` (one pooled picture, released when unused)
-- [ ] FX-007-T06 [US1] `Compositor.swift`: `directionalBlur` property, splice the source at the existing compile site,
+- [X] FX-007-T05 [US1] `DirectionalBlurPass` with `cmp_directional_blur` (constant `cmp_dirblur_taps = 16`) in
+  `Packages/Compositor/Sources/Compositor/DirectionalBlurPass.swift` (one pooled picture, released when unused) — Verified 2026-11-15: DirectionalBlurCompositeTests 5/5 on the host (Metal)
+- [X] FX-007-T06 [US1] `Compositor.swift`: `directionalBlur` property, splice the source at the existing compile site,
   the `.directionalBlur` case in `encodeOutputEffects` (Color folded before it), release in deinit; add the source to
-  `CompositorShaderSources.archived` in `CompositorShaders.swift` (FX-007-R7, R8, R12, R14)
-- [ ] FX-007-T07 [US1] [US2] [US3] `DirectionalBlurCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`:
+  `CompositorShaderSources.archived` in `CompositorShaders.swift` (FX-007-R7, R8, R12, R14) — Verified 2026-11-15: whole Compositor package on the host, 0 failures (1:22); CompositorPipelineArchiveTests pass
+- [X] FX-007-T07 [US1] [US2] [US3] `DirectionalBlurCompositeTests` in `Packages/Compositor/Tests/CompositorTests/`:
   radius 0 and off bit-identical on random content (scene and screen output, no picture held); at 0° a short vertical
   line spreads only horizontally (rows outside unchanged, row energy within 1%) and at 90° only vertically; maximum
   radius keeps every value within the frame's range; GPU ≈ CPU reference; the shader source declares 16 taps; the
-  picture returns when turned off (FX-007-S1 to S5)
-- [ ] FX-007-T08 [US1] Existing compositor tests still pass (`ChromaticSplitCompositeTests`,
-  `EffectOrderCompositeTests`, `MotionFeedbackCompositeTests`, `CompositorPipelineArchiveTests`)
+  picture returns when turned off (FX-007-S1 to S5) — Verified 2026-11-15: DirectionalBlurCompositeTests 5/5 on the host (radius 0 bit-identical, 0° rows / 90° columns, energy ±1%, range, GPU vs CPU ≤ 1/256, tap constant, pool)
+- [X] FX-007-T08 [US1] Existing compositor tests still pass (`ChromaticSplitCompositeTests`,
+  `EffectOrderCompositeTests`, `MotionFeedbackCompositeTests`, `CompositorPipelineArchiveTests`) — Verified 2026-11-15: ChromaticSplitCompositeTests, EffectOrderCompositeTests, MotionFeedbackCompositeTests, CompositorPipelineArchiveTests pass in the full Compositor run
 
 ## Phase 4: User Story 4 — chain, scenes, goldens (P2)
 
-- [ ] FX-007-T09 [US4] `SceneEffectSettings.directionalBlur` and the `fx.directionalBlur` entry (read, clamp, write,
+- [X] FX-007-T09 [US4] `SceneEffectSettings.directionalBlur` and the `fx.directionalBlur` entry (read, clamp, write,
   `isDefault`) in `Packages/SceneFormat/Sources/SceneFormat/SceneEffectChain.swift`; round-trip tests in
-  `SceneEffectChainTests` (FX-007-R11, S6)
-- [ ] FX-007-T10 [US4] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the blur; zero blur renders exactly
-  as no chain, save/reload keeps values and picture, in `EffectChainSceneTests` (FX-007-S1, S6)
+  `SceneEffectChainTests` (FX-007-R11, S6) — Verified 2026-11-15: swift test --filter SceneEffectChain, 15 pass
+- [X] FX-007-T10 [US4] RenderGoldens: `GoldenSceneRenderer.apply(effects:to:)` sets the blur; zero blur renders exactly
+  as no chain, save/reload keeps values and picture, in `EffectChainSceneTests` (FX-007-S1, S6) — Verified 2026-11-15: swift test --filter EffectChainScene (RenderGoldens), 7 pass
 
 ## Phase 5: App (P2)
 
