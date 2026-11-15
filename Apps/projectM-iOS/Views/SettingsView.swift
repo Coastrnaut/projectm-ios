@@ -573,6 +573,7 @@ struct SettingsView: View {
         if let layerInspector { EdgeOutlineSection(setting: layerInspector.edgeOutline).id("edgeOutline") }   // FX-014-R9
         if let layerInspector { LensDistortionSection(setting: layerInspector.lensDistortion).id("lensDistortion") }   // FX-016-R8
         if let layerInspector { VignetteSection(setting: layerInspector.vignette).id("vignette") }   // FX-015-R8
+        if let layerInspector { FilmGrainSection(setting: layerInspector.filmGrain).id("filmGrain") }   // FX-017-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
     }
 

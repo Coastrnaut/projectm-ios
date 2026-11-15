@@ -103,7 +103,7 @@ final class EchoSettingTests: XCTestCase {
             echo.count = 1
             SceneAutosaveCapture.applyEffects(written, chain: chain, grade: grade, trails: trails, echo: echo)
             XCTAssertEqual(echo.feedback, EchoFeedback(isEnabled: true, count: 4, delaySeconds: 0.2))
-            XCTAssertEqual(chain.order.effects, [.echo, .trails, .grade, .chromatic, .directionalBlur, .radialBlur, .mosaic, .edgeOutline, .lensDistortion, .vignette])
+            XCTAssertEqual(chain.order.effects, [.echo, .trails, .grade, .chromatic, .directionalBlur, .radialBlur, .mosaic, .edgeOutline, .lensDistortion, .vignette, .filmGrain])
             echo.isEnabled = false
             SceneAutosaveCapture.applyEffects(chain.presets.preset(named: "Ghosts")?.effects, chain: chain, grade: grade,
                                               trails: trails, echo: echo)

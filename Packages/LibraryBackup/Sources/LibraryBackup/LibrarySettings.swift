@@ -108,6 +108,8 @@ public enum LibrarySettingsPolicy {
         "settings.lensDistortion.enabled", "settings.lensDistortion.strength", "settings.lensDistortion.zoomToFill",   // FX-016-R9
         "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   // FX-015-R9
         "settings.vignette.centerX", "settings.vignette.centerY",
+        "settings.filmGrain.enabled", "settings.filmGrain.opacity", "settings.filmGrain.size",   // FX-017-R10
+        "settings.filmGrain.color", "settings.filmGrain.seed", "settings.filmGrain.animated",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9

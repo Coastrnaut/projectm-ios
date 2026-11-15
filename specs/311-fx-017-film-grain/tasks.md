@@ -58,22 +58,22 @@ tests). Budgets: unit test ≤ 10 s, suite < 1 min, UI test < 30 s. Never assert
 
 ## Phase 5: App (US1, US3, US4)
 
-- [ ] FX-017-T11 [US1] `FilmGrainSetting` (six keys) in `Apps/projectM-iOS/Coordinators/FilmGrainSetting.swift` and
+- [X] FX-017-T11 [US1] `FilmGrainSetting` (six keys) in `Apps/projectM-iOS/Coordinators/FilmGrainSetting.swift` and
   `AppCoordinator+FilmGrain.swift` (effective value under Reduce Motion); wire into `AppCoordinator.swift` (init, the
   four compositor creations, scene apply, reset, Reduce Motion change), `+SceneHistory`, `+EffectChain`,
-  `SceneAutosaveCapture.applyEffects` (FX-017-R1, R4, R10)
-- [ ] FX-017-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005
+  `SceneAutosaveCapture.applyEffects` (FX-017-R1, R4, R10) — Verified 2026-11-15: app unit tests 1378 on the own iOS 27.2 simulator (FilmGrainSettingTests 6/6, incl. the host compositor push; the one failure, an old Effect order summary string in ChromaticSplitSettingTests, fixed and rerun 5/5)
+- [X] FX-017-T12 [US1] Keys in `scripts/run_device_tests.py` `ALLOWED_KEYS`, FILE-005
   `LibrarySettingsPolicy.includedKeys`, the UI-test reset, `LibraryBackupAppTests` and `LibraryEraseAppTests` `appKeys`
-  (FX-017-R10)
-- [ ] FX-017-T13 [US1] `FilmGrainSection` (toggle, ACC-005 Opacity slider "30%", Size and Color pickers, Seed stepper,
+  (FX-017-R10) — Verified 2026-11-15: LibraryBackupAppTests, LibraryEraseAppTests, SettingsTests pass on the own simulator (22 tests rerun); FilmGrainSettingTests.testFilmGrainKeysAreBackedUpErasedAndNamed; LibraryBackup package 88 tests on the host
+- [X] FX-017-T13 [US1] `FilmGrainSection` (toggle, ACC-005 Opacity slider "30%", Size and Color pickers, Seed stepper,
   Vary over time toggle, help) in `Apps/projectM-iOS/Views/FilmGrainSection.swift`, one line in `SettingsView.swift`, the
   section ID in `UITestSettingsSection.swift`; Effect order row and name in `EffectChainView.swift` and
-  `EffectChainSetting.swift` (FX-017-R9)
-- [ ] FX-017-T14 [US1] App tests `FilmGrainSettingTests` (persistence, clamp, readout, keys, scene/preset round trip,
+  `EffectChainSetting.swift` (FX-017-R9) — Verified 2026-11-15: FilmGrainUITests and EffectChainUITests pass on the own simulator
+- [X] FX-017-T14 [US1] App tests `FilmGrainSettingTests` (persistence, clamp, readout, keys, scene/preset round trip,
   compositor push, Reduce Motion makes the pushed grain static) and the whole-order updates in `EffectChainSettingTests`
-  and the other effect setting tests; `SettingsTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` pass (FX-017-S6)
-- [ ] FX-017-T15 [US1] UI test `FilmGrainUITests` (find, turn on, move Opacity, step Seed) under 30 s; `EffectChainUITests`
-  pass (FX-017-S6)
+  and the other effect setting tests; `SettingsTests`, `LibraryBackupAppTests`, `LibraryEraseAppTests` pass (FX-017-S6) — Verified 2026-11-15: FilmGrainSettingTests 6/6, EffectChainSettingTests and the Chromatic/Directional/Radial/Echo/Vignette setting tests, SettingsTests, LibraryBackupAppTests, LibraryEraseAppTests pass (full app unit suite 1378, 56 s)
+- [X] FX-017-T15 [US1] UI test `FilmGrainUITests` (find, turn on, move Opacity, step Seed) under 30 s; `EffectChainUITests`
+  pass (FX-017-S6) — Verified 2026-11-15: FilmGrainUITests 1/1 (9.4 s); EffectChainUITests 1/1 (11.7 s); VignetteUITests 1/1 (12.5 s)
 
 ## Phase 6: Polish
 

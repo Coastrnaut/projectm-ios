@@ -79,6 +79,7 @@ final class EffectChainSetting {
         case .edgeOutline: "Edge outline"   // FX-014
         case .lensDistortion: "Lens distortion"   // FX-016
         case .vignette: "Vignette"   // FX-015
+        case .filmGrain: "Film grain"   // FX-017
         }
     }
 
