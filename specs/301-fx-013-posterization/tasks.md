@@ -39,7 +39,8 @@ finish. Logs go to `.autonomous/logs-fx-013/`.
 - [ ] FX-013-T06 [P] [US1] `Packages/Compositor/Tests/CompositorTests/PosterizeOutputTests.swift` (GPU, through
   `cmp_output`): a horizontal gradient composite in `rgba16Float` and `bgra8Unorm_srgb`, dithering off: at most L
   distinct values per channel for L ∈ {2, 6, 32}; GPU vs CPU level indices equal on ≥ 99% of pixels and within one
-  level everywhere; off bit-identical to the output without it; flash guard still limits a strobe.
+  level everywhere; off bit-identical to the output without it; `cmp_output_calibrated` (OUT-009, spec Edge Cases)
+  keeps at most L values; flash guard still limits a strobe.
 - [ ] FX-013-T07 [US1] Block layout in `Packages/Compositor/Tests/CompositorTests/ColorGradeOutputTests.swift` (size
   96, `poster` at 80).
 
@@ -60,7 +61,8 @@ finish. Logs go to `.autonomous/logs-fx-013/`.
 - [ ] FX-013-T11 App setting in `Apps/projectM-iOS/Coordinators/ColorGradeSetting.swift` (three keys in `allKeys`,
   stored, read checked, reset), `SceneAutosaveCapture.swift` (apply from scenes), FILE-005 `LibrarySettings.swift`
   included keys, `scripts/run_device_tests.py` `ALLOWED_KEYS`; tests in `Apps/projectM-iOS/Tests/ColorGradeSettingTests.swift`;
-  run `LibraryBackupAppTests` and `SettingsTests`.
+  run `LibraryBackupAppTests` and `SettingsTests`
+  (S6 backup and S7 relaunch: the setting test re-creates the setting from the same defaults).
 - [ ] FX-013-T12 Settings → Color rows in `Apps/projectM-iOS/Views/ColorGradeSection.swift` (Posterize toggle; Levels
   slider via ACC-005 and Dither toggle while on) and a short UI test in
   `Apps/projectM-iOS/UITests/ColorGradeUITests.swift` (toggle on shows "6 levels", reset turns it off).
