@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-15
 
-**Status**: Draft (speckit-specify 2026-11-15).
+**Status**: Draft (speckit-specify, speckit-clarify 2026-11-15).
 
 **Input**: User description: "Implement QA-011 (Final physical device matrix) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Run complete D1/D2/D3 matrix only after all
@@ -116,7 +116,7 @@ checklist.
   work away from devices (App Store Connect, signing). The rules are explicit and tested.
 - **QA-011-R3**: The inventory is committed as JSON with counts per category, per device and per session; a check
   mode fails when the committed file differs from a fresh generation.
-- **QA-011-R4**: Category (b) tasks are grouped into a small fixed set of owner sessions (at most 12) in an order
+- **QA-011-R4**: Category (b) tasks are grouped into a small fixed set of owner sessions (at most 13) in an order
   that minimises reinstalls and hardware changes; each session has preparation, recording notes and an estimated
   duration.
 - **QA-011-R5**: An owner checklist is generated from the inventory: per session the device(s), preparation, the
@@ -156,7 +156,7 @@ checklist.
   as not evidence.
 - **QA-011-S4**: On each of D1, D2 and D3 the final device stage produces a signed run record with OS/build, cases,
   results and artifacts `{device}`.
-- **QA-011-S5**: The owner's person-only work fits in at most 12 sessions.
+- **QA-011-S5**: The owner's person-only work fits in at most 13 sessions.
 
 ## Assumptions
 
@@ -166,3 +166,63 @@ checklist.
 - Package suites run on a device through `xcodebuild test` with the owner's existing local signing configuration;
   the app's unit-test bundle is hosted in the app.
 - No app code change is needed.
+
+## Clarifications
+
+### Session 2026-11-15 (speckit-clarify)
+
+Answered by Claude under the owner's standing approval (owner rules 4 and 9); each answer is the conservative,
+local-first option.
+
+- Q: How is a task classified, and what happens to a task a script can only partly do? → A: Explicit, tested
+  rules in `scripts/qa011_inventory.py`: (1) an explicit table of category (a) task IDs, each mapped to the matrix
+  cases that fully close it (a task is (a) only when every part of it is scripted); (2) (c) when the text names
+  App Store Connect, signing, certificates, profiles or TestFlight and no device step; (3) everything else is (b),
+  assigned to the first session whose keyword rule matches (ordered by hardware). A (b) task whose scriptable part
+  is covered by a matrix case lists that case under `matrixCases` ("automated part"), and the checklist says so.
+  Status: `waived` when the text carries "⛔"; `optional` when it says optional, "only if a later row needs it" or
+  "not required for this row"; otherwise `open`. Waived tasks are listed but put in no session; optional tasks are
+  put in a session and marked optional.
+- Q: Which devices does a task get when its text is vague? → A: Explicit device mentions win: "D1-D3"/"D1–D3"/
+  "every device"/"each device" → all three; "D1/D2", "D1 and D3" etc. → those; "iPadOS 26.5" or "iOS 26" → D3;
+  "an iPad"/"the iPads" without a D-number → D2 and D3; "reference device" → D1. A task naming none gets D1 (the
+  reference device) with `devicesInferred: true`.
+- Q: Where do inventory, records and artifacts live, and what is committed? → A: Committed: the inventory
+  `docs/test-reports/qa-011/device-inventory.json`, the owner checklist `docs/test-reports/qa-011/owner-checklist.md`,
+  run records `docs/test-reports/qa-011/runs/<D1|D2|D3|sim>/<run-id>/record.json` with `record.md` and
+  `record.json.sha256`, and the small JSON reports pulled from the app (same folder, `artifacts/`). Not committed:
+  `.xcresult` bundles and xcodebuild logs, kept under `Build/qa-011/<label>/<run-id>/` (gitignored, `--work-dir`
+  to override); the record holds their paths, sizes and hashes so QA-012 can cite them. A folder artifact is hashed
+  as SHA-256 over its sorted `relative-path NUL file-SHA-256 LF` lines. The record hash is the SHA-256 of the
+  record's canonical JSON (sorted keys, no `recordSha256` field), stored in the record and the sidecar.
+- Q: How do package test suites run on a device without changing signing? → A: `xcodebuild test` in the
+  package folder with `-destination 'platform=iOS,id=<hardware UDID>' -allowProvisioningUpdates -xcconfig
+  Configs/Signing.xcconfig`: the committed file only includes the owner's gitignored local file, so the team comes
+  from the owner's configuration and nothing is written. The app-hosted suite uses the project's own configuration.
+  The run record carries `codesign -dv` of the installed measurement build (Authority = signing identity,
+  TeamIdentifier = team); a simulator rehearsal records "not signed" or "ad hoc" exactly as codesign reports it.
+- Q: How long is a locked device waited for, and what are the case time limits? → A: `--locked-wait` default
+  600 s (retry every 15 s), then that device stops: the case is `blocked`, later cases `not-run`, and the message
+  says "unlock <D> and set Auto-Lock to Never, then rerun with --only <remaining cases>". Each case has its own
+  limit (automation modes 2-10 minutes, XCTest suites 10 minutes, the 600 s simulated soak 20 minutes); a case over
+  its limit is `timeout` and the run continues. A device not listed by devicectl, or listed with tunnel state
+  `unavailable`, is recorded `unavailable` with no case run.
+- Q: Which cases form the matrix? → A: In order (one install of the measurement build, app-hosted XCTest last
+  because it replaces the app): `autorun-perf001`, `launches-sc015`, `warmstart-perf009`, `autorun-sc009`,
+  `thresholds` (QA-010 judge over the pulled reports plus any PERF-012 export given with `--perf012-report`),
+  package XCTest `xctest-goldens` (RenderGoldens), `xctest-soak-600` (`QA006_SOAK_SECONDS=600`),
+  `xctest-materials` (Compositor ProceduralMaterialsTests), `xctest-angle-layer` (ProjectMLayerTests,
+  ClientBufferSpikeTests), the benches `bench-shd002`, `bench-cmp008`, `bench-cmp009`, `bench-cmp010`,
+  `bench-expression`, and the app-hosted `xctest-offline-export` (REC-013). Each case runs only on the devices of
+  the tasks it closes.
+- Q: How many owner sessions, and in what order? → A: Twelve, ordered so that no-extra-hardware sessions on one
+  Debug install come first and hardware is added one kind at a time: B01 visuals and effects, B02 shows/presets/
+  scenes/ergonomics, B03 Debug fault injection, B04 accessibility, B05 audio routes and calls, B06 camera and
+  sensors, B07 pickers, files and sharing, B08 recording, B09 network and Airplane Mode (starts with a fresh
+  install), B10 MIDI hardware, B11 external display, AirPlay and projector, B12 iPad multitasking, then B13
+  Xcode/Instruments-attached measurements last (a Release build attached to Xcode). Thirteen including the
+  Instruments session, which revises QA-011-S5 to "at most 13 sessions". Estimated duration: 5 minutes per task
+  and device, plus any duration named in the step (for example "5 min"), rounded up to 5 minutes per session.
+- Q: Does this feature run anything on D1-D3? → A: No. Agents never touch the devices (owner rule; CLAUDE.md).
+  The device runs are open tasks `{device}` for the owner's final device stage, driven by the main session; only
+  the dry run and a simulator rehearsal (marked not evidence) are run here.
