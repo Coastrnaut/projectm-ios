@@ -1,0 +1,118 @@
+{
+  "app" : {
+    "build" : "2",
+    "version" : "1.1"
+  },
+  "audioSync" : {
+    "detections" : 0,
+    "driftDetected" : false,
+    "maxMs" : 85.399794,
+    "p50Ms" : 23.6,
+    "p95Ms" : 64.3,
+    "sampleCount" : 442
+  },
+  "device" : {
+    "model" : "iPhone15,4",
+    "osBuild" : "24A446",
+    "osVersion" : "27.0.1"
+  },
+  "exportedAt" : "2026-11-15T20:27:12Z",
+  "frameDrops" : {
+    "outputs" : [
+      {
+        "discarded" : 0,
+        "late" : 479,
+        "output" : "device",
+        "presented" : 1153,
+        "skipped" : 0,
+        "stale" : 0,
+        "submitted" : 1155
+      }
+    ]
+  },
+  "frameTimings" : {
+    "frameGPUMedianMs" : 0.04360417369753122,
+    "frameGPUP95Ms" : 0.0677499920129776,
+    "rejectedSamples" : 0,
+    "stages" : [
+      {
+        "cpuMedianMs" : 0.011541999999999998,
+        "cpuP95Ms" : 0.018042000000000002,
+        "name" : "audio",
+        "samples" : 120
+      },
+      {
+        "cpuMedianMs" : 0.108938,
+        "cpuP95Ms" : 0.1985,
+        "name" : "render",
+        "samples" : 120
+      },
+      {
+        "cpuMedianMs" : 0.055957999999999994,
+        "cpuP95Ms" : 0.08708300000000001,
+        "name" : "present",
+        "samples" : 120
+      }
+    ],
+    "windowFrames" : 120
+  },
+  "frames" : {
+    "longFrames" : [
+      {
+        "count" : 4,
+        "thresholdMs" : 25
+      },
+      {
+        "count" : 1,
+        "thresholdMs" : 50
+      },
+      {
+        "count" : 1,
+        "thresholdMs" : 100
+      }
+    ],
+    "maxMs" : 154.62508331984282,
+    "measuredSeconds" : 79.10485787500511,
+    "p50Ms" : 16.7,
+    "p90Ms" : 16.7,
+    "p95Ms" : 16.7,
+    "p99Ms" : 16.7,
+    "resolutionMs" : 0.1,
+    "sampleCount" : 4741
+  },
+  "kind" : "projectM-iOS.performanceReport",
+  "resources" : {
+    "memory" : {
+      "availableBytes" : 3004282944,
+      "footprintBytes" : 216942528,
+      "peakFootprintBytes" : 245794704
+    }
+  },
+  "schemaVersion" : 1,
+  "session" : {
+    "durationSeconds" : 82.22329958333285,
+    "overlayShown" : true,
+    "visual" : "native"
+  },
+  "states" : {
+    "current" : {
+      "atSeconds" : 82.22333950002212,
+      "lowPower" : false,
+      "maxFramesPerSecond" : 60,
+      "profile" : "standard",
+      "renderScale" : 1,
+      "thermal" : "nominal"
+    },
+    "timeline" : [
+      {
+        "atSeconds" : 0.00011449999874457717,
+        "lowPower" : false,
+        "maxFramesPerSecond" : 60,
+        "profile" : "standard",
+        "renderScale" : 1,
+        "thermal" : "nominal"
+      }
+    ],
+    "truncated" : false
+  }
+}

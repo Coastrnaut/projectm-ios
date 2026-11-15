@@ -177,6 +177,18 @@ final class AudioClockDriftTests: XCTestCase {
         XCTAssertEqual(estimator.targetNanoseconds(atSessionSample: 44_100), 0)
     }
 
+    /// QA-011 (D1/D2, 2026-11-15): start-up lateness after a visual switch fitted as −3,300 and −5,600 ppm. No audio
+    /// clock drifts that much, so such a slope is never a detection and nothing is corrected.
+    func testImplausibleSlopeIsNeverDrift() {
+        var estimator = AudioClockDriftEstimator()
+        for second in 0..<30 {   // −5 ms per second of audio = −5,000 ppm
+            estimator.observe(sessionSample: Int64(second) * 44_100, residualNanoseconds: -Double(second) * 5_000_000)
+        }
+        XCTAssertEqual(estimator.driftPPM ?? 0, -5_000, accuracy: 0.001)
+        XCTAssertFalse(estimator.detected)
+        XCTAssertEqual(estimator.targetNanoseconds(atSessionSample: 30 * 44_100), 0)
+    }
+
     func testNewSessionResetsTheCorrection() {
         let meter = FeatureAgeMeter()
         var sample: Int64 = 0

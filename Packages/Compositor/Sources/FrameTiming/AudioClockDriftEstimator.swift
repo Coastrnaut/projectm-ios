@@ -8,7 +8,8 @@
 //   its minimum residual. The drift (ppm = ns per s / 1,000) is the least-squares slope through the last 64 bucket
 //   minima (a lower convex hull was tried: with ~1 ms of noise on each minimum its two-point edges were noisier).
 // * Verdict: at least 10 buckets; detected when |drift| ≥ 50 ppm and ≥ 3 standard errors of the slope (a noise guard:
-//   with no drift, short fits reach ±100 ppm); cleared when |drift| < 25 ppm.
+//   with no drift, short fits reach ±100 ppm); cleared when |drift| < 25 ppm. A slope beyond `maximumPPM` (2,000) is
+//   never a detection: no audio clock drifts that much (QA-011, 2026-11-15).
 // * Steps: a closed bucket more than 10 ms off the previous minimum plus the drift prediction is a latency step (an
 //   AUD-013 offset change, a route change), not drift. It starts a new segment: the fit gives every segment its own
 //   intercept and one shared slope (pooled within-segment regression), so a step never biases the drift and the
@@ -28,9 +29,14 @@ public struct AudioClockDriftConfiguration: Sendable, Equatable {
     /// Minimum significance of a detection, in standard errors of the slope.
     public var significance: Double
     public var stepNanoseconds: Double
+    /// A fitted slope beyond this is not clock drift (audio clocks drift by tens of ppm; PERF-013's tests inject
+    /// ±500 ppm): no detection. QA-011 (D1/D2, 2026-11-15): a newly attached visual's start-up lateness fitted as
+    /// −3,300 and −5,600 ppm, and the correction toward that target then inflated every measured age.
+    public var maximumPPM: Double
 
     public init(sampleRate: Double = 44_100, bucketSeconds: Double = 1, capacity: Int = 64, minimumBuckets: Int = 10,
-                detectPPM: Double = 50, clearPPM: Double = 25, significance: Double = 3, stepNanoseconds: Double = 10_000_000) {
+                detectPPM: Double = 50, clearPPM: Double = 25, significance: Double = 3, stepNanoseconds: Double = 10_000_000,
+                maximumPPM: Double = 2_000) {
         self.sampleRate = sampleRate
         self.bucketSeconds = bucketSeconds
         self.capacity = max(capacity, 3)
@@ -39,6 +45,7 @@ public struct AudioClockDriftConfiguration: Sendable, Equatable {
         self.clearPPM = clearPPM
         self.significance = significance
         self.stepNanoseconds = stepNanoseconds
+        self.maximumPPM = maximumPPM
     }
 
     public static let standard = AudioClockDriftConfiguration()
@@ -217,7 +224,7 @@ public struct AudioClockDriftEstimator: Sendable {
         let magnitude: Double = abs(ppm)
         if !detected {
             let significant: Bool = magnitude >= configuration.significance * standardError
-            guard magnitude >= configuration.detectPPM, significant else { return false }
+            guard magnitude >= configuration.detectPPM, magnitude <= configuration.maximumPPM, significant else { return false }
             detected = true
             detections += 1
             return true

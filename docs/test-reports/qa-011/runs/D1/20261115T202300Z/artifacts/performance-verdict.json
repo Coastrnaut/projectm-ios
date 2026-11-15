@@ -1,0 +1,73 @@
+{
+  "deviceClass": "D1",
+  "evidence": true,
+  "inputs": [
+    "automation-perf001-2026-11-15T202428Z.json",
+    "performance-perf012-2026-11-15T202712Z.json",
+    "sc015.json"
+  ],
+  "kind": "projectM-iOS.performanceVerdict",
+  "metrics": [
+    {
+      "direction": "min",
+      "limit": 55,
+      "metric": "fps1sP5",
+      "source": "automation-perf001-2026-11-15T202428Z.json",
+      "value": 60.091,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 18.2,
+      "metric": "frameIntervalP50Ms",
+      "source": "performance-perf012-2026-11-15T202712Z.json",
+      "value": 16.7,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 25,
+      "metric": "frameIntervalP95Ms",
+      "source": "performance-perf012-2026-11-15T202712Z.json",
+      "value": 16.7,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 5,
+      "metric": "droppedFramePercent",
+      "source": "automation-perf001-2026-11-15T202428Z.json",
+      "value": 0.0,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 300,
+      "metric": "peakMemoryMB",
+      "source": "performance-perf012-2026-11-15T202712Z.json",
+      "value": 245.795,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 100,
+      "metric": "audioAgeP95Ms",
+      "source": "performance-perf012-2026-11-15T202712Z.json",
+      "value": 64.3,
+      "verdict": "pass"
+    },
+    {
+      "direction": "max",
+      "limit": 2000,
+      "metric": "coldLaunchMs",
+      "source": "sc015.json",
+      "value": 102.985,
+      "verdict": "pass"
+    }
+  ],
+  "model": "iPhone15,4",
+  "overall": "pass",
+  "thresholdsSchemaVersion": 1,
+  "thresholdsVersion": 2,
+  "verdictSchemaVersion": 1
+}
