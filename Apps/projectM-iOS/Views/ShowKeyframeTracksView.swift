@@ -4,7 +4,8 @@
 // * The playhead (SHOW-007's position, 0:00 at Standby), Add Track… (a dialog of the targets without a track), and per track a section
 //   with its keyframes in time order ("0:30, 0.90, Linear"; VoiceOver reads the same), Add Keyframe at Playhead and
 //   Delete Track. A keyframe opens `ShowKeyframeEditView`: an ACC-005 slider over the parameter's range (numbers) or the
-//   system colour picker (colours), the interpolation to the next keyframe, and Delete Keyframe.
+//   system colour picker (colours), the interpolation to the next keyframe (SHOW-009: Linear, Stepped, Hold, Ease, Cubic,
+//   with a line describing the chosen one), and Delete Keyframe.
 // * SCN-015-R6: while the scene is locked the edit controls are disabled and the lock note is shown; the list stays.
 // A standard List, so Dynamic Type, VoiceOver and Full Keyboard Access apply (FR-070).
 import ShowControl
@@ -102,7 +103,13 @@ struct ShowKeyframeEditView: View {
                 Section(target.name + " at " + ShowKeyframeCoordinator.timeText(time)) {
                     valueEditor(keyframe, target)
                 }
-                Section("To the next keyframe") { interpolationPicker(keyframe) }
+                Section {
+                    interpolationPicker(keyframe)
+                } header: {
+                    Text("To the next keyframe")
+                } footer: {
+                    Text(keyframe.interpolation.summary).accessibilityIdentifier("showKeyframeInterpolationSummary")
+                }
                 Section {
                     Button("Delete Keyframe", role: .destructive) {
                         if keyframes.removeKeyframe(track: trackID, time: time) { dismiss() }
@@ -172,7 +179,7 @@ struct ShowKeyframeEditView: View {
             set: { (value: ShowKeyframeInterpolation) -> Void in keyframes.setInterpolation(value, track: trackID, time: time) })
         return Picker("Interpolation", selection: binding) {
             ForEach(ShowKeyframeInterpolation.allCases, id: \.self) { (value: ShowKeyframeInterpolation) in
-                Text(value.displayName).tag(value)
+                Text(value.displayName).tag(value).accessibilityLabel(value.displayName)
             }
         }
         .pickerStyle(.segmented)
