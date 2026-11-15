@@ -380,6 +380,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     @ObservationIgnored private(set) lazy var showTransport: ShowTransportCoordinator = makeShowTransport(defaults: defaults)
     /// PERF-008: the power profile (made in `init`, so the first frame loop already runs under it).
     @ObservationIgnored private(set) lazy var powerProfile = PowerProfileSetting(defaults: defaults)
+    /// CAM-011: device tilt and shake as modulation sources (Settings › Motion; the sensor runs only while used).
+    @ObservationIgnored private(set) lazy var motionModulation: MotionModulationCoordinator = makeMotionModulation(defaults: defaults)
     /// ACC-007: haptic beat pulses (Settings → Haptics; off by default), fed by the tempo poll while on.
     @ObservationIgnored private(set) lazy var hapticBeat = HapticBeatCoordinator(
         defaults: defaults, tempo: tempo, clamp: { [unowned self] () -> SafetyClamp in self.settings.safetyClamp })
@@ -1203,6 +1205,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
             connectThresholdTriggers(host)   // MOD-006
             connectLFOs(host)   // MOD-007
+            connectMotion(host)   // CAM-011
             connectStereoPhase(host)   // ANL-013
             #if DEBUG
             bindGlowToLevelIfRequested(host)   // MOD-002: AudioFeatureBindingUITests
@@ -1950,6 +1953,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         osc.sceneBecame(active: active)   // OSC-001-R3: no listener outside the foreground
         midi.sceneBecame(active: active)   // MIDI-001-R7: no discovery outside the foreground
         warmStart.sceneBecame(active: active)   // PERF-009-R6: write the pipeline archive back
+        motionModulation.setAppActive(active)   // CAM-011-R8: no motion sensor outside the foreground
         updateIdleTimer()
     }
 

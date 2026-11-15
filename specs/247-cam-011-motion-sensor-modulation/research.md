@@ -21,7 +21,7 @@
   Reusing MOD-005's `step` gives NaN safety and 0…1 clamping by construction.
 - **CAM-011-D5 Calibration.** `calibrate()` sets neutral to the last raw attitude, zeroes the offsets and snaps
   the smoothed attitude outputs to 0.5. Session only; never stored (privacy, and the yaw reference changes on
-  every start). Default neutral: pitch 0, roll 0, yaw = first sample's yaw.
+  every start). Default neutral: pitch 0, roll 0, yaw = first sample's yaw; a restart retakes the yaw neutral from its first sample (the `xArbitraryZVertical` reference resets on every start), pitch and roll neutral are kept.
 - **CAM-011-D6 Demand and lifecycle.** The coordinator runs the sensor only when (host uses motion OR the Settings
   readout is open) AND the app is active AND the device has motion. The host recomputes `usesMotion` when its
   bindings or triggers change (not per frame). Each sample also re-checks demand, so a released host stops the
