@@ -1,4 +1,4 @@
-// FX-003-T12, T14, T15, FX-004-T09, FX-005-T09: the colour grade setting (and FX-004's hue), its ACC-012 gain cap, the Settings section's targets and the hosts
+// FX-003-T12, T14, T15, FX-004-T09, FX-005-T09, FX-013-T11: the colour grade setting (and FX-004's hue), its ACC-012 gain cap, the Settings section's targets and the hosts
 // (FX-003-R1, R8, R9).
 import Compositor
 import FlashSafety
@@ -96,7 +96,7 @@ final class ColorGradeSettingTests: XCTestCase {
             let result = AccessibleParameterAdjuster.adjust(ColorGradeParameterSpecs.gain, target: target, direction: .increment)
             XCTAssertTrue(result.moved)
             XCTAssertEqual(setting.gain, 1.05, accuracy: 1e-9, "one VoiceOver step")
-            XCTAssertEqual(ColorGradeParameterSpecs.all.count, 7)   // FX-005: + contrast strength
+            XCTAssertEqual(ColorGradeParameterSpecs.all.count, 8)   // FX-005: + contrast strength; FX-013: + posterize levels
             for spec in ColorGradeParameterSpecs.all { XCTAssertLessThanOrEqual(spec.stepCount, 60, spec.id) }
         }
     }
@@ -179,6 +179,88 @@ final class ColorGradeSettingTests: XCTestCase {
         let strict = SafetyClamp(profile: SensorySafetyProfile(preset: .strict), reduceFlashingSetting: false)
         let grade = ColorGrade(contrast: .sCurve, contrastStrength: 1)
         XCTAssertEqual(ColorGradeSetting.effective(grade, clamp: strict), grade, "ACC-012 leaves the curve (white stays white)")
+    }
+
+    // MARK: - FX-013: posterize
+
+    func testPosterizePersistsClampsResetsAndReadsSafely() {
+        withDefaults { (defaults: UserDefaults) -> Void in
+            let setting = ColorGradeSetting(defaults: defaults)
+            XCTAssertFalse(setting.posterize)
+            XCTAssertEqual(setting.posterizeLevels, 6)
+            XCTAssertFalse(setting.posterizeDither)
+            XCTAssertEqual(ColorGradeSetting.posterizeKey, "settings.colorGrade.posterize")
+            XCTAssertEqual(ColorGradeSetting.posterizeLevelsKey, "settings.colorGrade.posterizeLevels")
+            XCTAssertEqual(ColorGradeSetting.posterizeDitherKey, "settings.colorGrade.posterizeDither")
+            for key in [ColorGradeSetting.posterizeKey, ColorGradeSetting.posterizeLevelsKey, ColorGradeSetting.posterizeDitherKey] {
+                XCTAssertTrue(ColorGradeSetting.allKeys.contains(key), "the UI-test reset and erase remove \(key)")
+            }
+            var reported: ColorGrade?
+            setting.onChange = { (grade: ColorGrade) -> Void in reported = grade }
+            setting.posterize = true
+            XCTAssertEqual(reported, ColorGrade(posterize: true))
+            XCTAssertFalse(setting.isNeutral)
+            setting.posterizeLevels = 4.4
+            XCTAssertEqual(setting.posterizeLevels, 4, "whole levels")
+            setting.posterizeDither = true
+            XCTAssertEqual(defaults.integer(forKey: ColorGradeSetting.posterizeLevelsKey), 4)
+            let relaunched = ColorGradeSetting(defaults: defaults)
+            XCTAssertEqual(relaunched.grade, ColorGrade(posterize: true, posterizeLevels: 4, posterizeDither: true), "kept across a relaunch")
+            setting.posterizeLevels = 90
+            XCTAssertEqual(setting.posterizeLevels, 32, "clamped")
+            setting.posterizeLevels = .nan
+            XCTAssertEqual(setting.posterizeLevels, 6, "NaN → 6")
+            setting.resetToNeutral()
+            XCTAssertFalse(setting.posterize)
+            XCTAssertFalse(setting.posterizeDither)
+            XCTAssertNil(defaults.object(forKey: ColorGradeSetting.posterizeKey), "Reset to neutral removes posterize")
+            defaults.set(1, forKey: ColorGradeSetting.posterizeKey)
+            XCTAssertFalse(ColorGradeSetting(defaults: defaults).posterize, "a number is not a Bool → off")
+            defaults.set(true, forKey: ColorGradeSetting.posterizeLevelsKey)
+            XCTAssertEqual(ColorGradeSetting(defaults: defaults).posterizeLevels, 6, "a Bool → 6")
+        }
+    }
+
+    func testPosterizeRoundTripsThroughASceneAndIsBackedUp() {
+        withDefaults { (defaults: UserDefaults) -> Void in
+            let setting = ColorGradeSetting(defaults: defaults)
+            setting.posterize = true
+            setting.posterizeLevels = 3
+            setting.posterizeDither = true
+            let live = SceneEffectSettings(order: .standard, grade: setting.grade, gradeEnabled: true, trails: .off)
+            let written: [SceneEffectEntry]? = SceneAutosaveCapture.effects(live, carry: nil)
+            XCTAssertNotNil(written, "posterize makes the grade worth saving")
+            setting.resetToNeutral()
+            let chain = EffectChainSetting(defaults: defaults)
+            let trails = MotionFeedbackSetting(defaults: defaults)
+            SceneAutosaveCapture.applyEffects(written, chain: chain, grade: setting, trails: trails)
+            XCTAssertEqual(setting.grade, ColorGrade(posterize: true, posterizeLevels: 3, posterizeDither: true))
+            let old: [SceneEffectEntry] = [SceneEffectEntry(kind: "fx.grade", parameters: ["gamma": .double(1.2)])]
+            SceneAutosaveCapture.applyEffects(old, chain: chain, grade: setting, trails: trails)
+            XCTAssertFalse(setting.posterize, "a scene saved before FX-013 restores off")
+        }
+        let included = Set(LibrarySettingsPolicy.includedKeys)
+        for key in [ColorGradeSetting.posterizeKey, ColorGradeSetting.posterizeLevelsKey, ColorGradeSetting.posterizeDitherKey] {
+            XCTAssertTrue(included.contains(key), "\(key) is backed up and erased with Settings")
+        }
+    }
+
+    func testPosterizeReadoutSliderAndSafetyProfile() {
+        XCTAssertEqual(ColorGradeSetting.posterizeLevelsText(6), "6 levels")
+        XCTAssertEqual(ColorGradeSetting.posterizeLevelsText(31.6), "32 levels")
+        let spec: AccessibleParameterSpec = ColorGradeParameterSpecs.posterizeLevels
+        XCTAssertEqual(spec.label, "Posterize levels")
+        XCTAssertEqual(spec.id, "colorPosterizeLevelsSlider")
+        XCTAssertEqual(spec.stepCount, 30)
+        withDefaults { (defaults: UserDefaults) -> Void in
+            let setting = ColorGradeSetting(defaults: defaults)
+            let target: ParameterTarget = ColorGradeSection.target(setting, \.posterizeLevels)
+            XCTAssertTrue(AccessibleParameterAdjuster.adjust(spec, target: target, direction: .increment).moved)
+            XCTAssertEqual(setting.posterizeLevels, 7, "one VoiceOver step is one level")
+        }
+        let strict = SafetyClamp(profile: SensorySafetyProfile(preset: .strict), reduceFlashingSetting: false)
+        let grade = ColorGrade(posterize: true, posterizeLevels: 2, posterizeDither: true)
+        XCTAssertEqual(ColorGradeSetting.effective(grade, clamp: strict), grade, "ACC-012 leaves posterize (never brighter)")
     }
 
     // MARK: - FX-004: hue

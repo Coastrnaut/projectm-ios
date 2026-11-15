@@ -97,6 +97,29 @@ new pass or ADR:
    `effect.colorGrade.contrastStrength`; the scene's `fx.grade` entry gains `contrast` and `contrastStrength`
    (written only when used; old scenes read as Linear); Settings → Color gains a "Contrast" picker and strength slider.
 
+## Amendment 2026-11-15: FX-013 posterization (decided by Claude under owner rule 4)
+
+`specs/301-fx-013-posterization` (research FX-013-D1 to D10) adds posterization to the same stage:
+
+1. **Operator 8, last (after FX-005's curve).** The colour is brought into display range with FX-002's tone-map step,
+   then each channel is quantised; FX-002's tone map that follows is an exact identity, so the quantiser is the last
+   value-changing step and each channel of the output holds at most L values (the flash gain and OUT-009's
+   calibration that follow map each level to one value).
+2. **Levels on the sRGB-encoded scale**: e = encode(x), level k = clamp(⌊e·n + t⌋, 0, n), output decode(k/n), n = L − 1,
+   L = 2…32 (default 6). t = 0.5 (nearest level) without dithering; with dithering t = (B + 0.5)/16 from a 4 × 4 Bayer
+   matrix at the output pixel (deterministic, no time dependence). Linear-light levels were rejected (uneven bands).
+3. **Block and flags**: `CMPGrade` gains `float4 poster` (n, 1/n, 0, 0) appended after `contrast`: 96 bytes, earlier
+   offsets unchanged. Flags 64 (posterize) and 128 (dither, only with 64). Off sets neither: bit-for-bit bypass.
+4. **Pixel position**: `cmp_grade_at` / `cmp_display_at` take the output pixel; `cmp_grade` / `cmp_display` remain as
+   the same at pixel (0, 0). The output passes, FX-020's grade pass and the flash guard (at the pixel it samples) pass
+   their position, so the guard measures the dithered colour shown. The grade source carries its own sRGB helpers
+   (the guard's source has no `cmp_encode`).
+5. **Safety**: never brighter than white; a black ↔ white strobe is still limited; ACC-012 does not cap posterize.
+6. Settings `settings.colorGrade.posterize`, `.posterizeLevels`, `.posterizeDither` (FILE-005 backup, FILE-011 erase,
+   privacy allow-list); MOD-001 `effect.colorGrade.posterize`, `.posterizeLevels` (integer), `.posterizeDither`; the
+   scene's `fx.grade` entry gains `posterize`, `posterizeLevels`, `posterizeDither` (written only when used; old scenes
+   read as off); Settings → Color gains a "Posterize" switch, then a levels slider and a "Dither" switch.
+
 ## Alternatives considered
 
 ASC CDL (its offset moves white); grading in sRGB-encoded space (an encode/decode per pixel, and the composite is

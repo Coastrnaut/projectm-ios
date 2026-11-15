@@ -15,6 +15,10 @@
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): `settings.colorGrade.contrast` (String preset name;
 // absent, not a string or unknown → Linear) and `settings.colorGrade.contrastStrength` (Double 0…1, absent → 0.5),
 // stored, reset and backed up like the others; ACC-012 does not cap the curve (white stays white).
+// FX-013 (specs/301-fx-013-posterization, research FX-013-D8, D9): `settings.colorGrade.posterize` (Bool, absent or not
+// a Bool → off), `settings.colorGrade.posterizeLevels` (number, absent → 6, rounded and clamped to 2…32) and
+// `settings.colorGrade.posterizeDither` (Bool), stored, reset and backed up like the others; ACC-012 does not cap them
+// (never brighter; the flash guard measures the posterized picture).
 import Compositor
 import FlashSafety
 import Foundation
@@ -32,8 +36,11 @@ final class ColorGradeSetting {
     static let enabledKey = "settings.colorGrade.enabled"   // FX-020-R8
     static let contrastKey = "settings.colorGrade.contrast"   // FX-005-R8
     static let contrastStrengthKey = "settings.colorGrade.contrastStrength"   // FX-005-R8
+    static let posterizeKey = "settings.colorGrade.posterize"   // FX-013-R8
+    static let posterizeLevelsKey = "settings.colorGrade.posterizeLevels"   // FX-013-R8
+    static let posterizeDitherKey = "settings.colorGrade.posterizeDither"   // FX-013-R8
     static let allKeys: [String] = [temperatureKey, liftKey, gammaKey, gainKey, saturationKey, hueKey, enabledKey,
-                                    contrastKey, contrastStrengthKey]
+                                    contrastKey, contrastStrengthKey, posterizeKey, posterizeLevelsKey, posterizeDitherKey]
 
     @ObservationIgnored private let defaults: UserDefaults
     /// Called after every change with the new (valid) grade.
@@ -78,6 +85,38 @@ final class ColorGradeSetting {
         didSet { store(\.contrastStrength, ContrastCurve.strengthRange, ContrastCurve.defaultStrength, Self.contrastStrengthKey) }
     }
 
+    /// FX-013: posterize on/off (off = neutral).
+    var posterize: Bool {
+        didSet {
+            guard posterize != oldValue else { return }
+            defaults.set(posterize, forKey: Self.posterizeKey)
+            onChange?(grade)
+        }
+    }
+
+    /// FX-013: levels per channel, a whole number 2…32 (default 6); a Double for the slider.
+    var posterizeLevels: Double {
+        didSet {
+            let valid: Double = Double(Posterize.levels(from: posterizeLevels))
+            if valid != posterizeLevels || posterizeLevels.isNaN {
+                posterizeLevels = valid
+                return
+            }
+            guard valid != oldValue else { return }
+            defaults.set(Int(valid), forKey: Self.posterizeLevelsKey)
+            onChange?(grade)
+        }
+    }
+
+    /// FX-013: ordered dithering while posterize is on.
+    var posterizeDither: Bool {
+        didSet {
+            guard posterizeDither != oldValue else { return }
+            defaults.set(posterizeDither, forKey: Self.posterizeDitherKey)
+            onChange?(grade)
+        }
+    }
+
     /// FX-020: Color on (the default) or off (neutral output, values kept).
     var isEnabled: Bool {
         didSet {
@@ -104,12 +143,17 @@ final class ColorGradeSetting {
         contrast = ContrastCurve(storedName: defaults.object(forKey: Self.contrastKey) as? String)   // FX-005
         let storedStrength: Double = Self.read(defaults, Self.contrastStrengthKey, ContrastCurve.defaultStrength)
         contrastStrength = ColorGrade.clamp(storedStrength, to: ContrastCurve.strengthRange, neutral: ContrastCurve.defaultStrength)
+        posterize = Self.readBool(defaults, Self.posterizeKey)   // FX-013
+        let storedLevels: Double = Self.read(defaults, Self.posterizeLevelsKey, Double(Posterize.defaultLevels))
+        posterizeLevels = Double(Posterize.levels(from: storedLevels))
+        posterizeDither = Self.readBool(defaults, Self.posterizeDitherKey)
     }
 
     /// The grade the compositor applies.
     var grade: ColorGrade {
         ColorGrade(temperature: temperature, lift: lift, gamma: gamma, gain: gain, saturation: saturation, hue: hue,
-                   contrast: contrast, contrastStrength: contrastStrength)
+                   contrast: contrast, contrastStrength: contrastStrength, posterize: posterize,
+                   posterizeLevels: Posterize.levels(from: posterizeLevels), posterizeDither: posterizeDither)
     }
 
     var isNeutral: Bool { grade.isNeutral }
@@ -142,6 +186,9 @@ final class ColorGradeSetting {
         hue = neutral.hue
         contrast = neutral.contrast   // FX-005
         contrastStrength = neutral.contrastStrength
+        posterize = neutral.posterize   // FX-013
+        posterizeLevels = Double(neutral.posterizeLevels)
+        posterizeDither = neutral.posterizeDither
         isEnabled = true
         for key in Self.allKeys { defaults.removeObject(forKey: key) }
         onChange?(grade)
@@ -169,7 +216,20 @@ final class ColorGradeSetting {
         return number.doubleValue
     }
 
+    /// FX-013: a stored Bool (CFBoolean only); absent or anything else → false.
+    private static func readBool(_ defaults: UserDefaults, _ key: String) -> Bool {
+        guard let number = defaults.object(forKey: key) as? NSNumber else { return false }
+        guard CFGetTypeID(number) == CFBooleanGetTypeID() else { return false }
+        return number.boolValue
+    }
+
     // MARK: - Readouts (typed steps)
+
+    /// FX-013: "6 levels".
+    static func posterizeLevelsText(_ value: Double) -> String {
+        let levels: Int = Posterize.levels(from: value)
+        return String(levels) + " levels"
+    }
 
     /// "Neutral", "Warm 25", "Cool 100" (the amount in percent of the range; no Kelvin, spec Clarifications).
     static func temperatureText(_ value: Double) -> String {
