@@ -78,7 +78,8 @@ final class VignetteSettingTests: XCTestCase {
         let included = Set(LibrarySettingsPolicy.includedKeys)
         for key in VignetteSetting.allKeys { XCTAssertTrue(included.contains(key), "\(key) is backed up and erased") }
         XCTAssertEqual(EffectChainSetting.name(.vignette), "Vignette")
-        XCTAssertGreaterThan(OutputEffectOrder.standard.effects.firstIndex(of: .vignette) ?? -1, OutputEffectOrder.standard.effects.firstIndex(of: .lensDistortion) ?? 99, "appended after Lens distortion (FX-018 Scanlines follows)")
+        let standardOrder: [OutputEffectKind] = OutputEffectOrder.standard.effects
+        XCTAssertEqual(standardOrder.firstIndex(of: .vignette), (standardOrder.firstIndex(of: .pixelSort) ?? 0) + 1, "directly after FX-011's pixel sort (FX-018 Scanlines and FX-017 Film grain follow)")
     }
 
     func testVignetteSceneAndPresetRoundTripThroughTheAppPaths() {

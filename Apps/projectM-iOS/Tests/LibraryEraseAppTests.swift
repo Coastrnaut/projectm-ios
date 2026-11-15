@@ -55,6 +55,7 @@ final class LibraryEraseAppTests: XCTestCase {
             + VignetteSetting.allKeys   // FX-015
             + PixelSortSetting.allKeys   // FX-011
             + ScanlinesSetting.allKeys   // FX-018
+            + FilmGrainSetting.allKeys   // FX-017
             + [InputTrimSetting.decibelsKey, ChannelSelectionSetting.modeKey, NoiseGateSetting.enabledKey, NoiseGateSetting.thresholdKey,
                FavoritesStore.favoritesKey, FavoritesStore.lastPresetKey, PhotoStore.idKey, VideoStore.idKey, VideoStore.loopKey, TextOverlayStore.key,
                RecordingAudioSetting.includeMicrophoneKey]   // REC-004-R3

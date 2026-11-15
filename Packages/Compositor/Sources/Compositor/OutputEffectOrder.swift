@@ -32,6 +32,8 @@ public enum OutputEffectKind: String, CaseIterable, Sendable, Hashable {
     case vignette = "fx.vignette"
     /// FX-018 Scanlines (appended after Vignette: stored orders without it read with it last; ADR-0123).
     case scanlines = "fx.scanlines"
+    /// FX-017 Film grain (appended last, after Scanlines: stored orders without it read with it last; ADR-0122).
+    case filmGrain = "fx.filmGrain"
 }
 
 /// A stage that always runs after every `OutputEffectKind` (FX-020-R2).
@@ -48,9 +50,9 @@ public struct OutputEffectOrder: Sendable, Hashable, CustomStringConvertible {
 
     /// Today's order: Trails, then Color (FX-020-R1), then FX-006's Chromatic split, FX-007's Directional blur,
     /// FX-008's Radial blur, FX-010's Echo and FX-012's Mosaic, then FX-014's Edge outline, FX-016's Lens distortion,
-    /// FX-011's Pixel sort, FX-015's Vignette and FX-018's Scanlines.
+    /// FX-011's Pixel sort, FX-015's Vignette, FX-018's Scanlines and FX-017's Film grain.
     public static let standard = OutputEffectOrder([.trails, .grade, .chromatic, .directionalBlur, .radialBlur, .echo, .mosaic,
-                                                         .edgeOutline, .lensDistortion, .pixelSort, .vignette, .scanlines])   // FX-014, FX-016, FX-011, FX-015, FX-018
+                                                         .edgeOutline, .lensDistortion, .pixelSort, .vignette, .scanlines, .filmGrain])   // FX-014, FX-016, FX-011, FX-015, FX-018, FX-017
 
     /// Repeats are dropped (the first counts); missing kinds are appended in standard order.
     public init(_ kinds: [OutputEffectKind]) {

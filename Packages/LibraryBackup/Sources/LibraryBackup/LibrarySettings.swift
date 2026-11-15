@@ -112,6 +112,8 @@ public enum LibrarySettingsPolicy {
         "settings.pixelSort.direction",
         "settings.scanlines.enabled", "settings.scanlines.spacing", "settings.scanlines.thickness",   // FX-018-R9
         "settings.scanlines.intensity", "settings.scanlines.vertical",
+        "settings.filmGrain.enabled", "settings.filmGrain.opacity", "settings.filmGrain.size",   // FX-017-R10
+        "settings.filmGrain.color", "settings.filmGrain.seed", "settings.filmGrain.animated",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9

@@ -115,6 +115,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.pixelSort.span", "settings.pixelSort.direction",
                 "settings.scanlines.enabled", "settings.scanlines.spacing", "settings.scanlines.thickness",   # FX-018-R9
                 "settings.scanlines.intensity", "settings.scanlines.vertical",
+                "settings.filmGrain.enabled", "settings.filmGrain.opacity", "settings.filmGrain.size",   # FX-017-R10
+                "settings.filmGrain.color", "settings.filmGrain.seed", "settings.filmGrain.animated",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11

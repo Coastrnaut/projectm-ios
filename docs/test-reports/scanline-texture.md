@@ -74,3 +74,15 @@ RenderGoldens 130 (1 skipped); LibraryBackup 88; the full app unit bundle 1388 t
 `ScanlinesUITests` (14.6 s), `PixelSortUITests` (13.0 s) and `EffectChainUITests` (15.5 s) passed on a new own
 simulator ("FX18b iPhone 17", deleted afterwards); `test_scripts` (186), `check_compliance` and `validate_docs` OK.
 PosterBoard reports: 25 before, 25 after.
+
+## Merge with FX-017 Film grain (2026-11-15)
+
+`autonomous/integration` (FX-017 integrated) was merged again, keeping both sides. The final order is … Edge outline →
+Lens distortion → Pixel sort → Vignette → Scanlines → Film grain, and argument lists read `vignette:, pixelSort:,
+scanlines:, filmGrain:`. Index-based order assertions from FX-011 and FX-017 (OutputEffectOrderTests, PixelSort and
+Vignette tests) were replaced by relative checks: Vignette directly follows Pixel sort, Scanlines directly follows
+Vignette, Film grain is last. After the merge: Compositor package 1272 tests in all bundles, 0 failures
+(CompositorTests 811, 10 skipped); SceneFormat 230; RenderGoldens 134 (1 skipped); LibraryBackup 88; the full app unit
+bundle 1394 tests, 0 failures (55.1 s); `ScanlinesUITests` (12.9 s), `FilmGrainUITests` (9.5 s), `PixelSortUITests`
+(12.1 s) and `EffectChainUITests` (14.1 s) passed on a new own simulator ("FX18c iPhone 17", deleted afterwards);
+`test_scripts` (186), `check_compliance` and `validate_docs` OK. PosterBoard reports: 25 before, 25 after.

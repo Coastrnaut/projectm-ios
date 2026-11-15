@@ -81,6 +81,7 @@ final class EffectChainSetting {
         case .pixelSort: "Pixel sort"   // FX-011
         case .vignette: "Vignette"   // FX-015
         case .scanlines: "Scanlines"   // FX-018
+        case .filmGrain: "Film grain"   // FX-017
         }
     }
 

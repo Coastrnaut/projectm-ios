@@ -71,7 +71,7 @@ final class ChromaticSplitSettingTests: XCTestCase {
         let included = Set(LibrarySettingsPolicy.includedKeys)
         for key in ChromaticSplitSetting.allKeys { XCTAssertTrue(included.contains(key), "\(key) is backed up and erased") }
         XCTAssertEqual(EffectChainSetting.summary(.standard),
-                       "Trails \u{2192} Color \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Radial blur \u{2192} Echo \u{2192} Mosaic \u{2192} Edge outline \u{2192} Lens distortion \u{2192} Pixel sort \u{2192} Vignette \u{2192} Scanlines")   // FX-007, FX-008 appended
+                       "Trails \u{2192} Color \u{2192} Chromatic split \u{2192} Directional blur \u{2192} Radial blur \u{2192} Echo \u{2192} Mosaic \u{2192} Edge outline \u{2192} Lens distortion \u{2192} Pixel sort \u{2192} Vignette \u{2192} Scanlines \u{2192} Film grain")   // FX-007, FX-008 appended
     }
 
     func testSceneAndPresetRoundTripThroughTheAppPaths() {
@@ -95,7 +95,7 @@ final class ChromaticSplitSettingTests: XCTestCase {
             chromatic.amount = 0.002
             SceneAutosaveCapture.applyEffects(written, chain: chain, grade: grade, trails: trails, chromatic: chromatic)
             XCTAssertEqual(chromatic.split, ChromaticSplit(isEnabled: true, amount: 0.01, angleDegrees: 30))
-            XCTAssertEqual(chain.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .pixelSort, .vignette, .scanlines])
+            XCTAssertEqual(chain.order.effects, [.chromatic, .trails, .grade, .directionalBlur, .radialBlur, .echo, .mosaic, .edgeOutline, .lensDistortion, .pixelSort, .vignette, .scanlines, .filmGrain])
             chromatic.isEnabled = false
             let preset = chain.presets.preset(named: "Fringe")
             SceneAutosaveCapture.applyEffects(preset?.effects, chain: chain, grade: grade, trails: trails, chromatic: chromatic)

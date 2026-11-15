@@ -21,6 +21,7 @@ extension AppCoordinator {
         live.vignette = vignette.vignette   // FX-015
         live.pixelSort = pixelSort.sort   // FX-011
         live.scanlines = scanlines.scanlines   // FX-018
+        live.filmGrain = filmGrain.grain   // FX-017
         return live
     }
 
@@ -52,7 +53,7 @@ extension AppCoordinator {
                                           directionalBlur: directionalBlur, radialBlur: radialBlur,
                                           echo: echoFeedback, mosaic: mosaic,
                                           edgeOutline: edgeOutline, lensDistortion: lensDistortion,
-                                          vignette: vignette, pixelSort: pixelSort, scanlines: scanlines)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018
+                                          vignette: vignette, pixelSort: pixelSort, scanlines: scanlines, filmGrain: filmGrain)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015, FX-011, FX-018, FX-017
         announcer.announce("Applied effect preset " + preset.name, kind: .parameter)
     }
 }
