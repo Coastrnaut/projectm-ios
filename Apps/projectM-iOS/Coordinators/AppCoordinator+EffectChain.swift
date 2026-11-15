@@ -18,6 +18,7 @@ extension AppCoordinator {
                                        echo: echoFeedback.feedback, mosaic: mosaic.mosaic,
                                        edgeOutline: edgeOutline.outline)   // FX-006, FX-007, FX-008, FX-010, FX-012, FX-014
         live.lensDistortion = lensDistortion.lens   // FX-016
+        live.vignette = vignette.vignette   // FX-015
         return live
     }
 
@@ -48,7 +49,8 @@ extension AppCoordinator {
         SceneAutosaveCapture.applyEffects(preset.effects, chain: effectChain, grade: colorGrade, trails: motionFeedback, chromatic: chromaticSplit,
                                           directionalBlur: directionalBlur, radialBlur: radialBlur,
                                           echo: echoFeedback, mosaic: mosaic,
-                                          edgeOutline: edgeOutline, lensDistortion: lensDistortion)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016
+                                          edgeOutline: edgeOutline, lensDistortion: lensDistortion,
+                                          vignette: vignette)   // FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015
         announcer.announce("Applied effect preset " + preset.name, kind: .parameter)
     }
 }

@@ -106,6 +106,8 @@ public enum LibrarySettingsPolicy {
         "settings.edgeOutline.enabled", "settings.edgeOutline.threshold", "settings.edgeOutline.width",   // FX-014-R10
         "settings.edgeOutline.color", "settings.edgeOutline.mode",
         "settings.lensDistortion.enabled", "settings.lensDistortion.strength", "settings.lensDistortion.zoomToFill",   // FX-016-R9
+        "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   // FX-015-R9
+        "settings.vignette.centerX", "settings.vignette.centerY",
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
         "settings.radialWaveform.ring", "settings.radialWaveform.amplitude",   // VIS-005-R9
@@ -123,6 +125,7 @@ public enum LibrarySettingsPolicy {
         "settings.reactionDiffusion.seed",
         "settings.reactionDiffusion.speed",
         "settings.starfield.speed", "settings.starfield.density",   // VIS-016-R8
+        "settings.signedDistance.quality",   // VIS-017-R8
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",

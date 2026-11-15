@@ -109,6 +109,8 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.edgeOutline.width", "settings.edgeOutline.color", "settings.edgeOutline.mode",
                 "settings.lensDistortion.enabled", "settings.lensDistortion.strength",   # FX-016-R9
                 "settings.lensDistortion.zoomToFill",
+                "settings.vignette.enabled", "settings.vignette.intensity", "settings.vignette.softness",   # FX-015-R9
+                "settings.vignette.centerX", "settings.vignette.centerY",
                 "settings.circularSpectrum.glow", "settings.circularSpectrum.glowIntensity",
                 "settings.circularSpectrum.glowRadius", "settings.circularSpectrum.glowThreshold",
                 "settings.linearSpectrum.orientation", "settings.linearSpectrum.spacing",   # VIS-002-R11
@@ -129,6 +131,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.reactionDiffusion.seed",
                 "settings.reactionDiffusion.speed",
                 "settings.starfield.speed", "settings.starfield.density",   # VIS-016-R8
+                "settings.signedDistance.quality",   # VIS-017-R8
                 "settings.spectrum.attack", "settings.spectrum.release",   # ANL-003-R6
                 "settings.osc.enabled", "settings.osc.port",   # OSC-001 (off by default)
                 "settings.osc.disabledRoutes", "settings.osc.aliases",   # OSC-003 (route addresses and parameter IDs)

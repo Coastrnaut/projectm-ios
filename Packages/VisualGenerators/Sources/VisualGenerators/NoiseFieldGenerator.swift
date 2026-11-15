@@ -20,6 +20,10 @@
 // `ReactionDiffusionPass` (made on the first reaction frame, never replaced) seeds, iterates, checks health and draws.
 // Entering the mode, a preset/pattern/seed change, a loop restart or a health flag re-seeds the grid from the stored
 // pattern and seed and restarts the 1 s fade-in; the envelope sees the fade-in × the brightest stop (all 64 samples).
+// VIS-017: `configuration.signedDistance` draws SDF shapes with a seventh entry point (`SignedDistanceShader`): the
+// bands move `signedDistanceDrive` (swell, angle, brightness), the 64 flash samples come from the CPU mirror of the same
+// bounded march, and a second small uniform block (buffer 1) carries the preset's step cap and threshold and the pose.
+// Entering the mode or a loop restart starts from the rest pose. `makeStepCountPipeline()` (tests) draws step counts.
 // Per frame: VIS-007's band groups of the input bands → `NoiseFieldDrive` (smoothed warp and brightness, drift on the
 // frame context's clock) → the CPU mirror's 64 samples → the strobe safety envelope's gain over 17 areas (after the
 // downstream stages when `downstreamLuminance` is set; FX-001-R10, FX-019-R9) → one full-screen triangle whose
@@ -76,6 +80,10 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     private var reactionReloadNanoseconds: UInt64 = 0
     /// VIS-012: the display's 8 palette stops (linear rgb).
     private let reactionStops: UnsafeMutablePointer<SIMD3<Float>>
+    /// VIS-017: the shapes' drive (the pose of the last frame) and their uniform block.
+    public private(set) var signedDistanceDrive = SignedDistanceDrive()
+    private let sdfUniforms: UnsafeMutablePointer<Float>
+    private var sdfPipeline: MTLRenderPipelineState?
     /// The mode of the last frame drawn (VIS-020: entering the waterfall clears its history).
     private var lastMode: Mode?
     /// VIS-020: the cells' sums were made with an older palette.
@@ -103,9 +111,10 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     private var tunnelPipeline: MTLRenderPipelineState?
 
     /// Which entry point draws.
-    enum Mode { case plain, folded, tunnel, waterfall, fluid, reaction }
+    enum Mode { case plain, folded, tunnel, waterfall, fluid, reaction, signedDistance }
 
     static func mode(_ c: NoiseFieldConfiguration) -> Mode {
+        if c.signedDistance != nil { return .signedDistance }   // VIS-017
         if c.reactionDiffusion != nil { return .reaction }   // VIS-012
         if c.fluidInk { return .fluid }   // VIS-011
         if c.waterfall { return .waterfall }   // VIS-020
@@ -130,6 +139,8 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         let initialMode: Mode = Self.mode(self.configuration)
         reactionStops = .allocate(capacity: ReactionDiffusion.paletteStops)
         reactionStops.initialize(repeating: SIMD3<Float>(1, 1, 1), count: ReactionDiffusion.paletteStops)
+        sdfUniforms = .allocate(capacity: SignedDistanceShader.uniformFloats)   // VIS-017
+        sdfUniforms.initialize(repeating: 0, count: SignedDistanceShader.uniformFloats)
         if initialMode == .fluid {   // VIS-011: its pass is its pipelines
             fluidPass = try FluidInkPass(device: device, library: library, targetFormat: pixelFormat)
         } else if initialMode == .reaction {   // VIS-012: likewise
@@ -142,6 +153,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
             case .folded: foldedPipeline = initial
             case .tunnel: tunnelPipeline = initial
             case .waterfall: waterfallPipeline = initial
+            case .signedDistance: sdfPipeline = initial   // VIS-017
             case .fluid, .reaction: break
             }
         }
@@ -174,6 +186,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .folded: name = "vis_kaleido_fragment"
         case .tunnel: name = "vis_tunnel_fragment"
         case .waterfall: name = "vis_waterfall_fragment"
+        case .signedDistance: name = "vis_sdf_fragment"   // VIS-017
         }
         guard let vertex = library.makeFunction(name: "vis_noise_vertex"),
               let fragment = library.makeFunction(name: name) else {
@@ -199,6 +212,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .waterfall: "VIS-020 Spectrum waterfall"
         case .fluid: "VIS-011 Fluid ink"
         case .reaction: "VIS-012 Reaction diffusion"
+        case .signedDistance: "VIS-017 SDF shapes"
         }
     }
 
@@ -214,6 +228,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         case .waterfall:
             if waterfallPipeline == nil { waterfallPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .waterfall) }
             return waterfallPipeline
+        case .signedDistance:   // VIS-017
+            if sdfPipeline == nil { sdfPipeline = try? Self.makePipeline(device: device, library: library, pixelFormat: pixelFormat, mode: .signedDistance) }
+            return sdfPipeline
         case .fluid, .reaction:
             return nil   // VIS-011: FluidInkPass; VIS-012: ReactionDiffusionPass
         case .plain:
@@ -226,6 +243,53 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         uniforms.deinitialize(count: Self.uniformFloats); uniforms.deallocate()
         palette.deinitialize(count: NoiseFieldConfiguration.paletteColors); palette.deallocate()
         reactionStops.deinitialize(count: ReactionDiffusion.paletteStops); reactionStops.deallocate()
+        sdfUniforms.deinitialize(count: SignedDistanceShader.uniformFloats); sdfUniforms.deallocate()
+    }
+
+    /// VIS-017-D6 (tests): a pipeline drawing each pixel's march step count in red (1 in green for a hit) for `format`.
+    func makeStepCountPipeline(format: MTLPixelFormat) throws -> MTLRenderPipelineState {
+        guard let vertex = library.makeFunction(name: "vis_noise_vertex"),
+              let fragment = library.makeFunction(name: "vis_sdf_steps_fragment") else {
+            throw VisualGeneratorError.pipelineUnavailable("shader functions missing")
+        }
+        let descriptor = MTLRenderPipelineDescriptor()
+        descriptor.label = "VIS-017 SDF step counts (tests)"
+        descriptor.vertexFunction = vertex
+        descriptor.fragmentFunction = fragment
+        descriptor.colorAttachments[0].pixelFormat = format
+        return try device.makeRenderPipelineState(descriptor: descriptor)
+    }
+
+    /// VIS-017 (tests): the SDF uniform block the next draw uses.
+    var signedDistanceUniforms: [Float] { (0..<SignedDistanceShader.uniformFloats).map { (k: Int) -> Float in sdfUniforms[k] } }
+
+    /// VIS-017: writes the SDF block for `quality` and the drive's pose; returns the pose.
+    @discardableResult
+    func writeSignedDistanceUniforms(quality: SignedDistanceQuality) -> SignedDistancePose {
+        let pose: SignedDistancePose = signedDistanceDrive.pose
+        sdfUniforms[0] = Float(SignedDistanceScene.cap(quality))
+        sdfUniforms[1] = quality.hitThreshold
+        sdfUniforms[2] = pose.angle
+        sdfUniforms[3] = pose.sphereRadius
+        return pose
+    }
+
+    /// VIS-017 (tests): draws the step-count view of the current pose and quality into `target` with `state`.
+    func encodeStepCounts(into target: MTLTexture, commandBuffer: MTLCommandBuffer, state: MTLRenderPipelineState) -> Bool {
+        guard let settings = configuration.signedDistance else { return false }
+        writeSignedDistanceUniforms(quality: settings.quality)
+        writeUniforms(width: target.width, height: target.height, gain: 1)
+        let descriptor = MTLRenderPassDescriptor()
+        descriptor.colorAttachments[0].texture = target
+        descriptor.colorAttachments[0].loadAction = .dontCare
+        descriptor.colorAttachments[0].storeAction = .store
+        guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else { return false }
+        encoder.setRenderPipelineState(state)
+        encoder.setFragmentBytes(uniforms, length: Self.uniformFloats * MemoryLayout<Float>.stride, index: 0)
+        encoder.setFragmentBytes(sdfUniforms, length: SignedDistanceShader.uniformFloats * MemoryLayout<Float>.stride, index: 1)
+        encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
+        encoder.endEncoding()
+        return true
     }
 
     private func fillPalette() {
@@ -249,6 +313,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         waterfallHistory.clear()   // VIS-020: storage kept
         resetFluid()   // VIS-011
         reactionReloadPending = true   // VIS-012: re-seed
+        signedDistanceDrive.reset()   // VIS-017: rest pose
     }
 
     /// VIS-011: queues an impulse for an ANL-004 onset at the frame's time. False when ignored or the queue is full.
@@ -370,6 +435,13 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
             waterfallHistory.advance(bands: bands, timeNanoseconds: context.timeNanoseconds, reduceMotion: c.reduceMotion)
             uploadWaterfallRows(commandBuffer: commandBuffer)
             flashAreas.loadWaterfall(waterfallCells, history: waterfallHistory, brightness: Float(NoiseFieldConfiguration.maximumBrightness))
+        } else if mode == .signedDistance, let settings = c.signedDistance {   // VIS-017
+            if lastMode != .signedDistance { signedDistanceDrive.reset() }
+            signedDistanceDrive.advance(groups: MandalaBandGroups.from(bands), timeNanoseconds: context.timeNanoseconds,
+                                        reduceMotion: c.reduceMotion)
+            let pose: SignedDistancePose = writeSignedDistanceUniforms(quality: settings.quality)
+            flashAreas.sampleSignedDistance(pose: pose, quality: settings.quality, paletteStops: palette,
+                                            width: target.width, height: target.height)
         } else if mode == .tunnel {   // VIS-015
             tunnelDrive.advance(groups: MandalaBandGroups.from(bands), tempo: tempo, timeNanoseconds: context.timeNanoseconds,
                                 configuration: c)
@@ -396,6 +468,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
         encoder.setRenderPipelineState(state)
         encoder.setFragmentBytes(uniforms, length: Self.uniformFloats * MemoryLayout<Float>.stride, index: 0)
         if mode == .waterfall { encoder.setFragmentTexture(historyTexture, index: 0) }   // VIS-020
+        if mode == .signedDistance {   // VIS-017
+            encoder.setFragmentBytes(sdfUniforms, length: SignedDistanceShader.uniformFloats * MemoryLayout<Float>.stride, index: 1)
+        }
         encoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         encoder.endEncoding()
         pass.colorAttachments[0].texture = nil
@@ -436,6 +511,9 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
             uniforms[2] = Float(max(waterfallHistory.newestRow, 0))
             uniforms[3] = Float(NoiseFieldConfiguration.maximumBrightness) * gain
         }
+        if c.signedDistance != nil {   // VIS-017: the drive's brightness in the same slot
+            uniforms[3] = signedDistanceDrive.pose.brightness * gain
+        }
         uniforms[4] = Float(c.frequency)
         uniforms[5] = Float(drive.warp)
         uniforms[6] = Float(c.octaves)
@@ -458,6 +536,7 @@ public final class NoiseFieldGenerator: SpectrumTextureGenerator {
     public static let shaderSource: String = shaderHeader + SeededNoiseShader.functions + KaleidoscopeFoldShader.function
         + TunnelShader.function + WaterfallShader.function + shaderBody + FluidInkShader.functions   // VIS-011: after the body
         + ReactionDiffusionShader.functions   // VIS-012: after the body
+        + SignedDistanceShader.functions   // VIS-017: after the body
 
     static let shaderHeader = """
     #include <metal_stdlib>

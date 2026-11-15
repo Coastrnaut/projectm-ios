@@ -49,6 +49,8 @@
 //   Glow and palette are shared; Bars does not apply.
 // * Fluid Ink (VIS-011-R12): `settings.visual` may also be `fluidInk`; no key of its own. Onsets (ANL-004) drive it; palette
 //   and glow are shared; Bars does not apply.
+// * SDF Shapes (VIS-017-R8): `settings.visual` may also be `signedDistance`; key `settings.signedDistance.quality`
+//   (`low`/`medium`/`high`; anything else → medium). Bands swell and turn it; palette and glow are shared; Bars does not apply.
 // * Reaction Diffusion (VIS-012-R13): `settings.visual` may also be `reactionDiffusion`; keys
 //   `settings.reactionDiffusion.preset` (`coral`/`mitosis`/`spots`/`maze`; else coral), `.pattern`
 //   (`square`/`spots`/`ring`/`stripes`; else square), `.seed` (Int 0…9999; else 1), `.speed` (Int 1…16; else 8). Bass
@@ -85,7 +87,7 @@
 //   opens no listener) and `settings.osc.port` (Int, absent or outside 1024-65535 → 9000).
 // All keys are "user settings" in the FR-065 list of what may be stored (FR-123 adds the scope,
 // VIS-001-R11 the two visual keys, FX-001-R11 the four glow keys, VIS-002-R11 the two linear keys,
-// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, VIS-013-R9 the three noise field keys, VIS-014-R9 the kaleidoscope's key, VIS-015-R9 the tunnel's key, VIS-016-R8 the starfield's two keys, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
+// VIS-003-R10 the two oscilloscope keys, VIS-004-R11 the two Lissajous keys, VIS-005-R9 the two radial waveform keys, VIS-006-R9 the beat rings' key, VIS-007-R9 the three mandala keys, VIS-008-R10 the particle fountain's key, VIS-009-R10 the particle orbit's key, VIS-013-R9 the three noise field keys, VIS-014-R9 the kaleidoscope's key, VIS-015-R9 the tunnel's key, VIS-016-R8 the starfield's two keys, VIS-017-R8 the SDF shapes' key, ANL-003-R6 the two smoothing keys, ACC-003-R13 the palette key
 // `settings.visual.colorBlindSafePalette`).
 // * Sensory safety (ACC-012-R8): the profile and its custom limits, four `settings.sensorySafety.*` keys owned by
 //   `SensorySafetySetting`; `safetyClamp` combines them with Reduce flashing (stricter wins, ADR-0049).
@@ -137,6 +139,7 @@ final class AppSettings {
     static let reactionSpeedKey = "settings.reactionDiffusion.speed"
     static let starfieldSpeedKey = "settings.starfield.speed"   // VIS-016
     static let starfieldDensityKey = "settings.starfield.density"   // VIS-016
+    static let signedDistanceQualityKey = "settings.signedDistance.quality"   // VIS-017
     static let spectrumAttackKey = "settings.spectrum.attack"
     static let spectrumReleaseKey = "settings.spectrum.release"
     static let oscEnabledKey = "settings.osc.enabled"
@@ -177,7 +180,7 @@ final class AppSettings {
     static let allKeys = [performanceOverlayKey, reduceFlashingKey, presetScopeKey, visualKey, circularSpectrumBarsKey,
                           glowKey, glowIntensityKey, glowRadiusKey, glowThresholdKey,
                           linearSpectrumOrientationKey, linearSpectrumSpacingKey, oscEnabledKey, oscPortKey, photoIDKey, slideshowKey, kenBurnsKey, videoIDKey, videoLoopKey, videoSpeedKey, videoReverseKey,
-                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleEmitterKey, particleTrailsKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, reactionPresetKey, reactionPatternKey, reactionSeedKey, reactionSpeedKey, starfieldSpeedKey, starfieldDensityKey, spectrumAttackKey, spectrumReleaseKey,
+                          textOverlayKey, oscilloscopeLineKey, oscilloscopeWindowKey, lissajousModeKey, lissajousPersistenceKey, radialWaveformRingKey, radialWaveformAmplitudeKey, beatRingsLifeKey, mandalaSymmetryKey, mandalaMirrorKey, mandalaPetalKey, particleGravityKey, particleEmitterKey, particleTrailsKey, particleOrbitRadiusKey, noiseFieldFrequencyKey, noiseFieldOctavesKey, noiseFieldSeedKey, kaleidoscopeWedgesKey, tunnelPaceKey, reactionPresetKey, reactionPatternKey, reactionSeedKey, reactionSpeedKey, starfieldSpeedKey, starfieldDensityKey, signedDistanceQualityKey, spectrumAttackKey, spectrumReleaseKey,
                           cameraPositionKey, cameraMirrorFrontKey, cameraMirrorBackKey,
                           cameraCropModeKey, cameraCropAnchorKey, cameraZoomKey, cameraLensKey, cameraPersonMaskKey, midiEnabledKey,
                           colorBlindSafePaletteKey, logoIDKey, logoPlacementKey, clockOverlayKey, countdownOverlayKey, SceneLock.key, ParameterQuantizer.key, ShowCueQuantizer.key,
@@ -414,6 +417,11 @@ final class AppSettings {
         ReactionDiffusionSettings(preset: reactionPreset, pattern: reactionPattern, seed: reactionSeed, speed: reactionSpeed)
     }
 
+    /// VIS-017: the SDF shapes' marching quality (Medium by default).
+    var signedDistanceQuality: SignedDistanceQuality {
+        didSet { defaults.set(signedDistanceQuality.rawValue, forKey: Self.signedDistanceQualityKey) }
+    }
+
     /// VIS-016: the starfield's speed (Medium by default).
     var starfieldSpeed: StarfieldSpeed {
         didSet { defaults.set(starfieldSpeed.rawValue, forKey: Self.starfieldSpeedKey) }
@@ -637,6 +645,8 @@ final class AppSettings {
         let density: Int = Self.storedInt(defaults, Self.starfieldDensityKey, in: StarfieldConfiguration.settingsDensityRange,
                                           fallback: StarfieldConfiguration.defaultDensity)
         starfieldDensity = Self.isStarfieldDensity(density) ? density : StarfieldConfiguration.defaultDensity   // VIS-016
+        signedDistanceQuality = defaults.string(forKey: Self.signedDistanceQualityKey)
+            .flatMap(SignedDistanceQuality.init(rawValue:)) ?? .defaultQuality   // VIS-017
         let attack = defaults.integer(forKey: Self.spectrumAttackKey)
         spectrumAttackMilliseconds = Self.spectrumAttackChoices.contains(attack) ? attack : 0
         let release = defaults.integer(forKey: Self.spectrumReleaseKey)
@@ -719,6 +729,8 @@ enum VisualChoice: String, CaseIterable, Sendable {
     case reactionDiffusion
     /// The native starfield (VIS-016).
     case starfield
+    /// The native SDF shapes (VIS-017).
+    case signedDistance
     /// The rear or front camera (CAM-002) with the circular spectrum over it (CAM-001; session only).
     case camera
     /// The imported photo with the circular spectrum over it (MED-001; persisted).
@@ -747,6 +759,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
         case .fluidInk: "Fluid Ink"
         case .reactionDiffusion: "Reaction Diffusion"
         case .starfield: "Starfield"
+        case .signedDistance: "SDF Shapes"
         case .camera: "Camera"
         case .photo: "Photo"
         case .video: "Video"
@@ -758,7 +771,7 @@ enum VisualChoice: String, CaseIterable, Sendable {
     var isNative: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .oscilloscope || self == .lissajous
         || self == .radialWaveform || self == .beatRings || self == .mandala || self == .particleFountain
         || self == .particleOrbit || self == .noiseField || self == .kaleidoscope || self == .tunnel
-        || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield }
+        || self == .spectrumWaterfall || self == .fluidInk || self == .reactionDiffusion || self == .starfield || self == .signedDistance }
 
     /// The native visual draws frequency bars, so Bars applies (not the oscilloscope or the Lissajous).
     var usesBars: Bool { self == .circularSpectrum || self == .linearSpectrum || self == .spectrumWaterfall }   // VIS-020: band count

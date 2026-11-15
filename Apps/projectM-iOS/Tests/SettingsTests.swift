@@ -81,6 +81,7 @@ final class SettingsTests: XCTestCase {
         settings.reactionSpeed = 12
         settings.starfieldSpeed = .fast         // VIS-016-R8
         settings.starfieldDensity = 1200        // VIS-016-R8
+        settings.signedDistanceQuality = .high  // VIS-017-R8
         settings.spectrumAttackMilliseconds = 25    // ANL-003-R6
         settings.spectrumReleaseMilliseconds = 250
         settings.oscEnabled = true             // OSC-001-R15
@@ -165,7 +166,7 @@ final class SettingsTests: XCTestCase {
         XCTAssertEqual(bad.linearSpectrumSpacing, 0.2, "unknown → Narrow")
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.orientation"))
         XCTAssertTrue(AppSettings.allKeys.contains("settings.linearSpectrum.spacing"))
-        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel, .spectrumWaterfall, .fluidInk, .reactionDiffusion, .starfield])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013, VIS-014, VIS-015, VIS-020, VIS-011, VIS-012
+        XCTAssertEqual(VisualChoice.allCases.filter(\.isNative), [.circularSpectrum, .linearSpectrum, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel, .spectrumWaterfall, .fluidInk, .reactionDiffusion, .starfield, .signedDistance])   // VIS-003, VIS-004, VIS-005, VIS-006, VIS-007, VIS-008, VIS-009, VIS-013, VIS-014, VIS-015, VIS-020, VIS-011, VIS-012
         XCTAssertEqual(VisualChoice.linearSpectrum.title, "Linear Spectrum")
     }
 

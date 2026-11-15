@@ -159,6 +159,7 @@ enum SnapshotBatchPlanner {
         case .fluidInk: return .fluidInk   // VIS-011
         case .reactionDiffusion: return .reactionDiffusion(settings.reactionDiffusion)   // VIS-012
         case .starfield: return .starfield(speed: settings.starfieldSpeed, density: settings.starfieldDensity)   // VIS-016
+        case .signedDistance: return .signedDistance(quality: settings.signedDistanceQuality)   // VIS-017
         default: return .circular
         }
     }

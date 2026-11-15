@@ -112,6 +112,9 @@
 // outline at its place in `outputEffectOrder` (Color folded before it the same way); appended after Mosaic.
 // FX-016 (specs/306-fx-016-lens-distortion, ADR-0117): while `lensDistortion` is active, `LensDistortionPass` warps the
 // picture (bounded barrel or pincushion) at its place in `outputEffectOrder` (Color folded before it); after Edge outline.
+// FX-015 (specs/305-fx-015-vignette, ADR-0116): while `vignette` is active, `VignettePass` darkens towards the edges
+// (colour × (1 − intensity × w), the centre exact) at its place in `outputEffectOrder` (Color folded before it the same
+// way); appended last (after FX-016's Lens distortion).
 // OUT-009 (specs/268-out-009-output-color-calibration, contract C2): while `displayCalibration` is not the identity, the
 // screen pass of `composite(into:)` uses `cmp_output_calibrated` (the same output, then the display calibration on the
 // encoded value). Recordings (`encodeOutput`), captures and `encodeScene` keep `cmp_output`: they are content.
@@ -304,6 +307,8 @@ public final class Compositor {
     private let edgeOutlinePass: EdgeOutlinePass
     /// FX-016: the lens distortion pass and its pooled picture.
     private let lensDistortionPass: LensDistortionPass
+    /// FX-015: the vignette pass and its pooled picture.
+    private let vignettePass: VignettePass
     /// XFADE (specs/167): the frozen-frame transition of `composite(into:)`; nil until the first one (idle: no work).
     private var outputTransition: OutputTransitionPass?
 
@@ -384,6 +389,15 @@ public final class Compositor {
     /// FX-014: frames drawn through the outline pass, and whether its picture is held (tests, diagnostics).
     public var edgeOutlineFrames: Int { edgeOutlinePass.frames }
     public var holdsEdgeOutlinePicture: Bool { edgeOutlinePass.holdsPicture }
+    /// FX-015 (ADR-0116): the vignette, set between frames. Inactive (the default, or intensity 0) adds no pass and
+    /// holds no picture: output bit-identical to before FX-015.
+    public var vignette: Vignette = .off {
+        didSet { if !vignette.isEnabled { vignettePass.release(to: texturePool, after: lastCommandBuffer) } }
+    }
+
+    /// FX-015: frames drawn through the vignette pass, and whether its picture is held (tests, diagnostics).
+    public var vignetteFrames: Int { vignettePass.frames }
+    public var holdsVignettePicture: Bool { vignettePass.holdsPicture }
 
     /// FX-016 (ADR-0117): the lens distortion, set between frames. Off or strength 0 (the default is off) adds no pass and
     /// holds no picture: output bit-identical to before FX-016.
@@ -485,7 +499,8 @@ public final class Compositor {
                                                 + EchoPass.source
                                                 + MosaicPass.source
                                                 + EdgeOutlinePass.source
-                                                + LensDistortionPass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016
+                                                + LensDistortionPass.source
+                                                + VignettePass.source)   // FX-009, FX-020, FX-006, FX-007, FX-008, FX-010, FX-012, FX-014, FX-016, FX-015
         fullScreen = try CompositorShaders.function(library, "cmp_fullscreen")
         trails = try TrailsPass(device: device, library: library, vertex: fullScreen)
         gradePass = try OutputGradePass(device: device, library: library, vertex: fullScreen)   // FX-020
@@ -496,6 +511,7 @@ public final class Compositor {
         mosaicPass = try MosaicPass(device: device, library: library, vertex: fullScreen)   // FX-012
         edgeOutlinePass = try EdgeOutlinePass(device: device, library: library, vertex: fullScreen)   // FX-014
         lensDistortionPass = try LensDistortionPass(device: device, library: library, vertex: fullScreen)   // FX-016
+        vignettePass = try VignettePass(device: device, library: library, vertex: fullScreen)   // FX-015
         overPipeline = try CompositorShaders.pipeline(device: device, vertex: fullScreen,
                                                       fragment: try CompositorShaders.function(library, "cmp_over"),
                                                       format: LayerPictureDescriptor.metalPixelFormat, blendOver: true,
@@ -532,6 +548,7 @@ public final class Compositor {
         mosaicPass.release(to: texturePool, after: lastCommandBuffer)   // FX-012
         edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer)   // FX-014
         lensDistortionPass.release(to: texturePool, after: lastCommandBuffer)   // FX-016
+        vignettePass.release(to: texturePool, after: lastCommandBuffer)   // FX-015
         outputTransition?.end(pool: texturePool, fence: lastCommandBuffer)   // XFADE-R6
     }
 
@@ -946,6 +963,7 @@ public final class Compositor {
         var mosaicRan = false   // FX-012
         var outlineRan = false   // FX-014
         var lensRan = false   // FX-016
+        var vignetteRan = false   // FX-015
         for kind in outputEffectOrder.effects {
             switch kind {
             case .grade:
@@ -1067,6 +1085,19 @@ public final class Compositor {
                 pictureAllocations += lensDistortionPass.allocations - taken   // PERF-004
                 shown = warped
                 lensRan = true
+            case .vignette:   // FX-015
+                guard vignette.isActive(width: shown.width, height: shown.height) else { continue }
+                if gradeListed && !graded {
+                    guard let output = encodeGradePass(shown, commandBuffer: commandBuffer) else { return nil }
+                    shown = output
+                    graded = true
+                }
+                let taken: Int = vignettePass.allocations
+                guard let darkened = vignettePass.encode(input: shown, vignette: vignette, pool: texturePool,
+                                                         fence: lastCommandBuffer, commandBuffer: commandBuffer) else { return nil }
+                pictureAllocations += vignettePass.allocations - taken   // PERF-004
+                shown = darkened
+                vignetteRan = true
             }
         }
         if !graded, gradePass.holdsPicture { gradePass.release(to: texturePool, after: lastCommandBuffer) }
@@ -1079,6 +1110,7 @@ public final class Compositor {
         if !mosaicRan, mosaicPass.holdsPicture { mosaicPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-012
         if !outlineRan, edgeOutlinePass.holdsPicture { edgeOutlinePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-014
         if !lensRan, lensDistortionPass.holdsPicture { lensDistortionPass.release(to: texturePool, after: lastCommandBuffer) }   // FX-016
+        if !vignetteRan, vignettePass.holdsPicture { vignettePass.release(to: texturePool, after: lastCommandBuffer) }   // FX-015
         return shown
     }
 

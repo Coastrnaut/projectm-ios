@@ -4,7 +4,8 @@
 // An optional top-level `effects` array, written only when set (format version 1, so scenes without it encode
 // byte-identically and QA-004's matrix gains no row). Each entry is `{"kind", "enabled", "parameters"}` plus any
 // unknown fields, kept verbatim. The first entry of each reorderable kind (`fx.trails`, `fx.grade`, FX-006's
-// `fx.chromatic`, FX-008's `fx.radialBlur`, FX-012's `fx.mosaic`, FX-014's `fx.edgeOutline`, FX-016's `fx.lensDistortion`) gives that effect's
+// `fx.chromatic`, FX-008's `fx.radialBlur`, FX-012's `fx.mosaic`, FX-014's `fx.edgeOutline`, FX-016's `fx.lensDistortion`,
+// FX-015's `fx.vignette`) gives that effect's
 // position, flag and parameters; repeated kinds, fixed stages (`fx.flashGuard`, `fx.toneMap`) and unknown kinds are kept
 // at their index, never rendered, and reported as warnings. Plain Swift, no Foundation.
 // FX-005 (specs/292-fx-005-contrast-curves, research FX-005-D8): the `fx.grade` entry may carry `contrast` (a preset
@@ -97,6 +98,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
     public var edgeOutline: EdgeOutline?
     /// FX-016 (ADR-0117): `isEnabled` is the entry's flag (`SceneEffectChain+LensDistortion.swift`); set after `init`.
     public var lensDistortion: LensDistortion?
+    /// FX-015 (ADR-0116): `isEnabled` is the entry's flag (`SceneEffectChain+Vignette.swift`); set after `init`.
+    public var vignette: Vignette?
 
     public init(order: OutputEffectOrder = .standard, grade: ColorGrade? = nil, gradeEnabled: Bool? = nil, trails: MotionFeedback? = nil,
                 chromatic: ChromaticSplit? = nil, directionalBlur: DirectionalBlur? = nil, radialBlur: RadialBlur? = nil,
@@ -157,10 +160,11 @@ public struct SceneEffectSettings: Sendable, Equatable {
         let radialBlurOff: Bool = !(radialBlur?.isEnabled ?? false)   // FX-008
         let echoOff: Bool = !(echo?.isEnabled ?? false)   // FX-010
         let mosaicOff: Bool = !(mosaic?.isEnabled ?? false)   // FX-012
+        let vignetteOff: Bool = !(vignette?.isEnabled ?? false)   // FX-015
         let outlineOff: Bool = !(edgeOutline?.isEnabled ?? false)   // FX-014
         let lensOff: Bool = !(lensDistortion?.isEnabled ?? false)   // FX-016
         return order == .standard && trailsOff && (gradeEnabled ?? true) && gradeNeutral && chromaticOff && blurOff && radialBlurOff
-            && echoOff && mosaicOff && outlineOff && lensOff
+            && echoOff && mosaicOff && outlineOff && lensOff && vignetteOff
     }
 
     // MARK: Reading
@@ -209,6 +213,8 @@ public struct SceneEffectSettings: Sendable, Equatable {
                     settings.edgeOutline = readEdgeOutline(entry, path, &issues)
                 case .lensDistortion:   // FX-016
                     settings.lensDistortion = readLensDistortion(entry, path, &issues)
+                case .vignette:   // FX-015
+                    settings.vignette = readVignette(entry, path, &issues)
                 }
             } else if FixedOutputStage(rawValue: entry.kind) != nil {
                 issues.append(SceneIssue(.fixedEffectStage, path: path + ".kind",
@@ -313,6 +319,9 @@ public struct SceneEffectSettings: Sendable, Equatable {
         case .lensDistortion:   // FX-016
             guard let l = lensDistortion else { return stored }
             Self.writeLensDistortion(l, into: &entry)
+        case .vignette:   // FX-015
+            guard let v = vignette else { return stored }
+            Self.writeVignette(v, into: &entry)
         }
         return entry
     }
