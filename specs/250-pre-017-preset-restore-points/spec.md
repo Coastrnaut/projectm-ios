@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (PRE-017-T01-T14 verified on the Mac: PresetLibrary and LibraryBackup package tests on the host, app unit and UI tests on a private iOS 27.2 simulator, repo checks; no ADR; the Linux build of the packages is not run on this host, it runs in CI)
 
 **Input**: User description: "Implement PRE-017 (Preset restore points) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Keep bounded local versions of edited user presets."
