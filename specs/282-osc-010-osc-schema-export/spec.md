@@ -40,6 +40,8 @@ answer is the conservative, local-first option.
 - Q: How is the file handed off? → A: The REC-012 path: a temporary copy under `<tmp>/Sharing`, the system share sheet with that one file, deleted on every outcome; nothing is uploaded and nothing is stored (OSC-010-R7).
 - Q: New settings keys? → A: None (OSC-010-R8).
 - Q: ADR? → A: No: no default is overridden and network access is unchanged.
+- Q: (clarify pass) What is the file called? → A: `projectM-osc-routes-<YYYYMMDD-hhmmss>Z.md` (UTC stamp; no device or user name) (OSC-010-R4, R5).
+- Q: (clarify pass) How are numbers and text written, and is the file localized? → A: English, locale-independent: numbers in Swift's shortest round-trip form with `.` as the decimal point (whole numbers without a fraction), ranges as `min…max`; `|` in a cell is escaped as `\|` (OSC-010-R3, R4).
 
 ## User Scenarios & Testing *(mandatory)*
 
