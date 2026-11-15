@@ -23,7 +23,7 @@ marks work the Mac cannot finish.
 
 ## Phase 4: US3 Safe light and Reduce Motion (P1)
 
-- [ ] VIS-011-T08 [US3] Flash tests: the bound bounds the drawn ink's light (GPU readback), the envelope's gain scales the drawn picture, Reduce flashing budget holds with bursts after silence, Reduce Motion halves speed and spaces impulses in Packages/VisualGenerators/Tests/VisualGeneratorsTests/FluidInkFlashTests.swift
+- [X] VIS-011-T08 [US3] Flash tests: the bound bounds the drawn ink's light (GPU readback), the envelope's gain scales the drawn picture, Reduce flashing budget holds with bursts after silence, Reduce Motion halves speed and spaces impulses in Packages/VisualGenerators/Tests/VisualGeneratorsTests/FluidInkFlashTests.swift — Verified 2026-11-14: FluidInkFlashTests 3/3 in 0.67 s on the macOS host: bound ≥ GPU max ink and drawn pixels ≤ bound × gain ≤ 0.8; bursts after silence worst 1 transition per window with Reduce flashing on (limit 4) and off (limit 6), rise rate held; Reduce Motion max speed ≤ 0.225 and one impulse per 0.5 s
 
 ## Phase 5: US4 Choose it (P2)
 
