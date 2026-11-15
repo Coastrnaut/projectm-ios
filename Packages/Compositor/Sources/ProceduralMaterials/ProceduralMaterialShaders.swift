@@ -9,8 +9,8 @@
 //
 // Shared rules (research SHD-001-D6): every time-dependent term advances by at most one cycle per
 // unit of phase; output is linear color clamped to 0…1 with alpha 1 (opaque, so premultiplied);
-// non-finite values become 0. Hashes use fixed constants per material (the seed is part of the
-// material), so output is deterministic. Uniform slot i is parameter i of the material's definition
+// non-finite values become 0. Hashes use fixed constants per material (Noise Flow: a seed parameter
+// hashed with integer arithmetic, SHD-006), so output is deterministic. Uniform slot i is parameter i of the material's definition
 // (ProceduralMaterialCatalog.swift).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
@@ -27,12 +27,12 @@ enum ProceduralMaterialShaders {
 
     struct MatOut { float4 position [[position]]; };
 
-    // Matches MaterialUniforms (144 bytes).
+    // Matches MaterialUniforms (272 bytes; SHD-006 ADR: 16 slots).
     struct MatUniforms {
         float2 size;
         float phase;
         float audio;
-        float4 slots[8];
+        float4 slots[16];
     };
 
     vertex MatOut mat_fullscreen(uint vid [[vertex_id]]) {
@@ -59,29 +59,6 @@ enum ProceduralMaterialShaders {
         p = fract(p * float2(123.34, 456.21));
         p += dot(p, p + 45.32);
         return fract(p.x * p.y);
-    }
-
-    static float mat_noise(float2 q) {
-        float2 i = floor(q);
-        float2 f = fract(q);
-        float2 w = f * f * (3.0 - 2.0 * f);
-        float a = mat_hash(i);
-        float b = mat_hash(i + float2(1.0, 0.0));
-        float c = mat_hash(i + float2(0.0, 1.0));
-        float d = mat_hash(i + float2(1.0, 1.0));
-        return mix(mix(a, b, w.x), mix(c, d, w.x), w.y);
-    }
-
-    static float mat_fbm(float2 q, int octaves) {
-        float sum = 0.0, amp = 0.5, norm = 0.0;
-        for (int i = 0; i < 5; i++) {
-            if (i >= octaves) break;
-            sum += amp * mat_noise(q);
-            norm += amp;
-            q = q * 2.03 + float2(17.1, 9.2);
-            amp *= 0.5;
-        }
-        return sum / max(norm, 1e-4);
     }
 
     // SHD-005: a multi-stop gradient (matches GradientRampUniforms, 272 bytes). info.x = stop count (0 = none),
@@ -184,23 +161,77 @@ enum ProceduralMaterialShaders {
         return mat_finish(col);
     }
 
-    // Noise Flow: 0 scale, 1 speed (cells/s), 2 octaves, 3 tint, 4 brightness, 5 audioReactivity.
+    // SHD-006 (contract N2): seeded value noise. The lattice hash is integer arithmetic: the cell (wrapped to 4096 per
+    // axis) XOR key · 0x9E3779B9, key = seed | octave << 16 | field << 19, then the lowbias32 finalizer. No random source,
+    // time or device state: the same settings give the same texture. NoiseTextureReference.swift mirrors this on the CPU.
+    static float mat_nhash(int2 cell, uint key) {
+        uint h = (uint(cell.x) & 4095u) | ((uint(cell.y) & 4095u) << 12);
+        h ^= key * 0x9E3779B9u;
+        h ^= h >> 16;
+        h *= 0x7FEB352Du;
+        h ^= h >> 15;
+        h *= 0x846CA68Bu;
+        h ^= h >> 16;
+        return float(h >> 8) * (1.0 / 16777216.0);
+    }
+
+    static float mat_snoise(float2 q, uint key) {
+        float2 i = floor(q);
+        float2 f = q - i;
+        float2 w = f * f * (3.0 - 2.0 * f);
+        int2 c = int2(i);
+        float a = mat_nhash(c, key);
+        float b = mat_nhash(c + int2(1, 0), key);
+        float d = mat_nhash(c + int2(0, 1), key);
+        float e = mat_nhash(c + int2(1, 1), key);
+        return mix(mix(a, b, w.x), mix(d, e, w.x), w.y);
+    }
+
+    // fBm of up to 8 octaves: amplitude × gain and frequency × lacunarity per octave, normalised to 0…1.
+    static float mat_sfbm(float2 q, int octaves, float lacunarity, float gain, uint seed, uint field) {
+        float sum = 0.0, amp = 1.0, norm = 0.0;
+        for (int i = 0; i < 8; i++) {
+            if (i >= octaves) break;
+            sum += amp * mat_snoise(q, seed | (uint(i) << 16) | (field << 19));
+            norm += amp;
+            q = q * lacunarity + float2(17.1, 9.2);
+            amp *= gain;
+        }
+        return sum / max(norm, 1e-4);
+    }
+
+    // Noise Flow: 0 scale, 1 speed (cells/s), 2 octaves (1-8), 3 tint, 4 brightness, 5 audioReactivity,
+    // 6 seed, 7 lacunarity, 8 gain, 9 warpAmount (cells), 10 warpFrequency (× scale). SHD-006: 2-D domain warp from
+    // two decorrelated fields, skipped at amount 0.
     fragment float4 mat_noiseFlow(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]]) {
         float2 p = mat_point(in, u);
-        int octaves = clamp(int(u.slots[2].x + 0.5), 1, 5);
+        int octaves = clamp(int(u.slots[2].x + 0.5), 1, 8);
+        uint seed = uint(clamp(u.slots[6].x, 0.0, 65535.0) + 0.5);
+        float lacunarity = clamp(u.slots[7].x, 1.5, 3.5);
+        float gain = clamp(u.slots[8].x, 0.2, 0.8);
+        float amount = clamp(u.slots[9].x, 0.0, 4.0);
         float2 q = p * u.slots[0].x + float2(u.phase, 0.5 * u.phase);
-        float w = mat_fbm(q + float2(3.1, 7.7), octaves);
-        float n = mat_fbm(q + 0.8 * (w - 0.5), octaves);
+        if (amount > 0.0) {
+            float2 wq = q * clamp(u.slots[10].x, 0.25, 4.0);
+            float wx = mat_sfbm(wq + float2(3.1, 7.7), octaves, lacunarity, gain, seed, 1u);
+            float wy = mat_sfbm(wq + float2(8.3, 2.8), octaves, lacunarity, gain, seed, 2u);
+            q += amount * (float2(wx, wy) - 0.5);
+        }
+        float n = mat_sfbm(q, octaves, lacunarity, gain, seed, 0u);
         float3 c = u.slots[3].rgb * (0.25 + 0.75 * n) * u.slots[4].x;
         return mat_finish(c);
     }
 
-    // SHD-004 Noise Flow "Low cost": one noise pass without the domain warp, at most 3 octaves.
+    // SHD-004 Noise Flow "Low cost": one noise pass without the domain warp, at most 3 octaves (same seed, lacunarity,
+    // gain).
     fragment float4 mat_noiseFlowLite(MatOut in [[stage_in]], constant MatUniforms &u [[buffer(0)]]) {
         float2 p = mat_point(in, u);
         int octaves = clamp(int(u.slots[2].x + 0.5), 1, 3);
+        uint seed = uint(clamp(u.slots[6].x, 0.0, 65535.0) + 0.5);
+        float lacunarity = clamp(u.slots[7].x, 1.5, 3.5);
+        float gain = clamp(u.slots[8].x, 0.2, 0.8);
         float2 q = p * u.slots[0].x + float2(u.phase, 0.5 * u.phase);
-        float n = mat_fbm(q, octaves);
+        float n = mat_sfbm(q, octaves, lacunarity, gain, seed, 0u);
         float3 c = u.slots[3].rgb * (0.25 + 0.75 * n) * u.slots[4].x;
         return mat_finish(c);
     }
@@ -292,12 +323,13 @@ struct GradientRampUniforms {
     }
 }
 
-/// Matches `MatUniforms` in the shader (144 bytes).
+/// Matches `MatUniforms` in the shader (272 bytes; SHD-006 ADR: 16 slots).
 struct MaterialUniforms {
     var size: SIMD2<Float>
     var phase: Float
     var audio: Float
     var s0, s1, s2, s3, s4, s5, s6, s7: SIMD4<Float>
+    var s8, s9, s10, s11, s12, s13, s14, s15: SIMD4<Float>
 
     init(width: Int, height: Int, phase: Double, audio: Double, values: MaterialParameterValues) {
         size = SIMD2(Float(max(width, 1)), Float(max(height, 1)))
@@ -305,6 +337,8 @@ struct MaterialUniforms {
         self.audio = Float(audio)
         s0 = values.slot(0); s1 = values.slot(1); s2 = values.slot(2); s3 = values.slot(3)
         s4 = values.slot(4); s5 = values.slot(5); s6 = values.slot(6); s7 = values.slot(7)
+        s8 = values.slot(8); s9 = values.slot(9); s10 = values.slot(10); s11 = values.slot(11)
+        s12 = values.slot(12); s13 = values.slot(13); s14 = values.slot(14); s15 = values.slot(15)
     }
 }
 #endif

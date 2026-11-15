@@ -57,5 +57,6 @@
 | [0060](0060-recording-aspect-and-output-cap.md) | Recording aspect presets crop to fill in the encoder's scaler; every output has a per-device size cap | Accepted 2026-11-14 (REC-014; owner rule 4) |
 | [0061](0061-recording-fragmented-writing-and-salvage.md) | Recordings are written as movie fragments; a writer failure keeps the usable part (amends REC-003-R17) | Accepted 2026-11-14 (REC-016; owner rule 4) |
 | [0062](0062-warm-start-pipeline-archive.md) | The warm-start pipeline archive is the one reviewed use of Metal binary archives (key- and checksum-checked, app-made from reviewed shader sources) | Accepted 2026-11-14 (PERF-009; owner rule 4) |
+| [0064](0064-material-parameter-cap-16.md) | Procedural materials may have up to 16 parameters (uniform block of 16 slots) | Accepted 2026-11-14 (SHD-006; owner rule 4) |
 
 Required by Constitution X: capture API, minimum OS, renderer, dependency strategy.

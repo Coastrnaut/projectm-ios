@@ -100,7 +100,8 @@ let package = Package(
         // descriptors, generic inspector controls). Foundation + ParameterGraph only; builds on Linux.
         .target(name: "ShaderParameterMetadata", dependencies: ["ParameterGraph"]),
         // SHD-005: the Gradient Field evaluates a VisualGenerators `GradientRamp` (the shared CPU reference).
-        .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph", "ShaderParameterMetadata",
+        // SHD-006: the preview renderer encodes with FrameCapture's half → sRGB conversion.
+        .target(name: "ProceduralMaterials", dependencies: ["Compositor", "ParameterGraph", "ShaderParameterMetadata", "FrameCapture",
                                                             .product(name: "VisualGenerators", package: "VisualGenerators")]),
         // FX-003: the colour grade's MOD-001 descriptors (the value and its shader live in Compositor).
         .target(name: "ColorGradeParameters", dependencies: ["Compositor", "ParameterGraph"]),

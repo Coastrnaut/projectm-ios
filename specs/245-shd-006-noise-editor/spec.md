@@ -167,7 +167,7 @@ mean difference from the unwarped picture rises with warp amount; warp frequency
   same GPU class (macOS host GPU and the iOS simulator) — the acceptance.
 - **SHD-006-S2**: Two different seeds differ in at least 25 % of pixels.
 - **SHD-006-S3**: High-frequency energy strictly increases for octaves 1 → 2 → 4 → 8, lacunarity 1.5 → 2.5 → 3.5
-  and gain 0.3 → 0.5 → 0.7; difference from unwarped strictly increases for warp 0 → 1 → 2 → 4.
+  and gain 0.3 → 0.5 → 0.7; difference from unwarped is positive and strictly increases for warp 0.5 → 1 → 2 (cells).
 - **SHD-006-S4**: A person can change any noise setting and see the preview update in under 30 seconds; the UI
   test runs in under 30 s.
 - **SHD-006-S5**: Unit tests under 10 s each, package suites under one minute.

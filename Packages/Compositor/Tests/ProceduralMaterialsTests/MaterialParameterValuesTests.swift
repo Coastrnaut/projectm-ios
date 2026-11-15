@@ -21,7 +21,7 @@ final class MaterialParameterValuesTests: XCTestCase {
 
     func testIntegersClampAndColorsClampPerComponent() throws {
         var values = MaterialParameterValues(noise)
-        XCTAssertEqual(try values.set(.integer(9), for: octaves), .integer(5))
+        XCTAssertEqual(try values.set(.integer(9), for: octaves), .integer(8))   // SHD-006: 1…8
         XCTAssertEqual(try values.set(.integer(-2), for: octaves), .integer(1))
         XCTAssertEqual(values.slot(2), SIMD4<Float>(1, 0, 0, 0))
         let stored = try values.set(.color(ParameterColor(red: 2, green: -1, blue: 0.5, alpha: 1)), for: tint)
@@ -40,7 +40,7 @@ final class MaterialParameterValuesTests: XCTestCase {
             XCTAssertEqual(error as? MaterialParameterError, .kindMismatch(speed, expected: "continuous", got: "integer"))
         }
         XCTAssertThrowsError(try values.set(.color(ParameterColor(red: .nan, green: 0, blue: 0)), for: tint))
-        let unknown = ParameterID("material.noiseFlow.seed")
+        let unknown = ParameterID("material.noiseFlow.detail")
         XCTAssertThrowsError(try values.set(.continuous(1), for: unknown)) { error in
             XCTAssertEqual(error as? MaterialParameterError, .unknownParameter(unknown))
         }

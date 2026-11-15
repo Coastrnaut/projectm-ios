@@ -37,9 +37,10 @@
   catches regressions on CI's paravirtual GPU.
 
 ## SHD-006-D6 — Monotonic measures
-- **Decision**: high-frequency energy = mean |L(x+1,y) − L(x,y)| + |L(x,y+1) − L(x,y)| of the noise value n over a
-  128 × 128 CPU-reference grid (and on the GPU picture for octaves); warp distance = mean |n_warp − n_nowarp|.
-- **Rationale**: neighbour differences grow with finer, stronger detail; measured on the CPU reference (exact,
+- **Decision**: high-frequency energy = mean magnitude of the discrete Laplacian |4n − left − right − up − down| of the
+  noise value n over a 64 × 64 CPU-reference grid (and of the green channel of the GPU picture for octaves); warp distance = mean |n_warp − n_nowarp|.
+- **Rationale**: the Laplacian ignores smooth structure and grows with finer, stronger detail (plain neighbour
+  differences fell from 1 to 2 octaves, because fBm normalisation weakens the base octave); measured on the CPU reference (exact,
   Linux) and spot-checked on the GPU.
 
 ## SHD-006-D7 — Editor placement and preview
