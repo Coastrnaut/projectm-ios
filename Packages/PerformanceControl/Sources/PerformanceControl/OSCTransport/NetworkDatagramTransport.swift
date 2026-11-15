@@ -5,7 +5,10 @@
 // place the Network framework may be used; scripts/check_compliance.py enforces it. No other
 // networking API is used here or anywhere.
 //
-// * Listens only: never connects out, never resolves a host, no Bonjour (OSC-011 adds discovery).
+// * Listens only: never connects out, never resolves a host.
+// * OSC-011 (ADR-0100): `advertise(_:)` announces this listener on the local link with Bonjour as one
+//   `OSCDiscovery.serviceType` service in `OSCDiscovery.domain` (`NWListener.service`), only while the user's
+//   "Let nearby devices find this one" holds; nil withdraws it. Nothing else is announced or browsed here.
 // * Local network only: cellular prohibited, and each peer's address must pass
 //   `OSCPeerAddress.isLocal` before anything is read from it. `NWParameters.acceptLocalOnly` is NOT
 //   set: with it the iOS 27.2 simulator never delivered a loopback datagram (the macOS host did), and
@@ -38,6 +41,8 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
     private var cancelReported = false
     /// OSC-009-R3: each accepted peer connection gets the next number; the address is never kept.
     private var lastSource: UInt64 = 0
+    /// OSC-011: the name to announce, nil for none.
+    private var advertisedName: String?
 
     public init() {}
 
@@ -47,6 +52,21 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
 
     public func stop() {
         queue.async { self.close() }
+    }
+
+    public func advertise(_ name: String?) {
+        queue.async {
+            guard self.advertisedName != name else { return }
+            self.advertisedName = name
+            guard !self.stopRequested, let listener = self.listener else { return }   // applied in open()
+            listener.service = Self.service(name)
+        }
+    }
+
+    /// The one Bonjour service this app announces (OSC-011-R1, R7).
+    static func service(_ name: String?) -> NWListener.Service? {
+        guard let name else { return nil }
+        return NWListener.Service(name: name, type: OSCDiscovery.serviceType, domain: OSCDiscovery.domain)
     }
 
     // MARK: Listener
@@ -66,6 +86,7 @@ public final class NetworkDatagramTransport: OSCDatagramTransport, @unchecked Se
             return
         }
         self.listener = listener
+        if let name = advertisedName { listener.service = Self.service(name) }   // OSC-011
         listener.stateUpdateHandler = { state in self.listenerChanged(state) }
         listener.newConnectionHandler = { connection in self.accept(connection) }
         listener.start(queue: queue)
