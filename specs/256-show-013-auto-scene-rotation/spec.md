@@ -4,7 +4,9 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-013-T01-T12 verified on the Mac, simulator "SHOW13 iPhone 17", iOS 27.2;
+T13 `{device}` open; no device claim). ShowControl 164 tests (1.3 s; 10 new in `SceneRotationTests`, the roadmap
+acceptance); app `SceneRotationAcceptanceTests` 9 (0.13 s); `SceneRotationUITests` 1 (14.6 s).
 
 **Input**: Roadmap row SHOW-013 (P1, depends on SHOW-001, integrated). Observable behavior, verbatim: "Rotate only within
 selected local scene collection on timer or beat." Acceptance, verbatim: "Seeded rotation excludes disabled scenes and
@@ -116,7 +118,7 @@ With a tapped tempo of 120 BPM and "every 8 bars", the scene changes on the down
 - **SHOW-013-R4**: A due rotation MUST go to the picked scene's first cue through the show's step path (timer: quantized like SHOW-002's timed advance; bars: at once), so transitions, Reduce Motion, Reduce flashing, repair and announcements are a cue step's.
 - **SHOW-013-R5**: Every step that moves the show MUST restart the interval from that moment.
 - **SHOW-013-R6**: Rotation MUST pause while a timed cue's countdown runs unheld (SHOW-002/SHOW-007) and while the timed advance's holds apply (pause, blackout, repair report, background, Hold); the interval restarts when the pause ends.
-- **SHOW-013-R7**: Settings MUST offer: Rotate scenes (on/off, off at launch), Collection (All scenes or a folder), Change (Timer or Bars), the interval or bar count, a status line ("Next scene in 0:42", "Next scene in 8 bars", "Paused while the show plays", "Held", "No scenes are in rotation.", "Only one scene is in rotation."), and a "Scenes in rotation" list with one toggle per scene of the collection.
+- **SHOW-013-R7**: Settings MUST offer: Rotate scenes (on/off, off at launch), Collection (All scenes or a folder), Change (Timer or Bars), the interval or bar count, a status line ("Next scene in 0:42", "Next scene on the bar in 0:16", "Paused while the show plays", "Held", "No scenes are in rotation.", "Only one scene is in rotation."), and a "Scenes in rotation" list with one toggle per scene of the collection.
 - **SHOW-013-R8**: The mode, interval, bars, collection and disabled scenes MUST be stored in `settings.show.rotation` (excluded from backups, erased with Settings, cleared by the UI-test reset); unreadable values MUST fall back to the defaults.
 - **SHOW-013-R9**: No network access, no wall-clock assertions in tests; ShowControl MUST keep building on Linux.
 
