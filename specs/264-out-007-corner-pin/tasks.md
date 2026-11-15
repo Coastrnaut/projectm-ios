@@ -6,8 +6,8 @@ Tests are requested by the row's acceptance and the brief. Budgets (owner rule 7
 
 ## Phase 1: Foundational
 
-- [ ] OUT-007-T01 [P] `CornerPinPoint`, `CornerPin` (identity, validity, clamped-or-refused `moving`/`nudging`, stored codec) and `Homography` (Heckbert solve, `map`, `jacobianDeterminant`, `layerMatrix`) (C1; OUT-007-R1, R3, R4) in Packages/PresentationLifecycle/Sources/PresentationLifecycle/CornerPin.swift
-- [ ] OUT-007-T02 [P] Package tests: unit corners → quad within 1e-9, interior points inside the quad, identity is identity; concave, bow-tie, collinear, tiny and out-of-range quads rejected; dense-grid positive Jacobian for valid quads; edits refused or clamped; stored codec round trip and malformed input (OUT-007-S1 to S3, S5) in Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/CornerPinTests.swift
+- [X] OUT-007-T01 [P] `CornerPinPoint`, `CornerPin` (identity, validity, clamped-or-refused `moving`/`nudging`, stored codec) and `Homography` (Heckbert solve, `map`, `jacobianDeterminant`, `layerMatrix`) (C1; OUT-007-R1, R3, R4) in Packages/PresentationLifecycle/Sources/PresentationLifecycle/CornerPin.swift — Verified 2026-11-14: PresentationLifecycle `swift test` (109 tests pass, 8 new CornerPinTests)
+- [X] OUT-007-T02 [P] Package tests: unit corners → quad within 1e-9, interior points inside the quad, identity is identity; concave, bow-tie, collinear, tiny and out-of-range quads rejected; dense-grid positive Jacobian for valid quads; edits refused or clamped; stored codec round trip and malformed input (OUT-007-S1 to S3, S5) in Packages/PresentationLifecycle/Tests/PresentationLifecycleTests/CornerPinTests.swift — Verified 2026-11-14: `swift test --filter CornerPinTests` (8 pass, 0.003 s)
 
 ## Phase 2: User Story 1 - Square the picture on a tilted projector (P1)
 
