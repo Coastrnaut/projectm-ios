@@ -353,6 +353,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let midiMonitor: MIDIMonitorCoordinator
     /// MIDI-003: MIDI learn and the mapping list (opened from the MIDI section; `midi.mappings` points here).
     let midiMappings: MIDIMappingCoordinator
+    /// MIDI-010: Follow MIDI clock (Settings → MIDI; off by default); feeds `tempo` while a clock is locked.
+    let midiClock: MIDIClockCoordinator
     /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
     @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
         guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
@@ -457,7 +459,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         let oscReceiver: OSCReceiver = .system(store: OSCRoutesCoordinator.makeStore(routable: oscRoutable),
                                                routes: OSCRoutesCoordinator.initialRoutes(routable: oscRoutable, defaults: defaults))
         #if DEBUG
-        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? oscReceiver)
+        let fakeOSC: OSCReceiver? = UITestFakeOSC.receiverIfRequested(store: oscReceiver.store, routable: oscRoutable, defaults: defaults)   // OSC-004
+        osc = OSCReceiverCoordinator(settings: settings, receiver: UITestOSCFailure.receiverIfRequested() ?? fakeOSC ?? oscReceiver)
         #else
         osc = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
         #endif
@@ -571,6 +574,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         #endif
         tempo = TempoCoordinator(clock: tempoClock)
+        midiClock = MIDIClockCoordinator(input: midiInput, tempo: tempo, defaults: defaults)   // MIDI-010
+        midi.clock = midiClock
         #if DEBUG
         // TempoConfidenceUITests: `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` (ANL-006 D7).
         if let script = defaults.string(forKey: "uitestTempoEstimate").flatMap(TempoCoordinator.estimateScript) {
@@ -660,6 +665,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles
@@ -686,6 +692,10 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         midiMappings.profiles = MIDIProfilesCoordinator.makeDefault(mappings: midiMappings)   // MIDI-012
         _ = hapticBeat   // ACC-007-R7: a stored "on" installs the tempo observer before any visual starts
         osc.peers = OSCPeersCoordinator(allowlist: osc.peerAllowlist, defaults: defaults)   // OSC-008 (outside init: type-check budget)
+        if let routes = osc.routes {   // OSC-004: learn on OSC Routes, announced on the .osc lane
+            let announcer: AccessibilityAnnouncer = statusEvents.announcer
+            osc.learn = OSCLearnCoordinator(osc: osc, routes: routes) { (text: String) -> Void in announcer.announce(text, kind: .osc) }
+        }
         photos.onPhotoChange = { [weak self] (_: StoredPhoto?) in self?.refreshPhotoContent() }   // MED-006: the slideshow wins when on
         connectSlideshow()   // MED-006
         connectLogo()   // MED-010
@@ -1196,7 +1206,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
-        case .particleFountain: .particleFountain(gravity: settings.particleGravity)   // VIS-008
+        case .particleFountain: .particleFountain(gravity: settings.particleGravity, emitter: settings.particleEmitter.effective)   // VIS-008, SHD-007
         case .particleOrbit: .particleOrbit(radius: settings.particleOrbitRadius)   // VIS-009
         case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014

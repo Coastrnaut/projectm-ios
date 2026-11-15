@@ -70,6 +70,7 @@ struct SceneHUDContent: Equatable {
     static func tempoSourceName(_ readout: TempoReadout) -> String {
         switch readout {
         case .manual: "Tap"
+        case .midiClock: "MIDI clock"   // MIDI-010
         case .stable, .uncertain: "Estimated"
         case .searching: "None"
         }
@@ -82,6 +83,9 @@ struct SceneHUDContent: Equatable {
         case .manual(let bpm):
             let whole: Int = TempoCoordinator.wholeBPM(bpm)
             return "\(whole) BPM from tap"
+        case .midiClock(let bpm):   // MIDI-010
+            let whole: Int = TempoCoordinator.wholeBPM(bpm)
+            return "\(whole) BPM from MIDI clock"
         case .stable(let bpm):
             let whole: Int = TempoCoordinator.wholeBPM(bpm)
             return "\(whole) BPM, estimated"

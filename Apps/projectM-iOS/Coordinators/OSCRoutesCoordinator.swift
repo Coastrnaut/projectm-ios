@@ -10,6 +10,8 @@
 //   FILE-011 Settings erase; neither holds a peer address or a received value.
 // * Every change replaces the dispatcher's allowlist at once (`OSCDispatcher.setRoutes`), so a route turned off
 //   is ignored from the next message and its parameter returns to the manual value.
+// * OSC-004 (specs/274-osc-004-osc-learn): `bindLearned` stores a learned address as a user alias (replacing your
+//   alias of the same address to another parameter) and turns the address on.
 import Foundation
 import Observation
 import ParameterGraph
@@ -139,6 +141,24 @@ final class OSCRoutesCoordinator {
             save()
             return true
         }
+    }
+
+    /// OSC-004-R7: binds a learned address to `parameter` as a user alias, enabled; nothing changes unless the result
+    /// is `.added` or `.replaced`.
+    func bindLearned(address: String, parameter: ParameterID) -> OSCLearnResolution {
+        let (resolution, aliases) = OSCLearnBinding.bind(address: address, parameter: parameter, table: table, userAliases: userAliases)
+        switch resolution {
+        case .added, .replaced:
+            aliasError = nil
+            userAliases = aliases
+            disabled.remove(address)
+            save()
+        case .alreadyBound:
+            if disabled.remove(address) != nil { save() }
+        case .full, .unavailable:
+            break
+        }
+        return resolution
     }
 
     func deleteAlias(address: String) {

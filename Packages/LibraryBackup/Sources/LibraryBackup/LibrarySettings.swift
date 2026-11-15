@@ -101,6 +101,7 @@ public enum LibrarySettingsPolicy {
         "settings.beatRings.life",   // VIS-006-R9
         "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   // VIS-007-R9
         "settings.particleFountain.gravity",   // VIS-008-R10
+        "settings.particleFountain.emitter",   // SHD-007-R8: the Particle emitter editor (absent at defaults)
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   // VIS-013-R9
         "settings.kaleidoscope.wedges",   // VIS-014-R9
@@ -135,6 +136,7 @@ public enum LibrarySettingsPolicy {
     /// Read by the app but deliberately left out (documented; a test checks none is included).
     public static let excludedKeys: [String] = [
         "settings.osc.enabled", "settings.midi.enabled",
+        "settings.midi.followClock",   // MIDI-010-R6: this device's MIDI setup (Follow MIDI clock), like Listen for MIDI
         "settings.scene.locked",   // SCN-015: a performance lock is session state of this device
         "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   // OSC-008-R10: this device's network only
         "settings.modulation.quantize",   // MOD-017: a performance timing choice of this device

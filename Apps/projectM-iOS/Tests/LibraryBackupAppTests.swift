@@ -50,6 +50,7 @@ final class LibraryBackupAppTests: XCTestCase {
             + HapticBeatCoordinator.allKeys   // ACC-007-R8
             + MotionModulationCoordinator.allKeys   // CAM-011-R12
             + FaceTrackingCoordinator.allKeys   // CAM-009-R3 (excluded: consent never travels)
+            + MIDIClockCoordinator.allKeys   // MIDI-010-R6 (excluded: this device's MIDI setup)
             + ExternalOutputSetting.keys)   // OUT-004-R8, OUT-003-R7 (excluded: the user's display hardware)
         let included = Set(LibrarySettingsPolicy.includedKeys)
         let excluded = Set(LibrarySettingsPolicy.excludedKeys)
@@ -65,6 +66,7 @@ final class LibraryBackupAppTests: XCTestCase {
                         ShowCueQuantizer.key,   // SHOW-003: a performance timing choice of this device
                         ShowTransportCoordinator.loopKey,   // SHOW-007: a performance choice of this device
                         SceneRotationCoordinator.key,   // SHOW-013: a performance choice of this device
+                        MIDIClockCoordinator.followKey,   // MIDI-010: this device's MIDI setup
                         SplitEditorSetting.key])   // UIX-007-R7
                        .union(RecordingQualitySetting.aspectKeys)   // REC-014-R7
                        .union(ExternalOutputSetting.keys)   // OUT-004-R8, OUT-003-R7

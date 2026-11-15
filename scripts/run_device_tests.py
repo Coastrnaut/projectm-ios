@@ -101,6 +101,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.beatRings.life",   # VIS-006-R9
                 "settings.mandala.symmetry", "settings.mandala.mirror", "settings.mandala.petal",   # VIS-007-R9
                 "settings.particleFountain.gravity",   # VIS-008-R10
+                "settings.particleFountain.emitter",   # SHD-007-R8 (Particle emitter editor, absent at defaults)
                 "settings.particleOrbit.radius",   # VIS-009-R10
                 "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   # VIS-013-R9
                 "settings.kaleidoscope.wedges",   # VIS-014-R9
@@ -111,6 +112,7 @@ ALLOWED_KEYS = {"favorites", "lastPresetID",
                 "settings.osc.peerAllowlist.enabled", "settings.osc.approvedPeers",   # OSC-008 (user-approved local hosts)
                 "settings.midi.enabled",   # MIDI-001 (off by default; no device names stored)
                 "settings.midi.mappings",  # MIDI-003 (channel, controller and parameter ID per line; no device)
+                "settings.midi.followClock",  # MIDI-010 (Follow MIDI clock; absent = off)
                 "settings.parameterShelf.pins",  # UIX-004-R10 (ordered pinned parameter IDs)
                 "settings.scene.locked",  # SCN-015 (scene lock; absent = unlocked)
                 "settings.modulation.quantize",  # MOD-017 (quantize mode; absent = off)

@@ -47,6 +47,8 @@ CHECKED = [
     "Coordinators/PresetCoordinator+Audition.swift",   # PRE-010-R9: previews announce on the library lane
     "Views/PresetAuditionBar.swift",                   # PRE-010-R9
     "Coordinators/MIDIMappingCoordinator.swift",       # MIDI-003-R11: learn announces through the announcer
+    "Coordinators/OSCLearnCoordinator.swift",          # OSC-004-R10: learn announces on the .osc lane
+    "Views/OSCLearnSection.swift",                     # OSC-004-R10
     "Coordinators/MIDIMappingCoordinator+Notes.swift", # MIDI-006-R9: note learn announces through the announcer
     "Coordinators/MIDIMappingCoordinator+Panic.swift", # MIDI-013-R6: "MIDI reset" through the announcer
     "Coordinators/MIDIMappingCoordinator+HighResolution.swift",  # MIDI-005-R5, R6: 14-bit through the announcer
