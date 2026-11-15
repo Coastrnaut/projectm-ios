@@ -89,6 +89,7 @@
 //   the glow switched on the governor defers the serious-state frame-rate cap to the ladder (PERF-003-R7).
 import AnalysisFeatures
 import AudioCore
+import Compositor
 import FlashSafety
 import FrameCapture
 import FrameTiming
@@ -1137,10 +1138,18 @@ final class NativeSpectrumHost: PresentationBoundResource {
 
 /// The CAMetalLayer-backed view; one accessibility element (VIS-001-R18, VIS-002-R13). The host sets
 /// its label, identifier and value for the shown visual.
-final class NativeSpectrumLayerView: UIView {
+/// OUT-009 (specs/268, contract C3): a display calibration receiver that accepts only when its host installed
+/// `onDisplayCalibrationChange` (the compositor hosts do: their output pass applies it). The native spectra draw
+/// straight into the drawable with no shared final pass, so they leave it unset (not covered, OUT-009-R3).
+final class NativeSpectrumLayerView: UIView, DisplayCalibrationReceiver {
     override class var layerClass: AnyClass { CAMetalLayer.self }
     var metalLayer: CAMetalLayer { layer as! CAMetalLayer }
     var onLayout: (() -> Void)?
+    var displayCalibration: DisplayCalibration = .identity {
+        didSet { if displayCalibration != oldValue { onDisplayCalibrationChange?(displayCalibration) } }
+    }
+    var onDisplayCalibrationChange: ((DisplayCalibration) -> Void)?
+    var acceptsDisplayCalibration: Bool { onDisplayCalibrationChange != nil }
 
     init(device: MTLDevice) {
         super.init(frame: .zero)

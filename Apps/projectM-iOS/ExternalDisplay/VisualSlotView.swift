@@ -20,6 +20,11 @@
 // corner pin's projective transform, set as its layer's `sublayerTransform` (Core Animation composites it: no
 // extra render pass, any kind of layer content). The device slot never takes one. While the corner-pin editor
 // is open the slot shows OUT-012's test card as a layer between the visual and the cover.
+// OUT-009 (spec specs/268-out-009-output-color-calibration, contract C4; research OUT-009-D1, D6): Core Animation has
+// no public colour transform on iOS, so an external slot hands its display calibration to the held visual's view
+// when it is a `DisplayCalibrationReceiver` (projectM's ANGLE view, a compositor host's view), whose renderer applies
+// it in its final pass. The device slot, and a visual leaving any slot, get the identity.
+import Compositor
 import PresentationLifecycle
 import SwiftUI
 import UIKit
@@ -70,6 +75,10 @@ final class VisualSlotView: UIView {
         }
     }
     private let card = CornerPinCardLayer()
+    /// OUT-009: the display calibration (applied to held receivers on external slots only).
+    var calibration: DisplayCalibration = .identity {
+        didSet { if calibration != oldValue { applyCalibration() } }
+    }
 
     init(role: Role) {
         self.role = role
@@ -121,6 +130,32 @@ final class VisualSlotView: UIView {
         placement = currentPlacement()
         for view in subviews { lay(view) }
         applyResolution()
+        applyCalibration()
+    }
+
+    /// OUT-009: the calibration each held receiver applies here (the identity on the device).
+    private var effectiveCalibration: DisplayCalibration { role == .external ? calibration : .identity }
+
+    private func applyCalibration() {
+        let value: DisplayCalibration = effectiveCalibration
+        for view in subviews {
+            guard let receiver = view as? DisplayCalibrationReceiver, receiver.displayCalibration != value else { continue }
+            receiver.displayCalibration = value
+        }
+    }
+
+    private static func removeCalibration(_ view: UIView) {
+        guard let receiver = view as? DisplayCalibrationReceiver, !receiver.displayCalibration.isIdentity else { return }
+        receiver.displayCalibration = .identity
+    }
+
+    /// OUT-009 (tests, DEBUG probe): "yes" when the held visual applies this slot's (non-identity) calibration,
+    /// "unsupported" when it cannot, "no" otherwise; nil without a visual.
+    var calibrationState: String? {
+        guard let view = subviews.first else { return nil }
+        guard let receiver = view as? DisplayCalibrationReceiver, receiver.acceptsDisplayCalibration else { return "unsupported" }
+        let value: DisplayCalibration = effectiveCalibration
+        return !value.isIdentity && receiver.displayCalibration == value ? "yes" : "no"
     }
 
     /// OUT-003-D3: the choice is resolved against the screen (this slot's size and its own display
@@ -218,6 +253,7 @@ final class VisualSlotView: UIView {
     func hold(_ visual: UIView) -> Bool {
         for view in subviews where view !== visual {
             Self.removeScale(view)
+            Self.removeCalibration(view)   // OUT-009
             view.removeFromSuperview()
         }
         let moved = visual.superview !== self
@@ -229,6 +265,7 @@ final class VisualSlotView: UIView {
         placement = currentPlacement()
         lay(visual)
         applyResolution()   // OUT-003: the external scale, or none on the device
+        applyCalibration()   // OUT-009: the display's calibration, or the identity on the device
         syncCoverFrame()
         visual.setNeedsLayout()
         return moved
@@ -298,6 +335,7 @@ final class VisualSlotView: UIView {
     func removeVisuals() {
         for view in subviews {
             Self.removeScale(view)   // OUT-003: a visual leaving the external slot renders at its next host's scale
+            Self.removeCalibration(view)   // OUT-009: and uncalibrated
             view.removeFromSuperview()
         }
         resolvedOutput = nil

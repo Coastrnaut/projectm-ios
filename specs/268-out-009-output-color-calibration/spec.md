@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (OUT-009-T01-T13 verified on the Mac host and the iOS 27.2 simulator; T14 `{device}` open)
 
 **Input**: User description: "Implement OUT-009 (Output color calibration) from docs/FEATURE_ROADMAP_AUTONOMOUS.md.
 Observable behavior, verbatim: "Apply gamma and RGB trims per display." Acceptance, verbatim: "Calibration

@@ -16,6 +16,9 @@
 //      the gain.
 //   3. Output: the frame x gain in linear light (exact sRGB decode/encode), never lifted; with
 //      gain 1 the scene is copied unchanged.
+//      OUT-009 (specs/268-out-009-output-color-calibration): then, only while a display calibration is set, each
+//      encoded channel becomes clamp(gain_c × c^exponent, 0, 1); `PMFlashLimiterDrawOutput` redraws this step from the
+//      current state (calibrated or not) for REC-001's read-back.
 // Tile rows are counted from the bottom of the picture (GL's origin); only consistency matters.
 
 #define TILE_SIDE 4
