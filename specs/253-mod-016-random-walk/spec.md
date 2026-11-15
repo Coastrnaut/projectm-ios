@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (MOD-016-T01-T10 verified on the Mac: host package tests and the app unit test host on a private iOS 27.2 simulator; no device task)
 
 **Input**: User description: "Implement MOD-016 (Random walk modulator) from
 docs/FEATURE_ROADMAP_AUTONOMOUS.md. Observable behavior, verbatim: "Generate bounded seeded smooth random
