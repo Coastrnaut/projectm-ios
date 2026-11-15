@@ -62,8 +62,9 @@ final class UserPresetEditingTests: XCTestCase {
         XCTAssertEqual(trial.calls.last, Data(bytes), "the edited text was tried before it was stored")
         XCTAssertEqual(outcome.message, "Saved “My Alpha”.")
 
-        // Content-addressed: the new text is stored, the old one is gone, nothing else is there.
-        XCTAssertEqual(Set(F.snapshot(directory).keys), ["/index.json", "/files/\(saved.sha256).milk"])
+        // Content-addressed: the new text is stored, the old one left `files/`; PRE-017 keeps it as a version.
+        XCTAssertEqual(Set(F.snapshot(directory).keys), ["/index.json", "/files/\(saved.sha256).milk", "/history.json",
+                                                         "/versions/\(copy.sha256).milk"])
         let data = await later.data(for: copy.id)
         XCTAssertEqual(data, Data(bytes))
         XCTAssertFalse(FileManager.default.fileExists(atPath: directory.appendingPathComponent("edit.json").path))
