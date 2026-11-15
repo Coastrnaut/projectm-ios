@@ -7,11 +7,12 @@ Format: `[ID] [P?] [Story] Description`. `{device}` = needs a physical device an
 
 ## Phase 1: Foundational model (blocks every story)
 
-- [ ] OUT-008-T01 [US2] `GridWarp` in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/GridWarp.swift`:
-  size, identity, Catmull-Rom surface, validator (research OUT-008-D4), clamped/refused edits, resampling, codec (C1).
-- [ ] OUT-008-T02 [US2] `GridWarpTests.swift`: each rule with an example, identity reproduction, affine exactness,
+- [X] OUT-008-T01 [US2] `GridWarp` in `Packages/PresentationLifecycle/Sources/PresentationLifecycle/GridWarp.swift`:
+  size, identity, Catmull-Rom surface, validator (research OUT-008-D4), clamped/refused edits, resampling, codec (C1). — Verified 2026-11-15: GridWarpTests (below).
+- [X] OUT-008-T02 [US2] `GridWarpTests.swift`: each rule with an example, identity reproduction, affine exactness,
   fuzzed meshes (accepted ⇒ every drawn triangle positive and the outline simple; refused ⇒ a rule fails), codec round
-  trip and malformed values, edits refused keep the mesh, resampling (OUT-008-S3).
+  trip and malformed values, edits refused keep the mesh, resampling (OUT-008-S3). — Verified 2026-11-15: `swift test --package-path
+  Packages/PresentationLifecycle` 127 tests, 0 failures (GridWarpTests 7, 1.7 s; package 2.2 s).
 
 ## Phase 2: Output passes (US1, P1)
 
