@@ -59,6 +59,27 @@ interaction); each answer is the conservative, local-first option.
 - Q: Undo? → A: Each editor window has its own undo and redo history (SCN-010 bounds), independent of other
   windows and of the live look's history.
 
+### Session 2026-11-15 (speckit-clarify)
+
+Answered by Claude under owner rules 4 and 9 (recommended option first).
+
+- Q: When the main window steps to a cue whose scene has an editor window open with unsaved edits, what does it
+  show? → A: The saved file only. Unsaved edits live in the editor window until Save; the main window never
+  reads an editor's model. Rejected: applying unsaved edits live (it would make a window a second performer).
+- Q: When the system creates a second main window, which one performs? → A: The first main window to appear
+  claims the performance role; any other shows "projectM is open in another window" with nothing live. When the
+  performing window closes, the next main window on screen takes the role.
+- Q: What happens to unsaved edits when an editor window is closed? → A: They are discarded; the file stays as
+  last saved. iPadOS gives an app no way to stop a window closing, so the window shows "Unsaved changes" under
+  its title while dirty and VoiceOver reads it. Rejected: autosaving on close (a half-finished edit would
+  silently replace the stored scene).
+- Q: How is a conflict with a change made elsewhere resolved? → A: Save compares the file's current bytes with
+  the bytes the editor loaded (or last saved); if they differ it writes nothing and offers Replace (write this
+  window's document) or Reload (discard this window's edits and read the file). Rejected: last writer wins
+  silently.
+- Q: Is the number of editor windows limited? → A: No app limit beyond iPadOS's; each editor holds one scene
+  document (at most 1 MiB) and its SCN-010-bounded history (at most 4 MB).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Edit two saved scenes side by side (Priority: P1)
@@ -116,6 +137,7 @@ to the same file elsewhere (for example a rename in the main window) after the e
   stored and writes nothing.
 - An invalid name (empty, too long, several lines): refused with SCN-003's message; the name is unchanged.
 - State restoration brings back an editor window for a scene that no longer exists: it shows the missing message.
+- The performing main window closes while another main window is on screen: that window takes the role.
 - An external display connected while editor windows are open: the external output still follows the main
   window only (OUT-001).
 
@@ -146,6 +168,8 @@ to the same file elsewhere (for example a rename in the main window) after the e
 - **UIX-008-R10**: The external display (OUT-001) MUST keep working with multiple windows enabled.
 - **UIX-008-R11**: Editor windows MUST meet FR-070: every control labelled for VoiceOver, Dynamic Type, and the
   opacity slider through the ACC-005 accessible-parameter helper.
+- **UIX-008-R12**: The main window MUST read only saved scene files; an editor's unsaved edits never reach the
+  live output.
 
 ### Key Entities
 
