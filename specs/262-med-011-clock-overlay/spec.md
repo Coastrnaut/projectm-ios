@@ -55,7 +55,7 @@ human interaction); each answer is the conservative, local-first option.
   and CMP-013's caching keeps every other frame free.
 - Q: Where and how is it drawn? → A: With the text overlay's own placement and style model
   (MED-009's `TextOverlaySpec` fields), stored separately from the Text visual's message. Defaults:
-  top, trailing, size 6 % of the picture height, white bold with the default black outline. Settings
+  top, trailing, size 6 % of the picture height, white bold Menlo with the default black outline. Settings
   offers position (top, middle, bottom) and alignment (leading, centre, trailing); the other style
   fields keep their defaults in this row.
 - Q: Is the clock content or device chrome? → A: Content: it is a layer of the compositor visuals'
@@ -69,6 +69,13 @@ human interaction); each answer is the conservative, local-first option.
 - Q: How do VoiceOver users read the time? → A: The drawn clock adds no accessibility element (the
   system status bar already speaks the time); the Settings controls are labelled and the Show Clock
   row's value says the current format.
+
+- Q: Should the clock's digits keep a fixed width so it does not shift sideways as the time changes? → A: Yes, by
+  default: the clock's default font is Menlo (fixed-width digits, a system font already offered by
+  MED-009), so a trailing or centred clock does not jiggle each minute. No renderer change (a
+  digit-width feature for the system font was rejected: it would change MED-009's shared rasterizer).
+- Q: Where are the clock's controls? → A: A "Clock" section in Settings' media sections, after the
+  Logo section (both are overlays on the compositor visuals).
 
 ## User Scenarios & Testing *(mandatory)*
 
