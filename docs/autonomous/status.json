@@ -14,10 +14,9 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 19,
-   "implementing": 3,
-   "integrated": 56,
-   "unit_passed": 1
+   "audited": 18,
+   "implementing": 4,
+   "integrated": 57
   },
   "P3": {
    "audited": 6,
@@ -26,11 +25,10 @@
   }
  },
  "by_state": {
-  "audited": 27,
-  "implementing": 4,
-  "integrated": 293,
-  "skipped_existing": 1,
-  "unit_passed": 1
+  "audited": 26,
+  "implementing": 5,
+  "integrated": 294,
+  "skipped_existing": 1
  },
  "device_gate": {
   "blocked": [],
@@ -58,7 +56,6 @@
    "OUT-014",
    "QA-011",
    "QA-012",
-   "SHOW-009",
    "SHOW-012",
    "UIX-006",
    "UIX-008",
@@ -73,7 +70,7 @@
   ],
   "phase": "implementation",
   "reasons": [
-   "32 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
+   "31 features are not implemented yet (first: FX-005, FX-006, FX-007, FX-008, FX-010)"
   ]
  },
  "features": {
@@ -1959,13 +1956,13 @@
   },
   "OUT-014": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/out-014",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "PERF-001": {
    "attempts": 0,
@@ -2922,10 +2919,10 @@
    "branch": "feature/show-009",
    "branch_sha": "67f0451e6fba6c8d7f6a696fc953a24bc3804418",
    "error_category": null,
-   "integrated_sha": null,
+   "integrated_sha": "c13a236e462fe902ff733240f31b4ae2c4dab659",
    "priority": "P2",
    "spec_dir": null,
-   "state": "unit_passed"
+   "state": "integrated"
   },
   "SHOW-010": {
    "attempts": 0,
@@ -4655,6 +4652,11 @@
    "sha": "e4ad41bb"
   },
   {
+   "branch": "feature/show-009",
+   "id": "SHOW-009",
+   "sha": "c13a236e462fe902ff733240f31b4ae2c4dab659"
+  },
+  {
    "branch": "feature/show-010",
    "id": "SHOW-010",
    "sha": "5ec1a2e59b212f5fb32d2fcfb59bf2e2ee6d4560"
@@ -4830,5 +4832,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T05:08:38Z"
+ "updated": "2026-11-15T05:11:46Z"
 }
