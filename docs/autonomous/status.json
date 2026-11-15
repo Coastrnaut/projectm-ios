@@ -14,21 +14,24 @@
    "integrated": 151
   },
   "P2": {
-   "audited": 16,
+   "audited": 15,
+   "built": 1,
    "implementing": 2,
    "integrated": 61
   },
   "P3": {
    "audited": 4,
-   "implementing": 1,
-   "integrated": 4
+   "integrated": 4,
+   "unit_passed": 1
   }
  },
  "by_state": {
-  "audited": 22,
-  "implementing": 3,
+  "audited": 21,
+  "built": 1,
+  "implementing": 2,
   "integrated": 300,
-  "skipped_existing": 1
+  "skipped_existing": 1,
+  "unit_passed": 1
  },
  "device_gate": {
   "blocked": [],
@@ -1110,13 +1113,13 @@
   },
   "FX-006": {
    "attempts": 0,
-   "branch": null,
+   "branch": "feature/fx-006",
    "branch_sha": null,
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "audited"
+   "state": "implementing"
   },
   "FX-007": {
    "attempts": 0,
@@ -1811,12 +1814,12 @@
   "OSC-012": {
    "attempts": 0,
    "branch": "feature/osc-012",
-   "branch_sha": null,
+   "branch_sha": "c28bfbd930248cb691ca24fee1e835683ed7e41e",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P3",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "unit_passed"
   },
   "OUT-001": {
    "attempts": 0,
@@ -3031,12 +3034,12 @@
   "UIX-006": {
    "attempts": 0,
    "branch": "feature/uix-006",
-   "branch_sha": null,
+   "branch_sha": "459c885c81c59d885a31f060d319f6a10d0a2dd7",
    "error_category": null,
    "integrated_sha": null,
    "priority": "P2",
    "spec_dir": null,
-   "state": "implementing"
+   "state": "built"
   },
   "UIX-007": {
    "attempts": 0,
@@ -4856,5 +4859,5 @@
   }
  ],
  "total": 326,
- "updated": "2026-11-15T05:48:15Z"
+ "updated": "2026-11-15T06:04:53Z"
 }

@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T05:48:15Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T06:04:53Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,21 @@
 
 | State | Features |
 |---|---|
-| audited | 22 |
-| implementing | 3 |
+| audited | 21 |
+| implementing | 2 |
+| built | 1 |
+| unit_passed | 1 |
 | integrated | 300 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | integrated | skipped_existing |
-|---|---|---|---|---|
-| P0 | 2 | 0 | 84 | 1 |
-| P1 | 0 | 0 | 151 | 0 |
-| P2 | 16 | 2 | 61 | 0 |
-| P3 | 4 | 1 | 4 | 0 |
+| Priority | audited | implementing | built | unit_passed | integrated | skipped_existing |
+|---|---|---|---|---|---|---|
+| P0 | 2 | 0 | 0 | 0 | 84 | 1 |
+| P1 | 0 | 0 | 0 | 0 | 151 | 0 |
+| P2 | 15 | 2 | 1 | 0 | 61 | 0 |
+| P3 | 4 | 0 | 0 | 1 | 4 | 0 |
 
 ## Final device gate
 
@@ -2166,6 +2168,15 @@ None.
 - `swift test --package-path Packages/LibraryBackup`: pass at `62748f099516` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-011/20261115T003248/swift-test_LibraryBackup.log`)
 - `swift test --package-path Packages/PerformanceControl`: pass at `62748f099516` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-011/20261115T003248/swift-test_PerformanceControl.log`)
 - `test_scripts conflict with SHOW-012 resolved (186 OK); swift test PerformanceControl 337; compliance, permission catalog, docs OK; postmerge projectM-iOSTests 1275 + OSCDiscoveryUITests 1`: pass at `111924d01799` (log `.autonomous/logs/integration/batch124/app-tests.log`)
+
+### OSC-012 Peer cue sync (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `c28bfbd93024` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-012/20261115T010310/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `c28bfbd93024` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-012/20261115T010310/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `c28bfbd93024` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-012/20261115T010310/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `c28bfbd93024` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-012/20261115T010310/autonomous-tests.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `c28bfbd93024` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-012/20261115T010310/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `c28bfbd93024` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-012/20261115T010310/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/PerformanceControl`: pass at `c28bfbd93024` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OSC-012/20261115T010310/swift-test_PerformanceControl.log`)
 
 ### OUT-001 External display scene (integrated)
 - `python3 scripts/check_compliance.py`: pass at `a95a4a96502a` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/OUT-001/20261113T133155/compliance.log`)
