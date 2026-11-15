@@ -5,7 +5,8 @@
 // sample points (the cell centres; four per 4 × 4 safety tile) is evaluated with the frame's frequency, octaves,
 // seed, warp and drift, and each sample's colour at gain 1 (palette × (0.25 + 0.75 n) × brightness, as the shader) is
 // kept. VIS-014: with the kaleidoscope on, each sample point is folded first, exactly as the shader does. VIS-015: the
-// tunnel's samples come from `TunnelMapping` (palette at its texture × light × brightness, as its shader).
+// tunnel's samples come from `TunnelMapping` (palette at its texture × light × brightness, as its shader). VIS-020: the
+// waterfall's samples are `WaterfallFlashCells`' exact cell means.
 // `levels(gain:transfer:into:)` gives each tile the mean of its four samples after the downstream stages, and
 // the whole frame the mean of all 64. Exact at the sample points; the field is smooth at these scales. All storage is
 // allocated in `init`; ≤ 64 × 3 × 6 noise evaluations per frame. Pure Swift (every platform). Not Sendable.
@@ -112,6 +113,19 @@ public final class NoiseFieldFlashAreas {
                 let base: LinearColor = Self.paletteColor(s.t, stops: paletteStops)
                 let scale: Float = s.light * lit
                 colors[k] = LinearColor(red: base.red * scale, green: base.green * scale, blue: base.blue * scale, alpha: 1)
+            }
+        }
+    }
+
+    /// VIS-020: the 64 samples of the waterfall are the cells' mean colours (exact mean of the texels each shows) ×
+    /// `brightness`; values hold the cells' luminance at brightness 1.
+    public func loadWaterfall(_ cells: WaterfallFlashCells, history: SpectrumWaterfallHistory, brightness: Float) {
+        for row in 0..<Self.gridSide {
+            for column in 0..<Self.gridSide {
+                let k: Int = row * Self.gridSide + column
+                let c: LinearColor = cells.cellColor(row: row, column: column, history: history)
+                values[k] = c.relativeLuminance
+                colors[k] = LinearColor(red: c.red * brightness, green: c.green * brightness, blue: c.blue * brightness, alpha: 1)
             }
         }
     }
