@@ -44,6 +44,8 @@ local-first option.
 - Q: How is flash safety estimated for a picture that is a texture? → A: The 8 × 8 estimate cells (two per safety tile each way) each take the exact mean linear colour of the history texels they show (32 columns × 64 rows each), recomputed only from the rows that changed; the envelope solves the gain over the 17 areas from these, every frame, with Reduce flashing as for every native visual. A waterfall changes by at most one row in 64 per cell per step, so it is slow by construction (VIS-020-R7).
 - Q: What does Reduce Motion do? → A: It halves the scroll speed: the row step doubles to 234.375 ms (the ring then spans 120 s), from the next row; storage is unchanged. Rejected: pausing (the visual would stop showing the music) (VIS-020-R8).
 - Q: Which settings? → A: No new setting key. Bars applies (it sets how many bands feed the columns); palette and glow are shared. Accessibility: identifier `spectrumWaterfall`, label "Spectrum Waterfall visualization", value "Newest at top, Glow off". A loop restart (the host's) clears the history. Rejected: a history-length setting (would need a different ring size or a non-exact fill) (VIS-020-R9, R12).
+- Q: When the user leaves the waterfall for another noise-field mode and comes back, is the old history shown? → A: No. Entering the waterfall mode clears the history (rows black, row clock re-anchored at the next frame), because rows from before the gap would look like recent sound; the storage and texture are the same objects. Rejected: keeping it (misleading time axis) (VIS-020-R3, R4).
+- Q: Does the waterfall add to per-frame work when nothing new arrives? → A: No. Between row steps only the running sum of the current row (256 additions) and the envelope's gain run; texture copies and the flash cells' update happen only for rows written that frame (about 8.5 per second), and nothing is allocated per frame (VIS-020-R3, R7).
 - Q: Is the waterfall saved in scenes? → A: No, as VIS-013 to VIS-015: it is no SCN-001 layer kind; a scene captured while it is shown records no native layer (VIS-020-R11).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -100,6 +102,7 @@ However long the app runs, and whatever size the screen or window becomes, the w
 - Fewer than 512 rows written: the unwritten rows are black.
 - Long stalls (more than 60 s between frames): at most 512 rows are written; the ring holds the newest level.
 - Time running backwards: no row is written; the clock re-anchors at the new time.
+- Leaving the waterfall mode and coming back: the history starts empty again (same storage).
 - Bars changed mid-history: earlier rows keep their resolution; new rows use the new band count.
 
 ## Requirements *(mandatory)*
