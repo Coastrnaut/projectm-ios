@@ -79,6 +79,11 @@ per beat, a 120 BPM tempo for 0.25 s then none, the same fixture bands, captured
 `NoiseFieldGenerator` with `tunnelPace: 1` (`Tests/RenderGoldensTests/TunnelGoldenTests.swift`); record with
 `--filter TunnelGolden` or `-only-testing:RenderGoldensTests/TunnelGoldenTests`.
 
+`GeneratorGoldens/SignedDistance/<class>/` (VIS-017) holds the SDF shapes' golden: `signed-distance-<w>x<h>-f0.png`
+(Medium quality, the spectrum palette, the same fixture bands, captured at 0.5 s), through `NoiseFieldGenerator` with
+`signedDistance` set (`Tests/RenderGoldensTests/SignedDistanceGoldenTests.swift`); record with
+`--filter SignedDistanceGolden` or `-only-testing:RenderGoldensTests/SignedDistanceGoldenTests`.
+
 `GeneratorGoldens/Waterfall/<class>/` (VIS-020) holds the spectrum waterfall's golden: `waterfall-<w>x<h>-f0.png` (the
 spectrum palette, a bass slope plus one lit band stepping five bands right each second, 10 Hz frames for 12 s), through
 `NoiseFieldGenerator` with `waterfall: true` (`Tests/RenderGoldensTests/WaterfallGoldenTests.swift`); record with
