@@ -52,6 +52,23 @@ interaction); each answer is the conservative, local-first option.
 - Q: Is anything new stored? → A: No. Applying a profile writes the existing `settings.externalDisplay.*` keys
   through the setting, exactly as the controls do. No new UserDefaults key, no profile list, no "last imported".
 
+### Session 2026-11-15 (speckit-clarify)
+
+- Q: Which file name and format does a profile use? → A: Sorted-key, pretty-printed UTF-8 JSON with the format tag
+  `org.projectmios.output-profile` and version 1, saved as `projectM Output Profile.pmoutput` (MIDI-012's `.pmmidi`
+  convention). Import accepts any picked data file and the content decides, as MIDI-012 does.
+- Q: Share sheet or file export? → A: The system file export ("Save to Files" style mover) with the file picker for
+  import, as MIDI-012 does: the file goes only where the user puts it, and the app's temporary copy is removed on
+  every outcome. No share sheet (it offers network destinations by default).
+- Q: How are the outcome messages made accessible? → A: One status line below the two buttons, a standard text row
+  VoiceOver reads; the different-class warning is a system confirmation dialog (announced by the system). Messages:
+  "Exported output profile.", "Applied output profile.", "Applied output profile. The display could not be checked
+  (no display connected or no display in the file).", "Could not import: <reason>", "Import cancelled. Nothing
+  changed."
+- Q: How do UI tests avoid the system file UIs? → A: A DEBUG-only launch argument `-uitestOutputProfileSimulation`:
+  Export writes and removes the temporary file as usual but keeps the document in memory instead of opening the
+  mover; Import reads that kept document instead of opening the picker. Release builds contain none of it.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Save a calibrated projector setup to a file (Priority: P1)
@@ -117,7 +134,7 @@ says why.
   mode, custom percentage, output mode, corner pin (four points) and calibration (gamma, red, green, blue), and,
   when a display is connected, its class (native width and height, screen pixel aspect, refresh rate, gamut).
 - **OUT-014-R3**: The document MUST contain no device or display name, identifier or network address.
-- **OUT-014-R4**: Export MUST go through the system file export as a local file; the app uploads nothing and
+- **OUT-014-R4**: Export MUST go through the system file export (no share sheet) as a local `.pmoutput` file; the app uploads nothing and
   removes its temporary copy on every outcome.
 - **OUT-014-R5**: Import MUST read a user-picked file of at most 16 KB and validate format, version, field set and
   every value with the rules the settings use, before anything changes.
