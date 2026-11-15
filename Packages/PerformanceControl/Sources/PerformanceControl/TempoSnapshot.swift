@@ -8,6 +8,8 @@ public enum TempoOrigin: String, Sendable, Hashable, Codable {
     case manual
     /// ANL-005's estimate with confidence of at least the rules' floor.
     case estimated
+    /// MIDI-010: a locked external MIDI clock (24 PPQN) while "Follow MIDI clock" is on; outranks manual.
+    case midiClock
     /// No tempo.
     case none
 }
@@ -34,11 +36,11 @@ public struct TempoSnapshot: Sendable, Hashable, Codable {
     public let origin: TempoOrigin
     /// nil for `.none`.
     public let bpm: Double?
-    /// 1 for manual, the estimate's for estimated, 0 for none.
+    /// 1 for manual and MIDI clock, the estimate's for estimated, 0 for none.
     public let confidence: Double
     /// 60 s / BPM in whole nanoseconds; nil for `.none`.
     public let periodNanoseconds: UInt64?
-    /// A beat of the grid (the last tap, or the analysis's latest beat); nil without phase.
+    /// A beat of the grid (the last tap, the clock's latest beat, or the analysis's latest beat); nil without phase.
     public let anchorNanoseconds: UInt64?
 
     init(origin: TempoOrigin, bpm: Double?, confidence: Double, anchorNanoseconds: UInt64?) {

@@ -353,6 +353,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let midiMonitor: MIDIMonitorCoordinator
     /// MIDI-003: MIDI learn and the mapping list (opened from the MIDI section; `midi.mappings` points here).
     let midiMappings: MIDIMappingCoordinator
+    /// MIDI-010: Follow MIDI clock (Settings → MIDI; off by default); feeds `tempo` while a clock is locked.
+    let midiClock: MIDIClockCoordinator
     /// REC-001: Save Frame (the shown visual's next frame, to the Files exporter).
     @ObservationIgnored private(set) lazy var frameCapture = FrameCaptureCoordinator { [weak self] () -> FrameCaptureCoordinator.Context in
         guard let self else { return FrameCaptureCoordinator.Context(source: nil, outputLive: false, paused: false) }
@@ -572,6 +574,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         }
         #endif
         tempo = TempoCoordinator(clock: tempoClock)
+        midiClock = MIDIClockCoordinator(input: midiInput, tempo: tempo, defaults: defaults)   // MIDI-010
+        midi.clock = midiClock
         #if DEBUG
         // TempoConfidenceUITests: `-uitestTempoEstimate <bpm>:<confidence>[:<polls>:<confidence2>]` (ANL-006 D7).
         if let script = defaults.string(forKey: "uitestTempoEstimate").flatMap(TempoCoordinator.estimateScript) {
@@ -661,6 +665,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         NoiseEditorStore.allKeys.forEach(defaults.removeObject(forKey:))   // SHD-006: noise defaults
         EffectChainSetting.allKeys.forEach(defaults.removeObject(forKey:))   // FX-020: standard order, no presets
         defaults.removeObject(forKey: MIDIMappingCoordinator.mappingsKey)   // MIDI-003: no mappings
+        MIDIClockCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // MIDI-010: not following
         OSCRoutesCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-003: every route on, no aliases
         OSCPeersCoordinator.allKeys.forEach(defaults.removeObject(forKey:))   // OSC-008: allowlist off, nobody approved
         if let profiles = try? MIDIProfilesCoordinator.defaultDirectory() { try? FileManager.default.removeItem(at: profiles) }   // MIDI-012: no profiles

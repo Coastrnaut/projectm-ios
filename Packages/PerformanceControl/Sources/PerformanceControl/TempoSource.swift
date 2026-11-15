@@ -11,6 +11,8 @@
 // * Phase: the manual grid's beats fall on the last accepted tap.
 // * The estimate counts only with confidence ≥ the rules' floor (0.5) and a tempo in range; it
 //   never overrides a manual tempo. `resetManual()` clears the override and the sequence.
+// * MIDI-010 (research MIDI-010-D7): a locked MIDI clock (`updateMIDIClock`) outranks the manual tempo and the
+//   estimate; taps still build the manual tempo underneath, so losing the clock falls back to it, else the estimate.
 // No clock is read here: every time is an argument (SHOW-011-R11).
 
 /// What a tap did, for feedback.
@@ -32,6 +34,7 @@ public struct TempoSource: Sendable {
     private var taps: [UInt64] = []
     private var manual: (bpm: Double, anchor: UInt64)?
     private var estimate: TempoEstimate?
+    private var midiClock: MIDIClockTempo?
 
     public init(rules: TapTempoRules = .standard) {
         self.rules = rules
@@ -45,6 +48,10 @@ public struct TempoSource: Sendable {
 
     /// The one read API (SHOW-011-R10).
     public var snapshot: TempoSnapshot {
+        if let midiClock {
+            return TempoSnapshot(origin: .midiClock, bpm: midiClock.bpm, confidence: 1,
+                                 anchorNanoseconds: midiClock.anchorNanoseconds)
+        }
         if let manual {
             return TempoSnapshot(origin: .manual, bpm: manual.bpm, confidence: 1, anchorNanoseconds: manual.anchor)
         }
@@ -92,6 +99,14 @@ public struct TempoSource: Sendable {
     public mutating func updateEstimate(_ estimate: TempoEstimate?) {
         self.estimate = estimate
     }
+
+    /// MIDI-010: the locked clock's tempo; nil when no clock is followed or it is not locked.
+    public mutating func updateMIDIClock(_ tempo: MIDIClockTempo?) {
+        midiClock = tempo
+    }
+
+    /// Whether a MIDI clock sets the tempo now.
+    public var followsMIDIClock: Bool { midiClock != nil }
 
     /// Least-squares slope of tap time against tap index (research SHOW-011-D1).
     private func fittedPeriod() -> Double {

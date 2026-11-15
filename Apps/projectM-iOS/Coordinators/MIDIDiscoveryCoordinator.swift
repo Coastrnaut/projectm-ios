@@ -42,6 +42,8 @@ final class MIDIDiscoveryCoordinator {
     @ObservationIgnored weak var monitor: MIDIMonitorCoordinator?
     /// MIDI-003: MIDI learn and mappings shown from the MIDI section (nil: no mappings row, e.g. in tests).
     @ObservationIgnored weak var mappings: MIDIMappingCoordinator?
+    /// MIDI-010: Follow MIDI clock shown from the MIDI section (nil: no clock rows, e.g. in tests).
+    @ObservationIgnored weak var clock: MIDIClockCoordinator?
     /// MIDI-011-R6: endpoints listed since discovery started (a returning one is announced "reconnected"); in memory
     /// only, cleared when discovery stops.
     @ObservationIgnored private var seenSinceStart: Set<MIDIEndpointID> = []
