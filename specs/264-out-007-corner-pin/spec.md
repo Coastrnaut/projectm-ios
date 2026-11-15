@@ -52,6 +52,22 @@ interaction); each answer is the conservative, local-first option.
   frame are the unwarped content (a recording is content; the warp is a property of the projector's
   placement) (OUT-007-R6).
 
+### Session 2026-11-14 (speckit-clarify)
+
+- Q: Should a correction be stored per display (or per display shape) rather than once for the app? → A: Once
+  for the app. The row is single-projector correction, a display's scene identifier is not a stable identity
+  of the hardware, and the corners are output-relative, so a resolution or shape change keeps a sensible
+  result; Reset restores the identity in one tap. Keying by shape would silently drop a correction when a
+  projector reports a different mode (OUT-007-R9).
+- Q: How large is one nudge step, and how strict is "nearly collinear"? → A: A nudge moves a corner by 0.5 %
+  of the output (0.005); "nearly collinear" means a turn at any corner smaller than 2° (the sine of the turn
+  under 0.035). Fine enough for a wall a few metres wide, and the angle bound also rejects needle-thin
+  corners that would magnify the picture without limit (OUT-007-R3, R5).
+- Q: What does the display show while the editor is open but blacked out, or while no display is connected?
+  → A: The blackout always wins (black everywhere); with no display the editor edits on the last known
+  display shape, else 16:9, and nothing is shown anywhere else. The test card appears only on a connected
+  display while the editor is open, and the live visual returns when it closes (OUT-007-R5, R8).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Square the picture on a tilted projector (Priority: P1)
