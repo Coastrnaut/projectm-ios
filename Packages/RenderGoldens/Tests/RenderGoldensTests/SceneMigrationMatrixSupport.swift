@@ -99,13 +99,14 @@ struct SceneMigrationMatrix: Decodable {
         return url
     }
 
+    /// On a device (QA-011, DeviceTests.yml) there is no repository: the test bundle carries a copy of `legacy`.
     static var legacyDirectory: URL {
-        repositoryRoot.appendingPathComponent("Packages/SceneFormat/Tests/SceneFormatTests/Fixtures/legacy", isDirectory: true)
+        let source = repositoryRoot.appendingPathComponent("Packages/SceneFormat/Tests/SceneFormatTests/Fixtures/legacy", isDirectory: true)
+        if FileManager.default.fileExists(atPath: source.path) { return source }
+        return GoldenPaths.packageRoot.appendingPathComponent("legacy", isDirectory: true)
     }
 
-    static var goldenScenesDirectory: URL {
-        repositoryRoot.appendingPathComponent("Packages/RenderGoldens/Scenes", isDirectory: true)
-    }
+    static var goldenScenesDirectory: URL { GoldenPaths.scenes }
 
     static func load() throws -> SceneMigrationMatrix {
         try JSONDecoder().decode(SceneMigrationMatrix.self, from: Data(contentsOf: legacyDirectory.appendingPathComponent("matrix.json")))

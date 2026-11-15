@@ -368,23 +368,68 @@ class Blocked(Exception):
     """The device stayed locked past --locked-wait."""
 
 
+class NoDeviceHost(Exception):
+    """A package suite with no app-hosted twin in DeviceTests.yml: it cannot run on a device yet."""
+
+
+# Xcode cannot run a package's own test target on a device ("Tool-hosted testing is unavailable on device
+# destinations"; D1, 2026-11-15). On a device, package suites run from DeviceTests.yml: the same sources compiled
+# into bundles hosted in the signed app. A package test bundle without a twin there cannot run on a device yet.
+DEVICE_TEST_SPEC = ROOT / "DeviceTests.yml"
+DEVICE_TEST_PROJECT = ROOT / "ProjectM-DeviceTests.xcodeproj"
+DEVICE_TEST_SCHEME = "DeviceTests"
+DEVICE_TEST_BUNDLES = {
+    "CompositorTests": "CompositorDeviceTests",
+    "ProceduralMaterialsTests": "MaterialsDeviceTests",
+    "GeneratorGraphTests": "GeneratorGraphDeviceTests",
+    "ParameterExpressionTests": "ExpressionDeviceTests",
+    "RenderGoldensTests": "RenderGoldensDeviceTests",
+}
+
+
+PACKAGE_DEVICE_BUNDLES = {"RenderGoldens": ["RenderGoldensDeviceTests"], "ParameterGraph": ["ExpressionDeviceTests"]}
+
+
+def device_only_testing(only: list[str], package: str | None = None) -> list[str] | None:
+    """The device-hosted `-only-testing` ids, or None when a bundle has no device host. A case without `only` runs
+    its package's bundles, never the whole scheme (D1, 2026-11-15: an unfiltered case ran every bundle)."""
+    if not only:
+        return PACKAGE_DEVICE_BUNDLES.get(package or "")
+    out = []
+    for o in only:
+        bundle, _, rest = o.partition("/")
+        if bundle not in DEVICE_TEST_BUNDLES:
+            return None
+        out.append(DEVICE_TEST_BUNDLES[bundle] + ("/" + rest if rest else ""))
+    return out
+
+
 def xctest_command(c: dict, target: MatrixTarget, derived: Path, bundle: Path) -> tuple[list[str], Path]:
+    only = list(c.get("only", []))
+    hosted = not c.get("app") and not target.simulator
     if c.get("app"):
         cmd, cwd = ["xcodebuild", "test", "-project", str(rdt.PROJECT), "-scheme", rdt.SCHEME], ROOT
+    elif hosted:
+        mapped = device_only_testing(only, c.get("package"))
+        if mapped is None:
+            raise NoDeviceHost(f"{', '.join(only)}: no app-hosted device bundle (DeviceTests.yml)")
+        only = mapped
+        cmd, cwd = ["xcodebuild", "test", "-project", str(DEVICE_TEST_PROJECT), "-scheme", DEVICE_TEST_SCHEME], ROOT
     else:
         cmd, cwd = ["xcodebuild", "test", "-scheme", c["package"]], ROOT / "Packages" / c["package"]
-    cmd += ["-destination", target.destination, "-derivedDataPath", str(derived / (c.get("package") or "app")),
+    cmd += ["-destination", target.destination,
+            "-derivedDataPath", str(derived / ("device-tests" if hosted else (c.get("package") or "app"))),
             "-resultBundlePath", str(bundle), "-test-timeouts-enabled", "YES",
             "-default-test-execution-time-allowance", str(c["timeoutSeconds"])]
-    if c.get("configuration"):
-        cmd += ["-configuration", c["configuration"], "ENABLE_TESTABILITY=YES"]
-    for only in c.get("only", []):
-        cmd.append(f"-only-testing:{only}")
+    if c.get("configuration") or hosted:
+        cmd += ["-configuration", c.get("configuration") or "Debug", "ENABLE_TESTABILITY=YES"]
+    for o in only:
+        cmd.append(f"-only-testing:{o}")
     if target.simulator:
         cmd.append("CODE_SIGNING_ALLOWED=NO")
     else:
         cmd.append("-allowProvisioningUpdates")
-        if not c.get("app"):
+        if not c.get("app") and not hosted:
             cmd += ["-xcconfig", str(SIGNING_XCCONFIG)]   # the owner's team via the include-only file
     return cmd, cwd
 
@@ -394,7 +439,7 @@ def test_counts(log: str) -> str:
     skipped = len(re.findall(r"Test Case .* skipped", log))
     if not found:
         return "no test summary in the log"
-    n, f, _ = found[-1]
+    n, f, _ = max(found, key=lambda t: int(t[0]))   # the whole run's total, not the last sub-suite (D1, 2026-11-15)
     return f"{n} tests, {f} failures, {skipped} skipped"
 
 
@@ -521,7 +566,16 @@ class Runner:
             log.parent.mkdir(parents=True, exist_ok=True)
             if bundle.exists():
                 shutil.rmtree(bundle)
-        cmd, cwd = xctest_command(c, self.target, self.derived, bundle)
+        try:
+            cmd, cwd = xctest_command(c, self.target, self.derived, bundle)
+        except NoDeviceHost as e:
+            result["status"], result["detail"] = "not-run", str(e)
+            print(f"!! {c['id']}: {e}", flush=True)
+            return
+        if cwd == ROOT and DEVICE_TEST_PROJECT.name in " ".join(cmd) and not DEVICE_TEST_PROJECT.exists() \
+                and not self.dry_run:
+            subprocess.run(["xcodegen", "generate", "--spec", str(DEVICE_TEST_SPEC)], cwd=ROOT, check=True,
+                           capture_output=True)
         env = {f"TEST_RUNNER_{k}": v for k, v in c.get("env", {}).items()}
         result["commands"].append([f"(cd {display_path(cwd)})"] + [f"{k}={v}" for k, v in env.items()] + cmd)
         deadline = time.monotonic() + self.locked_wait

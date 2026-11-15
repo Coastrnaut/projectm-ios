@@ -1,0 +1,112 @@
+# XcodeGen spec for on-device package tests (QA-011). Generate with:  xcodegen generate --spec DeviceTests.yml
+# The generated ProjectM-DeviceTests.xcodeproj is gitignored.
+#
+# Why: Xcode cannot run a Swift package's own test target on a device ("Tool-hosted testing is unavailable on
+# device destinations"). These bundles compile a package test folder's sources and run hosted in the signed
+# projectM-iOS app, so the QA-011 matrix can run GPU benches, goldens and the soak on D1-D3. Everything else comes
+# from project.yml (the app, its packages, signing through Configs/Signing.xcconfig); this spec adds only test
+# bundles and one scheme, so the normal projectM-iOS scheme and its tests are unchanged.
+include:
+  - project.yml
+name: ProjectM-DeviceTests
+packages:
+  RenderGoldens:
+    path: Packages/RenderGoldens
+  FlashSafety:
+    path: Packages/FlashSafety
+targetTemplates:
+  DeviceTestBundle:
+    type: bundle.unit-test
+    platform: iOS
+    dependencies:
+      - target: projectM-iOS
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/projectM-iOS.app/projectM-iOS"
+        BUNDLE_LOADER: "$(TEST_HOST)"
+        SWIFT_STRICT_CONCURRENCY: minimal
+targets:
+  CompositorDeviceTests:
+    templates: [DeviceTestBundle]
+    sources: [Packages/Compositor/Tests/CompositorTests]
+    dependencies:
+      - package: Compositor
+      - package: VisualGenerators
+      - package: LocalPortability
+      - package: AnalysisFeatures
+      - package: FlashSafety
+      - package: ParameterGraph
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.CompositorDeviceTests
+  MaterialsDeviceTests:
+    templates: [DeviceTestBundle]
+    sources: [Packages/Compositor/Tests/ProceduralMaterialsTests]
+    dependencies:
+      - package: Compositor
+      - package: VisualGenerators
+      - package: AnalysisFeatures
+      - package: FlashSafety
+      - package: ParameterGraph
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.MaterialsDeviceTests
+  GeneratorGraphDeviceTests:
+    templates: [DeviceTestBundle]
+    sources: [Packages/Compositor/Tests/GeneratorGraphTests]
+    dependencies:
+      - package: Compositor
+      - package: AnalysisFeatures
+      - package: FlashSafety
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.GeneratorGraphDeviceTests
+  ExpressionDeviceTests:
+    templates: [DeviceTestBundle]
+    sources: [Packages/ParameterGraph/Tests/ParameterExpressionTests]
+    dependencies:
+      - package: ParameterGraph
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.ExpressionDeviceTests
+  RenderGoldensDeviceTests:
+    templates: [DeviceTestBundle]
+    sources:
+      - Packages/RenderGoldens/Tests/RenderGoldensTests
+      # Folder resources: GoldenPaths falls back to the bundle's copy when the source tree is absent (a device).
+      - path: Packages/RenderGoldens/Scenes
+        type: folder
+        buildPhase: resources
+      - path: Packages/RenderGoldens/Goldens
+        type: folder
+        buildPhase: resources
+      - path: Packages/RenderGoldens/GeneratorGoldens
+        type: folder
+        buildPhase: resources
+      - path: Packages/SceneFormat/Tests/SceneFormatTests/Fixtures/legacy   # the QA-004 migration matrix
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - package: RenderGoldens
+      - package: FlashSafety
+      - package: SceneFormat
+      - package: Compositor
+      - package: VisualGenerators
+      - package: ParameterGraph
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.RenderGoldensDeviceTests
+schemes:
+  DeviceTests:
+    build:
+      targets:
+        projectM-iOS: all
+    test:
+      config: Release
+      targets:
+        - CompositorDeviceTests
+        - MaterialsDeviceTests
+        - GeneratorGraphDeviceTests
+        - ExpressionDeviceTests
+        - RenderGoldensDeviceTests

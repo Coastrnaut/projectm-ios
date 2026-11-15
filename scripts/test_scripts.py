@@ -2251,12 +2251,24 @@ class QA011MatrixTests(unittest.TestCase):
         self.assertIn('"PROJECTM_AUTORUN": "perf001"', text)
         self.assertIn("devicectl device install app", text)
         self.assertIn("TEST_RUNNER_QA006_SOAK_SECONDS=600", text)
-        self.assertIn("-only-testing:RenderGoldensTests/RenderSoakTests/testOnDemandLongSoak", text)
+        # On a device, package suites run hosted in the app (DeviceTests.yml), signed through the app project.
+        self.assertIn("-only-testing:RenderGoldensDeviceTests/RenderSoakTests/testOnDemandLongSoak", text)
+        self.assertIn("ProjectM-DeviceTests.xcodeproj", text)
         self.assertIn("-allowProvisioningUpdates", text)
-        self.assertIn("Configs/Signing.xcconfig", text)
         self.assertIn("platform=iOS,id=<UDID>", text)
         after = sorted(p for p in rdm.RUNS.rglob("*")) if rdm.RUNS.exists() else []
         self.assertEqual(before, after)
+
+    def test_device_package_cases_map_to_app_hosted_bundles(self):
+        self.assertEqual(rdm.device_only_testing(["CompositorTests/LayerGradientCompositeTests/testX"]),
+                         ["CompositorDeviceTests/LayerGradientCompositeTests/testX"])
+        self.assertEqual(rdm.device_only_testing([], "RenderGoldens"), ["RenderGoldensDeviceTests"],
+                         "an unfiltered case runs its package's bundle, never the whole scheme")
+        self.assertIsNone(rdm.device_only_testing(["ANGLERenderingTests/ProjectMLayerTests"]))
+        target = rdm.MatrixTarget("D1", "ID", False, Path("/tmp/x"), "UDID")
+        case = next(c for c in rdm.CASES if c["id"] == "xctest-angle-layer")
+        with self.assertRaises(rdm.NoDeviceHost):
+            rdm.xctest_command(case, target, Path("/tmp/d"), Path("/tmp/b.xcresult"))
 
     def test_xctest_command_on_a_simulator_is_unsigned(self):
         target = rdm.MatrixTarget("sim", "SIM-UDID", True, Path("/tmp/x"), "SIM-UDID")

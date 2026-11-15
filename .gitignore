@@ -67,3 +67,4 @@ docs/test-reports/exports/feature002/sim/
 
 # QA-011 simulator rehearsals are not evidence (CLAUDE.md: keep simulator exports gitignored)
 docs/test-reports/qa-011/runs/sim/
+ProjectM-DeviceTests.xcodeproj/
