@@ -90,13 +90,17 @@ public struct ParticleFountainConfiguration: Sendable, Equatable {
     public var palette: VisualPalette
     /// Premultiplied, linear.
     public var background: LinearColor
+    /// SHD-007: the edited emitter (continuous spawning, shape, velocity and lifetime ranges, bounds, its own seed and
+    /// gravity); nil keeps VIS-008's onset fountain exactly.
+    public var emitter: ParticleEmitterSettings?
 
     public init(gravity: Double = ParticleFountainConfiguration.defaultGravity,
                 drag: Double = ParticleFountainConfiguration.defaultDrag,
                 life: Double = ParticleFountainConfiguration.defaultLife,
                 particleSize: Double = ParticleFountainConfiguration.defaultParticleSize,
                 seed: UInt64 = ParticleFountainConfiguration.defaultSeed, reduceMotion: Bool = false,
-                palette: VisualPalette = .spectrum, background: LinearColor = .opaqueBlack) {
+                palette: VisualPalette = .spectrum, background: LinearColor = .opaqueBlack,
+                emitter: ParticleEmitterSettings? = nil) {
         self.gravity = gravity
         self.drag = drag
         self.life = life
@@ -105,6 +109,7 @@ public struct ParticleFountainConfiguration: Sendable, Equatable {
         self.reduceMotion = reduceMotion
         self.palette = palette
         self.background = background
+        self.emitter = emitter
         self = clamped()
     }
 
@@ -116,8 +121,12 @@ public struct ParticleFountainConfiguration: Sendable, Equatable {
         c.life = Self.clamp(life, Self.lifeRange, Self.defaultLife)
         c.particleSize = Self.clamp(particleSize, Self.sizeRange, Self.defaultParticleSize)
         c.background = background.clamped
+        c.emitter = emitter?.clamped()
         return c
     }
+
+    /// The seed a reset restores: the emitter's when it is set (SHD-007), else `seed`.
+    public var effectiveSeed: UInt64 { emitter?.seed ?? seed }
 
     /// The motion's time scale: 0.7 under Reduce Motion, else 1.
     public var timeScale: Double { reduceMotion ? Self.reduceMotionTimeScale : 1 }

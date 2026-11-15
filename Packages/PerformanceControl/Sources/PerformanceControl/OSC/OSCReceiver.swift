@@ -16,6 +16,8 @@
 //   coalesce its main-thread refreshes (`OSCRefreshGate`) instead of hopping once per message.
 // * OSC-008 (specs/200-osc-008-peer-allowlist): while `peerAllowlist` is on, a datagram from a host that is not
 //   approved is dropped and counted (`droppedUnapproved`) before it reaches the dispatcher.
+// * OSC-006 (specs/278-osc-006-osc-bundles): every stop and launch clears the dispatcher's bundle schedule, so a
+//   message scheduled before the switch went off never applies later.
 import ParameterGraph
 import Synchronization
 
@@ -55,8 +57,11 @@ public final class OSCReceiver: Sendable {
                 limits: OSCRateLimitConfiguration = .default,
                 clock: OSCMonotonicClock = .continuous(),
                 scheduler: OSCFlushScheduler = .sleepingTask,
+                wallClock: OSCWallClock = .system,
+                timing: OSCBundleTiming = .default,
                 makeTransport: @escaping @Sendable () -> (any OSCDatagramTransport)?) {
-        dispatcher = OSCDispatcher(store: store, routes: routes, limits: limits, clock: clock, scheduler: scheduler)
+        dispatcher = OSCDispatcher(store: store, routes: routes, limits: limits, clock: clock, scheduler: scheduler,
+                                   wallClock: wallClock, timing: timing)
         self.makeTransport = makeTransport
     }
 
@@ -134,6 +139,7 @@ public final class OSCReceiver: Sendable {
 
     public func stop() {
         dispatcher.resetLimits()                      // held values are discarded (OSC-009-R5)
+        dispatcher.clearScheduled()                   // and pending bundle messages (OSC-006-R10)
         let effects = lockedState.withLock { s -> Effects in
             s.desiredPort = nil
             guard var active = s.active else {
@@ -228,6 +234,7 @@ public final class OSCReceiver: Sendable {
         s.generation += 1
         s.active = Active(transport: transport, generation: s.generation)
         dispatcher.resetLimits()                      // every listener starts with full buckets (OSC-009-R5)
+        dispatcher.clearScheduled()                   // and an empty bundle schedule (OSC-006-R10)
         s.phase = .starting(port: port)
         return Effects(start: (transport, port, s.generation), notify: s.phase)
     }

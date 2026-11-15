@@ -17,14 +17,6 @@ final class DisplayCalibrationUITests: XCTestCase {
     private var editorProbe: String { (app.descendants(matching: .any)["calibrationProbe"].firstMatch.value as? String) ?? "nil" }
     private var displayProbe: String { (app.descendants(matching: .any)["externalCalibration"].firstMatch.value as? String) ?? "nil" }
 
-    private func showControls() {
-        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
-        if controls.exists { area.tap() }
-        area.tap()
-        if !controls.appears(within: 2) { area.tap() }
-        XCTAssertTrue(controls.appears(within: 5), "the controls are shown")
-    }
-
     func testTheEditorCalibratesTheDisplayAndResets() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
@@ -34,8 +26,7 @@ final class DisplayCalibrationUITests: XCTestCase {
         app.buttons["uitestConnectExternal"].tap()
         XCTAssertTrue(poll(5) { self.displayProbe.hasPrefix("cal=identity") }, "identity: \(displayProbe)")
 
-        showControls()
-        app.buttons["settings"].tap()
+        app.tapFreshControl("settings")   // retries when the controls auto-hide mid-tap
         let row = app.buttons["externalCalibrationButton"]
         XCTAssertTrue(app.reveal(row), "Color calibration… is reachable")
         row.tap()
@@ -43,7 +34,11 @@ final class DisplayCalibrationUITests: XCTestCase {
         XCTAssertTrue(gamma.appears(within: 10), "the editor is open")
         XCTAssertFalse(app.buttons["calibrationReset"].isEnabled, "Reset is off at the identity")
 
-        gamma.dragSlider(from: 0.25, to: 0.5)   // 1.0 on 0.5…2.5 sits at one quarter
+        // 1.0 on 0.5…2.5 sits at one quarter; a drag can be lost under load, so retry until it lands.
+        for _ in 0..<3 where !editorProbe.contains("|cal=custom") {
+            gamma.dragSlider(from: 0.25, to: 0.5)
+            _ = poll(2) { self.editorProbe.contains("|cal=custom") }
+        }
         XCTAssertTrue(poll(3) { self.editorProbe.contains("|cal=custom applied=yes") },
                       "a custom calibration, applied by the visual on the display: \(editorProbe)")
 

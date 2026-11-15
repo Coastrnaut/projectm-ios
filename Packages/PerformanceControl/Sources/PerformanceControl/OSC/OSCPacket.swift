@@ -1,8 +1,7 @@
 // OSCPacket.swift — an OSC packet: a message or a bundle (OSC-002-R5; data-model.md).
 //
-// A bundle carries a time tag and its elements in packet order. OSC-002 decodes the time tag but
-// the receiver applies a bundle's messages immediately; scheduling by time tag and the late-message
-// policy are OSC-006.
+// A bundle carries a time tag and its elements in packet order. OSC-002 decodes the time tag;
+// OSC-006 (`OSCBundleSchedule`, `OSCDispatcher`) applies the messages by it with the late-message policy.
 
 /// An NTP-format time: seconds since 1900-01-01 and a 32-bit binary fraction.
 public struct OSCTimeTag: Sendable, Hashable {

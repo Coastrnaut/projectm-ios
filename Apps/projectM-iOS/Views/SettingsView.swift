@@ -351,6 +351,7 @@ struct SettingsView: View {
                 if settings.visual == .mandala { mandalaOptions }   // VIS-007-R9
                 if settings.visual == .particleFountain { particleFountainOptions }   // VIS-008-R10
                 if settings.visual == .particleOrbit { particleOrbitOptions }   // VIS-009-R10
+                if settings.visual == .particleFountain || settings.visual == .particleOrbit { particleTrailsOptions }   // VIS-010-R9
                 if settings.visual == .noiseField { NoiseFieldOptions(settings: settings) }   // VIS-013-R9
                 if settings.visual == .kaleidoscope { KaleidoscopeOptions(settings: settings) }   // VIS-014-R9
                 if settings.visual == .tunnel { TunnelOptions(settings: settings) }   // VIS-015-R9
@@ -429,14 +430,29 @@ struct SettingsView: View {
         .accessibilityIdentifier("particleOrbitRadiusPicker")
     }
 
-    /// VIS-008-R10: the particle fountain's gravity.
-    private var particleFountainOptions: some View {
+    /// VIS-010-R9: the particle visuals' trails.
+    private var particleTrailsOptions: some View {
+        Picker("Trails", selection: $settings.particleTrails) {
+            ForEach(ParticleTrailSetting.allCases, id: \.self) { (trails: ParticleTrailSetting) in Text(trails.title).tag(trails) }
+        }
+        .segmentedUnlessAccessibilitySize()   // ACC-006-R1
+        .accessibilityLabel("Trails")
+        .accessibilityIdentifier("particleTrailsPicker")
+    }
+
+    /// VIS-008-R10: the particle fountain's gravity (SHD-007: the emitter's gravity replaces it when the emitter is on).
+    @ViewBuilder private var particleFountainOptions: some View {
         Picker("Gravity", selection: $settings.particleGravity) {
             ForEach(ParticleGravity.allCases, id: \.self) { (gravity: ParticleGravity) in Text(gravity.title).tag(gravity) }
         }
         .segmentedUnlessAccessibilitySize()   // ACC-006-R1
         .accessibilityLabel("Gravity")
         .accessibilityIdentifier("particleGravityPicker")
+        if settings.particleEmitter.enabled {
+            Text("The particle emitter is on, so its own gravity is used.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 
     /// VIS-007-R9: the mandala's symmetry, mirror and petal style.
@@ -540,6 +556,7 @@ struct SettingsView: View {
         if settings.visual.isNative { SpectrumColorsSection(settings: settings) }   // ACC-003-R13
         if let layerInspector { PaletteLinkSection(palettes: layerInspector.palettes).id("palettes") }   // UIX-011
         NoiseEditorLinkSection().id("noiseEditor")   // SHD-006-R6
+        ParticleEmitterLinkSection(settings: settings).id("particleEmitter")   // SHD-007-R7
         if let colorGrade { ColorGradeSection(setting: colorGrade).id("color") }   // FX-003-R9 (IDs: UITestSettingsSection)
         if let motionFeedback { TrailsSection(setting: motionFeedback, clamp: settings.safetyClamp).id("trails") }   // FX-009-R9
         if let layerInspector { EffectChainSection(coordinator: layerInspector).id("effects") }   // FX-020-R9 (the app coordinator)
@@ -619,6 +636,7 @@ struct SettingsView: View {
         }
         if let recentPresets { RecentHistorySection(recent: recentPresets).id("recentPresets") }   // PRE-006-R3, R4
         if let externalOutput { ExternalDisplaySection(setting: externalOutput).id("externalDisplay") }   // OUT-004-R9
+        if let external = externalOutput?.external { OutputDiagnosticsSection(external: external).id("outputDiagnostics") }   // OUT-011-R1
         Section {
             NavigationLink("Storage") {   // FILE-009, FILE-010, FILE-005, MED-013, REC-010
                 StorageUsageView(filesInUse: cacheFilesInUse, libraryBackup: libraryBackup, missingMedia: missingMedia,

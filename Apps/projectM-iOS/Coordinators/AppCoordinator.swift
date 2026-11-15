@@ -1209,7 +1209,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .radialWaveform: .radialWaveform(ring: settings.radialWaveformRing, amplitude: settings.radialWaveformAmplitude)   // VIS-005
         case .beatRings: .beatRings(life: settings.beatRingsLife)   // VIS-006
         case .mandala: .mandala(symmetry: settings.mandalaSymmetry, mirror: settings.mandalaMirror, petal: settings.mandalaPetal)   // VIS-007
-        case .particleFountain: .particleFountain(gravity: settings.particleGravity)   // VIS-008
+        case .particleFountain: .particleFountain(gravity: settings.particleGravity, emitter: settings.particleEmitter.effective)   // VIS-008, SHD-007
         case .particleOrbit: .particleOrbit(radius: settings.particleOrbitRadius)   // VIS-009
         case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
@@ -1246,6 +1246,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             host.safetyClamp = settings.safetyClamp   // ACC-012-R4
             host.smoothing = settings.spectrumSmoothing   // ANL-003
             host.palette = effectiveSpectrumPalette        // ACC-003-R13, UIX-011
+            host.particleTrails = settings.particleTrails   // VIS-010
             host.reduceMotion = settings.systemReduceMotion   // VIS-007-R5, VIS-008-R9, VIS-009-R9: the mandala's turn, the fountain's bursts, the orbit (ACC-001)
             host.externalValues = hostExternalValues   // MIDI-003, OSC-003, SHOW-008: values held while no native visual was shown
             for binding in sceneAutosave?.bindings ?? [] { try? host.addLayer(binding) }   // SCN-002: restored bindings, MOD-011 layers in order
@@ -1710,6 +1711,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         if !settings.visual.usesText { releaseTextVisual() }       // MED-009
         nativeVisual?.barCount = circularSpectrumBarCount
         nativeVisual?.smoothing = settings.spectrumSmoothing   // ANL-003: from the next frame, no snap
+        nativeVisual?.particleTrails = settings.particleTrails   // VIS-010: from the next frame, no rebuild
         cameraVisual?.barCount = circularSpectrumBarCount
         photoVisual?.barCount = circularSpectrumBarCount
         videoVisual?.barCount = circularSpectrumBarCount
