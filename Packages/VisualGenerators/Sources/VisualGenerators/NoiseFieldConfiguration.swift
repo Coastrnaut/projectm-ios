@@ -47,10 +47,12 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
     public var tunnelPace: Double
     /// VIS-020: the spectrum waterfall (the bands' 60 s history); on forces `wedges` and `tunnelPace` to 0.
     public var waterfall: Bool
+    /// VIS-011: fluid ink (onset-driven stable fluids); on forces `wedges`, `tunnelPace` and `waterfall` off.
+    public var fluidInk: Bool
 
     public init(frequency: Double = NoiseFieldConfiguration.defaultFrequency, octaves: Int = NoiseFieldConfiguration.defaultOctaves,
                 seed: Int = NoiseFieldConfiguration.defaultSeed, reduceMotion: Bool = false, palette: VisualPalette = .spectrum,
-                wedges: Int = 0, tunnelPace: Double = 0, waterfall: Bool = false) {
+                wedges: Int = 0, tunnelPace: Double = 0, waterfall: Bool = false, fluidInk: Bool = false) {
         self.frequency = frequency
         self.octaves = octaves
         self.seed = seed
@@ -59,6 +61,7 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         self.wedges = wedges
         self.tunnelPace = tunnelPace
         self.waterfall = waterfall
+        self.fluidInk = fluidInk
         self = clamped()
     }
 
@@ -78,6 +81,11 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
     /// VIS-020: the spectrum waterfall from the default field's settings (only the palette and Reduce Motion apply).
     public static func waterfall(reduceMotion: Bool = false, palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
         NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, waterfall: true)
+    }
+
+    /// VIS-011: fluid ink from the default field's settings (only the palette and Reduce Motion apply).
+    public static func fluidInk(reduceMotion: Bool = false, palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
+        NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, fluidInk: true)
     }
 
     /// VIS-015: the tunnel is on.
@@ -100,6 +108,7 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         c.tunnelPace = TunnelPace(ringsPerBeat: tunnelPace)?.ringsPerBeat ?? 0   // VIS-015: 0, 0.5, 1 or 2
         if c.tunnelPace > 0 { c.wedges = 0 }
         if c.waterfall { c.wedges = 0; c.tunnelPace = 0 }   // VIS-020
+        if c.fluidInk { c.wedges = 0; c.tunnelPace = 0; c.waterfall = false }   // VIS-011
         return c
     }
 

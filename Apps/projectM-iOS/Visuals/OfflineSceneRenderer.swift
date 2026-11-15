@@ -273,6 +273,11 @@ private final class OfflineFrameRenderer {
             let resolved = ParticleOrbitRadiusDrive.resolve(manual: orbit.configuration.radius, kick: Double(analysis.kickEnvelope),
                                                             modulator: nil)
             orbit.drive(base: resolved.base, bass: resolved.bass)
+        } else if let field = generator as? NoiseFieldGenerator, field.configuration.fluidInk {   // VIS-011
+            for event in analysis.events {
+                guard let onset = ParticleFountainTrigger.onset(event) else { continue }
+                field.enqueueImpulse(atNanoseconds: context.timeNanoseconds, strength: onset.strength, threshold: onset.threshold)
+            }
         } else if let rings = generator as? BeatRingGenerator {
             for event in analysis.events where trigger.shouldEmit(event) {
                 rings.emitRing(atNanoseconds: context.timeNanoseconds, flashConfiguration: context.flashConfiguration)

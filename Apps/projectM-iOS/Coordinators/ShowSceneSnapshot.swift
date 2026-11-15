@@ -98,7 +98,7 @@ enum ShowSceneSnapshot {
         var contents: [SceneLayerContent] = []
         var assets: [String: SceneAsset] = [:]
         switch look.visual {
-        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel, .spectrumWaterfall:
+        case .projectM, .camera, .oscilloscope, .lissajous, .radialWaveform, .beatRings, .mandala, .particleFountain, .particleOrbit, .noiseField, .kaleidoscope, .tunnel, .spectrumWaterfall, .fluidInk:
             break   // camera never reaches here (recordedVisual); projectM, the oscilloscope (VIS-003-R12) the Lissajous (VIS-004-R12) the radial waveform (VIS-005-R10) beat rings (VIS-006-R10) the mandala (VIS-007-R10) the particle fountain (VIS-008-R11) and the particle orbit (VIS-009-R11) are no compositor layer
         case .circularSpectrum:
             contents = [.circularSpectrum]

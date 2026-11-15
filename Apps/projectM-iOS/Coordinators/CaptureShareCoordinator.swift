@@ -121,6 +121,7 @@ final class CaptureShareCoordinator {
         case frame
         case recording
         case performanceReport   // PERF-012: Settings → Performance
+        case oscSchema           // OSC-010: Settings › OSC › OSC Routes
     }
 
     /// The share sheet to show: the copy and which result it came from.
