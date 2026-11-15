@@ -4,7 +4,10 @@
 
 **Created**: 2026-11-14
 
-**Status**: Draft
+**Status**: Implemented 2026-11-14 (SHOW-015-T01-T11 verified on the Mac, simulator "SHOW15 iPhone 17", iOS 27.2; no
+device claim; T12 `{device}` open). Extends the SCN-015 scene lock (no new state). PerformanceLockAcceptanceTests 4
+(0.07 s); unit regression 69 tests (1.9 s); PerformanceLockUITests 1 (under 30 s); UI regression: SceneLock, SceneFolders,
+PresetCollections (9), PresetSmartCollection, LibraryErase, LibraryBackup.
 
 **Input**: Roadmap row SHOW-015 (P1, size S, depends on SHOW-014, integrated). Observable behavior, verbatim:
 "Disable destructive gestures while retaining emergency controls." Acceptance, verbatim: "Lock blocks delete/reorder
