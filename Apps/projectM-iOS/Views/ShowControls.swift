@@ -23,6 +23,9 @@ import SwiftUI
 
 struct ShowCueRow: View {
     let coordinator: AppCoordinator
+    /// ACC-009-R2: false while the one-handed cluster carries Previous cue and Next cue (the status, Hold, Rehearse and
+    /// Scenes stay).
+    var showsArrows = true
     /// UIX-002-R11: VoiceOver focus returns here after the switcher closes without a choice.
     @AccessibilityFocusState private var scenesFocused: Bool
 
@@ -36,9 +39,9 @@ struct ShowCueRow: View {
 
     private var row: some View {
         HStack(spacing: 12) {
-            previousButton
+            if showsArrows { previousButton }
             status
-            nextButton
+            if showsArrows { nextButton }
             trailingButtons
         }
     }

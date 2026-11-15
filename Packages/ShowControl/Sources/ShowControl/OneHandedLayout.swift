@@ -153,10 +153,13 @@ public struct OneHandedLayout: Equatable, Sendable {
     public let frames: [(action: CriticalAction, rect: Rect)]
     /// True when every frame lies inside the zone.
     public let fits: Bool
+    /// The height kept for the pad's readouts above the cluster in a portrait-shaped area (0: no readouts).
+    public let readoutHeight: Double
 
     public static func == (lhs: OneHandedLayout, rhs: OneHandedLayout) -> Bool {
         lhs.width == rhs.width && lhs.height == rhs.height && lhs.hand == rhs.hand && lhs.zone == rhs.zone
             && lhs.baseTarget == rhs.baseTarget && lhs.padTarget == rhs.padTarget && lhs.fits == rhs.fits
+            && lhs.readoutHeight == rhs.readoutHeight
             && lhs.frames.map(\.action) == rhs.frames.map(\.action) && lhs.frames.map(\.rect) == rhs.frames.map(\.rect)
     }
 
@@ -176,10 +179,11 @@ public struct OneHandedLayout: Equatable, Sendable {
     ///   - padTarget: the pad's side while UIX-005's pad is on, nil otherwise.
     ///   - actions: the actions to place (`CriticalAction.displayed`); placed in `CriticalAction.allCases` order.
     public init(width: Double, height: Double, hand: OneHandedHand, baseTarget: Double, padTarget: Double?,
-                actions: [CriticalAction]) {
+                actions: [CriticalAction], readoutHeight: Double = 0) {
         self.width = width
         self.height = height
         self.hand = hand
+        self.readoutHeight = max(0, readoutHeight)
         let zone: Rect = Self.zone(width: width, height: height, hand: hand)
         self.zone = zone
         let wanted: Set<CriticalAction> = Set(actions)
@@ -219,7 +223,8 @@ public struct OneHandedLayout: Equatable, Sendable {
             }
         }
         let top: Double = frames.map { (entry: (action: CriticalAction, rect: Rect)) -> Double in entry.rect.y }.min() ?? height
-        return PerformanceLayout.Insets(bottom: max(0, height - top + Self.margin))
+        let readouts: Double = readoutHeight > 0 ? readoutHeight + Self.spacing : 0
+        return PerformanceLayout.Insets(bottom: max(0, height - top + Self.margin + readouts))
     }
 
     /// The part of the safe area the reserved band covers.
@@ -229,6 +234,15 @@ public struct OneHandedLayout: Equatable, Sendable {
         if insets.trailing > 0 { return Rect(x: width - insets.trailing, y: 0, width: insets.trailing, height: height) }
         if insets.leading > 0 { return Rect(x: 0, y: 0, width: insets.leading, height: height) }
         return Rect(x: 0, y: height, width: width, height: 0)
+    }
+
+    /// Where the pad's readouts go (ACC-009-R7), inside the reserved band and never over a target: in a portrait-shaped
+    /// area a strip of `readoutHeight` above the cluster, across the zone's width; in a landscape-shaped one the band
+    /// above the zone.
+    public var asideRect: Rect {
+        let band: Rect = reservedRect
+        if isLandscape { return Rect(x: band.x, y: 0, width: band.width, height: zone.y) }
+        return Rect(x: zone.x, y: band.y, width: zone.width, height: readoutHeight)
     }
 
     // MARK: Geometry

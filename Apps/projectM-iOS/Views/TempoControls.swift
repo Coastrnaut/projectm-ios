@@ -13,6 +13,8 @@ import SwiftUI
 struct TempoControls: View {
     let coordinator: AppCoordinator
     var compact = false
+    /// ACC-009-R2: false while the one-handed cluster carries Tap tempo (the readout and Reset stay).
+    var showsTap = true
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
@@ -40,18 +42,7 @@ struct TempoControls: View {
             .accessibilityAddTraits(.isStaticText)   // ACC-004: a readout, not a control (hit-region audit)
             .accessibilityIdentifier("tempoReadout")
 
-            Button { coordinator.tapTempo() } label: {
-                if compact {
-                    Image(systemName: "hand.tap").frame(minWidth: 36, minHeight: 36)
-                } else {
-                    Label("Tap", systemImage: "hand.tap")
-                }
-            }
-            .buttonStyle(.bordered)
-            .accessibilityLabel("Tap tempo")
-            .accessibilityValue(tempo.tapValue)
-            .accessibilityHint("Tap in time with the music, four times, to set the tempo")
-            .accessibilityIdentifier("tapTempo")
+            if showsTap { tapButton(tempo) }
 
             if snapshot.origin == .manual {
                 Button { coordinator.resetTempo() } label: {
@@ -68,5 +59,20 @@ struct TempoControls: View {
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("tempoControls")
+    }
+
+    private func tapButton(_ tempo: TempoCoordinator) -> some View {
+        Button { coordinator.tapTempo() } label: {
+            if compact {
+                Image(systemName: "hand.tap").frame(minWidth: 36, minHeight: 36)
+            } else {
+                Label("Tap", systemImage: "hand.tap")
+            }
+        }
+        .buttonStyle(.bordered)
+        .accessibilityLabel("Tap tempo")
+        .accessibilityValue(tempo.tapValue)
+        .accessibilityHint("Tap in time with the music, four times, to set the tempo")
+        .accessibilityIdentifier("tapTempo")
     }
 }

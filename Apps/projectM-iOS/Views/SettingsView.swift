@@ -90,6 +90,8 @@ struct SettingsView: View {
     var recordingCountdown: RecordingCountdownSetting?
     /// UIX-013: the scene performance HUD switch (nil hides the row, e.g. in previews).
     var sceneHUD: SceneHUDSetting? = nil
+    /// ACC-009: the one-handed layout (nil hides the section, e.g. in previews; iPhone only).
+    var oneHanded: OneHandedSetting? = nil
     /// OUT-004: the external display's output correction (nil hides the section, e.g. in previews).
     var externalOutput: ExternalOutputSetting? = nil
     /// REC-008: the recording length (nil hides the section, e.g. in previews).
@@ -542,6 +544,7 @@ struct SettingsView: View {
         }
         .id("performance")
         if let sceneHUD { SceneHUDSection(setting: sceneHUD).id("sceneHUD") }   // UIX-013-R1
+        if let oneHanded, oneHanded.isPhone { OneHandedSection(setting: oneHanded).id("oneHanded") }   // ACC-009-R1
         if let powerProfile { PowerProfileSection(setting: powerProfile).id("powerProfile") }   // PERF-008-R1
         if let performanceReport { PerformanceReportSection(export: performanceReport).id("performanceReport") }   // PERF-012-R1
     }

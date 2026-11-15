@@ -110,6 +110,20 @@ enum PrimaryScreens {
             RequiredControl("presets", .button),
             RequiredControl("settings", .button),
         ]),
+        // ACC-009-R10: the one-handed layout (Right hand): the critical actions in the thumb-zone cluster, the rest in the card.
+        PrimaryScreen(name: "oneHandedControls", feature: "ACC-009", auditKey: "controls",
+                      launch: ["-settings.controls.oneHanded", "right"], route: .controls, controls: [
+            RequiredControl("emergencyBlackout", .button, live: true),
+            RequiredControl("stop", .button),
+            RequiredControl("pauseResume", .button),
+            RequiredControl("previous", .button),
+            RequiredControl("next", .button),
+            RequiredControl("random", .button),
+            RequiredControl("presets", .button),
+            RequiredControl("settings", .button),
+            RequiredControl("blackout", .button),
+            RequiredControl("tapTempo", .button),
+        ]),
         PrimaryScreen(name: "parameterShelf", feature: "UIX-004", auditKey: "controls",
                       launch: ["-settings.parameterShelf.pins", "(effect.bloom.enabled, effect.bloom.intensity)"],
                       route: .controls, controls: [

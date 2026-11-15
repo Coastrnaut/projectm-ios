@@ -39,6 +39,7 @@ import FrameCapture
 import PresentationLifecycle
 import PresetLibrary
 import Rendering
+import ShowControl
 import SwiftUI
 import TextLayer
 import VideoLayer
@@ -48,6 +49,8 @@ struct VisualizerView: View {
     @Bindable var coordinator: AppCoordinator
     /// UIX-005-R4: the edges the performance pad uses; the status stack keeps clear of them.
     @State private var performanceInsets = EdgeInsets()
+    /// ACC-009-R5: the edge band the one-handed cluster reserves (used instead of the pad's while one-handed).
+    @State private var oneHandedInsets = EdgeInsets()
     /// UIX-007-R1: Settings opens beside the output (iPad, regular width) instead of as a sheet.
     @State private var splitEditorAvailable = false
 
@@ -151,7 +154,7 @@ struct VisualizerView: View {
             bottomStatus
         }
         .padding()
-        .padding(coordinator.performanceLayout ? performanceInsets : EdgeInsets())   // UIX-005-R4
+        .padding(reservedInsets)   // UIX-005-R4, ACC-009-R5
         // ACC-001-R2: the controls and the badges riding on them are instant with Reduce Motion.
         .reduceMotionAware(MotionPolicy.controlsFade, value: coordinator.controlsVisible, policy: coordinator.motion)
     }
@@ -214,6 +217,20 @@ struct VisualizerView: View {
     @ViewBuilder private var statusLayers: some View {
         statusStack
         performancePadLayer
+        oneHandedLayer
+    }
+
+    /// The edges the status stack keeps clear: the one-handed cluster's band, else the pad's (UIX-005-R4, ACC-009-R5).
+    private var reservedInsets: EdgeInsets {
+        if coordinator.oneHandedActive { return oneHandedInsets }
+        return coordinator.performanceLayout ? performanceInsets : EdgeInsets()
+    }
+
+    /// ACC-009-R2: the one-handed cluster of critical targets (it draws nothing while the controls and the pad are off).
+    @ViewBuilder private var oneHandedLayer: some View {
+        if coordinator.oneHandedActive, let hand = coordinator.oneHanded.hand {
+            OneHandedControlsLayer(coordinator: coordinator, hand: hand) { (insets: EdgeInsets) -> Void in oneHandedInsets = insets }
+        }
     }
 
     /// UIX-005-R2: the performance pad, with or without the controls, while the layout is on.
@@ -221,6 +238,8 @@ struct VisualizerView: View {
         if coordinator.performanceLayout {
             PerformancePadLayer(show: coordinator.show, tempo: coordinator.tempo, external: coordinator.externalDisplay,
                                 advance: coordinator.showAutoAdvance,   // SHOW-002
+                                oneHanded: coordinator.oneHandedActive ? coordinator.oneHanded.hand : nil,   // ACC-009-R7
+                                oneHandedActions: CriticalAction.displayed(coordinator.oneHandedContext),
                                 onSetHold: { (held: Bool) -> Void in coordinator.setShowHold(held) }) {   // SHOW-005
                 (insets: EdgeInsets) -> Void in performanceInsets = insets
             }
@@ -488,6 +507,7 @@ struct VisualizerView: View {
                      recordingQuality: coordinator.recordingQuality,   // REC-005
                      recordingCountdown: coordinator.recordingCountdown,   // REC-007
                      sceneHUD: coordinator.sceneHUD,   // UIX-013
+                     oneHanded: coordinator.oneHanded,   // ACC-009
                      externalOutput: coordinator.externalOutput,   // OUT-004
                      recordingTimedStop: coordinator.recordingTimedStop,   // REC-008
                      explainers: coordinator.explainers,   // UIX-015

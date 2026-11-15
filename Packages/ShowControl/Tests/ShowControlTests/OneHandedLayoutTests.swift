@@ -40,7 +40,7 @@ final class OneHandedLayoutTests: XCTestCase {
                         _ context: CriticalActionContext) -> OneHandedLayout {
         OneHandedLayout(width: size.width, height: size.height, hand: hand, baseTarget: base,
                         padTarget: context.padOn ? PerformanceLayout.compactTarget : nil,
-                        actions: CriticalAction.displayed(context))
+                        actions: CriticalAction.displayed(context), readoutHeight: context.padOn ? 44 : 0)
     }
 
     /// S1: every rule over the whole table.
@@ -68,6 +68,12 @@ final class OneHandedLayoutTests: XCTestCase {
         // The same set as the standard layout, each action once.
         XCTAssertEqual(layout.frames.map(\.action), CriticalAction.standard(context), tag)
         XCTAssertTrue(layout.fits, "\(tag): does not fit")
+        XCTAssertTrue(Rect(x: 0, y: 0, width: size.width, height: size.height).contains(layout.asideRect), "\(tag): readouts outside")
+        if context.padOn {
+            XCTAssertGreaterThanOrEqual(layout.asideRect.width, 200, "\(tag): readout area too narrow")
+            XCTAssertGreaterThanOrEqual(layout.asideRect.height, 44, "\(tag): readout area too short")
+            XCTAssertTrue(layout.reservedRect.contains(layout.asideRect), "\(tag): readouts outside the band")
+        }
         let band: Rect = layout.reservedRect
         for (index, entry) in layout.frames.enumerated() {
             let rect: Rect = entry.rect
@@ -77,6 +83,7 @@ final class OneHandedLayoutTests: XCTestCase {
             XCTAssertTrue(safe.contains(rect), "\(tag) \(entry.action): outside the safe area")
             XCTAssertTrue(layout.zone.contains(rect), "\(tag) \(entry.action): outside the zone")
             XCTAssertTrue(band.contains(rect), "\(tag) \(entry.action): outside the reserved band")
+            XCTAssertFalse(layout.asideRect.intersects(rect), "\(tag) \(entry.action): under the readouts")
             for other in layout.frames[(index + 1)...] {
                 XCTAssertFalse(rect.intersects(other.rect), "\(tag): \(entry.action) overlaps \(other.action)")
             }
