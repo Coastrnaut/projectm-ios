@@ -43,16 +43,19 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
     public var palette: VisualPalette
     /// VIS-014: kaleidoscope wedges; 0 draws the plain field, 2…24 fold it (`KaleidoscopeFold`).
     public var wedges: Int
+    /// VIS-015: tunnel rings per beat (`TunnelPace`); 0 draws the field or kaleidoscope, 0.5/1/2 the tunnel (wedges 0).
+    public var tunnelPace: Double
 
     public init(frequency: Double = NoiseFieldConfiguration.defaultFrequency, octaves: Int = NoiseFieldConfiguration.defaultOctaves,
                 seed: Int = NoiseFieldConfiguration.defaultSeed, reduceMotion: Bool = false, palette: VisualPalette = .spectrum,
-                wedges: Int = 0) {
+                wedges: Int = 0, tunnelPace: Double = 0) {
         self.frequency = frequency
         self.octaves = octaves
         self.seed = seed
         self.reduceMotion = reduceMotion
         self.palette = palette
         self.wedges = wedges
+        self.tunnelPace = tunnelPace
         self = clamped()
     }
 
@@ -62,6 +65,18 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         let n: Int = min(max(wedges, KaleidoscopeFold.wedgeRange.lowerBound), KaleidoscopeFold.wedgeRange.upperBound)
         return NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, wedges: n)
     }
+
+    /// VIS-015: the tunnel at `pace`, from the default field's seed (1301).
+    public static func tunnel(pace: TunnelPace = .defaultPace, reduceMotion: Bool = false,
+                              palette: VisualPalette = .spectrum) -> NoiseFieldConfiguration {
+        NoiseFieldConfiguration(reduceMotion: reduceMotion, palette: palette, tunnelPace: pace.ringsPerBeat)
+    }
+
+    /// VIS-015: the tunnel is on.
+    public var isTunnel: Bool { tunnelPace > 0 }
+
+    /// VIS-015: the tunnel's pace (nil when not a tunnel).
+    public var pace: TunnelPace? { TunnelPace(ringsPerBeat: tunnelPace) }
 
     /// VIS-014: the fold is on.
     public var isKaleidoscope: Bool { wedges >= KaleidoscopeFold.wedgeRange.lowerBound }
@@ -74,6 +89,8 @@ public struct NoiseFieldConfiguration: Sendable, Equatable {
         c.octaves = min(max(octaves, Self.octaveRange.lowerBound), Self.octaveRange.upperBound)
         c.seed = Self.seedRange.contains(seed) ? seed : Self.defaultSeed
         c.wedges = wedges < KaleidoscopeFold.wedgeRange.lowerBound ? 0 : min(wedges, KaleidoscopeFold.wedgeRange.upperBound)
+        c.tunnelPace = TunnelPace(ringsPerBeat: tunnelPace)?.ringsPerBeat ?? 0   // VIS-015: 0, 0.5, 1 or 2
+        if c.tunnelPace > 0 { c.wedges = 0 }
         return c
     }
 

@@ -1192,6 +1192,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         case .particleOrbit: .particleOrbit(radius: settings.particleOrbitRadius)   // VIS-009
         case .noiseField: .noiseField(frequency: settings.noiseFieldFrequency, octaves: settings.noiseFieldOctaves, seed: settings.noiseFieldSeed)   // VIS-013
         case .kaleidoscope: .kaleidoscope(wedges: settings.kaleidoscopeWedges)   // VIS-014
+        case .tunnel: .tunnel(pace: settings.tunnelPace)   // VIS-015
         default: .circular
         }
     }

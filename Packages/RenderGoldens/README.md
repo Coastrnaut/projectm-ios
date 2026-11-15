@@ -69,6 +69,11 @@ with `--filter NoiseFieldGolden` or `-only-testing:RenderGoldensTests/NoiseField
 (`Tests/RenderGoldensTests/KaleidoscopeGoldenTests.swift`); record with `--filter KaleidoscopeGolden` or
 `-only-testing:RenderGoldensTests/KaleidoscopeGoldenTests`.
 
+`GeneratorGoldens/Tunnel/<class>/` (VIS-015) holds the tunnel's golden: `tunnel-<w>x<h>-f0.png` (seed 1301, 1 ring
+per beat, a 120 BPM tempo for 0.25 s then none, the same fixture bands, captured at 0.5 s), through
+`NoiseFieldGenerator` with `tunnelPace: 1` (`Tests/RenderGoldensTests/TunnelGoldenTests.swift`); record with
+`--filter TunnelGolden` or `-only-testing:RenderGoldensTests/TunnelGoldenTests`.
+
 ## Run
 
 ```bash

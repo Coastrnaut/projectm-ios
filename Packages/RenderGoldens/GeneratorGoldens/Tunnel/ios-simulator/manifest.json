@@ -1,0 +1,28 @@
+{
+  "entries" : [
+    {
+      "file" : "tunnel-128x96-f0.png",
+      "fileSHA256" : "5a994236903ab25586f5a8d1061df2812e837038fd3905c6a38a0b0e76e87c46",
+      "frame" : 0,
+      "height" : 96,
+      "osSensitive" : false,
+      "pixelSHA256" : "aa0d8f194d6f9d1788b494be02544bc8805cedd3dd27a7ca7b3c3fae087cb613",
+      "scene" : "tunnel",
+      "width" : 128
+    },
+    {
+      "file" : "tunnel-256x192-f0.png",
+      "fileSHA256" : "ccc9375c9917f955c6e837d0f410f017eb4b15a6d558b1796e553d23e31617f3",
+      "frame" : 0,
+      "height" : 192,
+      "osSensitive" : false,
+      "pixelSHA256" : "1dc850189c461b230a26d2840f254bb71b4e8680796d37c574c0db70d5b61564",
+      "scene" : "tunnel",
+      "width" : 256
+    }
+  ],
+  "formatVersion" : 1,
+  "platform" : "ios-simulator",
+  "recordedGPU" : "Apple iOS simulator GPU",
+  "recordedOS" : "27.2"
+}

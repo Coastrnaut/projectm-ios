@@ -4,6 +4,7 @@
 // Nothing here touches the render session, the scene, the preset or the audio source (OUT-002-R1).
 // OUT-004: the stored output correction is applied at launch (ExternalOutputSetting).
 // OUT-003: so are the stored output resolution and this device's pixel budget.
+// OUT-007: the stored corner pin.
 // OUT-006: the stored output mode; the routing's scene-overlay decision drives MED-010's logo layers.
 import Foundation
 import PresentationLifecycle
@@ -18,6 +19,7 @@ extension AppCoordinator {
             self?.logo.outputSuppressed = !routes
         }
         externalDisplay.outputMode = externalOutput.outputMode
+        externalDisplay.cornerPin = externalOutput.cornerPin   // OUT-007
         logo.outputSuppressed = !externalDisplay.routesSceneOverlays
         externalDisplay.onConnectionChange = { [weak self] (change: ExternalDisplayConnectionChange) -> Void in
             self?.statusEvents.post(StatusEventCatalog.externalDisplay(change))
