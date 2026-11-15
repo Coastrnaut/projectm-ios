@@ -104,6 +104,7 @@ public enum LibrarySettingsPolicy {
         "settings.particleOrbit.radius",   // VIS-009-R10
         "settings.noiseField.frequency", "settings.noiseField.octaves", "settings.noiseField.seed",   // VIS-013-R9
         "settings.kaleidoscope.wedges",   // VIS-014-R9
+        "settings.tunnel.pace",   // VIS-015-R9
         "settings.spectrum.attack", "settings.spectrum.release",
         "settings.camera.position", "settings.camera.mirrorFront", "settings.camera.mirrorBack",
         "settings.camera.cropMode", "settings.camera.cropAnchor", "settings.camera.zoom", "settings.camera.lens", "settings.camera.personMask",
@@ -149,6 +150,7 @@ public enum LibrarySettingsPolicy {
         "settings.externalDisplay.pixelAspect",
         "settings.externalDisplay.resolution", "settings.externalDisplay.resolutionPercent",   // OUT-003-R7: likewise
         "settings.externalDisplay.outputMode",   // OUT-006-R7: likewise
+        "settings.externalDisplay.cornerPin",   // OUT-007-R9: likewise (one projector's geometry)
         "settings.splitEditor.width",   // UIX-007-R7: the iPad split editor width depends on this device's screen
         "settings.video.id", "settings.video.loop", "settings.video.speed",
         recentPresetsKey,   // PRE-006-R7: recently played history stays on this device
