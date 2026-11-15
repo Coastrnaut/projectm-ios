@@ -1,6 +1,6 @@
 # Autonomous roadmap run: status
 
-- Run `cb545c51cf0b`, updated 2026-11-15T02:23:54Z; phase: **implementation**
+- Run `cb545c51cf0b`, updated 2026-11-15T02:26:49Z; phase: **implementation**
 - Roadmap SHA-256 `77a775e969de49fed946704fe966967cf8a87fa49090eefeaa834a4ee769da37` (frozen)
 - Started from `419cc2a999edbc771333eb97968590802bc490fe`; integration branch `autonomous/integration` (local only, never pushed)
 - Features: 326
@@ -9,19 +9,19 @@
 
 | State | Features |
 |---|---|
-| audited | 53 |
-| implementing | 2 |
-| built | 1 |
+| audited | 52 |
+| implementing | 3 |
+| unit_passed | 1 |
 | integrated | 269 |
 | skipped_existing | 1 |
 
 ## Counts by priority
 
-| Priority | audited | implementing | built | integrated | skipped_existing |
+| Priority | audited | implementing | unit_passed | integrated | skipped_existing |
 |---|---|---|---|---|---|
 | P0 | 2 | 0 | 0 | 84 | 1 |
 | P1 | 2 | 1 | 1 | 147 | 0 |
-| P2 | 40 | 1 | 0 | 38 | 0 |
+| P2 | 39 | 2 | 0 | 38 | 0 |
 | P3 | 9 | 0 | 0 | 0 | 0 |
 
 ## Final device gate
@@ -3272,3 +3272,18 @@ None.
 - `swift test --package-path Packages/ShowControl`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_ShowControl.log`)
 - `swift test --package-path Packages/VisualGenerators`: pass at `900d68852a73` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-013/20261114T204900/swift-test_VisualGenerators.log`)
 - `swift test VisualGenerators 279, Compositor 1041, RenderGoldens 89; postmerge projectM-iOSTests 1161 + NoiseFieldUITests 1; compliance, docs OK`: pass at `a6c2cf3cfd3b` (log `.autonomous/logs/integration/batch94/app-tests.log`)
+
+### VIS-014 Kaleidoscope field (unit_passed)
+- `python3 scripts/check_compliance.py`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/compliance.log`)
+- `python3 scripts/validate_docs.py`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/docs.log`)
+- `python3 scripts/test_scripts.py`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/script-tests.log`)
+- `python3 scripts/autonomous/tests/test_autonomous.py`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/autonomous-tests.log`)
+- `xcodebuild -scheme ANGLERendering -destination id=45ECED7B-7ADD-40B8-BC3C-5E3CD0714B85 CODE_SIGNING_ALLOWED=NO -test-timeouts-enabled YES -default-test-execution-time-allowance 180 test`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/sim-test_ANGLERendering.log`)
+- `swift test --package-path Packages/Compositor`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_Compositor.log`)
+- `swift test --package-path Packages/ImportFuzz`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_ImportFuzz.log`)
+- `swift test --package-path Packages/LibraryBackup`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_LibraryBackup.log`)
+- `swift test --package-path Packages/RenderGoldens`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_RenderGoldens.log`)
+- `swift test --package-path Packages/SceneArchive`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_SceneArchive.log`)
+- `swift test --package-path Packages/SceneFormat`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_SceneFormat.log`)
+- `swift test --package-path Packages/ShowControl`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_ShowControl.log`)
+- `swift test --package-path Packages/VisualGenerators`: pass at `f65bea0e126f` (log `/Users/coast/Documents/GIT/projectm-ios/.autonomous/logs/VIS-014/20261114T212149/swift-test_VisualGenerators.log`)
