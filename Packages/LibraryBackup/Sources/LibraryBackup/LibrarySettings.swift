@@ -93,6 +93,7 @@ public enum LibrarySettingsPolicy {
         "settings.colorGrade.temperature", "settings.colorGrade.lift", "settings.colorGrade.gamma",   // FX-003-R8
         "settings.colorGrade.gain", "settings.colorGrade.saturation", "settings.colorGrade.hue",   // FX-004-R8
         "settings.feedback.enabled", "settings.feedback.halfLife",   // FX-009-R11: Trails
+        "settings.noiseEditor.values",   // SHD-006-R7: the Noise editor's values
         "settings.colorGrade.enabled", "settings.effectChain.order", "settings.effectChain.presets",   // FX-020-R8, R10
         "settings.oscilloscope.line", "settings.oscilloscope.window",
         "settings.lissajous.mode", "settings.lissajous.persistence",   // VIS-004-R11
@@ -117,6 +118,7 @@ public enum LibrarySettingsPolicy {
         recentPresetsEnabledKey,   // PRE-006-R7
         "settings.recording.countdown",   // REC-007-R8: a preference (off, 3, 5, 10); erased with Settings
         "settings.visualizer.sceneHUD",   // UIX-013-R11: a preference (Bool); erased with Settings
+        "settings.controls.oneHanded",   // ACC-009-R9: a preference ("left"/"right"); erased with Settings
         "settings.recording.timedStop",   // REC-008-R9: a preference (off, 10, 30, 60, 300); erased with Settings
         "settings.performance.powerProfile",   // PERF-008-R6: a preference (standard, followLowPowerMode, batterySaver)
     ]

@@ -18,8 +18,9 @@ final class MaterialVariantSwitchTests: XCTestCase {
     private static let golden: [String: [Float]] = [
         "plasmaDetailed": [0.1753, 0.0754, 0.2884, 0.3203, 0.2416, 0.3296, 0.1587, 0.0681, 0.3025,
                            0.1044, 0.1614, 0.3293, 0.1476, 0.0793, 0.3093, 0.1843, 0.0499, 0.2856],
-        "noiseFlowLite": [0.0364, 0.1275, 0.1639, 0.0560, 0.1962, 0.2522, 0.0280, 0.0982, 0.1262,
-                          0.0252, 0.0883, 0.1135, 0.0412, 0.1440, 0.1852, 0.0446, 0.1562, 0.2009],
+        // SHD-006: re-recorded 2026-11-14 (integer seeded hash; seed 0, defaults).
+        "noiseFlowLite": [0.0371, 0.1299, 0.1670, 0.0533, 0.1868, 0.2401, 0.0303, 0.1060, 0.1362,
+                          0.0351, 0.1229, 0.1580, 0.0360, 0.1261, 0.1621, 0.0326, 0.1142, 0.1467],
     ]
 
     private static func signature(_ pixels: [Pixel]) -> [Float] {

@@ -1,7 +1,7 @@
 // LibraryCheckUITests.swift — PRE-018-T14 (specs/194-pre-018-integrity-scanner; S6): the library check on
 // the iOS Simulator. `-uitestBrokenLibrary` (DEBUG, with `-uitestResetNotice`) seeds one issue of every
 // kind and every reference store. My Presets › Check Library › Check Library lists them; Fix All Safe
-// removes the five broken references and the three issues that need the user stay. Launched with the fixed
+// removes the six broken references (PRE-011 added notes) and the three issues that need the user stay. Launched with the fixed
 // fake entitlement (`-uitestUnlocked NO`). Simulator only; never device evidence. Budget: under 30 s.
 import XCTest
 
@@ -25,9 +25,17 @@ final class LibraryCheckUITests: XCTestCase {
 
         app.tapFreshControl("presets")
         let node = app.buttons["node:myPresets"]
-        _ = app.reveal(node)
-        node.tap()
         let link = app.buttons["libraryCheckLink"]
+        _ = app.reveal(node)
+        // Once thumbnails exist (any earlier run on this simulator), the PRE-004/005 facet chips push the home list
+        // down and this row ends under the floating search field at the bottom, where a tap lands on the field:
+        // lift the row into the upper part of the screen first (a drag in the right margin, as `reveal` does).
+        let window = app.windows.firstMatch
+        if node.frame.maxY > window.frame.maxY * 0.75 {
+            window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.7))
+                .press(forDuration: 0.1, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.35)))
+        }
+        node.tap()
         XCTAssertTrue(link.appears(within: 5) || app.reveal(link), "Check Library is offered in My Presets")
         _ = app.reveal(link)
         link.tap()
@@ -36,7 +44,7 @@ final class LibraryCheckUITests: XCTestCase {
         XCTAssertTrue(result.appears(within: 5))
         XCTAssertEqual(result.label, "Not checked yet.")
         app.buttons["checkLibrary"].tap()
-        XCTAssertTrue(waitFor(result, label: "Found 8 problems."), result.label)
+        XCTAssertTrue(waitFor(result, label: "Found 9 problems."), result.label)
         // The first section is on screen without scrolling; the count covers the rest (owner rule 7).
         XCTAssertTrue(app.descendants(matching: .any)["integrityIssue:missingTexture:user/00000000-0000-4000-8000-000000000010"].exists)
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -47,7 +55,7 @@ final class LibraryCheckUITests: XCTestCase {
         let fixAll = app.buttons["fixAllSafe"]
         if !fixAll.isHittable { _ = app.reveal(fixAll, down: true) }
         fixAll.tap()
-        let fixed = "Removed 5 broken references. Found 3 problems."
+        let fixed = "Removed 6 broken references. Found 3 problems."
         XCTAssertTrue(waitFor(result, label: fixed), result.label)
         XCTAssertFalse(app.buttons["fixAllSafe"].exists, "no broken reference is left")
         let missingFile = app.descendants(matching: .any)["integrityIssue:missingFile:user/00000000-0000-4000-8000-000000000011"]

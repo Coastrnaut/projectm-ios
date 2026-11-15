@@ -321,6 +321,18 @@ they override any system-provided reminder.
      Fix failures, budget overruns and conflicts, or hand them to an agent; don't leave them for
      the owner. Owner-only items (signing, App Store Connect, device steps that need a person,
      destructive git) stay the owner's: note them and carry on with everything else.
+10. **Remove worktrees after merge** (feedback, 2026-11-14). On 2026-11-14 the disk showed 660 GB
+    used: `.autonomous/worktrees` held 263 feature checkouts (207 GB) although 241 of 243 feature
+    branches were already merged into `autonomous/integration`. Nothing ever called
+    `Worktrees.remove`. The owner asked to remember to remove worktrees after merge.
+    - *How to apply:* as soon as a feature is integrated (merged and the integration gates pass),
+      remove its worktree with `Worktrees.remove(<id>)` (`git worktree remove`, never `--force`).
+      Keep the branch (its commits stay) and keep any worktree with uncommitted work, but report
+      it. Before each new batch, remove any leftover worktree whose branch
+      `git merge-base --is-ancestor` shows as merged and that no running agent uses, then
+      `git worktree prune`. Shut down and delete simulators that agents created for a finished
+      feature (`xcrun simctl delete`), and keep at most the concurrency limit of feature worktrees
+      on disk.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 

@@ -35,11 +35,14 @@
 // AUD-012: "Switch Source" (after Stop) opens the list of the other available sources.
 // UIX-004: the favorite parameter shelf (pinned controls) sits above the buttons while it has pins.
 // UIX-005: "Performance layout" / "Standard layout" turns the performance pad on and off (PerformancePad).
+// ACC-009-R2: with the one-handed layout active, the critical actions (the main row, Black out, Tap tempo, the cue
+// arrows) leave this card for the thumb-zone cluster (OneHandedControls.swift); the rest stays here.
 import CameraLayer
 import CaptureKit
 import CaptureUI
 import PresentationLifecycle
 import PresetLibrary
+import ShowControl
 import SwiftUI
 
 struct ControlsOverlay: View {
@@ -110,7 +113,7 @@ struct ControlsOverlay: View {
                 Divider()
             }
             if coordinator.show.hasCues {   // SHOW-001-R13
-                ShowCueRow(coordinator: coordinator)
+                ShowCueRow(coordinator: coordinator, showsArrows: !coordinator.oneHandedActive)   // ACC-009-R2
                 Divider()
             }
             ParameterShelfStrip(shelf: coordinator.parameterShelf, settings: coordinator.settings,   // UIX-004-R3
@@ -248,14 +251,14 @@ struct ControlsOverlay: View {
             if typeSize.isAccessibilitySize {
                 VStack(alignment: .leading, spacing: 6) {
                     SourceStatusIndicator(coordinator: coordinator)
-                    TempoControls(coordinator: coordinator, compact: true)   // SHOW-011
+                    TempoControls(coordinator: coordinator, compact: true, showsTap: !coordinator.oneHandedActive)   // SHOW-011, ACC-009
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             } else {
                 HStack {
                     SourceStatusIndicator(coordinator: coordinator)
                     Spacer(minLength: 0)
-                    TempoControls(coordinator: coordinator, compact: true)   // SHOW-011
+                    TempoControls(coordinator: coordinator, compact: true, showsTap: !coordinator.oneHandedActive)   // SHOW-011, ACC-009
                 }
             }
             if let route = routeIndicator {   // AUD-007: own row, the iPhone is narrow
@@ -272,14 +275,19 @@ struct ControlsOverlay: View {
             iconGrid(secondaryButtons)
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("controlsSecondary")
-            iconGrid(primaryButtons)
-                .accessibilityElement(children: .contain)
-                .accessibilityIdentifier("controlsPrimary")
+            if !coordinator.oneHandedActive {   // ACC-009-R2: the main row is in the thumb-zone cluster
+                iconGrid(primaryButtons)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("controlsPrimary")
+            }
         }
     }
 
     /// The FR-082 controls, in the order of the compact main row (FR-087).
     private static let primaryIDs: [String] = ["stop", "pauseResume", "previous", "next", "random", "presets", "settings"]
+
+    /// ACC-009: the card's buttons the one-handed cluster draws instead (CriticalAction's identifiers).
+    private static let oneHandedIDs: Set<String> = Set(CriticalAction.allCases.map { (action: CriticalAction) -> String in action.identifier })
 
     private var primaryButtons: [Item] {
         let items: [Item] = buttons
@@ -326,7 +334,7 @@ struct ControlsOverlay: View {
                     .accessibilityHint(item.hint ?? "")
                     .accessibilityIdentifier(item.id)
                 }
-                TempoControls(coordinator: coordinator)   // SHOW-011
+                TempoControls(coordinator: coordinator, showsTap: !coordinator.oneHandedActive)   // SHOW-011, ACC-009
             }
         }
     }
@@ -343,7 +351,10 @@ struct ControlsOverlay: View {
 
     private var buttons: [Item] {
         let presetIDs: Set<String> = ["previous", "next", "random", "presets"]
-        return allButtons.filter { !coordinator.showsAlternateVisual || !presetIDs.contains($0.id) }
+        let moved: Set<String> = coordinator.oneHandedActive ? Self.oneHandedIDs : []   // ACC-009-R2
+        return allButtons.filter { (item: Item) -> Bool in
+            (!coordinator.showsAlternateVisual || !presetIDs.contains(item.id)) && !moved.contains(item.id)
+        }
     }
 
     /// OUT-010: one tap blacks out, one tap restores (spec Clarifications: no confirmation).

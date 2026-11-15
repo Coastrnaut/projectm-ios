@@ -7,3 +7,4 @@
 - [Short tests](short-tests.md) — no 30-minute runs; tests short and concise, representative cases, targeted post-merge checks
 - [No simulator panel prompts](no-simulator-panel-prompts.md) — agents test headless; never use the Simulator attach tool
 - [Never stop](never-stop.md) — never stop the autonomous run under any circumstances; always keep work in flight
+- [Remove worktrees after merge](remove-worktrees-after-merge.md) — remove each feature worktree and its simulators once merged; keep branches

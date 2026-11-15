@@ -60,7 +60,7 @@ public struct ValidatedShaderMetadata: Sendable, Hashable {
 
 public enum ShaderMetadataReader {
     public static let schemaVersion = 1.0
-    public static let maximumParameters = 8
+    public static let maximumParameters = 16
     public static let maximumLabelLength = 64
     public static let maximumSummaryLength = 200
     public static let enumCaseCount = 2...16
