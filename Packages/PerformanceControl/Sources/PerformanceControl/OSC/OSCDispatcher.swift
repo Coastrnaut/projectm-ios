@@ -2,8 +2,7 @@
 // (OSC-001-R12, R13; contract C3; OSC-002-R10, contract P3).
 //
 // A bundle is decoded completely first, so a malformed element rejects the whole datagram and
-// applies nothing. Its messages are then applied immediately, depth-first in packet order; the time
-// tag is ignored (scheduling and the late-message policy are OSC-006).
+// applies nothing. OSC-006 then applies its messages by time tag (see below).
 // Called on the transport's serial queue (OSC-001-R14), never on the main thread or an audio
 // thread. A value reaches the store only through a route to a registered parameter whose
 // `ModulationPolicy.allowsExternalControl` is true; the store clamps it and refuses NaN/infinity.
@@ -29,6 +28,15 @@
 // and a whole-datagram decode) is captured and the capture disarms in the same locked step, so a burst or bundle
 // records one address. The handler runs after the lock is released, on the receiving side. The message is then
 // dispatched with the routes as they are (learning only creates a route later).
+//
+// OSC-006 (specs/278-osc-006-osc-bundles, contract B1): a bundle's tag is mapped to the monotonic clock once at
+// receipt (`OSCTimeMapping`, the injected wall clock); a message takes the latest of its enclosing bundles' tags.
+// "Immediately", on-time (≤ 20 ms late) and late (≤ 1 s) messages apply at once in (due, arrival) order; older ones
+// and those more than 10 s ahead are dropped; the rest wait in a bounded `OSCBundleSchedule` (256; a datagram that
+// does not fit is dropped whole). One wake-up at a time runs on the flush scheduler, and every datagram first
+// applies what is already due, so values never reorder. A due message goes through `apply(message:)` like any
+// other (routes, policy, learn, per-target limit at dispatch); the allow list and datagram limits were checked at
+// receipt. `clearScheduled` (receiver stop and start) drops everything pending.
 import ParameterGraph
 import Synchronization
 
@@ -46,8 +54,12 @@ public enum OSCDispatchOutcome: Sendable, Hashable {
     case rateLimited
     /// OSC-009: the message's target was over its rate; the value is held for the target's next slot.
     case coalesced(ParameterID)
+    /// OSC-006: the message waits for its time tag in the bundle schedule.
+    case scheduled
+    /// OSC-006: the message was too late, too far ahead or did not fit the schedule.
+    case dropped(OSCBundleDrop)
     /// OSC-002: a bundle; one outcome per message, depth-first in packet order (never `.rejected`
-    /// or `.bundle`).
+    /// or `.bundle`). A scheduled message's later outcome is counted when it applies.
     indirect case bundle([OSCDispatchOutcome])
 }
 
@@ -72,6 +84,16 @@ public struct OSCReceiverCounters: Sendable, Equatable {
     public var coalesced = 0
     /// OSC-003: messages to an address that is not on the route allowlist (also counted in `ignored`).
     public var unknownAddresses = 0
+    /// OSC-006: bundle messages put in the schedule.
+    public var scheduled = 0
+    /// OSC-006: bundle messages applied at once although 20 ms to 1 s late.
+    public var lateApplied = 0
+    /// OSC-006: bundle messages dropped as more than 1 s late.
+    public var lateDropped = 0
+    /// OSC-006: bundle messages dropped as more than 10 s ahead.
+    public var beyondHorizon = 0
+    /// OSC-006: bundle messages dropped because the schedule was full.
+    public var scheduleOverflow = 0
     /// `OSCDecodeError.reason` → count.
     public var rejectedByReason: [String: Int] = [:]
 
@@ -95,13 +117,19 @@ public final class OSCDispatcher: Sendable {
         /// OSC-004: the one-shot learn capture.
         var learnHandler: LearnHandler?
         var learnCaptured: String?
+        /// OSC-006: pending bundle messages, the arrival counter and the due time of the armed wake-up.
+        var schedule = OSCBundleSchedule()
+        var sequence: UInt64 = 0
+        var armedWake: UInt64?
     }
 
     public typealias LearnHandler = @Sendable (String) -> Void
 
     public let store: ParameterStore
     public let limits: OSCRateLimitConfiguration
+    public let timing: OSCBundleTiming
     private let clock: OSCMonotonicClock
+    private let wallClock: OSCWallClock
     private let scheduler: OSCFlushScheduler
     private let state: Mutex<State>
     private let activityHandlers = Mutex<[ActivityHandler]>([])
@@ -109,10 +137,14 @@ public final class OSCDispatcher: Sendable {
     public init(store: ParameterStore, routes: [OSCRoute],
                 limits: OSCRateLimitConfiguration = .default,
                 clock: OSCMonotonicClock = .continuous(),
-                scheduler: OSCFlushScheduler = .sleepingTask) {
+                scheduler: OSCFlushScheduler = .sleepingTask,
+                wallClock: OSCWallClock = .system,
+                timing: OSCBundleTiming = .default) {
         self.store = store
         self.limits = limits
+        self.timing = timing
         self.clock = clock
+        self.wallClock = wallClock
         self.scheduler = scheduler
         var initial = State(limiter: OSCRateLimiter(configuration: limits), routes: [:])
         initial.routes = Self.table(routes)
@@ -156,6 +188,58 @@ public final class OSCDispatcher: Sendable {
     /// Whether a deferred flush is scheduled (tests: never more than one).
     public var isFlushScheduled: Bool { state.withLock { $0.flushScheduled } }
 
+    // MARK: Bundle schedule (OSC-006)
+
+    /// Bundle messages waiting for their time tag.
+    public var pendingScheduledCount: Int { state.withLock { $0.schedule.count } }
+
+    /// Drops every pending bundle message (OSC-006-R10: the receiver stops or starts).
+    public func clearScheduled() {
+        state.withLock { s in
+            s.schedule.removeAll()
+            s.armedWake = nil
+        }
+    }
+
+    /// Applies every pending bundle message that is due and arms the next wake-up (run by the scheduler; tests
+    /// call it directly).
+    public func flushScheduled() { wake(armedFor: nil) }
+
+    private func wake(armedFor due: UInt64?) {
+        let (next, flushDelay, learned) = state.withLock { s -> ((UInt64, UInt64)?, UInt64?, (LearnHandler, String)?) in
+            if let due, s.armedWake == due { s.armedWake = nil }
+            let now = clock.now()
+            applyDue(now: now, &s)
+            return (Self.claimWake(&s, now: now), Self.claimFlush(&s, now: now), Self.takeLearned(&s))
+        }
+        if let next { scheduleWake(next) }
+        if let flushDelay { scheduleFlush(after: flushDelay) }
+        if let (handler, address) = learned { handler(address) }
+        notifyActivity()
+    }
+
+    /// Dispatches every due bundle message in (due, arrival) order, counted like an immediate message.
+    private func applyDue(now: UInt64, _ s: inout State) {
+        guard let earliest = s.schedule.earliestDue, earliest <= now else { return }
+        for entry in s.schedule.takeDue(now: now) {
+            Self.countMessage(apply(entry.message, now: now, &s), in: &s.counters)
+        }
+    }
+
+    /// The due time and delay of a wake-up to schedule now: only when none is armed for the earliest due time or
+    /// before it.
+    private static func claimWake(_ s: inout State, now: UInt64) -> (UInt64, UInt64)? {
+        guard let earliest = s.schedule.earliestDue else { return nil }
+        if let armed = s.armedWake, armed <= earliest { return nil }
+        s.armedWake = earliest
+        return (earliest, earliest > now ? earliest - now : 0)
+    }
+
+    private func scheduleWake(_ next: (due: UInt64, delay: UInt64)) {
+        let due = next.due
+        scheduler.schedule(next.delay) { [weak self] in self?.wake(armedFor: due) }
+    }
+
     // MARK: Learn (OSC-004)
 
     /// Arms the one-shot learn capture: `handler` receives the first eligible address, once. Arming again replaces
@@ -183,13 +267,15 @@ public final class OSCDispatcher: Sendable {
 
     @discardableResult
     public func handle(_ datagram: [UInt8], source: OSCSourceID = .unattributed) -> OSCDispatchOutcome {
-        let (outcome, flushDelay, learned) = state.withLock { s -> (OSCDispatchOutcome, UInt64?, (LearnHandler, String)?) in
+        let (outcome, flushDelay, wake, learned) = state.withLock {
+            s -> (OSCDispatchOutcome, UInt64?, (UInt64, UInt64)?, (LearnHandler, String)?) in
             let now = clock.now()
             s.counters.received += 1
             guard s.limiter.admitDatagram(from: source, now: now) else {
                 s.counters.rateLimited += 1
-                return (.rateLimited, nil, nil)
+                return (.rateLimited, nil, nil, nil)
             }
+            applyDue(now: now, &s)                    // OSC-006: what is due goes first
             let outcome = apply(datagram, now: now, &s)
             switch outcome {
             case .rejected(let error):
@@ -201,9 +287,10 @@ public final class OSCDispatcher: Sendable {
             default:
                 Self.countMessage(outcome, in: &s.counters)
             }
-            return (outcome, Self.claimFlush(&s, now: now), Self.takeLearned(&s))
+            return (outcome, Self.claimFlush(&s, now: now), Self.claimWake(&s, now: now), Self.takeLearned(&s))
         }
         if let flushDelay { scheduleFlush(after: flushDelay) }
+        if let wake { scheduleWake(wake) }
         if let (handler, address) = learned { handler(address) }
         notifyActivity()
         return outcome
@@ -217,6 +304,7 @@ public final class OSCDispatcher: Sendable {
             c.ignored += 1
             c.unknownAddresses += 1
         case .wrongArguments, .notExternallyControllable, .refusedByStore: c.ignored += 1
+        case .scheduled, .dropped: break                  // counted when classified (OSC-006)
         case .rejected, .bundle, .rateLimited: break      // never produced per message
         }
     }
@@ -291,13 +379,70 @@ public final class OSCDispatcher: Sendable {
         switch OSCDecoder.decodePacket(datagram) {
         case .success(.message(let message)):
             return apply(message, now: now, &s)
-        case .success(let bundle):
-            var outcomes: [OSCDispatchOutcome] = []
-            outcomes.reserveCapacity(bundle.messages.count)
-            for message in bundle.messages { outcomes.append(apply(message, now: now, &s)) }
-            return .bundle(outcomes)
+        case .success(.bundle(let bundle)):
+            return .bundle(schedule(bundle, now: now, &s))
         case .failure(let error):
             return .rejected(error)
+        }
+    }
+
+    /// OSC-006 contract B1, steps 2 to 6: one outcome per message in depth-first packet order.
+    private func schedule(_ bundle: OSCBundle, now: UInt64, _ s: inout State) -> [OSCDispatchOutcome] {
+        var items: [(message: OSCMessage, tag: OSCTimeTag)] = []
+        Self.flatten(bundle, outer: .immediately, into: &items)
+        let mapping = OSCTimeMapping(monotonicNow: now, wallNow: wallClock.now())
+        var outcomes = [OSCDispatchOutcome](repeating: .scheduled, count: items.count)
+        var applyNow: [(offset: Int64, sequence: UInt64, index: Int)] = []
+        var future: [OSCScheduledMessage] = []
+        var indexOf: [UInt64: Int] = [:]
+        for (index, item) in items.enumerated() {
+            s.sequence &+= 1
+            let offset: Int64 = mapping.offset(for: item.tag) ?? 0
+            if offset > 0 {
+                if UInt64(offset) > timing.horizon {
+                    s.counters.beyondHorizon += 1
+                    outcomes[index] = .dropped(.beyondHorizon)
+                } else {
+                    indexOf[s.sequence] = index
+                    future.append(OSCScheduledMessage(message: item.message, due: now &+ UInt64(offset), sequence: s.sequence))
+                }
+                continue
+            }
+            let lateness = UInt64(-offset)
+            if lateness > timing.maximumLateness {
+                s.counters.lateDropped += 1
+                outcomes[index] = .dropped(.tooLate)
+                continue
+            }
+            if lateness > timing.onTimeTolerance { s.counters.lateApplied += 1 }
+            applyNow.append((offset, s.sequence, index))
+        }
+        // Due order, then arrival order (OSC-006-R5).
+        applyNow.sort { (x: (offset: Int64, sequence: UInt64, index: Int), y: (offset: Int64, sequence: UInt64, index: Int)) -> Bool in
+            x.offset != y.offset ? x.offset < y.offset : x.sequence < y.sequence
+        }
+        for entry in applyNow { outcomes[entry.index] = apply(items[entry.index].message, now: now, &s) }
+        guard !future.isEmpty else { return outcomes }
+        if s.schedule.count + future.count > timing.capacity {
+            s.counters.scheduleOverflow += future.count          // OSC-006-R8: the newest datagram is dropped whole
+            for entry in future { if let index = indexOf[entry.sequence] { outcomes[index] = .dropped(.queueFull) } }
+        } else {
+            s.counters.scheduled += future.count
+            for entry in future { s.schedule.insert(entry) }
+        }
+        return outcomes
+    }
+
+    /// Messages depth-first with their effective tags: an inner tag earlier than its container's takes the
+    /// container's (OSC-006-R4).
+    private static func flatten(_ bundle: OSCBundle, outer: OSCTimeTag,
+                                into items: inout [(message: OSCMessage, tag: OSCTimeTag)]) {
+        let tag = OSCTimeTag.latest(outer, bundle.timeTag)
+        for element in bundle.elements {
+            switch element {
+            case .message(let message): items.append((message, tag))
+            case .bundle(let inner): flatten(inner, outer: tag, into: &items)
+            }
         }
     }
 

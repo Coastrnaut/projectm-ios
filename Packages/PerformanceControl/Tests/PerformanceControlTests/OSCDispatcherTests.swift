@@ -101,8 +101,8 @@ final class OSCDispatcherTests: XCTestCase {
 
     func testBundleMessagesAreAppliedImmediatelyInPacketOrder() {
         let (dispatcher, store) = makeDispatcher()
-        // A time tag far in the future is ignored in this row (OSC-006 schedules).
-        let future = OSCTimeTag(seconds: 0xFFFF_FFFF, fraction: 0)
+        // OSC-006-T09: "immediately" (a far-future tag is now beyond the scheduling horizon; OSC-006 tests cover tags).
+        let future = OSCTimeTag.immediately
         let outcome = dispatcher.handle(bundle([
             message("/projectm/test", [.float(0.25)]),
             .bundle(OSCBundle(timeTag: .immediately, elements: [message("/nope", [.float(1)])])),
