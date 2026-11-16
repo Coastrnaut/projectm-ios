@@ -371,6 +371,14 @@ they override any system-provided reminder.
     - *Still the owner's:* signing; App Store Connect, agreements, banking, purchases, releases; device steps that
       need a person; amending Constitution I or V; destructive git. Batch those and carry on.
 
+13. **Maintain `docs/autotester.md`** (feedback, 2026-11-15). The owner asked to document every lesson learned and
+    how device testing is automated, "for steering other repos and future work on this repo", and to "build this
+    file and keep it updated docs/autotester.md … manage that file and update it … commit to claude".
+    - *How to apply:* `docs/autotester.md` is the single maintained guide. Update it in the same commit as any change
+      to device automation (`DeviceTests.yml`, `Apps/projectM-iOS/DeviceUITests`, `scripts/run_device_matrix.py`,
+      AutomationRunner modes, fixtures) and whenever a run teaches something new; keep its pieces table, commands,
+      lessons, person-only list and guide for other repositories current.
+
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
 These lessons come from building this app and its paid feature 002 almost entirely
