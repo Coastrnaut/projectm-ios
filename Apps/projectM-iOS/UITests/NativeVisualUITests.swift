@@ -21,6 +21,7 @@ final class NativeVisualUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDiagnostics", "-autostart", "inAppPlayback"]
             + extra + Self.noStore
+
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
     }
@@ -92,7 +93,14 @@ final class NativeVisualUITests: XCTestCase {
         openSettings()
         app.visualRow("Circular Spectrum").tap()
         let bars = app.segmentedControls["barsPicker"]
-        XCTAssertTrue(bars.appears(within: 5), "Bars offered for the circular spectrum")
+        // The picker sits below the visual rows: in a lazy list it may not exist until the list scrolls. On a 13-inch
+        // iPad (D2, 2026-11-15) Settings is a side panel that a window-wide drag does not scroll, so swipe the list.
+        var found = bars.appears(within: 3)
+        for _ in 0..<6 where !found {
+            app.collectionViews.firstMatch.swipeUp(velocity: .slow)
+            found = bars.exists && bars.isHittable
+        }
+        XCTAssertTrue(found, "Bars offered for the circular spectrum")
         XCTAssertTrue(bars.buttons["64"].isSelected, "64 bars by default")
         bars.buttons["16"].tap()
         closeSettings()
@@ -103,7 +111,8 @@ final class NativeVisualUITests: XCTestCase {
         XCTAssertTrue(circularSpectrum.appears(within: 10), "the choice persisted")
         openSettings()
         XCTAssertTrue(app.visualRow("Circular Spectrum").isSelected)
-        XCTAssertTrue(app.segmentedControls["barsPicker"].buttons["16"].isSelected, "the bar count persisted")
+        for _ in 0..<6 where !(bars.exists && bars.isHittable) { app.collectionViews.firstMatch.swipeUp(velocity: .slow) }
+        XCTAssertTrue(bars.buttons["16"].isSelected, "the bar count persisted")
         closeSettings()
     }
 

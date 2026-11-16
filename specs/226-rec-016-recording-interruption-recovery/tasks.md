@@ -35,7 +35,7 @@
 
 - [X] REC-016-T11 DEBUG `-uitestWriterFault` and UI test RecordingRecoveryUITests.swift (append failure → panel offers the part, probe reads video, < 30 s) — Verified 2026-11-14: RecordingRecoveryUITests.testWriterFailureOffersThePartRecordedBeforeIt passed in 9.8 s and 11.8 s (REC16 iOS 27.2): panel, notice, probe frames=10; RecordingDiskGuardUITests 2/2
 - [X] REC-016-T12 Linux-shape build of Compositor; existing FrameRecording, REC-003/REC-015/StatusEvents app suites; repo checks; privacy manifest and network symbols; type-check budget flags — Verified 2026-11-14: Linux-shape swift build --build-tests of Compositor OK; FrameRecording 150 tests (1 skip) host 16.7 s; RecordingRecoveryTests 7/7 and MetalFrameRecorderTests on the iOS 27.2 simulator; app suites (Recording*, VideoRecording, StatusEvents, PhotosSave, CacheCleanup) 101 tests 0 failures; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 174 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; type-check flags: no warning in touched files
-- [ ] REC-016-T13 {device} On D1 record 30 s (normal finish plays, no `moof`), and a Debug run with `-uitestWriterFault writer:90` keeps a playable part; note CPU against REC-003
+- [ ] REC-016-T13 {device} On D1 record 30 s (normal finish plays, no `moof`), and a Debug run with `-uitestWriterFault writer:90` keeps a playable part; note CPU against REC-003 Writer-fault part automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B03.md): RecordingRecoveryUITests, a writer failure offers the part recorded before it. Open: a 30 s normal recording (no moof) and CPU against REC-003.
 
 ## Dependencies
 

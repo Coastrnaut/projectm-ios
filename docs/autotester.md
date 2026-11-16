@@ -68,6 +68,14 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 - **Parallel devices from one build:** copy `Build/<derived>/Build/Products` to a per-device folder and run
   `xcodebuild test-without-building -xctestrun <copy>/…xctestrun`, so rebuilding for one device never disturbs
   another device's run.
+- **Simulator UI tests on a device:** the DeviceAcceptance scheme also hosts `projectM-iOSUITests`, so an existing
+  simulator test can run on D1-D3 (`-only-testing:projectM-iOSUITests/<Class>`). Most run as written; the ones that
+  failed (2026-11-15) failed for screen size, not app faults. A lazy list builds rows only near the screen (Photo below
+  the fold on the iPhone), and on a 13-inch iPad Settings is a 400 pt side panel that a window-wide drag does not
+  scroll. Swipe the list itself (`app.collectionViews.firstMatch.swipeUp(velocity: .slow)`) until the element exists
+  and is hittable; never swipe down at the top of a sheet.
+- **Each device needs its own UI-automation reset:** D1, D2 and D3 each showed the automation-mode timeout on their
+  first UI test run of the day; the Developer toggle (D1) or signing the device in (D2) cleared it.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

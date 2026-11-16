@@ -1,0 +1,43 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "02f5b18e7b65fcb418674d88d5f4bafdf0ae9c9d9d759dcf702b7cda48871f1f",
+ "measurements": [],
+ "passed": 5,
+ "schemaVersion": 1,
+ "session": "B02",
+ "tasks": {},
+ "tests": [
+  {
+   "class": "GestureShortcutsUITests",
+   "result": "passed",
+   "seconds": 19.813,
+   "test": "testTwoFingerTapRunsTheMappedActionAndTheSwitchDisablesIt"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 21.254,
+   "test": "testChoiceAndBarsPersistAcrossRelaunch"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 9.913,
+   "test": "testProjectMIsTheDefaultAndCircularSpectrumReplacesIt"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 7.002,
+   "test": "testRotationKeepsTheCircularSpectrumWithoutRestartingTheSource"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 17.184,
+   "test": "testUnavailableNativeVisualFallsBackToProjectMWithANotice"
+  }
+ ],
+ "xcresult": null
+}

@@ -27,7 +27,7 @@
 ## Phase 4: Close
 
 - [X] UIX-006-T13 Spec Status line updated with the verified test counts and the open {device} task — Verified 2026-11-15: spec Status line
-- [ ] UIX-006-T14 {device} On D1 and D2: quickstart device steps 1-6 (S6)
+- [ ] UIX-006-T14 {device} On D1 and D2: quickstart device steps 1-6 (S6) D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B02.md): GestureShortcutsUITests on D2, a two-finger tap runs the mapped action and the switch disables it. Open: the remaining quickstart device steps on D1 and D2.
 
 ## Dependencies
 

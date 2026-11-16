@@ -34,6 +34,9 @@ final class RenderFaultUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5), "Settings opens while a fault is active")
         if let title {
             let row = app.visualRow(title)
+            // A lazy list builds rows only near the screen: on an iPhone (D1, 2026-11-15) Photo starts below the
+            // fold. Swipe up (never down: at the top that dismisses the sheet) until it exists and can be tapped.
+            for _ in 0..<6 where !(row.exists && row.isHittable) { app.collectionViews.firstMatch.swipeUp(velocity: .slow) }
             XCTAssertTrue(row.appears(within: 5))
             row.tap()
         }

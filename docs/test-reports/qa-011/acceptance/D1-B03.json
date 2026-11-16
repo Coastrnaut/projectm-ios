@@ -1,7 +1,7 @@
 {
  "device": "D1",
  "kind": "projectM-iOS.qa011.deviceAcceptance",
- "logSha256": "3c56a85ef2bf10c76f575d3ba0f9d3e50fae8121acf287a263355c35bf1d3c90",
+ "logSha256": "9226f2da1dd3a699efef6cd43c1995449db48bac1d3ce59c2f8d2aaa6e2423de",
  "measurements": [
   {
    "device": "iPhone15,4",
@@ -24,7 +24,7 @@
    "task": "PERF-010-T15"
   }
  ],
- "passed": 1,
+ "passed": 5,
  "schemaVersion": 1,
  "session": "B03",
  "tasks": {
@@ -41,7 +41,37 @@
    "result": "passed",
    "seconds": 14.064,
    "test": "testPERF010RealCrashThenRelaunchOffersRecovery"
+  },
+  {
+   "class": "RecordingRecoveryUITests",
+   "result": "passed",
+   "seconds": 8.638,
+   "test": "testWriterFailureOffersThePartRecordedBeforeIt"
+  },
+  {
+   "class": "RenderFaultUITests",
+   "result": "passed",
+   "seconds": 14.1,
+   "test": "testAPresentationFailureEndsOnThePlaceholderUntilTheUserResumes"
+  },
+  {
+   "class": "RenderFaultUITests",
+   "result": "failed",
+   "seconds": 11.472,
+   "test": "testInjectedFaultsKeepTheAppResponsiveAndRecordTheReason"
+  },
+  {
+   "class": "SceneAutosaveUITests",
+   "result": "passed",
+   "seconds": 41.303,
+   "test": "testKillAfterAnUncommittedEditRestoresTheLastCommittedScene"
+  },
+  {
+   "class": "RenderFaultUITests",
+   "result": "passed",
+   "seconds": 21.634,
+   "test": "testInjectedFaultsKeepTheAppResponsiveAndRecordTheReason"
   }
  ],
- "xcresult": "b03-D1-222415.xcresult"
+ "xcresult": null
 }
