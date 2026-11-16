@@ -1,0 +1,235 @@
+{
+ "device": "D3",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "efcb55d5782896665a4154f04ebfb2c6bc7bd803df9f7c24110f1907d45919e8",
+ "measurements": [
+  {
+   "device": "iPad15,7",
+   "r": -1,
+   "step": "inverted",
+   "task": "ANL-013-T14",
+   "warned": 1
+  },
+  {
+   "device": "iPad15,7",
+   "step": "paused across background",
+   "stillPaused": 1,
+   "task": "AUD-006-T39"
+  },
+  {
+   "device": "iPad15,7",
+   "resumed": 1,
+   "step": "playing across background",
+   "task": "AUD-006-T39"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.073,
+   "meanSaturation": 0.11,
+   "nonBlack": 0.116,
+   "step": "mix 0 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.078,
+   "meanSaturation": 0.123,
+   "nonBlack": 0.128,
+   "step": "mix 0 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.076,
+   "meanSaturation": 0.12,
+   "nonBlack": 0.125,
+   "step": "mix 1 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.068,
+   "meanSaturation": 0.105,
+   "nonBlack": 0.111,
+   "step": "mix 1 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.073,
+   "meanSaturation": 0.113,
+   "nonBlack": 0.119,
+   "step": "mix 2 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.078,
+   "meanSaturation": 0.116,
+   "nonBlack": 0.122,
+   "step": "mix 2 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "motionMax": 0.023,
+   "motionMean": 0.018,
+   "step": "mix",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.087,
+   "meanSaturation": 0.132,
+   "nonBlack": 0.138,
+   "step": "left 0 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.09,
+   "meanSaturation": 0.142,
+   "nonBlack": 0.148,
+   "step": "left 0 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.09,
+   "meanSaturation": 0.14,
+   "nonBlack": 0.146,
+   "step": "left 1 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.081,
+   "meanSaturation": 0.124,
+   "nonBlack": 0.13,
+   "step": "left 1 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.087,
+   "meanSaturation": 0.134,
+   "nonBlack": 0.14,
+   "step": "left 2 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.092,
+   "meanSaturation": 0.137,
+   "nonBlack": 0.143,
+   "step": "left 2 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "motionMax": 0.025,
+   "motionMean": 0.019,
+   "step": "left",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.009,
+   "meanSaturation": 0.023,
+   "nonBlack": 0.013,
+   "step": "right 0 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.004,
+   "meanSaturation": 0,
+   "nonBlack": 0.006,
+   "step": "right 0 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.004,
+   "meanSaturation": 0,
+   "nonBlack": 0.006,
+   "step": "right 1 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.004,
+   "meanSaturation": 0,
+   "nonBlack": 0.006,
+   "step": "right 1 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.004,
+   "meanSaturation": 0,
+   "nonBlack": 0.006,
+   "step": "right 2 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.005,
+   "meanSaturation": 0,
+   "nonBlack": 0.006,
+   "step": "right 2 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "motionMax": 0.006,
+   "motionMean": 0.002,
+   "step": "right",
+   "task": "AUD-009-T13"
+  }
+ ],
+ "passed": 3,
+ "schemaVersion": 1,
+ "session": "B05",
+ "tasks": {
+  "ANL-013-T14": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "AUD-006-T39": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "AUD-009-T13": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B05AudioDeviceTests",
+   "result": "passed",
+   "seconds": 10.602,
+   "test": "testANL013PhaseInvertedFeedWarns"
+  },
+  {
+   "class": "B05AudioDeviceTests",
+   "result": "passed",
+   "seconds": 21.917,
+   "test": "testAUD006PauseStaysPausedAcrossBackground"
+  },
+  {
+   "class": "B05AudioDeviceTests",
+   "result": "passed",
+   "seconds": 36.933,
+   "test": "testAUD009ChannelSelectionFollowsTheChosenChannel"
+  }
+ ],
+ "xcresult": null
+}
