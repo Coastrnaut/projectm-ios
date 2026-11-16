@@ -72,3 +72,43 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         assertDrawingAndMoving(task, "Reduce flashing on")
     }
 }
+
+/// FX-002-T18: a glowing spectrum over a bright photo. Tone mapping keeps colours above 1 in range: no broken pixels
+/// (a non-finite colour maps to black, FX-002-R2, so black specks on a near-white photo are the failure) and the frame
+/// rate as with the glow off. The screenshots are attached for the look (hue).
+@MainActor
+final class B02ToneMappingDeviceTests: DeviceAcceptanceCase {
+    /// Fraction of near-black samples (luma below 0.05) in a fraction rectangle of the last screenshot.
+    private func darkFraction(_ p: [UInt8], _ r: (Double, Double, Double, Double)) -> Double {
+        1 - Self.region(p, width: lastSize.0, height: lastSize.1, r).nonBlack
+    }
+
+    func testFX002GlowingSpectrumOverABrightPhoto() {
+        let task = "FX-002-T18"
+        sampleStep = 2
+        // Below the overlay (top) and above the status pill (bottom): the photo with the spectrum over it.
+        let body = (0.0, 0.3, 1.0, 0.45)
+        var results: [String: Double] = [:]
+        for glow in [false, true] {
+            launch(visual: "photo", settings: ["settings.circularSpectrum.glow": glow,
+                                               "settings.circularSpectrum.glowRadius": 0.06],
+                   extra: ["-uitestSeedPhoto", "bright"])
+            let label = glow ? "glow on, maximum radius" : "glow off"
+            let fps = assertFrameRate(task, label)
+            var dark = 0.0
+            for i in 0..<3 {
+                let (_, p) = screen(task, "\(label) \(i)")
+                dark = max(dark, darkFraction(p, body))
+                pause(1)
+            }
+            report(task, label, ["darkFraction": dark])
+            results[glow ? "fpsOn" : "fpsOff"] = fps
+            results[glow ? "darkOn" : "darkOff"] = dark
+            XCTAssertLessThan(dark, 0.01, "\(label): no broken (black) pixels over the bright photo")
+            app.terminate()
+        }
+        report(task, "glow cost", ["offMinusOn": (results["fpsOff"] ?? 0) - (results["fpsOn"] ?? 0)])
+        XCTAssertLessThanOrEqual((results["fpsOff"] ?? 0) - (results["fpsOn"] ?? 0), Self.effectToleranceFPS,
+                                 "the frame rate with the glow is as before")
+    }
+}

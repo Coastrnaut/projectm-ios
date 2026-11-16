@@ -254,8 +254,8 @@ final class DynamicTypeInspectorUITests: XCTestCase {
                 if flinging {
                     // Towards the end with momentum; once the list no longer moves (or after eight), it
                     // is at its end and the element is above: held drags back (owner rule 7, 2026-11-14).
-                    window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.8))
-                        .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.2)),
+                    app.scrollSurface().coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.8))
+                        .press(forDuration: 0.05, thenDragTo: app.scrollSurface().coordinate(withNormalizedOffset: CGVector(dx: lane, dy: 0.2)),
                                withVelocity: XCUIGestureVelocity(rawValue: 10000), thenHoldForDuration: 0)
                     blind += 1
                     let now = position()
@@ -275,13 +275,13 @@ final class DynamicTypeInspectorUITests: XCTestCase {
                 if blind == 16 { dragDown.toggle() }
                 blind += 1
                 // Up: from 0.8 (lower starts land on sheets' bottom bars and do not scroll).
-                let high = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: dragDown ? (backFromEnd ? 0.2 : 0.4) : 0.2))
-                let low = window.coordinate(withNormalizedOffset: CGVector(dx: lane, dy: dragDown ? (backFromEnd ? 0.9 : 0.75) : 0.8))
+                let high = app.scrollSurface().coordinate(withNormalizedOffset: CGVector(dx: lane, dy: dragDown ? (backFromEnd ? 0.2 : 0.4) : 0.2))
+                let low = app.scrollSurface().coordinate(withNormalizedOffset: CGVector(dx: lane, dy: dragDown ? (backFromEnd ? 0.9 : 0.75) : 0.8))
                 let (from, to) = dragDown ? (high, low) : (low, high)
                 from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .fast, thenHoldForDuration: 0.1)
                 continue
             }
-            let area: XCUIElement = inControls ? controlsScroll : window
+            let area: XCUIElement = inControls ? controlsScroll : app.scrollSurface()
             let upper: CGFloat = inControls ? controlsScroll.frame.minY : top()
             let lower: CGFloat = inControls ? controlsScroll.frame.maxY : bottom()
             let towardsTop = known ? element.frame.minY < upper : down   // above the visible area: drag down

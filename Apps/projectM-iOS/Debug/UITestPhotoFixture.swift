@@ -26,7 +26,10 @@ enum UITestPhotoFixture {
             return
         }
         let kind = arguments[i + 1]
-        guard let data = kind == "pattern" ? patternPNG() : png(alpha: kind == "alpha") else { return }
+        // "bright" (QA-011 FX-002-T18): a near-white photo, so a glow over it pushes colours past 1 and tone mapping works.
+        let data: Data? = kind == "pattern" ? patternPNG()
+            : kind == "bright" ? png(alpha: false, color: (250, 246, 236)) : png(alpha: kind == "alpha")
+        guard let data else { return }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-photo-\(UUID().uuidString).png")
         guard (try? data.write(to: url)) != nil else { return }
         photos.importNow(at: url)

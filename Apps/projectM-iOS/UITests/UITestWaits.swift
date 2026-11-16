@@ -55,16 +55,27 @@ extension XCUIApplication {
     /// 2026-11-13). Frames, not `isHittable`, which fails the test for an off-screen row.
     /// `long`: up drags of 82 % (0.92 to 0.1) for a row several screens down; each drag costs about
     /// 1.7 s however far it goes, so fewer, longer drags (owner rule 7, 2026-11-14).
+    /// Where scrolling drags start: the window, or a list shown as a side panel narrower than it. On a 13-inch iPad
+    /// (D2, 2026-11-15) Settings is a 400 pt panel at the trailing edge, and drags in the window's 0.96 lane did not
+    /// scroll it; drags inside the panel do. On an iPhone the list fills the window, so nothing changes there.
+    func scrollSurface() -> XCUIElement {
+        let window = windows.firstMatch, list = collectionViews.firstMatch
+        guard navigationBars.firstMatch.exists, list.exists else { return window }
+        let w = window.frame.width
+        return list.frame.width > 0 && list.frame.width < w * 0.9 ? list : window
+    }
+
     @discardableResult
     func reveal(_ element: XCUIElement, down: Bool = false, long: Bool = false) -> Bool {
         let window = windows.firstMatch
+        let surface = scrollSurface()
         let bar = navigationBars.firstMatch
         // Right-hand margin (2026-11-14): a drag from mid-screen landed on a slider's thumb once Settings
         // showed the Color sliders (FX-003) and moved the slider instead of the list; the left edge is
         // the navigation back gesture.
         let revealLane: CGFloat = 0.96
-        let top = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.1 : 0.18))
-        let bottom = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.92 : 0.88))
+        let top = surface.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.1 : 0.18))
+        let bottom = surface.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: long ? 0.92 : 0.88))
         // Below the navigation bar once this call has dragged: an up drag can glide a row past the fold
         // and under the translucent bar, where its frame is on screen but a tap lands on the bar
         // (CameraRecoveryUITests' Camera row, 2026-11-14). Before any drag the screen's top is the limit,
@@ -93,8 +104,8 @@ extension XCUIApplication {
             dragged = true
             // Down (towards the top of the list) uses a short drag from mid-screen: a long pull from
             // near the top on a list already at its top dismisses the sheet instead of scrolling.
-            let midHigh = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.42))
-            let midLow = window.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.72))
+            let midHigh = surface.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.42))
+            let midLow = surface.coordinate(withNormalizedOffset: CGVector(dx: revealLane, dy: 0.72))
             let (from, to) = down || overshot() ? (midHigh, midLow) : (bottom, top)
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .default, thenHoldForDuration: 0.1)
         }
