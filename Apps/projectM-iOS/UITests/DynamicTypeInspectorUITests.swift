@@ -556,7 +556,13 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             create.tap()
         }
         XCTAssertTrue(alert.disappears(within: 3))
-        XCTAssertTrue(app.descendants(matching: .any)["sceneFolderRow.Set A"].firstMatch.appears(within: 3), "the folder row")
+        // The new folder's row is in a lower section of a lazy list: at AX sizes on an iPhone it starts below the fold
+        // (D1, QA-011 B04, 2026-11-15), so scroll to it before asserting.
+        let folderRow = app.descendants(matching: .any)["sceneFolderRow.Set A"].firstMatch
+        XCTAssertTrue(folderRow.appears(within: 3) || scrollTo(folderRow), "the folder row")
+        // Audit once the inserted row has finished animating in: caught mid-insert on D1 its frame was 92 pt wide and
+        // the audit reported its title as partly unsupported.
+        _ = folderRow.settles()
         try audit("sceneFolders")
     }
 

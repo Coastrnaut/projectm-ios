@@ -98,6 +98,11 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   audit (iOS 27.0.1) flagged accent-coloured list buttons measured at 5.8:1 that pass on the 27.2 simulator. Triage
   each device failure (app finding, environment, harness) before changing code; a read-only agent can do it from the
   log and the result bundle's screenshots.
+- **Pin the appearance in audits that measure colour:** D1's Appearance is Automatic, so at night (D1 at 23:57) the app
+  ran in dark mode while the same tests had run in light mode hours earlier. Contrast results then change with the
+  time of day. Accessibility suites should pin light or dark per run, or report which one ran.
+- **Opening Settings at a section beats flinging:** `-uitestSettingsSection <id>` (storage, text) turned 125 s
+  timeouts into 10 s passes on D1 and D2 for Storage, Licenses and the Text rows.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
