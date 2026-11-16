@@ -99,12 +99,20 @@ struct SceneMigrationMatrix: Decodable {
         return url
     }
 
+    /// On a device (QA-011, DeviceTests.yml) there is no repository: the test bundle carries copies of `legacy` and
+    /// `Scenes`, found next to this file's class.
     static var legacyDirectory: URL {
-        repositoryRoot.appendingPathComponent("Packages/SceneFormat/Tests/SceneFormatTests/Fixtures/legacy", isDirectory: true)
+        let source = repositoryRoot.appendingPathComponent("Packages/SceneFormat/Tests/SceneFormatTests/Fixtures/legacy", isDirectory: true)
+        return FileManager.default.fileExists(atPath: source.path) ? source : bundled("legacy") ?? source
     }
 
     static var goldenScenesDirectory: URL {
-        repositoryRoot.appendingPathComponent("Packages/RenderGoldens/Scenes", isDirectory: true)
+        let source = repositoryRoot.appendingPathComponent("Packages/RenderGoldens/Scenes", isDirectory: true)
+        return FileManager.default.fileExists(atPath: source.path) ? source : bundled("Scenes") ?? source
+    }
+
+    private static func bundled(_ folder: String) -> URL? {
+        Bundle(for: SupportBundleMarker.self).resourceURL?.appendingPathComponent(folder, isDirectory: true)
     }
 
     static func load() throws -> SceneMigrationMatrix {
@@ -249,3 +257,6 @@ struct SceneMigrationMatrix: Decodable {
         case notAnObject(String)
     }
 }
+
+/// Locates the test bundle on a device (QA-011).
+private final class SupportBundleMarker {}
