@@ -539,7 +539,7 @@ struct SettingsView: View {
         if let coordinator = layerInspector { ModulationMatrixLinkSection(coordinator: coordinator).id("modulation") }   // MOD-012-R1
         QuantizeChangesSection(quantizer: settings.parameterQuantizer).id("quantize")   // MOD-017-R1
         if settings.visual.usesCamera {   // CAM-002-R1: which camera, and its mirror
-            cameraSection
+            cameraSection.id("camera")   // `-uitestSettingsSection camera` (QA-011 B06 device tests)
         }
         if settings.visual.usesPhoto, let photos {
             photoSection(photos)

@@ -4,42 +4,42 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 244,
-    "specs": 203,
+    "total": 242,
+    "specs": 201,
     "byStatus": {
-      "open": 227,
+      "open": 225,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 220
+      "b": 218
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 231
+      "b": 229
     },
     "byDevice": {
-      "D1": 223,
-      "D2": 54,
-      "D3": 53
+      "D1": 221,
+      "D2": 52,
+      "D3": 51
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 12,
-        "b": 211
+        "b": 209
       },
       "D2": {
         "a": 3,
-        "b": 51
+        "b": 49
       },
       "D3": {
         "a": 3,
-        "b": 50
+        "b": 48
       }
     },
     "bySession": {
-      "B01": 18,
+      "B01": 16,
       "B02": 12,
       "B03": 6,
       "B04": 17,
@@ -291,9 +291,7 @@
         "D3"
       ],
       "tasks": [
-        "020-fx-001-bloom:FX-001-T27",
         "024-anl-016-analysis-event-bus:ANL-016-T20",
-        "025-vis-002-linear-spectrum:VIS-002-T16",
         "126-fx-004-hue-shift:FX-004-T15",
         "132-pre-001-thumbnail-cache:PRE-001-T14",
         "142-fx-020-effect-chains:FX-020-T19",
@@ -311,7 +309,7 @@
         "314-qa-012-release-evidence-manifest:QA-012-T08"
       ],
       "optionalTasks": 1,
-      "estimatedMinutes": 125
+      "estimatedMinutes": 95
     },
     {
       "id": "B02",
@@ -1568,27 +1566,6 @@
       "text": "VIS-001-T36 {device} (open: final device phase) On D1, D2, D3: choose Circular Spectrum with the reference track; rotate; lock/unlock and background/return; toggle Reduce flashing; note the overlay's frame rate; confirm no crash and the fallback never shows. Final device phase only. D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B02.md): NativeVisualUITests on D2, Circular Spectrum replaces projectM, survives rotation without a source restart, the choice and bar count persist across relaunch, an unavailable native visual falls back to projectM with a notice. Open: lock/unlock, background/return, Reduce flashing and the overlay frame rate on D1-D3. D1 automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): NativeVisualUITests pass on D1 (the bars test once timed out on a 60 s accessibility snapshot, then passed alone), and B02ShowsDeviceTests: Circular Spectrum portrait, landscape, background and return (playback active again within 0.3 s), Reduce flashing on, 60 fps median throughout, drawing and moving, no crash, the fallback never shown. Open: lock and unlock (a person) on D1, and D2, D3. D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B02.md): B02ShowsDeviceTests passes on D2 (rotation, background and return, Reduce flashing, frame rate, no crash, no fallback). Open: lock and unlock (a person) on D1 and D2, and D3."
     },
     {
-      "id": "FX-001-T27",
-      "spec": "020-fx-001-bloom",
-      "feature": "FX-001",
-      "line": 72,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "FX-001-T27 {device} (open: final device phase) On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: glow off 60 / on 59-60 / max radius with Reduce flashing 60 fps, landscape 59-60 and drawing; D2 and D3 open D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B01.md): 60 fps median, lowest 1 s 56; D3 open."
-    },
-    {
       "id": "FX-019-T22",
       "spec": "022-fx-019-strobe-safety-envelope",
       "feature": "FX-019",
@@ -1664,27 +1641,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "ANL-016-T20 [US5] {device} Optional (open, pending device; not required): run Circular Spectrum on D1 with music; the bars move as before. Not required for acceptance (spec Assumptions)."
-    },
-    {
-      "id": "VIS-002-T16",
-      "spec": "025-vis-002-linear-spectrum",
-      "feature": "VIS-002",
-      "line": 55,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B01",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "VIS-002-T16 `{device}` On D1-D3: Linear Spectrum renders in both orientations, glow on, Reduce flashing on; frame time within the VIS-001 budget. Final device phase only. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: portrait and landscape with glow and Reduce flashing 60 fps median, drawing and moving; D2 and D3 open D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B01.md): 60 fps median, lowest 1 s 56; D3 open."
     },
     {
       "id": "AUD-007-T16",
