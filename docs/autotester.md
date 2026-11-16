@@ -89,6 +89,10 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   check (portrait = taller than wide) passed on an iPad whose screen is already 3:4. Resets now go through
   `UserDefaults.removeForUITestReset`, which keeps typed keys. Assert values that prove the setting applied (Draft
   is H.264 at a 1280 long side; Portrait is 9:16), never a shape the default could also have.
+- **Test-only defaults keys stay inside `#if DEBUG`:** the privacy key scan (`test_every_stored_defaults_key_is_allowed`)
+  treats any defaults key named outside DEBUG code as stored by the shipping app (CI run 43804165117).
+- **Thresholds per kind of visual:** a line visual (oscilloscope) covers about 1 % of the screen, so "draws" uses
+  `minimumDraw: 0.005` there; filled visuals keep 0.02.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

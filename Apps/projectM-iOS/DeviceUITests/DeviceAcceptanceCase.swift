@@ -188,13 +188,14 @@ class DeviceAcceptanceCase: XCTestCase {
     }
 
     /// The visual is drawing: non-black content, and it moves between two screenshots 1 s apart.
-    func assertDrawingAndMoving(_ task: String, _ label: String, minimumChange: Double = 0.002) {
+    /// `minimumDraw`: the non-black share that counts as drawing; a line visual (the oscilloscope) covers about 1 %.
+    func assertDrawingAndMoving(_ task: String, _ label: String, minimumChange: Double = 0.002, minimumDraw: Double = 0.02) {
         let (first, a) = screen(task, "\(label) a")
         pause(1)
         let (_, b) = screen(task, "\(label) b")
         let motion = Self.change(a, b)
         report(task, label, ["motion": motion])
-        XCTAssertGreaterThan(first.nonBlack, 0.02, "\(task) \(label): the visual draws")
+        XCTAssertGreaterThan(first.nonBlack, minimumDraw, "\(task) \(label): the visual draws")
         XCTAssertGreaterThan(motion, minimumChange, "\(task) \(label): the visual moves with the music")
     }
 

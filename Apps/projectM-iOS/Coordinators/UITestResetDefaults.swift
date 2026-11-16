@@ -7,11 +7,12 @@
 import Foundation
 
 extension UserDefaults {
-    static let uitestTypedKeysKey = "uitest.defaults.keys"
-
-    /// Removes `key` for the UI-test reset unless this launch typed it with `-uitestDefaults`.
+    /// Removes `key` for the UI-test reset unless this launch typed it with `-uitestDefaults` (DEBUG only; the list
+    /// key exists only in DEBUG builds, so Release stores and reads nothing new: the privacy key scan).
     func removeForUITestReset(_ key: String) {
-        if (stringArray(forKey: Self.uitestTypedKeysKey) ?? []).contains(key) { return }
+        #if DEBUG
+        if (stringArray(forKey: "uitest.defaults.keys") ?? []).contains(key) { return }
+        #endif
         removeObject(forKey: key)
     }
 }

@@ -1,0 +1,93 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "dc98cf31a12eb4416f0eafdb74fb18b0c3d0bc9c916d39533efc7c32a7ab17ff",
+ "measurements": [
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 59,
+   "samples": 10,
+   "step": "portrait",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.007,
+   "meanSaturation": 0.007,
+   "nonBlack": 0.012,
+   "step": "portrait a",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.007,
+   "meanSaturation": 0.007,
+   "nonBlack": 0.012,
+   "step": "portrait b",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPad17,3",
+   "motion": 0.007,
+   "step": "portrait",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "landscape",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.009,
+   "meanSaturation": 0.009,
+   "nonBlack": 0.015,
+   "step": "landscape a",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.022,
+   "meanSaturation": 0.029,
+   "nonBlack": 0.035,
+   "step": "landscape b",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPad17,3",
+   "motion": 0.019,
+   "step": "landscape",
+   "task": "VIS-003-T17"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B13",
+ "tasks": {
+  "VIS-003-T17": {
+   "checks": {
+    "landscape: motion": 0.019,
+    "portrait: motion": 0.007
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 59,
+   "steps": 2
+  }
+ },
+ "tests": [
+  {
+   "class": "B13MeasurementDeviceTests",
+   "result": "passed",
+   "seconds": 37.741,
+   "test": "testVIS003OscilloscopeRenders"
+  }
+ ],
+ "xcresult": null
+}
