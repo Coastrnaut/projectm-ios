@@ -77,6 +77,7 @@
 // * Guided first scene (UIX-001): `guide` offers the tutorial after the notice on a new install (not
 //   while PERF-010's offer is pending); Play is AppCoordinator+Guide.swift.
 import ANGLERendering
+import Metal
 import CameraLayer
 import ImageLayer
 import VideoLayer
@@ -1238,9 +1239,37 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     play(track)
                 }
             }
+            runVisualCycleIfRequested()
             #endif
         }
     }
+
+    #if DEBUG
+    /// QA-011 PERF-004-T14/T15: `-uitestCycleVisuals <n>` switches Camera → Photo → Circular Spectrum n times (0.4 s
+    /// apart) and records `MTLDevice.currentAllocatedSize` after every full cycle in `visualCycleProbe`
+    /// ("switches=<n> mb=<first>,<…>,<last> done=<0|1>"), so a device test reads whether GPU memory plateaus.
+    private(set) var visualCycleProbe = "idle"
+
+    private func runVisualCycleIfRequested() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let i = arguments.firstIndex(of: "-uitestCycleVisuals"), i + 1 < arguments.count,
+              let count = Int(arguments[i + 1]), count > 0 else { return }
+        let sequence: [VisualChoice] = [.camera, .photo, .circularSpectrum]
+        let device = MTLCreateSystemDefaultDevice()
+        Task { @MainActor in
+            var megabytes: [Int] = []
+            for n in 0..<count {
+                settings.visual = sequence[n % sequence.count]
+                try? await Task.sleep(for: .milliseconds(400))
+                if n % sequence.count == sequence.count - 1 {
+                    megabytes.append(Int((device?.currentAllocatedSize ?? 0) / 1_048_576))
+                }
+                visualCycleProbe = "switches=\(n + 1) mb=\(megabytes.map(String.init).joined(separator: ",")) done=0"
+            }
+            visualCycleProbe = "switches=\(count) mb=\(megabytes.map(String.init).joined(separator: ",")) done=1"
+        }
+    }
+    #endif
 
     func microphoneExplainerContinue() {
         showMicrophoneExplainer = false

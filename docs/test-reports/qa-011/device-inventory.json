@@ -4,25 +4,25 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 236,
+    "total": 235,
     "specs": 196,
     "byStatus": {
-      "open": 219,
+      "open": 218,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 212
+      "b": 211
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 223
+      "b": 222
     },
     "byDevice": {
       "D1": 215,
       "D2": 47,
-      "D3": 46
+      "D3": 45
     },
     "byDeviceAndCategory": {
       "D1": {
@@ -35,7 +35,7 @@
       },
       "D3": {
         "a": 3,
-        "b": 43
+        "b": 42
       }
     },
     "bySession": {
@@ -51,7 +51,7 @@
       "B10": 13,
       "B11": 31,
       "B12": 5,
-      "B13": 18,
+      "B13": 17,
       "MATRIX": 13
     },
     "devicesInferred": 2
@@ -772,7 +772,6 @@
         "048-med-002-import-video-layer:MED-002-T27",
         "048-med-002-import-video-layer:MED-002-T28",
         "052-perf-004-texture-pool:PERF-004-T14",
-        "052-perf-004-texture-pool:PERF-004-T15",
         "054-perf-006-memory-warning-recovery:PERF-006-T17",
         "058-rec-003-video-recording:REC-003-T23",
         "083-vis-003-waveform-oscilloscope:VIS-003-T17",
@@ -784,7 +783,7 @@
         "284-med-005-video-reverse-playback:MED-005-T20"
       ],
       "optionalTasks": 3,
-      "estimatedMinutes": 165
+      "estimatedMinutes": 160
     }
   ],
   "tasks": [
@@ -2127,25 +2126,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "PERF-004-T14 {device} D1: 100 visual and stack switches (Camera → Photo → Spectrum → Camera), live GPU memory from Xcode's memory report or `MTLDevice.currentAllocatedSize` plateaus after the first cycle (S6)"
-    },
-    {
-      "id": "PERF-004-T15",
-      "spec": "052-perf-004-texture-pool",
-      "feature": "PERF-004",
-      "line": 49,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B13",
-      "devices": [
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "PERF-004-T15 {device} D3 (iPadOS 26.5): the same as T14"
     },
     {
       "id": "PERF-004-T16",

@@ -1,0 +1,37 @@
+{
+ "device": "D3",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "d1028e4344c1df68dc6e28f174c6a0e6e3569f55a9da40926cd4c3b9f9359fcd",
+ "measurements": [
+  {
+   "cycles": 33,
+   "device": "iPad15,7",
+   "firstMB": 172,
+   "lastMB": 176,
+   "maxMB": 176,
+   "secondMB": 172,
+   "step": "gpu memory",
+   "task": "PERF-004-T15"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B13-perf004",
+ "tasks": {
+  "PERF-004-T15": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13MeasurementDeviceTests",
+   "result": "passed",
+   "seconds": 50.627,
+   "test": "testPERF004GPUMemoryPlateausOverVisualSwitches"
+  }
+ ],
+ "xcresult": null
+}

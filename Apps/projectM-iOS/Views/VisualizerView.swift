@@ -378,6 +378,15 @@ struct VisualizerView: View {
                 .padding(.top, 100)
         }
         #endif
+        #if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-uitestCycleVisuals") {   // QA-011 PERF-004: GPU memory per cycle
+            Text(coordinator.visualCycleProbe)
+                .font(.caption2)
+                .opacity(0.01)
+                .accessibilityIdentifier("visualCycleProbe")
+                .accessibilityValue(coordinator.visualCycleProbe)
+        }
+        #endif
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
             Text("\(coordinator.sourceStarts)")
                 .font(.caption2)
