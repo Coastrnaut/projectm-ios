@@ -113,6 +113,8 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 - **Every device needs the fixtures:** D3 stayed on "Choose source" in every test (the app said the fixture could
   not be found) because the music fixture had been copied onto D1 and D2 only. `scripts/install_test_fixtures.py
   --device all` copies it; the tests now fail with that instruction when the app lands on the source chooser.
+- **Task notes start with " — ":** `qa011_inventory.py` reads a task's devices from its text before the first " — ";
+  a note appended without it that names D2 or D3 widens the task's device list (2026-11-16: three D1 tasks gained D3).
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
