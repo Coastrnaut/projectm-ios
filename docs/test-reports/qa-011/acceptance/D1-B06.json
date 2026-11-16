@@ -1,0 +1,211 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "d1bc771db9c8b6a82226f8843a99474dfa47fa0246cfd20df06ce979999dc294",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "back portrait",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "back portrait",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.068,
+   "meanSaturation": 0.105,
+   "nonBlack": 0.117,
+   "step": "back portrait",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 60,
+   "step": "back landscape",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "back landscape",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.037,
+   "meanSaturation": 0.088,
+   "nonBlack": 0.077,
+   "step": "back landscape",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "front portrait",
+   "task": "CAM-002-T21"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "front portrait",
+   "task": "CAM-002-T21"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.239,
+   "meanSaturation": 0.243,
+   "nonBlack": 0.623,
+   "step": "front portrait",
+   "task": "CAM-002-T21"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 57,
+   "step": "front landscape",
+   "task": "CAM-002-T21"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "front landscape",
+   "task": "CAM-002-T21"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.17,
+   "meanSaturation": 0.264,
+   "nonBlack": 0.459,
+   "step": "front landscape",
+   "task": "CAM-002-T21"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "back",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPhone15,4",
+   "seconds": 3.588,
+   "step": "to Front",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPhone15,4",
+   "step": "to Front in app",
+   "switchMs": 250,
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 60,
+   "step": "after the switch to Front",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPhone15,4",
+   "seconds": 3.595,
+   "step": "to Back",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPhone15,4",
+   "step": "to Back in app",
+   "switchMs": 463,
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 60,
+   "step": "after the switch to Back",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "back",
+   "task": "CAM-003-T11"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "after ten lens switches",
+   "task": "CAM-003-T11"
+  }
+ ],
+ "passed": 4,
+ "schemaVersion": 1,
+ "session": "B06",
+ "tasks": {
+  "CAM-001-T24": {
+   "checks": {},
+   "fpsMedians": [
+    59,
+    59
+   ],
+   "fpsMin": 57,
+   "steps": 2
+  },
+  "CAM-002-T21": {
+   "checks": {},
+   "fpsMedians": [
+    59,
+    60
+   ],
+   "fpsMin": 58,
+   "steps": 2
+  },
+  "CAM-002-T23": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "CAM-003-T11": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 70.876,
+   "test": "testCAM001BackCameraLiveThroughRotation"
+  },
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 46.684,
+   "test": "testCAM002FrontCameraLiveThroughRotation"
+  },
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 77.426,
+   "test": "testCAM002SwitchingWithinTwoSecondsAudioUninterrupted"
+  },
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 73.324,
+   "test": "testCAM003LensRow"
+  }
+ ],
+ "xcresult": null
+}

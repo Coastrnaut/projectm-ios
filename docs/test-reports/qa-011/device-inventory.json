@@ -4,38 +4,38 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 242,
-    "specs": 201,
+    "total": 240,
+    "specs": 200,
     "byStatus": {
-      "open": 225,
+      "open": 223,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 218
+      "b": 216
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 229
+      "b": 227
     },
     "byDevice": {
-      "D1": 221,
-      "D2": 52,
-      "D3": 51
+      "D1": 219,
+      "D2": 50,
+      "D3": 49
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 12,
-        "b": 209
+        "b": 207
       },
       "D2": {
         "a": 3,
-        "b": 49
+        "b": 47
       },
       "D3": {
         "a": 3,
-        "b": 48
+        "b": 46
       }
     },
     "bySession": {
@@ -44,7 +44,7 @@
       "B03": 6,
       "B04": 17,
       "B05": 26,
-      "B06": 21,
+      "B06": 19,
       "B07": 20,
       "B08": 13,
       "B09": 17,
@@ -492,12 +492,10 @@
         "037-cam-012-camera-privacy-status:CAM-012-T13",
         "096-cam-002-front-camera-layer:CAM-002-T21",
         "096-cam-002-front-camera-layer:CAM-002-T22",
-        "096-cam-002-front-camera-layer:CAM-002-T23",
         "098-cam-007-camera-crop-and-rotation:CAM-007-T15",
         "098-cam-007-camera-crop-and-rotation:CAM-007-T16",
         "102-cam-013-camera-failure-recovery:CAM-013-T18",
         "130-fx-009-motion-feedback:FX-009-T18",
-        "204-cam-003-lens-selection:CAM-003-T11",
         "217-cam-004-exposure-lock:CAM-004-T08",
         "227-cam-005-focus-point:CAM-005-T14",
         "239-cam-006-white-balance:CAM-006-T09",
@@ -509,7 +507,7 @@
         "306-fx-016-lens-distortion:FX-016-T17"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 160
+      "estimatedMinutes": 130
     },
     {
       "id": "B07",
@@ -1760,7 +1758,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "CAM-001-T24 {device} On D1, D2, D3: choose Camera → system prompt → Allow → live upright picture under the spectrum and the camera indicator; rotate (S1, R2) D2 and D3 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B06.md, D3-B06.md): B06CameraDeviceTests chooses Camera in Settings; the back camera is Live with 56-60 camera pictures per second in portrait and landscape, the camera badge shown. Open: D1 (camera permission prompt pending), and the iOS camera indicator (system UI, by eye)."
+      "text": "CAM-001-T24 {device} On D1, D2, D3: choose Camera → system prompt → Allow → live upright picture under the spectrum and the camera indicator; rotate (S1, R2) D2 and D3 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B06.md, D3-B06.md): B06CameraDeviceTests chooses Camera in Settings; the back camera is Live with 56-60 camera pictures per second in portrait and landscape, the camera badge shown. Open: D1 (camera permission prompt pending), and the iOS camera indicator (system UI, by eye). — D1 added 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B06.md, D2-B06.md, D3-B06.md): automated on D1, D2 and D3 (Live, 56-60 pictures per second in portrait and landscape, the camera badge). Open: upright by eye from the attached screenshots and iOS's own camera indicator (system UI); the permission prompt is a human-testing step (owner rule 14)."
     },
     {
       "id": "CAM-001-T25",
@@ -2809,7 +2807,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "CAM-002-T21 {device} D1-D3: quickstart device stage steps 1-2 (front camera upright and mirrored in portrait and landscape, badge, iOS indicator) D2 and D3 automated 2026-11-16 (D2-B06.md, D3-B06.md): the front camera is Live with 58-60 pictures per second in portrait and landscape. Open: D1; mirrored look and the iOS indicator by eye."
+      "text": "CAM-002-T21 {device} D1-D3: quickstart device stage steps 1-2 (front camera upright and mirrored in portrait and landscape, badge, iOS indicator) D2 and D3 automated 2026-11-16 (D2-B06.md, D3-B06.md): the front camera is Live with 58-60 pictures per second in portrait and landscape. Open: D1; mirrored look and the iOS indicator by eye. — D1 added 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B06.md, D2-B06.md, D3-B06.md): the front camera is Live through rotation on D1, D2 and D3. Open: mirrored look by eye and iOS's camera indicator."
     },
     {
       "id": "CAM-002-T22",
@@ -2829,27 +2827,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "CAM-002-T22 {device} D1: quickstart step 3 (Mirror flips at once; Save Frame and Record match the screen for mirror on and off)"
-    },
-    {
-      "id": "CAM-002-T23",
-      "spec": "096-cam-002-front-camera-layer",
-      "feature": "CAM-002",
-      "line": 54,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B06",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "CAM-002-T23 {device} D1-D3: quickstart step 4 (switching within 2 s, no frame of the old camera, audio uninterrupted; CAM-002-S7) Finding on D2 and D3 2026-11-16 (D2-B06.md, D3-B06.md): switching Back ↔ Front in Settings while the camera runs leaves the visual \"Live\" but no new camera picture is shown afterwards (0 per second for 5+ s, also with Settings closed); starting on either camera works. Under investigation; open."
     },
     {
       "id": "AUD-015-T13",
@@ -3934,27 +3911,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "ANL-015-T12 {device} Play a track with a quiet intro and a loud chorus on D1 with a native visual and a \"Section change\" binding on the glow: one flash about 2 s into the chorus, none on drum hits (quickstart)"
-    },
-    {
-      "id": "CAM-003-T11",
-      "spec": "204-cam-003-lens-selection",
-      "feature": "CAM-003",
-      "line": 38,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B06",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "CAM-003-T11 {device} D1: Wide ↔ Ultra Wide ten times while running (picture follows, badge stays, no crash); D2 and D3: no Lens row (S4). D2 and D3 done 2026-11-16 (D2-B06.md, D3-B06.md): no Lens row in the camera settings on either iPad. Open: D1 (ten Wide ↔ Ultra Wide switches)."
     },
     {
       "id": "UIX-007-T13",

@@ -1,17 +1,17 @@
 {
  "device": "D3",
  "kind": "projectM-iOS.qa011.deviceAcceptance",
- "logSha256": "b21357e0eb5f2fbba65ea3f918531c4119a653340e8b7021d62c88f93557f5e9",
+ "logSha256": "1fb63f09ed85e3fda8ffc51e34c2708ed6c99945e2ba4c03ba122de3f90e6e7b",
  "measurements": [
   {
    "device": "iPad15,7",
-   "framesPerSecond": 58,
+   "framesPerSecond": 59,
    "step": "back portrait",
    "task": "CAM-001-T24"
   },
   {
    "device": "iPad15,7",
-   "fpsMedian": 60,
+   "fpsMedian": 59,
    "fpsMin": 59,
    "samples": 10,
    "step": "back portrait",
@@ -19,99 +19,123 @@
   },
   {
    "device": "iPad15,7",
-   "meanLuma": 0.226,
-   "meanSaturation": 0.261,
-   "nonBlack": 0.66,
+   "meanLuma": 0.258,
+   "meanSaturation": 0.289,
+   "nonBlack": 0.698,
    "step": "back portrait",
    "task": "CAM-001-T24"
   },
   {
    "device": "iPad15,7",
-   "framesPerSecond": 59,
+   "framesPerSecond": 89,
    "step": "back landscape",
    "task": "CAM-001-T24"
   },
   {
    "device": "iPad15,7",
    "fpsMedian": 60,
+   "fpsMin": 59,
+   "samples": 10,
+   "step": "back landscape",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.385,
+   "meanSaturation": 0.24,
+   "nonBlack": 0.735,
+   "step": "back landscape",
+   "task": "CAM-001-T24"
+  },
+  {
+   "device": "iPad15,7",
+   "framesPerSecond": 58,
+   "step": "front portrait",
+   "task": "CAM-002-T21"
+  },
+  {
+   "device": "iPad15,7",
+   "fpsMedian": 59,
    "fpsMin": 58,
    "samples": 10,
-   "step": "back landscape",
-   "task": "CAM-001-T24"
-  },
-  {
-   "device": "iPad15,7",
-   "meanLuma": 0.306,
-   "meanSaturation": 0.324,
-   "nonBlack": 0.693,
-   "step": "back landscape",
-   "task": "CAM-001-T24"
-  },
-  {
-   "device": "iPad15,7",
-   "framesPerSecond": 58,
    "step": "front portrait",
    "task": "CAM-002-T21"
   },
   {
    "device": "iPad15,7",
-   "fpsMedian": 60,
-   "fpsMin": 59,
-   "samples": 10,
-   "step": "front portrait",
-   "task": "CAM-002-T21"
-  },
-  {
-   "device": "iPad15,7",
-   "meanLuma": 0.315,
-   "meanSaturation": 0.201,
+   "meanLuma": 0.311,
+   "meanSaturation": 0.181,
    "nonBlack": 0.703,
    "step": "front portrait",
    "task": "CAM-002-T21"
   },
   {
    "device": "iPad15,7",
-   "framesPerSecond": 58,
+   "framesPerSecond": 89,
    "step": "front landscape",
    "task": "CAM-002-T21"
   },
   {
    "device": "iPad15,7",
    "fpsMedian": 60,
-   "fpsMin": 59,
+   "fpsMin": 58,
    "samples": 10,
    "step": "front landscape",
    "task": "CAM-002-T21"
   },
   {
    "device": "iPad15,7",
-   "meanLuma": 0.331,
-   "meanSaturation": 0.176,
+   "meanLuma": 0.351,
+   "meanSaturation": 0.161,
    "nonBlack": 0.734,
    "step": "front landscape",
    "task": "CAM-002-T21"
   },
   {
    "device": "iPad15,7",
-   "framesPerSecond": 58,
+   "framesPerSecond": 57,
    "step": "back",
    "task": "CAM-002-T23"
   },
   {
    "device": "iPad15,7",
-   "seconds": 7.859,
+   "seconds": 3.895,
    "step": "to Front",
    "task": "CAM-002-T23"
   },
   {
    "device": "iPad15,7",
-   "seconds": 7.006,
+   "step": "to Front in app",
+   "switchMs": 244,
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad15,7",
+   "framesPerSecond": 59,
+   "step": "after the switch to Front",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad15,7",
+   "seconds": 3.742,
    "step": "to Back",
    "task": "CAM-002-T23"
   },
   {
    "device": "iPad15,7",
-   "framesPerSecond": 57,
+   "step": "to Back in app",
+   "switchMs": 198,
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad15,7",
+   "framesPerSecond": 59,
+   "step": "after the switch to Back",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad15,7",
+   "framesPerSecond": 59,
    "step": "back",
    "task": "CAM-003-T11"
   },
@@ -122,26 +146,26 @@
    "task": "CAM-003-T11"
   }
  ],
- "passed": 3,
+ "passed": 4,
  "schemaVersion": 1,
  "session": "B06",
  "tasks": {
   "CAM-001-T24": {
    "checks": {},
    "fpsMedians": [
-    60,
+    59,
     60
    ],
-   "fpsMin": 58,
+   "fpsMin": 59,
    "steps": 2
   },
   "CAM-002-T21": {
    "checks": {},
    "fpsMedians": [
-    60,
+    59,
     60
    ],
-   "fpsMin": 59,
+   "fpsMin": 58,
    "steps": 2
   },
   "CAM-002-T23": {
@@ -161,25 +185,25 @@
   {
    "class": "B06CameraDeviceTests",
    "result": "passed",
-   "seconds": 45.573,
+   "seconds": 53.591,
    "test": "testCAM001BackCameraLiveThroughRotation"
   },
   {
    "class": "B06CameraDeviceTests",
    "result": "passed",
-   "seconds": 40.751,
+   "seconds": 41.824,
    "test": "testCAM002FrontCameraLiveThroughRotation"
   },
   {
    "class": "B06CameraDeviceTests",
-   "result": "failed",
-   "seconds": 49.282,
+   "result": "passed",
+   "seconds": 66.742,
    "test": "testCAM002SwitchingWithinTwoSecondsAudioUninterrupted"
   },
   {
    "class": "B06CameraDeviceTests",
    "result": "passed",
-   "seconds": 37.396,
+   "seconds": 37.543,
    "test": "testCAM003LensRow"
   }
  ],

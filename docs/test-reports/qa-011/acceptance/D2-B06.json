@@ -1,27 +1,27 @@
 {
  "device": "D2",
  "kind": "projectM-iOS.qa011.deviceAcceptance",
- "logSha256": "267f190c96be495036ab74e1668850ecf3af2ba7c857ba89d61520735a141524",
+ "logSha256": "453da3e330d4a0f416c9fa2c2f9c3b1d48e7705edb31733d9e244fce14e2b175",
  "measurements": [
   {
    "device": "iPad17,3",
-   "framesPerSecond": 58,
+   "framesPerSecond": 57,
    "step": "back portrait",
    "task": "CAM-001-T24"
   },
   {
    "device": "iPad17,3",
    "fpsMedian": 60,
-   "fpsMin": 58,
+   "fpsMin": 59,
    "samples": 10,
    "step": "back portrait",
    "task": "CAM-001-T24"
   },
   {
    "device": "iPad17,3",
-   "meanLuma": 0.049,
-   "meanSaturation": 0.442,
-   "nonBlack": 0.115,
+   "meanLuma": 0.046,
+   "meanSaturation": 0.461,
+   "nonBlack": 0.091,
    "step": "back portrait",
    "task": "CAM-001-T24"
   },
@@ -34,22 +34,22 @@
   {
    "device": "iPad17,3",
    "fpsMedian": 60,
-   "fpsMin": 58,
+   "fpsMin": 59,
    "samples": 10,
    "step": "back landscape",
    "task": "CAM-001-T24"
   },
   {
    "device": "iPad17,3",
-   "meanLuma": 0.051,
-   "meanSaturation": 0.414,
-   "nonBlack": 0.079,
+   "meanLuma": 0.053,
+   "meanSaturation": 0.434,
+   "nonBlack": 0.089,
    "step": "back landscape",
    "task": "CAM-001-T24"
   },
   {
    "device": "iPad17,3",
-   "framesPerSecond": 58,
+   "framesPerSecond": 56,
    "step": "front portrait",
    "task": "CAM-002-T21"
   },
@@ -63,9 +63,9 @@
   },
   {
    "device": "iPad17,3",
-   "meanLuma": 0.098,
-   "meanSaturation": 0.735,
-   "nonBlack": 0.687,
+   "meanLuma": 0.152,
+   "meanSaturation": 0.823,
+   "nonBlack": 0.907,
    "step": "front portrait",
    "task": "CAM-002-T21"
   },
@@ -85,9 +85,9 @@
   },
   {
    "device": "iPad17,3",
-   "meanLuma": 0.116,
-   "meanSaturation": 0.734,
-   "nonBlack": 0.711,
+   "meanLuma": 0.203,
+   "meanSaturation": 0.843,
+   "nonBlack": 0.897,
    "step": "front landscape",
    "task": "CAM-002-T21"
   },
@@ -99,19 +99,43 @@
   },
   {
    "device": "iPad17,3",
-   "seconds": 7.044,
+   "seconds": 2.865,
    "step": "to Front",
    "task": "CAM-002-T23"
   },
   {
    "device": "iPad17,3",
-   "seconds": 6.937,
+   "step": "to Front in app",
+   "switchMs": 277,
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 58,
+   "step": "after the switch to Front",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad17,3",
+   "seconds": 2.823,
    "step": "to Back",
    "task": "CAM-002-T23"
   },
   {
    "device": "iPad17,3",
-   "framesPerSecond": 57,
+   "step": "to Back in app",
+   "switchMs": 147,
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 56,
+   "step": "after the switch to Back",
+   "task": "CAM-002-T23"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 56,
    "step": "back",
    "task": "CAM-003-T11"
   },
@@ -120,39 +144,9 @@
    "lensRow": 0,
    "step": "no lens row",
    "task": "CAM-003-T11"
-  },
-  {
-   "device": "iPad17,3",
-   "framesPerSecond": 57,
-   "step": "back",
-   "task": "CAM-002-T23"
-  },
-  {
-   "device": "iPad17,3",
-   "seconds": 7.434,
-   "step": "to Front",
-   "task": "CAM-002-T23"
-  },
-  {
-   "device": "iPad17,3",
-   "framesPerSecond": 0,
-   "step": "after the switch to Front",
-   "task": "CAM-002-T23"
-  },
-  {
-   "device": "iPad17,3",
-   "seconds": 7.565,
-   "step": "to Back",
-   "task": "CAM-002-T23"
-  },
-  {
-   "device": "iPad17,3",
-   "framesPerSecond": 0,
-   "step": "after the switch to Back",
-   "task": "CAM-002-T23"
   }
  ],
- "passed": 3,
+ "passed": 4,
  "schemaVersion": 1,
  "session": "B06",
  "tasks": {
@@ -162,7 +156,7 @@
     60,
     60
    ],
-   "fpsMin": 58,
+   "fpsMin": 59,
    "steps": 2
   },
   "CAM-002-T21": {
@@ -191,32 +185,26 @@
   {
    "class": "B06CameraDeviceTests",
    "result": "passed",
-   "seconds": 47.723,
+   "seconds": 52.466,
    "test": "testCAM001BackCameraLiveThroughRotation"
   },
   {
    "class": "B06CameraDeviceTests",
    "result": "passed",
-   "seconds": 37.673,
+   "seconds": 36.21,
    "test": "testCAM002FrontCameraLiveThroughRotation"
   },
   {
    "class": "B06CameraDeviceTests",
-   "result": "failed",
-   "seconds": 41.185,
+   "result": "passed",
+   "seconds": 55.423,
    "test": "testCAM002SwitchingWithinTwoSecondsAudioUninterrupted"
   },
   {
    "class": "B06CameraDeviceTests",
    "result": "passed",
-   "seconds": 31.084,
+   "seconds": 29.59,
    "test": "testCAM003LensRow"
-  },
-  {
-   "class": "B06CameraDeviceTests",
-   "result": "failed",
-   "seconds": 67.077,
-   "test": "testCAM002SwitchingWithinTwoSecondsAudioUninterrupted"
   }
  ],
  "xcresult": null
