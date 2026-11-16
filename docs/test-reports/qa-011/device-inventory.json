@@ -4,38 +4,38 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 239,
-    "specs": 199,
+    "total": 236,
+    "specs": 196,
     "byStatus": {
-      "open": 222,
+      "open": 219,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 215
+      "b": 212
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 226
+      "b": 223
     },
     "byDevice": {
-      "D1": 218,
-      "D2": 50,
-      "D3": 49
+      "D1": 215,
+      "D2": 47,
+      "D3": 46
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 12,
-        "b": 206
+        "b": 203
       },
       "D2": {
         "a": 3,
-        "b": 47
+        "b": 44
       },
       "D3": {
         "a": 3,
-        "b": 46
+        "b": 43
       }
     },
     "bySession": {
@@ -51,7 +51,7 @@
       "B10": 13,
       "B11": 31,
       "B12": 5,
-      "B13": 21,
+      "B13": 18,
       "MATRIX": 13
     },
     "devicesInferred": 2
@@ -180,11 +180,7 @@
       "partOf": [
         "CMP-001-T20"
       ],
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
+      "devices": [],
       "timeoutSeconds": 900
     },
     {
@@ -773,9 +769,6 @@
         "016-anl-002-log-frequency-bands:ANL-002-T20",
         "018-anl-004-spectral-flux-onset-detector:ANL-004-T25",
         "022-fx-019-strobe-safety-envelope:FX-019-T22",
-        "029-cmp-001-unified-layer-protocol:CMP-001-T20",
-        "039-shd-001-procedural-material-catalog:SHD-001-T19",
-        "040-cmp-002-ordered-layer-stack:CMP-002-T15",
         "048-med-002-import-video-layer:MED-002-T27",
         "048-med-002-import-video-layer:MED-002-T28",
         "052-perf-004-texture-pool:PERF-004-T14",
@@ -791,7 +784,7 @@
         "284-med-005-video-reverse-playback:MED-005-T20"
       ],
       "optionalTasks": 3,
-      "estimatedMinutes": 210
+      "estimatedMinutes": 165
     }
   ],
   "tasks": [
@@ -1678,29 +1671,6 @@
       "text": "SHOW-011-T23 `{device}` On D1, tap along with music, reset with music playing; not required for this row and not run (open, `{device}`). D1 automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): TapTempoUITests, four taps with the reference track playing set the tempo and Reset clears it."
     },
     {
-      "id": "CMP-001-T20",
-      "spec": "029-cmp-001-unified-layer-protocol",
-      "feature": "CMP-001",
-      "line": 66,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B13",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [
-        "xctest-angle-layer"
-      ],
-      "estimatedMinutes": 15,
-      "text": "CMP-001-T20 {device} On D1-D3: the spike tests and `ProjectMLayerTests` on each device, and a frame-time sample of a compositor with two spectrum layers and a projectM layer (CMP-001-S7 on hardware, the cost noted in ADR-0013). Roadmap final device phase; not run in this row."
-    },
-    {
       "id": "ACC-002-T20",
       "spec": "030-acc-002-reduced-flash-preset-policy",
       "feature": "ACC-002",
@@ -1855,48 +1825,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "OSC-007-T12 `{device}` On D1 over Wi-Fi (quickstart D): the badge shows while listening, Stop ends delivery and Settings shows off (OSC-007-S5). Owner, last stage."
-    },
-    {
-      "id": "SHD-001-T19",
-      "spec": "039-shd-001-procedural-material-catalog",
-      "feature": "SHD-001",
-      "line": 64,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B13",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "SHD-001-T19 {device} (open: needs D1-D3 and the final device stage) Per-material GPU frame cost at full screen on D1, D2 and D3 (median and 95th percentile over 600 frames at defaults), recorded in `docs/test-reports/performance.md` (S8; R16)"
-    },
-    {
-      "id": "CMP-002-T15",
-      "spec": "040-cmp-002-ordered-layer-stack",
-      "feature": "CMP-002",
-      "line": 61,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B13",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "CMP-002-T15 {device} Per-layer frame cost of a 4-layer stack (projectM or a material, camera, two spectra) on D1, D2 and D3: GPU time per frame with 1 to 4 layers, recorded in `docs/test-reports/performance.md` (CMP-002-S6, R15)"
     },
     {
       "id": "OSC-009-T15",

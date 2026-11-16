@@ -381,3 +381,45 @@ pipeline archive".
 
 The simulator's chooser times are dominated by Debug-build start-up and vary by hundreds of milliseconds between
 launches; only the library load column shows the cache's effect there.
+
+## QA-011 B13: GPU frame cost on D1-D3 (2026-11-16)
+
+Device benches in the Release `DeviceTests` bundles (`MaterialFrameCostBench`, `LayerStackFrameCostBench`,
+`ProjectMStackFrameCostBench`; gated by `SHD001_BENCH`, `CMP002_BENCH`, `CMP001_BENCH`): 30 warm-up frames, then 600
+measured, at each device's native portrait size. GPU = `MTLCommandBuffer` gpuEndTime - gpuStartTime; wall = the frame's
+CPU-side time to completion. projectM draws in ANGLE's own command buffers, so for projectM stacks the wall time is
+the figure that includes it. The camera layer is drawn from a stand-in provider with a 1920x1080 texture: the GPU
+sampling cost of a camera picture, without capture (which is CPU). Every `BENCH-RESULT` row with its log's SHA-256:
+`docs/test-reports/qa-011/acceptance/D1-B13-gpu-bench.json` (and D2, D3).
+
+### SHD-001-T19: per material, full screen, defaults (ms)
+
+| Material | D1 median / p95 | D2 median / p95 | D3 median / p95 |
+|---|---|---|---|
+| material.gradient | 2.10 / 2.13 | 0.24 / 0.77 | 3.34 / 3.37 |
+| material.noiseFlow | 4.98 / 7.39 | 1.73 / 1.73 | 7.85 / 8.42 |
+| material.plasma | 2.64 / 2.69 | 0.36 / 0.36 | 4.17 / 4.19 |
+| material.starfield | 4.65 / 4.71 | 0.54 / 0.56 | 7.38 / 7.59 |
+| material.tunnel | 2.07 / 2.09 | 0.24 / 0.25 | 3.29 / 3.32 |
+
+Sizes: D1 1179x2556, D2 2064x2752, D3 1640x2360.
+
+### CMP-002-T15: ordered stack, GPU time per frame with 1 to 4 layers (ms)
+
+| Bottom layer | Layers | D1 GPU / wall | D2 GPU / wall | D3 GPU / wall |
+|---|---|---|---|---|
+| material.noiseFlow | material.noiseFlow | 7.80 / 8.80 | 2.25 / 2.49 | 10.46 / 11.39 |
+| material.noiseFlow | material.noiseFlow + camera (stub provider, 1920x1080) | 8.11 / 9.15 | 2.51 / 2.74 | 14.93 / 15.92 |
+| material.noiseFlow | material.noiseFlow + camera (stub provider, 1920x1080) + spectrum.circular | 9.16 / 10.41 | 2.68 / 2.92 | 15.95 / 17.11 |
+| material.noiseFlow | material.noiseFlow + camera (stub provider, 1920x1080) + spectrum.circular + spectrum.linear | 12.09 / 13.59 | 3.68 / 3.95 | 17.56 / 18.97 |
+| projectM | projectM | 4.05 / 11.36 | 0.71 / 2.08 | 5.99 / 15.89 |
+| projectM | projectM + camera (stub provider, 1920x1080) | 5.55 / 12.87 | 0.93 / 2.33 | 8.29 / 18.16 |
+| projectM | projectM + camera (stub provider, 1920x1080) + spectrum.circular | 6.50 / 13.85 | 1.09 / 2.50 | 9.65 / 19.38 |
+| projectM | projectM + camera (stub provider, 1920x1080) + spectrum.circular + spectrum.linear | 11.98 / 18.89 | 2.10 / 3.49 | 14.22 / 21.84 |
+
+### CMP-001-T20: compositor with two spectrum layers (ms)
+
+| Bottom layer | Layers | D1 GPU / wall | D2 GPU / wall | D3 GPU / wall |
+|---|---|---|---|---|
+| material.noiseFlow | material.noiseFlow + spectrum.circular + spectrum.linear | 9.09 / 10.08 | 2.65 / 2.91 | 16.13 / 17.40 |
+| projectM | projectM + spectrum.circular + spectrum.linear | 6.14 / 13.49 | 1.07 / 2.47 | 9.05 / 18.89 |

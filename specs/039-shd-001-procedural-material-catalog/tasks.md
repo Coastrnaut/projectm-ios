@@ -61,7 +61,7 @@ this row.
 ## Phase 7: Polish
 
 - [X] SHD-001-T18 Gates: `python3 scripts/check_compliance.py`, `python3 scripts/validate_docs.py`, `swift test --package-path Packages/Compositor` (host), the Linux shape (`-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE`), and `xcodebuild test -scheme Compositor` on a fresh iOS 27.2 simulator (deleted afterwards; PosterBoard reports counted); spec status and test counts recorded — Verified 2026-11-13: check_compliance OK, validate_docs OK, host 92 tests (31 + 61), Linux shape 48 tests (19 + 29), `xcodebuild test -scheme Compositor` on a new iOS 27.2 simulator 92 tests (31 s, simulator deleted, PosterBoard reports 32 before and after)
-- [ ] SHD-001-T19 {device} (open: needs D1-D3 and the final device stage) Per-material GPU frame cost at full screen on D1, D2 and D3 (median and 95th percentile over 600 frames at defaults), recorded in `docs/test-reports/performance.md` (S8; R16)
+- [X] SHD-001-T19 {device} (open: needs D1-D3 and the final device stage) Per-material GPU frame cost at full screen on D1, D2 and D3 (median and 95th percentile over 600 frames at defaults), recorded in `docs/test-reports/performance.md` (S8; R16) — Verified 2026-11-16 on D1, D2 and D3 (docs/test-reports/performance.md (QA-011 B13), rows in docs/test-reports/qa-011/acceptance/D1-B13-gpu-bench.json, D2-, D3-): MaterialFrameCostBench, every catalog material at defaults, full screen, median and 95th percentile over 600 frames.
 
 ## Dependencies
 

@@ -166,3 +166,11 @@ refuses duplicate IDs (`LayerStackError.duplicateLayer`), more than 8 entries an
 limit, and the next added layer gets the largest restored ID + 1, so IDs are still never reused.
 Procedural materials and generator graphs declare their layer kinds (`material`,
 `generator.graph`) beside their targets, like every other kind.
+
+## Device cost (CMP-001-T20, 2026-11-16)
+
+On D1-D3 a compositor with two spectrum layers over a projectM layer took a median of 6.1 ms (D1), 1.1 ms (D2) and
+9.1 ms (D3) of compositor GPU time per frame, and 13.5, 2.5 and 18.9 ms wall time including projectM's own ANGLE draw;
+over a material instead of projectM, 9.1, 2.7 and 16.1 ms GPU. 600 frames at native size, Release.
+`docs/test-reports/performance.md` (QA-011 B13) has the tables.
+
