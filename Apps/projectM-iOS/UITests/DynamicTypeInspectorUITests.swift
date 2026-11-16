@@ -342,7 +342,7 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     private func launch(_ size: String, _ extra: [String] = [], autostart: Bool = true) {
         XCUIDevice.shared.orientation = .portrait
         let start: [String] = autostart ? ["-autostart", "inAppPlayback"] : []
-        app.launchArguments = ["-uitestResetNotice", "-uitestKeepControls", "-UIPreferredContentSizeCategoryName", self.size(size)]
+        app.launchArguments = ["-uitestResetNotice", "-uitestKeepControls", "-uitestAppearance", "light", "-UIPreferredContentSizeCategoryName", self.size(size)]
             + start + extra + Self.noStore
         app.launch()
     }

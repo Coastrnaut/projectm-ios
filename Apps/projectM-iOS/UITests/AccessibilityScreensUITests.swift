@@ -197,7 +197,7 @@ final class AccessibilityScreensUITests: XCTestCase {
 
     private func launch(_ extra: [String] = []) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestKeepControls", "-autostart", "inAppPlayback"] + extra + Self.noStore
+        app.launchArguments = ["-uitestResetNotice", "-uitestKeepControls", "-uitestAppearance", "light", "-autostart", "inAppPlayback"] + extra + Self.noStore
         app.launch()
     }
 

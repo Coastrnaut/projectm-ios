@@ -274,12 +274,26 @@ struct StatusAppearance: Equatable, Sendable {
     /// ACC-003-R12: forces the window scenes' contrast trait, so the asset accent and dynamic colours
     /// resolve exactly as with the real setting.
     @MainActor static func applyDebugContrastOverride() {
-        guard let increased = increaseContrastOverride else { return }
+        let increased = increaseContrastOverride, style = appearanceOverride
+        guard increased != nil || style != nil else { return }
         for scene in UIApplication.shared.connectedScenes {
             guard let windowScene = scene as? UIWindowScene else { continue }
-            windowScene.traitOverrides.accessibilityContrast = increased ? .high : .normal
+            if let increased { windowScene.traitOverrides.accessibilityContrast = increased ? .high : .normal }
+            if let style { windowScene.traitOverrides.userInterfaceStyle = style }
         }
     }
+
+    /// QA-011: DEBUG `-uitestAppearance light|dark` pins the window scenes' appearance, so colour audits on a device
+    /// whose Appearance is Automatic do not change with the time of day (D1 ran dark at night, 2026-11-15).
+    static let appearanceOverride: UIUserInterfaceStyle? = {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let index = arguments.firstIndex(of: "-uitestAppearance"), index + 1 < arguments.count else { return nil }
+        switch arguments[index + 1] {
+        case "light": return .light
+        case "dark": return .dark
+        default: return nil
+        }
+    }()
     #endif
 }
 

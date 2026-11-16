@@ -46,7 +46,7 @@ final class PrimaryScreensAccessibilityUITests: XCTestCase {
         XCUIDevice.shared.orientation = .portrait
         let base: [String] = ["-uitestResetNotice", "-uitestKeepControls", "-autostart", "inAppPlayback",
                               "-UIPreferredContentSizeCategoryName", layout.category]
-        app.launchArguments = base + screen.launch + Self.noStore
+        app.launchArguments = base + ["-uitestAppearance", "light"] + screen.launch + Self.noStore   // pinned (QA-011: Automatic ran dark at night)
         app.launch()
     }
 
