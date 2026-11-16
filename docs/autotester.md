@@ -50,9 +50,12 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 - **A locked device stops everything.** `xcodebuild` fails with "Unlock <name> to Continue"; `devicectl` launches fail
   with "Locked". Ask once for Auto-Lock **Never** per device for the session. `xcrun devicectl device info lockState`
   reports `passcodeRequired`.
-- **"Timed out while enabling automation mode"** stopped D1's UI tests twice in a row after it had been idle; the owner
-  then woke and checked the device (no prompt was visible) and the next run started. Treat it as "a person must look
-  at the device": it is not something to script around.
+- **"Timed out while enabling automation mode"** (XCTFuture 1000) stopped D1's UI tests four times in a row on
+  2026-11-15 although the device was connected, unlocked (`lockState`: `passcodeRequired` false) and showed no prompt.
+  Waking the device did not clear it, and `devicectl device process terminate` cannot stop the device's
+  `testmanagerd` (a protected system process). Package test bundles (no UI automation) are not affected. What is
+  left is a person at the device: Settings › Developer › turn "Enable UI Automation" off and on, or restart the
+  device and unlock it. Don't loop retries; one retry, then ask, and run non-UI work meanwhile.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

@@ -149,6 +149,8 @@ schemes:
       config: Debug
       targets:
         - projectM-iOSDeviceUITests
+        # The simulator UI tests also run on D1/D2 for owner-session steps they already cover (QA-011 B02-B13).
+        - projectM-iOSUITests
   DeviceTests:
     build:
       targets:
