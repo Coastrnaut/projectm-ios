@@ -73,7 +73,12 @@ class DeviceAcceptanceCase: XCTestCase {
         args += ["-uitestDefaults", json]
         app.launchArguments = args + extra
         app.launch()
-        XCTAssertTrue(wait(15) { self.app.staticTexts["sourceStarts"].exists }, "the source started")
+        let started = wait(15) { self.app.staticTexts["sourceStarts"].exists }
+        if !started, music, app.navigationBars["Choose source"].exists {
+            XCTFail("the app stayed on Choose source: music-fixture.m4a is missing from the app's Documents on this "
+                    + "device; run python3 scripts/install_test_fixtures.py --device all")
+        }
+        XCTAssertTrue(started, "the source started")
         XCTAssertTrue(wait(10) { self.overlayFPS() != nil }, "the performance overlay shows a frame rate")
         if music {
             let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch

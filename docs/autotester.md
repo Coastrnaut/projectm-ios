@@ -27,6 +27,7 @@ xcodegen generate --spec DeviceTests.yml
 xcodebuild build-for-testing -project ProjectM-DeviceTests.xcodeproj -scheme DeviceAcceptance \
   -destination 'platform=iOS,id=<hardware UDID>' -derivedDataPath Build/device-acceptance -allowProvisioningUpdates
 xcrun devicectl device install app --device <devicectl id> Build/device-acceptance/Build/Products/Debug-iphoneos/projectM-iOS.app
+python3 scripts/install_test_fixtures.py --device all              # copies it onto D1-D3 (or by hand:)
 xcrun devicectl device copy to --device <devicectl id> --domain-type appDataContainer \
   --domain-identifier org.projectmios.ProjectMiOS --source Build/fixtures/music-fixture.m4a \
   --destination Documents/music-fixture.m4a
@@ -107,6 +108,9 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   shows the microphone, camera and Local Network prompts one after another and waits (up to 180 s each) for a person
   to answer; it never taps them. A granted permission survives reinstalling the same app, so the camera, microphone
   and OSC device tests run unattended afterwards.
+- **Every device needs the fixtures:** D3 stayed on "Choose source" in every test (the app said the fixture could
+  not be found) because the music fixture had been copied onto D1 and D2 only. `scripts/install_test_fixtures.py
+  --device all` copies it; the tests now fail with that instruction when the app lands on the source chooser.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
