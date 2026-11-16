@@ -169,8 +169,14 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   paths, and verify no personal data before pushing.
 - **Simulator rehearsals are never evidence** and stay gitignored; device records carry their own SHA-256 and a
   verifier; uncommitted artifacts such as xcresults drift and are not checked.
-- **Keep person-steps out of the unattended suite** (owner ruling): a case that triggers a permission prompt moves to
-  an owner session.
+- **Everything that raises a prompt is human testing, never automated testing** (owner ruling, restated
+  2026-11-16 after an unattended run on D1 stopped at a camera permission prompt): every test that can show a system
+  prompt or alert that waits for a person — camera, microphone, Local Network, photo library, location, notifications,
+  UI-automation consent — is grouped together in the human test session and never runs in an unattended device or
+  simulator run. Today that group is `PermissionPrimerDeviceTests` (camera, microphone and Local Network prompts) and
+  any B06 camera case that can reach the camera prompt on a device where it was never answered; unattended runs
+  exclude them with `-skip-testing` and start only after the person session has answered every prompt on that device.
+  A new test that can prompt goes into this group, and the unattended suite asserts that no prompt appears.
 
 ## What still needs a person
 
