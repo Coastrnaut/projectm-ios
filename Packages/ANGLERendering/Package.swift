@@ -20,6 +20,9 @@ let package = Package(
         .package(path: "../FlashSafety"),
         // CMP-001 (ADR-0013): the layer contract the projectM layer conforms to.
         .package(path: "../Compositor"),
+        // CMP-001-T20 / CMP-002-T15 benches (tests only): the spectrum generators of the test stack.
+        .package(path: "../VisualGenerators"),
+        .package(path: "../AnalysisFeatures"),
     ],
     targets: [
         .binaryTarget(name: "libEGL", path: "../../Build/ANGLEFrameworks/libEGL.xcframework"),
@@ -39,6 +42,9 @@ let package = Package(
                 linkerSettings: [.linkedFramework("Metal")]),
         .testTarget(name: "ANGLERenderingTests",
                     dependencies: ["ANGLERendering", "ProjectMLayer", .product(name: "Compositor", package: "Compositor"), "CANGLE", "Rendering", "AudioCore", "ProjectMBridge", "PresentationLifecycle", "FlashSafety",
-                                   .product(name: "CFlashLimiter", package: "Rendering")]),
+                                   .product(name: "CFlashLimiter", package: "Rendering"),
+                                   // CMP-001-T20 / CMP-002-T15 benches: the spectrum generators of the test stack.
+                                   .product(name: "VisualGenerators", package: "VisualGenerators"),
+                                   .product(name: "AnalysisFeatures", package: "AnalysisFeatures")]),
     ]
 )

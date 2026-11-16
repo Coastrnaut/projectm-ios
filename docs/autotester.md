@@ -140,6 +140,12 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
 - **Test media persists in the app between launches:** imported tracks stay in the audio library, so "play the first
   imported track" played the left-only fixture in the inverted-phase test once both had been imported on D1 (r 0, no
   warning). The import hook now plays the track this launch imported (by file name).
+- **GPU benches on the devices (B13):** `MaterialFrameCostBench` (SHD-001), `LayerStackFrameCostBench` (CMP-002, CMP-001)
+  and `ProjectMStackFrameCostBench` (projectM at the bottom) run in the Release `DeviceTests` bundles, gated by
+  `SHD001_BENCH`, `CMP002_BENCH`, `CMP001_BENCH` (set them as `TEST_RUNNER_<NAME>=1` on the xcodebuild command), and
+  print `BENCH-RESULT {json}` lines (GPU and wall median and p95 over 600 frames at the native screen size). Release
+  device-test builds need `ENABLE_TESTABILITY=YES` (the matrix passes it); without it every `@testable import` fails
+  to resolve. projectM draws in ANGLE's own command buffers, so its GPU figure omits that draw: use the wall time.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

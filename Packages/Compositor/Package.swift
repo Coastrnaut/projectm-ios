@@ -120,7 +120,7 @@ let package = Package(
         .target(name: "AuthoringPreview", dependencies: ["Compositor", "ProceduralMaterials", "ParameterGraph", "FrameCapture",
                                                          .product(name: "VisualGenerators", package: "VisualGenerators")]),
         .testTarget(name: "CompositorTests",
-                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording", "FrameTiming", "ParameterGraph",
+                    dependencies: ["Compositor", "SpectrumLayers", "CameraLayer", "ProceduralMaterials", "ImageLayer", "VideoLayer", "MediaSniffing", "AnalysisFeatures", "FlashSafety", "FrameCapture", "FrameRecording", "FrameTiming", "ParameterGraph",
                                    .product(name: "VisualGenerators", package: "VisualGenerators"),
                                    .product(name: "LocalPortability", package: "LocalPortability")]),
         .testTarget(name: "ProceduralMaterialsTests",

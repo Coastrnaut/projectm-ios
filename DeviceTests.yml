@@ -112,6 +112,8 @@ targets:
     dependencies:
       - package: ANGLERendering
       - package: Compositor
+      - package: VisualGenerators     # CMP-001/CMP-002 projectM benches
+      - package: AnalysisFeatures
       - package: Rendering
         product: Rendering
       - package: Rendering
