@@ -57,7 +57,11 @@ final class RecordingRecoveryTests: XCTestCase {
     }
 
     /// Records `frames` frames (stopping at the first `.failed`), finishes, releases the recorder and checks the ledger.
-    private func record(_ name: String, url: URL, fault: RecordingWriterFault, frames: Int) async throws -> Run {
+    /// `settle`: a pause before the finish, so the encoder has completed a fragment before an injected finish
+    /// failure (non-real-time appends run ahead of the encoder; on a loaded CI simulator none had completed yet and
+    /// the file was rightly deleted, REC-016-R3: run 43803523105).
+    private func record(_ name: String, url: URL, fault: RecordingWriterFault, frames: Int,
+                        settle: Duration = .zero) async throws -> Run {
         let (device, queue) = try gpu()
         let recorders = RecordingResourceLedger.liveRecorders, writers = RecordingResourceLedger.liveWriters
         var appended = 0
@@ -71,6 +75,7 @@ final class RecordingRecoveryTests: XCTestCase {
                 if try offer(recorder, queue: queue, index: i) == .failed { break }
             }
             appended = recorder.statistics.written
+            if settle > .zero { try await Task.sleep(for: settle) }
             result = await recorder.finish()
             XCTAssertEqual(recorder.framesInFlight, 0, "\(name): nothing in flight")
         }
@@ -120,7 +125,7 @@ final class RecordingRecoveryTests: XCTestCase {
     func testFinishFailureKeepsTheCompletedFragments() async throws {
         let url = temporaryURL("finish")
         defer { try? FileManager.default.removeItem(at: url) }
-        let run = try await record("finish", url: url, fault: .finishFailure, frames: 45)
+        let run = try await record("finish", url: url, fault: .finishFailure, frames: 45, settle: .seconds(1))
         XCTAssertEqual(run.appended, 45)
         try await assertKept(run, url: url, name: "finish")
     }

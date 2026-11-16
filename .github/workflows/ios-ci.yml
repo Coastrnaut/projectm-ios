@@ -27,7 +27,9 @@ env:
   # group; the Linux job and the device-SDK compile use all three.
   PKGS_AUDIO: AudioCore CaptureKit CaptureUI AnalysisFeatures PerformanceControl
   PKGS_LIBRARY: Diagnostics LocalPortability PresetLibrary PresentationLifecycle FlashSafety ShowControl LibraryBackup ImportFuzz
-  PKGS_VISUAL: VisualGenerators ParameterGraph Compositor SceneFormat SceneArchive RenderGoldens
+  PKGS_VISUAL: VisualGenerators ParameterGraph SceneFormat SceneArchive RenderGoldens
+  # Compositor alone since 2026-11-16: with it the visual group ran into its 45-minute limit (run 43807715816).
+  PKGS_COMPOSITOR: Compositor
 
 jobs:
   docs-and-compliance:
@@ -53,13 +55,13 @@ jobs:
         run: python scripts/collect_licenses.py --check
       - name: Package groups name each package once, and each exists
         run: |
-          ALL="$PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL"
+          ALL="$PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL $PKGS_COMPOSITOR"
           DUP=$(printf '%s\n' $ALL | sort | uniq -d)
           [ -z "$DUP" ] || { echo "::error::Packages in more than one group: $DUP"; exit 1; }
           for pkg in $ALL; do
             [ -f "Packages/$pkg/Package.swift" ] || { echo "::error::Package group names a missing package: $pkg"; exit 1; }
           done
-          echo "$(printf '%s\n' $ALL | wc -l | tr -d ' ') packages in 3 groups"
+          echo "$(printf '%s\n' $ALL | wc -l | tr -d ' ') packages in 4 groups"
 
   host-tests-linux:
     # Platform-independent package logic. Apple-only code (ScreenCaptureKit, AVFAudio, UIKit,
@@ -75,7 +77,7 @@ jobs:
         run: swift --version
       - name: Package tests (Linux host)
         run: |
-          for pkg in $PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL; do
+          for pkg in $PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL $PKGS_COMPOSITOR; do
             echo "::group::swift test $pkg"
             swift test --package-path "Packages/$pkg"
             echo "::endgroup::"
@@ -153,7 +155,7 @@ jobs:
       - name: Compile packages for iOS (device SDK, includes Apple-only code)
         run: |
           # No index store: nothing reads it in CI, and it costs about 15% of each build.
-          for pkg in $PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL; do
+          for pkg in $PKGS_AUDIO $PKGS_LIBRARY $PKGS_VISUAL $PKGS_COMPOSITOR; do
             echo "::group::xcodebuild $pkg (generic iOS)"
             START=$SECONDS
             (cd "Packages/$pkg" && xcodebuild -quiet -scheme "$pkg" -destination 'generic/platform=iOS' \
@@ -205,7 +207,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [audio, library, visual]
+        group: [audio, library, visual, compositor]
     name: apple-package-tests (${{ matrix.group }})
     steps:
       - uses: actions/checkout@v5
@@ -223,6 +225,7 @@ jobs:
             audio) PKGS="$PKGS_AUDIO" ;;
             library) PKGS="$PKGS_LIBRARY" ;;
             visual) PKGS="$PKGS_VISUAL" ;;
+            compositor) PKGS="$PKGS_COMPOSITOR" ;;
             *) echo "::error::unknown package group ${{ matrix.group }}"; exit 1 ;;
           esac
           echo "list=$PKGS" >> "$GITHUB_OUTPUT"
@@ -479,7 +482,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [audio, library, visual]
+        group: [audio, library, visual, compositor]
     name: build-ios27 (${{ matrix.group }})
     steps:
       - uses: actions/checkout@v5
@@ -604,6 +607,7 @@ jobs:
             audio) PKGS="$PKGS_AUDIO" ;;
             library) PKGS="$PKGS_LIBRARY" ;;
             visual) PKGS="$PKGS_VISUAL" ;;
+            compositor) PKGS="$PKGS_COMPOSITOR" ;;
             *) echo "::error::unknown package group ${{ matrix.group }}"; exit 1 ;;
           esac
           for pkg in $PKGS; do
