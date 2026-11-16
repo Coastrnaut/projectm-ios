@@ -124,7 +124,7 @@ produced, with " — Verified <date>: <how>".
 - [ ] PERF-011-T21 {device} S7 on D1: GPU time zero and lower memory 10 s after backgrounding with
   System/App Capture running; frames within 2 s of return (quickstart D1, D2). Final device stage. — Open: `{device}`, final device stage; not attempted.
 - [ ] PERF-011-T22 {device} S8 on D1-D3: app switcher card and first frame after return, lock and
-  unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted. — D2 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B02-perf011.md): background, rotate while away, return: the visual draws again 0.77 s after the return (first non-zero overlay reading), in landscape, 60 fps. Open: D1 and D3 runs; the app switcher card, lock and unlock and Control Center (a person).
+  unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted. — D2 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B02-perf011.md): background, rotate while away, return: the visual draws again 0.77 s after the return (first non-zero overlay reading), in landscape, 60 fps. Open: D1 and D3 runs; the app switcher card, lock and unlock and Control Center (a person). — D1 and D3 added 2026-11-16 (D1-B05-B06-effects.md, D3-B02-perf011.md): the visual draws again 0.89 s (D1) and 0.82 s (D3) after a return with a rotation made while away. Automated part done on D1-D3; open: app switcher card, lock and unlock, Control Center (a person).
 
 ## Correction after the integration gate (2026-11-12)
 

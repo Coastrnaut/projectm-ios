@@ -77,7 +77,7 @@ unit test ≤ 10 s, suite < 1 min, UI test < 30 s.
   privacy manifest and network symbols on the Debug app, type-check budget — Verified 2026-11-15: compliance, docs, motion policy, permission catalog, status events OK; 186 script tests; privacy manifest and network symbols OK on the Debug app; no type-check warning in the new files
 - [X] FX-014-T17 Test report in `docs/test-reports/edge-outline.md`; spec status — Verified 2026-11-15: docs/test-reports/edge-outline.md
 - [ ] FX-014-T18 {device} On D1: Camera visual, Edge outline at threshold 0.2, widths 1 and 3, both modes: outlines
-  follow edges, flat areas clean; frame rate with and without recorded (FX-014-S7)
+  follow edges, flat areas clean; frame rate with and without recorded (FX-014-S7) — D1 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): Edge outline at 0.2, widths 1 and 3 over the live back camera changes the picture and the frame rate stays at the visual's normal rate (within 1 fps of off). Open: the look by eye (a moving hand, outlines on edges, corners).
 
 ## Dependencies
 

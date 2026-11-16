@@ -1,0 +1,77 @@
+{
+ "device": "D3",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "4c9e36df1eb87fca6a0485adcd21447681b138d093838ad42e4d302a7af34ba6",
+ "measurements": [
+  {
+   "device": "iPad15,7",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "before",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPad15,7",
+   "landscape": 1,
+   "secondsToFirstFrameReading": 0.816,
+   "step": "return",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPad15,7",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "after the return",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.034,
+   "meanSaturation": 0.051,
+   "nonBlack": 0.058,
+   "step": "after the return a",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.057,
+   "meanSaturation": 0.102,
+   "nonBlack": 0.109,
+   "step": "after the return b",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPad15,7",
+   "motion": 0.025,
+   "step": "after the return",
+   "task": "PERF-011-T22"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B02-perf011",
+ "tasks": {
+  "PERF-011-T22": {
+   "checks": {
+    "after the return: motion": 0.025
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 2
+  }
+ },
+ "tests": [
+  {
+   "class": "B02ShowsDeviceTests",
+   "result": "passed",
+   "seconds": 44.139,
+   "test": "testPERF011ReturnAfterRotationWhileAway"
+  }
+ ],
+ "xcresult": null
+}

@@ -1229,8 +1229,14 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                     await audioLibrary.importPicked(.success([url]))
                 }
             }
-            if defaults.bool(forKey: "uitestPlayImported"), let first = audioLibrary.tracks.first {
-                play(first)
+            // The track this launch imported first (by its file name): the library persists between launches, so its
+            // first track can be an earlier fixture (D1 played the left-only fixture for the inverted-phase test).
+            if defaults.bool(forKey: "uitestPlayImported") {
+                let wanted: String? = defaults.string(forKey: "uitestImportAudio")?.split(separator: "|").first
+                    .map { (path: Substring) -> String in URL(fileURLWithPath: String(path)).lastPathComponent }
+                if let track = audioLibrary.tracks.first(where: { $0.originalFileName == wanted }) ?? audioLibrary.tracks.first {
+                    play(track)
+                }
             }
             #endif
         }

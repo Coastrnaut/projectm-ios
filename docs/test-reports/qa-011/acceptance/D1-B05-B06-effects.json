@@ -1,0 +1,730 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "ff2c1c77a62962cce02741b8586af4ee8552ca0bd3bc8a3fc61eff676829c90f",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "r": 0,
+   "step": "inverted",
+   "task": "ANL-013-T14",
+   "warned": 0
+  },
+  {
+   "device": "iPhone15,4",
+   "step": "left",
+   "task": "ANL-013-T14",
+   "warned": 0
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "before stop",
+   "task": "CAM-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "seconds": 0.557,
+   "step": "stop",
+   "task": "CAM-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.064,
+   "meanSaturation": 0.044,
+   "nonBlack": 0.099,
+   "step": "previous visual a",
+   "task": "CAM-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.063,
+   "meanSaturation": 0.039,
+   "nonBlack": 0.096,
+   "step": "previous visual b",
+   "task": "CAM-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.025,
+   "step": "previous visual",
+   "task": "CAM-012-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 59,
+   "step": "echo 4 x 200 ms off",
+   "task": "FX-010-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "echo 4 x 200 ms off",
+   "task": "FX-010-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.063,
+   "meanSaturation": 0.099,
+   "nonBlack": 0.108,
+   "step": "echo 4 x 200 ms off",
+   "task": "FX-010-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "echo 4 x 200 ms on",
+   "task": "FX-010-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "echo 4 x 200 ms on",
+   "task": "FX-010-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.069,
+   "meanSaturation": 0.137,
+   "nonBlack": 0.133,
+   "step": "echo 4 x 200 ms on",
+   "task": "FX-010-T17"
+  },
+  {
+   "changeFromOff": 0.018,
+   "device": "iPhone15,4",
+   "offMinusOn": 0,
+   "step": "echo 4 x 200 ms",
+   "task": "FX-010-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 59,
+   "step": "edge outline width 1 off",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 58,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "edge outline width 1 off",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.064,
+   "meanSaturation": 0.102,
+   "nonBlack": 0.11,
+   "step": "edge outline width 1 off",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "edge outline width 1 on",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "edge outline width 1 on",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.066,
+   "meanSaturation": 0.098,
+   "nonBlack": 0.115,
+   "step": "edge outline width 1 on",
+   "task": "FX-014-T18"
+  },
+  {
+   "changeFromOff": 0.013,
+   "device": "iPhone15,4",
+   "offMinusOn": -1,
+   "step": "edge outline width 1",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 57,
+   "step": "edge outline width 3 off",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 56,
+   "samples": 10,
+   "step": "edge outline width 3 off",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.064,
+   "meanSaturation": 0.099,
+   "nonBlack": 0.11,
+   "step": "edge outline width 3 off",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "edge outline width 3 on",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "edge outline width 3 on",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.069,
+   "meanSaturation": 0.089,
+   "nonBlack": 0.118,
+   "step": "edge outline width 3 on",
+   "task": "FX-014-T18"
+  },
+  {
+   "changeFromOff": 0.016,
+   "device": "iPhone15,4",
+   "offMinusOn": 0,
+   "step": "edge outline width 3",
+   "task": "FX-014-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 57,
+   "step": "lens distortion 100 % zoom on off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "lens distortion 100 % zoom on off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.064,
+   "meanSaturation": 0.098,
+   "nonBlack": 0.11,
+   "step": "lens distortion 100 % zoom on off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "lens distortion 100 % zoom on on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "lens distortion 100 % zoom on on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.068,
+   "meanSaturation": 0.115,
+   "nonBlack": 0.128,
+   "step": "lens distortion 100 % zoom on on",
+   "task": "FX-016-T17"
+  },
+  {
+   "changeFromOff": 0.019,
+   "device": "iPhone15,4",
+   "offMinusOn": -1,
+   "step": "lens distortion 100 % zoom on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 59,
+   "step": "lens distortion -100 % zoom on off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "lens distortion -100 % zoom on off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.064,
+   "meanSaturation": 0.091,
+   "nonBlack": 0.109,
+   "step": "lens distortion -100 % zoom on off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "lens distortion -100 % zoom on on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "lens distortion -100 % zoom on on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.065,
+   "meanSaturation": 0.095,
+   "nonBlack": 0.116,
+   "step": "lens distortion -100 % zoom on on",
+   "task": "FX-016-T17"
+  },
+  {
+   "changeFromOff": 0.013,
+   "device": "iPhone15,4",
+   "offMinusOn": 0,
+   "step": "lens distortion -100 % zoom on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "lens distortion 100 % zoom off off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 59,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "lens distortion 100 % zoom off off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.067,
+   "meanSaturation": 0.115,
+   "nonBlack": 0.12,
+   "step": "lens distortion 100 % zoom off off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "framesPerSecond": 58,
+   "step": "lens distortion 100 % zoom off on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 58,
+   "fpsMin": 56,
+   "samples": 10,
+   "step": "lens distortion 100 % zoom off on",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.064,
+   "meanSaturation": 0.065,
+   "nonBlack": 0.112,
+   "step": "lens distortion 100 % zoom off on",
+   "task": "FX-016-T17"
+  },
+  {
+   "changeFromOff": 0.016,
+   "device": "iPhone15,4",
+   "offMinusOn": 1,
+   "step": "lens distortion 100 % zoom off",
+   "task": "FX-016-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "before",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "landscape": 1,
+   "secondsToFirstFrameReading": 0.892,
+   "step": "return",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "after the return",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.037,
+   "meanSaturation": 0.047,
+   "nonBlack": 0.073,
+   "step": "after the return a",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.037,
+   "meanSaturation": 0.048,
+   "nonBlack": 0.073,
+   "step": "after the return b",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.002,
+   "step": "after the return",
+   "task": "PERF-011-T22"
+  },
+  {
+   "device": "iPhone15,4",
+   "r": -1,
+   "step": "inverted",
+   "task": "ANL-013-T14",
+   "warned": 1
+  },
+  {
+   "device": "iPhone15,4",
+   "step": "left",
+   "task": "ANL-013-T14",
+   "warned": 0
+  },
+  {
+   "device": "iPhone15,4",
+   "step": "paused across background",
+   "stillPaused": 1,
+   "task": "AUD-006-T39"
+  },
+  {
+   "device": "iPhone15,4",
+   "resumed": 1,
+   "step": "playing across background",
+   "task": "AUD-006-T39"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.09,
+   "meanSaturation": 0.145,
+   "nonBlack": 0.154,
+   "step": "mix 0 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.095,
+   "meanSaturation": 0.126,
+   "nonBlack": 0.155,
+   "step": "mix 0 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.094,
+   "meanSaturation": 0.123,
+   "nonBlack": 0.152,
+   "step": "mix 1 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.09,
+   "meanSaturation": 0.117,
+   "nonBlack": 0.143,
+   "step": "mix 1 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.088,
+   "meanSaturation": 0.113,
+   "nonBlack": 0.139,
+   "step": "mix 2 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.102,
+   "meanSaturation": 0.129,
+   "nonBlack": 0.157,
+   "step": "mix 2 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motionMax": 0.028,
+   "motionMean": 0.023,
+   "step": "mix",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.08,
+   "meanSaturation": 0.159,
+   "nonBlack": 0.218,
+   "step": "left 0 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.174,
+   "meanSaturation": 0.25,
+   "nonBlack": 0.28,
+   "step": "left 0 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.108,
+   "meanSaturation": 0.146,
+   "nonBlack": 0.173,
+   "step": "left 1 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.103,
+   "meanSaturation": 0.135,
+   "nonBlack": 0.164,
+   "step": "left 1 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.102,
+   "meanSaturation": 0.132,
+   "nonBlack": 0.161,
+   "step": "left 2 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.109,
+   "meanSaturation": 0.139,
+   "nonBlack": 0.168,
+   "step": "left 2 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motionMax": 0.107,
+   "motionMean": 0.049,
+   "step": "left",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.045,
+   "meanSaturation": 0.005,
+   "nonBlack": 0.103,
+   "step": "right 0 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.024,
+   "meanSaturation": 0,
+   "nonBlack": 0.029,
+   "step": "right 0 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.024,
+   "meanSaturation": 0,
+   "nonBlack": 0.029,
+   "step": "right 1 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.024,
+   "meanSaturation": 0,
+   "nonBlack": 0.029,
+   "step": "right 1 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.024,
+   "meanSaturation": 0,
+   "nonBlack": 0.029,
+   "step": "right 2 a",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.023,
+   "meanSaturation": 0,
+   "nonBlack": 0.029,
+   "step": "right 2 b",
+   "task": "AUD-009-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "motionMax": 0.027,
+   "motionMean": 0.01,
+   "step": "right",
+   "task": "AUD-009-T13"
+  }
+ ],
+ "passed": 8,
+ "schemaVersion": 1,
+ "session": "B05-B06-effects",
+ "tasks": {
+  "ANL-013-T14": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "AUD-006-T39": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "AUD-009-T13": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "CAM-012-T13": {
+   "checks": {
+    "previous visual: motion": 0.025
+   },
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "FX-010-T17": {
+   "checks": {
+    "echo 4 x 200 ms: changeFromOff": 0.018
+   },
+   "fpsMedians": [
+    59,
+    59
+   ],
+   "fpsMin": 57,
+   "steps": 2
+  },
+  "FX-014-T18": {
+   "checks": {
+    "edge outline width 1: changeFromOff": 0.013,
+    "edge outline width 3: changeFromOff": 0.016
+   },
+   "fpsMedians": [
+    58,
+    59,
+    59,
+    59
+   ],
+   "fpsMin": 56,
+   "steps": 4
+  },
+  "FX-016-T17": {
+   "checks": {
+    "lens distortion -100 % zoom on: changeFromOff": 0.013,
+    "lens distortion 100 % zoom off: changeFromOff": 0.016,
+    "lens distortion 100 % zoom on: changeFromOff": 0.019
+   },
+   "fpsMedians": [
+    59,
+    60,
+    59,
+    59,
+    59,
+    58
+   ],
+   "fpsMin": 56,
+   "steps": 6
+  },
+  "PERF-011-T22": {
+   "checks": {
+    "after the return: motion": 0.002
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 2
+  }
+ },
+ "tests": [
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 29.133,
+   "test": "testCAM012StopCameraReleasesIt"
+  },
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 62.974,
+   "test": "testFX010EchoOverCamera"
+  },
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 120.627,
+   "test": "testFX014EdgeOutlineOverCamera"
+  },
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 180.906,
+   "test": "testFX016LensDistortionOverCamera"
+  },
+  {
+   "class": "B02ShowsDeviceTests",
+   "result": "passed",
+   "seconds": 43.284,
+   "test": "testPERF011ReturnAfterRotationWhileAway"
+  },
+  {
+   "class": "B05AudioDeviceTests",
+   "result": "passed",
+   "seconds": 18.799,
+   "test": "testANL013PhaseInvertedFeedWarns"
+  },
+  {
+   "class": "B05AudioDeviceTests",
+   "result": "passed",
+   "seconds": 21.841,
+   "test": "testAUD006PauseStaysPausedAcrossBackground"
+  },
+  {
+   "class": "B05AudioDeviceTests",
+   "result": "passed",
+   "seconds": 37.766,
+   "test": "testAUD009ChannelSelectionFollowsTheChosenChannel"
+  }
+ ],
+ "xcresult": null
+}

@@ -4,30 +4,30 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 240,
-    "specs": 200,
+    "total": 239,
+    "specs": 199,
     "byStatus": {
-      "open": 223,
+      "open": 222,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 216
+      "b": 215
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 227
+      "b": 226
     },
     "byDevice": {
-      "D1": 219,
+      "D1": 218,
       "D2": 50,
       "D3": 49
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 12,
-        "b": 207
+        "b": 206
       },
       "D2": {
         "a": 3,
@@ -43,7 +43,7 @@
       "B02": 12,
       "B03": 6,
       "B04": 17,
-      "B05": 26,
+      "B05": 25,
       "B06": 19,
       "B07": 20,
       "B08": 13,
@@ -460,11 +460,10 @@
         "092-aud-012-source-crossfade:AUD-012-T20",
         "097-aud-015-background-playback-policy:AUD-015-T13",
         "138-aud-010-channel-balance:AUD-010-T16",
-        "196-anl-013-stereo-correlation:ANL-013-T14",
         "216-perf-013-audio-render-sync:PERF-013-T12"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 195
+      "estimatedMinutes": 190
     },
     {
       "id": "B06",
@@ -1107,7 +1106,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "PERF-011-T22 {device} S8 on D1-D3: app switcher card and first frame after return, lock and unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted. — D2 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B02-perf011.md): background, rotate while away, return: the visual draws again 0.77 s after the return (first non-zero overlay reading), in landscape, 60 fps. Open: D1 and D3 runs; the app switcher card, lock and unlock and Control Center (a person)."
+      "text": "PERF-011-T22 {device} S8 on D1-D3: app switcher card and first frame after return, lock and unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted. — D2 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B02-perf011.md): background, rotate while away, return: the visual draws again 0.77 s after the return (first non-zero overlay reading), in landscape, 60 fps. Open: D1 and D3 runs; the app switcher card, lock and unlock and Control Center (a person). — D1 and D3 added 2026-11-16 (D1-B05-B06-effects.md, D3-B02-perf011.md): the visual draws again 0.89 s (D1) and 0.82 s (D3) after a return with a rotation made while away. Automated part done on D1-D3; open: app switcher card, lock and unlock, Control Center (a person)."
     },
     {
       "id": "PRE-007-T23",
@@ -1836,7 +1835,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "CAM-012-T13 {device} On D1: choose Camera, tap Stop camera; iOS's camera indicator turns off within one second, the previous visual keeps animating, music continues; pause/resume and lock/unlock do not restart the camera (S5; quickstart \"Device\")"
+      "text": "CAM-012-T13 {device} On D1: choose Camera, tap Stop camera; iOS's camera indicator turns off within one second, the previous visual keeps animating, music continues; pause/resume and lock/unlock do not restart the camera (S5; quickstart \"Device\") — D1 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): Stop camera removes the camera and its badge in 0.56 s, music continues, the previous visual keeps drawing and moving, and background and return do not restart the camera. Open: iOS's own camera indicator (system UI) and lock and unlock (a person)."
     },
     {
       "id": "OSC-007-T12",
@@ -2727,7 +2726,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "AUD-009-T13 {device} On D1 (In-App Playback with a hard-panned track, then the microphone) choose Left, Right, Mid and Side and check the bars follow each definition while playback is unchanged; plug or unplug headphones and take a phone call (interruption): the mode stays and the analysis resumes. Evidence: a device note in `docs/test-reports/` (final roadmap device phase). — In-App Playback part automated on D2 and D3 2026-11-16 (D2-B05.md, D3-B05.md): with music in the left channel only, Mix and Left move the spectrum (motion 0.018-0.028) and Right leaves it nearly still (0.002-0.006). Open: D1 (the task names D1), Mid and Side, the microphone and the headphone/call parts (a person)."
+      "text": "AUD-009-T13 {device} On D1 (In-App Playback with a hard-panned track, then the microphone) choose Left, Right, Mid and Side and check the bars follow each definition while playback is unchanged; plug or unplug headphones and take a phone call (interruption): the mode stays and the analysis resumes. Evidence: a device note in `docs/test-reports/` (final roadmap device phase). — In-App Playback part automated on D2 and D3 2026-11-16 (D2-B05.md, D3-B05.md): with music in the left channel only, Mix and Left move the spectrum (motion 0.018-0.028) and Right leaves it nearly still (0.002-0.006). Open: D1 (the task names D1), Mid and Side, the microphone and the headphone/call parts (a person). — D1 In-App Playback part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): left-only fixture, Mix and Left move the spectrum (0.023, 0.049), Right much less (0.010). Open: Mid and Side, the microphone, headphones and a call (a person)."
     },
     {
       "id": "AUD-011-T12",
@@ -3815,25 +3814,6 @@
       "matrixCases": [],
       "estimatedMinutes": 10,
       "text": "UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking Note 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): OneHandedUITests do not apply on D2 (one-handed controls are not offered on iPad, OneHandedSetting); the task is a performer's pass without looking (a person)."
-    },
-    {
-      "id": "ANL-013-T14",
-      "spec": "196-anl-013-stereo-correlation",
-      "feature": "ANL-013",
-      "line": 45,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B05",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "ANL-013-T14 {device} Play a phase-inverted stereo feed through Mix on D1 with a native visual: the overlay reads negative r and the source status shows the warning after about 1 s; switching AUD-009 to Left clears it (quickstart) — Automated on D2 and D3 2026-11-16 (D2-B05.md, D3-B05.md): a phase-inverted fixture under Mix reads r -1.00 on the overlay and the phase-inverted warning shows. Open: D1 (the task names D1) and switching AUD-009 to another mode."
     },
     {
       "id": "REC-010-T13",
@@ -5268,7 +5248,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "FX-010-T17 {device} On D1 open Camera, turn on Echo with 4 echoes at 200 ms, wave a hand: four fading copies trail it and the frame rate stays at the visual's normal rate (FX-010-S7)"
+      "text": "FX-010-T17 {device} On D1 open Camera, turn on Echo with 4 echoes at 200 ms, wave a hand: four fading copies trail it and the frame rate stays at the visual's normal rate (FX-010-S7) — D1 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): Echo 4 x 200 ms over the live back camera changes the picture and the frame rate stays at the visual's normal rate (within 1 fps of off). Open: the look by eye (a moving hand, outlines on edges, corners)."
     },
     {
       "id": "UIX-010-T10",
@@ -5345,7 +5325,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "FX-014-T18 {device} On D1: Camera visual, Edge outline at threshold 0.2, widths 1 and 3, both modes: outlines follow edges, flat areas clean; frame rate with and without recorded (FX-014-S7)"
+      "text": "FX-014-T18 {device} On D1: Camera visual, Edge outline at threshold 0.2, widths 1 and 3, both modes: outlines follow edges, flat areas clean; frame rate with and without recorded (FX-014-S7) — D1 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): Edge outline at 0.2, widths 1 and 3 over the live back camera changes the picture and the frame rate stays at the visual's normal rate (within 1 fps of off). Open: the look by eye (a moving hand, outlines on edges, corners)."
     },
     {
       "id": "VIS-017-T13",
@@ -5383,7 +5363,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "FX-016-T17 {device} On D1: Camera visual, Lens distortion at +100 % and −100 %, zoom on and off: bulge and pinch, corners show picture (black only at barrel with zoom off), no sparkles; frame rate with and without recorded (FX-016-S8)"
+      "text": "FX-016-T17 {device} On D1: Camera visual, Lens distortion at +100 % and −100 %, zoom on and off: bulge and pinch, corners show picture (black only at barrel with zoom off), no sparkles; frame rate with and without recorded (FX-016-S8) — D1 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): Lens distortion +100 % and -100 %, zoom on and off over the live back camera changes the picture and the frame rate stays at the visual's normal rate (within 1 fps of off). Open: the look by eye (a moving hand, outlines on edges, corners)."
     },
     {
       "id": "VIS-018-T14",
