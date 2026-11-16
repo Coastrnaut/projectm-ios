@@ -33,7 +33,7 @@ acceptance; owner rule 7 budgets).
 
 - [X] SHOW-013-T11 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, ShowControl Linux shape, LibraryBackup package tests, `LibraryBackupAppTests` — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK (1 skipped); check_privacy_manifest OK and check_network_symbols OK on the Debug simulator app; no type-check warning in the new files (the two warnings in AppCoordinator init and SettingsView:288 predate this branch); regression app tests (ShowAutoAdvance, ShowCueQuantizer, ShowTransport, LibraryErase, ShowCoordinator) 31/31
 - [X] SHOW-013-T12 Spec status, PosterBoard counts, delete the simulator and derived data — Verified 2026-11-14: PosterBoard reports 28 before, 28 after; simulator "SHOW13 iPhone 17" and derived data deleted
-- [ ] SHOW-013-T13 {device} On D1: a show of 4+ scenes, 120 BPM tapped, Rotate scenes on, Bars 4: scenes change on the downbeat every 8 s, never repeating, a disabled scene never shows; Timer 15 s also rotates
+- [ ] SHOW-013-T13 {device} On D1: a show of 4+ scenes, 120 BPM tapped, Rotate scenes on, Bars 4: scenes change on the downbeat every 8 s, never repeating, a disabled scene never shows; Timer 15 s also rotates D1 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): SceneRotationUITests, rotation switches scenes by itself. Open: downbeat timing every 8 s, no repeats, disabled scene, Timer 15 s.
 
 ## Dependencies
 

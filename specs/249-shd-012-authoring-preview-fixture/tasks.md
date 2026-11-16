@@ -34,7 +34,7 @@ Tests are requested by the spec (acceptance S1-S5). Budgets: unit tests ≤ 10 s
 ## Phase 5: Polish
 
 - [X] SHD-012-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests, privacy manifest, network symbols), type-check budget, spec status — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 179 OK; check_privacy_manifest OK; check_network_symbols OK; LibraryBackupAppTests 5 passed; NoiseEditorTests 5 passed
-- [ ] SHD-012-T13 {device} On D1: Settings › Noise editor › Play fixture; the loop plays smoothly, the warp follows the kicks, a second Play shows the same run digest
+- [ ] SHD-012-T13 {device} On D1: Settings › Noise editor › Play fixture; the loop plays smoothly, the warp follows the kicks, a second Play shows the same run digest D1 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): FixturePreviewUITests, a second Play gives the same run digest. Open: smoothness and the warp following the kicks.
 
 ## Dependencies
 

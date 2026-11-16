@@ -1,0 +1,85 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "2ec5c2fc2f919a6cfffb48b78ae6cc28cad94d76a1517110a46b910c809625cd",
+ "measurements": [],
+ "passed": 11,
+ "schemaVersion": 1,
+ "session": "B02",
+ "tasks": {},
+ "tests": [
+  {
+   "class": "FixturePreviewUITests",
+   "result": "passed",
+   "seconds": 24.508,
+   "test": "testPlayFixtureTwiceGivesTheSameRun"
+  },
+  {
+   "class": "GestureShortcutsUITests",
+   "result": "passed",
+   "seconds": 19.441,
+   "test": "testTwoFingerTapRunsTheMappedActionAndTheSwitchDisablesIt"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "failed",
+   "seconds": 130.093,
+   "test": "testChoiceAndBarsPersistAcrossRelaunch"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 94.647,
+   "test": "testProjectMIsTheDefaultAndCircularSpectrumReplacesIt"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 8.723,
+   "test": "testRotationKeepsTheCircularSpectrumWithoutRestartingTheSource"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 24.971,
+   "test": "testUnavailableNativeVisualFallsBackToProjectMWithANotice"
+  },
+  {
+   "class": "NoiseEditorUITests",
+   "result": "passed",
+   "seconds": 17.993,
+   "test": "testRandomizeSeedAndDragLacunarity"
+  },
+  {
+   "class": "PerformanceLockUITests",
+   "result": "passed",
+   "seconds": 17.636,
+   "test": "testLockHidesDeleteAndReorderButBlackoutWorksThenUnlocks"
+  },
+  {
+   "class": "SceneRotationUITests",
+   "result": "passed",
+   "seconds": 8.578,
+   "test": "testRotationSwitchesScenesByItself"
+  },
+  {
+   "class": "ShowBeatGridUITests",
+   "result": "passed",
+   "seconds": 5.053,
+   "test": "testTheTimelineShowsA120BPMGrid"
+  },
+  {
+   "class": "TapTempoUITests",
+   "result": "passed",
+   "seconds": 6.331,
+   "test": "testFourTapsSetTheTempoAndResetClearsIt"
+  },
+  {
+   "class": "NativeVisualUITests",
+   "result": "passed",
+   "seconds": 33.522,
+   "test": "testChoiceAndBarsPersistAcrossRelaunch"
+  }
+ ],
+ "xcresult": null
+}

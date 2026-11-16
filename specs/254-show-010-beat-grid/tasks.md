@@ -31,7 +31,7 @@ acceptance; owner rule 7 budgets).
 
 - [X] SHOW-010-T10 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, ShowControl Linux shape (Foundation only) — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK (1 skipped); check_privacy_manifest OK and check_network_symbols OK on the Debug simulator app; no function body over 300 ms or expression over 150 ms in the touched files; BeatGrid.swift imports Foundation only
 - [X] SHOW-010-T11 Spec status, PosterBoard counts, delete the simulator and derived data — Verified 2026-11-14: PosterBoard reports 26 before, 27 after (one report at 20:32 during the UI-test window; its simulator is not named in the report); simulator "SHOW10 iPhone 17" and derived data deleted
-- [ ] SHOW-010-T12 {device} On D1, tap tempo with a 120 BPM track and play a timed show: ticks every half second, readout counts bars with the music
+- [ ] SHOW-010-T12 {device} On D1, tap tempo with a 120 BPM track and play a timed show: ticks every half second, readout counts bars with the music D1 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): ShowBeatGridUITests, the timeline shows a 120 BPM grid. Open: ticks and bar readout against a 120 BPM track.
 
 ## Dependencies
 

@@ -28,7 +28,7 @@
 ## Phase 5: Polish
 
 - [X] SHOW-015-T11 Regression and repo checks: SceneLock, EmergencyBlackout, collections, SceneFolders, LibraryBackupApp and Settings tests; the six repo scripts; privacy manifest and network symbols on the Debug app; type-check budget — specs/260-show-015-performance-lock/spec.md status — Verified 2026-11-14: unit regression 69 tests pass (SceneLock, PresetCollectionsCoordinator, PresetSmartCollectionApp, LibraryEraseApp, LibraryBackupApp, FolderBackupApp, EmergencyBlackout, Settings, SceneFolder, SceneTag, ShowCoordinator, PerformanceLock; 1.9 s); UI regression SceneLockUITests, SceneFoldersUITests, PresetCollectionsUITests 9, PresetSmartCollectionUITests, LibraryEraseUITests, LibraryBackupUITests pass (three PresetCollections reorder tests hit "Critical process xctest crashed" in the batch, a runner crash also seen on another branch, and passed on rerun); check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; no type-check warnings in touched files
-- [ ] SHOW-015-T12 {device} On D1: lock; swipe a cue and a collection (no Delete); tap the emergency blackout and restore; unlock with confirmation — docs/test-reports (owner run)
+- [ ] SHOW-015-T12 {device} On D1: lock; swipe a cue and a collection (no Delete); tap the emergency blackout and restore; unlock with confirmation — docs/test-reports (owner run) D1 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): PerformanceLockUITests, lock: no Edit or swipe Delete on a collection, emergency blackout and restore while locked, unlock asks first. Open: a cue's swipe.
 
 ## Dependencies
 
