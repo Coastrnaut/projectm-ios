@@ -51,7 +51,7 @@ the owner's device and stay open until run.
 - [X] PERF-010-T13 `check_compliance.py`, `validate_docs.py`, `check_privacy_manifest.py` on the Debug
   app; PosterBoard count before and after. — Verified 2026-11-13: check_compliance OK, validate_docs OK, check_privacy_manifest OK on the Debug simulator app; PosterBoard reports 32 before and after.
 - [X] PERF-010-T14 Roadmap/status notes: spec Status, tasks verified. — Verified 2026-11-13: spec Status set; tasks ticked with evidence.
-- [ ] PERF-010-T15 `{device}` D1: real crash with the DEBUG "Crash now" button, relaunch from the home
+- [X] PERF-010-T15 `{device}` D1: real crash with the DEBUG "Crash now" button, relaunch from the home — Verified 2026-11-15 on D1 (docs/test-reports/qa-011/acceptance/D1-B03.md): B03RecoveryDeviceTests commits a scene, taps Crash now (the app ends: notRunning), relaunches from the test; the recovery offer is shown and the decision is abnormal.
   screen (quickstart, Device).
 
 ## Analysis (speckit-analyze, 2026-11-13)
