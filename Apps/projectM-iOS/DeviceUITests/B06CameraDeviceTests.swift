@@ -227,4 +227,44 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
         pause(2)
         XCTAssertFalse(camera.exists, "the camera does not restart after background and return")
     }
+
+    /// CAM-007-T15 (D1) / T16 (D2, D3): back and front, Fill Center 1x, Fill Top 2x and Fit, portrait and landscape:
+    /// live, and Save Frame writes a frame of the screen's size in each mode (DEBUG `-uitestCaptureDirectory`). Fit
+    /// shows bars where the camera's 4:3 or 16:9 picture does not fill the screen; upright, undistorted and the anchor
+    /// are judged by eye from the attached screenshots.
+    func testCAM007CropModesBothCamerasAndSaveFrame() {
+        let task = UIDevice.current.userInterfaceIdiom == .pad ? "CAM-007-T16" : "CAM-007-T15"
+        let modes: [(String, [String: Any])] = [
+            ("fill center 1x", ["settings.camera.cropMode": "fill", "settings.camera.cropAnchor": "center", "settings.camera.zoom": 1.0]),
+            ("fill top 2x", ["settings.camera.cropMode": "fill", "settings.camera.cropAnchor": "top", "settings.camera.zoom": 2.0]),
+            ("fit", ["settings.camera.cropMode": "fit", "settings.camera.cropAnchor": "center", "settings.camera.zoom": 1.0]),
+        ]
+        let probe = app.staticTexts["frameCaptureProbe"]
+        for position in ["back", "front"] {
+            for (label, settings) in modes {
+                XCUIDevice.shared.orientation = .portrait
+                launchCamera(position, extra: ["-uitestCaptureDirectory", "B06CropDeviceTests"], settings: settings)
+                for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
+                    XCUIDevice.shared.orientation = orientation
+                    pause(2)
+                    let step = "\(position) \(label) \(orientation == .portrait ? "portrait" : "landscape")"
+                    assertLive(task, step)
+                    _ = screen(task, step)
+                }
+                // Save Frame from the controls; the saved file is read back into the probe ("png WxH opaque").
+                let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
+                if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
+                let save = app.buttons["saveFrame"].firstMatch
+                XCTAssertTrue(wait(5) { save.exists }, "\(position) \(label): Save Frame")
+                save.tap()
+                let png = app.buttons["PNG"].firstMatch   // the format choice (FrameCaptureUITests)
+                if wait(5, { png.exists }) { png.tap() }
+                XCTAssertTrue(wait(10) { (probe.value as? String ?? "").contains("x") }, "\(position) \(label): frame saved: \(String(describing: probe.value))")
+                let text = probe.value as? String ?? ""
+                print("CAM-007 \(position) \(label): \(text)")
+                report(task, "\(position) \(label) save frame", ["saved": text.contains("x") ? 1 : 0])
+                app.terminate()
+            }
+        }
+    }
 }

@@ -108,7 +108,9 @@ CASES: list[dict] = [
          only=["projectM-iOSTests/OfflineExportAcceptanceTests"]),
 ]
 CASE_IDS = [c["id"] for c in CASES]
-DEFAULT_DEVICES = {"autorun-perf001": LABELS, "launches-sc015": LABELS, "thresholds": LABELS}
+# Cases that stay release evidence on these devices even when every task they closed is done (2026-11-16: closing
+# CMP-001-T20 left xctest-angle-layer on no device and failed CI run 43918880546).
+DEFAULT_DEVICES = {"autorun-perf001": LABELS, "launches-sc015": LABELS, "thresholds": LABELS, "xctest-angle-layer": LABELS}
 
 
 # MARK: - Which cases run where (from the inventory)
@@ -122,8 +124,9 @@ def case_devices(inventory: dict | None) -> dict[str, list[str]]:
         for cid in task.get("matrixCases", []):
             if cid in out:
                 out[cid].update(task.get("devices", []))
-    if not inventory:   # no inventory: every case on D1 (the reference device) at least
-        for cid, devices in out.items():
+    # No inventory, or a case whose tasks are all closed: it still runs on D1 (the reference device) as evidence.
+    for cid, devices in out.items():
+        if not inventory or not devices:
             devices.add("D1")
     return {cid: sorted(devices) for cid, devices in out.items()}
 

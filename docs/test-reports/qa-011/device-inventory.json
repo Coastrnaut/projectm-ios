@@ -180,7 +180,11 @@
       "partOf": [
         "CMP-001-T20"
       ],
-      "devices": [],
+      "devices": [
+        "D1",
+        "D2",
+        "D3"
+      ],
       "timeoutSeconds": 900
     },
     {

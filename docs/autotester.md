@@ -146,6 +146,14 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   print `BENCH-RESULT {json}` lines (GPU and wall median and p95 over 600 frames at the native screen size). Release
   device-test builds need `ENABLE_TESTABILITY=YES` (the matrix passes it); without it every `@testable import` fails
   to resolve. projectM draws in ANGLE's own command buffers, so its GPU figure omits that draw: use the wall time.
+- **The Mac's Local Network privacy blocks some senders:** the OSC driver's Python socket got "No route to host" to the
+  iPhone while `ping`, `/usr/bin/nc`, Perl and Ruby reached it; macOS grants Local Network access per program. Rather
+  than change a Mac privacy setting, `scripts/osc_device_driver.py` hands each datagram to a system Perl process.
+  Python's resolver also missed `<name>.local`; the driver falls back to `dscacheutil`.
+- **Run the script tests before any push that closes tasks:** closing CMP-001-T20 left the matrix case it drove on no
+  device and failed CI (run 43918880546) after a `[skip ci]`-free push of docs; cases now keep D1 (or their default
+  devices) once their tasks close. UDP over Wi-Fi also loses single datagrams (the first to a host, or one at the end
+  of a flood): the OSC driver sends closing values three times.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

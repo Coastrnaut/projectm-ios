@@ -2226,7 +2226,8 @@ class QA011MatrixTests(unittest.TestCase):
         self.assertNotIn("xctest-soak-600", d2)
         self.assertIn("xctest-materials", d3)
         self.assertNotIn("bench-cmp008", d2, "a waived task adds no device")
-        self.assertEqual(d2, ["autorun-perf001", "launches-sc015", "thresholds", "xctest-materials"])
+        # xctest-angle-layer stays on D1-D3 by default (release evidence after CMP-001-T20 closed).
+        self.assertEqual(d2, ["autorun-perf001", "launches-sc015", "thresholds", "xctest-materials", "xctest-angle-layer"])
         self.assertEqual([c["id"] for c in rdm.plan(None, devices)], rdm.CASE_IDS)
         order = rdm.CASE_IDS
         self.assertEqual(order[-1], "xctest-offline-export", "the app-hosted suite replaces the app: last")

@@ -28,7 +28,7 @@ python3 scripts/run_device_matrix.py --device D3    # then: python3 scripts/run_
 | `xctest-goldens` | D1 | QA-003-T17 | 900 s |
 | `xctest-soak-600` | D1 | QA-006-T13 | 1200 s |
 | `xctest-materials` | D2, D3 | SHD-004-T20 | 900 s |
-| `xctest-angle-layer` |  | part of CMP-001-T20 | 900 s |
+| `xctest-angle-layer` | D1, D2, D3 | part of CMP-001-T20 | 900 s |
 | `bench-shd002` | D1, D2, D3 | SHD-002-T24 | 900 s |
 | `bench-cmp008` | D1 | CMP-008-T19 | 900 s |
 | `bench-cmp009` | D1 | CMP-009-T19 | 900 s |

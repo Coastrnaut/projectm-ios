@@ -38,12 +38,21 @@ def bundle(at: float, *messages: bytes) -> bytes:
     return pad(b"#bundle") + timetag + b"".join(struct.pack(">i", len(m)) + m for m in messages)
 
 
-def run(scenario: str, sock: socket.socket, target: tuple[str, int]) -> str:
+def send_reliably(sock, data: bytes, target, times: int = 3) -> None:
+    """UDP over Wi-Fi can lose a datagram (the first one to a host while its address is looked up, or one at the end
+    of a flood); the same value sent three times 50 ms apart changes nothing on the device but survives one loss."""
+    for i in range(times):
+        sock.sendto(data, target)
+        if i < times - 1:
+            time.sleep(0.05)
+
+
+def run(scenario: str, sock, target: tuple[str, int]) -> str:
     if scenario == "test":
-        sock.sendto(message("/projectm/test", 0.42), target)
+        send_reliably(sock, message("/projectm/test", 0.42), target)
         return "0.42"
     if scenario == "after":
-        sock.sendto(message("/projectm/test", 0.11), target)
+        send_reliably(sock, message("/projectm/test", 0.11), target)
         return "0.11"
     if scenario == "bundle":
         now = time.time()
@@ -57,9 +66,28 @@ def run(scenario: str, sock: socket.socket, target: tuple[str, int]) -> str:
             sock.sendto(message("/projectm/test", (n % 100) / 100), target)
             n += 1
             time.sleep(max(0, start + n / 2000 - time.monotonic()))
-        sock.sendto(message("/projectm/test", 0.77), target)
-        return f"{n + 1} messages, last 0.77"
+        time.sleep(0.2)   # the last value after the flood, sent so that one Wi-Fi loss cannot hide it
+        send_reliably(sock, message("/projectm/test", 0.77), target)
+        return f"{n + 3} messages, last 0.77"
     return "unknown scenario"
+
+
+class PerlSender:
+    """Sends datagrams through the system Perl. macOS's Local Network privacy refuses the command-line Python here
+    ("No route to host", 2026-11-16) while /usr/bin/perl and nc are allowed; one Perl process reads hex datagrams,
+    one per line, and sends each."""
+    SCRIPT = (r'use IO::Socket::INET; $|=1; my $s=IO::Socket::INET->new(PeerAddr=>$ARGV[0],PeerPort=>$ARGV[1],'
+              r'Proto=>"udp") or die "socket $!"; while(my $l=<STDIN>){chomp $l; $s->send(pack("H*",$l));}')
+
+    def __init__(self, host: str, port: int):
+        import subprocess
+        self.proc = subprocess.Popen(["/usr/bin/perl", "-e", self.SCRIPT, host, str(port)],
+                                     stdin=subprocess.PIPE, text=True, bufsize=1)
+
+    def sendto(self, data: bytes, _target=None) -> None:
+        assert self.proc.stdin is not None
+        self.proc.stdin.write(data.hex() + "\n")
+        self.proc.stdin.flush()
 
 
 def resolve(host: str) -> str:
@@ -84,7 +112,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--timeout", type=float, default=900)
     args = p.parse_args(argv)
     target = (resolve(args.host), args.port)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock = PerlSender(*target)
     log, done, seen = Path(args.log), time.monotonic() + args.timeout, 0
     print(f"osc_device_driver: {args.host} = {target[0]}:{target[1]}", flush=True)
     while time.monotonic() < done:
