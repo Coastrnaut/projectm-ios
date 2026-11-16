@@ -7,7 +7,11 @@ stereo, with a quiet intro, a loud chorus, a breakdown and a loud ending, so bea
 all have something to follow. Generated, not recorded: no licence. Output: a 44.1 kHz stereo WAV, converted to
 AAC (.m4a) with `afconvert` when it is available (macOS).
 
-    python3 scripts/make_music_fixture.py [--out Build/fixtures/music-fixture.m4a]
+    python3 scripts/make_music_fixture.py [--out Build/fixtures/music-fixture.m4a] [--variant left|inverted]
+
+Variants for the stereo device tests (QA-011 B05): `left` keeps the music in the left channel only (the right is
+silent: AUD-009 channel selection); `inverted` makes the right channel the negated left (a phase-inverted feed:
+ANL-013 stereo correlation reads a negative r).
 """
 from __future__ import annotations
 
@@ -103,11 +107,19 @@ def write_wav(path: Path, left: list[float], right: list[float], rate: int = RAT
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    p.add_argument("--out", default=str(ROOT / "Build" / "fixtures" / "music-fixture.m4a"))
+    p.add_argument("--out", default=None)
+    p.add_argument("--variant", choices=["normal", "left", "inverted"], default="normal")
     args = p.parse_args(argv)
-    out = Path(args.out)
+    name = "music-fixture" if args.variant == "normal" else f"music-fixture-{args.variant}"
+    out = Path(args.out) if args.out else ROOT / "Build" / "fixtures" / f"{name}.m4a"
     wav = out.with_suffix(".wav")
     left, right = synthesize()
+    if args.variant == "left":
+        mono = [(a + b) / 2 for a, b in zip(left, right)]
+        left, right = mono, [0.0] * len(mono)
+    elif args.variant == "inverted":
+        mono = [(a + b) / 2 for a, b in zip(left, right)]
+        left, right = mono, [-x for x in mono]
     write_wav(wav, left, right)
     if out.suffix == ".m4a" and shutil.which("afconvert"):
         subprocess.run(["afconvert", "-f", "m4af", "-d", "aac", "-b", "192000", str(wav), str(out)], check=True)

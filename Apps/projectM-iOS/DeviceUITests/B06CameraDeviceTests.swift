@@ -14,12 +14,27 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     private var frames: Int { Int((app.staticTexts["cameraFramesShown"].value as? String) ?? "") ?? -1 }
     private var starts: String { (app.staticTexts["sourceStarts"].value as? String) ?? "" }
 
+    /// Launches on the spectrum and chooses Camera in Settings: the camera never starts by itself at launch, only
+    /// when Camera is chosen (CAM-001-R11), so a typed visual is not enough.
     private func launchCamera(_ position: String, extra: [String] = []) {
-        launch(visual: "camera", settings: ["settings.camera.position": position], extra: extra)
+        launch(visual: "circularSpectrum", settings: ["settings.camera.position": position], extra: extra)
+        openSettings()
+        let row = app.buttons["visual.camera"]
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<4 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        XCTAssertTrue(row.isHittable, "the Camera row")
+        row.tap()
+        closeSettings()
+        XCTAssertTrue(wait(10) { self.camera.exists }, "the Camera visual is shown")
         if app.otherElements["cameraNotice"].exists {
             XCTFail("camera notice instead of a picture: \(app.staticTexts["cameraNoticeText"].label) "
                     + "(camera access on this device: Settings › projectM-iOS › Camera)")
         }
+    }
+
+    private func closeSettings() {
+        app.navigationBars["Settings"].buttons["Done"].tap()
+        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
     }
 
     /// The camera is live: VoiceOver value "Live" and frames keep arriving (over 1 s).
@@ -53,21 +68,29 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     /// CAM-002-T21: the front camera the same way (mirrored by default).
     func testCAM002FrontCameraLiveThroughRotation() { liveThroughRotation("CAM-002-T21", "front") }
 
-    private func openCameraSettings() {
+    private func openSettings() {
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
+        if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
         app.buttons["settings"].tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
     }
 
+    /// Settings scrolled to the camera rows (below the visual rows).
+    private func openCameraSettings(_ element: XCUIElement) {
+        openSettings()
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<8 where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
+    }
+
     /// CAM-002-T23: Back → Front and back within 2 s each, no audio restart.
     func testCAM002SwitchingWithinTwoSecondsAudioUninterrupted() {
         let task = "CAM-002-T23"
-        launchCamera("back", extra: ["-uitestSettingsSection", "camera"])
+        launchCamera("back")
         assertLive(task, "back")
         let audioStarts = starts
-        openCameraSettings()
         let picker = app.segmentedControls["cameraPositionPicker"]
+        openCameraSettings(picker)
         XCTAssertTrue(wait(5) { picker.exists }, "the Camera picker")
         for target in ["Front", "Back"] {
             let before = frames
@@ -87,10 +110,10 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     /// CAM-003-T11: D1 switches Wide ↔ Ultra Wide ten times while running; the iPads offer no Lens row.
     func testCAM003LensRow() {
         let task = "CAM-003-T11"
-        launchCamera("back", extra: ["-uitestSettingsSection", "camera"])
+        launchCamera("back")
         assertLive(task, "back")
-        openCameraSettings()
         let lens = app.segmentedControls["cameraLensPicker"]
+        openCameraSettings(app.segmentedControls["cameraPositionPicker"])
         if UIDevice.current.userInterfaceIdiom == .pad {
             XCTAssertFalse(wait(3) { lens.exists }, "no Lens row on this iPad")
             report(task, "no lens row", ["lensRow": lens.exists ? 1 : 0])

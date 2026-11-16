@@ -57,12 +57,12 @@ class DeviceAcceptanceCase: XCTestCase {
     /// `music`: the generated music fixture (scripts/make_music_fixture.py, copied into the app's Documents by the
     /// runner) plays instead of the reference track, which is a test signal with a silent gap.
     func launch(visual: String, settings: [String: Any] = [:], extra: [String] = [],
-                orientation: UIDeviceOrientation = .portrait, music: Bool = true) {
+                orientation: UIDeviceOrientation = .portrait, music: Bool = true, fixture: String = "music-fixture.m4a") {
         XCUIDevice.shared.orientation = orientation
         // `-uitestResetNotice` clears the app's settings, media and committed scene first: otherwise launch restores
         // the last committed scene (SCN-002) and its effect values replace the test's settings.
         var args: [String] = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "NO"]
-        if music { args += ["-uitestImportAudio", "music-fixture.m4a", "-uitestPlayImported", "YES"] }
+        if music { args += ["-uitestImportAudio", fixture, "-uitestPlayImported", "YES"] }
         // Typed values through `-uitestDefaults` (plain launch arguments arrive as strings, which settings that
         // read NSNumber ignore).
         var values: [String: Any] = settings

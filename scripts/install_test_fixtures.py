@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 BUNDLE = "org.projectmios.ProjectMiOS"
 DEVICES = {"D1": "iPhone15,4", "D2": "iPad17,3", "D3": "iPad15,7"}
-FIXTURE = ROOT / "Build" / "fixtures" / "music-fixture.m4a"
+FIXTURES = ["music-fixture.m4a", "music-fixture-left.m4a", "music-fixture-inverted.m4a"]   # B05: left-only, inverted
 
 
 def identifiers() -> dict[str, str]:
@@ -35,8 +35,9 @@ def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--device", choices=["D1", "D2", "D3", "all"], default="all")
     args = p.parse_args(argv)
-    if not FIXTURE.exists():
-        subprocess.run([sys.executable, str(ROOT / "scripts" / "make_music_fixture.py")], check=True)
+    for name, variant in zip(FIXTURES, ["normal", "left", "inverted"]):
+        if not (ROOT / "Build" / "fixtures" / name).exists():
+            subprocess.run([sys.executable, str(ROOT / "scripts" / "make_music_fixture.py"), "--variant", variant], check=True)
     ids = identifiers()
     wanted = list(DEVICES) if args.device == "all" else [args.device]
     status = 0
@@ -45,13 +46,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"install_test_fixtures: {name} not found (paired and on the network?)")
             status = 1
             continue
-        result = subprocess.run(["xcrun", "devicectl", "device", "copy", "to", "--device", ids[name],
-                                 "--domain-type", "appDataContainer", "--domain-identifier", BUNDLE,
-                                 "--source", str(FIXTURE), "--destination", "Documents/music-fixture.m4a"],
-                                capture_output=True, text=True)
-        ok = result.returncode == 0
-        print(f"install_test_fixtures: {name} music-fixture.m4a {'copied' if ok else 'FAILED: ' + result.stderr.strip()[-200:]}")
-        status |= 0 if ok else 1
+        for fixture in FIXTURES:
+            result = subprocess.run(["xcrun", "devicectl", "device", "copy", "to", "--device", ids[name],
+                                     "--domain-type", "appDataContainer", "--domain-identifier", BUNDLE,
+                                     "--source", str(ROOT / "Build" / "fixtures" / fixture),
+                                     "--destination", f"Documents/{fixture}"],
+                                    capture_output=True, text=True)
+            ok = result.returncode == 0
+            print(f"install_test_fixtures: {name} {fixture} {'copied' if ok else 'FAILED: ' + result.stderr.strip()[-200:]}")
+            status |= 0 if ok else 1
     return status
 
 
