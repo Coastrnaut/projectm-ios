@@ -22,7 +22,7 @@ final class SceneHUDSetting {
 
     init(defaults: UserDefaults) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.key)   // the UI-test reset: off
+            defaults.removeForUITestReset(Self.key)   // the UI-test reset: off
         }
         self.defaults = defaults
         isEnabled = defaults.bool(forKey: Self.key)

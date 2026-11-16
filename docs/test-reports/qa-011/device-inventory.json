@@ -3472,7 +3472,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5)"
+      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5) D2 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): every profile records and reads back at its own size and codec (Draft avc1 960x1280, Standard hvc1 1440x1920, High hvc1 1920x2560, Max hvc1 2064x2752). Finding: frames/duration fell short of the profile rate on D2 (Draft 30 of 30 fps, Standard about 24 of 30, High about 17 of 60, Max about 38 of 60), so S5 is not met there yet; open, with D1."
     },
     {
       "id": "PERF-001-T16",
@@ -4116,7 +4116,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5)"
+      "text": "REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5) D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): B08RecordingDeviceTests, Portrait 6 s of the Photo visual reads back hvc1 1080x1920 (9:16) with audio. Open: D1 Square; the centre-of-picture check is by the attached screenshots."
     },
     {
       "id": "PERF-013-T12",

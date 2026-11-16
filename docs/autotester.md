@@ -83,6 +83,12 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   often enough to fail (D1, 2026-11-15: 0.002, then 0.022, then 0.003 over 15 s with music verified active).
   Take three pairs a few seconds apart and assert on the largest. A live status comes from the performance
   overlay's label, not `announcementProbe` (which keeps the last announcement).
+- **Typed settings must survive lazily created settings objects:** `-uitestResetNotice` made ten settings types clear
+  their keys in their own init, and several are created lazily, after `-uitestDefaults` wrote the typed values. A
+  Draft or Portrait recording asked for by a device test silently came out at Standard and Match screen, and a loose
+  check (portrait = taller than wide) passed on an iPad whose screen is already 3:4. Resets now go through
+  `UserDefaults.removeForUITestReset`, which keeps typed keys. Assert values that prove the setting applied (Draft
+  is H.264 at a 1280 long side; Portrait is 9:16), never a shape the default could also have.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

@@ -53,8 +53,8 @@ final class OneHandedSetting {
 
     init(defaults: UserDefaults, isPhone: Bool = UIDevice.current.userInterfaceIdiom == .phone) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.key)   // the UI-test reset: Off (a launch argument still overrides)
-            defaults.removeObject(forKey: Self.leftHandedKey)   // ACC-010-R7
+            defaults.removeForUITestReset(Self.key)   // the UI-test reset: Off (a launch argument still overrides)
+            defaults.removeForUITestReset(Self.leftHandedKey)   // ACC-010-R7
         }
         self.defaults = defaults
         self.isPhone = isPhone

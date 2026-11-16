@@ -57,7 +57,7 @@ final class SafeAreaGuideSetting {
 
     init(defaults: UserDefaults) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            for key in Self.allKeys { defaults.removeObject(forKey: key) }   // the UI-test reset: defaults
+            for key in Self.allKeys { defaults.removeForUITestReset(key) }   // the UI-test reset: defaults
         }
         self.defaults = defaults
         isEnabled = defaults.bool(forKey: Self.enabledKey)

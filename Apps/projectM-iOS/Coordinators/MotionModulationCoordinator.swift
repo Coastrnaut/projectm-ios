@@ -67,7 +67,7 @@ final class MotionModulationCoordinator {
     init(defaults: UserDefaults, sampler: any MotionSampling,
          frameCap: @escaping @MainActor () -> Int = MotionModulationCoordinator.systemFrameCap) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.rangeKey)   // the UI-test reset: Medium
+            defaults.removeForUITestReset(Self.rangeKey)   // the UI-test reset: Medium
         }
         self.defaults = defaults
         self.sampler = sampler

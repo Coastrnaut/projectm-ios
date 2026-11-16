@@ -31,7 +31,7 @@ final class PowerProfileSetting {
 
     init(defaults: UserDefaults) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.key)   // the UI-test reset: Standard
+            defaults.removeForUITestReset(Self.key)   // the UI-test reset: Standard
         }
         self.defaults = defaults
         profile = Self.stored(in: defaults)

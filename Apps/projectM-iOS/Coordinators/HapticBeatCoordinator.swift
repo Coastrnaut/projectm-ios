@@ -103,7 +103,7 @@ final class HapticBeatCoordinator {
          conditions: HapticConditions = .system, clock: @escaping () -> UInt64 = { MonotonicClock.nowNanoseconds() },
          player: @escaping () -> any HapticPlaying = { () -> any HapticPlaying in ImpactHapticPlayer() }) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            for key in Self.allKeys { defaults.removeObject(forKey: key) }   // the UI-test reset: off, Beats, Medium
+            for key in Self.allKeys { defaults.removeForUITestReset(key) }   // the UI-test reset: off, Beats, Medium
         }
         self.defaults = defaults
         self.player = player

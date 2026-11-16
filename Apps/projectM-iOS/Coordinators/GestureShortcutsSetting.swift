@@ -24,7 +24,7 @@ final class GestureShortcutsSetting {
 
     init(defaults: UserDefaults, lock: SceneLock? = nil) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.key)   // the UI-test reset: off, default mapping
+            defaults.removeForUITestReset(Self.key)   // the UI-test reset: off, default mapping
         }
         self.defaults = defaults
         self.lock = lock

@@ -65,7 +65,7 @@ final class RecordingTimedStopSetting {
 
     init(defaults: UserDefaults, arguments: [String] = ProcessInfo.processInfo.arguments) {
         if arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.key)   // the UI-test reset: Off
+            defaults.removeForUITestReset(Self.key)   // the UI-test reset: Off
         }
         #if DEBUG
         if let i = arguments.firstIndex(of: "-uitestTimedStop"), i + 1 < arguments.count,

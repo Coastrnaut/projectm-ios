@@ -37,7 +37,7 @@
 ## Phase 6: Polish
 
 - [X] REC-014-T14 Confirm no frame-loop file changed (REC-014-R11: `git diff --stat` shows no visual host edits); Linux shape build of Compositor, repo checks (compliance, validate_docs, motion, permission catalog, status events, test_scripts), privacy manifest and network symbols on the Debug app, type-check budget flags on touched files — Verified 2026-11-14: no visual host file changed (git diff); Linux-shape swift build of Compositor (-DCOMPOSITOR_NO_METAL -DVISUAL_NO_METAL -DANALYSIS_NO_ACCELERATE) OK; check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 164 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; type-check flags: no warnings
-- [ ] REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5)
+- [ ] REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5) D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): B08RecordingDeviceTests, Portrait 6 s of the Photo visual reads back hvc1 1080x1920 (9:16) with audio. Open: D1 Square; the centre-of-picture check is by the attached screenshots.
 
 ## Dependencies
 

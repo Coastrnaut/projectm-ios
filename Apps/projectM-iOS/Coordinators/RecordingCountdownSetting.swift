@@ -22,7 +22,7 @@ final class RecordingCountdownSetting {
 
     init(defaults: UserDefaults) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.key)   // the UI-test reset: Off
+            defaults.removeForUITestReset(Self.key)   // the UI-test reset: Off
         }
         self.defaults = defaults
         length = Self.stored(in: defaults)

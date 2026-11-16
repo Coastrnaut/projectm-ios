@@ -92,9 +92,9 @@ final class RecordingQualitySetting {
     init(defaults: UserDefaults, capabilities: @escaping @MainActor () -> any RecordingEncoderCapabilities,
          rowSize: @escaping @MainActor () -> CGSize) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.profileKey)   // the UI-test reset: Standard (REC-005-R7)
-            defaults.removeObject(forKey: Self.frameRateKey)   // and Profile default (REC-006-R8)
-            for key in Self.aspectKeys { defaults.removeObject(forKey: key) }   // and Match screen (REC-014-R7)
+            defaults.removeForUITestReset(Self.profileKey)   // the UI-test reset: Standard (REC-005-R7)
+            defaults.removeForUITestReset(Self.frameRateKey)   // and Profile default (REC-006-R8)
+            for key in Self.aspectKeys { defaults.removeForUITestReset(key) }   // and Match screen (REC-014-R7)
         }
         self.defaults = defaults
         capabilitiesProvider = capabilities
