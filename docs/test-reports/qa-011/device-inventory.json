@@ -4,25 +4,25 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 235,
+    "total": 234,
     "specs": 196,
     "byStatus": {
-      "open": 218,
+      "open": 217,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 211
+      "b": 210
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 222
+      "b": 221
     },
     "byDevice": {
       "D1": 215,
-      "D2": 47,
-      "D3": 45
+      "D2": 46,
+      "D3": 44
     },
     "byDeviceAndCategory": {
       "D1": {
@@ -31,11 +31,11 @@
       },
       "D2": {
         "a": 3,
-        "b": 44
+        "b": 43
       },
       "D3": {
         "a": 3,
-        "b": 42
+        "b": 41
       }
     },
     "bySession": {
@@ -44,7 +44,7 @@
       "B03": 6,
       "B04": 17,
       "B05": 25,
-      "B06": 19,
+      "B06": 18,
       "B07": 20,
       "B08": 13,
       "B09": 17,
@@ -492,7 +492,6 @@
         "096-cam-002-front-camera-layer:CAM-002-T21",
         "096-cam-002-front-camera-layer:CAM-002-T22",
         "098-cam-007-camera-crop-and-rotation:CAM-007-T15",
-        "098-cam-007-camera-crop-and-rotation:CAM-007-T16",
         "102-cam-013-camera-failure-recovery:CAM-013-T18",
         "130-fx-009-motion-feedback:FX-009-T18",
         "217-cam-004-exposure-lock:CAM-004-T08",
@@ -506,7 +505,7 @@
         "306-fx-016-lens-distortion:FX-016-T17"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 130
+      "estimatedMinutes": 120
     },
     {
       "id": "B07",
@@ -2776,26 +2775,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "CAM-007-T15 {device} D1: quickstart device steps 1-4 (Back and Front, each mode, portrait ↔ landscape, Save Frame) (CAM-007-S6)"
-    },
-    {
-      "id": "CAM-007-T16",
-      "spec": "098-cam-007-camera-crop-and-rotation",
-      "feature": "CAM-007",
-      "line": 47,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B06",
-      "devices": [
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 10,
-      "text": "CAM-007-T16 {device} D2 and D3: the same steps on the iPads (4:3 screen, iPadOS 26.5 on D3) (CAM-007-S6)"
     },
     {
       "id": "ACC-011-T17",

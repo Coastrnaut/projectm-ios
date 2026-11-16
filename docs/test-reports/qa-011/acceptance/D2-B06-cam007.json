@@ -1,0 +1,231 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "947b4751de0987e65f76495d425427746c897750c744b1bbbdcf2501ab35018a",
+ "measurements": [
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "back fill center 1x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.042,
+   "meanSaturation": 0.419,
+   "nonBlack": 0.066,
+   "step": "back fill center 1x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "back fill center 1x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.048,
+   "meanSaturation": 0.433,
+   "nonBlack": 0.08,
+   "step": "back fill center 1x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "saved": 1,
+   "step": "back fill center 1x save frame",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "back fill top 2x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.053,
+   "meanSaturation": 0.43,
+   "nonBlack": 0.091,
+   "step": "back fill top 2x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "back fill top 2x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.044,
+   "meanSaturation": 0.467,
+   "nonBlack": 0.068,
+   "step": "back fill top 2x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "saved": 1,
+   "step": "back fill top 2x save frame",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 58,
+   "step": "back fit portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.052,
+   "meanSaturation": 0.339,
+   "nonBlack": 0.09,
+   "step": "back fit portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "back fit landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.046,
+   "meanSaturation": 0.348,
+   "nonBlack": 0.073,
+   "step": "back fit landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "saved": 1,
+   "step": "back fit save frame",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 50,
+   "step": "front fill center 1x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.182,
+   "meanSaturation": 0.801,
+   "nonBlack": 0.95,
+   "step": "front fill center 1x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "front fill center 1x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.201,
+   "meanSaturation": 0.789,
+   "nonBlack": 0.92,
+   "step": "front fill center 1x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "saved": 1,
+   "step": "front fill center 1x save frame",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 60,
+   "step": "front fill top 2x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.272,
+   "meanSaturation": 0.673,
+   "nonBlack": 0.991,
+   "step": "front fill top 2x portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "front fill top 2x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.222,
+   "meanSaturation": 0.819,
+   "nonBlack": 0.892,
+   "step": "front fill top 2x landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "saved": 1,
+   "step": "front fill top 2x save frame",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 52,
+   "step": "front fit portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.136,
+   "meanSaturation": 0.617,
+   "nonBlack": 0.69,
+   "step": "front fit portrait",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "framesPerSecond": 59,
+   "step": "front fit landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.144,
+   "meanSaturation": 0.617,
+   "nonBlack": 0.691,
+   "step": "front fit landscape",
+   "task": "CAM-007-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "saved": 1,
+   "step": "front fit save frame",
+   "task": "CAM-007-T16"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B06-cam007",
+ "tasks": {
+  "CAM-007-T16": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B06CameraDeviceTests",
+   "result": "passed",
+   "seconds": 147.006,
+   "test": "testCAM007CropModesBothCamerasAndSaveFrame"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d2/cam007-123728.xcresult"
+}

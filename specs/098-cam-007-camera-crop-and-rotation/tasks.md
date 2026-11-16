@@ -44,7 +44,7 @@ stage and stay open until a person runs them on D1-D3.
 - [X] CAM-007-T13 ADR-0017 amendment (decisions 9-10: crop model and placement rule, transparent Fit bars; defaults unchanged) in `docs/adr/0017-rear-camera-layer.md` — Verified 2026-11-14: amendment decisions 9-10 written; `python3 scripts/validate_docs.py` OK
 - [X] CAM-007-T14 Run `check_compliance.py`, `validate_docs.py`, `check_motion_policy.py`, `check_permission_catalog.py`, `test_scripts.py`, `check_privacy_manifest.py <Debug .app>`; PosterBoard count after; delete the simulator — Verified 2026-11-14: check_compliance OK, validate_docs OK (881 files), check_motion_policy OK, check_permission_catalog OK (4 permissions), test_scripts 147 OK, check_privacy_manifest OK on the Debug simulator .app; PosterBoard reports 25 after (no new); simulator 8BFCB559 deleted
 - [ ] CAM-007-T15 {device} D1: quickstart device steps 1-4 (Back and Front, each mode, portrait ↔ landscape, Save Frame) (CAM-007-S6)
-- [ ] CAM-007-T16 {device} D2 and D3: the same steps on the iPads (4:3 screen, iPadOS 26.5 on D3) (CAM-007-S6)
+- [X] CAM-007-T16 {device} D2 and D3: the same steps on the iPads (4:3 screen, iPadOS 26.5 on D3) (CAM-007-S6) — Verified 2026-11-16: `B06CameraDeviceTests.testCAM007CropModesBothCamerasAndSaveFrame` passed on both iPads (Back and Front, each crop mode, portrait and landscape, the camera live and non-black in every step, Save Frame as PNG saved; records `docs/test-reports/qa-011/acceptance/D2-B06-cam007.md`, `D3-B06-cam007.md`)
 
 ## Dependencies
 
