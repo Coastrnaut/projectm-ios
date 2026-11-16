@@ -137,6 +137,9 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   --device all` copies it; the tests now fail with that instruction when the app lands on the source chooser.
 - **Task notes start with " — ":** `qa011_inventory.py` reads a task's devices from its text before the first " — ";
   a note appended without it that names D2 or D3 widens the task's device list (2026-11-16: three D1 tasks gained D3).
+- **Test media persists in the app between launches:** imported tracks stay in the audio library, so "play the first
+  imported track" played the left-only fixture in the inverted-phase test once both had been imported on D1 (r 0, no
+  warning). The import hook now plays the track this launch imported (by file name).
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
