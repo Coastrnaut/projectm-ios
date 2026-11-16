@@ -11,6 +11,21 @@ import XCTest
 final class B08RecordingDeviceTests: DeviceAcceptanceCase {
     private var probe: String { (app.staticTexts["videoRecordingProbe"].value as? String) ?? "" }
 
+    /// REC-006-R4 facts of the last recording: (fps, written frames, dropped slots), from the DEBUG `recordingFacts`.
+    private func facts() -> (fps: Int, frames: Int, dropped: Int)? {
+        let text = (app.staticTexts["recordingFacts"].value as? String) ?? ""
+        var values: [String: Int] = [:]
+        for part in text.split(separator: " ") {
+            let kv = part.split(separator: "=")
+            if kv.count == 2, let v = Int(kv[1]) { values[String(kv[0])] = v }
+        }
+        guard let fps = values["fps"], let frames = values["frames"], let dropped = values["dropped"] else { return nil }
+        return (fps, frames, dropped)
+    }
+
+    /// Dropped slots are skipped by design and reported (REC-006 Clarifications); the device test bounds them at 5 %.
+    static let maximumDroppedShare = 0.05
+
     private func showControls() {
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if controls.exists { area.tap() }
@@ -94,5 +109,47 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         if let draft = pixels["draft"], let max = pixels["max"] {
             XCTAssertLessThanOrEqual(draft, max, "Draft is no larger than Max")
         }
+    }
+
+    /// REC-008-T14: a 10 s timed stop ends the recording by itself; the file is 10 s, 300 frames at 30 fps.
+    func testREC008TimedStopTenSeconds() {
+        let task = "REC-008-T14"
+        launch(visual: "photo", settings: ["settings.recording.timedStop": "10"],
+               extra: ["-uitestSeedPhoto", "pattern", "-uitestRecordingDirectory", "B08RecordingDeviceTests"])
+        showControls()
+        let button = app.buttons["record"]
+        XCTAssertTrue(wait(5) { button.exists && button.label == "Record" }, "Record is offered")
+        button.tap()
+        // No Stop: the timed stop ends it; the offered file is read back.
+        XCTAssertTrue(wait(30) { self.probe.hasPrefix("video ") || self.probe.hasPrefix("failed") }, "stopped by itself: \(probe)")
+        print("B08 \(task): \(probe)")
+        let parts = probe.split(separator: " ").map(String.init)
+        guard parts.count >= 6, parts[0] == "video" else { return XCTFail("no readable recording: \(probe)") }
+        let frames = Int(parts[3].replacingOccurrences(of: "frames=", with: "")) ?? 0
+        let duration = Double(parts[4].replacingOccurrences(of: "duration=", with: "")) ?? 0
+        report(task, "timed stop", ["frames": Double(frames), "duration": duration])
+        XCTAssertEqual(duration, 10, accuracy: 0.1, "10 s long")
+        guard let f = facts() else { return XCTFail("no recording facts") }
+        report(task, "slots", ["written": Double(f.frames), "dropped": Double(f.dropped), "fps": Double(f.fps)])
+        XCTAssertEqual(f.fps, 30, "recorded at 30 fps")
+        XCTAssertEqual(frames, f.frames, "the file holds the written frames")
+        XCTAssertEqual(f.frames + f.dropped, 300, accuracy: 1, "300 slots at 30 fps: written \(f.frames) + dropped \(f.dropped)")
+        XCTAssertLessThanOrEqual(Double(f.dropped), 300 * Self.maximumDroppedShare, "dropped slots stay bounded")
+    }
+
+    /// REC-006-T15: a 24 fps recording of the Photo visual (rendering at 60 Hz) reads back at 24 fps.
+    func testREC006TwentyFourFPSReadsBackAt24() {
+        let task = "REC-006-T15"
+        guard let file = record(task, "24 fps", settings: ["settings.recording.frameRate": "24"], seconds: 4) else {
+            return XCTFail("no readable recording: \(probe)")
+        }
+        guard let f = facts() else { return XCTFail("no recording facts") }
+        let slots = file.duration * 24
+        report(task, "24 fps slots", ["written": Double(f.frames), "dropped": Double(f.dropped), "fps": Double(f.fps),
+                                      "expectedSlots": slots])
+        XCTAssertEqual(f.fps, 24, "recorded at 24 fps")
+        XCTAssertEqual(Double(f.frames + f.dropped), slots, accuracy: 1.5,
+                       "written \(f.frames) + dropped \(f.dropped) fill \(file.duration) s at 24 fps")
+        XCTAssertLessThanOrEqual(Double(f.dropped), slots * Self.maximumDroppedShare, "dropped slots stay bounded")
     }
 }

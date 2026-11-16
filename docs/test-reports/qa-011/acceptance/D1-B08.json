@@ -1,7 +1,7 @@
 {
  "device": "D1",
  "kind": "projectM-iOS.qa011.deviceAcceptance",
- "logSha256": "2587924a129c284654f25de95fbad2752faf7df1a4afd74732c94a7810af87cf",
+ "logSha256": "454597cf1434a05a308ac830302c8bb3c516b744acc46c57fec3617780b1757f",
  "measurements": [
   {
    "device": "iPhone15,4",
@@ -129,9 +129,42 @@
    "step": "square",
    "task": "REC-014-T15",
    "width": 1178
+  },
+  {
+   "device": "iPhone15,4",
+   "duration": 5.33,
+   "frames": 125,
+   "height": 1920,
+   "step": "24 fps",
+   "task": "REC-006-T15",
+   "width": 884
+  },
+  {
+   "device": "iPhone15,4",
+   "dropped": 3,
+   "expectedSlots": 127.92,
+   "fps": 24,
+   "step": "24 fps slots",
+   "task": "REC-006-T15",
+   "written": 125
+  },
+  {
+   "device": "iPhone15,4",
+   "duration": 10,
+   "frames": 295,
+   "step": "timed stop",
+   "task": "REC-008-T14"
+  },
+  {
+   "device": "iPhone15,4",
+   "dropped": 5,
+   "fps": 30,
+   "step": "slots",
+   "task": "REC-008-T14",
+   "written": 295
   }
  ],
- "passed": 2,
+ "passed": 4,
  "schemaVersion": 1,
  "session": "B08",
  "tasks": {
@@ -145,6 +178,18 @@
    "steps": 2
   },
   "REC-005-T14": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "REC-006-T15": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "REC-008-T14": {
    "checks": {},
    "fpsMedians": [],
    "fpsMin": null,
@@ -169,6 +214,18 @@
    "result": "passed",
    "seconds": 16.804,
    "test": "testREC014AspectPresetReadsBackAtThePlannedShape"
+  },
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 18.931,
+   "test": "testREC006TwentyFourFPSReadsBackAt24"
+  },
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 19.269,
+   "test": "testREC008TimedStopTenSeconds"
   }
  ],
  "xcresult": null

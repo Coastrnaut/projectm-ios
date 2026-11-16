@@ -332,6 +332,17 @@ struct VisualizerView: View {
                 .allowsHitTesting(false)
                 .accessibilityIdentifier("videoRecordingProbe")
                 .accessibilityValue(coordinator.videoRecording.probe)
+            // REC-006-R4: the last recording's facts ("fps=<n> frames=<n> dropped=<n>"), so device tests check that
+            // written plus dropped slots fill the length (QA-011 B08; dropped slots are skipped by design, REC-006).
+            let facts: String = coordinator.videoRecording.lastRecording.map {
+                "fps=\($0.frameRate) frames=\($0.frameCount) dropped=\($0.droppedFrames)"
+            } ?? "none"
+            Text(facts)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("recordingFacts")
+                .accessibilityValue(facts)
         }
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // SHOW-001: ShowCueUITests
             let value = "\(coordinator.show.appliedSceneID ?? "none")|\(coordinator.settings.visual.rawValue)"

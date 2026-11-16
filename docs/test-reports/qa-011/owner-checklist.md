@@ -110,7 +110,7 @@ Closes: `PERF-011-T22`, `VIS-001-T36`, `FX-019-T23`, `SHOW-011-T23`, `FX-002-T18
 
 ## B03 Debug fault injection and crash recovery
 
-- Devices: D1, D3; tasks: 4; estimated 25 min
+- Devices: D1, D3; tasks: 5; estimated 30 min
 - Install: same Debug install (DEBUG launch arguments through Xcode's scheme editor or `devicectl ... process launch -- <args>`)
 - Preparation: unlock each device, Auto-Lock Never, cable connected; Xcode open with the device attached; The launch arguments each step names
 - Record: Pass/fail, the event log lines the step names; Crash reports produced on purpose; the result goes into each task's own `tasks.md` and the test report it names.
@@ -119,10 +119,11 @@ Steps:
 
 - [ ] `PERF-014-T22` [D1, D3] (057-perf-014-render-failure-fallback): PERF-014-T22 {device} D1 (iOS 27) and D3 (iPadOS 26.5), Debug build with `-uitestRenderFaults prepare:photo,preset:1,gpu:gpuTimeout`: no hang, controls respond, overlay shows the reason, "Render fault" events in Console, the placeholder fades in after the GPU retries and goes after pause/resume with the fault cleared (quickstart E) D1 part automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B03.md): RenderFaultUITests on D1, prepare:photo,preset:1 records the reason, the frame loop keeps ticking, Settings responds, the overlay shows the render line, the photo returns after clearing; a presentation failure ends on the placeholder until resume. Open: gpu:gpuTimeout and Console events on D1, and D3.
 - [ ] `SCN-002-T10` [D1] (067-scn-002-scene-autosave): SCN-002-T10 [US1] {device} On D1 (Debug build): Circular Spectrum, 16 bars, close Settings; reopen, 32 bars, force-quit from the app switcher at once; relaunch: a committed value (32 expected, the switcher passes through the background), never 64, visual draws (quickstart D) Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B03.md): SceneAutosaveUITests passes on D1 (kill after an uncommitted edit restores the committed 16 bars, never 64). Open: the app-switcher force-quit variant (passes through the background, 32 expected).
+- [ ] `REC-006-T15` [D1] (164-rec-006-record-frame-rate): REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6) D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): a 24 fps recording of the Photo visual reads back with 125 frames and 3 reported dropped slots filling 5.33 s at 24 fps (DEBUG `recordingFacts` probe). Open: the presentation times on the 1/24 s grid (not in the probe).
 - [ ] `REC-016-T13` [D1] (226-rec-016-recording-interruption-recovery): REC-016-T13 {device} On D1 record 30 s (normal finish plays, no `moof`), and a Debug run with `-uitestWriterFault writer:90` keeps a playable part; note CPU against REC-003 Writer-fault part automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B03.md): RecordingRecoveryUITests, a writer failure offers the part recorded before it. Open: a 30 s normal recording (no moof) and CPU against REC-003.
 - [ ] `CAM-010-T17` [D1] (276-cam-010-hand-pose-modulation): CAM-010-T17 {device} D1: real hands drive the bound inner radius (DEBUG `-uitestBindCameraRadiusToPinch`), the badge and iOS's camera indicator show, frame rate with face and hand tracking on recorded
 
-Closes: `PERF-014-T22`, `SCN-002-T10`, `REC-016-T13`, `CAM-010-T17`
+Closes: `PERF-014-T22`, `SCN-002-T10`, `REC-006-T15`, `REC-016-T13`, `CAM-010-T17`
 
 ## B04 Accessibility: VoiceOver, large text, Reduce Motion, filters, haptics and hand use
 
@@ -259,7 +260,7 @@ Closes: `PRE-007-T23`, `PRE-012-T31`, `PRE-014-T25`, `MED-001-T22`, `MED-001-T23
 
 ## B08 Recording
 
-- Devices: D1, D2, D3; tasks: 14; estimated 95 min
+- Devices: D1, D2, D3; tasks: 13; estimated 90 min
 - Install: same Debug install
 - Preparation: unlock each device, Auto-Lock Never, cable connected; At least 5 GB free (and, for the low-storage step, a nearly full device); Music playing
 - Record: File size, duration, frame rate and dropped frames; Whether the file plays in Files; the result goes into each task's own `tasks.md` and the test report it names.
@@ -273,15 +274,14 @@ Steps:
 - [ ] `REC-004-T19` [D1] (134-rec-004-recording-audio): REC-004-T19 {device} Device stage: quickstart "Device" steps 1-4 on D1 (In-App Playback alignment within 40 ms, REC-004-S5; microphone consent; System/App Capture video only)
 - [ ] `REC-005-T14` [D1, D2] (150-rec-005-quality-profiles): REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5) D2 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): every profile records and reads back at its own size and codec (Draft avc1 960x1280, Standard hvc1 1440x1920, High hvc1 1920x2560, Max hvc1 2064x2752). Finding: frames/duration fell short of the profile rate on D2 (Draft 30 of 30 fps, Standard about 24 of 30, High about 17 of 60, Max about 38 of 60), so S5 is not met there yet; open, with D1. D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): Draft avc1 590x1280 (about 28 of 30 fps), Standard hvc1 884x1920 (about 29 of 30), High and Max hvc1 1178x2556 (about 53 of 60; the drawable caps both at native size). D1 is near the profile rates, D2 is not (see the D2 note).
 - [ ] `QA-008-T10` [D1] (163-qa-008-recording-validation): QA-008-T10 [US4] {device} Validate one recording exported from D1 with `testExternalRecording` (quickstart C) in the final QA phase
-- [ ] `REC-006-T15` [D1] (164-rec-006-record-frame-rate): REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6)
 - [ ] `REC-007-T13` [D1] (175-rec-007-countdown): REC-007-T13 {device} On D1: 3 s countdown with VoiceOver on, let it complete and cancel once; the recording starts after "1" and a cancel leaves no file
-- [ ] `REC-008-T14` [D1] (180-rec-008-timed-stop): REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps)
+- [ ] `REC-008-T14` [D1] (180-rec-008-timed-stop): REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps) D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): a 10 s timed stop ends the Photo visual recording by itself at 10.00 s; 295 frames written and 5 slots dropped (reported, REC-006 skip rule) = 300 slots at 30 fps. Open: the task asks for 300 frames in the file; 5 skipped slots (1.7 %) on D1.
 - [ ] `REC-009-T11` [D1] (190-rec-009-status-overlay): REC-009-T11 {device} On D1, record the Photo visual, look at the lines (and a low-storage warning on a nearly full device), save the file and confirm the lines are not in it
 - [ ] `REC-010-T13` [D1] (198-rec-010-recording-library): REC-010-T13 {device} On D1: record, Keep, open Recordings, play, share to Files, rename, delete.
 - [ ] `REC-011-T16` [D1] (210-rec-011-export-to-photos): REC-011-T16 {device} D1: record, Save to Photos, Allow → video in Photos, recording still offered; save a frame; turn Photos off for projectM in Settings → denied notice, file still offered (quickstart step 5)
 - [ ] `REC-014-T15` [D1, D2] (215-rec-014-export-aspect-presets): REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5) D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): B08RecordingDeviceTests, Portrait 6 s of the Photo visual reads back hvc1 1080x1920 (9:16) with audio. Open: D1 Square; the centre-of-picture check is by the attached screenshots. D1 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): Square reads back hvc1 1178x1178 with audio. Both planned sizes verified (D1 Square, D2 Portrait 1080x1920). Open: the centre of the picture, by a person from the files.
 
-Closes: `REC-001-T19`, `REC-003-T25`, `REC-012-T13`, `REC-015-T17`, `REC-004-T19`, `REC-005-T14`, `QA-008-T10`, `REC-006-T15`, `REC-007-T13`, `REC-008-T14`, `REC-009-T11`, `REC-010-T13`, `REC-011-T16`, `REC-014-T15`
+Closes: `REC-001-T19`, `REC-003-T25`, `REC-012-T13`, `REC-015-T17`, `REC-004-T19`, `REC-005-T14`, `QA-008-T10`, `REC-007-T13`, `REC-008-T14`, `REC-009-T11`, `REC-010-T13`, `REC-011-T16`, `REC-014-T15`
 
 ## B09 Network: Wi-Fi controllers, two devices, Airplane Mode, privacy report
 

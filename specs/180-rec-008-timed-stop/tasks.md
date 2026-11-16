@@ -33,7 +33,7 @@
 ## Phase 5: Polish
 
 - [X] REC-008-T13 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), Compositor package tests on the host, the type-check budget flags on touched files, existing recording app tests unchanged, privacy manifest and network symbols on the built app, Linux-safe FrameRecording (pure Swift only in the timeline) — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK; check_privacy_manifest OK and check_network_symbols OK on the Debug simulator .app; existing recording app tests unchanged (VideoRecordingAppTests 18, RecordingCountdownAppTests 10, RecordingFrameRateAppTests 5, RecordingAudioAppTests 9, RecordingQualityAppTests 6, StatusEventsTests 8, LibraryBackupAppTests 5: 0 failures); the timeline edit is pure Swift (Linux-safe). Type-check: no new file or changed line over the budget; untouched expressions in SettingsView.swift:255 and VisualizerView.swift:61 measured 219/231 ms on a loaded host (a @State macro expansion measured 221 ms in the same build)
-- [ ] REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps)
+- [ ] REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps) D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): a 10 s timed stop ends the Photo visual recording by itself at 10.00 s; 295 frames written and 5 slots dropped (reported, REC-006 skip rule) = 300 slots at 30 fps. Open: the task asks for 300 frames in the file; 5 skipped slots (1.7 %) on D1.
 
 ## Dependencies
 

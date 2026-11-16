@@ -41,12 +41,12 @@
     "bySession": {
       "B01": 18,
       "B02": 12,
-      "B03": 4,
+      "B03": 5,
       "B04": 18,
       "B05": 26,
       "B06": 21,
       "B07": 20,
-      "B08": 14,
+      "B08": 13,
       "B09": 17,
       "B10": 13,
       "B11": 31,
@@ -368,11 +368,12 @@
       "tasks": [
         "057-perf-014-render-failure-fallback:PERF-014-T22",
         "067-scn-002-scene-autosave:SCN-002-T10",
+        "164-rec-006-record-frame-rate:REC-006-T15",
         "226-rec-016-recording-interruption-recovery:REC-016-T13",
         "276-cam-010-hand-pose-modulation:CAM-010-T17"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 25
+      "estimatedMinutes": 30
     },
     {
       "id": "B04",
@@ -582,7 +583,6 @@
         "134-rec-004-recording-audio:REC-004-T19",
         "150-rec-005-quality-profiles:REC-005-T14",
         "163-qa-008-recording-validation:QA-008-T10",
-        "164-rec-006-record-frame-rate:REC-006-T15",
         "175-rec-007-countdown:REC-007-T13",
         "180-rec-008-timed-stop:REC-008-T14",
         "190-rec-009-status-overlay:REC-009-T11",
@@ -591,7 +591,7 @@
         "215-rec-014-export-aspect-presets:REC-014-T15"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 95
+      "estimatedMinutes": 90
     },
     {
       "id": "B09",
@@ -3604,14 +3604,14 @@
       ],
       "status": "open",
       "category": "b",
-      "session": "B08",
+      "session": "B03",
       "devices": [
         "D1"
       ],
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6)"
+      "text": "REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6) D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): a 24 fps recording of the Photo visual reads back with 125 frames and 3 reported dropped slots filling 5.33 s at 24 fps (DEBUG `recordingFacts` probe). Open: the presentation times on the 1/24 s grid (not in the probe)."
     },
     {
       "id": "MIDI-011-T12",
@@ -3765,7 +3765,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps)"
+      "text": "REC-008-T14 {device} On D1: 10 s length, record the Photo visual, Save, validate the file (10 s, 300 frames at 30 fps) D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): a 10 s timed stop ends the Photo visual recording by itself at 10.00 s; 295 frames written and 5 slots dropped (reported, REC-006 skip rule) = 300 slots at 30 fps. Open: the task asks for 300 frames in the file; 5 skipped slots (1.7 %) on D1."
     },
     {
       "id": "MIDI-013-T13",

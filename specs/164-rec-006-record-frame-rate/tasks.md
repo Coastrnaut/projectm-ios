@@ -43,7 +43,7 @@
 ## Phase 6: Polish
 
 - [X] REC-006-T14 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), Linux-shape build of FrameRecording, the type-check budget on the changed app files, privacy manifest and network symbols on the Debug app — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 159 OK; Linux-shape `swift build --build-tests` of Compositor OK; check_privacy_manifest OK and check_network_symbols OK on the Debug simulator app
-- [ ] REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6)
+- [ ] REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6) D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): a 24 fps recording of the Photo visual reads back with 125 frames and 3 reported dropped slots filling 5.33 s at 24 fps (DEBUG `recordingFacts` probe). Open: the presentation times on the 1/24 s grid (not in the probe).
 
 ## Dependencies
 
