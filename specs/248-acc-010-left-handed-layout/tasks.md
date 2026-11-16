@@ -36,7 +36,7 @@ the spec's success criteria. Budgets (owner rule 7): unit test ≤ 10 s, UI test
 
 - [X] ACC-010-T11 Type-check budget build (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`), the six repo checks, `check_privacy_manifest.py` and `check_network_symbols` on the Debug app; existing `PerformanceLayoutUITests` and `OneHandedUITests` still pass — Verified 2026-11-14: type-check build: no warning in ACC-010 files (pre-existing warnings elsewhere only); the six repo checks pass (test_scripts 179 OK); check_privacy_manifest OK and check_network_symbols OK on the Debug app; PerformanceLayoutUITests 4 and OneHandedUITests 4 passed
 - [X] ACC-010-T12 Spec status, PosterBoard counts, delete the simulator and derived data — Verified 2026-11-14: spec status set; PosterBoard reports 25 before and 25 after; simulator "ACC10 iPhone 17" and derived data deleted
-- [ ] ACC-010-T13 {device} On D1 (and D2 for iPad): quickstart "Device" steps 1-6 with the left hand
+- [ ] ACC-010-T13 {device} On D1 (and D2 for iPad): quickstart "Device" steps 1-6 with the left hand D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): LeftHandedUITests on D2, landscape columns swap sides and switching mirrors the pad and the emergency button. Open: the quickstart steps with a left hand (a person) on D1 and D2.
 
 ## Dependencies
 

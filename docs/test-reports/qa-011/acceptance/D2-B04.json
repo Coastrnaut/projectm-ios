@@ -1,0 +1,361 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "9aa1b2eb335ada5f060959d7b46aff17e2953da5558fe4f981e131adb248af44",
+ "measurements": [],
+ "passed": 24,
+ "schemaVersion": 1,
+ "session": "B04",
+ "tasks": {},
+ "tests": [
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "failed",
+   "seconds": 29.09,
+   "test": "testBrowserRowsScaleWithAccessibilityTextSizes"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "failed",
+   "seconds": 13.556,
+   "test": "testCollectionsAndMyPresetsAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "passed",
+   "seconds": 13.324,
+   "test": "testPresetBrowserAndPackAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "failed",
+   "seconds": 12.444,
+   "test": "testSettingsAndShowEditorAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "passed",
+   "seconds": 6.096,
+   "test": "testShowRowIsLabelledAndPassesTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "passed",
+   "seconds": 5.99,
+   "test": "testUserChangesAreAnnounced"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "failed",
+   "seconds": 6.887,
+   "test": "testVisualizerControlsAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 7.546,
+   "test": "testBrowserAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 7.433,
+   "test": "testBrowserAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 13.891,
+   "test": "testCameraNoticeAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 16.876,
+   "test": "testCameraNoticeAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 52.895,
+   "test": "testCollectionsAndMyPresetsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 53.526,
+   "test": "testCollectionsAndMyPresetsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 7.497,
+   "test": "testGuideAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 16.117,
+   "test": "testGuideAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 121.256,
+   "test": "testLicensesAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 120.144,
+   "test": "testLicensesAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 16.823,
+   "test": "testLinearSpectrumRowsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 22.657,
+   "test": "testLinearSpectrumRowsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 42.378,
+   "test": "testLocalNetworkNoticeAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 118.951,
+   "test": "testLocalNetworkNoticeAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 8.942,
+   "test": "testNoticeAndChooserAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 9.263,
+   "test": "testNoticeAndChooserAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 17.196,
+   "test": "testOscilloscopeRowsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 20.435,
+   "test": "testOscilloscopeRowsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 56.15,
+   "test": "testPresetEditorAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 55.632,
+   "test": "testPresetEditorAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 21.569,
+   "test": "testRenameSceneAlertAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 22.85,
+   "test": "testRenameSceneAlertAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 54.938,
+   "test": "testRepairSheetAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 57.078,
+   "test": "testRepairSheetAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 11.697,
+   "test": "testSceneFoldersAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 11.319,
+   "test": "testSceneFoldersAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 7.711,
+   "test": "testSceneSwitcherAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 7.722,
+   "test": "testSceneSwitcherAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 9.885,
+   "test": "testSettingsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 9.555,
+   "test": "testSettingsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 8.083,
+   "test": "testShowEditorAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 10.268,
+   "test": "testShowEditorAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 119.125,
+   "test": "testStorageAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 118.664,
+   "test": "testStorageAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 60.382,
+   "test": "testTextMessageFieldAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 117.556,
+   "test": "testTextMessageFieldAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 62.682,
+   "test": "testTextRowsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 114.922,
+   "test": "testTextRowsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 14.597,
+   "test": "testVisualizerControlsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 15.25,
+   "test": "testVisualizerControlsAX5"
+  },
+  {
+   "class": "LeftHandedUITests",
+   "result": "passed",
+   "seconds": 5.178,
+   "test": "testLandscapeColumnsSwapSides"
+  },
+  {
+   "class": "LeftHandedUITests",
+   "result": "passed",
+   "seconds": 7.635,
+   "test": "testSwitchingMirrorsThePadAndTheEmergencyButton"
+  },
+  {
+   "class": "OneHandedUITests",
+   "result": "failed",
+   "seconds": 6.612,
+   "test": "testLeftHandWithShowAndHUD"
+  },
+  {
+   "class": "OneHandedUITests",
+   "result": "failed",
+   "seconds": 6.676,
+   "test": "testPadTargetsInTheZoneWithoutTheControls"
+  },
+  {
+   "class": "OneHandedUITests",
+   "result": "failed",
+   "seconds": 24.053,
+   "test": "testSwitchToRightHandKeepsEveryCriticalAction"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 22.662,
+   "test": "testOscilloscopeRowsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 20.099,
+   "test": "testPresetEditorAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 14.641,
+   "test": "testRepairSheetAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 126.854,
+   "test": "testStorageAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 122.681,
+   "test": "testTextMessageFieldAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 65.931,
+   "test": "testTextRowsAX3"
+  }
+ ],
+ "xcresult": null
+}

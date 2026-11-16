@@ -45,7 +45,7 @@ device evidence.
   check_permission_catalog OK; test_scripts 147 OK. **Not met: S3** (each test < 30 s): 14-100 s per test
   at load average 57-600 from other agents (contract C1 splits keep each test to one launch and one deep scroll).
 - [ ] ACC-006-T12 {device} D1 at AX5 and an iPad at AX5 (portrait and landscape): the quickstart's
-  device walk; record in `docs/test-reports/accessibility-dynamic-type.md` (S5).
+  device walk; record in `docs/test-reports/accessibility-dynamic-type.md` (S5). D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): DynamicTypeInspectorUITests at AX3 and AX5 on D2 (iPad, portrait): most screens pass after the scroll fix for the Settings side panel (scrollSurface). Open on D2: Storage and the Text message field are not reached at the end of Settings (also on D1), and the Oscilloscope and Text visuals add 2-3 element-less findings over the bounded 8 beside the panel (unattributed); landscape; D1 at AX5.
 
 ## Dependencies
 

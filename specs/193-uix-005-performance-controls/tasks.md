@@ -28,7 +28,7 @@ Tests are short (owner rule 7): unit tests about 1 s, each UI test under 30 s.
 ## Phase 4: Polish
 
 - [X] UIX-005-T12 Regressions: ShowCueUITests, TapTempoUITests, EmergencyBlackoutUITests, OutputBlackoutUITests; repo checks; type-check budget; spec status (UIX-005-S5) — Verified 2026-11-14: ShowCueUITests (2), TapTempoUITests, EmergencyBlackoutUITests (2), OutputBlackoutUITests, AccessibilityScreensUITests visualizer controls and show row, DynamicTypeInspectorUITests.testVisualizerControlsAX5, EmergencyBlackoutTests (2) pass; six repo checks, 159 script tests, privacy manifest and network symbols OK; no type-check warning in the new files
-- [ ] UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking
+- [ ] UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking Note 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): OneHandedUITests do not apply on D2 (one-handed controls are not offered on iPad, OneHandedSetting); the task is a performer's pass without looking (a person).
 
 ## Dependencies
 

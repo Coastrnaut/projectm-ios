@@ -52,7 +52,7 @@ Tasks the matrix closes when its cases pass on the named devices:
 - [ ] `SHD-004-T20` (D2, D3) — xctest-materials
 - [ ] `REC-013-T14` (D1) — xctest-offline-export
 
-Estimated person time for sessions B01-B13: about 27 h 5 min (5 minutes per task and device plus any duration a step names; the matrix itself runs unattended for about 1-1.5 h per device).
+Estimated person time for sessions B01-B13: about 27 h 0 min (5 minutes per task and device plus any duration a step names; the matrix itself runs unattended for about 1-1.5 h per device).
 
 ## B01 Visuals and effects: look and frame rate with music
 
@@ -126,7 +126,7 @@ Closes: `PERF-014-T22`, `SCN-002-T10`, `REC-016-T13`, `CAM-010-T17`
 
 ## B04 Accessibility: VoiceOver, large text, Reduce Motion, filters, haptics and hand use
 
-- Devices: D1, D2, D3; tasks: 18; estimated 110 min
+- Devices: D1, D2; tasks: 18; estimated 105 min
 - Install: same Debug install
 - Preparation: unlock each device, Auto-Lock Never, cable connected; Accessibility Shortcut set to VoiceOver; Text size AX5 ready in Settings › Accessibility › Display & Text Size; Reduce Motion, Increase Contrast and Color Filters reachable
 - Record: What VoiceOver reads for each control; Pass/fail per step; the result goes into each task's own `tasks.md` and the test report it names.
@@ -137,18 +137,18 @@ Steps:
 - [ ] `ACC-002-T20` [D1] (030-acc-002-reduced-flash-preset-policy): ACC-002-T20 {device} On D1 with Reduce flashing on: VoiceOver reads "may flash" on flagged rows and the alert; Random 50 times without a flagged preset; the alert at the largest text size (quickstart §4).
 - [ ] `ACC-001-T12` [D1] (080-acc-001-reduce-motion-mode): ACC-001-T12 {device} On D1: toggle Reduce Motion while the app runs; controls transition changes at once; VoiceOver behavior unchanged (quickstart Scenario 3; S6) — open, needs the owner
 - [ ] `ACC-004-T12` [D1] (082-acc-004-voiceover-scene-browser): ACC-004-T12 `{device}` VoiceOver pass on D1 (quickstart "Device"): every primary control reachable and named, cue and preset rotor actions (including the swipe actions iOS exposes, D4), C1 announcements without repeats (ACC-004-S6).
-- [ ] `ACC-006-T12` [D1, D2, D3] (087-acc-006-dynamic-type-inspector): ACC-006-T12 {device} D1 at AX5 and an iPad at AX5 (portrait and landscape): the quickstart's device walk; record in `docs/test-reports/accessibility-dynamic-type.md` (S5).
+- [ ] `ACC-006-T12` [D1, D2] (087-acc-006-dynamic-type-inspector): ACC-006-T12 {device} D1 at AX5 and an iPad at AX5 (portrait and landscape): the quickstart's device walk; record in `docs/test-reports/accessibility-dynamic-type.md` (S5). D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): DynamicTypeInspectorUITests at AX3 and AX5 on D2 (iPad, portrait): most screens pass after the scroll fix for the Settings side panel (scrollSurface). Open on D2: Storage and the Text message field are not reached at the end of Settings (also on D1), and the Oscilloscope and Text visuals add 2-3 element-less findings over the bounded 8 beside the panel (unattributed); landscape; D1 at AX5.
 - [ ] `ACC-011-T17` [D1] (100-acc-011-captioned-status-events): ACC-011-T17 `{device}` VoiceOver pass on D1 (quickstart C) — left open, needs a person
 - [ ] `ACC-003-T17` [D1] (110-acc-003-color-blind-friendly-controls): ACC-003-T17 `{device}` D1 with Color Filters (Grayscale) and Increase Contrast, quickstart "D1" steps 1-7 (left open for the owner's device stage)
 - [ ] `ACC-005-T16` [D1] (115-acc-005-voiceover-parameter-editing): ACC-005-T16 `{device}` D1 with VoiceOver: swipe up and down on every slider (quickstart C); each step is one step and is read with its unit; ends announced once
 - [ ] `ACC-008-T16` [D1] (119-acc-008-high-contrast-overlay): ACC-008-T16 `{device}` D1 over the brightest presets, standard and Increase Contrast (quickstart D).
 - [ ] `ACC-012-T22` [D1] (121-acc-012-sensory-safety-profile): ACC-012-T22 `{device}` (open: needs D1 and a person) ACC-012-S6 on D1 (quickstart "Device")
 - [ ] `QA-009-T10` [D1] (177-qa-009-accessibility-suite): QA-009-T10 {device} VoiceOver and AX5 walk of the manifest screens on D1 (owner; extends ACC-004-T12 / ACC-006-T12)
-- [ ] `UIX-005-T13` [D1, D2] (193-uix-005-performance-controls): UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking
+- [ ] `UIX-005-T13` [D1, D2] (193-uix-005-performance-controls): UIX-005-T13 {device} A performer's pass on D1 (portrait and landscape) and D2 (72 pt targets): every target hit without looking Note 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): OneHandedUITests do not apply on D2 (one-handed controls are not offered on iPad, OneHandedSetting); the task is a performer's pass without looking (a person).
 - [ ] `SHD-003-T20` [D1] (218-shd-003-shader-parameter-metadata): SHD-003-T20 {device} On D1, open the seeded material layer and read the Material settings controls with VoiceOver
 - [ ] `ACC-007-T13` [D1] (238-acc-007-haptic-beat-feedback): ACC-007-T13 {device} On D1: Settings → Haptics on, Beats, In-App Playback music: taps on the beat; Kicks and Downbeats change them; Strict, Low Power Mode and the switch off give none (quickstart step 4)
 - [ ] `ACC-009-T14` [D1] (244-acc-009-one-handed-mode): ACC-009-T14 {device} On D1: Right and Left hand, portrait and landscape, with and without the pad: every critical action reached with the thumb of the holding hand (quickstart step 5)
-- [ ] `ACC-010-T13` [D1, D2] (248-acc-010-left-handed-layout): ACC-010-T13 {device} On D1 (and D2 for iPad): quickstart "Device" steps 1-6 with the left hand
+- [ ] `ACC-010-T13` [D1, D2] (248-acc-010-left-handed-layout): ACC-010-T13 {device} On D1 (and D2 for iPad): quickstart "Device" steps 1-6 with the left hand D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): LeftHandedUITests on D2, landscape columns swap sides and switching mirrors the pad and the emergency button. Open: the quickstart steps with a left hand (a person) on D1 and D2.
 - [ ] `UIX-010-T10` [D1] (298-uix-010-batch-parameter-reset): UIX-010-T10 {device} On D1 with VoiceOver: each row reads as a toggle with its state, the reset button reads its count, and "Reset 2 parameters" is announced after a reset
 - [ ] `VIS-019-T13` [D1] (308-vis-019-cymatic-line-patterns): VIS-019-T13 {device} On D1: a test-tone sweep and music for 30 s each; frame rate on the overlay; tones change the figure, silence returns it to the cross within about 1 s; Reduce Motion calmer; device GPU golden look.
 
