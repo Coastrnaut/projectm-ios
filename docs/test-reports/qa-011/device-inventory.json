@@ -21,8 +21,8 @@
     },
     "byDevice": {
       "D1": 221,
-      "D2": 54,
-      "D3": 54
+      "D2": 52,
+      "D3": 51
     },
     "byDeviceAndCategory": {
       "D1": {
@@ -31,11 +31,11 @@
       },
       "D2": {
         "a": 3,
-        "b": 51
+        "b": 49
       },
       "D3": {
         "a": 3,
-        "b": 51
+        "b": 48
       }
     },
     "bySession": {
@@ -464,7 +464,7 @@
         "216-perf-013-audio-render-sync:PERF-013-T12"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 220
+      "estimatedMinutes": 195
     },
     {
       "id": "B06",
@@ -1223,13 +1223,12 @@
       "session": "B05",
       "devices": [
         "D1",
-        "D2",
-        "D3"
+        "D2"
       ],
       "devicesInferred": false,
       "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "AUD-006-T39 {device} On D1 and D2: pause, lock and unlock, background and foreground: playback stays paused; while playing: the existing pause and resume on background still work and continue from the same position (within 50 ms by ear and by the shown time). D2 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B05.md; also D3-B05.md): a user pause stays paused across background and return, and playing playback resumes after it. Open: lock and unlock (a person), and D1."
+      "estimatedMinutes": 10,
+      "text": "AUD-006-T39 {device} On D1 and D2: pause, lock and unlock, background and foreground: playback stays paused; while playing: the existing pause and resume on background still work and continue from the same position (within 50 ms by ear and by the shown time). — D2 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B05.md; also D3-B05.md): a user pause stays paused across background and return, and playing playback resumes after it. Open: lock and unlock (a person), and D1."
     },
     {
       "id": "AUD-006-T40",
@@ -2725,14 +2724,12 @@
       "category": "b",
       "session": "B05",
       "devices": [
-        "D1",
-        "D2",
-        "D3"
+        "D1"
       ],
       "devicesInferred": false,
       "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "AUD-009-T13 {device} On D1 (In-App Playback with a hard-panned track, then the microphone) choose Left, Right, Mid and Side and check the bars follow each definition while playback is unchanged; plug or unplug headphones and take a phone call (interruption): the mode stays and the analysis resumes. Evidence: a device note in `docs/test-reports/` (final roadmap device phase). In-App Playback part automated on D2 and D3 2026-11-16 (D2-B05.md, D3-B05.md): with music in the left channel only, Mix and Left move the spectrum (motion 0.018-0.028) and Right leaves it nearly still (0.002-0.006). Open: D1 (the task names D1), Mid and Side, the microphone and the headphone/call parts (a person)."
+      "estimatedMinutes": 5,
+      "text": "AUD-009-T13 {device} On D1 (In-App Playback with a hard-panned track, then the microphone) choose Left, Right, Mid and Side and check the bars follow each definition while playback is unchanged; plug or unplug headphones and take a phone call (interruption): the mode stays and the analysis resumes. Evidence: a device note in `docs/test-reports/` (final roadmap device phase). — In-App Playback part automated on D2 and D3 2026-11-16 (D2-B05.md, D3-B05.md): with music in the left channel only, Mix and Left move the spectrum (motion 0.018-0.028) and Right leaves it nearly still (0.002-0.006). Open: D1 (the task names D1), Mid and Side, the microphone and the headphone/call parts (a person)."
     },
     {
       "id": "AUD-011-T12",
@@ -3854,14 +3851,12 @@
       "category": "b",
       "session": "B05",
       "devices": [
-        "D1",
-        "D2",
-        "D3"
+        "D1"
       ],
       "devicesInferred": false,
       "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "ANL-013-T14 {device} Play a phase-inverted stereo feed through Mix on D1 with a native visual: the overlay reads negative r and the source status shows the warning after about 1 s; switching AUD-009 to Left clears it (quickstart) Automated on D2 and D3 2026-11-16 (D2-B05.md, D3-B05.md): a phase-inverted fixture under Mix reads r -1.00 on the overlay and the phase-inverted warning shows. Open: D1 (the task names D1) and switching AUD-009 to another mode."
+      "estimatedMinutes": 5,
+      "text": "ANL-013-T14 {device} Play a phase-inverted stereo feed through Mix on D1 with a native visual: the overlay reads negative r and the source status shows the warning after about 1 s; switching AUD-009 to Left clears it (quickstart) — Automated on D2 and D3 2026-11-16 (D2-B05.md, D3-B05.md): a phase-inverted fixture under Mix reads r -1.00 on the overlay and the phase-inverted warning shows. Open: D1 (the task names D1) and switching AUD-009 to another mode."
     },
     {
       "id": "REC-010-T13",
