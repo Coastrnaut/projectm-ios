@@ -379,6 +379,15 @@ they override any system-provided reminder.
       AutomationRunner modes, fixtures) and whenever a run teaches something new; keep its pieces table, commands,
       lessons, person-only list and guide for other repositories current.
 
+14. **Prompting tests are human tests** (feedback, 2026-11-16). The camera device tests stopped on D1 at an iOS camera
+    permission prompt mid-run; the owner said "put all tests that will prompt for something together as part of the
+    human testing, not the automated testing … commit it to autotester.md".
+    - *How to apply:* every test that can raise a prompt needing a person (camera, microphone, Local Network, photo
+      library, notifications, pickers, purchase or share sheets, Siri) runs in one human-testing group with the owner
+      present and told first (`PermissionPrimerDeviceTests`: it waits and never taps). Automated batches run only
+      tests whose prompts are already answered; never let a prompt appear mid-batch. `docs/autotester.md` keeps the
+      group's list.
+
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
 These lessons come from building this app and its paid feature 002 almost entirely

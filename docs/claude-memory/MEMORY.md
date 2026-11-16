@@ -11,3 +11,4 @@
 - [Device runs: never idle unexplained](device-runs-never-idle-unexplained.md) — keep each device working until every case passes; say at once when a device is idle and why
 - [Unattended, fully autonomous](unattended-autonomous-device-stage.md) — investigate, decide with best judgement, act and keep going; batch owner-only steps
 - [Maintain docs/autotester.md](maintain-autotester-doc.md) — keep the device test automation guide and lessons learned built and current
+- [Prompts are human tests](prompts-are-human-tests.md) — tests that can raise a prompt run together in the human testing group, never mid-automation

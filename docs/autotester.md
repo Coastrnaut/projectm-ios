@@ -41,6 +41,28 @@ python3 scripts/device_acceptance_report.py --log <log> --device D1 --session B0
 The hardware UDID (`hardwareProperties.udid`) is what `xcodebuild -destination` needs; `devicectl` takes its own
 identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 
+## Human testing group (tests that can prompt)
+
+Owner rule 14 (2026-11-16): any test that can raise a prompt needing a person runs in this group, together, with the
+owner present and told first; never in an automated batch. Automated batches assume these were answered.
+
+| Test | Prompts | Notes |
+|---|---|---|
+| `PermissionPrimerDeviceTests.testA_Microphone` | Microphone | launch with `-autostart microphone` |
+| `PermissionPrimerDeviceTests.testB_Camera` | Camera | chooses Camera in Settings (the camera never starts at launch) |
+| `PermissionPrimerDeviceTests.testC_LocalNetwork` | Local Network | OSC on; check it really asks (see the camera lesson) |
+| Pickers, purchase and share sheets, Siri, calls, AirPlay, headphones | system UI | listed in the person-only section |
+
+Run once per device after a fresh install (a reinstall over the app keeps the answers):
+
+```bash
+xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination platform=iOS,id=<UDID> \
+  -only-testing:projectM-iOSDeviceUITests/PermissionPrimerDeviceTests
+```
+
+The camera B06 tests stopped on D1 at the camera prompt mid-run (2026-11-16) because the first primer set Camera at
+launch and so never asked; the prompt then appeared inside the automated batch. That is what this group prevents.
+
 ## Lessons learned
 
 ### Devices and connections
