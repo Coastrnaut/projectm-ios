@@ -25,7 +25,7 @@
 
 - [X] UIX-012-T11 Add the new app files to `scripts/check_status_events.py`; repo checks (compliance, docs, motion, permission catalog, status events, script tests); privacy manifest and network symbol checks on the Debug app; type-check budget on new and changed files; Compositor package tests on the host; no new UserDefaults key (R10) — Verified 2026-11-15: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events exit 0; test_scripts 186 OK; check_privacy_manifest and check_network_symbols OK on the Debug simulator app; Compositor `swift test` for FrameCapture, capture and colour-sample suites pass; SceneHistoryCoordinatorTests, LibraryBackupAppTests, SplitEditorSettingTests, TextOverlayUITests pass (SplitEditorUITests skip on iPhone, as designed); no new UserDefaults key
 - [X] UIX-012-T12 Mark the spec Implemented; final report — Verified 2026-11-15: spec Status set to Implemented; no ADR (REC-001's capture reused, no default overridden)
-- [ ] UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear "<name> set to …" and cancel with the escape gesture; on D2 sample in the split editor
+- [ ] UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear "<name> set to …" and cancel with the escape gesture; on D2 sample in the split editor D2 part automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): ColorSamplerUITests on D2 samples in the split editor (Settings stays beside the preview; the tap on the scaled preview writes the fixture colour). Open: D1 by eye and with VoiceOver (a person).
 
 ## Dependencies
 

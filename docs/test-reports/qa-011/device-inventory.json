@@ -1269,7 +1269,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "AUD-006-T41 {device} VoiceOver on D1: every transport control is announced by its label; the scrubber's increment and decrement move 10 s and announce the value; largest text size on D1 and iPad split view on D2: no control is cut off."
+      "text": "AUD-006-T41 {device} VoiceOver on D1: every transport control is announced by its label; the scrubber's increment and decrement move 10 s and announce the value; largest text size on D1 and iPad split view on D2: no control is cut off. D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): TransportUITests on D2, the reference track has the transport and it hides with the controls; no transport for other sources. Open: VoiceOver and largest text on D1, split view on D2 (no control cut off)."
     },
     {
       "id": "PRE-012-T31",
@@ -4018,7 +4018,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4)"
+      "text": "UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4) D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): SplitEditorUITests on D2, dragging the divider never distorts the output and portrait keeps the aspect. Open: the remaining quickstart device steps."
     },
     {
       "id": "CMP-008-T19",
@@ -5396,7 +5396,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear \"<name> set to …\" and cancel with the escape gesture; on D2 sample in the split editor"
+      "text": "UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear \"<name> set to …\" and cancel with the escape gesture; on D2 sample in the split editor D2 part automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): ColorSamplerUITests on D2 samples in the split editor (Settings stays beside the preview; the tap on the scaled preview writes the fixture colour). Open: D1 by eye and with VoiceOver (a person)."
     },
     {
       "id": "UIX-014-T12",

@@ -1,0 +1,49 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "d4145432cb012797b6c430831a1df42da9cff3cf6dc541104c2fdd86f0d2cc5c",
+ "measurements": [],
+ "passed": 5,
+ "schemaVersion": 1,
+ "session": "B12",
+ "tasks": {},
+ "tests": [
+  {
+   "class": "ColorSamplerUITests",
+   "result": "failed",
+   "seconds": 4.383,
+   "test": "testEyedropperThenTapWritesTheFixtureColour"
+  },
+  {
+   "class": "SplitEditorUITests",
+   "result": "passed",
+   "seconds": 8.11,
+   "test": "testDraggingTheDividerNeverDistortsTheOutput"
+  },
+  {
+   "class": "SplitEditorUITests",
+   "result": "passed",
+   "seconds": 4.606,
+   "test": "testPortraitKeepsTheAspect"
+  },
+  {
+   "class": "TransportUITests",
+   "result": "passed",
+   "seconds": 8.791,
+   "test": "testNoTransportForOtherSources"
+  },
+  {
+   "class": "TransportUITests",
+   "result": "passed",
+   "seconds": 12.667,
+   "test": "testReferenceTrackHasTheTransportAndHidesWithTheControls"
+  },
+  {
+   "class": "ColorSamplerUITests",
+   "result": "passed",
+   "seconds": 8.555,
+   "test": "testEyedropperThenTapWritesTheFixtureColour"
+  }
+ ],
+ "xcresult": null
+}

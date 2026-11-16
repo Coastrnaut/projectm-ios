@@ -38,7 +38,7 @@ Tests are requested by the spec (UIX-007-S1-S3). Budgets (owner rule 7): unit te
 ## Phase 6: Polish
 
 - [X] UIX-007-T12 Type-check budget run (`-warn-long-function-bodies=300 -warn-long-expression-type-checking=150`) on the changed app files; repo checks (`check_compliance`, `validate_docs`, `check_motion_policy`, `check_permission_catalog`, `check_status_events`, `test_scripts`), `check_privacy_manifest`, `check_network_symbols`; Settings UI test on iPhone still a sheet (UIX-007-S3) — Verified 2026-11-14: type-check run (new code under budget; `VisualizerView.layers` 173-231 ms under load avg 48-138 vs 167 ms at baseline, see final report), the six repo checks, `check_privacy_manifest`, `check_network_symbols` OK; iPhone 17 simulator: SettingsUITests, VisualizerUITests (2), FrameCaptureUITests, LayerInspectorUITests, PerformanceLayoutUITests pass, SplitEditorUITests skip (compact width)
-- [ ] UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4)
+- [ ] UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4) D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): SplitEditorUITests on D2, dragging the divider never distorts the output and portrait keeps the aspect. Open: the remaining quickstart device steps.
 
 ## Dependencies
 

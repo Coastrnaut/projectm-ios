@@ -389,11 +389,11 @@ Closes: `OUT-001-T15`, `OUT-001-T16`, `OUT-001-T17`, `OUT-001-T18`, `OUT-010-T15
 
 Steps:
 
-- [ ] `AUD-006-T41` [D1, D2] (007-aud-006-seekable-transport): AUD-006-T41 {device} VoiceOver on D1: every transport control is announced by its label; the scrubber's increment and decrement move 10 s and announce the value; largest text size on D1 and iPad split view on D2: no control is cut off.
+- [ ] `AUD-006-T41` [D1, D2] (007-aud-006-seekable-transport): AUD-006-T41 {device} VoiceOver on D1: every transport control is announced by its label; the scrubber's increment and decrement move 10 s and announce the value; largest text size on D1 and iPad split view on D2: no control is cut off. D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): TransportUITests on D2, the reference track has the transport and it hides with the controls; no transport for other sources. Open: VoiceOver and largest text on D1, split view on D2 (no control cut off).
 - [ ] `CAM-001-T26` [D1, D2] (033-cam-001-rear-camera-layer): CAM-001-T26 {device} On D1: interruption by another app (Camera app in Split View on D2, a FaceTime call on D1) → paused notice, picture returns; 3 minutes running with thermal state and frame rate recorded (R8)
 - [ ] `CAM-013-T17` [D1, D2] (102-cam-013-camera-failure-recovery): CAM-013-T17 {device} D1 and D2: quickstart device steps 1-3 (FaceTime or another camera app, Split View on D2, Retry spacing, revocation ends the app and the next start is denied) (CAM-013-S7)
-- [ ] `UIX-007-T13` [D2] (205-uix-007-split-preview-editor): UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4)
-- [ ] `UIX-012-T13` [D1, D2] (300-uix-012-touch-color-sampler): UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear "<name> set to …" and cancel with the escape gesture; on D2 sample in the split editor
+- [ ] `UIX-007-T13` [D2] (205-uix-007-split-preview-editor): UIX-007-T13 {device} D2 (iPad Pro M5): quickstart device steps 1-5 (UIX-007-S4) D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): SplitEditorUITests on D2, dragging the divider never distorts the output and portrait keeps the aspect. Open: the remaining quickstart device steps.
+- [ ] `UIX-012-T13` [D1, D2] (300-uix-012-touch-color-sampler): UIX-012-T13 {device} On D1: sample a live visual (Text visual over a spectrum) and compare by eye; with VoiceOver hear "<name> set to …" and cancel with the escape gesture; on D2 sample in the split editor D2 part automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B12.md): ColorSamplerUITests on D2 samples in the split editor (Settings stays beside the preview; the tap on the scaled preview writes the fixture colour). Open: D1 by eye and with VoiceOver (a person).
 
 Closes: `AUD-006-T41`, `CAM-001-T26`, `CAM-013-T17`, `UIX-007-T13`, `UIX-012-T13`
 

@@ -3,6 +3,7 @@
 // makes the shown visual's capture a solid colour (research UIX-012-D7; the GPU path is proven by
 // ColorSampleCompositorTests). Settings closes for sampling and comes back with the eyedropper reading the sampled
 // colour. Under 30 s (owner rule 7). Simulator results are UI evidence only (Constitution X).
+import UIKit
 import XCTest
 
 @MainActor
@@ -17,7 +18,7 @@ final class ColorSamplerUITests: XCTestCase {
 
     func testEyedropperThenTapWritesTheFixtureColour() {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-autostart", "inAppPlayback", "-settings.visual", "text",
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback", "-settings.visual", "text",
                                "-uitestColorSampleFixture", "51,102,153",
                                "-uitestSettingsSection", "text", "-uitestSettingsSectionOnce"] + Self.noStore
         app.launch()
@@ -35,8 +36,25 @@ final class ColorSamplerUITests: XCTestCase {
         let banner = app.staticTexts["colorSamplingBanner"].firstMatch
         XCTAssertTrue(banner.appears(within: 5), "the sampling banner over the preview")
         XCTAssertEqual(banner.label, "Tap the picture to pick Text color.")
-        XCTAssertFalse(app.navigationBars["Settings"].exists, "the Settings sheet gave way to the preview")
-        app.descendants(matching: .any)["colorSamplingLayer"].firstMatch.tap()
+        // A Settings sheet closes for the sample; on an iPad Settings stays beside the scaled preview (UIX-012 User
+        // Story 2, the split editor; seen on D2, 2026-11-15).
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            XCTAssertTrue(app.navigationBars["Settings"].exists, "Settings stays beside the preview (split editor)")
+        } else {
+            XCTAssertFalse(app.navigationBars["Settings"].exists, "the Settings sheet gave way to the preview")
+        }
+        let layer = app.descendants(matching: .any)["colorSamplingLayer"].firstMatch
+        let probe = app.staticTexts["splitOutputFrame"]
+        let slot: [Double] = ((probe.exists ? probe.value as? String : nil) ?? "").split(separator: "|").first
+            .map { $0.split(separator: ",").compactMap { Double($0) } } ?? []
+        if UIDevice.current.userInterfaceIdiom == .pad, slot.count == 4 {
+            // The split editor: tap the middle of the scaled preview (the slot), not the layer's middle, which can be
+            // in the pane's margin or under Settings, where a tap is rejected as outside the picture (UIX-012).
+            app.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: slot[0] + slot[2] / 2, dy: slot[1] + slot[3] / 2)).tap()
+        } else {
+            layer.tap()
+        }
 
         XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5), "Settings returns after the sample")
         XCTAssertFalse(banner.exists, "one sample ends sampling mode")
