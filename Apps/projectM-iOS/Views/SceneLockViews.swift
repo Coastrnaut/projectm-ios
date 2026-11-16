@@ -57,7 +57,8 @@ struct SceneLockSection: View {
 
     var body: some View {
         Section {
-            Toggle(isOn: binding) { Label("Lock scene", systemImage: lock.isLocked ? "lock.fill" : "lock.open") }
+            // IconTitleRow: a plain Label wrapped under its icon at AX3 and AX5 and the audit reported it clipped (D1, QA-011 B04).
+            Toggle(isOn: binding) { IconTitleRow(title: "Lock scene", systemImage: lock.isLocked ? "lock.fill" : "lock.open") }
                 .accessibilityIdentifier("sceneLockToggle")
                 .accessibilityHint(lock.isLocked ? "Asks before unlocking" : "Stops edits to the scene; cues still play")
                 .confirmationDialog(SceneLock.unlockTitle, isPresented: $confirming, titleVisibility: .visible) {

@@ -93,6 +93,11 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   treats any defaults key named outside DEBUG code as stored by the shipping app (CI run 43804165117).
 - **Thresholds per kind of visual:** a line visual (oscilloscope) covers about 1 % of the screen, so "draws" uses
   `minimumDraw: 0.005` there; filled visuals keep 0.02.
+- **Device audits find what the simulator does not:** on D1 the Dynamic Type audit flagged two `Label`s that wrapped
+  under their icon at AX3/AX5 ("Lock scene", "Import Folder or Archive…"; fixed with `IconTitleRow`), and its contrast
+  audit (iOS 27.0.1) flagged accent-coloured list buttons measured at 5.8:1 that pass on the 27.2 simulator. Triage
+  each device failure (app finding, environment, harness) before changing code; a read-only agent can do it from the
+  log and the result bundle's screenshots.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

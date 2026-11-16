@@ -42,7 +42,7 @@ struct BulkImportSection: View {
         Button {
             picking = true
         } label: {
-            Label("Import Folder or Archive…", systemImage: "folder.badge.plus")
+            IconTitleRow(title: "Import Folder or Archive…", systemImage: "folder.badge.plus")   // wraps beside its icon at AX sizes (D1, QA-011 B04)
         }
         .disabled(disabled)
         .accessibilityIdentifier("bulkImport")

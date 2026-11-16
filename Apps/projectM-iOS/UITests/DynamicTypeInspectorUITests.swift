@@ -114,6 +114,10 @@ final class DynamicTypeInspectorUITests: XCTestCase {
             list.append(AuditFilter(screen: screen, type: .dynamicType, element: "Glow", reason: glow))
             list.append(AuditFilter(screen: screen, type: .textClipped, element: "Glow", reason: glow))
         }
+        list.append(AuditFilter(screen: "myPresets", type: .dynamicType, element: "Imports every .milk preset", labelPrefix: true, limit: 1,
+                                reason: "the import section's footer at the bottom edge of the visible list: on D1 at AX3 it grew to "
+                                    + "205 pt and ended 20 pt above the screen's bottom, so the audit's larger sizes push it out of view "
+                                    + "(the ACC-004 bottom-row artefact); its text scales (QA-011 B04, 2026-11-15)"))
         list.append(AuditFilter(screen: "showEditor", type: .dynamicType, element: "Cues",
                                 reason: "the system section header (`Section(\"Cues\")`), pushed below the visible list at the audit's "
                                     + "larger sizes when the editor starts at AX3 (the ACC-004 bottom-row artefact); not reported at AX5"))
