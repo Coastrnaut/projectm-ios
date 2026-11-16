@@ -9,6 +9,9 @@ import GeneratorGraph
 import Metal
 import ProceduralMaterials
 import XCTest
+#if canImport(UIKit)
+import UIKit
+#endif
 
 enum GraphBenchGraphs {
     static let twelveNodes = GeneratorGraphDocument(name: "Bench 12", speed: 0.1, nodes: [
@@ -40,8 +43,16 @@ final class GraphCostBench: XCTestCase {
         let rig = try GraphGPURig()
         let graph = try rig.layer(GraphBenchGraphs.twelveNodes)
         let material = ProceduralMaterialCatalog.makeLayer(.noiseFlow)
-        let picture = try rig.picture(width: 1179, height: 2556)
-        let descriptor = try XCTUnwrap(LayerPictureDescriptor(width: 1179, height: 2556))
+        // SHD-002-T24 asks for the device's native size; the host keeps the iPhone 15's 1179 × 2556.
+        var width = 1179, height = 2556, scale = 3.0
+        #if canImport(UIKit) && os(iOS)
+        let native = UIScreen.main.nativeBounds
+        width = Int(min(native.width, native.height))
+        height = Int(max(native.width, native.height))
+        scale = Double(UIScreen.main.nativeScale)
+        #endif
+        let picture = try rig.picture(width: width, height: height)
+        let descriptor = try XCTUnwrap(LayerPictureDescriptor(width: width, height: height))
         try material.prepare(picture: descriptor, device: rig.device)
         try graph.prepare(picture: descriptor, device: rig.device)
         var clock = LayerFrameClock()
@@ -49,8 +60,8 @@ final class GraphCostBench: XCTestCase {
         func time(_ draw: (MTLCommandBuffer, LayerFrameContext) throws -> Void) throws -> [Double] {
             var samples: [Double] = []
             for i in 0..<70 {
-                let frame = clock.next(presentationTimeNanoseconds: UInt64(i) * GraphGPURig.frameNanoseconds, outputWidth: 1179,
-                                       outputHeight: 2556, contentScale: 3, reduceFlashing: false)
+                let frame = clock.next(presentationTimeNanoseconds: UInt64(i) * GraphGPURig.frameNanoseconds, outputWidth: width,
+                                       outputHeight: height, contentScale: scale, reduceFlashing: false)
                 let commands = try XCTUnwrap(rig.queue.makeCommandBuffer())
                 try draw(commands, frame)
                 commands.commit()
@@ -67,7 +78,7 @@ final class GraphCostBench: XCTestCase {
             try material.render(into: picture, commandBuffer: commands, frame: frame, audio: audio.context)
         }
         print("SHD002_BENCH device \(rig.device.name): 12-node graph median \(graphTimes[30]) ms, max \(graphTimes.last ?? 0) ms; "
-              + "Noise Flow median \(materialTimes[30]) ms, max \(materialTimes.last ?? 0) ms (GPU time per frame, 1179 x 2556, 60 frames)")
+              + "Noise Flow median \(materialTimes[30]) ms, max \(materialTimes.last ?? 0) ms (GPU time per frame, \(width) x \(height), 60 frames)")
     }
 }
 #endif

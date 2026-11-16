@@ -140,6 +140,8 @@ final class MaterialVariantSwitchTests: XCTestCase {
         let gpu = try XCTUnwrap(l.capabilities)
         XCTAssertEqual(gpu, MaterialGPUCapabilities(device: rig.device))
         XCTAssertEqual(l.resolution.drawn, gpu.families.contains(.apple9) ? "plasmaDetailed" : "plasma")
+        // SHD-004-T20 evidence line: which variant this device's GPU draws for Plasma Detailed.
+        print("SHD004-DEVICE \(rig.device.name): apple9=\(gpu.families.contains(.apple9)) drawn=\(l.resolution.drawn)")
     }
 
     /// S6 (SHD-001-R9 for variants): extremes stay valid.
