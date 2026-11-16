@@ -103,6 +103,10 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   time of day. Accessibility suites should pin light or dark per run, or report which one ran.
 - **Opening Settings at a section beats flinging:** `-uitestSettingsSection <id>` (storage, text) turned 125 s
   timeouts into 10 s passes on D1 and D2 for Storage, Licenses and the Text rows.
+- **Permission prompts stay a person's tap, once per device:** `PermissionPrimerDeviceTests` launches the app so iOS
+  shows the microphone, camera and Local Network prompts one after another and waits (up to 180 s each) for a person
+  to answer; it never taps them. A granted permission survives reinstalling the same app, so the camera, microphone
+  and OSC device tests run unattended afterwards.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
