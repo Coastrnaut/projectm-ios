@@ -1,0 +1,47 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "3c56a85ef2bf10c76f575d3ba0f9d3e50fae8121acf287a263355c35bf1d3c90",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "notRunning": 1,
+   "step": "crash",
+   "task": "PERF-010-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "offerShown": 1,
+   "step": "relaunch",
+   "task": "PERF-010-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.227,
+   "meanSaturation": 0.295,
+   "nonBlack": 0.54,
+   "step": "recovery offer",
+   "task": "PERF-010-T15"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B03",
+ "tasks": {
+  "PERF-010-T15": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B03RecoveryDeviceTests",
+   "result": "passed",
+   "seconds": 14.064,
+   "test": "testPERF010RealCrashThenRelaunchOffersRecovery"
+  }
+ ],
+ "xcresult": "b03-D1-222415.xcresult"
+}

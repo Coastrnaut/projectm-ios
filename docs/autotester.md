@@ -56,6 +56,18 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   `testmanagerd` (a protected system process). Package test bundles (no UI automation) are not affected. What is
   left is a person at the device: Settings › Developer › turn "Enable UI Automation" off and on, or restart the
   device and unlock it. Don't loop retries; one retry, then ask, and run non-UI work meanwhile.
+- **The automation-mode timeout cleared with the Developer toggle** (2026-11-15): on D1, turning "Enable UI
+  Automation" off and on fixed it at once; D2 showed the same timeout until the owner signed it in, then ran.
+- **A test that crashes the app on purpose** (PERF-010 "Crash now"): XCTest records "<bundle> crashed" as an issue
+  asynchronously, often after the relaunch, so `XCTExpectFailure` around the tap misses it. Override
+  `record(_:)` in that test class and drop only that issue while a flag is set (B03RecoveryDeviceTests).
+- **Long Settings lists in a sheet:** a swipe down at the top of the list dismisses the sheet. To get back to the
+  top from a deep section (`-uitestSettingsSection storage`), tap the status bar (normalized y 0.01), then fall
+  back to slow swipes on the list, guarded by the navigation bar still existing. `app.debugDescription.prefix(n)`
+  shows the views under a sheet first, so a truncated dump can hide the sheet.
+- **Parallel devices from one build:** copy `Build/<derived>/Build/Products` to a per-device folder and run
+  `xcodebuild test-without-building -xctestrun <copy>/…xctestrun`, so rebuilding for one device never disturbs
+  another device's run.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

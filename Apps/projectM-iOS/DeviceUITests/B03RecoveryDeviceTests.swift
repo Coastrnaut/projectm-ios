@@ -6,6 +6,18 @@ import XCTest
 
 @MainActor
 final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
+    /// The crash is the point of the test: XCTest records "<bundle> crashed" (asynchronously, often after the
+    /// relaunch) as an issue. While this is set, only that issue is dropped and logged; every other one still fails.
+    private var crashExpected = false
+
+    override func record(_ issue: XCTIssue) {
+        if crashExpected, issue.compactDescription.hasSuffix("org.projectmios.ProjectMiOS crashed") {
+            print("B03: expected crash recorded and accepted: \(issue.compactDescription)")
+            return
+        }
+        super.record(issue)
+    }
+
     private var probe: String { app.staticTexts["sessionRecovery"].value as? String ?? "" }
     private var autosave: String { app.staticTexts["sceneAutosave"].value as? String ?? "" }
 
@@ -43,14 +55,28 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
         let task = "PERF-010-T15"
         launchForRecovery(reset: true)
         XCTAssertTrue(wait(10) { self.probe.hasPrefix("decision=clean") }, "fresh start: \(probe)")
-        // Commit a scene: closing Settings commits at once (SCN-002-R3).
+        // Commit a scene: an edit (Linear Spectrum), then closing Settings commits at once (SCN-002-R3).
+        // Settings opens at Storage, so scroll back up to the visual rows.
         openSettings()
+        let row = app.buttons["visual.linearSpectrum"]
+        // Scroll the list itself, slowly, and stop once the row exists: a swipe at the top of the list pulls the
+        // Settings sheet down and dismisses it (seen on D1, 2026-11-15).
+        let list = app.collectionViews.firstMatch, nav = app.navigationBars["Settings"]
+        // A status-bar tap scrolls the list to its top (Storage is dozens of sections down); swipes are the fallback.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.01)).tap()
+        _ = wait(3) { row.exists }
+        for _ in 0..<10 where !row.exists && nav.exists { list.swipeDown(velocity: .slow) }
+        for _ in 0..<3 where row.exists && !row.isHittable && nav.exists { list.swipeDown(velocity: .slow) }
+        XCTAssertTrue(nav.exists, "Settings is still open")
+        XCTAssertTrue(row.isHittable, "the Linear Spectrum row is reachable")
+        row.tap()
         closeSettings()
         XCTAssertTrue(wait(10) { self.autosave.contains("pending=0") && !self.autosave.contains("committed=0") },
                       "the scene is committed: \(autosave)")
         openSettings()
         let crash = app.buttons["debugCrashButton"]
         XCTAssertTrue(wait(5) { crash.exists }, "the DEBUG crash button is shown (Settings opens at Storage)")
+        crashExpected = true
         crash.tap()
         XCTAssertTrue(wait(10) { self.app.state == .notRunning }, "the app ended abnormally")
         report(task, "crash", ["notRunning": app.state == .notRunning ? 1 : 0])

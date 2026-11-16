@@ -1,0 +1,173 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "c70251b5bf4b2698b223367f349cba55a90314dac40ec12fc2320f78275187d0",
+ "measurements": [
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 56,
+   "samples": 10,
+   "step": "glow off",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "glow on, default radius",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "glow on, maximum radius, Reduce flashing on",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 59,
+   "samples": 10,
+   "step": "landscape",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.026,
+   "meanSaturation": 0.081,
+   "nonBlack": 0.084,
+   "step": "landscape a",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.028,
+   "meanSaturation": 0.103,
+   "nonBlack": 0.104,
+   "step": "landscape b",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "motion": 0.008,
+   "step": "landscape",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "offMinusOnDefault": 0,
+   "offMinusOnMax": 0,
+   "step": "glow cost",
+   "task": "FX-001-T27"
+  },
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "portrait",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.047,
+   "meanSaturation": 0.373,
+   "nonBlack": 0.303,
+   "step": "portrait a",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.051,
+   "meanSaturation": 0.179,
+   "nonBlack": 0.183,
+   "step": "portrait b",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "motion": 0.039,
+   "step": "portrait",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "landscape",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.047,
+   "meanSaturation": 0.261,
+   "nonBlack": 0.245,
+   "step": "landscape a",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.037,
+   "meanSaturation": 0.302,
+   "nonBlack": 0.239,
+   "step": "landscape b",
+   "task": "VIS-002-T16"
+  },
+  {
+   "device": "iPad17,3",
+   "motion": 0.024,
+   "step": "landscape",
+   "task": "VIS-002-T16"
+  }
+ ],
+ "passed": 2,
+ "schemaVersion": 1,
+ "session": "B01",
+ "tasks": {
+  "FX-001-T27": {
+   "checks": {
+    "landscape: motion": 0.008
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 56,
+   "steps": 4
+  },
+  "VIS-002-T16": {
+   "checks": {
+    "landscape: motion": 0.024,
+    "portrait: motion": 0.039
+   },
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 60,
+   "steps": 2
+  }
+ },
+ "tests": [
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 70.668,
+   "test": "testFX001GlowFrameRateRotationAndReduceFlashing"
+  },
+  {
+   "class": "B01NativeVisualDeviceTests",
+   "result": "passed",
+   "seconds": 33.769,
+   "test": "testVIS002LinearSpectrumBothOrientations"
+  }
+ ],
+ "xcresult": "b01-D2-222230.xcresult"
+}
