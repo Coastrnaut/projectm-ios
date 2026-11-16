@@ -39,7 +39,34 @@ final class PermissionPrimerDeviceTests: XCTestCase {
     }
 
     func testA_Microphone() { prime("microphone", ["-autostart", "microphone"]) }
-    func testB_Camera() { prime("camera", ["-autostart", "inAppPlayback", "-settings.visual", "camera"]) }
+    /// The camera never starts at launch (CAM-001-R11), so a launch argument asks nothing: choose Camera in Settings
+    /// (the first primer run reported "no prompt" on D1 and the camera prompt then appeared mid-test, 2026-11-16).
+    func testB_Camera() {
+        app.launchArguments = ["-uitestResetNotice", "-uitestUnlocked", "NO", "-autostart", "inAppPlayback"]
+        app.launch()
+        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
+        _ = area.waitForExistence(timeout: 15)
+        for _ in 0..<3 where !app.buttons["settings"].exists { area.tap(); _ = controls.waitForExistence(timeout: 3) }
+        app.buttons["settings"].tap()
+        let row = app.buttons["visual.camera"]
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<4 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        row.tap()
+        waitForAnswer("camera")
+    }
+
+    private func waitForAnswer(_ name: String) {
+        let alert = springboard.alerts.firstMatch
+        if alert.waitForExistence(timeout: 20) {
+            print("PERMISSION-PRIMER \(name): prompt shown, waiting for a person to answer: \(alert.label)")
+            let answered = XCTNSPredicateExpectation(predicate: NSPredicate(format: "exists == false"), object: alert)
+            XCTAssertEqual(XCTWaiter().wait(for: [answered], timeout: 180), .completed, "\(name): answered at the device")
+            print("PERMISSION-PRIMER \(name): answered")
+        } else {
+            let live = (app.descendants(matching: .any)["cameraVisual"].firstMatch.value as? String) == "Live"
+            print("PERMISSION-PRIMER \(name): no prompt (already answered; camera \(live ? "live" : "not live"))")
+        }
+    }
     func testC_LocalNetwork() {
         prime("localNetwork", ["-autostart", "inAppPlayback", "-settings.osc.enabled", "YES", "-settings.osc.port", "47127"])
     }

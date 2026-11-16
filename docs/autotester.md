@@ -104,9 +104,11 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   time of day. Accessibility suites should pin light or dark per run, or report which one ran.
 - **Opening Settings at a section beats flinging:** `-uitestSettingsSection <id>` (storage, text) turned 125 s
   timeouts into 10 s passes on D1 and D2 for Storage, Licenses and the Text rows.
-- **Permission prompts stay a person's tap, once per device:** `PermissionPrimerDeviceTests` launches the app so iOS
-  shows the microphone, camera and Local Network prompts one after another and waits (up to 180 s each) for a person
-  to answer; it never taps them. A granted permission survives reinstalling the same app, so the camera, microphone
+- **Permission prompts stay a person's tap, once per device:** `PermissionPrimerDeviceTests` makes iOS show the
+  microphone, camera and Local Network prompts one after another and waits (up to 180 s each) for a person to answer;
+  it never taps them. Trigger each one the way a user does: the camera never starts at launch (CAM-001-R11), so a
+  launch argument asked nothing and the primer wrongly reported "already answered" on D1; the prompt then appeared
+  mid-test and covered the app for every later test. The primer now chooses Camera in Settings. A granted permission survives reinstalling the same app, so the camera, microphone
   and OSC device tests run unattended afterwards.
 - **Every device needs the fixtures:** D3 stayed on "Choose source" in every test (the app said the fixture could
   not be found) because the music fixture had been copied onto D1 and D2 only. `scripts/install_test_fixtures.py

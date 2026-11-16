@@ -98,7 +98,14 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
             picker.buttons[target].tap()
             // The new camera's first picture: the count resumes growing (pictures of the old camera are not counted
             // as the new one's; the badge and value stay on Live).
-            let resumed = wait(5) { self.frames > before + 5 }
+            // The count may restart for the new camera (a new layer source), so "resumed" is: the count moved
+            // off its value at the tap and then rose again between two reads.
+            var last = before, rises = 0
+            let resumed = wait(5) {
+                let now = self.frames
+                if now != last { if now > last && last != before { rises += 1 }; last = now }
+                return rises >= 1
+            }
             let seconds = Date().timeIntervalSince(t0)
             report(task, "to \(target)", ["seconds": seconds])
             XCTAssertTrue(resumed, "to \(target): pictures resume")
