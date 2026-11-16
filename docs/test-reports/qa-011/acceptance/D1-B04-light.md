@@ -1,0 +1,84 @@
+# QA-011 device acceptance: D1 session B04-light
+
+Automated owner-session steps on the device (Apps/projectM-iOS/DeviceUITests). Log SHA-256 `03848e169dc1ecdb3049ee0af8a6911f65b7f44fd24ecbeb2042b47ee575a9fa`; 56 of 75 tests passed.
+
+| Task | Frame-rate steps | Median fps | Lowest 1 s fps |
+|---|---|---|---|
+
+| Test | Result | Seconds |
+|---|---|---|
+| AccessibilityScreensUITests.testBrowserRowsScaleWithAccessibilityTextSizes | passed | 23.5 |
+| AccessibilityScreensUITests.testCollectionsAndMyPresetsAreLabelledAndPassTheAudit | failed | 9.4 |
+| AccessibilityScreensUITests.testPresetBrowserAndPackAreLabelledAndPassTheAudit | failed | 13.2 |
+| AccessibilityScreensUITests.testSettingsAndShowEditorAreLabelledAndPassTheAudit | failed | 12.3 |
+| AccessibilityScreensUITests.testShowRowIsLabelledAndPassesTheAudit | passed | 7.7 |
+| AccessibilityScreensUITests.testUserChangesAreAnnounced | passed | 6.9 |
+| AccessibilityScreensUITests.testVisualizerControlsAreLabelledAndPassTheAudit | passed | 7.8 |
+| DynamicTypeInspectorUITests.testBrowserAX3 | failed | 8.1 |
+| DynamicTypeInspectorUITests.testBrowserAX5 | failed | 9.6 |
+| DynamicTypeInspectorUITests.testCameraNoticeAX3 | passed | 28.1 |
+| DynamicTypeInspectorUITests.testCameraNoticeAX5 | passed | 30.0 |
+| DynamicTypeInspectorUITests.testCollectionsAndMyPresetsAX3 | passed | 28.5 |
+| DynamicTypeInspectorUITests.testCollectionsAndMyPresetsAX5 | passed | 42.7 |
+| DynamicTypeInspectorUITests.testGuideAX3 | passed | 33.5 |
+| DynamicTypeInspectorUITests.testGuideAX5 | passed | 40.2 |
+| DynamicTypeInspectorUITests.testLicensesAX3 | passed | 10.5 |
+| DynamicTypeInspectorUITests.testLicensesAX5 | passed | 11.1 |
+| DynamicTypeInspectorUITests.testLinearSpectrumRowsAX3 | passed | 30.3 |
+| DynamicTypeInspectorUITests.testLinearSpectrumRowsAX5 | passed | 34.4 |
+| DynamicTypeInspectorUITests.testLocalNetworkNoticeAX3 | failed | 79.7 |
+| DynamicTypeInspectorUITests.testLocalNetworkNoticeAX5 | failed | 138.9 |
+| DynamicTypeInspectorUITests.testNoticeAndChooserAX3 | passed | 12.7 |
+| DynamicTypeInspectorUITests.testNoticeAndChooserAX5 | passed | 14.4 |
+| DynamicTypeInspectorUITests.testOscilloscopeRowsAX3 | passed | 27.4 |
+| DynamicTypeInspectorUITests.testOscilloscopeRowsAX5 | passed | 37.4 |
+| DynamicTypeInspectorUITests.testPresetEditorAX3 | passed | 29.0 |
+| DynamicTypeInspectorUITests.testPresetEditorAX5 | passed | 32.6 |
+| DynamicTypeInspectorUITests.testRenameSceneAlertAX3 | failed | 26.2 |
+| DynamicTypeInspectorUITests.testRenameSceneAlertAX5 | passed | 34.9 |
+| DynamicTypeInspectorUITests.testRepairSheetAX3 | passed | 24.2 |
+| DynamicTypeInspectorUITests.testRepairSheetAX5 | passed | 35.7 |
+| DynamicTypeInspectorUITests.testSceneFoldersAX3 | failed | 25.8 |
+| DynamicTypeInspectorUITests.testSceneFoldersAX5 | failed | 26.9 |
+| DynamicTypeInspectorUITests.testSceneSwitcherAX3 | passed | 10.5 |
+| DynamicTypeInspectorUITests.testSceneSwitcherAX5 | passed | 8.5 |
+| DynamicTypeInspectorUITests.testSettingsAX3 | passed | 15.8 |
+| DynamicTypeInspectorUITests.testSettingsAX5 | passed | 15.1 |
+| DynamicTypeInspectorUITests.testShowEditorAX3 | passed | 17.4 |
+| DynamicTypeInspectorUITests.testShowEditorAX5 | passed | 20.0 |
+| DynamicTypeInspectorUITests.testStorageAX3 | passed | 12.1 |
+| DynamicTypeInspectorUITests.testStorageAX5 | passed | 11.9 |
+| DynamicTypeInspectorUITests.testTextMessageFieldAX3 | passed | 10.0 |
+| DynamicTypeInspectorUITests.testTextMessageFieldAX5 | passed | 9.2 |
+| DynamicTypeInspectorUITests.testTextRowsAX3 | passed | 11.2 |
+| DynamicTypeInspectorUITests.testTextRowsAX5 | passed | 11.2 |
+| DynamicTypeInspectorUITests.testVisualizerControlsAX3 | passed | 25.9 |
+| DynamicTypeInspectorUITests.testVisualizerControlsAX5 | failed | 23.9 |
+| PrimaryScreensAccessibilityUITests.testControlsAX5 | passed | 15.7 |
+| PrimaryScreensAccessibilityUITests.testControlsStandard | passed | 7.6 |
+| PrimaryScreensAccessibilityUITests.testEffectOrderAX5 | failed | 43.5 |
+| PrimaryScreensAccessibilityUITests.testEffectOrderStandard | failed | 22.0 |
+| PrimaryScreensAccessibilityUITests.testLicensesAX5 | passed | 18.0 |
+| PrimaryScreensAccessibilityUITests.testLicensesStandard | passed | 13.6 |
+| PrimaryScreensAccessibilityUITests.testMIDIMappingsAX5 | passed | 16.5 |
+| PrimaryScreensAccessibilityUITests.testMIDIMappingsStandard | passed | 12.8 |
+| PrimaryScreensAccessibilityUITests.testOneHandedControlsAX5 | passed | 7.1 |
+| PrimaryScreensAccessibilityUITests.testOneHandedControlsStandard | passed | 7.2 |
+| PrimaryScreensAccessibilityUITests.testParameterInspectorAX5 | passed | 18.8 |
+| PrimaryScreensAccessibilityUITests.testParameterInspectorStandard | passed | 14.4 |
+| PrimaryScreensAccessibilityUITests.testParameterShelfAX5 | passed | 12.6 |
+| PrimaryScreensAccessibilityUITests.testParameterShelfStandard | passed | 6.6 |
+| PrimaryScreensAccessibilityUITests.testPresetBrowserAX5 | passed | 24.5 |
+| PrimaryScreensAccessibilityUITests.testPresetBrowserStandard | failed | 16.7 |
+| PrimaryScreensAccessibilityUITests.testRecordingFrameRateAX5 | passed | 10.9 |
+| PrimaryScreensAccessibilityUITests.testRecordingFrameRateStandard | passed | 6.7 |
+| PrimaryScreensAccessibilityUITests.testRecordingQualityAX5 | passed | 14.5 |
+| PrimaryScreensAccessibilityUITests.testRecordingQualityStandard | passed | 6.5 |
+| PrimaryScreensAccessibilityUITests.testSceneSwitcherAX5 | failed | 29.8 |
+| PrimaryScreensAccessibilityUITests.testSceneSwitcherStandard | passed | 9.8 |
+| PrimaryScreensAccessibilityUITests.testSettingsAX5 | failed | 16.2 |
+| PrimaryScreensAccessibilityUITests.testSettingsStandard | passed | 10.5 |
+| PrimaryScreensAccessibilityUITests.testShowEditorAX5 | passed | 18.0 |
+| PrimaryScreensAccessibilityUITests.testShowEditorStandard | failed | 11.5 |
+| PrimaryScreensAccessibilityUITests.testStorageAX5 | failed | 24.9 |
+| PrimaryScreensAccessibilityUITests.testStorageStandard | failed | 20.5 |

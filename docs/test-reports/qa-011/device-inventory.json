@@ -41,8 +41,8 @@
     "bySession": {
       "B01": 18,
       "B02": 12,
-      "B03": 5,
-      "B04": 18,
+      "B03": 6,
+      "B04": 17,
       "B05": 26,
       "B06": 21,
       "B07": 20,
@@ -363,17 +363,19 @@
       "order": 3,
       "devices": [
         "D1",
+        "D2",
         "D3"
       ],
       "tasks": [
         "057-perf-014-render-failure-fallback:PERF-014-T22",
         "067-scn-002-scene-autosave:SCN-002-T10",
+        "087-acc-006-dynamic-type-inspector:ACC-006-T12",
         "164-rec-006-record-frame-rate:REC-006-T15",
         "226-rec-016-recording-interruption-recovery:REC-016-T13",
         "276-cam-010-hand-pose-modulation:CAM-010-T17"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 30
+      "estimatedMinutes": 40
     },
     {
       "id": "B04",
@@ -398,7 +400,6 @@
         "030-acc-002-reduced-flash-preset-policy:ACC-002-T20",
         "080-acc-001-reduce-motion-mode:ACC-001-T12",
         "082-acc-004-voiceover-scene-browser:ACC-004-T12",
-        "087-acc-006-dynamic-type-inspector:ACC-006-T12",
         "100-acc-011-captioned-status-events:ACC-011-T17",
         "110-acc-003-color-blind-friendly-controls:ACC-003-T17",
         "115-acc-005-voiceover-parameter-editing:ACC-005-T16",
@@ -414,7 +415,7 @@
         "308-vis-019-cymatic-line-patterns:VIS-019-T13"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 105
+      "estimatedMinutes": 95
     },
     {
       "id": "B05",
@@ -2745,7 +2746,7 @@
       ],
       "status": "open",
       "category": "b",
-      "session": "B04",
+      "session": "B03",
       "devices": [
         "D1",
         "D2"
@@ -2753,7 +2754,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "ACC-006-T12 {device} D1 at AX5 and an iPad at AX5 (portrait and landscape): the quickstart's device walk; record in `docs/test-reports/accessibility-dynamic-type.md` (S5). D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): DynamicTypeInspectorUITests at AX3 and AX5 on D2 (iPad, portrait): most screens pass after the scroll fix for the Settings side panel (scrollSurface). Open on D2: Storage and the Text message field are not reached at the end of Settings (also on D1), and the Oscilloscope and Text visuals add 2-3 element-less findings over the bounded 8 beside the panel (unattributed); landscape; D1 at AX5. D1 fixes 2026-11-15 (QA-011 B04 triage): \"Lock scene\" and \"Import Folder or Archive…\" use IconTitleRow (clipped at AX3/AX5 on D1); the camera notice caps its message height at accessibility sizes so the controls stay reachable (testCameraNoticeAX3/AX5 pass on D1). Open on D1: the remaining DynamicTypeInspector and primary-screen failures (test harness scrolling, standard-size contrast audit on accent buttons, see docs/test-reports/qa-011/acceptance/D1-B04.md)."
+      "text": "ACC-006-T12 {device} D1 at AX5 and an iPad at AX5 (portrait and landscape): the quickstart's device walk; record in `docs/test-reports/accessibility-dynamic-type.md` (S5). D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B04.md): DynamicTypeInspectorUITests at AX3 and AX5 on D2 (iPad, portrait): most screens pass after the scroll fix for the Settings side panel (scrollSurface). Open on D2: Storage and the Text message field are not reached at the end of Settings (also on D1), and the Oscilloscope and Text visuals add 2-3 element-less findings over the bounded 8 beside the panel (unattributed); landscape; D1 at AX5. D1 fixes 2026-11-15 (QA-011 B04 triage): \"Lock scene\" and \"Import Folder or Archive…\" use IconTitleRow (clipped at AX3/AX5 on D1); the camera notice caps its message height at accessibility sizes so the controls stay reachable (testCameraNoticeAX3/AX5 pass on D1). Open on D1: the remaining DynamicTypeInspector and primary-screen failures (test harness scrolling, standard-size contrast audit on accent buttons, see docs/test-reports/qa-011/acceptance/D1-B04.md). Light-mode baseline 2026-11-16 (`-uitestAppearance light`; D1 had run dark at night): D1 56 of 75 accessibility-suite tests pass (docs/test-reports/qa-011/acceptance/D1-B04-light.md; the accent-button contrast findings are gone), D2 45 of 75 (D2-B04-light.md; many failures from the iPad side-panel layout, where the visual stays on screen beside Settings). Open: the remaining findings listed in those records and D1-B04-triage.md."
     },
     {
       "id": "AUD-009-T13",

@@ -1,0 +1,463 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "03848e169dc1ecdb3049ee0af8a6911f65b7f44fd24ecbeb2042b47ee575a9fa",
+ "measurements": [],
+ "passed": 56,
+ "schemaVersion": 1,
+ "session": "B04-light",
+ "tasks": {},
+ "tests": [
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "passed",
+   "seconds": 23.542,
+   "test": "testBrowserRowsScaleWithAccessibilityTextSizes"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "failed",
+   "seconds": 9.414,
+   "test": "testCollectionsAndMyPresetsAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "failed",
+   "seconds": 13.165,
+   "test": "testPresetBrowserAndPackAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "failed",
+   "seconds": 12.313,
+   "test": "testSettingsAndShowEditorAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "passed",
+   "seconds": 7.651,
+   "test": "testShowRowIsLabelledAndPassesTheAudit"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "passed",
+   "seconds": 6.86,
+   "test": "testUserChangesAreAnnounced"
+  },
+  {
+   "class": "AccessibilityScreensUITests",
+   "result": "passed",
+   "seconds": 7.788,
+   "test": "testVisualizerControlsAreLabelledAndPassTheAudit"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 8.117,
+   "test": "testBrowserAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 9.612,
+   "test": "testBrowserAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 28.079,
+   "test": "testCameraNoticeAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 30.003,
+   "test": "testCameraNoticeAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 28.537,
+   "test": "testCollectionsAndMyPresetsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 42.741,
+   "test": "testCollectionsAndMyPresetsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 33.534,
+   "test": "testGuideAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 40.173,
+   "test": "testGuideAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 10.528,
+   "test": "testLicensesAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 11.115,
+   "test": "testLicensesAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 30.258,
+   "test": "testLinearSpectrumRowsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 34.382,
+   "test": "testLinearSpectrumRowsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 79.746,
+   "test": "testLocalNetworkNoticeAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 138.922,
+   "test": "testLocalNetworkNoticeAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 12.709,
+   "test": "testNoticeAndChooserAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 14.394,
+   "test": "testNoticeAndChooserAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 27.39,
+   "test": "testOscilloscopeRowsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 37.42,
+   "test": "testOscilloscopeRowsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 29.035,
+   "test": "testPresetEditorAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 32.618,
+   "test": "testPresetEditorAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 26.243,
+   "test": "testRenameSceneAlertAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 34.85,
+   "test": "testRenameSceneAlertAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 24.211,
+   "test": "testRepairSheetAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 35.71,
+   "test": "testRepairSheetAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 25.84,
+   "test": "testSceneFoldersAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 26.915,
+   "test": "testSceneFoldersAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 10.471,
+   "test": "testSceneSwitcherAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 8.503,
+   "test": "testSceneSwitcherAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 15.756,
+   "test": "testSettingsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 15.053,
+   "test": "testSettingsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 17.448,
+   "test": "testShowEditorAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 19.984,
+   "test": "testShowEditorAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 12.069,
+   "test": "testStorageAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 11.908,
+   "test": "testStorageAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 9.979,
+   "test": "testTextMessageFieldAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 9.228,
+   "test": "testTextMessageFieldAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 11.25,
+   "test": "testTextRowsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 11.16,
+   "test": "testTextRowsAX5"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "passed",
+   "seconds": 25.869,
+   "test": "testVisualizerControlsAX3"
+  },
+  {
+   "class": "DynamicTypeInspectorUITests",
+   "result": "failed",
+   "seconds": 23.941,
+   "test": "testVisualizerControlsAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 15.677,
+   "test": "testControlsAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 7.565,
+   "test": "testControlsStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 43.51,
+   "test": "testEffectOrderAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 21.979,
+   "test": "testEffectOrderStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 17.975,
+   "test": "testLicensesAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 13.629,
+   "test": "testLicensesStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 16.542,
+   "test": "testMIDIMappingsAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 12.819,
+   "test": "testMIDIMappingsStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 7.078,
+   "test": "testOneHandedControlsAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 7.168,
+   "test": "testOneHandedControlsStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 18.754,
+   "test": "testParameterInspectorAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 14.419,
+   "test": "testParameterInspectorStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 12.581,
+   "test": "testParameterShelfAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 6.592,
+   "test": "testParameterShelfStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 24.478,
+   "test": "testPresetBrowserAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 16.718,
+   "test": "testPresetBrowserStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 10.858,
+   "test": "testRecordingFrameRateAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 6.662,
+   "test": "testRecordingFrameRateStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 14.54,
+   "test": "testRecordingQualityAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 6.476,
+   "test": "testRecordingQualityStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 29.81,
+   "test": "testSceneSwitcherAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 9.787,
+   "test": "testSceneSwitcherStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 16.218,
+   "test": "testSettingsAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 10.539,
+   "test": "testSettingsStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "passed",
+   "seconds": 18.022,
+   "test": "testShowEditorAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 11.483,
+   "test": "testShowEditorStandard"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 24.897,
+   "test": "testStorageAX5"
+  },
+  {
+   "class": "PrimaryScreensAccessibilityUITests",
+   "result": "failed",
+   "seconds": 20.478,
+   "test": "testStorageStandard"
+  }
+ ],
+ "xcresult": null
+}
