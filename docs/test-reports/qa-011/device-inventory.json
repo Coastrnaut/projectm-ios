@@ -1760,7 +1760,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "CAM-001-T24 {device} On D1, D2, D3: choose Camera → system prompt → Allow → live upright picture under the spectrum and the camera indicator; rotate (S1, R2)"
+      "text": "CAM-001-T24 {device} On D1, D2, D3: choose Camera → system prompt → Allow → live upright picture under the spectrum and the camera indicator; rotate (S1, R2) D2 and D3 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B06.md, D3-B06.md): B06CameraDeviceTests chooses Camera in Settings; the back camera is Live with 56-60 camera pictures per second in portrait and landscape, the camera badge shown. Open: D1 (camera permission prompt pending), and the iOS camera indicator (system UI, by eye)."
     },
     {
       "id": "CAM-001-T25",
@@ -2809,7 +2809,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "CAM-002-T21 {device} D1-D3: quickstart device stage steps 1-2 (front camera upright and mirrored in portrait and landscape, badge, iOS indicator)"
+      "text": "CAM-002-T21 {device} D1-D3: quickstart device stage steps 1-2 (front camera upright and mirrored in portrait and landscape, badge, iOS indicator) D2 and D3 automated 2026-11-16 (D2-B06.md, D3-B06.md): the front camera is Live with 58-60 pictures per second in portrait and landscape. Open: D1; mirrored look and the iOS indicator by eye."
     },
     {
       "id": "CAM-002-T22",
@@ -2849,7 +2849,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "CAM-002-T23 {device} D1-D3: quickstart step 4 (switching within 2 s, no frame of the old camera, audio uninterrupted; CAM-002-S7)"
+      "text": "CAM-002-T23 {device} D1-D3: quickstart step 4 (switching within 2 s, no frame of the old camera, audio uninterrupted; CAM-002-S7) Finding on D2 and D3 2026-11-16 (D2-B06.md, D3-B06.md): switching Back ↔ Front in Settings while the camera runs leaves the visual \"Live\" but no new camera picture is shown afterwards (0 per second for 5+ s, also with Settings closed); starting on either camera works. Under investigation; open."
     },
     {
       "id": "AUD-015-T13",
@@ -3954,7 +3954,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "CAM-003-T11 {device} D1: Wide ↔ Ultra Wide ten times while running (picture follows, badge stays, no crash); D2 and D3: no Lens row (S4)."
+      "text": "CAM-003-T11 {device} D1: Wide ↔ Ultra Wide ten times while running (picture follows, badge stays, no crash); D2 and D3: no Lens row (S4). D2 and D3 done 2026-11-16 (D2-B06.md, D3-B06.md): no Lens row in the camera settings on either iPad. Open: D1 (ten Wide ↔ Ultra Wide switches)."
     },
     {
       "id": "UIX-007-T13",

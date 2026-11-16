@@ -35,7 +35,7 @@ Format: `- [ ] CAM-003-Txx [P?] [Story] description`. `{device}` = needs a physi
 ## Phase 5: Polish
 
 - [X] CAM-003-T10 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app; type-check budget on changed files; PosterBoard count; delete the simulator and derived data. — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events, test_scripts all exit 0; check_privacy_manifest OK and check_network_symbols OK (19 images) on the Debug simulator app; PosterBoard reports 25 before and 25 after; simulator and derived data deleted at the end.
-- [ ] CAM-003-T11 {device} D1: Wide ↔ Ultra Wide ten times while running (picture follows, badge stays, no crash); D2 and D3: no Lens row (S4).
+- [ ] CAM-003-T11 {device} D1: Wide ↔ Ultra Wide ten times while running (picture follows, badge stays, no crash); D2 and D3: no Lens row (S4). D2 and D3 done 2026-11-16 (D2-B06.md, D3-B06.md): no Lens row in the camera settings on either iPad. Open: D1 (ten Wide ↔ Ultra Wide switches).
 
 ## Analysis (speckit-analyze, 2026-11-14)
 

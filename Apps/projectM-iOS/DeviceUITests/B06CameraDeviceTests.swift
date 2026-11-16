@@ -93,13 +93,15 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
         openCameraSettings(picker)
         XCTAssertTrue(wait(5) { picker.exists }, "the Camera picker")
         for target in ["Front", "Back"] {
+            if !picker.exists { openCameraSettings(picker) }
             let before = frames
             let t0 = Date()
             picker.buttons[target].tap()
-            // The new camera's first picture: the count resumes growing (pictures of the old camera are not counted
-            // as the new one's; the badge and value stay on Live).
-            // The count may restart for the new camera (a new layer source), so "resumed" is: the count moved
-            // off its value at the tap and then rose again between two reads.
+            // Close Settings at once: the camera count only grows with drawn frames, and it stood still while Settings
+            // was open (D2, 2026-11-16). The time includes the close.
+            closeSettings()
+            // The count may restart for the new camera, so "resumed" is: it moved off its value at the tap and then
+            // rose again between two reads.
             var last = before, rises = 0
             let resumed = wait(5) {
                 let now = self.frames
@@ -109,7 +111,8 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
             let seconds = Date().timeIntervalSince(t0)
             report(task, "to \(target)", ["seconds": seconds])
             XCTAssertTrue(resumed, "to \(target): pictures resume")
-            XCTAssertLessThan(seconds, 2.5, "to \(target): within 2 s (plus the poll)")
+            XCTAssertLessThan(seconds, 3, "to \(target): within 2 s (plus closing Settings and the poll)")
+            assertLive(task, "after the switch to \(target)")
         }
         XCTAssertEqual(starts, audioStarts, "the audio source was never restarted")
     }
