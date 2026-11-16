@@ -155,6 +155,9 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     private var retryToken: UInt64 = 0
 
     /// "<state>|<reason or none>|<attempts>|<pending yes/no>|<counts>" (DEBUG readout; numbers only).
+    /// QA-011 (DEBUG): the capture path's counters and the layer's previous-camera drops, for the switch test.
+    var captureProbe: String { camera.provider.debugCaptureSummary + " stale=\(camera.staleDropped) shown=\(camera.framesShown)" }
+
     var recoveryProbe: String {
         let reason: String = stopReason?.rawValue ?? "none"
         let pending: String = retryPending ? "yes" : "no"

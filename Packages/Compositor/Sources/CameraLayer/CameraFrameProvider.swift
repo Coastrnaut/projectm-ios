@@ -69,6 +69,8 @@ public struct CameraFrame {
 /// The source of camera pictures. `start`, `stop`, `state` and `onStateChange` belong to the main
 /// thread; `latestFrame` may be called from the render thread and never blocks.
 public protocol CameraFrameProvider: AnyObject {
+    /// QA-011 (DEBUG): capture-path counters (a requirement so the AV provider's are reached through `any`).
+    var debugCaptureSummary: String { get }
     /// The current state (main thread).
     var state: CameraFeedState { get }
     /// Called on the main thread after every change of `state`.
@@ -136,6 +138,9 @@ public protocol CameraFrameProvider: AnyObject {
 }
 
 extension CameraFrameProvider {
+    /// QA-011 (DEBUG device diagnosis of a camera switch): what the capture path did; "" for providers without counters.
+    public var debugCaptureSummary: String { "" }
+
     /// A provider without a front camera (CAM-001's stand-ins) stays on the rear camera.
     public var position: CameraPosition { .back }
     public func select(_ position: CameraPosition) {}

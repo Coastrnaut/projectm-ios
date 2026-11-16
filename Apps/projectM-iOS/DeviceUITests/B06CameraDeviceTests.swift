@@ -11,7 +11,13 @@ import XCTest
 @MainActor
 final class B06CameraDeviceTests: DeviceAcceptanceCase {
     private var camera: XCUIElement { app.descendants(matching: .any)["cameraVisual"].firstMatch }
-    private var frames: Int { Int((app.staticTexts["cameraFramesShown"].value as? String) ?? "") ?? -1 }
+    /// Camera pictures shown, from the capture probe's `shown=` (the `cameraFramesShown` text went stale after Settings
+    /// opened on the iPads, while this probe beside it kept counting: D2, 2026-11-16).
+    private var frames: Int {
+        let text = (app.staticTexts["cameraCaptureProbe"].value as? String) ?? ""
+        guard let range = text.range(of: #"shown=(\d+)"#, options: .regularExpression) else { return -1 }
+        return Int(text[range].dropFirst("shown=".count)) ?? -1
+    }
     private var starts: String { (app.staticTexts["sourceStarts"].value as? String) ?? "" }
 
     /// Launches on the spectrum and chooses Camera in Settings: the camera never starts by itself at launch, only
@@ -110,8 +116,18 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
             }
             let seconds = Date().timeIntervalSince(t0)
             report(task, "to \(target)", ["seconds": seconds])
+            print("B06-CAPTURE to \(target): \((app.staticTexts["cameraCaptureProbe"].value as? String) ?? "none")")
+            pause(2)
+            print("B06-CAPTURE to \(target) +2 s: \((app.staticTexts["cameraCaptureProbe"].value as? String) ?? "none")")
             XCTAssertTrue(resumed, "to \(target): pictures resume")
-            XCTAssertLessThan(seconds, 3, "to \(target): within 2 s (plus closing Settings and the poll)")
+            // The switch itself, timed in the app from select() to the new camera's first stored picture; the UI time
+            // above adds closing Settings and the accessibility polls.
+            let probe = (app.staticTexts["cameraCaptureProbe"].value as? String) ?? ""
+            let ms = probe.range(of: #"switchMs=(-?\d+)"#, options: .regularExpression)
+                .flatMap { Int(probe[$0].dropFirst("switchMs=".count)) } ?? -1
+            report(task, "to \(target) in app", ["switchMs": Double(ms)])
+            XCTAssertGreaterThanOrEqual(ms, 0, "to \(target): the new camera's first picture was timed (\(probe))")
+            XCTAssertLessThan(ms, 2000, "to \(target): the new camera's first picture within 2 s (CAM-002-S7)")
             assertLive(task, "after the switch to \(target)")
         }
         XCTAssertEqual(starts, audioStarts, "the audio source was never restarted")

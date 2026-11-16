@@ -407,6 +407,11 @@ struct VisualizerView: View {
                         .opacity(0.01)
                         .accessibilityIdentifier("cameraFramesShown")
                         .accessibilityValue("\(camera.framesShown)")
+                    Text(camera.captureProbe)   // QA-011: the capture path after a camera switch
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .accessibilityIdentifier("cameraCaptureProbe")
+                        .accessibilityValue(camera.captureProbe)
                 }
             }
             if let photo = coordinator.photoVisual {   // MED-001: frames that showed the photo

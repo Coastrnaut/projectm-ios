@@ -226,6 +226,10 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
 
     public func select(_ position: CameraPosition) {
         guard position != self.position else { return }
+        #if DEBUG
+        let now = DispatchTime.now().uptimeNanoseconds
+        debugCounters.withLockUnchecked { $0.switchStart = now; $0.target = position.rawValue; $0.switchMs = -1 }
+        #endif
         self.position = position
         stopReason = nil   // CAM-013: a switch clears the reason
         latest.clear()
@@ -276,10 +280,13 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
             session.commitConfiguration()
             video.async { [self] in   // every buffer queued before the swap was refused by the closed slot
                 DispatchQueue.main.async { [self] in
-                    guard current == generation, state == .starting else { return }
+                    // An interruption during the swap moved `.starting` to `.interrupted`: still open the slot (its end
+                    // then shows the new camera). Requiring `.starting` left the slot closed while the state later read
+                    // running, so no picture ever showed after a switch (D2, D3: QA-011 B06, 2026-11-16).
+                    guard current == generation, state == .starting || state == .interrupted else { return }
                     if added {
                         latest.open()
-                        state = .running
+                        if state == .starting { state = .running }
                     } else {
                         stop()
                         state = .unavailable
@@ -331,7 +338,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
             }.first
             video.async { [self] in   // every buffer queued before the switch was refused by the closed slot
                 DispatchQueue.main.async { [self] in
-                    guard current == generation, state == .starting else { return }
+                    guard current == generation, state == .starting || state == .interrupted else { return }   // as switchInput
                     finishLensSwitch(outcome, running: running)
                 }
             }
@@ -348,7 +355,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
         followRotation(of: camera)
         latest.setPosition(position)
         latest.open()
-        state = .running
+        if state == .starting { state = .running }   // an interruption keeps its state until it ends
     }
 
     /// An input for a back lens, or nil when that lens is missing or cannot be opened.
@@ -523,6 +530,7 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
             [self] _ in
             guard current == generation, state == .interrupted else { return }
             stopReason = nil
+            latest.open()   // never `.running` with a closed slot (a switch's completion may not have opened it yet)
             state = .running
         })
         observers.append(center.addObserver(forName: AVCaptureSession.runtimeErrorNotification, object: session, queue: .main) {
@@ -537,7 +545,23 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
 
     // MARK: - Pictures (video queue)
 
+    #if DEBUG
+    /// QA-011: capture-path counters for the device test of a camera switch (calls, refused while closed, stored, the
+    /// last stored position). Video queue writes, main thread reads.
+    private let debugCounters = OSAllocatedUnfairLock(uncheckedState: (calls: 0, closed: 0, stored: 0, last: "none",
+                                                                       switchStart: UInt64(0), target: "", switchMs: -1))
+    public var debugCaptureSummary: String {
+        let c = debugCounters.withLockUnchecked { $0 }
+        return "state=\(state) open=\(latest.isOpen ? 1 : 0) pos=\(position.rawValue) calls=\(c.calls) closed=\(c.closed) "
+            + "stored=\(c.stored) last=\(c.last) switchMs=\(c.switchMs)"
+    }
+    #endif
+
     public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        #if DEBUG
+        let isOpen = latest.isOpen
+        debugCounters.withLockUnchecked { $0.calls += 1; if !isOpen { $0.closed += 1 } }
+        #endif
         guard latest.isOpen, let cache, let pixels = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let width = CVPixelBufferGetWidth(pixels), height = CVPixelBufferGetHeight(pixels)
         var wrapper: CVMetalTexture?
@@ -546,6 +570,18 @@ public final class AVCameraFrameProvider: NSObject, CameraFrameProvider, AVCaptu
               let wrapper, let texture = CVMetalTextureGetTexture(wrapper) else { return }
         let position: CameraPosition? = Self.position(of: connection)
         guard latest.store(texture, owner: CVMetalTextureHold(texture: wrapper, cache: cache), position: position) else { return }
+        #if DEBUG
+        let stamped = position?.rawValue ?? "nil", now = DispatchTime.now().uptimeNanoseconds
+        debugCounters.withLockUnchecked {
+            $0.stored += 1
+            $0.last = stamped
+            // CAM-002-S7: from select() to the first stored picture of the chosen camera.
+            if $0.switchStart > 0, stamped == $0.target {
+                $0.switchMs = Int((now - $0.switchStart) / 1_000_000)
+                $0.switchStart = 0
+            }
+        }
+        #endif
         let masker: PersonMasker? = personMasker
         let analyzer: (any CameraPictureAnalyzing)? = pictureAnalyzer
         guard masker != nil || analyzer != nil else { return }

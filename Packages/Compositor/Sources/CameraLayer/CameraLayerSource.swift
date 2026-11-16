@@ -39,6 +39,8 @@ public final class CameraLayerSource: LayerSource {
     private var held: CameraFrame?
     /// Frames whose own camera picture was drawn (diagnostics, tests).
     public private(set) var framesShown = 0
+    /// Pictures dropped because they came from the other camera (CAM-002-R7); QA-011 switch diagnosis.
+    public private(set) var staleDropped = 0
     /// CAM-002-R3, R5: flip the camera picture left to right (main thread; applies from the next frame).
     public var mirrored = false
     /// CAM-007-R1, R5: the user's crop (main thread; applies from the next frame; never touches the camera).
@@ -155,7 +157,7 @@ public final class CameraLayerSource: LayerSource {
             throw .notReady
         }
         if let newest = provider.latestFrame() { held = newest }
-        if let stale = held, stale.position != provider.position { held = nil }   // CAM-002-R7: never the previous camera
+        if let stale = held, stale.position != provider.position { held = nil; staleDropped += 1 }   // CAM-002-R7: never the previous camera
         guard let camera = held, let pipeline, let sampler, let maskPlaceholder else {
             drawnPicture = nil
             throw .notReady
