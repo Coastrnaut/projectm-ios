@@ -1,12 +1,198 @@
 {
  "device": "D1",
  "kind": "projectM-iOS.qa011.deviceAcceptance",
- "logSha256": "2ec5c2fc2f919a6cfffb48b78ae6cc28cad94d76a1517110a46b910c809625cd",
- "measurements": [],
- "passed": 11,
+ "logSha256": "72ecc2400121150d1804d6a620b1a27f044c360980163acd6176a90628d1e209",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "portrait",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.05,
+   "meanSaturation": 0.046,
+   "nonBlack": 0.076,
+   "step": "portrait a",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.049,
+   "meanSaturation": 0.039,
+   "nonBlack": 0.07,
+   "step": "portrait b",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.03,
+   "step": "portrait",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "landscape",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.036,
+   "meanSaturation": 0.045,
+   "nonBlack": 0.072,
+   "step": "landscape a",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.04,
+   "meanSaturation": 0.059,
+   "nonBlack": 0.083,
+   "step": "landscape b",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.006,
+   "step": "landscape",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "resumed": 1,
+   "seconds": 0.3,
+   "step": "audio after background",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "after background",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.046,
+   "meanSaturation": 0.039,
+   "nonBlack": 0.068,
+   "step": "after background 0 a",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.045,
+   "meanSaturation": 0.037,
+   "nonBlack": 0.066,
+   "step": "after background 0 b",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.049,
+   "meanSaturation": 0.043,
+   "nonBlack": 0.072,
+   "step": "after background 1 a",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.071,
+   "meanSaturation": 0.083,
+   "nonBlack": 0.112,
+   "step": "after background 1 b",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.055,
+   "meanSaturation": 0.051,
+   "nonBlack": 0.08,
+   "step": "after background 2 a",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.052,
+   "meanSaturation": 0.046,
+   "nonBlack": 0.075,
+   "step": "after background 2 b",
+   "task": "VIS-001-T36"
+  },
+  {
+   "controlsShown": 0,
+   "device": "iPhone15,4",
+   "first": 0.002,
+   "second": 0.022,
+   "step": "after background motion",
+   "task": "VIS-001-T36",
+   "third": 0.003
+  },
+  {
+   "device": "iPhone15,4",
+   "fallbackShown": 0,
+   "returned": 1,
+   "step": "background",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 58,
+   "samples": 10,
+   "step": "Reduce flashing on",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.036,
+   "meanSaturation": 0.039,
+   "nonBlack": 0.068,
+   "step": "Reduce flashing on a",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.044,
+   "meanSaturation": 0.037,
+   "nonBlack": 0.068,
+   "step": "Reduce flashing on b",
+   "task": "VIS-001-T36"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.03,
+   "step": "Reduce flashing on",
+   "task": "VIS-001-T36"
+  }
+ ],
+ "passed": 12,
  "schemaVersion": 1,
  "session": "B02",
- "tasks": {},
+ "tasks": {
+  "VIS-001-T36": {
+   "checks": {
+    "Reduce flashing on: motion": 0.03,
+    "landscape: motion": 0.006,
+    "portrait: motion": 0.03
+   },
+   "fpsMedians": [
+    60,
+    60,
+    60,
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 4
+  }
+ },
  "tests": [
   {
    "class": "FixturePreviewUITests",
@@ -79,6 +265,12 @@
    "result": "passed",
    "seconds": 33.522,
    "test": "testChoiceAndBarsPersistAcrossRelaunch"
+  },
+  {
+   "class": "B02ShowsDeviceTests",
+   "result": "passed",
+   "seconds": 90.644,
+   "test": "testVIS001CircularSpectrumRotationBackgroundReduceFlashing"
   }
  ],
  "xcresult": null

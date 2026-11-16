@@ -79,6 +79,10 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 - **After closing or annotating any QA-011 task, run `python3 scripts/qa011_inventory.py`** and commit the regenerated
   `device-inventory.json` and `owner-checklist.md` with it; CI's script tests fail on a stale inventory (run
   43799100657, 2026-11-15). Docs-only `[skip ci]` pushes hide this until the next code push.
+- **Motion checks need several samples:** one pair of screenshots 1 s apart lands in a quiet passage of the music
+  often enough to fail (D1, 2026-11-15: 0.002, then 0.022, then 0.003 over 15 s with music verified active).
+  Take three pairs a few seconds apart and assert on the largest. A live status comes from the performance
+  overlay's label, not `announcementProbe` (which keeps the last announcement).
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
