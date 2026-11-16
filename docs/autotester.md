@@ -76,6 +76,9 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   and is hittable; never swipe down at the top of a sheet.
 - **Each device needs its own UI-automation reset:** D1, D2 and D3 each showed the automation-mode timeout on their
   first UI test run of the day; the Developer toggle (D1) or signing the device in (D2) cleared it.
+- **After closing or annotating any QA-011 task, run `python3 scripts/qa011_inventory.py`** and commit the regenerated
+  `device-inventory.json` and `owner-checklist.md` with it; CI's script tests fail on a stale inventory (run
+  43799100657, 2026-11-15). Docs-only `[skip ci]` pushes hide this until the next code push.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

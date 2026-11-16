@@ -4,30 +4,30 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 245,
-    "specs": 204,
+    "total": 244,
+    "specs": 203,
     "byStatus": {
-      "open": 228,
+      "open": 227,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 221
+      "b": 220
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 232
+      "b": 231
     },
     "byDevice": {
-      "D1": 224,
+      "D1": 223,
       "D2": 54,
       "D3": 54
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 12,
-        "b": 212
+        "b": 211
       },
       "D2": {
         "a": 3,
@@ -41,7 +41,7 @@
     "bySession": {
       "B01": 18,
       "B02": 12,
-      "B03": 5,
+      "B03": 4,
       "B04": 18,
       "B05": 26,
       "B06": 21,
@@ -368,12 +368,11 @@
       "tasks": [
         "057-perf-014-render-failure-fallback:PERF-014-T22",
         "067-scn-002-scene-autosave:SCN-002-T10",
-        "070-perf-010-crash-safe-session-recovery:PERF-010-T15",
         "226-rec-016-recording-interruption-recovery:REC-016-T13",
         "276-cam-010-hand-pose-modulation:CAM-010-T17"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 30
+      "estimatedMinutes": 25
     },
     {
       "id": "B04",
@@ -1566,7 +1565,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "VIS-001-T36 {device} (open: final device phase) On D1, D2, D3: choose Circular Spectrum with the reference track; rotate; lock/unlock and background/return; toggle Reduce flashing; note the overlay's frame rate; confirm no crash and the fallback never shows. Final device phase only."
+      "text": "VIS-001-T36 {device} (open: final device phase) On D1, D2, D3: choose Circular Spectrum with the reference track; rotate; lock/unlock and background/return; toggle Reduce flashing; note the overlay's frame rate; confirm no crash and the fallback never shows. Final device phase only. D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B02.md): NativeVisualUITests on D2, Circular Spectrum replaces projectM, survives rotation without a source restart, the choice and bar count persist across relaunch, an unavailable native visual falls back to projectM with a notice. Open: lock/unlock, background/return, Reduce flashing and the overlay frame rate on D1-D3."
     },
     {
       "id": "FX-001-T27",
@@ -1587,7 +1586,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "FX-001-T27 {device} (open: final device phase) On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: glow off 60 / on 59-60 / max radius with Reduce flashing 60 fps, landscape 59-60 and drawing; D2 and D3 open"
+      "text": "FX-001-T27 {device} (open: final device phase) On D1, D2, D3 with the reference track: frame rate with Glow off vs on at default and maximum radius (performance overlay), appearance after rotation, Reduce flashing on. Final device phase only; not run in this row. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: glow off 60 / on 59-60 / max radius with Reduce flashing 60 fps, landscape 59-60 and drawing; D2 and D3 open D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B01.md): 60 fps median, lowest 1 s 56; D3 open."
     },
     {
       "id": "FX-019-T22",
@@ -1685,7 +1684,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "VIS-002-T16 `{device}` On D1-D3: Linear Spectrum renders in both orientations, glow on, Reduce flashing on; frame time within the VIS-001 budget. Final device phase only. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: portrait and landscape with glow and Reduce flashing 60 fps median, drawing and moving; D2 and D3 open"
+      "text": "VIS-002-T16 `{device}` On D1-D3: Linear Spectrum renders in both orientations, glow on, Reduce flashing on; frame time within the VIS-001 budget. Final device phase only. — Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B01.md): D1 done: portrait and landscape with glow and Reduce flashing 60 fps median, drawing and moving; D2 and D3 open D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B01.md): 60 fps median, lowest 1 s 56; D3 open."
     },
     {
       "id": "AUD-007-T16",
@@ -2404,7 +2403,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "PERF-014-T22 {device} D1 (iOS 27) and D3 (iPadOS 26.5), Debug build with `-uitestRenderFaults prepare:photo,preset:1,gpu:gpuTimeout`: no hang, controls respond, overlay shows the reason, \"Render fault\" events in Console, the placeholder fades in after the GPU retries and goes after pause/resume with the fault cleared (quickstart E)"
+      "text": "PERF-014-T22 {device} D1 (iOS 27) and D3 (iPadOS 26.5), Debug build with `-uitestRenderFaults prepare:photo,preset:1,gpu:gpuTimeout`: no hang, controls respond, overlay shows the reason, \"Render fault\" events in Console, the placeholder fades in after the GPU retries and goes after pause/resume with the fault cleared (quickstart E) D1 part automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B03.md): RenderFaultUITests on D1, prepare:photo,preset:1 records the reason, the frame loop keeps ticking, Settings responds, the overlay shows the render line, the photo returns after clearing; a presentation failure ends on the placeholder until resume. Open: gpu:gpuTimeout and Console events on D1, and D3."
     },
     {
       "id": "REC-003-T23",
@@ -2561,26 +2560,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "SCN-002-T10 [US1] {device} On D1 (Debug build): Circular Spectrum, 16 bars, close Settings; reopen, 32 bars, force-quit from the app switcher at once; relaunch: a committed value (32 expected, the switcher passes through the background), never 64, visual draws (quickstart D)"
-    },
-    {
-      "id": "PERF-010-T15",
-      "spec": "070-perf-010-crash-safe-session-recovery",
-      "feature": "PERF-010",
-      "line": 54,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B03",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "PERF-010-T15 `{device}` D1: real crash with the DEBUG \"Crash now\" button, relaunch from the home screen (quickstart, Device)."
+      "text": "SCN-002-T10 [US1] {device} On D1 (Debug build): Circular Spectrum, 16 bars, close Settings; reopen, 32 bars, force-quit from the app switcher at once; relaunch: a committed value (32 expected, the switcher passes through the background), never 64, visual draws (quickstart D) Automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B03.md): SceneAutosaveUITests passes on D1 (kill after an uncommitted edit restores the committed 16 bars, never 64). Open: the app-switcher force-quit variant (passes through the background, 32 expected)."
     },
     {
       "id": "FILE-009-T12",
@@ -4278,7 +4258,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "REC-016-T13 {device} On D1 record 30 s (normal finish plays, no `moof`), and a Debug run with `-uitestWriterFault writer:90` keeps a playable part; note CPU against REC-003"
+      "text": "REC-016-T13 {device} On D1 record 30 s (normal finish plays, no `moof`), and a Debug run with `-uitestWriterFault writer:90` keeps a playable part; note CPU against REC-003 Writer-fault part automated on D1 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B03.md): RecordingRecoveryUITests, a writer failure offers the part recorded before it. Open: a 30 s normal recording (no moof) and CPU against REC-003."
     },
     {
       "id": "CAM-005-T14",
@@ -5318,7 +5298,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "UIX-006-T14 {device} On D1 and D2: quickstart device steps 1-6 (S6)"
+      "text": "UIX-006-T14 {device} On D1 and D2: quickstart device steps 1-6 (S6) D2 partly automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B02.md): GestureShortcutsUITests on D2, a two-finger tap runs the mapped action and the switch disables it. Open: the remaining quickstart device steps on D1 and D2."
     },
     {
       "id": "OSC-012-T22",
