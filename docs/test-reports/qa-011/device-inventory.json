@@ -3161,7 +3161,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "FX-002-T18 {device} On D1, a scene with a glowing spectrum layer over a bright photo: no hue-shifted clipping or broken pixels; frame rate as before (FX-002-S6, last stage)."
+      "text": "FX-002-T18 {device} On D1, a scene with a glowing spectrum layer over a bright photo: no hue-shifted clipping or broken pixels; frame rate as before (FX-002-S6, last stage). D1 automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): B02ToneMappingDeviceTests, a glowing spectrum over a near-white photo: no broken (black) pixels with the glow off or at maximum radius (dark fraction 0), frame rate 60 fps median both ways (no glow cost). A first run after two hours of B04 measured 30 fps for both, glow off and on alike (device state, not the glow); the rerun measured 60. Open: hue by a person from the attached screenshots."
     },
     {
       "id": "MED-004-T22",
@@ -3470,7 +3470,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5) D2 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): every profile records and reads back at its own size and codec (Draft avc1 960x1280, Standard hvc1 1440x1920, High hvc1 1920x2560, Max hvc1 2064x2752). Finding: frames/duration fell short of the profile rate on D2 (Draft 30 of 30 fps, Standard about 24 of 30, High about 17 of 60, Max about 38 of 60), so S5 is not met there yet; open, with D1."
+      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5) D2 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): every profile records and reads back at its own size and codec (Draft avc1 960x1280, Standard hvc1 1440x1920, High hvc1 1920x2560, Max hvc1 2064x2752). Finding: frames/duration fell short of the profile rate on D2 (Draft 30 of 30 fps, Standard about 24 of 30, High about 17 of 60, Max about 38 of 60), so S5 is not met there yet; open, with D1. D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): Draft avc1 590x1280 (about 28 of 30 fps), Standard hvc1 884x1920 (about 29 of 30), High and Max hvc1 1178x2556 (about 53 of 60; the drawable caps both at native size). D1 is near the profile rates, D2 is not (see the D2 note)."
     },
     {
       "id": "PERF-001-T16",
@@ -4114,7 +4114,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5) D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): B08RecordingDeviceTests, Portrait 6 s of the Photo visual reads back hvc1 1080x1920 (9:16) with audio. Open: D1 Square; the centre-of-picture check is by the attached screenshots."
+      "text": "REC-014-T15 {device} On D1 record Square and on D2 Portrait for 5 s; the files read back at the planned size and show the centre of the picture (REC-014-S5) D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): B08RecordingDeviceTests, Portrait 6 s of the Photo visual reads back hvc1 1080x1920 (9:16) with audio. Open: D1 Square; the centre-of-picture check is by the attached screenshots. D1 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): Square reads back hvc1 1178x1178 with audio. Both planned sizes verified (D1 Square, D2 Portrait 1080x1920). Open: the centre of the picture, by a person from the files."
     },
     {
       "id": "PERF-013-T12",

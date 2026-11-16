@@ -75,7 +75,7 @@ test**: the reference gradient through the real output pass.
   `git diff` shows no new `makeRenderCommandEncoder`, `makeTexture` or per-frame `makeBuffer` in the frame path
   (FX-002-R9). — Verified 2026-11-14: the five check scripts OK, test_scripts 153 OK (1 skipped); AuditScratchTests removed; the source diff adds only the two 4-byte buffers at init (no pass, texture or per-frame buffer).
 - [ ] FX-002-T18 {device} On D1, a scene with a glowing spectrum layer over a bright photo: no hue-shifted
-  clipping or broken pixels; frame rate as before (FX-002-S6, last stage).
+  clipping or broken pixels; frame rate as before (FX-002-S6, last stage). D1 automated 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B02.md): B02ToneMappingDeviceTests, a glowing spectrum over a near-white photo: no broken (black) pixels with the glow off or at maximum radius (dark fraction 0), frame rate 60 fps median both ways (no glow cost). A first run after two hours of B04 measured 30 fps for both, glow off and on alike (device state, not the glow); the rerun measured 60. Open: hue by a person from the attached screenshots.
 
 ## Dependencies
 

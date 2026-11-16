@@ -1,0 +1,175 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "2587924a129c284654f25de95fbad2752faf7df1a4afd74732c94a7810af87cf",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 30,
+   "fpsMin": 29,
+   "samples": 10,
+   "step": "glow off",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.748,
+   "meanSaturation": 0.095,
+   "nonBlack": 0.997,
+   "step": "glow off 0",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.789,
+   "meanSaturation": 0.096,
+   "nonBlack": 1,
+   "step": "glow off 1",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.785,
+   "meanSaturation": 0.101,
+   "nonBlack": 1,
+   "step": "glow off 2",
+   "task": "FX-002-T18"
+  },
+  {
+   "darkFraction": 0,
+   "device": "iPhone15,4",
+   "step": "glow off",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 30,
+   "fpsMin": 30,
+   "samples": 10,
+   "step": "glow on, maximum radius",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.774,
+   "meanSaturation": 0.122,
+   "nonBlack": 1,
+   "step": "glow on, maximum radius 0",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.79,
+   "meanSaturation": 0.096,
+   "nonBlack": 1,
+   "step": "glow on, maximum radius 1",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.762,
+   "meanSaturation": 0.134,
+   "nonBlack": 1,
+   "step": "glow on, maximum radius 2",
+   "task": "FX-002-T18"
+  },
+  {
+   "darkFraction": 0,
+   "device": "iPhone15,4",
+   "step": "glow on, maximum radius",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "offMinusOn": 0,
+   "step": "glow cost",
+   "task": "FX-002-T18"
+  },
+  {
+   "device": "iPhone15,4",
+   "duration": 4.43,
+   "frames": 124,
+   "height": 1280,
+   "step": "draft",
+   "task": "REC-005-T14",
+   "width": 590
+  },
+  {
+   "device": "iPhone15,4",
+   "duration": 4.77,
+   "frames": 139,
+   "height": 1920,
+   "step": "standard",
+   "task": "REC-005-T14",
+   "width": 884
+  },
+  {
+   "device": "iPhone15,4",
+   "duration": 4.68,
+   "frames": 247,
+   "height": 2556,
+   "step": "high",
+   "task": "REC-005-T14",
+   "width": 1178
+  },
+  {
+   "device": "iPhone15,4",
+   "duration": 4.73,
+   "frames": 249,
+   "height": 2556,
+   "step": "max",
+   "task": "REC-005-T14",
+   "width": 1178
+  },
+  {
+   "device": "iPhone15,4",
+   "duration": 8.5,
+   "frames": 249,
+   "height": 1178,
+   "step": "square",
+   "task": "REC-014-T15",
+   "width": 1178
+  }
+ ],
+ "passed": 2,
+ "schemaVersion": 1,
+ "session": "B08",
+ "tasks": {
+  "FX-002-T18": {
+   "checks": {},
+   "fpsMedians": [
+    30,
+    30
+   ],
+   "fpsMin": 29,
+   "steps": 2
+  },
+  "REC-005-T14": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "REC-014-T15": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 57.639,
+   "test": "testREC005EachProfileRecordsAndReadsBack"
+  },
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 16.804,
+   "test": "testREC014AspectPresetReadsBackAtThePlannedShape"
+  }
+ ],
+ "xcresult": null
+}
