@@ -22,8 +22,9 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
 
     /// Launches on the spectrum and chooses Camera in Settings: the camera never starts by itself at launch, only
     /// when Camera is chosen (CAM-001-R11), so a typed visual is not enough.
-    private func launchCamera(_ position: String, extra: [String] = []) {
-        launch(visual: "circularSpectrum", settings: ["settings.camera.position": position], extra: extra)
+    private func launchCamera(_ position: String, extra: [String] = [], settings: [String: Any] = [:]) {
+        launch(visual: "circularSpectrum", settings: settings.merging(["settings.camera.position": position]) { a, _ in a },
+               extra: extra)
         openSettings()
         let row = app.buttons["visual.camera"]
         let list = app.collectionViews.firstMatch
@@ -154,5 +155,76 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
         }
         app.navigationBars["Settings"].buttons["Done"].tap()
         assertLive(task, "after ten lens switches")
+    }
+
+    // MARK: Camera effects and Stop camera (D1 tasks)
+
+    /// Frame rate and picture with an effect off and on over the live back camera; the on/off pictures must differ in
+    /// the middle of the screen (the effect applied). Moving a hand in front of the camera stays a person's look.
+    private func effectOverCamera(_ task: String, _ label: String, on settings: [String: Any], minimumChange: Double = 0.003) {
+        launchCamera("back")
+        assertLive(task, "\(label) off")
+        let off = assertFrameRate(task, "\(label) off")
+        let (_, a) = screen(task, "\(label) off")
+        app.terminate()
+        launchCamera("back", settings: settings)
+        assertLive(task, "\(label) on")
+        let on = assertFrameRate(task, "\(label) on")
+        let (_, b) = screen(task, "\(label) on")
+        let change = Self.change(a, b)
+        report(task, label, ["offMinusOn": off - on, "changeFromOff": change])
+        XCTAssertLessThanOrEqual(off - on, Self.effectToleranceFPS, "\(label): the frame rate stays at the visual's normal rate")
+        XCTAssertGreaterThan(change, minimumChange, "\(label): the effect changes the camera picture")
+        app.terminate()
+    }
+
+    /// FX-010-T17: Echo with 4 echoes at 200 ms over the camera (the trailing copies of a moving hand are by eye).
+    func testFX010EchoOverCamera() {
+        effectOverCamera("FX-010-T17", "echo 4 x 200 ms", on: ["settings.echo.enabled": true, "settings.echo.count": 4,
+                                                               "settings.echo.delay": 0.2], minimumChange: 0)
+    }
+
+    /// FX-014-T18: Edge outline at threshold 0.2, widths 1 and 3.
+    func testFX014EdgeOutlineOverCamera() {
+        for width in [1, 3] {
+            effectOverCamera("FX-014-T18", "edge outline width \(width)",
+                             on: ["settings.edgeOutline.enabled": true, "settings.edgeOutline.threshold": 0.2,
+                                  "settings.edgeOutline.width": width])
+        }
+    }
+
+    /// FX-016-T17: Lens distortion at +100 % and -100 %, zoom on and off.
+    func testFX016LensDistortionOverCamera() {
+        for (strength, zoom) in [(1.0, true), (-1.0, true), (1.0, false)] {
+            effectOverCamera("FX-016-T17", "lens distortion \(Int(strength * 100)) % zoom \(zoom ? "on" : "off")",
+                             on: ["settings.lensDistortion.enabled": true, "settings.lensDistortion.strength": strength,
+                                  "settings.lensDistortion.zoomToFill": zoom])
+        }
+    }
+
+    /// CAM-012-T13: Stop camera ends the camera within a second, the previous visual keeps animating, music continues,
+    /// and a trip to the background does not restart it.
+    func testCAM012StopCameraReleasesIt() {
+        let task = "CAM-012-T13"
+        launchCamera("back")
+        assertLive(task, "before stop")
+        let stop = app.buttons["Stop camera"].firstMatch
+        XCTAssertTrue(wait(5) { stop.exists }, "the Stop camera button")
+        let t0 = Date()
+        stop.tap()
+        let gone = wait(5) { !self.camera.exists && !self.app.descendants(matching: .any)["cameraIndicatorStatus"].firstMatch.exists }
+        report(task, "stop", ["seconds": Date().timeIntervalSince(t0)])
+        XCTAssertTrue(gone, "the camera and its badge are gone")
+        XCTAssertLessThan(Date().timeIntervalSince(t0), 2, "within about a second (plus the poll)")
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        XCTAssertTrue(overlay.label.contains("Active audio"), "music continues: \(overlay.label.prefix(120))")
+        assertDrawingAndMoving(task, "previous visual")
+        XCUIDevice.shared.press(.home)
+        _ = wait(10) { self.app.state != .runningForeground }
+        pause(3)
+        app.activate()
+        _ = wait(10) { self.app.state == .runningForeground }
+        pause(2)
+        XCTAssertFalse(camera.exists, "the camera does not restart after background and return")
     }
 }
