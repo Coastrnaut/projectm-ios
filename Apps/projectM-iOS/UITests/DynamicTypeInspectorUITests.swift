@@ -95,6 +95,9 @@ final class DynamicTypeInspectorUITests: XCTestCase {
         list.append(AuditFilter(screen: "renameSceneAlert", type: .dynamicType, element: "Rename Scene", reason: "the alert title; " + alert))
         list.append(AuditFilter(screen: "renameSceneAlert", type: .dynamicType, element: "", elementless: true,
                                 reason: "the alert body; " + alert))
+        list.append(AuditFilter(screen: "renameSceneAlert", type: .textClipped, element: "", limit: 1,
+                                reason: "an unlabelled 297 x 11 pt element inside the system alert on D1 at AX3 (the alert's own "
+                                    + "layout; QA-011 B04, 2026-11-15); " + alert))
         // Settings' Undo and Redo bar glyphs (SCN-010), enabled once a visual row changed the scene: the
         // audit reports their fixed-size symbols without an element (two buttons: at most two per type).
         // They are navigation-bar items and show the Large Content Viewer on long press (ACC-006).
