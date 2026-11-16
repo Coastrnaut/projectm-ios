@@ -27,9 +27,23 @@ struct PermissionNoticeView: View {
         // An `if`, not `AnyLayout`, so the standard-size tree is unchanged.
         Group {
             if typeSize.isAccessibilitySize {
-                VStack(alignment: .leading, spacing: 8) { parts }
+                // ACC-006 (D1, QA-011 B04): at AX5 the stacked notice filled the screen and left the visualizer
+                // controls a 5.7 pt scroll area, so Settings could not be reached under it. The symbol and texts
+                // scroll inside a capped height; the buttons stay below them, always on screen. Never blocks (CAM-001-R5).
+                VStack(alignment: .leading, spacing: 8) {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 8) { message }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .scrollBounceBehavior(.basedOnSize)
+                    .frame(maxHeight: Self.accessibilityMessageHeight)
+                    actions
+                }
             } else {
-                HStack(spacing: 10) { parts }
+                HStack(spacing: 10) {
+                    message
+                    actions
+                }
             }
         }
         .padding(10)
@@ -38,7 +52,10 @@ struct PermissionNoticeView: View {
         .accessibilityIdentifier("\(identifierPrefix)Notice")
     }
 
-    @ViewBuilder private var parts: some View {
+    /// The most height the message takes at accessibility sizes; it scrolls beyond that.
+    static let accessibilityMessageHeight: CGFloat = 220
+
+    @ViewBuilder private var message: some View {
         Image(systemName: symbol)
             .accessibilityHidden(true)
         VStack(alignment: .leading, spacing: 4) {
@@ -54,6 +71,9 @@ struct PermissionNoticeView: View {
                     .accessibilityIdentifier("\(identifierPrefix)NoticeFallback")
             }
         }
+    }
+
+    @ViewBuilder private var actions: some View {
         if notice.offersSettings {
             Button("Open Settings") { PermissionCatalog.openSettings() }
                 .font(.footnote.bold())
