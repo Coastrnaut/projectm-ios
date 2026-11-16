@@ -431,10 +431,12 @@ final class DynamicTypeInspectorUITests: XCTestCase {
 
     /// Storage, one of the last rows of Settings (split from Settings: owner rule 7).
     private func storage(_ size: String) throws {
-        launch(size)
+        // Opens Settings at its last section (`-uitestSettingsSection storage`): flinging a dozen AX screens to the end
+        // and back ran out of gestures on D1 and D2 (QA-011 B04, 2026-11-15). The row is still reached and audited.
+        launch(size, ["-uitestSettingsSection", "storage"])
         openSettings()
         let link = app.buttons["storageLink"]
-        requireReachable(link, "Storage", fromEnd: true)
+        requireReachable(link, "Storage")
         link.tap()
         XCTAssertTrue(app.navigationBars["Storage"].appears(within: 10))
         try audit("storage")
@@ -442,10 +444,12 @@ final class DynamicTypeInspectorUITests: XCTestCase {
 
     /// Licenses, the last link of Settings (split from Storage, 2026-11-14: owner rule 7).
     private func licenses(_ size: String) throws {
-        launch(size)
+        // Opens Settings at its last section (`-uitestSettingsSection storage`): flinging a dozen AX screens to the end
+        // and back ran out of gestures on D1 and D2 (QA-011 B04, 2026-11-15). The row is still reached and audited.
+        launch(size, ["-uitestSettingsSection", "storage"])
         openSettings()
         let licenses = app.buttons["licensesLink"]
-        requireReachable(licenses, "Licenses", fromEnd: true)
+        requireReachable(licenses, "Licenses")
         licenses.tap()
         XCTAssertTrue(app.navigationBars["Licenses"].appears(within: 10))
         try audit("licenses")
@@ -454,11 +458,18 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     /// Settings with one native visual's own rows (owner rule 7: one visual per test): the visual's
     /// row, then its last row scrolled into view, then the audit.
     private func settingsVisual(_ size: String, raw: String, screen: String, last: String) throws {
-        launch(size, raw == "text" ? ["-uitestSeedText"] : [])
-        openSettings()
-        let row = app.buttons["visual.\(raw)"]
-        XCTAssertTrue(scrollTo(row), "\(raw) row")
-        row.tap()
+        // The Text visual's section sits deep in Settings: start with it chosen and open Settings there (as
+        // ColorSamplerUITests does); scrolling there at AX sizes ran out of drags on D1 (QA-011 B04, 2026-11-15).
+        if raw == "text" {
+            launch(size, ["-uitestSeedText", "-settings.visual", "text", "-uitestSettingsSection", "text", "-uitestSettingsSectionOnce"])
+            openSettings()
+        } else {
+            launch(size)
+            openSettings()
+            let row = app.buttons["visual.\(raw)"]
+            XCTAssertTrue(scrollTo(row), "\(raw) row")
+            row.tap()
+        }
         let element = app.descendants(matching: .any)[last].firstMatch
         XCTAssertTrue(scrollTo(element), "\(last) is reachable")
         try audit(screen)
@@ -468,11 +479,8 @@ final class DynamicTypeInspectorUITests: XCTestCase {
     /// rule 7). The field sits above the rows' last control, so it is reached on the way down instead of
     /// scrolling back up after the audit.
     private func textMessageField(_ size: String) throws {
-        launch(size, ["-uitestSeedText"])
-        openSettings()
-        let row = app.buttons["visual.text"]
-        XCTAssertTrue(scrollTo(row), "text row")
-        row.tap()
+        launch(size, ["-uitestSeedText", "-settings.visual", "text", "-uitestSettingsSection", "text", "-uitestSettingsSectionOnce"])
+        openSettings()   // at the Text section (see settingsVisual)
         let message = app.descendants(matching: .any)["textMessageField"].firstMatch
         XCTAssertTrue(scrollTo(message), "the Text message field")
         requireAcceptsInput(message, "Hi", "the Text message field")
