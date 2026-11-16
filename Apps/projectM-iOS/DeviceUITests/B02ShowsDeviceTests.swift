@@ -17,6 +17,31 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         XCTAssertEqual(app.state, .runningForeground, "\(step): no crash")
     }
 
+    /// PERF-011-T22 (automatable part): background, rotate while away, return: the visual draws again in the new
+    /// orientation, timed from the return to the overlay's first non-zero frame rate. The app switcher card, lock and
+    /// unlock and Control Center stay a person's steps.
+    func testPERF011ReturnAfterRotationWhileAway() {
+        let task = "PERF-011-T22"
+        launch(visual: "circularSpectrum")
+        assertFrameRate(task, "before")
+        XCUIDevice.shared.press(.home)
+        XCTAssertTrue(wait(10) { self.app.state != .runningForeground }, "in the background")
+        XCUIDevice.shared.orientation = .landscapeLeft   // rotated while away
+        pause(3)
+        let t0 = Date()
+        app.activate()
+        XCTAssertTrue(wait(10) { self.app.state == .runningForeground }, "back")
+        let drawing = wait(10) { (self.overlayFPS() ?? 0) > 0 }
+        let seconds = Date().timeIntervalSince(t0)
+        let window = app.windows.firstMatch.frame
+        report(task, "return", ["secondsToFirstFrameReading": seconds, "landscape": window.width > window.height ? 1 : 0])
+        XCTAssertTrue(drawing, "the visual draws again after the return")
+        XCTAssertGreaterThan(window.width, window.height, "the window follows the rotation made while away")
+        assertStillCircular("after the return")
+        assertFrameRate(task, "after the return")
+        assertDrawingAndMoving(task, "after the return")
+    }
+
     /// VIS-001-T36: rotate, background/return, Reduce flashing; overlay frame rate; no crash, no fallback.
     func testVIS001CircularSpectrumRotationBackgroundReduceFlashing() {
         let task = "VIS-001-T36"

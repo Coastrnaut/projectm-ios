@@ -53,6 +53,13 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertNotNil(r, "the overlay shows the stereo line: \(label.prefix(200))")
         XCTAssertLessThan(r ?? 1, -0.5, "a negative r for an inverted feed")
         XCTAssertTrue(warned, "the phase-inverted warning shows")
+        app.terminate()
+        // Switching AUD-009 to Left clears it: one channel cannot be out of phase with itself.
+        launch(visual: "linearSpectrum", settings: ["settings.analysisChannel.mode": "left"], fixture: "music-fixture-inverted.m4a")
+        pause(3)
+        let cleared = !overlay.label.contains("phase-inverted")
+        report(task, "left", ["warned": cleared ? 0 : 1])
+        XCTAssertTrue(cleared, "Left clears the warning: \(overlay.label.prefix(200))")
     }
 
     /// AUD-006-T39 (background part): a user pause stays paused across background and return; playing resumes.

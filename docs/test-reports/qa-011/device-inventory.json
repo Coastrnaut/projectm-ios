@@ -1107,7 +1107,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 15,
-      "text": "PERF-011-T22 {device} S8 on D1-D3: app switcher card and first frame after return, lock and unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted."
+      "text": "PERF-011-T22 {device} S8 on D1-D3: app switcher card and first frame after return, lock and unlock, rotation while away, Control Center (quickstart D3, D4). Final device stage. — Open: `{device}`, final device stage; not attempted. — D2 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D2-B02-perf011.md): background, rotate while away, return: the visual draws again 0.77 s after the return (first non-zero overlay reading), in landscape, 60 fps. Open: D1 and D3 runs; the app switcher card, lock and unlock and Control Center (a person)."
     },
     {
       "id": "PRE-007-T23",
@@ -2415,7 +2415,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "REC-003-T25 {device} Save to On My iPhone/iPad and iCloud Drive; HEVC on iPadOS 26.5 plays (quickstart D3)"
+      "text": "REC-003-T25 {device} Save to On My iPhone/iPad and iCloud Drive; HEVC on iPadOS 26.5 plays (quickstart D3) — D3 part automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D3-B08.md): on iPadOS 26.5 recordings in every profile are written as HEVC (Draft H.264) and read back with their frames and audio. Open: saving to On My iPad and iCloud Drive and playing in Files (a picker: human testing)."
     },
     {
       "id": "REC-012-T13",
@@ -3404,7 +3404,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 10,
-      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5) D2 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): every profile records and reads back at its own size and codec (Draft avc1 960x1280, Standard hvc1 1440x1920, High hvc1 1920x2560, Max hvc1 2064x2752). Finding: frames/duration fell short of the profile rate on D2 (Draft 30 of 30 fps, Standard about 24 of 30, High about 17 of 60, Max about 38 of 60), so S5 is not met there yet; open, with D1. D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): Draft avc1 590x1280 (about 28 of 30 fps), Standard hvc1 884x1920 (about 29 of 30), High and Max hvc1 1178x2556 (about 53 of 60; the drawable caps both at native size). D1 is near the profile rates, D2 is not (see the D2 note)."
+      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5) D2 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): every profile records and reads back at its own size and codec (Draft avc1 960x1280, Standard hvc1 1440x1920, High hvc1 1920x2560, Max hvc1 2064x2752). Finding: frames/duration fell short of the profile rate on D2 (Draft 30 of 30 fps, Standard about 24 of 30, High about 17 of 60, Max about 38 of 60), so S5 is not met there yet; open, with D1. D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): Draft avc1 590x1280 (about 28 of 30 fps), Standard hvc1 884x1920 (about 29 of 30), High and Max hvc1 1178x2556 (about 53 of 60; the drawable caps both at native size). D1 is near the profile rates, D2 is not (see the D2 note). — D3 measured 2026-11-16 (D3-B08.md): Draft avc1 890x1280 about 30 fps, Standard hvc1 1334x1920 about 25 of 30, High and Max hvc1 1640x2360 about 22 of 60. Finding: the iPads (D2, D3) fall well short of the profile rates; D1 is near them."
     },
     {
       "id": "PERF-001-T16",
