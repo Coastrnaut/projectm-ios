@@ -336,7 +336,7 @@ struct VisualizerView: View {
             // that written plus dropped slots fill the length (QA-011 B08; dropped slots are skipped by design, REC-006)
             // and report the file size (REC-003-T23; -1 when the file is gone).
             let facts: String = coordinator.videoRecording.lastRecording.map {
-                "fps=\($0.frameRate) frames=\($0.frameCount) dropped=\($0.droppedFrames) bytes=\(Self.debugRecordingBytes($0.url))"
+                "fps=\($0.frameRate) frames=\($0.frameCount) dropped=\($0.droppedFrames) bytes=\(Self.debugRecordingBytes($0.url)) busy=\($0.statistics.droppedBusy) notReady=\($0.statistics.droppedNotReady) rateSkipped=\($0.statistics.skippedRate)"
             } ?? "none"
             Text(facts)
                 .font(.caption2)
@@ -1041,6 +1041,10 @@ private struct VideoLoopProbe: View {
             Text(stats).accessibilityIdentifier("videoLoopStats").accessibilityValue(stats)
             Text(speed).accessibilityIdentifier("videoSpeed").accessibilityValue(speed)
             Text(reverse).accessibilityIdentifier("videoReverse").accessibilityValue(reverse)
+            #if DEBUG
+            let memory: String = video.reverseMemoryProbe()   // QA-011 MED-005-T20
+            Text(memory).accessibilityIdentifier("videoReverseMemory").accessibilityValue(memory)
+            #endif
         }
         .font(.caption2)
         .opacity(0.01)

@@ -1240,6 +1240,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
                 }
             }
             runVisualCycleIfRequested()
+            runAutoRecordIfRequested()
             #endif
         }
     }
@@ -1249,6 +1250,20 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// apart) and records `MTLDevice.currentAllocatedSize` after every full cycle in `visualCycleProbe`
     /// ("switches=<n> mb=<first>,<…>,<last> done=<0|1>"), so a device test reads whether GPU memory plateaus.
     private(set) var visualCycleProbe = "idle"
+
+    /// QA-011 REC-003-T23 diagnosis: `-uitestAutoRecordSeconds <n>` starts a recording 4 s after launch and stops it
+    /// n s later, so Instruments can trace a recording it launched (`xctrace --launch`; no taps needed).
+    private func runAutoRecordIfRequested() {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let i = arguments.firstIndex(of: "-uitestAutoRecordSeconds"), i + 1 < arguments.count,
+              let seconds = Double(arguments[i + 1]), seconds > 0 else { return }
+        Task { @MainActor [weak self] in
+            try? await Task.sleep(nanoseconds: 4_000_000_000)
+            self?.videoRecording.toggle()
+            try? await Task.sleep(nanoseconds: UInt64(seconds * 1e9))
+            self?.videoRecording.toggle()
+        }
+    }
 
     private func runVisualCycleIfRequested() {
         let arguments = ProcessInfo.processInfo.arguments

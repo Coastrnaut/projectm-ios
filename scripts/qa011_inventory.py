@@ -58,7 +58,7 @@ CATEGORY_A: dict[str, list[str]] = {
     "REC-013-T14": ["xctest-offline-export"],
 }
 # Category (b) tasks with a scripted part (the checklist names the case).
-AUTOMATED_PARTS: dict[str, list[str]] = {"CMP-001-T20": ["xctest-angle-layer"]}
+AUTOMATED_PARTS: dict[str, list[str]] = {"CMP-001-T20": ["xctest-angle-layer"], "PRE-012-T31": ["xctest-pre012-limits"]}
 
 OWNER_ONLY = re.compile(r"App Store Connect|TestFlight|signing team|certificate|provisioning profile|"
                         r"Paid Apps|banking", re.I)

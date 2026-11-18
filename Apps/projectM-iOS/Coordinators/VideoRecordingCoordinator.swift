@@ -507,7 +507,11 @@ final class VideoRecordingCoordinator {
         if refusedStart(c, busy: afterCountdown ? false : state != .idle) { return }
         guard let source = c.source else { return }
         let size = source.recordingDrawableSize
-        let audio = Self.audioDecision(for: c)   // REC-004-R4: fixed for this recording
+        var audio = Self.audioDecision(for: c)   // REC-004-R4: fixed for this recording
+        #if DEBUG
+        // QA-011 REC-003-T23 diagnosis: `-uitestRecordingNoAudio` records without an audio track.
+        if ProcessInfo.processInfo.arguments.contains("-uitestRecordingNoAudio") { audio = .exclude(.noSource) }
+        #endif
         let tapArmer = c.setAudioTapArmed
         let url = directory.appendingPathComponent(Self.fileName(date: Date()))
         // REC-005-R6, REC-006-R7: the selected profile and rate, re-checked with this drawable; a fallback is announced (X9c).

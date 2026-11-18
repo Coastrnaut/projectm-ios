@@ -1,0 +1,64 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "85cf38ab8be9e0988300afdd5f3f2ed7d89f960fbd7e3f1f8f17b6a404570b05",
+ "measurements": [
+  {
+   "baselineFootprintMB": 502,
+   "budgetMB": 128,
+   "device": "iPad17,3",
+   "downs": 3,
+   "footprintGrowthMB": 179,
+   "peakCacheMB": 123.616,
+   "peakFootprintMB": 681,
+   "physicalMemoryGB": 11.175,
+   "preparationSeconds": 4.096,
+   "step": "30 s 1080p reverse",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.227,
+   "meanSaturation": 0.096,
+   "nonBlack": 0.995,
+   "step": "reversed a",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad17,3",
+   "meanLuma": 0.074,
+   "meanSaturation": 0.07,
+   "nonBlack": 0.074,
+   "step": "reversed b",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad17,3",
+   "motion": 0.177,
+   "step": "reversed",
+   "task": "MED-005-T20"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B13-med005",
+ "tasks": {
+  "MED-005-T20": {
+   "checks": {
+    "reversed: motion": 0.177
+   },
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13MediaDeviceTests",
+   "result": "passed",
+   "seconds": 28.947,
+   "test": "testMED005ThirtySecond1080pClipReversesWithinBudget"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d2/med005b-1118160741.xcresult"
+}

@@ -1,0 +1,115 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "d91ab2a71db70a9da93730108d4a17be31950a1a",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3387972,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261118T205324Z/logs/xctest-pre012-limits.log",
+          "sha256": "796b2a08f518f0ce4e6f7c48a17e8af1d28e7bb2497bfd119322554d8cd7ec05"
+        },
+        {
+          "bytes": 402559,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261118T205324Z/xcresult/xctest-pre012-limits.xcresult",
+          "sha256": "b9a60c0fe847c3219aa5e6e7fdbfe2f5086e96dd81e2b9fbefe576f6ff1a8473"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261118T205324Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261118T205324Z/xcresult/xctest-pre012-limits.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "600",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:ANGLEDeviceTests/PresetTrialRunnerTests/testPresetsAtTheStaticLimitsDoNotCrashTheProcess",
+          "-only-testing:ANGLEDeviceTests/PresetTrialRunnerTests/testPresetsAtTwiceTheStaticLimitsDoNotCrashEither",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "2 tests, 0 failures, 0 skipped; 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\")",
+      "durationSeconds": 52.7,
+      "id": "xctest-pre012-limits",
+      "kind": "xctest",
+      "partOf": [
+        "PRE-012-T31"
+      ],
+      "status": "pass",
+      "title": "PRE-012 worst-case preset shapes at the static limits and at twice them do not crash the trial thread or the visible engine (device stack sizes)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-18T20:54:17Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D2",
+  "recordSha256": "ead87fc6f9972a0033161f5079d15b9df62112aacbdba69111b7d2de04190e92",
+  "runId": "20261118T205324Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-18T20:53:24Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 0,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "A8C56656-AA51-5F6B-8C3C-FC8EFD709F9C",
+    "kind": "device",
+    "name": "iPad77",
+    "osBuild": "24B119",
+    "osVersion": "27.2",
+    "productType": "iPad17,3",
+    "state": "connected",
+    "udid": "00008142-001640823C22401C"
+  }
+}

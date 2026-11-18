@@ -1,0 +1,86 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "3d3c524d3241348bc3514446ae65f29ef681e9c1d05848f5a06c4155805614a2",
+ "measurements": [
+  {
+   "baselineFootprintMB": 302,
+   "budgetMB": 64,
+   "device": "iPhone15,4",
+   "downs": 3,
+   "footprintGrowthMB": 93,
+   "peakCacheMB": 61.247,
+   "peakFootprintMB": 395,
+   "physicalMemoryGB": 5.555,
+   "preparationSeconds": 3.843,
+   "step": "30 s 1080p reverse",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.338,
+   "meanSaturation": 0.052,
+   "nonBlack": 0.996,
+   "step": "reversed a",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.195,
+   "meanSaturation": 0.059,
+   "nonBlack": 0.981,
+   "step": "reversed b",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPhone15,4",
+   "motion": 0.145,
+   "step": "reversed",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.911,
+   "meanSaturation": 0.021,
+   "nonBlack": 0.996,
+   "step": "2-minute clip message",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPhone15,4",
+   "forwardSteps": 3,
+   "messageShown": 1,
+   "step": "2-minute clip",
+   "task": "MED-005-T20",
+   "unsupported": 1
+  }
+ ],
+ "passed": 2,
+ "schemaVersion": 1,
+ "session": "B13-med005",
+ "tasks": {
+  "MED-005-T20": {
+   "checks": {
+    "reversed: motion": 0.145
+   },
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13MediaDeviceTests",
+   "result": "passed",
+   "seconds": 38.604,
+   "test": "testMED005ThirtySecond1080pClipReversesWithinBudget"
+  },
+  {
+   "class": "B13MediaDeviceTests",
+   "result": "passed",
+   "seconds": 23.238,
+   "test": "testMED005TwoMinuteClipShowsThe30SecondMessageAndPlaysForward"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d1/med005-1118155323.xcresult"
+}

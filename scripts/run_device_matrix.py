@@ -86,8 +86,17 @@ CASES: list[dict] = [
     case("xctest-angle-layer", "xctest", "CMP-001 ProjectMLayerTests and the client-buffer spike tests on the "
          "device", [], 900, partOf=["CMP-001-T20"], package="ANGLERendering",
          only=["ANGLERenderingTests/ProjectMLayerTests", "ANGLERenderingTests/ClientBufferSpikeTests"]),
+    case("xctest-pre012-limits", "xctest", "PRE-012 worst-case preset shapes at the static limits and at twice them "
+         "do not crash the trial thread or the visible engine (device stack sizes)", [], 600, partOf=["PRE-012-T31"],
+         package="ANGLERendering",
+         only=["ANGLERenderingTests/PresetTrialRunnerTests/testPresetsAtTheStaticLimitsDoNotCrashTheProcess",
+               "ANGLERenderingTests/PresetTrialRunnerTests/testPresetsAtTwiceTheStaticLimitsDoNotCrashEither"]),
     case("bench-shd002", "xctest", "SHD-002 12-node graph GPU cost (SHD002_BENCH)", ["SHD-002-T24"], 900,
          package="Compositor", only=["GeneratorGraphTests/GraphCostBench"], env={"SHD002_BENCH": "1"},
+         configuration="Release"),
+    case("bench-rec003-encoder", "xctest", "REC-003 encoder throughput at native size, 60 fps, 40 Mbit/s: 32BGRA "
+         "against 4:2:0 input, HEVC and H.264 (REC003_ENCODER_BENCH)", [], 300, partOf=["REC-003-T23"],
+         package="Compositor", only=["FrameRecordingTests/EncoderThroughputBench"], env={"REC003_ENCODER_BENCH": "1"},
          configuration="Release"),
     case("bench-cmp008", "xctest", "CMP-008 full-screen gradient layer GPU time (CMP008_BENCH)", ["CMP-008-T19"],
          900, package="Compositor", only=["CompositorTests/LayerGradientCompositeTests/testGradientGPUTimeBench"],
@@ -110,7 +119,8 @@ CASES: list[dict] = [
 CASE_IDS = [c["id"] for c in CASES]
 # Cases that stay release evidence on these devices even when every task they closed is done (2026-11-16: closing
 # CMP-001-T20 left xctest-angle-layer on no device and failed CI run 43918880546).
-DEFAULT_DEVICES = {"autorun-perf001": LABELS, "launches-sc015": LABELS, "thresholds": LABELS, "xctest-angle-layer": LABELS}
+DEFAULT_DEVICES = {"autorun-perf001": LABELS, "launches-sc015": LABELS, "thresholds": LABELS, "xctest-angle-layer": LABELS,
+                   "bench-rec003-encoder": ["D1", "D3"]}
 
 
 # MARK: - Which cases run where (from the inventory)
@@ -442,6 +452,7 @@ DEVICE_TEST_BUNDLES = {
     "CompositorTests": "CompositorDeviceTests",
     "ProceduralMaterialsTests": "MaterialsDeviceTests",
     "GeneratorGraphTests": "GeneratorGraphDeviceTests",
+    "FrameRecordingTests": "RecordingDeviceTests",
     "ParameterExpressionTests": "ExpressionDeviceTests",
     "RenderGoldensTests": "RenderGoldensDeviceTests",
     "ANGLERenderingTests": "ANGLEDeviceTests",

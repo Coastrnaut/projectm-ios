@@ -1,0 +1,115 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "d91ab2a71db70a9da93730108d4a17be31950a1a",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3667207,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261118T210734Z/logs/bench-rec003-encoder.log",
+          "sha256": "60499e14a80f82c5630550f791de21ce3ac230ccc440669d1b7ce037fabc57b4"
+        },
+        {
+          "bytes": 290151,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D1/20261118T210734Z/xcresult/bench-rec003-encoder.xcresult",
+          "sha256": "2fb579c52664e96783273fdebec8ccd26fa4b97fe48d44a1915ac65ef321844c"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_REC003_ENCODER_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-001E4C5C3A42201E",
+          "-derivedDataPath",
+          "Build/qa-011/D1/20261118T210734Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D1/20261118T210734Z/xcresult/bench-rec003-encoder.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "300",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:RecordingDeviceTests/EncoderThroughputBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "2 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D1/20261118T210734Z/xcresult/bench-rec003-encoder.xcresult / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\")",
+      "durationSeconds": 203.8,
+      "id": "bench-rec003-encoder",
+      "kind": "xctest",
+      "partOf": [
+        "REC-003-T23"
+      ],
+      "status": "pass",
+      "title": "REC-003 encoder throughput at native size, 60 fps, 40 Mbit/s: 32BGRA against 4:2:0 input, HEVC and H.264 (REC003_ENCODER_BENCH)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-18T21:10:59Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "3799a8c8eafe03e917f5571421baad7b20652a8307fdbcc4fa1398716bdb5010",
+  "runId": "20261118T210734Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-18T21:07:34Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 0,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}

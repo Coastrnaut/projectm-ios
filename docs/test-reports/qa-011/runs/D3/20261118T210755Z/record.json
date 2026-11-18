@@ -1,0 +1,115 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "d91ab2a71db70a9da93730108d4a17be31950a1a",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": true,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3667299,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D3/20261118T210755Z/logs/bench-rec003-encoder.log",
+          "sha256": "d2b59da238c72de812f783741ecf4469b1a6586a710bb409b824f7129fe397bf"
+        },
+        {
+          "bytes": 288512,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D3/20261118T210755Z/xcresult/bench-rec003-encoder.xcresult",
+          "sha256": "455abcdfd83483d3163289ef4aaaea4c04a605335c4e0f124b5ce93c218c20bf"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_REC003_ENCODER_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008120-000165E830914032",
+          "-derivedDataPath",
+          "Build/qa-011/D3/20261118T210755Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D3/20261118T210755Z/xcresult/bench-rec003-encoder.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "300",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:RecordingDeviceTests/EncoderThroughputBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "2 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D3/20261118T210755Z/xcresult/bench-rec003-encoder.xcresult / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\")",
+      "durationSeconds": 197.5,
+      "id": "bench-rec003-encoder",
+      "kind": "xctest",
+      "partOf": [
+        "REC-003-T23"
+      ],
+      "status": "pass",
+      "title": "REC-003 encoder throughput at native size, 60 fps, 40 Mbit/s: 32BGRA against 4:2:0 input, HEVC and H.264 (REC003_ENCODER_BENCH)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-18T21:11:13Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D3",
+  "recordSha256": "24cf4c62761fdec2ab1673d5d4e1a9d87ee395bd86cf7e303afa6fd6ae6cd191",
+  "runId": "20261118T210755Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-18T21:07:55Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 0,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "4253F938-122E-5E5A-8F91-8A7F31950F8C",
+    "kind": "device",
+    "name": "iPadC",
+    "osBuild": "23F77",
+    "osVersion": "26.5",
+    "productType": "iPad15,7",
+    "state": "connected",
+    "udid": "00008120-000165E830914032"
+  }
+}

@@ -179,6 +179,40 @@ final class B13ExtraDeviceTests: DeviceAcceptanceCase {
     /// REC-003-T23: 60 s of the Circular Spectrum at the drawable's size (Max; High or Standard when the device refuses
     /// Max) reads back at the recorded length; frame rate, slots, size and thermal state are reported. Drops are
     /// reported, not asserted (the iPads were measured to drop slots).
+    /// REC-003-T23 diagnosis (2026-11-18): 20 s Max-profile recordings of the Photo visual that differ in one thing
+    /// each: music (an audio track) on or off, and whether the test reads the overlay each second (XCUITest snapshots).
+    /// Reports the written frames and the drop causes; asserts only that each file reads back.
+    func testREC003DropDiagnosis() {
+        let task = "REC-003-T23"
+        for (name, music, poll) in [("music, not polled", true, false), ("music, no audio track", true, false),
+                                  ("no music, no audio track", false, false)] {
+            let noAudio: [String] = name.hasSuffix("no audio track") ? ["-uitestRecordingNoAudio"] : []
+            launch(visual: "photo", settings: ["settings.recording.qualityProfile": "max"],
+                   extra: ["-uitestSeedPhoto", "pattern", "-uitestRecordingDirectory", "B13ExtraDeviceTests"] + noAudio, music: music)
+            showControls()
+            let button = app.buttons["record"]
+            XCTAssertTrue(wait(5) { button.exists && button.label == "Record" }, "\(name): Record is offered")
+            button.tap()
+            let started = Date()
+            while Date().timeIntervalSince(started) < 20 {
+                pause(1)
+                if poll { _ = overlayFPS() }
+            }
+            showControls()
+            app.buttons["record"].tap()
+            XCTAssertTrue(wait(60) { self.recordingProbe.hasPrefix("video ") || self.recordingProbe.hasPrefix("failed") },
+                          "\(name): the file is read back: \(recordingProbe)")
+            let facts = recordingFacts()
+            print("B13 diagnosis \(name): \(recordingProbe) facts \(facts)")
+            let audioTracks = recordingProbe.split(separator: " ").first { $0.hasPrefix("audio=") }
+                .flatMap { Double($0.dropFirst(6)) } ?? -1
+            report(task, "diagnosis \(name)", ["written": Double(facts["frames"] ?? -1), "dropped": Double(facts["dropped"] ?? -1),
+                                               "notReady": Double(facts["notReady"] ?? -1), "busy": Double(facts["busy"] ?? -1),
+                                               "audio": audioTracks])
+            app.terminate()
+        }
+    }
+
     func testREC003SixtySecondCircularSpectrumRecording() {
         let task = "REC-003-T23"
         let thermalBefore = ProcessInfo.processInfo.thermalState
@@ -229,7 +263,8 @@ final class B13ExtraDeviceTests: DeviceAcceptanceCase {
             "frames": Double(frames), "duration": duration, "recordedFor": recordedFor,
             "fps": Double(facts["fps"] ?? 0), "written": Double(written), "dropped": Double(dropped),
             "droppedShare": written + dropped > 0 ? Double(dropped) / Double(written + dropped) : 0,
-            "bytes": Double(facts["bytes"] ?? -1),
+            "bytes": Double(facts["bytes"] ?? -1), "busy": Double(facts["busy"] ?? -1),
+            "notReady": Double(facts["notReady"] ?? -1), "rateSkipped": Double(facts["rateSkipped"] ?? -1),
             "renderFPSMedian": Self.median(fps), "renderFPSMin": fps.min() ?? 0,
             "thermalBefore": Double(thermalBefore.rawValue), "thermalAfter": Double(thermalAfter.rawValue)])
         XCTAssertEqual(size.count, 2, "the probe names the size: \(recordingProbe)")

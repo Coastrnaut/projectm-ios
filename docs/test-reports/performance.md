@@ -451,3 +451,27 @@ the bench asserts no time budget (SHD-002 sets none), so this is recorded, not a
   changed only during the first 4.7 s and stayed at 46.7 MB after; GPU time per frame (first to last top-level GPU
   interval of each frame, `metal-gpu-intervals`, after 5 s) median 0.53 ms, 95th percentile 0.54 ms, max 1.36 ms
   over 3,398 frames, far inside the VIS-001 budget of 16.7 ms at 60 Hz.
+
+### REC-003-T23 follow-up: why 60 fps Max recordings drop frames on the A16 devices (2026-11-18, open)
+
+In the app, a Max-profile recording (HEVC, native size, 40 Mbit/s, 60 fps) writes a steady **~21 fps on D3** (1640 ×
+2360) and **~51 fps on D1** (1178 × 2556), while rendering holds 60 fps. The DEBUG `recordingFacts` breakdown shows the
+cause is the writer's input refusing frames (`notReady`), never the three-frame GPU gate (`busy` 0).
+
+| Experiment (D3 unless noted) | Written in ~21 s | Result |
+|---|---|---|
+| In app, music + audio track, test reads the overlay each second | 463 | `notReady` 837 |
+| In app, music + audio track, no reads | 445 | `notReady` 797 |
+| In app, music, no audio track (`-uitestRecordingNoAudio`) | 446 | `notReady` 801 |
+| In app, no music, no audio track | 444 | `notReady` 793 |
+| In app, writer queue at `.userInitiated` (experiment, reverted) | 66 % dropped over 60 s | no change |
+| In app, texture cache flushed after each append (experiment, reverted) | 66 % dropped over 60 s | no change |
+| Bench: AVAssetWriter alone, 32BGRA and 4:2:0, HEVC and H.264, D1 and D3 | 600 of 600 in 10 s | 0 refused |
+| Bench: the app's `VideoFileWriter`, with and without its AAC input | 600 of 600 | 0 refused |
+| Bench: GPU writes each frame (blit or render pass) through the texture cache, with and without a second GPU load | 600 of 600 | 0 refused |
+
+So the encoder, the writer, the audio interleaving, the GPU path and GPU contention each keep up at 60 fps on D3; only
+the running app's recording does not. Benches: `EncoderThroughputBench` (`run_device_matrix.py --only
+bench-rec003-encoder`, `REC003_ENCODER_BENCH=1`). Next: a symbolicated Time Profiler / System Trace of an in-app
+recording (`-uitestAutoRecordSeconds <n>` starts one under `xctrace --launch`; the Debug build needs
+`DEBUG_INFORMATION_FORMAT=dwarf-with-dsym` so the trace symbolicates).

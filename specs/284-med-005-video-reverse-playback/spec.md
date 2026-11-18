@@ -79,6 +79,14 @@ Five questions, each answered by Claude with the recommended option (owner rules
   announcement path as the Video section's other notices (MED-002-R14), when it first appears, and shown as the Reverse row's caption while
   Reverse is on (MED-005-R5).
 
+### Session 2026-11-18 (QA-011 device stage, best judgement)
+
+- Q: Must the process footprint (Xcode's memory gauge) grow by no more than the decoded-picture budget while a clip is
+  prepared? → A: No. MED-005-R3 bounds the cache's accounted bytes, which stayed within the budget on D1 and D3
+  (61.2 of 64 MB). The footprint also carries the hardware decoder's buffers and the clip playing forward meanwhile:
+  it grew 93 MB on D1 and 127 MB on D3 (peaks 395 and 460 MB). The device test reports the growth and holds the
+  peak below a quarter of the device's memory (jetsam safety); it no longer applies a guessed 40 MB allowance.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Play a short clip backwards (Priority: P1)

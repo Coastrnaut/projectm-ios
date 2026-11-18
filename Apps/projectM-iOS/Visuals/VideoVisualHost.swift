@@ -132,6 +132,14 @@ final class VideoVisualHost: PresentationBoundResource, CompositorVisualHost {
         return video.reverseState.probeName + " " + index
     }
 
+    #if DEBUG
+    /// QA-011 MED-005-T20: the reverse cache's peak accounted bytes and this device class's budget
+    /// ("peak=<bytes> budget=<bytes>"; peak 0 until a cache plays).
+    func reverseMemoryProbe() -> String {
+        "peak=" + String(video.reversePeakBytes) + " budget=" + String(video.reverseBudgetBytes)
+    }
+    #endif
+
     /// MED-004 diagnostics: "<percent> ratio=<x.xxx>" (video time over presentation time since the last
     /// speed change; "ratio=none" before any counted step).
     func speedProbe() -> String {

@@ -67,6 +67,15 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.GeneratorGraphDeviceTests
+  RecordingDeviceTests:
+    templates: [DeviceTestBundle]
+    # REC-003-T23 follow-up: only the encoder bench (the other FrameRecording tests read host fixtures).
+    sources: [Packages/Compositor/Tests/FrameRecordingTests/EncoderThroughputBench.swift]
+    dependencies:
+      - package: Compositor
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.RecordingDeviceTests
   ExpressionDeviceTests:
     templates: [DeviceTestBundle]
     sources: [Packages/ParameterGraph/Tests/ParameterExpressionTests]
@@ -163,6 +172,7 @@ schemes:
         - CompositorDeviceTests
         - MaterialsDeviceTests
         - GeneratorGraphDeviceTests
+        - RecordingDeviceTests
         - ExpressionDeviceTests
         - RenderGoldensDeviceTests
         - ANGLEDeviceTests

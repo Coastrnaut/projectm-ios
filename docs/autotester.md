@@ -166,6 +166,11 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   unreadable trace. `xctrace export --toc` lists the tables; Metal System Trace exports `metal-gpu-intervals` and
   `metal-current-allocated-size`, but Allocations exports no allocation table, so memory growth is checked with the
   DEBUG `memoryProbe` (`footprintMB=<n>` each second with `-uitestDiagnostics`) instead.
+- **Recording diagnosis hooks (DEBUG):** `recordingFacts` reports `busy=` (gate full), `notReady=` (the writer refused)
+  and `rateSkipped=` besides written and dropped slots; `-uitestRecordingNoAudio` records without an audio track;
+  `-uitestAutoRecordSeconds <n>` starts a recording 4 s after launch and stops it n s later, so `xctrace --launch` can
+  trace one without taps. `xctrace --attach` could not find the app on D3 by pid or name (2026-11-18): launch it
+  through xctrace instead.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
@@ -200,6 +205,13 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   (`-uitestDefaults <json>`) that writes them before any setting is read and removes the previous launch's keys.
   Settings kept as Codable JSON data (MED-011's clock) take `{"key": {"$json": <value>}}`, which the hook stores as
   JSON data. The DEBUG `recordingFacts` probe also reports `bytes=<n>`, the recorded file's size (-1 when gone).
+- **Seed media in the app, not through a picker.** `-uitestSeedVideo hd30` (1920 × 1080, 30 fps, 30 s) and
+  `-uitestSeedVideo long120` (640 × 360, 2 min) write flat-grey H.264 clips in the app and import them through the
+  normal store (`UITestVideoFixture`, DEBUG), so no fixture file is installed (MED-005-T20, `B13MediaDeviceTests`).
+  The DEBUG probe `videoReverseMemory` reads `peak=<bytes> budget=<bytes>` (the reverse cache's peak accounted bytes
+  and the device class budget); `memoryProbe` gives the process footprint each second.
+- **Package suites with a device host belong in the matrix.** PRE-012's worst-case preset shapes at the static limits
+  (and twice them) run as `xctest-pre012-limits` (ANGLEDeviceTests, `PresetTrialRunnerTests`), not as UI tests.
 - **Saved state overrides settings at launch.** The app restores the last committed scene (SCN-002), whose effect
   values replaced the test's settings. Start every test clean (`-uitestResetNotice` clears settings, media and the
   committed scene) and then apply the test's settings.
