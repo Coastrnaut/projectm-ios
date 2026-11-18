@@ -764,6 +764,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestLogoFixture.seedIfRequested(media.logo)      // MED-010: LogoOverlayUITests
         UITestMacroFixture.seedIfRequested(media.macros)   // MOD-010: ParameterMacroUITests
         UITestPhotoLibrarySeed.shared.startIfRequested()   // QA-011: Photos picker fixtures (add-only)
+        UITestDiskBallast.shared.startAtLaunch()   // QA-011 REC-015-T17: deletes an old ballast; fills when asked
     }
     #endif
 

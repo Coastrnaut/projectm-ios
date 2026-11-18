@@ -58,6 +58,11 @@ struct RootView: View {
                 Text(value).font(.caption2).opacity(0.01).allowsHitTesting(false)
                     .accessibilityIdentifier("photoLibrarySeed").accessibilityValue(value)
             }
+            if UITestDiskBallast.isRequested, ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
+                let value = UITestDiskBallast.shared.value   // QA-011 REC-015-T17: the disk ballast's readings
+                Text(value).font(.caption2).opacity(0.01).allowsHitTesting(false)
+                    .accessibilityIdentifier("diskBallast").accessibilityValue(value)
+            }
             #endif
         }
         // ACC-011 X19: the OSC listener opened (a network listener; announced on every screen).

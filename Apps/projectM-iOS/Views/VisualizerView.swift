@@ -361,6 +361,7 @@ struct VisualizerView: View {
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { UITestCueTransitionProbe(stage: coordinator.cueTransitions) }   // XFADE
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { UITestMemoryProbe() }   // VIS-003-T17
         if UITestVisualProbes.isRequested { UITestVisualProbesView(coordinator: coordinator) }   // QA-011 B07
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { UITestCPUProbe() }   // QA-011 REC-016-T13
         #endif
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-004-R9: the last announcement
             let spoken = coordinator.announcer.lastSpoken

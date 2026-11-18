@@ -2822,5 +2822,148 @@ class Batch8DriverTests(unittest.TestCase):
         self.assertEqual(self.dev.newest(names, "projectM-osc-routes-", ".md"), "projectM-osc-routes-20261118-110000Z.md")
 
 
+class RecordingFrameCheckTests(unittest.TestCase):
+    """QA-011 Batch 6: recording_frame_check.py (log lines, file choice, atoms, sips, OCR, centre, A/V alignment)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib
+        cls.rfc = importlib.import_module("recording_frame_check")
+
+    def test_parses_check_lines_behind_xcodebuild_prefixes(self):
+        lines = ['t = 1.2s RECORDING-CHECK {"task": "REC-016-T13", "dir": "tmp/QA011-REC016", "checks": {}}',
+                 "RECORDING-CHECK {broken", "noise",
+                 'RECORDING-CHECK {"task": "QA-008-T10", "dir": "tmp/QA011-REC016"}']
+        self.assertEqual([c["task"] for c in self.rfc.parse_checks(lines)], ["REC-016-T13", "QA-008-T10"])
+
+    def test_picks_the_newest_file_of_this_run(self):
+        names = ["tmp/x/Visualizer Recording 2026-11-18 at 09.00.00.mp4",
+                 "Visualizer Recording 2026-11-18 at 14.05.32.mp4", "Visualizer Frame 2026-11-18 at 15.00.00.png",
+                 "Visualizer Recording 2026-11-17 at 23.59.59.mp4"]
+        pick = self.rfc.pick
+        self.assertEqual(pick(names, "Visualizer Recording", ".mp4"), "Visualizer Recording 2026-11-18 at 14.05.32.mp4")
+        self.assertIsNone(pick(names, "Visualizer Recording", ".mp4", not_before="2026-11-18 at 14.06.00"),
+                          "an older run's file is never taken for this run's")
+        self.assertEqual(pick(names, "Visualizer Frame", ".png", "2026-11-18 at 14.00.00"),
+                         "Visualizer Frame 2026-11-18 at 15.00.00.png")
+        self.assertEqual(pick(["QA011 REC010 1.mp4"], exact="QA011 REC010 1.mp4"), "QA011 REC010 1.mp4")
+        self.assertIsNone(pick([], exact="QA011 REC010 1.mp4"))
+
+    def test_top_level_atoms_find_moov_and_moof(self):
+        def box(kind, body=b""):
+            return struct.pack(">I4s", 8 + len(body), kind) + body
+        plain = box(b"ftyp", b"isom") + box(b"mdat", b"\0" * 32) + box(b"moov", box(b"mvhd", b"\0" * 8))
+        fragmented = box(b"ftyp") + box(b"moov") + box(b"moof", b"\0" * 4) + box(b"mdat")
+        large = box(b"ftyp") + struct.pack(">I4sQ", 1, b"mdat", 16 + 4) + b"\0" * 4 + box(b"moov")
+        self.assertEqual(self.rfc.top_level_atoms(plain), ["ftyp", "mdat", "moov"])
+        self.assertIn("moof", self.rfc.top_level_atoms(fragmented))
+        self.assertEqual(self.rfc.top_level_atoms(large), ["ftyp", "mdat", "moov"])
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "x.mp4"
+            path.write_bytes(large)
+            self.assertEqual(self.rfc.file_atoms(path), ["ftyp", "mdat", "moov"])
+            result = self.rfc.evaluate(path, {"atoms": {"present": ["moov"], "absent": ["moof"]}}, inspect=lambda *a: {})
+            self.assertTrue(result["ok"])
+            path.write_bytes(fragmented)
+            self.assertFalse(self.rfc.evaluate(path, {"atoms": {"absent": ["moof"]}}, inspect=lambda *a: {})["ok"])
+
+    def test_sips_output_and_the_image_check(self):
+        text = "/x/Visualizer Frame.png\n  pixelWidth: 1179\n  pixelHeight: 2556\n  format: png\n  hasAlpha: yes\n"
+        facts = self.rfc.parse_sips(text)
+        self.assertEqual(facts["pixelWidth"], 1179)
+        self.assertEqual(facts["format"], "png")
+        path = Path("unused.png")
+        ok = self.rfc.evaluate(path, {"image": {"format": "png", "minPixels": 500_000}}, read_sips=lambda p: facts)
+        self.assertTrue(ok["ok"])
+        heif = self.rfc.evaluate(path, {"image": {"format": "heic"}}, read_sips=lambda p: facts)
+        self.assertFalse(heif["ok"], "a PNG is not the HEIF that was asked for")
+
+    def test_ocr_absent_any_and_pattern(self):
+        frames = [{"t": 1, "texts": ["14.05", "Hello"]}, {"t": 2.5, "texts": ["14:05"]}, {"t": 4, "texts": []}]
+        fake = lambda *args: {"frames": frames} if args[0] == "ocr" else {}
+        absent = self.rfc.evaluate(Path("x"), {"ocrAbsent": {"times": [1, 2.5], "strings": ["min left", "fps"]}}, inspect=fake)
+        self.assertTrue(absent["ok"])
+        status = self.rfc.evaluate(Path("x"), {"ocrAbsent": {"strings": ["hello"]}}, inspect=fake)
+        self.assertFalse(status["ok"], "a status word in a frame fails REC-009")
+        clock = self.rfc.evaluate(Path("x"), {"ocrAny": {"strings": ["14:05"], "minFrames": 2}}, inspect=fake)
+        self.assertTrue(clock["ok"], "Vision's 14.05 counts as 14:05")
+        countdown = [{"t": 1, "texts": ["00:08"]}, {"t": 2.5, "texts": ["00:06"]}, {"t": 9.5, "texts": ["00:00"]}]
+        fake2 = lambda *args: {"frames": countdown}
+        spec = {"ocrPattern": {"times": [1, 2.5, 9.5], "pattern": "[0-9]{2}:[0-9]{2}", "minFrames": 3, "last": "00:00"}}
+        self.assertTrue(self.rfc.evaluate(Path("x"), spec, inspect=fake2)["ok"])
+        countdown[-1]["texts"] = ["00:01"]
+        self.assertFalse(self.rfc.evaluate(Path("x"), spec, inspect=fake2)["ok"], "it must hold at 00:00")
+
+    def test_centre_correlation(self):
+        grid = [10, 200, 10, 200, 90, 90, 10, 200, 10]
+        fake = lambda *args: {"values": [12, 190, 14, 205, 88, 95, 9, 198, 11]}
+        spec = {"centre": {"time": 2, "cols": 3, "rows": 3, "values": grid, "minCorrelation": 0.8}}
+        self.assertTrue(self.rfc.evaluate(Path("x"), spec, inspect=fake)["ok"])
+        off = lambda *args: {"values": [200, 10, 200, 10, 90, 90, 200, 10, 200]}
+        self.assertFalse(self.rfc.evaluate(Path("x"), spec, inspect=off)["ok"], "an off-centre crop does not correlate")
+        self.assertEqual(self.rfc.pearson([1, 2], [1]), 0.0)
+
+    def test_clicks_flashes_and_alignment(self):
+        bin_ms = 1
+        peaks = [0.0] * 6000
+        for beat in range(12):   # 120 BPM: a click every 0.5 s from 0.2 s
+            peaks[200 + beat * 500] = 0.9
+        clicks = self.rfc.click_onsets(peaks, bin_ms)
+        self.assertEqual(len(clicks), 12)
+        self.assertAlmostEqual(clicks[1] - clicks[0], 0.5, places=3)
+        frames = []
+        for i in range(180):   # 30 fps, 6 s; each ring flashes 1 frame (33 ms) after its click
+            t = i / 30
+            lit = any(0 <= t - (c + 0.03) < 0.1 for c in clicks)
+            frames.append([t, 0.4 if lit else 0.05])
+        flashes = self.rfc.flash_onsets(frames)
+        result = self.rfc.alignment(clicks, flashes)
+        self.assertEqual(result["paired"], 12)
+        self.assertLessEqual(abs(result["medianMs"]), 40)
+        late = self.rfc.alignment(clicks, [round(c + 0.12, 4) for c in clicks])
+        self.assertGreater(late["medianMs"], 40, "a 120 ms lag fails REC-004-S5")
+        self.assertEqual(self.rfc.alignment(clicks, [])["paired"], 0)
+
+    def test_run_entry_pulls_the_newest_and_handles_absent(self):
+        commands = []
+
+        def runner(cmd, **_):
+            commands.append(cmd)
+            Path(cmd[cmd.index("--destination") + 1]).write_bytes(b"x")
+            return mock.Mock(returncode=0, stderr="")
+
+        with tempfile.TemporaryDirectory() as tmp:
+            out = Path(tmp)
+            lister = lambda ident, d: ["Visualizer Recording 2026-11-18 at 14.05.32.mp4"]
+            entry = {"task": "REC-016-T13", "dir": "tmp/QA011-REC016", "prefix": "Visualizer Recording",
+                     "suffix": ".mp4", "notBefore": "2026-11-18 at 14.05.00", "checks": {}}
+            r = self.rfc.run_entry(entry, "DEV", out, lister=lister, runner=runner,
+                                   evaluator=lambda p, c: {"ok": True, "results": {}})
+            self.assertTrue(r["ok"])
+            self.assertIn("tmp/QA011-REC016/Visualizer Recording 2026-11-18 at 14.05.32.mp4", commands[0])
+            self.assertIn("appDataContainer", commands[0])
+            gone = self.rfc.run_entry({"dir": "Library/Application Support/RecordingLibrary", "name": "QA011 REC010 1.mp4",
+                                       "absent": True}, "DEV", out, lister=lambda i, d: ["Other.mp4"])
+            self.assertTrue(gone["ok"])
+            missing = self.rfc.run_entry(dict(entry, notBefore="2026-11-18 at 15.00.00"), "DEV", out, lister=lister,
+                                         runner=runner)
+            self.assertFalse(missing["ok"])
+            dry = self.rfc.run_entry(entry, "DEV", out, dry_run=True, lister=lister)
+            self.assertIn("command", dry)
+
+    def test_swift_helper_and_device_tests_name_the_same_identifiers(self):
+        helper = (FIXTURES / "recording_inspect.swift").read_text()
+        for command in ("\"info\"", "\"ocr\"", "\"grid\"", "\"luma\"", "\"envelope\"", "\"frame\""):
+            self.assertIn(f"case {command}", helper)
+        tests = (Path(__file__).resolve().parent.parent / "Apps" / "projectM-iOS" / "DeviceUITests")
+        support = (tests / "RecordingCheckSupport.swift").read_text()
+        self.assertIn(self.rfc.MARK.strip(), support)
+        self.assertIn("yyyy-MM-dd 'at' HH.mm.ss", support, "the stamp the app puts in its file names")
+        for name in ("B08RecordingDeviceTests.swift", "B08ShareDeviceTests.swift"):
+            source = (tests / name).read_text()
+            for key in re.findall(r'"(ocr[A-Za-z]+|centre|alignment|atoms|qa008|audioNonSilent|codec|image)"\s*:', source):
+                self.assertIn(f'"{key}"', (Path(self.rfc.__file__)).read_text(), f"{name}: the check {key} exists")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -925,6 +925,7 @@ final class VideoRecordingCoordinator {
         #if DEBUG
         let arguments = ProcessInfo.processInfo.arguments
         return arguments.contains("-uitestStorage") || arguments.contains("-uitestWriterFault")   // REC-016
+            || arguments.contains("-uitestDiskBallast")   // QA-011 REC-015-T17: the real guard, the offered file read back
         #else
         return false
         #endif

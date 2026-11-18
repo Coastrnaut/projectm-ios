@@ -31,6 +31,7 @@ runs on hardware.
 | OSC driver | `scripts/osc_device_driver.py` | Follows a run's log, answers `OSC-READY <scenario>` by sending OSC through the system Perl; `--listen-port` receives the app's Send OSC; `--device` copies an OSC routes export off the device and checks it. |
 | MIDI driver | `scripts/mac_driver/midi.py` + `scripts/fixtures/midi_session.swift` | The Mac's CoreMIDI network session to the device; answers `MIDI-READY <scenario>` with CC, notes, programs, 14-bit pairs and clock; counts MIDI feedback. Needs the network-MIDI DEBUG exemption (see Batch 8). |
 | Two-device runner | `scripts/mac_driver/peer.py` | Runs one test on D1 and one on D2 from per-device product copies; starts the acting role on the waiting role's `PEER-READY` line; pairs `PEER-STEP`/`PEER-SEEN` times. |
+| Recording checks | `scripts/recording_frame_check.py`, `scripts/fixtures/recording_inspect.swift` | Batch 6: reads `RECORDING-CHECK` lines from a run's log, copies each recording or still off the device and checks atoms, codec, `sips`, Vision OCR, centre correlation, click/flash alignment and QA-008's validator; `Build/recording-checks/<device>/report.json`. |
 | Device facts | `scripts/mac_driver/devices.py` | D1-D3 by product type, Bonjour names, `dscacheutil` resolution, the Mac's own address, Documents copies. |
 | Audio probes (DEBUG) | `Apps/projectM-iOS/Debug/UITestAudioProbes.swift`, CaptureKit `PlaybackDebugProbe`, AudioCore `NoiseGateDebugProbe` | QA-011 audio (B05): generated fixtures (`-uitestSeedAudio`), what the playback tap delivered (`-uitestPlaybackProbe`), the audio-session notifications (`-uitestSessionLog`), the noise gate's transitions (`-uitestGateProbe`), import times and announcements (`importProbe`), and a panel for seeks, queue edits, repeat and shuffle (`-uitestAudioPanel`). See "Audio device tests" below. |
 | Audio device-test helpers | `Apps/projectM-iOS/DeviceUITests/AudioProbeSupport.swift` | Probe parsing, `launchPlayback`, real interruptions through `SystemUI` with the AUD-014 policy check, `MAC-DO` requests to the Mac driver. |
@@ -267,6 +268,57 @@ xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination pla
   View on D2, a FaceTime call and Retry's back-off under a persisting interruption stay a person's.
 - **Revocation (CAM-013-T17):** the camera switch turned off in Settings while the app is in the background; iOS ends
   the app; the next start shows the denied notice; the test and `SystemUI.restore()` turn it back on.
+## Recording and share (QA-011 Batch 6, 2026-11-18)
+
+Tests: `B08RecordingDeviceTests` (recordings read back in the app and, through the Mac, in the file) and
+`B08ShareDeviceTests` (the Files exporter and mover, the share sheet, the Files app, the Recordings library), with
+`RecordingCheckSupport.swift`. A test that leaves a file for the Mac prints one `RECORDING-CHECK {json}` line (folder in
+the app's container, name prefix, the "yyyy-MM-dd at HH.mm.ss" stamp it must not be older than, the checks). After
+the run `scripts/recording_frame_check.py` copies each file off the device and checks it with a compiled Swift helper
+(`scripts/fixtures/recording_inspect.swift`: AVFoundation tracks and frames, Vision OCR) and Python (MP4 atoms, `sips`,
+correlation, onsets). Nothing waits on the Mac during the run.
+
+| Test | Tasks | What it asserts (app / Mac) |
+|---|---|---|
+| `B08RecordingDeviceTests.testREC014…` | REC-014-T15 | planned shape / the file's frame correlates (r ≥ 0.8) with the centre crop of a screenshot taken while recording |
+| `testREC008TimedStopTenSeconds` | REC-008-T14 | 10 s, 300 slots, **300 frames written**; the failure names busy, notReady, rateSkipped |
+| `testREC016ThirtySecond…` | REC-016-T13, QA-008-T10 | 30 s with audio, CPU idle vs recording (`cpuProbe`) / `moov`, no `moof`; `testExternalRecording` on the same file |
+| `testREC009StatusLinesAreNotInTheFile` | REC-009-T11 | status lines with a real low free-storage reading (ballast) / OCR finds none of their words in the frames |
+| `testREC015RealDiskGuardStopsTheRecording` | REC-015-T17 | the real guard stops with "Recording stopped because storage is almost full.", the offered file reads back |
+| `testREC007CountdownStartsAfterOne…` | REC-007-T13 | recording ≥ 2.9 s after Record, "Recording in 3", "2", "1" once each; Cancel: no probe, no file / no file |
+| `testREC004ClickAndFlashAlignInTheFile` | REC-004-T19 | click fixture on Beat Rings, audio track / clicks vs luma flashes, median ≤ 40 ms |
+| `testREC004MicrophoneRecording…` | REC-004-T19 | audio track only with "Include microphone audio" / with the Mac driver's 1 kHz tone, audio not silent |
+| `testMED011RecordingContainsTheClock` | MED-011-T13 | / OCR reads the device's HH:mm in ≥ 2 frames |
+| `testMED012CountdownFinishesOnce…` | MED-012-T14 | 00:00 once and held, finished=1, "Countdown finished" once / OCR reads the countdown, last frame 00:00 |
+| `B08ShareDeviceTests.testREC001PNGAndHEIFToOnMyDevice` | REC-001-T19 | "Frame saved." for PNG and HEIF / `sips` reads png and heic |
+| `testREC003SaveToOnMyDeviceAndPlayInFiles` | REC-003-T25 | "Recording saved.", Files › On My iPad › projectM opens it in Quick Look / hvc1 with audio |
+| `testREC012ShareSheetForAFrameAndARecording` | REC-012-T13 | AirDrop, Save to Files (Messages on the iPhone); no Save Image/Video, Assign to Contact; cancel keeps the panel; Messages compose cancelled; iPad popover; "Shared." / both files read |
+| `testREC010RecordKeepPlayShareRenameDelete` | REC-010-T13 | Keep, play (picture changes), Save to Files, rename, delete / the renamed file is gone from the library folder |
+
+```bash
+python3 scripts/install_test_fixtures.py --device D1 --media        # click-120bpm.m4a for REC-004
+python3 scripts/mac_device_driver.py follow --log Build/b08-D1.log --device D1 &   # the Microphone test's tone
+xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination platform=iOS,id=<D1 UDID> \
+  -only-testing:projectM-iOSDeviceUITests/B08RecordingDeviceTests -only-testing:projectM-iOSDeviceUITests/B08ShareDeviceTests \
+  -test-timeouts-enabled YES -default-test-execution-time-allowance 300 TEST_RUNNER_MAC_DRIVER=1 > Build/b08-D1.log 2>&1
+python3 scripts/recording_frame_check.py run --log Build/b08-D1.log --device D1    # Build/recording-checks/D1/report.json
+```
+
+Devices: D1 for all; D3 for REC-001, REC-003-T25 and MED-011; D2 for REC-014 (Portrait) and REC-012's popover.
+
+- **Disk ballast (DEBUG):** `-uitestDiskBallast <freeMB>` fills one file in Caches until the free storage the guard
+  reads (`volumeAvailableCapacityForImportantUsage`) is about that much; `-uitestDiskBallastGrowMBps <n>` grows it while
+  a recording file exists, so the real guard stops within seconds. It never leaves less than 200 MB of real free space,
+  every DEBUG launch deletes an old ballast, and the ballast tests relaunch the app once in tearDown. Probe
+  `diskBallast`; state `capped` (purgeable space keeps the reading high) skips REC-015 with the readings. iOS may show
+  "Storage Almost Full": the test dismisses only alerts that mention storage. Not yet run on a device.
+- **CPU (DEBUG):** `cpuProbe` reads "cpuSeconds=<user+system> uptime=<s>" each second (`getrusage`); a test takes
+  Δcpu/Δuptime (100 % = one core).
+- **Files in tmp survive, offered ones do not:** a launch deletes `<tmp>/Recordings` (REC-003-R13), so every file the
+  Mac reads is in a `-uitestRecordingDirectory` folder (`tmp/QA011-…`), in Documents (Files saves), or the library.
+- **Still a person's:** an AirDrop transfer (a receiver accepts), iCloud Drive destinations (iCloud signed in), the
+  countdown with VoiceOver on, System/App Capture video only (the system picker), and the microphone prompt itself
+  (answered by the prompt flow first; a prompt here fails the test and is left alone).
 
 ## Lessons learned
 
