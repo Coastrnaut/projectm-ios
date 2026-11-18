@@ -65,9 +65,9 @@ class DeviceAcceptanceCase: XCTestCase {
         if music { args += ["-uitestImportAudio", fixture, "-uitestPlayImported", "YES"] }
         // Typed values through `-uitestDefaults` (plain launch arguments arrive as strings, which settings that
         // read NSNumber ignore).
-        var values: [String: Any] = settings
+        var values: [String: Any] = ["settings.performanceOverlay": true]   // on unless the test's settings say otherwise
+        values.merge(settings) { (_: Any, given: Any) -> Any in given }
         values["settings.visual"] = visual
-        values["settings.performanceOverlay"] = true
         let json = (try? JSONSerialization.data(withJSONObject: values, options: [.sortedKeys]))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
         args += ["-uitestDefaults", json]
@@ -79,8 +79,10 @@ class DeviceAcceptanceCase: XCTestCase {
                     + "device; run python3 scripts/install_test_fixtures.py --device all")
         }
         XCTAssertTrue(started, "the source started")
-        XCTAssertTrue(wait(10) { self.overlayFPS() != nil }, "the performance overlay shows a frame rate")
-        if music {
+        if (values["settings.performanceOverlay"] as? Bool) ?? true {
+            XCTAssertTrue(wait(10) { self.overlayFPS() != nil }, "the performance overlay shows a frame rate")
+        }
+        if music, (values["settings.performanceOverlay"] as? Bool) ?? true {
             let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
             XCTAssertTrue(wait(12) { overlay.label.contains("Active audio") }, "music is playing: \(overlay.label.prefix(120))")
         }

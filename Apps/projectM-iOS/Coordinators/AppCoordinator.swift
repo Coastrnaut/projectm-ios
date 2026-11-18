@@ -1241,6 +1241,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             }
             runVisualCycleIfRequested()
             runAutoRecordIfRequested()
+            UITestEncoderProbe.shared.startIfRequested()
             #endif
         }
     }

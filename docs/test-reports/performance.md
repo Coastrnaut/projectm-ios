@@ -452,7 +452,7 @@ the bench asserts no time budget (SHD-002 sets none), so this is recorded, not a
   interval of each frame, `metal-gpu-intervals`, after 5 s) median 0.53 ms, 95th percentile 0.54 ms, max 1.36 ms
   over 3,398 frames, far inside the VIS-001 budget of 16.7 ms at 60 Hz.
 
-### REC-003-T23 follow-up: why 60 fps Max recordings drop frames on the A16 devices (2026-11-18, open)
+### REC-003-T23 follow-up: why 60 fps Max recordings dropped frames on the A16 devices (2026-11-18, resolved)
 
 In the app, a Max-profile recording (HEVC, native size, 40 Mbit/s, 60 fps) writes a steady **~21 fps on D3** (1640 ×
 2360) and **~51 fps on D1** (1178 × 2556), while rendering holds 60 fps. The DEBUG `recordingFacts` breakdown shows the
@@ -472,6 +472,15 @@ cause is the writer's input refusing frames (`notReady`), never the three-frame 
 
 So the encoder, the writer, the audio interleaving, the GPU path and GPU contention each keep up at 60 fps on D3; only
 the running app's recording does not. Benches: `EncoderThroughputBench` (`run_device_matrix.py --only
-bench-rec003-encoder`, `REC003_ENCODER_BENCH=1`). Next: a symbolicated Time Profiler / System Trace of an in-app
-recording (`-uitestAutoRecordSeconds <n>` starts one under `xctrace --launch`; the Debug build needs
-`DEBUG_INFORMATION_FORMAT=dwarf-with-dsym` so the trace symbolicates).
+bench-rec003-encoder`, `REC003_ENCODER_BENCH=1`).
+
+**Cause: the UI test run's own screen recording.** A plain HEVC writer inside the app (DEBUG `-uitestEncoderProbe 15`)
+refused 580-620 of 900 frames on D3 under XCUITest while a visual showed, 0-10 on the source chooser, and **0 of 900**
+in every state when the app was launched with `devicectl` and no UI test ran (clean, performance overlay on, DEBUG
+probe labels on). The test run had `PreferredScreenCaptureFormat = screenRecording`: Xcode recorded each UI test as
+video on the device's hardware encoder, which the app's recorder shares (the A16 has less encoder capacity than
+D2's M5; a static chooser screen gives the screen recording little to encode). With the DeviceAcceptance scheme set
+to `preferredScreenCaptureFormat: screenshots` (`DeviceTests.yml`), the 60 s Max recording dropped **0.4 % on D3**
+(3,667 written, 13 dropped, `notReady` 0) and **0.9 % on D1** (3,688 written, 34 dropped), render 60 fps
+(`qa-011/acceptance/D1-B13-rec003.md`, `D3-B13-rec003.md`). The app's recorder needed no change; recordings
+measured under XCUITest before 2026-11-18 understate the iPads' and D1's recording frame rates.

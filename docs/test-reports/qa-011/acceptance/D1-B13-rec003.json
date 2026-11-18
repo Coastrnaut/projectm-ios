@@ -1,0 +1,51 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "79f068bc0caacb7e93d5780f5da40964e5206b074ac93071625afb82db88a03a",
+ "measurements": [
+  {
+   "busy": 0,
+   "bytes": 28022744,
+   "device": "iPhone15,4",
+   "dropped": 34,
+   "droppedShare": 0.009,
+   "duration": 62.03,
+   "fps": 60,
+   "frames": 3688,
+   "height": 2556,
+   "notReady": 0,
+   "rateSkipped": 6,
+   "recordedFor": 62.02,
+   "renderFPSMedian": 60,
+   "renderFPSMin": 49,
+   "screenHeight": 2556,
+   "screenWidth": 1178,
+   "step": "circular spectrum max",
+   "task": "REC-003-T23",
+   "thermalAfter": 0,
+   "thermalBefore": 0,
+   "width": 1178,
+   "written": 3688
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B13-rec003",
+ "tasks": {
+  "REC-003-T23": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13ExtraDeviceTests",
+   "result": "passed",
+   "seconds": 74.776,
+   "test": "testREC003SixtySecondCircularSpectrumRecording"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d1/recfix-1118170744.xcresult"
+}

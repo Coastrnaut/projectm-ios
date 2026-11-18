@@ -158,6 +158,9 @@ schemes:
         projectM-iOS: all
     test:
       config: Debug
+      # REC-003-T23 (2026-11-18): Xcode records UI test runs as video by default, on the device's hardware encoder;
+      # on the A16 devices that starved the app's own recorder (D3 wrote ~21 of 60 fps). Screenshots leave the encoder free.
+      preferredScreenCaptureFormat: screenshots
       targets:
         - projectM-iOSDeviceUITests
         # The simulator UI tests also run on D1/D2 for owner-session steps they already cover (QA-011 B02-B13).

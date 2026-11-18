@@ -171,6 +171,13 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   `-uitestAutoRecordSeconds <n>` starts a recording 4 s after launch and stops it n s later, so `xctrace --launch` can
   trace one without taps. `xctrace --attach` could not find the app on D3 by pid or name (2026-11-18): launch it
   through xctrace instead.
+- **UI test runs must not record the screen as video:** Xcode's default `PreferredScreenCaptureFormat =
+  screenRecording` encodes the device screen for the whole UI test on the hardware video encoder. Any test that
+  measures the app's own recording (or other encoder work) then competes with it: on D3 (A16) a 60 fps recording
+  wrote ~21 fps and dropped 66 % of its slots, on D1 15 %, while D2 (M5) hid it. The DeviceAcceptance scheme sets
+  `preferredScreenCaptureFormat: screenshots` (`DeviceTests.yml`); check the `.xctestrun` says `screenshots` before
+  trusting a recording measurement. Found by running the same encoder probe inside the app with and without XCUITest
+  (`devicectl device process launch ... -- <arguments>`: put the app's arguments after `--`).
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

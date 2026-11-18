@@ -213,6 +213,39 @@ final class B13ExtraDeviceTests: DeviceAcceptanceCase {
         }
     }
 
+    /// REC-003-T23 diagnosis: a plain HEVC writer at native size, 60 fps, inside the app while it shows Photo with the
+    /// reference track, without the recorder (DEBUG `-uitestEncoderProbe`). Reports how many frames the input refused.
+    func testREC003EncoderInsideTheVisualizingApp() {
+        let task = "REC-003-T23"
+        let variants: [(String, [String: Any])] = [
+            ("photo", [:]),
+            ("photo, overlay off", ["settings.performanceOverlay": false]),
+            ("photo, reduce flashing off", ["settings.reduceFlashing": false]),
+            ("photo, battery saver", ["settings.performance.powerProfile": "batterySaver"]),
+        ]
+        for (name, settings) in variants {
+            launch(visual: "photo", settings: settings, extra: ["-uitestSeedPhoto", "pattern", "-uitestEncoderProbe", "15"])
+            measureEncoderProbe(task, name)
+            app.terminate()
+        }
+        // The source chooser: nothing renders (no autostart).
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO", "-uitestEncoderProbe", "15"]
+        app.launch()
+        measureEncoderProbe(task, "source chooser, nothing rendering")
+    }
+
+    private func measureEncoderProbe(_ task: String, _ name: String) {
+        let probe = app.descendants(matching: .any)["encoderProbe"].firstMatch
+        XCTAssertTrue(wait(40) { ((probe.value as? String) ?? "").contains("done=1") }, "\(name): the probe finishes: \(String(describing: probe.value))")
+        let text = (probe.value as? String) ?? ""
+        print("B13 encoder inside the app (\(name)): \(text)")
+        var values: [String: Double] = [:]
+        for part in text.split(separator: " ") {
+            let kv = part.split(separator: "="); if kv.count == 2, let v = Double(kv[1]) { values[String(kv[0])] = v }
+        }
+        report(task, "encoder inside the app: \(name)", ["offered": values["offered"] ?? -1, "refused": values["refused"] ?? -1])
+    }
+
     func testREC003SixtySecondCircularSpectrumRecording() {
         let task = "REC-003-T23"
         let thermalBefore = ProcessInfo.processInfo.thermalState

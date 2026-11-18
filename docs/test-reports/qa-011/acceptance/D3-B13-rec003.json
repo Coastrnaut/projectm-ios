@@ -1,0 +1,51 @@
+{
+ "device": "D3",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "5ce89b06c4302c3453b0729e66968767d824fee1272a4495ec055c992b1f7561",
+ "measurements": [
+  {
+   "busy": 0,
+   "bytes": 49790859,
+   "device": "iPad15,7",
+   "dropped": 13,
+   "droppedShare": 0.004,
+   "duration": 61.33,
+   "fps": 60,
+   "frames": 3667,
+   "height": 2360,
+   "notReady": 0,
+   "rateSkipped": 0,
+   "recordedFor": 61.325,
+   "renderFPSMedian": 60,
+   "renderFPSMin": 56,
+   "screenHeight": 2360,
+   "screenWidth": 1640,
+   "step": "circular spectrum max",
+   "task": "REC-003-T23",
+   "thermalAfter": 0,
+   "thermalBefore": 0,
+   "width": 1640,
+   "written": 3667
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B13-rec003",
+ "tasks": {
+  "REC-003-T23": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13ExtraDeviceTests",
+   "result": "passed",
+   "seconds": 74.755,
+   "test": "testREC003SixtySecondCircularSpectrumRecording"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d3/recfix-1118170714.xcresult"
+}

@@ -45,6 +45,14 @@ struct RootView: View {
                 GuidedFirstSceneView(guide: coordinator.guide, soundIsPlaying: coordinator.screen == .visualizer,
                                      onPlay: { coordinator.finishGuidedFirstScene() })
             }
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-uitestEncoderProbe"),   // REC-003-T23 diagnosis, every screen
+               ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
+                let value = UITestEncoderProbe.shared.value
+                Text(value).font(.caption2).opacity(0.01).allowsHitTesting(false)
+                    .accessibilityIdentifier("encoderProbe").accessibilityValue(value)
+            }
+            #endif
         }
         // ACC-011 X19: the OSC listener opened (a network listener; announced on every screen).
         .onChange(of: coordinator.osc.badgePort) { _, port in
