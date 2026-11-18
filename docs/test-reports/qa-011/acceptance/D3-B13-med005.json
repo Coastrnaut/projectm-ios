@@ -1,0 +1,86 @@
+{
+ "device": "D3",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "9fb76e407a606092f50a13fdbf195665eb588fa75c31b33a379b28ce66a9783f",
+ "measurements": [
+  {
+   "baselineFootprintMB": 335,
+   "budgetMB": 64,
+   "device": "iPad15,7",
+   "downs": 3,
+   "footprintGrowthMB": 91,
+   "peakCacheMB": 61.247,
+   "peakFootprintMB": 426,
+   "physicalMemoryGB": 5.776,
+   "preparationSeconds": 2.374,
+   "step": "30 s 1080p reverse",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.383,
+   "meanSaturation": 0.066,
+   "nonBlack": 0.999,
+   "step": "reversed a",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.226,
+   "meanSaturation": 0.06,
+   "nonBlack": 0.993,
+   "step": "reversed b",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad15,7",
+   "motion": 0.162,
+   "step": "reversed",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad15,7",
+   "meanLuma": 0.629,
+   "meanSaturation": 0.033,
+   "nonBlack": 0.731,
+   "step": "2-minute clip message",
+   "task": "MED-005-T20"
+  },
+  {
+   "device": "iPad15,7",
+   "forwardSteps": 3,
+   "messageShown": 1,
+   "step": "2-minute clip",
+   "task": "MED-005-T20",
+   "unsupported": 1
+  }
+ ],
+ "passed": 2,
+ "schemaVersion": 1,
+ "session": "B13-med005",
+ "tasks": {
+  "MED-005-T20": {
+   "checks": {
+    "reversed: motion": 0.162
+   },
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13MediaDeviceTests",
+   "result": "passed",
+   "seconds": 53.384,
+   "test": "testMED005ThirtySecond1080pClipReversesWithinBudget"
+  },
+  {
+   "class": "B13MediaDeviceTests",
+   "result": "passed",
+   "seconds": 37.571,
+   "test": "testMED005TwoMinuteClipShowsThe30SecondMessageAndPlaysForward"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d3/med005c-1118164331.xcresult"
+}

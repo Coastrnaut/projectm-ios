@@ -243,7 +243,7 @@ not retried.
 - [ ] PRE-012-T30 {merge} (open: needs the merged checkout with the pack submodules; run by the main session) After the merge, with the pack submodules: the corpus test of T04 over
   all 14,604 files, the full app build, `PresetTests`, `python3 scripts/check_privacy_manifest.py` on the built app, and a check that
   the bundled `PresetBlocklist.json` is in the built app.
-- [ ] PRE-012-T31 {device} (open: final device phase; also confirm on D1-D3 that the worst-case shapes at the static limits do not crash, since stack sizes differ from the simulator) Final device phase on D1-D3: import through the real Files picker; a
+- [ ] PRE-012-T31 {device} (open: final device phase; also confirm on D1-D3 that the worst-case shapes at the static limits do not crash, since stack sizes differ from the simulator) Final device phase on D1-D3: import through the real Files picker; a — Worst-case shapes automated 2026-11-18: matrix case `xctest-pre012-limits` (`PresetTrialRunnerTests`, the 15 shapes at the static limits and at twice them, through the trial thread and the visible engine) passed on D1, D2 and D3 with no crash (`docs/test-reports/qa-011/runs/D1/20261118T214331Z`, `D2/20261118T205324Z`, `D3/20261118T214506Z`). Open: the real Files picker, a renamed JPEG, trial timing and VoiceOver (person-only)
   renamed JPEG is quarantined; trial timing on device; VoiceOver pass over My Presets and
   Quarantine.
 

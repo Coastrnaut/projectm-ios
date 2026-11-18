@@ -4,30 +4,30 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 227,
-    "specs": 190,
+    "total": 226,
+    "specs": 189,
     "byStatus": {
-      "open": 210,
+      "open": 209,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 11,
-      "b": 205
+      "b": 204
     },
     "byCategoryIncludingWaived": {
       "a": 11,
-      "b": 216
+      "b": 215
     },
     "byDevice": {
-      "D1": 209,
+      "D1": 208,
       "D2": 43,
-      "D3": 41
+      "D3": 40
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 11,
-        "b": 198
+        "b": 197
       },
       "D2": {
         "a": 1,
@@ -35,7 +35,7 @@
       },
       "D3": {
         "a": 1,
-        "b": 40
+        "b": 39
       }
     },
     "bySession": {
@@ -51,7 +51,7 @@
       "B10": 13,
       "B11": 31,
       "B12": 5,
-      "B13": 15,
+      "B13": 14,
       "MATRIX": 11
     },
     "devicesInferred": 2
@@ -802,11 +802,10 @@
         "173-perf-003-adaptive-quality:PERF-003-T15",
         "201-perf-008-battery-saver:PERF-008-T16",
         "221-pre-005-energy-facets:PRE-005-T17",
-        "235-pre-009-preset-comparison:PRE-009-T13",
-        "284-med-005-video-reverse-playback:MED-005-T20"
+        "235-pre-009-preset-comparison:PRE-009-T13"
       ],
       "optionalTasks": 3,
-      "estimatedMinutes": 140
+      "estimatedMinutes": 130
     }
   ],
   "tasks": [
@@ -1302,7 +1301,7 @@
         "xctest-pre012-limits"
       ],
       "estimatedMinutes": 15,
-      "text": "PRE-012-T31 {device} (open: final device phase; also confirm on D1-D3 that the worst-case shapes at the static limits do not crash, since stack sizes differ from the simulator) Final device phase on D1-D3: import through the real Files picker; a renamed JPEG is quarantined; trial timing on device; VoiceOver pass over My Presets and Quarantine."
+      "text": "PRE-012-T31 {device} (open: final device phase; also confirm on D1-D3 that the worst-case shapes at the static limits do not crash, since stack sizes differ from the simulator) Final device phase on D1-D3: import through the real Files picker; a — Worst-case shapes automated 2026-11-18: matrix case `xctest-pre012-limits` (`PresetTrialRunnerTests`, the 15 shapes at the static limits and at twice them, through the trial thread and the visible engine) passed on D1, D2 and D3 with no crash (`docs/test-reports/qa-011/runs/D1/20261118T214331Z`, `D2/20261118T205324Z`, `D3/20261118T214506Z`). Open: the real Files picker, a renamed JPEG, trial timing and VoiceOver (person-only) renamed JPEG is quarantined; trial timing on device; VoiceOver pass over My Presets and Quarantine."
     },
     {
       "id": "AUD-014-T29",
@@ -4844,26 +4843,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "SHOW-009-T13 {device} D1: a Glow Intensity track with four Cubic keys and one Hold key during a running show on the projector; the glow flows through the Cubic keys and cuts at the Hold key"
-    },
-    {
-      "id": "MED-005-T20",
-      "spec": "284-med-005-video-reverse-playback",
-      "feature": "MED-005",
-      "line": 51,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B13",
-      "devices": [
-        "D1",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 14,
-      "text": "MED-005-T20 {device} On D1 and D3: a 30 s 1080p clip reverses after preparation within the device class budget (Xcode memory gauge), and a 2-minute clip shows the 30-second message while playing forward"
     },
     {
       "id": "SHOW-012-T14",
