@@ -72,7 +72,7 @@ this row.
 
 ## Phase 8: Device stage (last)
 
-- [ ] SHD-002-T24 {device} Frame cost of the 12-node bench graph on D1, D2 and D3 (GPU time per frame at native size), recorded in `docs/test-reports/performance.md`
+- [X] SHD-002-T24 {device} Frame cost of the 12-node bench graph on D1, D2 and D3 (GPU time per frame at native size), recorded in `docs/test-reports/performance.md` — Verified 2026-11-18: the bench at each native size on D1 (9.48 ms median), D2 (4.19 ms) and D3 (14.46 ms), matrix records D1/20261115T204015Z, D2/20261118T201758Z, D3/20261118T201849Z; recorded in `docs/test-reports/performance.md` ("SHD-002-T24")
 
 ## Phase 9: Polish
 

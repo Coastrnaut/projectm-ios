@@ -423,3 +423,19 @@ Sizes: D1 1179x2556, D2 2064x2752, D3 1640x2360.
 |---|---|---|---|---|
 | material.noiseFlow | material.noiseFlow + spectrum.circular + spectrum.linear | 9.09 / 10.08 | 2.65 / 2.91 | 16.13 / 17.40 |
 | projectM | projectM + spectrum.circular + spectrum.linear | 6.14 / 13.49 | 1.07 / 2.47 | 9.05 / 18.89 |
+
+### SHD-002-T24: 12-node generator graph at native size (2026-11-18)
+
+`GraphCostBench.testGraphCostAgainstNoiseFlow` (`SHD002_BENCH=1`, Release, `run_device_matrix.py --only bench-shd002`):
+GPU time per frame over 60 frames after 10 warm-up frames, at each device's native screen size, against SHD-001's Noise
+Flow material in the same picture.
+
+| Device | Native size | 12-node graph median (max) | Noise Flow median (max) | Record |
+|---|---|---|---|---|
+| D1 iPhone 15 (A16) | 1179 × 2556 | 9.48 ms (9.71) | 4.91 ms (4.95) | `qa-011/runs/D1/20261115T204015Z` |
+| D2 iPad Pro M5 | 2064 × 2752 | 4.19 ms (4.44) | 1.72 ms (1.73) | `qa-011/runs/D2/20261118T201758Z` |
+| D3 iPad A16 | 1640 × 2360 | 14.46 ms (14.59) | 7.84 ms (7.87) | `qa-011/runs/D3/20261118T201849Z` |
+
+The interpreted graph costs about twice the hand-written material on every device. On D3 a full-screen 12-node graph
+alone takes 87 % of a 60 Hz frame (16.7 ms), so a graph layer stacked with other layers there will drop below 60 fps;
+the bench asserts no time budget (SHD-002 sets none), so this is recorded, not a failure.

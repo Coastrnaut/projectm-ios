@@ -4,37 +4,37 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 230,
-    "specs": 193,
+    "total": 228,
+    "specs": 191,
     "byStatus": {
-      "open": 213,
+      "open": 211,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
-      "a": 13,
+      "a": 11,
       "b": 206
     },
     "byCategoryIncludingWaived": {
-      "a": 13,
+      "a": 11,
       "b": 217
     },
     "byDevice": {
-      "D1": 211,
-      "D2": 46,
-      "D3": 44
+      "D1": 210,
+      "D2": 44,
+      "D3": 42
     },
     "byDeviceAndCategory": {
       "D1": {
-        "a": 12,
+        "a": 11,
         "b": 199
       },
       "D2": {
-        "a": 3,
+        "a": 1,
         "b": 43
       },
       "D3": {
-        "a": 3,
+        "a": 1,
         "b": 41
       }
     },
@@ -52,7 +52,7 @@
       "B11": 31,
       "B12": 5,
       "B13": 16,
-      "MATRIX": 13
+      "MATRIX": 11
     },
     "devicesInferred": 2
   },
@@ -167,8 +167,7 @@
       ],
       "partOf": [],
       "devices": [
-        "D2",
-        "D3"
+        "D1"
       ],
       "timeoutSeconds": 900
     },
@@ -196,9 +195,7 @@
       ],
       "partOf": [],
       "devices": [
-        "D1",
-        "D2",
-        "D3"
+        "D1"
       ],
       "timeoutSeconds": 900
     },
@@ -1804,29 +1801,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "CAM-012-T13 {device} On D1: choose Camera, tap Stop camera; iOS's camera indicator turns off within one second, the previous visual keeps animating, music continues; pause/resume and lock/unlock do not restart the camera (S5; quickstart \"Device\") — D1 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): Stop camera removes the camera and its badge in 0.56 s, music continues, the previous visual keeps drawing and moving, and background and return do not restart the camera. Open: iOS's own camera indicator (system UI) and lock and unlock (a person)."
-    },
-    {
-      "id": "SHD-002-T24",
-      "spec": "042-shd-002-node-generator-graph",
-      "feature": "SHD-002",
-      "line": 75,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "a",
-      "session": "MATRIX",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [
-        "bench-shd002"
-      ],
-      "estimatedMinutes": 15,
-      "text": "SHD-002-T24 {device} Frame cost of the 12-node bench graph on D1, D2 and D3 (GPU time per frame at native size), recorded in `docs/test-reports/performance.md`"
     },
     {
       "id": "MED-001-T22",
@@ -4041,28 +4015,6 @@
       ],
       "estimatedMinutes": 5,
       "text": "CMP-010-T19 {device} GPU time of a full-screen colour-keyed layer on D1 (CMP-010-S5)"
-    },
-    {
-      "id": "SHD-004-T20",
-      "spec": "231-shd-004-shader-variant-switching",
-      "feature": "SHD-004",
-      "line": 51,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "a",
-      "session": "MATRIX",
-      "devices": [
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [
-        "xctest-materials"
-      ],
-      "estimatedMinutes": 10,
-      "text": "SHD-004-T20 {device} On D3 (iPad A16, family 8) a Plasma layer with Detailed reports the unsupported notice and draws Standard; on D2 (M5) Detailed draws (Debug build; GPU test bundle on device)"
     },
     {
       "id": "UIX-013-T12",
