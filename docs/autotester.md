@@ -154,6 +154,12 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   device and failed CI (run 43918880546) after a `[skip ci]`-free push of docs; cases now keep D1 (or their default
   devices) once their tasks close. UDP over Wi-Fi also loses single datagrams (the first to a host, or one at the end
   of a flood): the OSC driver sends closing values three times.
+- **Tap a SwiftUI Toggle at its switch, not its centre:** `app.switches["id"].tap()` in a Settings list hit the row's
+  label on D1 and the switch never changed (OSC-007's after-Stop check, 2026-11-18). Tap
+  `coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5))` and check `value` changed. Rows shown only while a
+  setting is on (OSC's Test value) vanish with it: turn the setting back on before reading them.
+- **Pass each `-only-testing:` as its own argument:** two filters quoted into one shell argument ran zero tests and
+  still printed `** TEST EXECUTE SUCCEEDED **`; check "Executed N tests" with N > 0.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
