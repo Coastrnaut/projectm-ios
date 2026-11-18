@@ -310,9 +310,20 @@ final class InAppPlaybackGraph {
         let layout = ChannelLayoutTag(rawValue: tapFormat.channelLayout?.layoutTag ?? 0)
         tapSampleRate = tapFormat.sampleRate
         warmUp(tapFormat)   // no first-call method-cache allocation in the tap (T063)
+        #if DEBUG
+        let probe = PlaybackDebugProbe.enabledInstance   // QA-011 device tests (`-uitestPlaybackProbe`); nil otherwise
+        let probeRate = tapFormat.sampleRate
+        #endif
         engine.mainMixerNode.installTap(onBus: 0, bufferSize: 1024, format: tapFormat) { @Sendable tapBuffer, when in
             // AUD-006: a tap from before the last cut must not write (PlaybackTapGate).
             if gate.enter(token) {
+                #if DEBUG
+                if let probe, let data = tapBuffer.floatChannelData {
+                    probe.record(data, channelCount: Int(tapBuffer.format.channelCount), stride: tapBuffer.stride,
+                                 frames: Int(tapBuffer.frameLength), sampleRate: probeRate,
+                                 firstAfterCut: gate.deliveredFrames == 0)
+                }
+                #endif
                 // Capture delivery (task T062): the buffer's host time, in ns on the uptime clock.
                 let captureNs: UInt64 = when.isHostTimeValid
                     ? UInt64(AVAudioTime.seconds(forHostTime: when.hostTime) * 1_000_000_000) : 0

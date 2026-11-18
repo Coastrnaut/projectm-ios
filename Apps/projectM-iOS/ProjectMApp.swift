@@ -46,6 +46,7 @@ struct RootView: View {
                                      onPlay: { coordinator.finishGuidedFirstScene() })
             }
             #if DEBUG
+            if UITestAudioProbes.isRequested { UITestAudioProbeView(coordinator: coordinator) }   // QA-011 audio device tests
             if ProcessInfo.processInfo.arguments.contains("-uitestEncoderProbe"),   // REC-003-T23 diagnosis, every screen
                ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
                 let value = UITestEncoderProbe.shared.value

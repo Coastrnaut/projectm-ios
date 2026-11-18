@@ -50,6 +50,15 @@ final class AudioLibraryCoordinator {
             try? FileManager.default.removeItem(at: directory)
         }
         #endif
+        #if DEBUG
+        // QA-011 AUD-002-T27: the device test reads what was announced (`importProbe`); VoiceOver still gets the post.
+        if UITestAudioProbes.isRequested {
+            return AudioLibraryCoordinator(library: directory.map { AudioLibrary(directory: $0) }, queueDirectory: directory) {
+                UITestAudioProbes.lastLibraryAnnouncement = $0
+                UIAccessibility.post(notification: .announcement, argument: $0)
+            }
+        }
+        #endif
         return AudioLibraryCoordinator(library: directory.map { AudioLibrary(directory: $0) }, queueDirectory: directory)
     }
 

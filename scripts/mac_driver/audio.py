@@ -29,6 +29,13 @@ def tone_wav(path: Path, hz: float, seconds: float, rate: int = 44_100, level: f
 
 
 def afplay(path: Path, request: dict) -> list[str]:
+    if request.get("loop") and "seconds" in request:
+        # Microphone tests (QA-011 Batch 3): repeat the file until `seconds` have passed; afplay plays once.
+        seconds = float(request["seconds"])
+        volume = f" -v {float(request['volume'])}" if "volume" in request else ""
+        script = (f'end=$(( $(date +%s) + {int(seconds + 0.999)} )); '
+                  f'while [ $(date +%s) -lt $end ]; do afplay "$0"{volume} -t $(( end - $(date +%s) )); done')
+        return ["/bin/sh", "-c", script, str(path)]
     cmd = ["afplay", str(path)]
     if "seconds" in request:
         cmd += ["-t", str(float(request["seconds"]))]

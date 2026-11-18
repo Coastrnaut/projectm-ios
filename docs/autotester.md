@@ -31,6 +31,35 @@ runs on hardware.
 | MIDI driver | `scripts/mac_driver/midi.py` + `scripts/fixtures/midi_session.swift` | The Mac's CoreMIDI network session to the device; answers `MIDI-READY <scenario>` with CC, notes, programs, 14-bit pairs and clock; counts MIDI feedback. Needs the network-MIDI DEBUG exemption (see Batch 8). |
 | Two-device runner | `scripts/mac_driver/peer.py` | Runs one test on D1 and one on D2 from per-device product copies; starts the acting role on the waiting role's `PEER-READY` line; pairs `PEER-STEP`/`PEER-SEEN` times. |
 | Device facts | `scripts/mac_driver/devices.py` | D1-D3 by product type, Bonjour names, `dscacheutil` resolution, the Mac's own address, Documents copies. |
+| Audio probes (DEBUG) | `Apps/projectM-iOS/Debug/UITestAudioProbes.swift`, CaptureKit `PlaybackDebugProbe`, AudioCore `NoiseGateDebugProbe` | QA-011 audio (B05): generated fixtures (`-uitestSeedAudio`), what the playback tap delivered (`-uitestPlaybackProbe`), the audio-session notifications (`-uitestSessionLog`), the noise gate's transitions (`-uitestGateProbe`), import times and announcements (`importProbe`), and a panel for seeks, queue edits, repeat and shuffle (`-uitestAudioPanel`). See "Audio device tests" below. |
+| Audio device-test helpers | `Apps/projectM-iOS/DeviceUITests/AudioProbeSupport.swift` | Probe parsing, `launchPlayback`, real interruptions through `SystemUI` with the AUD-014 policy check, `MAC-DO` requests to the Mac driver. |
+| Real-backend contract bundle | `Packages/CaptureKit/Tests/CaptureKitDeviceTests` (`CaptureKitDeviceTests` in `DeviceTests.yml`) | QA-007-T23: no sink write after stop and the session-event mapping with AVAudioEngine and the microphone (skips the microphone unless already granted). |
+| MP3 fixtures | `scripts/make_music_fixture.py --mp3 cbr\|vbr` | AUD-002-T25: the music fixture as MP3 from `lame` (owner approved 2026-11-18): 192 kbit/s CBR, and `-V 2` VBR with an ID3v2 tag and cover art. `install_test_fixtures.py` makes and copies both. |
+
+## Audio device tests (QA-011 Batch 3)
+
+- **Time-code ramps instead of listening.** `-uitestSeedAudio ramps` writes 32-bit float WAVs whose channel 0 is a slow
+  ramp: `0.03 + 0.05 k + 0.02 t / D` names the track `k` and the position `t` (channel 1 is a quiet tone with a kick, so
+  the status reads "Active audio"). The In-App Playback tap records the first and last sample and the peak of every
+  delivered buffer (`PlaybackDebugProbe`, atomics and a preallocated ring, only with `-uitestPlaybackProbe`); the app
+  reads them back as `playbackProbe`: `staleSeeks` (first buffer after a seek more than 0.25 s off its target), `disc`
+  and `rewinds` (jumps no cut explains: a gap or a repeated fragment), `wraps` (loops), `changes` (`a>b`, `!` when a
+  track change cut in away from an end), `silentBuffers`/`maxSilentMs` (gaps), `cutJumpMs` (a resume continues where it
+  held). This answers "is there audio from before a seek" on hardware with numbers, not by ear.
+- **Other seeds:** `containers` (AAC M4A, ADTS `.aac`, ALAC M4A, WAV, AIFF via AVAudioFile), `broken` (truncated M4A,
+  a PDF named `.mp3`), `large` (10.6 MB WAV), `long` (60-minute AAC; the first run writes it, about a minute or two),
+  `original` (for the Files-picker import), `bigpreset` (a 524,288-byte preset; `-uitestImportPreset` now also takes a
+  Documents-relative path). `-uitestDeleteDocument <name>` removes the picked original before a relaunch.
+- **Real interruptions:** `SystemUI.startClockTimer` and `SystemUI.siriInterruption` (Batch 1); `sessionLog` shows
+  whether iOS delivered the end and `shouldResume`, and `realInterruption(...)` checks the AUD-014 policy for what
+  arrived. A lost output route stays synthetic (`session:routeLost`), headphones and calls stay with a person.
+- **Microphone tests use the Mac's speaker:** the test prints `MAC-DO {"module":"audio","action":"play",
+  "fixture":"music-fixture.m4a","seconds":N,"loop":true,...}` (and `"action":"stop"`); `scripts/mac_device_driver.py`
+  plays it with `afplay` next to the device. Keep the device within about 30 cm of the Mac and the Mac's volume up.
+  The tests wait on the gate or level probes, never on the Mac's log.
+- **Which batch:** the microphone tests need the permission already granted; the Files-picker (AUD-001-T23,
+  AUD-002-T25, AUD-002-T27) and Siri tests drive system UI and run in the prompt-flow batch (owner rule 14 as amended),
+  never inside an unattended batch.
 
 ## Running it (D1 example)
 

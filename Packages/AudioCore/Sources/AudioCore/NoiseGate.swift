@@ -281,7 +281,17 @@ public final class NoiseGateReader: NormalizedPCMReader, AnalysisSessionReportin
             processor.reset()
         }
         processor.setOpenThreshold(decibels: control.openDecibels)
+        #if DEBUG
+        let phaseBefore = processor.phase
+        #endif
         processor.process(dst, frames: frames, channels: NormalizedPCMRing.channelCount)
+        #if DEBUG
+        // QA-011 AUD-011-T12: the gate's transitions for the device test (NoiseGateDebugProbe; analysis worker).
+        NoiseGateDebugProbe.shared.note(reader: ObjectIdentifier(self), before: phaseBefore, after: processor.phase,
+                                        envelope: processor.envelope, gain: processor.gain,
+                                        openLinear: NoiseGate.linear(decibels: processor.parameters.openDecibels),
+                                        closeLinear: NoiseGate.linear(decibels: processor.parameters.closeDecibels))
+        #endif
         return frames
     }
 }

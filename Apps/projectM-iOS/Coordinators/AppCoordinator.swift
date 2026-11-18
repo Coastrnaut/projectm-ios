@@ -1223,12 +1223,15 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             // those files, in that order, through the same code path as the Files picker's result.
             // QA-011 device acceptance: a path without a leading "/" is relative to Documents (a fixture copied
             // there with devicectl), and `-uitestPlayImported YES` then plays the first imported track.
+            await UITestAudioProbes.prepare()   // QA-011 audio device tests: fixtures and probes before the import
             if let paths = defaults.string(forKey: "uitestImportAudio") {
                 for path in paths.split(separator: "|") {
                     let raw = String(path)
                     let url: URL = raw.hasPrefix("/") ? URL(fileURLWithPath: raw)
                         : URL.documentsDirectory.appendingPathComponent(raw)
+                    let started = Date()
                     await audioLibrary.importPicked(.success([url]))
+                    UITestAudioProbes.noteImport(raw, milliseconds: Date().timeIntervalSince(started) * 1000)   // AUD-001-S1
                 }
             }
             // The track this launch imported first (by its file name): the library persists between launches, so its
@@ -1417,7 +1420,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             // UserPresetsUITests: `-uitestImportPreset <path>` imports that file through the same
             // code path as the Files picker's result.
             if let path = defaults.string(forKey: "uitestImportPreset") {
-                await userPresets.importPicked(.success(URL(fileURLWithPath: path)))
+                // QA-011 PRE-015-T26: a path without a leading "/" is relative to Documents (as for `-uitestImportAudio`).
+                let url: URL = path.hasPrefix("/") ? URL(fileURLWithPath: path) : URL.documentsDirectory.appendingPathComponent(path)
+                await userPresets.importPicked(.success(url))
             }
             // PresetArchiveImportUITests (FILE-003): previews a fixture archive after the trials ran.
             if defaults.bool(forKey: "uitestPresetArchiveFixture") { await userPresets.previewFixtureArchive() }

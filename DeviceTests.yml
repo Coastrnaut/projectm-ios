@@ -154,6 +154,17 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.ANGLEDeviceTests
+  CaptureKitDeviceTests:
+    # QA-007-T23: the source contract's seam promises with the real AVAudioEngine and microphone backends (matrix
+    # case xctest-qa007-backends). Not a SwiftPM target; only public CaptureKit API, so it builds in Release too.
+    templates: [DeviceTestBundle]
+    sources: [Packages/CaptureKit/Tests/CaptureKitDeviceTests]
+    dependencies:
+      - package: CaptureKit
+      - package: AudioCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: org.projectmios.ProjectMiOS.CaptureKitDeviceTests
   projectM-iOSDeviceUITests:
     # QA-011 device acceptance: the owner sessions' steps automated on D1/D2 (Apps/projectM-iOS/DeviceUITests).
     type: bundle.ui-testing
@@ -194,3 +205,4 @@ schemes:
         - ExpressionDeviceTests
         - RenderGoldensDeviceTests
         - ANGLEDeviceTests
+        - CaptureKitDeviceTests

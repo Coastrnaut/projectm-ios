@@ -12,6 +12,10 @@ AAC (.m4a) with `afconvert` when it is available (macOS).
 Variants for the stereo device tests (QA-011 B05): `left` keeps the music in the left channel only (the right is
 silent: AUD-009 channel selection); `inverted` makes the right channel the negated left (a phase-inverted feed:
 ANL-013 stereo correlation reads a negative r).
+
+MP3 for AUD-002-T25 (owner approved Homebrew `lame`, 2026-11-18): `--mp3 cbr` writes music-fixture-cbr.mp3 (constant
+192 kbit/s), `--mp3 vbr` writes music-fixture-vbr.mp3 (variable, `-V 2`, with an ID3v2 tag and a generated PNG cover).
+The music fixture is decoded to WAV with `afconvert` first (generated when missing), then encoded by `lame`.
 """
 from __future__ import annotations
 
@@ -21,6 +25,7 @@ import shutil
 import struct
 import subprocess
 import wave
+import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -105,11 +110,52 @@ def write_wav(path: Path, left: list[float], right: list[float], rate: int = RAT
         w.writeframes(bytes(frames))
 
 
+def cover_png(path: Path, size: int = 64) -> None:
+    """A small generated cover image (a colour gradient) for the VBR file's ID3 artwork."""
+    rows = b"".join(b"\x00" + bytes(c for x in range(size) for c in (x * 4 % 256, y * 4 % 256, 160)) for y in range(size))
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+    header = struct.pack(">IIBBBBB", size, size, 8, 2, 0, 0, 0)
+    path.write_bytes(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b""))
+
+
+def make_mp3(kind: str, out: Path | None) -> int:
+    """AUD-002-T25: the music fixture as MP3 from a real encoder (`lame`), constant or variable bit rate."""
+    lame = shutil.which("lame") or ("/opt/homebrew/bin/lame" if Path("/opt/homebrew/bin/lame").exists() else None)
+    if lame is None:
+        print("make_music_fixture: lame not found (brew install lame)")
+        return 1
+    fixtures = ROOT / "Build" / "fixtures"
+    out = out or fixtures / f"music-fixture-{kind}.mp3"
+    m4a = fixtures / "music-fixture.m4a"
+    if not m4a.exists():
+        main(["--out", str(m4a)])
+    wav = fixtures / "music-fixture-decoded.wav"
+    if m4a.exists() and shutil.which("afconvert"):
+        subprocess.run(["afconvert", "-f", "WAVE", "-d", "LEI16", str(m4a), str(wav)], check=True)
+    else:
+        left, right = synthesize()
+        write_wav(wav, left, right)
+    command = [lame, "--quiet"]
+    if kind == "cbr":
+        command += ["-b", "192"]
+    else:
+        cover = fixtures / "music-fixture-cover.png"
+        cover_png(cover)
+        command += ["-V", "2", "--add-id3v2", "--tt", "Music fixture VBR", "--ta", "projectM-iOS tests", "--ti", str(cover)]
+    subprocess.run(command + [str(wav), str(out)], check=True)
+    print(f"make_music_fixture: {out} ({out.stat().st_size} bytes)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     p.add_argument("--out", default=None)
     p.add_argument("--variant", choices=["normal", "left", "inverted"], default="normal")
+    p.add_argument("--mp3", choices=["cbr", "vbr"], default=None, help="write the MP3 fixture instead (needs lame)")
     args = p.parse_args(argv)
+    if args.mp3:
+        return make_mp3(args.mp3, Path(args.out) if args.out else None)
     name = "music-fixture" if args.variant == "normal" else f"music-fixture-{args.variant}"
     out = Path(args.out) if args.out else ROOT / "Build" / "fixtures" / f"{name}.m4a"
     wav = out.with_suffix(".wav")

@@ -43,6 +43,10 @@ def copy_command(device: str, source: Path) -> list[str]:
             "--domain-identifier", BUNDLE, "--source", str(source), "--destination", f"Documents/{source.name}"]
 
 
+# AUD-002-T25: MP3 from a real encoder (lame; owner approved 2026-11-18), constant and variable bit rate.
+MP3_FIXTURES = {"music-fixture-cbr.mp3": "cbr", "music-fixture-vbr.mp3": "vbr"}
+
+
 def identifiers() -> dict[str, str]:
     with tempfile.NamedTemporaryFile(suffix=".json") as out:
         subprocess.run(["xcrun", "devicectl", "list", "devices", "--json-output", out.name],
@@ -63,6 +67,13 @@ def main(argv: list[str] | None = None) -> int:
         if not (ROOT / "Build" / "fixtures" / name).exists():
             subprocess.run([sys.executable, str(ROOT / "scripts" / "make_music_fixture.py"), "--variant", variant], check=True)
     sources = [ROOT / "Build" / "fixtures" / f for f in FIXTURES]
+    for name, kind in MP3_FIXTURES.items():   # AUD-002-T25: made with lame when missing
+        if not (ROOT / "Build" / "fixtures" / name).exists():
+            made = subprocess.run([sys.executable, str(ROOT / "scripts" / "make_music_fixture.py"), "--mp3", kind]).returncode == 0
+            if not made:
+                print(f"install_test_fixtures: {name} not made (needs lame); AUD-002-T25's MP3 cases will fail")
+                continue
+        sources.append(ROOT / "Build" / "fixtures" / name)
     if args.media:
         sys.path.insert(0, str(ROOT / "scripts"))
         sources += media_fixtures(args.only)
