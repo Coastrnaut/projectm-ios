@@ -4,38 +4,38 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 228,
-    "specs": 191,
+    "total": 227,
+    "specs": 190,
     "byStatus": {
-      "open": 211,
+      "open": 210,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 11,
-      "b": 206
+      "b": 205
     },
     "byCategoryIncludingWaived": {
       "a": 11,
-      "b": 217
+      "b": 216
     },
     "byDevice": {
-      "D1": 210,
-      "D2": 44,
-      "D3": 42
+      "D1": 209,
+      "D2": 43,
+      "D3": 41
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 11,
-        "b": 199
+        "b": 198
       },
       "D2": {
         "a": 1,
-        "b": 43
+        "b": 42
       },
       "D3": {
         "a": 1,
-        "b": 41
+        "b": 40
       }
     },
     "bySession": {
@@ -51,7 +51,7 @@
       "B10": 13,
       "B11": 31,
       "B12": 5,
-      "B13": 16,
+      "B13": 15,
       "MATRIX": 11
     },
     "devicesInferred": 2
@@ -757,7 +757,6 @@
       "order": 13,
       "devices": [
         "D1",
-        "D2",
         "D3"
       ],
       "tasks": [
@@ -770,7 +769,6 @@
         "048-med-002-import-video-layer:MED-002-T28",
         "054-perf-006-memory-warning-recovery:PERF-006-T17",
         "058-rec-003-video-recording:REC-003-T23",
-        "083-vis-003-waveform-oscilloscope:VIS-003-T17",
         "095-aud-013-source-latency-calibration:AUD-013-T15",
         "173-perf-003-adaptive-quality:PERF-003-T15",
         "201-perf-008-battery-saver:PERF-008-T16",
@@ -779,7 +777,7 @@
         "284-med-005-video-reverse-playback:MED-005-T20"
       ],
       "optionalTasks": 3,
-      "estimatedMinutes": 155
+      "estimatedMinutes": 140
     }
   ],
   "tasks": [
@@ -2471,27 +2469,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "ACC-004-T12 `{device}` VoiceOver pass on D1 (quickstart \"Device\"): every primary control reachable and named, cue and preset rotor actions (including the swipe actions iOS exposes, D4), C1 announcements without repeats (ACC-004-S6)."
-    },
-    {
-      "id": "VIS-003-T17",
-      "spec": "083-vis-003-waveform-oscilloscope",
-      "feature": "VIS-003",
-      "line": 53,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B13",
-      "devices": [
-        "D1",
-        "D2",
-        "D3"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 15,
-      "text": "VIS-003-T17 `{device}` On D1 under Instruments (Allocations, Metal System Trace): 60 s of the oscilloscope with the reference track, no allocation growth in the frame loop and frame time within the VIS-001 budget; D2 and D3 render it. Final device phase only. D2 done 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B13.md): B13MeasurementDeviceTests, the oscilloscope renders on D2 in portrait and landscape within the frame-rate budget. Open: D1 under Instruments, D3. — D3 done 2026-11-16 (docs/test-reports/qa-011/acceptance/D3-B02-B03-B13.md): the oscilloscope renders on D3 in portrait and landscape within the frame-rate budget. D2 and D3 done; open: D1 under Instruments."
     },
     {
       "id": "AUD-008-T13",

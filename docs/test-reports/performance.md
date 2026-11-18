@@ -439,3 +439,15 @@ Flow material in the same picture.
 The interpreted graph costs about twice the hand-written material on every device. On D3 a full-screen 12-node graph
 alone takes 87 % of a 60 Hz frame (16.7 ms), so a graph layer stacked with other layers there will drop below 60 fps;
 the bench asserts no time budget (SHD-002 sets none), so this is recorded, not a failure.
+
+### VIS-003-T17: the oscilloscope on D1 for 60 s under Instruments (2026-11-18)
+
+- **Allocations** (`xctrace record --template Allocations`, 61 s, the app launched with the reference track and the
+  oscilloscope): recorded (6.7 GB, kept local, not committed). `xctrace export` does not export the Allocations
+  instrument's data, so the growth check uses the process footprint instead: `B13MeasurementDeviceTests.testVIS003SixtySecondsWithoutMemoryGrowth`
+  sampled `phys_footprint` (DEBUG `memoryProbe`) each second: 117 MB in all 57 samples, 60 fps at the start and
+  after 60 s (`qa-011/acceptance/D1-B13-vis003.md`).
+- **Metal System Trace** (`xctrace record --template "Metal System Trace"`, 60 s): `metal-current-allocated-size`
+  changed only during the first 4.7 s and stayed at 46.7 MB after; GPU time per frame (first to last top-level GPU
+  interval of each frame, `metal-gpu-intervals`, after 5 s) median 0.53 ms, 95th percentile 0.54 ms, max 1.36 ms
+  over 3,398 frames, far inside the VIS-001 budget of 16.7 ms at 60 Hz.

@@ -19,6 +19,31 @@ final class B13MeasurementDeviceTests: DeviceAcceptanceCase {
         assertDrawingAndMoving(task, "landscape", minimumDraw: 0.005)
     }
 
+    /// VIS-003-T17 (D1): 60 s of the oscilloscope with the reference track; the process footprint (Xcode's memory
+    /// gauge, DEBUG `memoryProbe`, once a second) does not grow in the frame loop, and the frame rate stays within the
+    /// VIS-001 budget at the start and the end. The last 10 s may exceed the 5-15 s median by at most 5 MB.
+    func testVIS003SixtySecondsWithoutMemoryGrowth() {
+        let task = "VIS-003-T17"
+        launch(visual: "oscilloscope")
+        assertFrameRate(task, "start")
+        let probe = app.descendants(matching: .any)["memoryProbe"].firstMatch
+        var samples: [Int] = []
+        let start = Date()
+        while Date().timeIntervalSince(start) < 60 {
+            let text = (probe.value as? String) ?? ""
+            if let mb = Int(text.replacingOccurrences(of: "footprintMB=", with: "")), mb > 0 { samples.append(mb) }
+            pause(1)
+        }
+        assertFrameRate(task, "after 60 s")
+        guard samples.count >= 40 else { return XCTFail("too few memory samples: \(samples)") }
+        func median(_ values: ArraySlice<Int>) -> Int { values.sorted()[values.count / 2] }
+        let early = median(samples[5..<15]), late = median(samples[(samples.count - 10)...])
+        print("VIS-003 footprint (MB): \(samples)")
+        report(task, "footprint", ["earlyMB": Double(early), "lateMB": Double(late), "maxMB": Double(samples.max() ?? 0),
+                                   "samples": Double(samples.count)])
+        XCTAssertLessThanOrEqual(late, early + 5, "no memory growth over 60 s: \(early) MB early, \(late) MB late")
+    }
+
     /// PERF-004-T14 (D1) / T15 (D3): 100 visual switches (Camera → Photo → Circular Spectrum); GPU memory
     /// (`MTLDevice.currentAllocatedSize` after each cycle) plateaus after the first cycle: the last cycles are within
     /// 10 % of the second cycle and never above the highest early value by more than 10 %.

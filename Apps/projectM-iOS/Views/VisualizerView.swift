@@ -356,6 +356,7 @@ struct VisualizerView: View {
         }
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { UITestCueTransitionProbe(stage: coordinator.cueTransitions) }   // XFADE
+        if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { UITestMemoryProbe() }   // VIS-003-T17
         #endif
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // ACC-004-R9: the last announcement
             let spoken = coordinator.announcer.lastSpoken
@@ -1060,6 +1061,24 @@ extension VisualizerView {
             if let size = (try? FileManager.default.attributesOfItem(atPath: candidate.path))?[.size] as? Int { return size }
         }
         return -1
+    }
+}
+#endif
+
+#if DEBUG
+/// QA-011 VIS-003-T17: the process's physical footprint in MB, refreshed each second ("footprintMB=<n>"), so a device
+/// test can check that memory does not grow while a visual runs.
+private struct UITestMemoryProbe: View {
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { _ in
+            let value = "footprintMB=\((ProcessMemory.footprintBytes() ?? -1) / 1_048_576)"
+            Text(value)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("memoryProbe")
+                .accessibilityValue(value)
+        }
     }
 }
 #endif

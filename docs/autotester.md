@@ -160,6 +160,12 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   setting is on (OSC's Test value) vanish with it: turn the setting back on before reading them.
 - **Pass each `-only-testing:` as its own argument:** two filters quoted into one shell argument ran zero tests and
   still printed `** TEST EXECUTE SUCCEEDED **`; check "Executed N tests" with N > 0.
+- **Instruments from the command line:** `xcrun xctrace record --template <name> --device <UDID> --time-limit 60s
+  --output x.trace --launch -- <bundle id> <launch arguments>` launches the installed Debug app with test hooks. Never
+  wrap it in a short `timeout`: saving a 60 s Allocations trace takes minutes (6.7 GB), and a killed save leaves an
+  unreadable trace. `xctrace export --toc` lists the tables; Metal System Trace exports `metal-gpu-intervals` and
+  `metal-current-allocated-size`, but Allocations exports no allocation table, so memory growth is checked with the
+  DEBUG `memoryProbe` (`footprintMB=<n>` each second with `-uitestDiagnostics`) instead.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

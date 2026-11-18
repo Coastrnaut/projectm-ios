@@ -1,0 +1,55 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "791b6fd753f65636ae9341d93cfc65096167c9779ca3a6d22175e616fa72cfbf",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "start",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 60,
+   "samples": 10,
+   "step": "after 60 s",
+   "task": "VIS-003-T17"
+  },
+  {
+   "device": "iPhone15,4",
+   "earlyMB": 117,
+   "lateMB": 117,
+   "maxMB": 117,
+   "samples": 57,
+   "step": "footprint",
+   "task": "VIS-003-T17"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B13-vis003",
+ "tasks": {
+  "VIS-003-T17": {
+   "checks": {},
+   "fpsMedians": [
+    60,
+    60
+   ],
+   "fpsMin": 60,
+   "steps": 2
+  }
+ },
+ "tests": [
+  {
+   "class": "B13MeasurementDeviceTests",
+   "result": "passed",
+   "seconds": 94.025,
+   "test": "testVIS003SixtySecondsWithoutMemoryGrowth"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d1/vis003-1118154432.xcresult"
+}
