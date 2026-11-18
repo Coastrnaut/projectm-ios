@@ -1,0 +1,53 @@
+{
+ "device": "D3",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "b3e2b0764e1bc0d316a09e17ce5a12df5f931238e86b0be5b6be673bbdd605d6",
+ "measurements": [
+  {
+   "device": "iPad15,7",
+   "levelMax": 0.33,
+   "levelMean": 0.032,
+   "outputVolume": 0,
+   "samples": 40,
+   "step": "0 dB",
+   "task": "AUD-008-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "levelMax": 0.37,
+   "levelMean": 0.049,
+   "outputVolume": 0,
+   "samples": 40,
+   "step": "12 dB",
+   "task": "AUD-008-T13"
+  },
+  {
+   "device": "iPad15,7",
+   "difference": 0.018,
+   "flatMean": 0.032,
+   "raisedMean": 0.049,
+   "step": "compare",
+   "task": "AUD-008-T13"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B13-aud008",
+ "tasks": {
+  "AUD-008-T13": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13ExtraDeviceTests",
+   "result": "passed",
+   "seconds": 43.853,
+   "test": "testAUD008PlusTwelveDecibelsDrivesTheAnalysisHarder"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d3/aud008-1118153951.xcresult"
+}

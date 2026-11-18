@@ -155,8 +155,10 @@ final class B13ExtraDeviceTests: DeviceAcceptanceCase {
         let raised = analysisLevel(task, decibels: 12)
         report(task, "compare", ["flatMean": flat.mean, "raisedMean": raised.mean, "difference": raised.mean - flat.mean])
         XCTAssertGreaterThan(flat.max, 0, "0 dB: the music moves the analysis")
-        XCTAssertGreaterThan(raised.mean, flat.mean + 0.02,
-                             "+12 dB reads a higher mean band level: \(raised.mean) vs \(flat.mean) at 0 dB")
+        // A relative margin: the band level's scale differs by device (0.035 on D3, 0.20 on D1 at 0 dB, 2026-11-18),
+        // while +12 dB raised it by 36-55 % on D1-D3. An absolute 0.02 failed D3 at +46 %.
+        XCTAssertGreaterThan(raised.mean, flat.mean * 1.2,
+                             "+12 dB reads a mean band level at least 20 % higher: \(raised.mean) vs \(flat.mean) at 0 dB")
     }
 
     // MARK: REC-003-T23 (60 s recording)
