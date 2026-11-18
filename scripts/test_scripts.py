@@ -40,6 +40,10 @@ import qa011_inventory as qa011  # noqa: E402
 import run_device_matrix as rdm  # noqa: E402
 import release_manifest as rmf  # noqa: E402
 import verify_environment  # noqa: E402
+import mac_device_driver as mdd  # noqa: E402
+import mac_driver  # noqa: E402
+import make_media_fixtures as mmf  # noqa: E402
+import install_test_fixtures as itf  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -2461,6 +2465,144 @@ class ReleaseManifestTests(unittest.TestCase):
         self.assertEqual(m["openDeviceTasks"]["byCategory"], {"a": 1, "b": 2})
         self.assertEqual(m["openDeviceTasks"]["notCounted"], 2, "waived and optional tasks do not hold a release")
         self.assertIn("3 open {device}/{owner} tasks (QA-011 inventory)", m["gaps"])
+
+
+class MacDeviceDriverTests(unittest.TestCase):
+    """mac_device_driver.py and scripts/mac_driver (QA-011 Batch 1): MAC-DO requests from the xcodebuild log."""
+
+    def test_parse_request_reads_the_json_after_the_marker(self):
+        line = 'Test Case ... 2026-11-18 MAC-DO {"action": "audio.stop", "id": "3"}'
+        self.assertEqual(mac_driver.parse_request(line), {"action": "audio.stop", "id": "3"})
+        self.assertIsNone(mac_driver.parse_request("MAC-DO {not json"))
+        self.assertIsNone(mac_driver.parse_request('MAC-DO {"action": "nomodule"}'))
+        self.assertIsNone(mac_driver.parse_request("OSC-READY test"))
+
+    def test_only_package_modules_resolve(self):
+        context = mac_driver.Context(dry_run=True)
+        self.assertTrue(mac_driver.dispatch({"action": "../etc.x"}, context).startswith("error"))
+        self.assertTrue(mac_driver.dispatch({"action": "os.system"}, context).startswith("error"))
+        self.assertTrue(mac_driver.dispatch({"action": "audio.nothing"}, context).startswith("error"))
+        self.assertEqual(mac_driver.dispatch({"action": "audio.stop"}, context), "nothing playing")
+
+    def test_audio_play_stays_inside_the_repository(self):
+        context = mac_driver.Context(dry_run=True)
+        self.assertTrue(mac_driver.dispatch({"action": "audio.play", "file": "../../etc/hosts"}, context).startswith("error"))
+        result = mac_driver.dispatch({"action": "audio.play", "file": "scripts/make_music_fixture.py", "seconds": 2,
+                                      "volume": 0.5}, context)
+        self.assertEqual(result, "playing make_music_fixture.py")
+        self.assertTrue(context.log[-1].startswith("afplay ") and "-t 2.0 -v 0.5 &" in context.log[-1], context.log)
+
+    def test_memory_warning_finds_the_app_pid(self):
+        processes = {"result": {"runningProcesses": [
+            {"executable": "file:///usr/libexec/backboardd", "processIdentifier": 40},
+            {"executable": "file:///private/var/containers/Bundle/Application/X/projectM-iOS.app/projectM-iOS",
+             "processIdentifier": 812}]}}
+        from mac_driver import memory
+        self.assertEqual(memory.app_pid(processes), 812)
+        self.assertIsNone(memory.app_pid({"result": {"runningProcesses": []}}))
+
+    def test_crash_reports_since_a_time(self):
+        from mac_driver import device
+        listing = {"result": {"files": [
+            {"relativePath": "projectM-iOS-2026-11-18-101500.ips", "lastModDate": "2026-11-18T10:15:00Z"},
+            {"relativePath": "projectM-iOS-2026-11-17-090000.ips", "lastModDate": "2026-11-17T09:00:00Z"},
+            {"relativePath": "Camera-2026-11-18-101600.ips", "lastModDate": "2026-11-18T10:16:00Z"}]}}
+        since = 1_794_996_000.0   # 2026-11-18T10:00:00Z
+        self.assertEqual(device.crash_reports(listing, "projectM", since), ["projectM-iOS-2026-11-18-101500.ips"])
+
+    def test_follow_answers_each_request_once_and_stops_at_the_end_marker(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            log = Path(tmp) / "x.log"
+            log.write_text('MAC-DO {"action": "audio.stop", "id": "1"}\nnoise\nMAC-DO {"action": "audio.tone", '
+                           '"id": "2", "hz": 220, "seconds": 0.01}\n** TEST EXECUTE SUCCEEDED **\n'
+                           'MAC-DO {"action": "audio.stop", "id": "9"}\n')
+            lines: list[str] = []
+            context = mac_driver.Context(dry_run=True)
+            self.assertEqual(mdd.follow(log, context, timeout=5, out=lines.append, poll=0.01), 0)
+        self.assertEqual(len(lines), 2, lines)
+        self.assertTrue(lines[0].startswith("MAC-DONE 1 ") and lines[0].endswith("audio.stop: nothing playing"))
+        self.assertIn("audio.tone: tone 220 Hz", lines[1])
+
+    def test_prompt_flow_reinstalls_then_runs_the_class_alone(self):
+        cmds = mdd.prompt_flow_commands("DEV", "UDID", Path("Build/da"), Path("Build/da/app"), Path("logs"), osc=True)
+        self.assertEqual(cmds[0][:5], ["xcrun", "devicectl", "device", "uninstall", "app"])
+        self.assertEqual(cmds[1][:5], ["xcrun", "devicectl", "device", "install", "app"])
+        self.assertIn("--media", cmds[2])
+        test = cmds[3]
+        self.assertIn("-only-testing:projectM-iOSDeviceUITests/PromptFlowDeviceTests", test)
+        self.assertEqual(sum(a.startswith("-only-testing") for a in test), 1, "the prompt flow runs alone")
+        self.assertIn("TEST_RUNNER_MAC_DRIVER=1", test)
+        self.assertIn("TEST_RUNNER_OSC_DRIVER=1", test)
+        self.assertIn("platform=iOS,id=UDID", test)
+
+    def test_device_ids_map_product_types(self):
+        listing = {"result": {"devices": [
+            {"identifier": "A", "hardwareProperties": {"productType": "iPhone15,4", "udid": "U1"}},
+            {"identifier": "B", "hardwareProperties": {"productType": "iPad99,1", "udid": "U9"}}]}}
+        self.assertEqual(mdd.device_ids(listing), {"D1": ("A", "U1")})
+
+    def test_autotester_documents_the_prompt_flow_batch(self):
+        """Owner rule 14 (2026-11-18): the self-answering prompt flow is its own batch, excluded from other runs."""
+        doc = (Path(__file__).resolve().parent.parent / "docs" / "autotester.md").read_text(encoding="utf-8")
+        self.assertIn("-skip-testing:projectM-iOSDeviceUITests/PromptFlowDeviceTests", doc)
+        self.assertIn("mac_device_driver.py prompt-flow", doc)
+
+
+class MediaFixtureTests(unittest.TestCase):
+    """make_media_fixtures.py (QA-011 Batch 1): the Python-made fixtures and the catalog."""
+
+    def test_preset_is_exactly_the_size_limit_and_valid(self):
+        data = mmf.preset_of_size()
+        self.assertEqual(len(data), 524_288)
+        self.assertTrue(data.startswith(b"[preset00]\n"))
+        for size in (300, 301, 302, 1000):
+            self.assertEqual(len(mmf.preset_of_size(size)), size)
+
+    def test_strobe_preset_is_flagged(self):
+        import preset_flash_risk
+        self.assertTrue(preset_flash_risk.may_flash(mmf.strobe_preset()))
+
+    def test_pdf_is_a_pdf(self):
+        data = mmf.pdf_bytes()
+        self.assertTrue(data.startswith(b"%PDF-1.4"))
+        self.assertTrue(data.rstrip().endswith(b"%%EOF"))
+        xref = int(data.split(b"startxref\n")[1].split(b"\n")[0])
+        self.assertEqual(data[xref:xref + 4], b"xref")
+
+    def test_damage_m4a_breaks_the_moov_atom(self):
+        def atom(kind: bytes, body: bytes) -> bytes:
+            return struct.pack(">I4s", 8 + len(body), kind) + body
+        ftyp, moov, mdat = atom(b"ftyp", b"M4A \0\0\0\0"), atom(b"moov", b"m" * 40), atom(b"mdat", b"a" * 64)
+        early = mmf.damage_m4a(ftyp + moov + mdat)
+        self.assertEqual(len(early), len(ftyp + moov + mdat), "same size, audio data kept")
+        self.assertTrue(early.endswith(mdat))
+        self.assertEqual(early[len(ftyp) + 16:len(ftyp) + len(moov)], bytes(len(moov) - 16), "index zeroed")
+        late = mmf.damage_m4a(ftyp + mdat + moov)
+        self.assertEqual(late, ftyp + mdat + moov[:16], "cut inside a trailing moov")
+        with self.assertRaises(ValueError):
+            mmf.damage_m4a(ftyp + mdat)
+
+    def test_click_track_has_a_click_on_every_beat(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "c.wav"
+            mmf.click_track(path, seconds=2)
+            with wave.open(str(path)) as w:
+                rate, frames = w.getframerate(), w.readframes(w.getnframes())
+        samples = struct.unpack(f"<{len(frames) // 2}h", frames)
+        onsets = [i for i in range(1, len(samples))
+                  if samples[i] != 0 and all(s == 0 for s in samples[max(0, i - 200):i])]
+        self.assertEqual(len(onsets), 4, "120 BPM: four clicks in 2 s")
+        self.assertAlmostEqual((onsets[1] - onsets[0]) / rate, 0.5, delta=0.01)
+
+    def test_catalog_makers_and_install_list(self):
+        self.assertTrue(all(maker in ("swift", "audio", "python") for maker, _ in mmf.CATALOG.values()))
+        swift = (Path(__file__).resolve().parent / "fixtures" / "make_media.swift").read_text(encoding="utf-8")
+        for name, (maker, _) in mmf.CATALOG.items():
+            if maker == "swift":
+                self.assertIn(f'case "{name}"', swift, name)
+        self.assertNotIn(".mp3", " ".join(n for n in mmf.CATALOG if n != "not-audio.mp3"), "no MP3 encoder on the Mac")
+        cmd = itf.copy_command("DEV", Path("/x/photo-gps.heic"))
+        self.assertEqual(cmd[-2:], ["--destination", "Documents/photo-gps.heic"])
 
 
 if __name__ == "__main__":

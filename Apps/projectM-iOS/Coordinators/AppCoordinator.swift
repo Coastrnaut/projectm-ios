@@ -763,6 +763,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         UITestTextFixture.seedIfRequested(media.texts)     // MED-009: TextOverlayUITests
         UITestLogoFixture.seedIfRequested(media.logo)      // MED-010: LogoOverlayUITests
         UITestMacroFixture.seedIfRequested(media.macros)   // MOD-010: ParameterMacroUITests
+        UITestPhotoLibrarySeed.shared.startIfRequested()   // QA-011: Photos picker fixtures (add-only)
     }
     #endif
 

@@ -18,8 +18,8 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
     }
 
     /// PERF-011-T22 (automatable part): background, rotate while away, return: the visual draws again in the new
-    /// orientation, timed from the return to the overlay's first non-zero frame rate. The app switcher card, lock and
-    /// unlock and Control Center stay a person's steps.
+    /// orientation, timed from the return to the overlay's first non-zero frame rate. The app switcher card and Control
+    /// Center: testPERF011SwitcherCardAndControlCenter; lock and unlock stay a person's step.
     func testPERF011ReturnAfterRotationWhileAway() {
         let task = "PERF-011-T22"
         launch(visual: "circularSpectrum")
@@ -40,6 +40,40 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         assertStillCircular("after the return")
         assertFrameRate(task, "after the return")
         assertDrawingAndMoving(task, "after the return")
+    }
+
+    /// PERF-011-T22 (QA-011 Batch 1, SystemUI): the app switcher card shows the picture (not black), the return from
+    /// the switcher draws again (timed to the first non-zero overlay reading), and Control Center over the running
+    /// app costs nothing once dismissed. Lock and unlock stay a person's step (no API).
+    func testPERF011SwitcherCardAndControlCenter() {
+        let task = "PERF-011-T22"
+        let system = SystemUI(app: app)
+        launch(visual: "circularSpectrum")
+        assertFrameRate(task, "before")
+
+        system.openAppSwitcher()
+        let (card, _) = screen(task, "app switcher")
+        let cardListed = system.appSwitcherCard.exists
+        report(task, "switcher", ["cardNonBlack": card.nonBlack, "cardListed": cardListed ? 1 : 0,
+                                  "appState": Double(app.state.rawValue)])
+        XCTAssertGreaterThan(card.nonBlack, 0.05, "the switcher shows the app's card with its picture, not black")
+        let t0 = Date()
+        system.returnFromAppSwitcher()
+        XCTAssertTrue(wait(10) { self.app.state == .runningForeground }, "back from the switcher")
+        let drawing = wait(10) { (self.overlayFPS() ?? 0) > 0 }
+        report(task, "switcher return", ["secondsToFirstFrameReading": Date().timeIntervalSince(t0)])
+        XCTAssertTrue(drawing, "the visual draws again after the switcher")
+        assertStillCircular("after the switcher")
+        assertDrawingAndMoving(task, "after the switcher")
+
+        XCTAssertTrue(system.openControlCenter(), "Control Center opens over the app")
+        pause(2)
+        _ = screen(task, "control center")
+        system.closeControlCenter()
+        XCTAssertTrue(wait(10) { self.app.state == .runningForeground }, "back from Control Center")
+        assertStillCircular("after Control Center")
+        assertFrameRate(task, "after Control Center")
+        assertDrawingAndMoving(task, "after Control Center")
     }
 
     /// VIS-001-T36: rotate, background/return, Reduce flashing; overlay frame rate; no crash, no fallback.

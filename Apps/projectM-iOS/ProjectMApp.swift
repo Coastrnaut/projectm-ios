@@ -52,6 +52,11 @@ struct RootView: View {
                 Text(value).font(.caption2).opacity(0.01).allowsHitTesting(false)
                     .accessibilityIdentifier("encoderProbe").accessibilityValue(value)
             }
+            if UITestPhotoLibrarySeed.isRequested, ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
+                let value = UITestPhotoLibrarySeed.shared.value   // QA-011: the Photos library seed's result
+                Text(value).font(.caption2).opacity(0.01).allowsHitTesting(false)
+                    .accessibilityIdentifier("photoLibrarySeed").accessibilityValue(value)
+            }
             #endif
         }
         // ACC-011 X19: the OSC listener opened (a network listener; announced on every screen).

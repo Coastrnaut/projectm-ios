@@ -14,6 +14,13 @@ runs on hardware.
 | In-app automation | `Apps/projectM-iOS/Automation/AutomationRunner.swift` | `PROJECTM_AUTORUN=<mode>`: measurement modes (perf001, perf012, sc009 …) write a JSON report to Documents and exit. Compiled only under `DEBUG || PROJECTM_AUTOMATION`. |
 | Device test host | `DeviceTests.yml` (XcodeGen, includes `project.yml`) | App-hosted test bundles that compile package test folders, so package suites run on a device; the `DeviceAcceptance` scheme holds the on-device UI tests. The main project and scheme are unchanged. |
 | On-device UI tests | `Apps/projectM-iOS/DeviceUITests/` | The owner sessions' steps as XCUITest on the device: launch with settings, play music, read the performance overlay, take and measure screenshots. One `DEVICE-ACCEPT {json}` line per measurement. |
+| System UI driver | `Apps/projectM-iOS/DeviceUITests/SystemUI.swift` | iOS's own UI from a device test (Batch 1; read-only for other batches): springboard alerts (`answerAlert`), Control Center (`openControlCenter`, `controlCenterPrivacyUser`, `statusIndicatorDotVisible`), the app switcher (`openAppSwitcher`, `returnFromAppSwitcher`, `forceQuitFromSwitcher`), the app's Settings page (`setAppPermission(.camera/.microphone/.localNetwork/.photos, on:)`), `toggleAccessibility(.reduceMotion/.increaseContrast/.grayscale/.differentiateWithoutColor/.smartInvert/.lowPower, on:)`, `startClockTimer(seconds:)`, `siriInterruption()`, `filesPick`/`filesSave`, `photosPick`, `shareSheet`, `cameraApp(photo:)`/`cameraApp(record:)`, `MacDriver.request`, `auditIssues`. Every setter is undone by `restore()` in tearDown unless `keep: true`. No Airplane Mode or Wi-Fi helper (cable steps not required, owner ruling 2026-11-18). |
+| Prompt flow | `Apps/projectM-iOS/DeviceUITests/PromptFlowDeviceTests.swift` | The self-answering prompt batch (owner rule 14 as amended 2026-11-18), see below. |
+| System tests | `B14SystemDeviceTests` (ACC-001, ACC-003, ACC-008), `B02…testPERF011SwitcherCardAndControlCenter`, `B03…testSCN002ForceQuitFromSwitcher` | Unattended tests that drive Settings, the switcher and Control Center; no prompts. |
+| Mac driver | `scripts/mac_device_driver.py`, `scripts/mac_driver/` | `follow`: answers `MAC-DO {json}` lines in an xcodebuild log with an action module (`audio.play/tone/stop` via `afplay`, `memory.warning` via `devicectl … sendMemoryWarning`, `device.crashlogs`; later batches add xctrace, osc, midi, peer); logs `MAC-DONE <id>`. `prompt-flow`: uninstall, install, fixtures, then the prompt flow alone. |
+| Media fixtures | `scripts/make_media_fixtures.py`, `scripts/fixtures/make_media.swift` | Build/fixtures/media: HEIC with GPS, 60 MP PNG/HEIC, a 45 MB JPEG, transparent PNG, 200-frame GIF, H.264 1080p, HEVC 4K60, HEVC 360p 10 min, HDR HEVC (HLG, 10-bit), WAV/AIFF/AAC/M4A AAC/ALAC, 10 MB and 60-min M4A, a damaged M4A, a PDF named .mp3, a JPEG named .milk, a 524,288-byte preset, a strobing preset, a 120 BPM click track (about 40 s on the Mac Studio). No MP3 (no encoder on the Mac). |
+| Photo library seed | `Apps/projectM-iOS/Debug/UITestPhotoLibrarySeed.swift` | DEBUG `-uitestSeedPhotoLibrary <name,…>`: adds Documents fixtures to Photos (add-only), probe `photoLibrarySeed` ("status=… added=… missing=… failed=… done=1"). |
+| Files sharing (Debug host) | `DeviceTests.yml` (post-build script) | The Debug device-test app gets `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace`, so Documents shows in Files › On My iPhone/iPad › projectM for the real document picker. The shipping Info.plist is unchanged. |
 | Music fixture | `scripts/make_music_fixture.py` | A deterministic, generated 60 s stereo track (120 BPM drums, bass, chords, quiet intro, loud chorus, breakdown). No licence. Copied into the app's Documents before a run. |
 | Acceptance record | `scripts/device_acceptance_report.py` | Turns a run's log into `docs/test-reports/qa-011/acceptance/<device>-<session>.json` and `.md` (every measurement, every test, the log's hash). |
 | Inventory and checklist | `scripts/qa011_inventory.py` | Every open `{device}`/`{owner}` task, classified (scripted, person, owner-only) and batched into owner sessions. |
@@ -38,6 +45,18 @@ xcodebuild test-without-building -project ProjectM-DeviceTests.xcodeproj -scheme
 python3 scripts/device_acceptance_report.py --log <log> --device D1 --session B01
 ```
 
+Media fixtures and the Mac driver (QA-011 Batch 1):
+
+```bash
+python3 scripts/make_media_fixtures.py [--list] [--only <name> …]        # Build/fixtures/media
+python3 scripts/install_test_fixtures.py --device D1 --media             # music + media into Documents
+python3 scripts/mac_device_driver.py follow --log <xcodebuild log> --device D1 &   # beside any run that prints MAC-DO
+python3 scripts/mac_device_driver.py prompt-flow --device D1 [--osc-host <name>.local] [--dry-run]
+```
+
+Every unattended UI test run passes `-skip-testing:projectM-iOSDeviceUITests/PromptFlowDeviceTests` (and
+`PermissionPrimerDeviceTests`), each as its own argument.
+
 The hardware UDID (`hardwareProperties.udid`) is what `xcodebuild -destination` needs; `devicectl` takes its own
 identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 
@@ -59,12 +78,37 @@ themselves (springboard alert buttons, Settings toggles) in a separate prompt-fl
 reinstall, and never inside another batch. `PermissionPrimerDeviceTests` (waits for a person) stays for runs with the
 owner present; the automated prompt flow replaces it otherwise.
 
+### The prompt-flow batch (automated, runs alone)
+
+`python3 scripts/mac_device_driver.py prompt-flow --device D1` uninstalls the app (so iOS forgets every answer),
+installs the built Debug app, copies the music and media fixtures, then runs only `PromptFlowDeviceTests` with the
+Mac driver following the log (`--osc-host <name>.local` also starts `osc_device_driver.py`). The tests run in name
+order and depend on the fresh install; each answers iOS's real prompt itself through springboard, Don't Allow first,
+then grants in Settings, so the device ends with camera, microphone, Local Network and Photos (add only) granted for
+the unattended batches. Never part of another batch; nothing waits for a person.
+
+| Test | Prompts it answers | Closes |
+|---|---|---|
+| `testA_UIX001FreshInstallOffline` | none may appear (asserted at each of the five steps) | UIX-001-T14 (audits; Airplane Mode not required, owner ruling 2026-11-18) |
+| `testB_UIX015CameraExplainerThenPrompt` | camera: Don't Allow | UIX-015-T14 (camera) |
+| `testC_UIX015LocalNetworkExplainerThenPrompt` | Local Network: Don't Allow | UIX-015-T14 (Local Network), OSC-001-T26 (prompt on first enable) |
+| `testD_FILE013DeniedPermissions` | microphone: Don't Allow; camera, Local Network off in Settings | FILE-013-T11 (Screen Time stays a person's) |
+| `testE_CAM001DenyThenRevokeWhileBackgrounded` | none (Settings: allow, then revoke in the background; `device.crashlogs` on the Mac) | CAM-001-T25 |
+| `testF_REC011SaveToPhotosAllowThenDeny` | Photos add-only: Allow; then Photos None in Settings | REC-011-T16 |
+| `testZ_GrantEverythingForUnattendedRuns` | none (every permission on in Settings; OSC 0.42 with the OSC driver; `-uitestSeedPhotoLibrary`) | grants for later batches |
+
+Untried on a device when written (2026-11-18): Settings rows are found by their visible labels (Apps › projectM,
+Accessibility › Motion …) and the switcher and Control Center by coordinates in portrait; check the first run's
+screenshots and fix SystemUI.swift (not the tests) where iOS 26 or 27 differs.
+
+### Tests that wait for a person
+
 | Test | Prompts | Notes |
 |---|---|---|
 | `PermissionPrimerDeviceTests.testA_Microphone` | Microphone | launch with `-autostart microphone` |
 | `PermissionPrimerDeviceTests.testB_Camera` | Camera | chooses Camera in Settings (the camera never starts at launch) |
 | `PermissionPrimerDeviceTests.testC_LocalNetwork` | Local Network | OSC on; check it really asks (see the camera lesson) |
-| Pickers, purchase and share sheets, Siri, calls, AirPlay, headphones | system UI | listed in the person-only section |
+| Purchase sheets, calls, headphones | system UI | listed in the person-only section (pickers, share sheets and Siri: SystemUI helpers; AirPlay and cable steps: not required, owner ruling 2026-11-18) |
 
 Run once per device after a fresh install (a reinstall over the app keeps the answers):
 
@@ -265,14 +309,18 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   any B06 camera case that can reach the camera prompt on a device where it was never answered; unattended runs
   exclude them with `-skip-testing` and start only after the person session has answered every prompt on that device.
   A new test that can prompt goes into this group, and the unattended suite asserts that no prompt appears.
+  Amended 2026-11-18: the group is automated as the prompt-flow batch (`PromptFlowDeviceTests`, run alone after a
+  fresh install by `mac_device_driver.py prompt-flow`); a new prompting test goes there.
 
 ## What still needs a person
 
-Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode, a real face or hands in front of the
+Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:
+not required, owner ruling 2026-11-18), a real face or hands in front of the
 camera, a USB MIDI device's own transport, real projectors and curved screens, a 240 fps camera, and the iOS prompts
 that guard UI automation and permissions. Stand-ins that are automatable: a CoreMIDI virtual source for a controller,
-the Mac sending OSC over Wi-Fi for a LAN controller, Siri for an interruption, AirPlay to the Mac for an external
-display (needs AirPlay Receiver turned on by the owner), `xctrace` for Instruments.
+the Mac sending OSC over Wi-Fi for a LAN controller, Siri and a Clock timer for an interruption (SystemUI), Settings
+toggles for permissions and accessibility settings (SystemUI), `xctrace` for Instruments. AirPlay steps are not
+required (owner ruling 2026-11-18).
 
 ## For another repository
 

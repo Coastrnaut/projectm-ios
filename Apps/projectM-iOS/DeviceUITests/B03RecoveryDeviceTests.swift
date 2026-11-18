@@ -1,6 +1,8 @@
 // B03RecoveryDeviceTests.swift — QA-011 owner session B03 ("Debug fault injection and crash recovery"), automated
 // on D1. PERF-010-T15: a real crash with the DEBUG "Crash now" button (fatalError, not terminate), then a relaunch
 // from the test as from the Home Screen: the session recovery offer is shown and the decision is "abnormal".
+// SCN-002-T10: a force quit from the app switcher (SystemUI) right after an uncommitted edit; the relaunch restores a
+// committed scene.
 import UIKit
 import XCTest
 
@@ -86,5 +88,64 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(5) { self.probe.hasPrefix("decision=abnormal") }, "decision is abnormal: \(probe)")
         report(task, "relaunch", ["offerShown": offer.exists ? 1 : 0])
         screen(task, "recovery offer")
+    }
+
+    // MARK: SCN-002-T10 (QA-011 Batch 1)
+
+    private var bars: XCUIElement { app.segmentedControls["barsPicker"] }
+
+    /// Opens Settings and scrolls (slowly, the list itself) to the Bars picker below the visual rows.
+    private func openBars() {
+        showControls()
+        app.buttons["settings"].tap()
+        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        let list = app.collectionViews.firstMatch
+        for _ in 0..<8 where !(bars.exists && bars.isHittable) { list.swipeUp(velocity: .slow) }
+        XCTAssertTrue(bars.isHittable, "the Bars picker")
+    }
+
+    private func launchScene(reset: Bool) {
+        let values: [String: Any] = ["settings.visual": "circularSpectrum"]
+        let json = (try? JSONSerialization.data(withJSONObject: values)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+        app.launchArguments = (reset ? ["-uitestResetNotice", "-uitestDefaults", json] : [])
+            + ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "NO"]
+        app.launch()
+        XCTAssertTrue(wait(15) { self.app.staticTexts["sourceStarts"].exists }, "the source started")
+    }
+
+    /// SCN-002-T10: Circular Spectrum, 16 bars, Settings closed (committed); then 32 bars with Settings open and at
+    /// once the app switcher and a force quit there (the user's way; the switcher passes through the background, so
+    /// 32 is expected). Relaunch: a committed value (32, or 16), never the default 64, and the visual draws.
+    func testSCN002ForceQuitFromSwitcher() {
+        let task = "SCN-002-T10"
+        let system = SystemUI(app: app)
+        launchScene(reset: true)
+        openBars()
+        bars.buttons["16"].tap()
+        XCTAssertTrue(bars.buttons["16"].isSelected)
+        closeSettings()
+        XCTAssertTrue(wait(10) { self.autosave.contains("pending=0") && !self.autosave.contains("committed=0") },
+                      "16 bars committed: \(autosave)")
+
+        openBars()
+        bars.buttons["32"].tap()
+        XCTAssertTrue(bars.buttons["32"].isSelected)
+        system.openAppSwitcher()
+        let ended = system.forceQuitFromSwitcher()
+        report(task, "force quit", ["ended": ended ? 1 : 0])
+        XCTAssertTrue(ended, "the app ended from the switcher")
+
+        launchScene(reset: false)
+        XCTAssertTrue(wait(10) { self.autosave.hasPrefix("restored=main") }, "restored from the committed scene: \(autosave)")
+        XCTAssertTrue(wait(10) { (self.app.staticTexts["visualRunning"].value as? String) == "yes" }, "the visual draws")
+        XCTAssertTrue(wait(10) { self.app.descendants(matching: .any)["circularSpectrum"].firstMatch.exists },
+                      "the Circular Spectrum is restored")
+        openBars()
+        let restored = ["16", "32", "64"].first { bars.buttons[$0].isSelected } ?? "none"
+        report(task, "relaunch", ["bars": Double(restored) ?? -1])
+        print("SCN002 restored bars=\(restored) probe=\(autosave)")
+        XCTAssertTrue(restored == "32" || restored == "16", "a committed bar count (32 expected), got \(restored)")
+        XCTAssertNotEqual(restored, "64", "never the default")
+        closeSettings()
     }
 }

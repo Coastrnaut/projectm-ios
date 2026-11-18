@@ -32,6 +32,21 @@ targets:
     # the app from getting it through Compositor alone: link it directly here (D1 device build, 2026-11-15).
     dependencies:
       - package: FlashSafety
+    # QA-011 Batch 1 (automation plan, "Shared pieces"): the Debug device-test host shares its Documents in Files
+    # (On My iPhone/iPad › projectM), so the fixtures that scripts/install_test_fixtures.py copies there can be picked
+    # through the real document picker. Only this project's Debug build of the app gets the two keys, written into
+    # the built Info.plist before signing; project.yml's app (and every shipping build) is unchanged.
+    postBuildScripts:
+      - name: Device test host file sharing (Debug)
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$CONFIGURATION" = "Debug" ]; then
+            plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
+            for key in UIFileSharingEnabled LSSupportsOpeningDocumentsInPlace; do
+              /usr/libexec/PlistBuddy -c "Delete :$key" "$plist" >/dev/null 2>&1 || true
+              /usr/libexec/PlistBuddy -c "Add :$key bool true" "$plist"
+            done
+          fi
   CompositorDeviceTests:
     templates: [DeviceTestBundle]
     sources: [Packages/Compositor/Tests/CompositorTests]
