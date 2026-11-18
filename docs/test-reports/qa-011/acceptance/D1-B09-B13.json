@@ -1,0 +1,120 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "0ddbb3c87547fbf5733a76b4bb06e9288bc38b093753c379c4d127f6cbdd520d",
+ "measurements": [
+  {
+   "arrived": 1,
+   "device": "iPhone15,4",
+   "step": "test value",
+   "task": "OSC-001-T26"
+  },
+  {
+   "device": "iPhone15,4",
+   "secondsAfterThePlainMessage": 2.034,
+   "step": "bundle",
+   "task": "OSC-006-T11"
+  },
+  {
+   "badgeGone": 1,
+   "device": "iPhone15,4",
+   "step": "stop",
+   "switchOff": 1,
+   "task": "OSC-007-T12"
+  },
+  {
+   "device": "iPhone15,4",
+   "rateLimited": 19785,
+   "step": "flood",
+   "task": "OSC-009-T15"
+  },
+  {
+   "device": "iPhone15,4",
+   "fpsMedian": 60,
+   "fpsMin": 57,
+   "samples": 10,
+   "step": "after the flood",
+   "task": "OSC-009-T15"
+  },
+  {
+   "cycles": 33,
+   "device": "iPhone15,4",
+   "firstMB": 161,
+   "lastMB": 165,
+   "maxMB": 165,
+   "secondMB": 161,
+   "step": "gpu memory",
+   "task": "PERF-004-T14"
+  }
+ ],
+ "passed": 5,
+ "schemaVersion": 1,
+ "session": "B09-B13",
+ "tasks": {
+  "OSC-001-T26": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "OSC-006-T11": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "OSC-007-T12": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "OSC-009-T15": {
+   "checks": {},
+   "fpsMedians": [
+    60
+   ],
+   "fpsMin": 57,
+   "steps": 1
+  },
+  "PERF-004-T14": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B09OSCDeviceTests",
+   "result": "passed",
+   "seconds": 15.26,
+   "test": "testOSC001TestValueFromTheMac"
+  },
+  {
+   "class": "B09OSCDeviceTests",
+   "result": "passed",
+   "seconds": 17.042,
+   "test": "testOSC006BundleTimeTags"
+  },
+  {
+   "class": "B09OSCDeviceTests",
+   "result": "passed",
+   "seconds": 16.193,
+   "test": "testOSC007BadgeAndStop"
+  },
+  {
+   "class": "B09OSCDeviceTests",
+   "result": "passed",
+   "seconds": 33.954,
+   "test": "testOSC009FloodIsRateLimited"
+  },
+  {
+   "class": "B13MeasurementDeviceTests",
+   "result": "passed",
+   "seconds": 43.783,
+   "test": "testPERF004GPUMemoryPlateausOverVisualSwitches"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d1/oscrun-1118151758.xcresult"
+}

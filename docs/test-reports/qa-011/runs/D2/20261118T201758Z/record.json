@@ -1,0 +1,169 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "6ee08e69f7c499ee0fa08cef1fbf8dfc77f1ed4d",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": false,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 3386451,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261118T201758Z/logs/xctest-materials.log",
+          "sha256": "0d74bbf99055da23a8e0f60a474dac0ec128d9b0106a6727da6bcf43ffdd21b8"
+        },
+        {
+          "bytes": 406702,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261118T201758Z/xcresult/xctest-materials.xcresult",
+          "sha256": "9e08abae88049d2dc8ed907f9ccf165575bf4aca3e4e04d3a43972752a9c5fc5"
+        }
+      ],
+      "closes": [
+        "SHD-004-T20"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261118T201758Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261118T201758Z/xcresult/xctest-materials.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Debug",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:MaterialsDeviceTests/MaterialVariantSwitchTests",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "5 tests, 0 failures, 0 skipped; 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\")",
+      "durationSeconds": 55.2,
+      "id": "xctest-materials",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "SHD-004 material variants on the device GPU family (Detailed needs family 9; Standard fallback with the notice)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 3560551,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D2/20261118T201758Z/logs/bench-shd002.log",
+          "sha256": "25a5f49e08512330831500cd67183f3a4f560a0d282dc2ae674b75a98ddd6287"
+        },
+        {
+          "bytes": 278912,
+          "committed": false,
+          "kind": "folder",
+          "path": "Build/qa-011/D2/20261118T201758Z/xcresult/bench-shd002.xcresult",
+          "sha256": "3a5354df426b82c5d4d42b28a477518c230b7726cedbe94554dd5ac37c53fcff"
+        }
+      ],
+      "closes": [
+        "SHD-002-T24"
+      ],
+      "commands": [
+        [
+          "(cd .)",
+          "TEST_RUNNER_SHD002_BENCH=1",
+          "xcodebuild",
+          "test",
+          "-project",
+          "ProjectM-DeviceTests.xcodeproj",
+          "-scheme",
+          "DeviceTests",
+          "-destination",
+          "platform=iOS,id=00008142-001640823C22401C",
+          "-derivedDataPath",
+          "Build/qa-011/D2/20261118T201758Z/derived-data/device-tests",
+          "-resultBundlePath",
+          "Build/qa-011/D2/20261118T201758Z/xcresult/bench-shd002.xcresult",
+          "-test-timeouts-enabled",
+          "YES",
+          "-default-test-execution-time-allowance",
+          "900",
+          "-configuration",
+          "Release",
+          "ENABLE_TESTABILITY=YES",
+          "-only-testing:GeneratorGraphDeviceTests/GraphCostBench",
+          "-allowProvisioningUpdates"
+        ]
+      ],
+      "detail": "2 tests, 0 failures, 0 skipped; /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project ProjectM-DeviceTests.xcodeproj -scheme Devic / Build/qa-011/D2/20261118T201758Z/xcresult/bench-shd002.xcresult / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\") / 41 |             throw XCTSkip(\"on-demand bench: set SHD002_BENCH=1\")",
+      "durationSeconds": 166.6,
+      "id": "bench-shd002",
+      "kind": "xctest",
+      "partOf": [],
+      "status": "pass",
+      "title": "SHD-002 12-node graph GPU cost (SHD002_BENCH)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-18T20:21:41Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D2",
+  "recordSha256": "001307f83123c9ed0c49760155298df8c409281f01cd9dd0968c89e046503ab4",
+  "runId": "20261118T201758Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-18T20:17:58Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 0,
+    "not-run": 0,
+    "pass": 2,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "A8C56656-AA51-5F6B-8C3C-FC8EFD709F9C",
+    "kind": "device",
+    "name": "iPad77",
+    "osBuild": "24B119",
+    "osVersion": "27.2",
+    "productType": "iPad17,3",
+    "state": "connected",
+    "udid": "00008142-001640823C22401C"
+  }
+}

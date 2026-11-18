@@ -62,6 +62,10 @@ final class B09OSCDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(5) { toggle.exists }, "the OSC switch")
         report(task, "stop", ["switchOff": (toggle.value as? String) == "0" ? 1 : 0, "badgeGone": badge.exists ? 0 : 1])
         XCTAssertEqual(toggle.value as? String, "0", "Settings shows OSC off after Stop")
+        // OSC-001-T26: turning OSC off stops changes; the driver sent 0.11 after Stop.
+        let ignored = !testValue.contains("0.11")
+        report("OSC-001-T26", "off stops changes", ["afterStopIgnored": ignored ? 1 : 0])
+        XCTAssertTrue(ignored, "a value sent after Stop does not apply: \(testValue)")
     }
 
     func testOSC009FloodIsRateLimited() {

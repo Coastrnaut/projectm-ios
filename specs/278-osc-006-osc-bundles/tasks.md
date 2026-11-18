@@ -32,7 +32,7 @@ Tasks are ticked only when verified, with " — Verified 2026-11-14: <how>".
 ## Phase 5: Polish
 
 - [X] OSC-006-T10 Repo checks (compliance, docs, motion, permission catalog, status events, script tests), the whole PerformanceControl and ImportFuzz OSC suites, Linux-safe build (no stdio globals), type-check budget. — Verified 2026-11-14: check_compliance, validate_docs, check_motion_policy, check_permission_catalog, check_status_events OK; test_scripts 179 OK; check_privacy_manifest and check_network_symbols OK on the Debug app; PerformanceControl 314 and ImportFuzz OSC 3 tests pass; no type-check warning in any OSC-006 file (package and app built with the 300/150 ms flags); no stdio globals, only `Date` (Linux Foundation) added.
-- [ ] OSC-006-T11 {device} D1 with a LAN sender whose clock is network-synced: a bundle 500 ms ahead changes the test value about half a second later; one 30 s ahead never applies (quickstart step 3).
+- [X] OSC-006-T11 {device} D1 with a LAN sender whose clock is network-synced: a bundle 500 ms ahead changes the test value about half a second later; one 30 s ahead never applies (quickstart step 3). — Verified 2026-11-18 on D1: `B09OSCDeviceTests.testOSC006BundleTimeTags` passed with the Mac sending over Wi-Fi (`scripts/osc_device_driver.py`); a bundle time-tagged 2 s ahead (instead of 0.5 s, so the delay stands out from polling) applied 2.03 s after the plain message, and one 30 s ahead never applied (docs/test-reports/qa-011/acceptance/D1-B09-B13.md)
 
 ## Analysis (speckit-analyze, 2026-11-14)
 

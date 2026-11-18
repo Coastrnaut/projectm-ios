@@ -4,30 +4,30 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 234,
-    "specs": 196,
+    "total": 230,
+    "specs": 193,
     "byStatus": {
-      "open": 217,
+      "open": 213,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 13,
-      "b": 210
+      "b": 206
     },
     "byCategoryIncludingWaived": {
       "a": 13,
-      "b": 221
+      "b": 217
     },
     "byDevice": {
-      "D1": 215,
+      "D1": 211,
       "D2": 46,
       "D3": 44
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 12,
-        "b": 203
+        "b": 199
       },
       "D2": {
         "a": 3,
@@ -47,11 +47,11 @@
       "B06": 18,
       "B07": 20,
       "B08": 13,
-      "B09": 17,
+      "B09": 14,
       "B10": 13,
       "B11": 31,
       "B12": 5,
-      "B13": 17,
+      "B13": 16,
       "MATRIX": 13
     },
     "devicesInferred": 2
@@ -610,8 +610,6 @@
       "tasks": [
         "003-aud-001-import-drm-free-audio-files:AUD-001-T23",
         "032-osc-001-osc-receiver:OSC-001-T26",
-        "038-osc-007-osc-network-access-switch:OSC-007-T12",
-        "041-osc-009-osc-rate-limiter:OSC-009-T15",
         "075-uix-001-guided-first-scene:UIX-001-T14",
         "076-file-012-no-telemetry-verification:FILE-012-T11",
         "078-file-013-privacy-permission-audit:FILE-013-T11",
@@ -620,14 +618,13 @@
         "200-osc-008-peer-allowlist:OSC-008-T13",
         "274-osc-004-osc-learn:OSC-004-T14",
         "277-osc-005-osc-send:OSC-005-T16",
-        "278-osc-006-osc-bundles:OSC-006-T11",
         "282-osc-010-osc-schema-export:OSC-010-T09",
         "289-osc-011-local-peer-discovery:OSC-011-T19",
         "291-osc-012-peer-cue-sync:OSC-012-T22",
         "302-uix-014-offline-help-browser:UIX-014-T12"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 100
+      "estimatedMinutes": 85
     },
     {
       "id": "B10",
@@ -774,7 +771,6 @@
         "022-fx-019-strobe-safety-envelope:FX-019-T22",
         "048-med-002-import-video-layer:MED-002-T27",
         "048-med-002-import-video-layer:MED-002-T28",
-        "052-perf-004-texture-pool:PERF-004-T14",
         "054-perf-006-memory-warning-recovery:PERF-006-T17",
         "058-rec-003-video-recording:REC-003-T23",
         "083-vis-003-waveform-oscilloscope:VIS-003-T17",
@@ -786,7 +782,7 @@
         "284-med-005-video-reverse-playback:MED-005-T20"
       ],
       "optionalTasks": 3,
-      "estimatedMinutes": 160
+      "estimatedMinutes": 155
     }
   ],
   "tasks": [
@@ -1810,44 +1806,6 @@
       "text": "CAM-012-T13 {device} On D1: choose Camera, tap Stop camera; iOS's camera indicator turns off within one second, the previous visual keeps animating, music continues; pause/resume and lock/unlock do not restart the camera (S5; quickstart \"Device\") — D1 automated 2026-11-16 (docs/test-reports/qa-011/acceptance/D1-B05-B06-effects.md): Stop camera removes the camera and its badge in 0.56 s, music continues, the previous visual keeps drawing and moving, and background and return do not restart the camera. Open: iOS's own camera indicator (system UI) and lock and unlock (a person)."
     },
     {
-      "id": "OSC-007-T12",
-      "spec": "038-osc-007-osc-network-access-switch",
-      "feature": "OSC-007",
-      "line": 40,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B09",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "OSC-007-T12 `{device}` On D1 over Wi-Fi (quickstart D): the badge shows while listening, Stop ends delivery and Settings shows off (OSC-007-S5). Owner, last stage."
-    },
-    {
-      "id": "OSC-009-T15",
-      "spec": "041-osc-009-osc-rate-limiter",
-      "feature": "OSC-009",
-      "line": 44,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B09",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "OSC-009-T15 {device} On D1, a LAN controller floods `/projectm/test` at ~2,000 msg/s for 10 s: rendering continues, \"Rate-limited N\" grows, the value ends at the last one sent (quickstart C). Device LAN check, last stage; not run by this row."
-    },
-    {
       "id": "SHD-002-T24",
       "spec": "042-shd-002-node-generator-graph",
       "feature": "SHD-002",
@@ -2110,25 +2068,6 @@
       "matrixCases": [],
       "estimatedMinutes": 10,
       "text": "OUT-010-T15 {device} Blackout on HDMI (USB-C adapter) and AirPlay on D1 and D2 (quickstart D): black at once, controls responsive, restore fade, unplug while blacked out keeps the device black; optional 240 fps camera timing"
-    },
-    {
-      "id": "PERF-004-T14",
-      "spec": "052-perf-004-texture-pool",
-      "feature": "PERF-004",
-      "line": 48,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B13",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "PERF-004-T14 {device} D1: 100 visual and stack switches (Camera → Photo → Spectrum → Camera), live GPU memory from Xcode's memory report or `MTLDevice.currentAllocatedSize` plateaus after the first cycle (S6)"
     },
     {
       "id": "PERF-004-T16",
@@ -4869,25 +4808,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "OSC-005-T16 {device} LAN receiver on D1 (quickstart step 4)."
-    },
-    {
-      "id": "OSC-006-T11",
-      "spec": "278-osc-006-osc-bundles",
-      "feature": "OSC-006",
-      "line": 35,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B09",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "OSC-006-T11 {device} D1 with a LAN sender whose clock is network-synced: a bundle 500 ms ahead changes the test value about half a second later; one 30 s ahead never applies (quickstart step 3)."
     },
     {
       "id": "SHD-008-T18",
