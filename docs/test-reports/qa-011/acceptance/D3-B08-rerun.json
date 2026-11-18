@@ -1,0 +1,141 @@
+{
+ "device": "D3",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "b6e69d7e1ce50bf0246ccad4d6cae9f2611191cec32144c02861514fb284b087",
+ "measurements": [
+  {
+   "device": "iPad15,7",
+   "duration": 5.03,
+   "frames": 150,
+   "height": 1280,
+   "step": "draft",
+   "task": "REC-005-T14",
+   "width": 890
+  },
+  {
+   "device": "iPad15,7",
+   "duration": 4.9,
+   "frames": 145,
+   "height": 1920,
+   "step": "standard",
+   "task": "REC-005-T14",
+   "width": 1334
+  },
+  {
+   "device": "iPad15,7",
+   "duration": 4.85,
+   "frames": 282,
+   "height": 2360,
+   "step": "high",
+   "task": "REC-005-T14",
+   "width": 1640
+  },
+  {
+   "device": "iPad15,7",
+   "duration": 4.82,
+   "frames": 282,
+   "height": 2360,
+   "step": "max",
+   "task": "REC-005-T14",
+   "width": 1640
+  },
+  {
+   "device": "iPad15,7",
+   "duration": 5.71,
+   "frames": 136,
+   "height": 1920,
+   "step": "24 fps",
+   "task": "REC-006-T15",
+   "width": 1334
+  },
+  {
+   "device": "iPad15,7",
+   "dropped": 1,
+   "expectedSlots": 137.04,
+   "fps": 24,
+   "step": "24 fps slots",
+   "task": "REC-006-T15",
+   "written": 136
+  },
+  {
+   "device": "iPad15,7",
+   "duration": 10,
+   "frames": 298,
+   "step": "timed stop",
+   "task": "REC-008-T14"
+  },
+  {
+   "device": "iPad15,7",
+   "dropped": 2,
+   "fps": 30,
+   "step": "slots",
+   "task": "REC-008-T14",
+   "written": 298
+  },
+  {
+   "device": "iPad15,7",
+   "duration": 6.2,
+   "frames": 185,
+   "height": 1920,
+   "step": "portrait",
+   "task": "REC-014-T15",
+   "width": 1080
+  }
+ ],
+ "passed": 4,
+ "schemaVersion": 1,
+ "session": "B08-rerun",
+ "tasks": {
+  "REC-005-T14": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "REC-006-T15": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "REC-008-T14": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "REC-014-T15": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 57.791,
+   "test": "testREC005EachProfileRecordsAndReadsBack"
+  },
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 13.982,
+   "test": "testREC006TwentyFourFPSReadsBackAt24"
+  },
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 19.173,
+   "test": "testREC008TimedStopTenSeconds"
+  },
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 15.295,
+   "test": "testREC014AspectPresetReadsBackAtThePlannedShape"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d3/b08fix-1118170951.xcresult"
+}

@@ -1,0 +1,51 @@
+{
+ "device": "D2",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "a68f64e4eca3802dc05a3cc3bcdf732f11c93ec9f6503abf5147292f89e0f817",
+ "measurements": [
+  {
+   "device": "iPad17,3",
+   "duration": 5.71,
+   "frames": 137,
+   "height": 1920,
+   "step": "24 fps",
+   "task": "REC-006-T15",
+   "width": 1440
+  },
+  {
+   "device": "iPad17,3",
+   "dropped": 0,
+   "expectedSlots": 137.04,
+   "fps": 24,
+   "step": "24 fps slots",
+   "task": "REC-006-T15",
+   "written": 137
+  },
+  {
+   "device": "iPad17,3",
+   "offGrid": 0,
+   "step": "24 fps grid",
+   "task": "REC-006-T15"
+  }
+ ],
+ "passed": 1,
+ "schemaVersion": 1,
+ "session": "B08-rec006-grid",
+ "tasks": {
+  "REC-006-T15": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B08RecordingDeviceTests",
+   "result": "passed",
+   "seconds": 18.857,
+   "test": "testREC006TwentyFourFPSReadsBackAt24"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d2/grid2-1118171926.xcresult"
+}

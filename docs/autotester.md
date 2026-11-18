@@ -167,7 +167,8 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   `metal-current-allocated-size`, but Allocations exports no allocation table, so memory growth is checked with the
   DEBUG `memoryProbe` (`footprintMB=<n>` each second with `-uitestDiagnostics`) instead.
 - **Recording diagnosis hooks (DEBUG):** `recordingFacts` reports `busy=` (gate full), `notReady=` (the writer refused)
-  and `rateSkipped=` besides written and dropped slots; `-uitestRecordingNoAudio` records without an audio track;
+  and `rateSkipped=` besides written and dropped slots; `videoRecordingProbe` ends with `offGrid=<n>`, the frames whose
+  presentation time is off the recording's 1/fps grid; `-uitestRecordingNoAudio` records without an audio track;
   `-uitestAutoRecordSeconds <n>` starts a recording 4 s after launch and stops it n s later, so `xctrace --launch` can
   trace one without taps. `xctrace --attach` could not find the app on D3 by pid or name (2026-11-18): launch it
   through xctrace instead.

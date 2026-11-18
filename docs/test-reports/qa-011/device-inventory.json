@@ -4,34 +4,34 @@
   "source": "specs/*/tasks.md: unchecked task lines tagged {device} or {owner}",
   "generator": "scripts/qa011_inventory.py",
   "counts": {
-    "total": 226,
-    "specs": 189,
+    "total": 224,
+    "specs": 187,
     "byStatus": {
-      "open": 209,
+      "open": 207,
       "optional": 6,
       "waived": 11
     },
     "byCategory": {
       "a": 11,
-      "b": 204
+      "b": 202
     },
     "byCategoryIncludingWaived": {
       "a": 11,
-      "b": 215
+      "b": 213
     },
     "byDevice": {
-      "D1": 208,
-      "D2": 43,
+      "D1": 206,
+      "D2": 42,
       "D3": 40
     },
     "byDeviceAndCategory": {
       "D1": {
         "a": 11,
-        "b": 197
+        "b": 195
       },
       "D2": {
         "a": 1,
-        "b": 42
+        "b": 41
       },
       "D3": {
         "a": 1,
@@ -41,12 +41,12 @@
     "bySession": {
       "B01": 16,
       "B02": 12,
-      "B03": 6,
+      "B03": 5,
       "B04": 17,
       "B05": 25,
       "B06": 18,
       "B07": 20,
-      "B08": 13,
+      "B08": 12,
       "B09": 14,
       "B10": 13,
       "B11": 31,
@@ -394,12 +394,11 @@
         "057-perf-014-render-failure-fallback:PERF-014-T22",
         "067-scn-002-scene-autosave:SCN-002-T10",
         "087-acc-006-dynamic-type-inspector:ACC-006-T12",
-        "164-rec-006-record-frame-rate:REC-006-T15",
         "226-rec-016-recording-interruption-recovery:REC-016-T13",
         "276-cam-010-hand-pose-modulation:CAM-010-T17"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 40
+      "estimatedMinutes": 35
     },
     {
       "id": "B04",
@@ -602,7 +601,6 @@
         "060-rec-012-share-via-files:REC-012-T13",
         "063-rec-015-recording-disk-guard:REC-015-T17",
         "134-rec-004-recording-audio:REC-004-T19",
-        "150-rec-005-quality-profiles:REC-005-T14",
         "163-qa-008-recording-validation:QA-008-T10",
         "175-rec-007-countdown:REC-007-T13",
         "180-rec-008-timed-stop:REC-008-T14",
@@ -612,7 +610,7 @@
         "215-rec-014-export-aspect-presets:REC-014-T15"
       ],
       "optionalTasks": 0,
-      "estimatedMinutes": 90
+      "estimatedMinutes": 80
     },
     {
       "id": "B09",
@@ -3197,26 +3195,6 @@
       "text": "MIDI-007-T15 {device} With a physical controller on D1, assign a program to a scene; the patch change selects it and a repeat does nothing"
     },
     {
-      "id": "REC-005-T14",
-      "spec": "150-rec-005-quality-profiles",
-      "feature": "REC-005",
-      "line": 43,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B08",
-      "devices": [
-        "D1",
-        "D2"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 10,
-      "text": "REC-005-T14 `{device}` Quickstart C on D1/D2: record each available profile and read it back (REC-005-S5) D2 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D2-B08.md): every profile records and reads back at its own size and codec (Draft avc1 960x1280, Standard hvc1 1440x1920, High hvc1 1920x2560, Max hvc1 2064x2752). Finding: frames/duration fell short of the profile rate on D2 (Draft 30 of 30 fps, Standard about 24 of 30, High about 17 of 60, Max about 38 of 60), so S5 is not met there yet; open, with D1. D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): Draft avc1 590x1280 (about 28 of 30 fps), Standard hvc1 884x1920 (about 29 of 30), High and Max hvc1 1178x2556 (about 53 of 60; the drawable caps both at native size). D1 is near the profile rates, D2 is not (see the D2 note). — D3 measured 2026-11-16 (D3-B08.md): Draft avc1 890x1280 about 30 fps, Standard hvc1 1334x1920 about 25 of 30, High and Max hvc1 1640x2360 about 22 of 60. Finding: the iPads (D2, D3) fall well short of the profile rates; D1 is near them."
-    },
-    {
       "id": "PERF-001-T16",
       "spec": "152-perf-001-stage-timings",
       "feature": "PERF-001",
@@ -3337,25 +3315,6 @@
       "matrixCases": [],
       "estimatedMinutes": 5,
       "text": "QA-008-T10 [US4] {device} Validate one recording exported from D1 with `testExternalRecording` (quickstart C) in the final QA phase"
-    },
-    {
-      "id": "REC-006-T15",
-      "spec": "164-rec-006-record-frame-rate",
-      "feature": "REC-006",
-      "line": 46,
-      "tags": [
-        "device"
-      ],
-      "status": "open",
-      "category": "b",
-      "session": "B03",
-      "devices": [
-        "D1"
-      ],
-      "devicesInferred": false,
-      "matrixCases": [],
-      "estimatedMinutes": 5,
-      "text": "REC-006-T15 {device} On D1: a 24 fps recording of a recordable visual (the photo visual; projectM is not recordable, REC-003-R12) rendering at 60 Hz reads back at 24 fps on the grid with its reported dropped count (REC-006-S6) D1 measured 2026-11-15 (docs/test-reports/qa-011/acceptance/D1-B08.md): a 24 fps recording of the Photo visual reads back with 125 frames and 3 reported dropped slots filling 5.33 s at 24 fps (DEBUG `recordingFacts` probe). Open: the presentation times on the 1/24 s grid (not in the probe)."
     },
     {
       "id": "MIDI-011-T12",

@@ -965,9 +965,19 @@ final class VideoRecordingCoordinator {
         Task { [weak self] in
             let info = await RecordedVideoInspector.inspect(url)
             guard let self, self.probe == "inspecting" else { return }
-            self.probe = info?.summary ?? "failed: unreadable"
+            self.probe = self.readBackProbe(info)
         }
         #endif
+    }
+
+    /// DEBUG: the read-back summary plus REC-006-T15's count of frames whose presentation time is off the recording's
+    /// frame grid (1/fps from the first frame): "video hvc1 … audio=1 offGrid=0".
+    private func readBackProbe(_ info: RecordedVideoInfo?) -> String {
+        guard let info else { return "failed: unreadable" }
+        let step = Int64(RecordingSettings.timescale) / Int64(max(lastRecording?.frameRate ?? 30, 1))
+        let first = info.presentationTicks.first ?? 0
+        let offGrid = info.presentationTicks.filter { (t: Int64) -> Bool in (t - first) % step != 0 }.count
+        return info.summary + " offGrid=\(offGrid)"
     }
 
     /// UI tests: the mover cannot be automated, so the file goes to a temporary folder and is read back.
@@ -985,8 +995,9 @@ final class VideoRecordingCoordinator {
         probe = "inspecting"
         Task { [weak self] in
             let info = await RecordedVideoInspector.inspect(destination)
-            self?.probe = info?.summary ?? "failed: unreadable"
-            if self?.notice == nil { self?.notice = "Recording saved." }
+            guard let self else { return }
+            self.probe = self.readBackProbe(info)
+            if self.notice == nil { self.notice = "Recording saved." }
         }
     }
 }

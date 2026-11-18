@@ -148,6 +148,10 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         report(task, "24 fps slots", ["written": Double(f.frames), "dropped": Double(f.dropped), "fps": Double(f.fps),
                                       "expectedSlots": slots])
         XCTAssertEqual(f.fps, 24, "recorded at 24 fps")
+        // REC-006-S6: every frame's presentation time lies on the 1/24 s grid (the read-back counts those off it).
+        let offGrid = probe.split(separator: " ").first { $0.hasPrefix("offGrid=") }.flatMap { Int($0.dropFirst(8)) } ?? -1
+        report(task, "24 fps grid", ["offGrid": Double(offGrid)])
+        XCTAssertEqual(offGrid, 0, "every presentation time on the 1/24 s grid: \(probe)")
         XCTAssertEqual(Double(f.frames + f.dropped), slots, accuracy: 1.5,
                        "written \(f.frames) + dropped \(f.dropped) fill \(file.duration) s at 24 fps")
         XCTAssertLessThanOrEqual(Double(f.dropped), slots * Self.maximumDroppedShare, "dropped slots stay bounded")
