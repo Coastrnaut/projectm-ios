@@ -34,7 +34,7 @@ runs them.
 ## Phase 5: Polish
 
 - [X] MED-011-T12 Repo checks (compliance, docs, motion policy, permission catalog, status events, script tests), privacy manifest and network symbols on the Debug app, type-check budget, PosterBoard count after (R10: no networking API, no permission); report `docs/test-reports/clock-overlay.md`; spec status — Verified 2026-11-14: all six repo checks OK; check_privacy_manifest and check_network_symbols OK on the Debug app; PosterBoard 28 before and after; `docs/test-reports/clock-overlay.md`
-- [ ] MED-011-T13 {device} On D1 and D3: Show Clock on the Text and Photo visuals; the clock matches the status bar, changes at the minute, is readable; 12-hour with seconds updates each second; a REC-003 recording contains the clock
+- [ ] MED-011-T13 {device} On D1 and D3: Show Clock on the Text and Photo visuals; the clock matches the status bar, changes at the minute, is readable; 12-hour with seconds updates each second; a REC-003 recording contains the clock — D1 automated 2026-11-18 (`docs/test-reports/qa-011/acceptance/D1-B13-extra.md`, `B13ExtraDeviceTests`): Show Clock drew on Photo and Text and matched the device time (HH:mm), changed at the minute, and 12-hour with seconds gave 7 distinct correct readings in 6 s (0 off the device time); screenshots attached for readability. Open: D3, and "a REC-003 recording contains the clock" (no probe reads a recording's pixels yet)
 
 ## Dependencies
 

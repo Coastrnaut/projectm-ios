@@ -1,0 +1,163 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "75b41d77d58e7a0376d1788741479bc65680a71b35539c2d0dbb202a433ca922",
+ "measurements": [
+  {
+   "device": "iPhone15,4",
+   "levelMax": 0.33,
+   "levelMean": 0.199,
+   "outputVolume": 0.45,
+   "samples": 40,
+   "step": "0 dB",
+   "task": "AUD-008-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "levelMax": 0.47,
+   "levelMean": 0.27,
+   "outputVolume": 0.45,
+   "samples": 40,
+   "step": "12 dB",
+   "task": "AUD-008-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "difference": 0.071,
+   "flatMean": 0.199,
+   "raisedMean": 0.27,
+   "step": "compare",
+   "task": "AUD-008-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "drawn": 296,
+   "matches": 1,
+   "step": "photo HH:mm",
+   "task": "MED-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.339,
+   "meanSaturation": 0.783,
+   "nonBlack": 0.982,
+   "step": "photo clock",
+   "task": "MED-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "drawn": 300,
+   "matches": 1,
+   "step": "text HH:mm",
+   "task": "MED-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.045,
+   "meanSaturation": 0.029,
+   "nonBlack": 0.065,
+   "step": "text clock",
+   "task": "MED-011-T13"
+  },
+  {
+   "changed": 1,
+   "device": "iPhone15,4",
+   "matches": 1,
+   "step": "minute change",
+   "task": "MED-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "drawn": 285,
+   "matches": 1,
+   "step": "text h:mm:ss a",
+   "task": "MED-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "meanLuma": 0.052,
+   "meanSaturation": 0.037,
+   "nonBlack": 0.086,
+   "step": "text clock",
+   "task": "MED-011-T13"
+  },
+  {
+   "device": "iPhone15,4",
+   "distinct": 7,
+   "mismatches": 0,
+   "step": "12-hour seconds",
+   "task": "MED-011-T13"
+  },
+  {
+   "bytes": 27321811,
+   "device": "iPhone15,4",
+   "dropped": 605,
+   "droppedShare": 0.164,
+   "duration": 61.47,
+   "fps": 60,
+   "frames": 3083,
+   "height": 2556,
+   "recordedFor": 61.473,
+   "renderFPSMedian": 60,
+   "renderFPSMin": 56,
+   "screenHeight": 2556,
+   "screenWidth": 1178,
+   "step": "circular spectrum max",
+   "task": "REC-003-T23",
+   "thermalAfter": 0,
+   "thermalBefore": 0,
+   "width": 1178,
+   "written": 3083
+  }
+ ],
+ "passed": 4,
+ "schemaVersion": 1,
+ "session": "B13-extra",
+ "tasks": {
+  "AUD-008-T13": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "MED-011-T13": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "REC-003-T23": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B13ExtraDeviceTests",
+   "result": "passed",
+   "seconds": 43.562,
+   "test": "testAUD008PlusTwelveDecibelsDrivesTheAnalysisHarder"
+  },
+  {
+   "class": "B13ExtraDeviceTests",
+   "result": "passed",
+   "seconds": 15.762,
+   "test": "testMED011ClockShowsTheDeviceTimeAndChangesAtTheMinute"
+  },
+  {
+   "class": "B13ExtraDeviceTests",
+   "result": "passed",
+   "seconds": 13.944,
+   "test": "testMED011TwelveHourWithSecondsUpdatesEachSecond"
+  },
+  {
+   "class": "B13ExtraDeviceTests",
+   "result": "passed",
+   "seconds": 71.495,
+   "test": "testREC003SixtySecondCircularSpectrumRecording"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d1/b13x-1118153156.xcresult"
+}

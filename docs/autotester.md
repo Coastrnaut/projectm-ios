@@ -192,6 +192,8 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
 - **Launch arguments arrive as strings.** `-key value` reaches settings that read `bool(forKey:)`/`integer(forKey:)`,
   but not settings that read `object(forKey:) as? NSNumber`. Pass typed values through a DEBUG hook
   (`-uitestDefaults <json>`) that writes them before any setting is read and removes the previous launch's keys.
+  Settings kept as Codable JSON data (MED-011's clock) take `{"key": {"$json": <value>}}`, which the hook stores as
+  JSON data. The DEBUG `recordingFacts` probe also reports `bytes=<n>`, the recorded file's size (-1 when gone).
 - **Saved state overrides settings at launch.** The app restores the last committed scene (SCN-002), whose effect
   values replaced the test's settings. Start every test clean (`-uitestResetNotice` clears settings, media and the
   committed scene) and then apply the test's settings.

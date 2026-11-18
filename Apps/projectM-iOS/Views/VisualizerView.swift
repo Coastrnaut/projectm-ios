@@ -332,10 +332,11 @@ struct VisualizerView: View {
                 .allowsHitTesting(false)
                 .accessibilityIdentifier("videoRecordingProbe")
                 .accessibilityValue(coordinator.videoRecording.probe)
-            // REC-006-R4: the last recording's facts ("fps=<n> frames=<n> dropped=<n>"), so device tests check that
-            // written plus dropped slots fill the length (QA-011 B08; dropped slots are skipped by design, REC-006).
+            // REC-006-R4: the last recording's facts ("fps=<n> frames=<n> dropped=<n> bytes=<n>"), so device tests check
+            // that written plus dropped slots fill the length (QA-011 B08; dropped slots are skipped by design, REC-006)
+            // and report the file size (REC-003-T23; -1 when the file is gone).
             let facts: String = coordinator.videoRecording.lastRecording.map {
-                "fps=\($0.frameRate) frames=\($0.frameCount) dropped=\($0.droppedFrames)"
+                "fps=\($0.frameRate) frames=\($0.frameCount) dropped=\($0.droppedFrames) bytes=\(Self.debugRecordingBytes($0.url))"
             } ?? "none"
             Text(facts)
                 .font(.caption2)
@@ -1045,3 +1046,20 @@ private struct VideoLoopProbe: View {
         .allowsHitTesting(false)
     }
 }
+
+#if DEBUG
+extension VisualizerView {
+    /// The recorded file's size in bytes, where UI tests find it (moved into `-uitestRecordingDirectory`, or still
+    /// offered at `url`); -1 when neither exists (QA-011 B13, REC-003-T23).
+    static func debugRecordingBytes(_ url: URL) -> Int {
+        var candidates: [URL] = [url]
+        if let folder = VideoRecordingCoordinator.debugDirectoryFromArguments() {
+            candidates.insert(folder.appendingPathComponent(url.lastPathComponent), at: 0)
+        }
+        for candidate in candidates {
+            if let size = (try? FileManager.default.attributesOfItem(atPath: candidate.path))?[.size] as? Int { return size }
+        }
+        return -1
+    }
+}
+#endif

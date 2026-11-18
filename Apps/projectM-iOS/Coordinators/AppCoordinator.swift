@@ -2327,7 +2327,15 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         guard let i = arguments.firstIndex(of: "-uitestDefaults"), i + 1 < arguments.count,
               let data = arguments[i + 1].data(using: .utf8),
               let values = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return }
-        for (key, value) in values { defaults.set(value, forKey: key) }
+        for (key, value) in values {
+            // `{"$json": <value>}` is stored as JSON data: settings kept as Codable JSON (MED-011's clock, QA-011 B13).
+            if let wrapped = value as? [String: Any], let inner = wrapped["$json"],
+               let encoded = try? JSONSerialization.data(withJSONObject: inner, options: [.sortedKeys]) {
+                defaults.set(encoded, forKey: key)
+            } else {
+                defaults.set(value, forKey: key)
+            }
+        }
         defaults.set(Array(values.keys), forKey: listKey)
     }
     #endif
