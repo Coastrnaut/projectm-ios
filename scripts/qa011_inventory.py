@@ -47,7 +47,8 @@ CATEGORY_A: dict[str, list[str]] = {
     "PERF-002-T13": ["autorun-perf001"],
     "PERF-009-T16": ["warmstart-perf009"],
     "QA-010-T12": ["autorun-perf001", "launches-sc015", "autorun-perf012", "thresholds"],
-    "QA-003-T17": ["xctest-goldens"],
+    "QA-003-T17": ["xctest-goldens-record", "xctest-goldens"],
+    "PERF-004-T16": ["xctrace-perf004"],
     "QA-006-T13": ["xctest-soak-600"],
     "SHD-004-T20": ["xctest-materials"],
     "SHD-002-T24": ["bench-shd002"],
@@ -58,7 +59,12 @@ CATEGORY_A: dict[str, list[str]] = {
     "REC-013-T14": ["xctest-offline-export"],
 }
 # Category (b) tasks with a scripted part (the checklist names the case).
-AUTOMATED_PARTS: dict[str, list[str]] = {"CMP-001-T20": ["xctest-angle-layer"], "PRE-012-T31": ["xctest-pre012-limits"]}
+AUTOMATED_PARTS: dict[str, list[str]] = {
+    "CMP-001-T20": ["xctest-angle-layer"], "PRE-012-T31": ["xctest-pre012-limits"],
+    # QA-011 Batch 2 (2026-11-18): the scripted part; the rest stays with a person (named in each case's title).
+    "AUD-014-T32": ["autorun-sc009"], "FX-019-T22": ["rendererlab-flashcost"], "PRE-005-T17": ["autorun-pre005"],
+    "PERF-003-T15": ["autorun-perf001-glow"], "PERF-008-T16": ["xctrace-perf008"], "PERF-011-T21": ["xctrace-perf011"],
+}
 
 OWNER_ONLY = re.compile(r"App Store Connect|TestFlight|signing team|certificate|provisioning profile|"
                         r"Paid Apps|banking", re.I)

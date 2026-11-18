@@ -12,12 +12,12 @@
       "waived": 11
     },
     "byCategory": {
-      "a": 11,
-      "b": 202
+      "a": 12,
+      "b": 201
     },
     "byCategoryIncludingWaived": {
-      "a": 11,
-      "b": 213
+      "a": 12,
+      "b": 212
     },
     "byDevice": {
       "D1": 206,
@@ -26,8 +26,8 @@
     },
     "byDeviceAndCategory": {
       "D1": {
-        "a": 11,
-        "b": 195
+        "a": 12,
+        "b": 194
       },
       "D2": {
         "a": 1,
@@ -49,10 +49,10 @@
       "B08": 12,
       "B09": 14,
       "B10": 13,
-      "B11": 31,
+      "B11": 30,
       "B12": 5,
       "B13": 14,
-      "MATRIX": 11
+      "MATRIX": 12
     },
     "devicesInferred": 2
   },
@@ -101,6 +101,98 @@
         "D1"
       ],
       "timeoutSeconds": 600
+    },
+    {
+      "id": "autorun-perf001-glow",
+      "kind": "autorun",
+      "title": "AutomationRunner perf001 on the circular spectrum with the glow on: the export carries the effect quality level at the device's real thermal state (PERF-003)",
+      "closes": [],
+      "partOf": [
+        "PERF-003-T15"
+      ],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "autorun-pre005",
+      "kind": "autorun",
+      "title": "AutomationRunner pre005: motion scores of 200 real thumbnails (evenly spaced over the library), percentiles and class counts at today's thresholds",
+      "closes": [],
+      "partOf": [
+        "PRE-005-T17"
+      ],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "autorun-sc009",
+      "kind": "autorun",
+      "title": "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts (watchdog: a partial report names the stalled phase)",
+      "closes": [
+        "AUD-014-T32"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1",
+        "D3"
+      ],
+      "timeoutSeconds": 300
+    },
+    {
+      "id": "rendererlab-flashcost",
+      "kind": "rendererlab",
+      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, Reduce flashing on minus off, at most 2 ms per frame (FX-019-S6)",
+      "closes": [],
+      "partOf": [
+        "FX-019-T22"
+      ],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 1200
+    },
+    {
+      "id": "xctrace-perf004",
+      "kind": "xctrace",
+      "title": "Instruments Logging (os_signpost): PERF-004 texture allocations only at the start and within 3 s of a rotation",
+      "closes": [
+        "PERF-004-T16"
+      ],
+      "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "xctrace-perf011",
+      "kind": "xctrace",
+      "title": "Instruments Metal System Trace: no GPU intervals and a lower footprint 10 s after backgrounding (In-App Playback), frames within 2 s of the return",
+      "closes": [],
+      "partOf": [
+        "PERF-011-T21"
+      ],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "xctrace-perf008",
+      "kind": "xctrace",
+      "title": "Instruments Power Profiler: 5 min Standard, then 5 min Battery saver (In-App Playback); frame time and energy per minute",
+      "closes": [],
+      "partOf": [
+        "PERF-008-T16"
+      ],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 2400
     },
     {
       "id": "autorun-perf012",
@@ -275,6 +367,19 @@
         "SHD-010-T13"
       ],
       "partOf": [],
+      "devices": [
+        "D1"
+      ],
+      "timeoutSeconds": 900
+    },
+    {
+      "id": "xctest-goldens-record",
+      "kind": "xctest",
+      "title": "RenderGoldens suite recording this device model's goldens (RECORD_DEVICE_GOLDENS); imported into Packages/RenderGoldens/Goldens/<class> for a commit",
+      "closes": [],
+      "partOf": [
+        "QA-003-T17"
+      ],
       "devices": [
         "D1"
       ],
@@ -712,7 +817,6 @@
         "049-out-001-external-display-scene:OUT-001-T17",
         "049-out-001-external-display-scene:OUT-001-T18",
         "051-out-010-output-blackout-isolation:OUT-010-T15",
-        "052-perf-004-texture-pool:PERF-004-T16",
         "055-rec-001-still-frame-capture:REC-001-T20",
         "058-rec-003-video-recording:REC-003-T24",
         "061-show-014-emergency-blackout:SHOW-014-T12",
@@ -740,7 +844,7 @@
         "310-fx-011-pixel-sorting:FX-011-T16"
       ],
       "optionalTasks": 1,
-      "estimatedMinutes": 215
+      "estimatedMinutes": 210
     },
     {
       "id": "B12",
@@ -1095,7 +1199,9 @@
         "D1"
       ],
       "devicesInferred": false,
-      "matrixCases": [],
+      "matrixCases": [
+        "xctrace-perf011"
+      ],
       "estimatedMinutes": 5,
       "text": "PERF-011-T21 {device} S7 on D1: GPU time zero and lower memory 10 s after backgrounding with System/App Capture running; frames within 2 s of return (quickstart D1, D2). Final device stage. — Open: `{device}`, final device stage; not attempted."
     },
@@ -1375,7 +1481,9 @@
         "D3"
       ],
       "devicesInferred": false,
-      "matrixCases": [],
+      "matrixCases": [
+        "autorun-sc009"
+      ],
       "estimatedMinutes": 10,
       "text": "AUD-014-T32 {device} `PROJECTM_AUTORUN=sc009` on D1 and D3 with this build: the In-App Playback and Microphone lifecycle scripts end in the same states as the 2026-11-10 run (`docs/test-reports/performance.md`)."
     },
@@ -1591,7 +1699,9 @@
         "D1"
       ],
       "devicesInferred": false,
-      "matrixCases": [],
+      "matrixCases": [
+        "rendererlab-flashcost"
+      ],
       "estimatedMinutes": 5,
       "text": "FX-019-T22 {device} Measure the pass cost on D1 with RendererLab `RL_MODE=flashcost` (T104 method; target ≤ 2 ms per frame, FX-019-S6) and watch a strobing preset with Reduce flashing off and on."
     },
@@ -2078,13 +2188,15 @@
         "device"
       ],
       "status": "open",
-      "category": "b",
-      "session": "B11",
+      "category": "a",
+      "session": "MATRIX",
       "devices": [
         "D1"
       ],
       "devicesInferred": false,
-      "matrixCases": [],
+      "matrixCases": [
+        "xctrace-perf004"
+      ],
       "estimatedMinutes": 5,
       "text": "PERF-004-T16 {device} D1: Instruments signposts \"PERF-004 texture allocation\" appear only at the first cycle and at size changes (rotation or external display)"
     },
@@ -3075,6 +3187,7 @@
       ],
       "devicesInferred": true,
       "matrixCases": [
+        "xctest-goldens-record",
         "xctest-goldens"
       ],
       "estimatedMinutes": 5,
@@ -3390,7 +3503,9 @@
         "D1"
       ],
       "devicesInferred": false,
-      "matrixCases": [],
+      "matrixCases": [
+        "autorun-perf001-glow"
+      ],
       "estimatedMinutes": 5,
       "text": "PERF-003-T15 {device} D1 with the glow on under sustained load: the overlay shows Reduced at serious with the 60 fps cap kept, Minimal and 30 fps only at critical; `perf001` export carries the level"
     },
@@ -3639,7 +3754,9 @@
         "D1"
       ],
       "devicesInferred": false,
-      "matrixCases": [],
+      "matrixCases": [
+        "xctrace-perf008"
+      ],
       "estimatedMinutes": 15,
       "text": "PERF-008-T16 {device} D1: 5 min Standard vs 5 min Battery saver (same preset, In-App Playback), Instruments Energy Log + Metal System Trace with the \"Power profile\" signpost; record frame time and energy per minute in docs/test-reports/performance.md (PERF-008-S3)"
     },
@@ -3872,7 +3989,9 @@
         "D1"
       ],
       "devicesInferred": false,
-      "matrixCases": [],
+      "matrixCases": [
+        "autorun-pre005"
+      ],
       "estimatedMinutes": 5,
       "text": "PRE-005-T17 {device} Tune the provisional thresholds with a device sweep of real thumbnails (score distribution on D1); a threshold change needs no data migration"
     },

@@ -41,6 +41,11 @@ final class GoldenRenderSuiteTests: XCTestCase {
             for frame in run.capturedFrames {
                 let actual = try XCTUnwrap(frames[frame])
                 let capture = "\(run.name)-\(resolution)-f\(frame)"
+                if platform == nil {   // QA-003-T17: a physical device has its own per-model goldens
+                    DeviceGoldens.check(capture: capture, scene: run.name, resolution: resolution, frame: frame, actual: actual,
+                                        osSensitive: run.osSensitive, gpu: renderer.device.name, test: self)
+                    continue
+                }
                 let manifest = store?.manifest()
                 var expected: GoldenImage?
                 var comparison: GoldenComparisonResult?

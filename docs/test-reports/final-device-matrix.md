@@ -84,6 +84,15 @@ alive, its main thread idle and nothing crashed. The simulator logged AVAudioSes
 start. The cause is not found. It may be simulator-only, but it may also happen on D1 and D3, so the device run
 should watch this case first; AUD-014-T32 stays open either way.
 
+2026-11-18 (QA-011 Batch 2, from the code; not reproduced): the likely cause is a blocking audio call on the main
+thread. The stall is right after "interruption began"; the next step's resume runs `AVAudioSession.setActive(true)` and
+`AVAudioEngine.start()` synchronously on the main actor, and with the simulator's audio server failing (-10879) such a
+call can wait in `mach_msg`, which a sample shows like an idle run loop. sc009 now has a watchdog on its own queue
+(`PROJECTM_WATCHDOG`, default 180 s): it writes a partial `automation-sc009` report with the stalled phase, the steps so
+far and `mainThreadSilentSeconds`, then exits; sc009 also exits after a complete report. The matrix case
+`autorun-sc009` is back as an on-demand case (it needs the microphone answered by the prompt-flow batch), and a
+simulator rehearsal samples the app's threads when the report is late.
+
 ## Checks (2026-11-15)
 
 - `python3 scripts/test_scripts.py`: 205 tests, OK (1 skipped), including the QA-011 inventory, classifier,

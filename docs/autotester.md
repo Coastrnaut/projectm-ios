@@ -25,6 +25,8 @@ runs on hardware.
 | Acceptance record | `scripts/device_acceptance_report.py` | Turns a run's log into `docs/test-reports/qa-011/acceptance/<device>-<session>.json` and `.md` (every measurement, every test, the log's hash). |
 | Inventory and checklist | `scripts/qa011_inventory.py` | Every open `{device}`/`{owner}` task, classified (scripted, person, owner-only) and batched into owner sessions. |
 | Release manifest | `scripts/release_manifest.py` | One commit's evidence: feature evidence, hashed reports, verified device records, gaps. |
+| Instruments helper | `scripts/mac_driver/xctrace.py` | `xctrace record`/`export` commands, the TOC and table XML parser (`ref`/`id` values, sentinels), signpost events and markers, the PERF-004, PERF-011 and per-minute energy verdicts. Used by the matrix's `xctrace` cases. |
+| Device goldens import | `scripts/import_device_goldens.py` | The `projectM-iOS.deviceGolden` attachments of a `RECORD_DEVICE_GOLDENS=1` run → `Packages/RenderGoldens/Goldens/<ios-device-model>/` (PNGs, canonical manifest). |
 
 ## Running it (D1 example)
 
@@ -67,6 +69,46 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
   USB cable with wireless off (Airplane Mode, Wi-Fi outage, offline launches) are not required. Tasks keep their
   checkbox with "⛔ not required (owner ruling 2026-11-18)" on those parts.
 - **2026-11-18: MP3 fixtures** are made on the Mac with Homebrew `lame` (owner approved the install).
+
+## Matrix cases added 2026-11-18 (QA-011 Batch 2)
+
+| Case | Tasks | What it asserts |
+|---|---|---|
+| `autorun-perf001-glow` | part of PERF-003-T15 | perf001 on the circular spectrum with the glow on (`PROJECTM_VISUAL`, `PROJECTM_GLOW`); the export has `frameTimings.effectQuality` |
+| `autorun-pre005` | part of PRE-005-T17 | 200 real thumbnails (evenly spaced) scored; percentiles and class counts for the threshold choice |
+| `autorun-sc009` | AUD-014-T32 (D1, D3) | the lifecycle scripts' end states; on demand, needs the microphone answered (see below) |
+| `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (builds RendererLab into `Build/rendererlab` when missing) |
+| `xctrace-perf004` | PERF-004-T16 | Logging template: "PERF-004 texture allocation" signposts only before start + 5 s and within 3 s of each rotation (perf004 rotates at 10 s and back at 20 s) |
+| `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; the Mac opens Settings at 15 s and relaunches the app at 35 s: no frames (and no GPU intervals of the app) from 10 s after backgrounding, a lower footprint, the first frame within 2 s of the return |
+| `xctrace-perf008` | part of PERF-008-T16 | on demand (about 12 min): Power Profiler 5 min Standard then 5 min Battery saver; fps and frame time per minute from the app, energy per minute from any power table the trace exports |
+| `xctest-goldens-record` | part of QA-003-T17 | on demand: records this model's goldens and imports them; commit them, rebuild, then `xctest-goldens` compares |
+
+```bash
+python3 scripts/run_device_matrix.py --device D1                         # includes perf001-glow, pre005, flashcost, perf004, perf011
+python3 scripts/run_device_matrix.py --device D1 --only xctrace-perf008  # on demand
+python3 scripts/run_device_matrix.py --device D1 --only xctest-goldens-record   # once; then add Goldens/ios-device-iphone15-4
+python3 scripts/run_device_matrix.py --device D1 --only autorun-sc009 --no-install   # after the prompt-flow batch, D1 then D3
+```
+
+- **On-demand cases** (`onDemand`) never run in a plain matrix run, only when named with `--only`: long benches,
+  recording goldens, and cases that raise a prompt.
+- **A prompting case refuses to run after the run's own fresh install** (`prompts`): the uninstall reset its answers,
+  so it would raise the prompt mid-batch (rule 14). Run the prompt-flow batch first, then the case with `--no-install`
+  (installing over the app keeps the answers).
+- **Instruments through `xctrace --env`**: AutomationRunner modes run inside the trace
+  (`--env PROJECTM_AUTORUN=perf004 --launch -- <bundle>`), so the measurement build (Release + `PROJECTM_AUTOMATION`)
+  is traced without DEBUG hooks. The modes emit Points of Interest markers (`QA-011 start`, `rotate`, `rotate back`,
+  `background`, `foreground`) so trace times line up with the run; add `--instrument os_signpost` to templates that
+  lack it (Metal System Trace, Power Profiler). `xctrace record --show-recording-options` lists a template's
+  configurable instruments.
+- **Backgrounding from the Mac**: `devicectl device process launch <id> com.apple.Preferences` sends the app away; a
+  launch of the running app without `--terminate-existing` brings it back. The app holds a background task while
+  away so its sampler can read footprint and frame counts (perf011). Not yet run on a device: check the first run.
+- **Device goldens are per model** (`ios-device-iphone15-4`), outside `GoldenPlatformClass` (every generator suite
+  iterates those classes and would demand goldens for them). The test bundle is read-only, so recording attaches JSON
+  per capture and the Mac writes the folder.
+- **A watchdog thread for scripts that can stall**: sc009's partial report names the phase it stalled in and how long
+  the main thread has been silent; a main-actor watchdog would stall with it.
 
 ## Human testing group (tests that can prompt)
 
@@ -236,6 +278,14 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
   `preferredScreenCaptureFormat: screenshots` (`DeviceTests.yml`); check the `.xctestrun` says `screenshots` before
   trusting a recording measurement. Found by running the same encoder probe inside the app with and without XCUITest
   (`devicectl device process launch ... -- <arguments>`: put the app's arguments after `--`).
+- **"Idle" in a sample can be a blocked main thread** (sc009 stall on the simulator, 2026-11-15; read from the code
+  2026-11-18, not reproduced): the UI stayed at "In-App Playback · Interrupted" and the script never reached its next
+  step, although it only sleeps between notifications. The step after "interruption began" is "interruption ended,
+  resume"; the policy then resumes In-App Playback, and `AVInAppPlaybackBackend.resume()` calls
+  `AVAudioSession.setActive(true)` and `AVAudioEngine.start()` synchronously on the main actor. With the simulator's
+  audio server failing (-10879 on every engine start), such a call can wait in `mach_msg` for good, which looks idle
+  in a sample. A main-actor timer would stall too, so sc009's watchdog runs on its own queue and reports
+  `mainThreadSilentSeconds`; a simulator rehearsal also samples the app after 80 % of the wait.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

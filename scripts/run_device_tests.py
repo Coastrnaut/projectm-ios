@@ -236,8 +236,10 @@ def person(step: str) -> None:
 # MARK: - Targets (a device over devicectl, or a simulator over simctl)
 
 class Target:
-    def __init__(self, label: str, identifier: str, simulator: bool):
+    def __init__(self, label: str, identifier: str, simulator: bool, bundle: str = BUNDLE, app_name: str = SCHEME):
         self.label, self.identifier, self.simulator = label, identifier, simulator
+        # Another app on the same device (QA-011: RendererLab's flashcost run) uses the same steps with its own ids.
+        self.bundle, self.app_name = bundle, app_name
 
     @property
     def out_dir(self) -> Path:
@@ -251,18 +253,18 @@ class Target:
 
     def uninstall(self) -> None:
         if self.simulator:
-            run(["xcrun", "simctl", "uninstall", self.identifier, BUNDLE], check=False)
+            run(["xcrun", "simctl", "uninstall", self.identifier, self.bundle], check=False)
         else:
-            run(["xcrun", "devicectl", "device", "uninstall", "app", "--device", self.identifier, BUNDLE], check=False)
+            run(["xcrun", "devicectl", "device", "uninstall", "app", "--device", self.identifier, self.bundle], check=False)
 
     def launch(self, mode: str, extra: dict[str, str] | None = None) -> None:
         variables = {"PROJECTM_AUTORUN": mode, **(extra or {})}
         if self.simulator:
-            run(["xcrun", "simctl", "launch", "--terminate-running-process", self.identifier, BUNDLE],
+            run(["xcrun", "simctl", "launch", "--terminate-running-process", self.identifier, self.bundle],
                 env={f"SIMCTL_CHILD_{k}": v for k, v in variables.items()})
         else:
             cmd = ["xcrun", "devicectl", "device", "process", "launch", "--device", self.identifier,
-                   "--terminate-existing", "--environment-variables", json.dumps(variables), BUNDLE]
+                   "--terminate-existing", "--environment-variables", json.dumps(variables), self.bundle]
             deadline = time.time() + LOCKED_WAIT
             while True:
                 with tempfile.TemporaryDirectory() as tmp:
@@ -281,7 +283,7 @@ class Target:
     def terminate(self) -> None:
         """Stops the app if a mode left it running."""
         if self.simulator:
-            run(["xcrun", "simctl", "terminate", self.identifier, BUNDLE], check=False, quiet=True)
+            run(["xcrun", "simctl", "terminate", self.identifier, self.bundle], check=False, quiet=True)
             return
         if DRY_RUN:
             return
@@ -292,7 +294,7 @@ class Target:
             if not out.exists():
                 return
             for process in json.loads(out.read_text())["result"].get("runningProcesses", []):
-                if f"/{SCHEME}.app/" in process.get("executable", ""):
+                if f"/{self.app_name}.app/" in process.get("executable", ""):
                     run(["xcrun", "devicectl", "device", "process", "terminate", "--device", self.identifier,
                          "--pid", str(process["processIdentifier"])], check=False, capture=True)
 
@@ -301,14 +303,14 @@ class Target:
         if DRY_RUN:
             return []
         if self.simulator:
-            data = Path(run(["xcrun", "simctl", "get_app_container", self.identifier, BUNDLE, "data"],
+            data = Path(run(["xcrun", "simctl", "get_app_container", self.identifier, self.bundle, "data"],
                             capture=True, quiet=True).stdout.strip())
             base = data / subdirectory if subdirectory else data
             return sorted(str(p.relative_to(base)) for p in base.rglob("*")) if base.exists() else []
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "files.json"
             cmd = ["xcrun", "devicectl", "device", "info", "files", "--device", self.identifier,
-                   "--domain-type", "appDataContainer", "--domain-identifier", BUNDLE, "--json-output", str(out)]
+                   "--domain-type", "appDataContainer", "--domain-identifier", self.bundle, "--json-output", str(out)]
             if subdirectory:
                 cmd += ["--subdirectory", subdirectory]
             run(cmd, capture=True, quiet=True)
@@ -318,13 +320,13 @@ class Target:
         if not DRY_RUN:   # a dry run writes nothing (QA-011: it left empty run folders behind)
             destination.parent.mkdir(parents=True, exist_ok=True)
         if self.simulator:
-            data = Path(run(["xcrun", "simctl", "get_app_container", self.identifier, BUNDLE, "data"],
+            data = Path(run(["xcrun", "simctl", "get_app_container", self.identifier, self.bundle, "data"],
                             capture=True, quiet=True).stdout.strip())
             if not DRY_RUN:
                 shutil.copy2(data / relative, destination)
         else:
             run(["xcrun", "devicectl", "device", "copy", "from", "--device", self.identifier,
-                 "--domain-type", "appDataContainer", "--domain-identifier", BUNDLE,
+                 "--domain-type", "appDataContainer", "--domain-identifier", self.bundle,
                  "--source", relative, "--destination", str(destination)])
 
     def wait_for_report(self, prefix: str, before: set[str], timeout: float) -> str | None:

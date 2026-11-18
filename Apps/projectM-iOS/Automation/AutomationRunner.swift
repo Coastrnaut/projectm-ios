@@ -47,6 +47,30 @@
 //   perf001 In-App Playback on the visual chosen in Settings: 5 s of frame rate with no stage timer, then a
 //           timer attached to the shown visual (no overlay, so only the timer's cost differs) for 5 s, then the
 //           per-stage report in the diagnostics format (`frameTimings`, with the PERF-002 `budget` verdict; PERF-007 `frameDrops`). Report: automation-perf001-*.json.
+//           PERF-003-T15: PROJECTM_VISUAL=<VisualChoice> and PROJECTM_GLOW=1 choose the visual and the glow for this run
+//           only (the export then carries the native host's effect quality level).
+//
+// QA-011 Batch 2 (2026-11-18; driven by scripts/run_device_matrix.py, Instruments through `xctrace record --env`):
+//   sc009   also has a watchdog on its own thread (AUD-014-T32): when the script has not finished after
+//           PROJECTM_WATCHDOG seconds (default 180; a device run takes about 70 s) it writes a partial
+//           automation-sc009 report with the phase it was in, the steps so far and how long the main thread has not
+//           answered, then exits. The simulator stall (2026-11-15) left no report at all.
+//   pre005  PRE-005-T17: with the library unlocked (fixed entitlement), In-App Playback, then PROJECTM_PICKS presets
+//           (default 200, evenly spaced over the library; "all" for every one) drawn through the real thumbnail path;
+//           the motion scores, their percentiles and the class counts at today's thresholds. Report:
+//           automation-pre005-*.json.
+//   perf004 PERF-004-T16: In-App Playback on PROJECTM_VISUAL (default circularSpectrum, glow on); at 10 s a rotation to
+//           landscape, at 20 s back to portrait (UIWindowScene.requestGeometryUpdate), each marked with a
+//           Points of Interest signpost ("QA-011 start", "QA-011 rotate", "QA-011 rotate back") for the trace; report
+//           at 28 s. Report: automation-perf004-*.json.
+//   perf008 PERF-008-T16: PROJECTM_POWER_PROFILE (standard, batterySaver, followLowPowerMode) for PROJECTM_SECONDS
+//           (default 300) of In-App Playback; frame rate and mean frame time once a second, per-minute means; the stored
+//           profile is restored. Report: automation-perf008-*.json.
+//   perf011 PERF-011-T21: In-App Playback for PROJECTM_SECONDS (default 45); once a second the application state,
+//           frames presented since the last sample and the footprint. The Mac backgrounds the app (it opens Settings)
+//           and brings it back; a background task keeps the sampler running while away (about 30 s), and the first
+//           presented frame after the return is timed. Signposts "QA-011 background" and "QA-011 foreground" mark the
+//           trace. Report: automation-perf011-*.json.
 #if DEBUG || PROJECTM_AUTOMATION
 import ANGLERendering
 import AudioCore
@@ -56,12 +80,16 @@ import Darwin
 import Diagnostics
 import FrameTiming
 import Foundation
+import os
 import PresetLibrary
+import Rendering
 import UIKit
 import VisualEffects
 
 @MainActor
 enum AutomationRunner {
+    /// Points of Interest markers that line a trace up with the run (QA-011 Batch 2).
+    private static let signposter = OSSignposter(subsystem: "org.projectmios.automation", category: .pointsOfInterest)
     private static var mode: String? { ProcessInfo.processInfo.environment["PROJECTM_AUTORUN"] }
     private static var launchRecorded = false
     /// Modes that measure one launch each and exit (run repeatedly).
@@ -72,7 +100,7 @@ enum AutomationRunner {
     /// Feature 002: sc102 and sc104 use the whole library unlocked without StoreKit; every other
     /// mode (and a normal launch) uses the real store.
     static func entitlementsOverride() -> (any EntitlementProviding)? {
-        guard let mode, ["sc102", "sc104"].contains(mode) else { return nil }
+        guard let mode, ["sc102", "sc104", "pre005"].contains(mode) else { return nil }
         return FakeEntitlements(unlocked: true)
     }
 
@@ -103,6 +131,10 @@ enum AutomationRunner {
             case "privacy": await privacy(coordinator)
             case "perf001": await perf001(coordinator)
             case "perf012": await perf012(coordinator)
+            case "pre005": await pre005(coordinator)
+            case "perf004": await perf004(coordinator)
+            case "perf008": await perf008(coordinator)
+            case "perf011": await perf011(coordinator)
             default: write("unknown", ["error": "unknown PROJECTM_AUTORUN \(mode)"])
             }
         }
@@ -354,9 +386,13 @@ enum AutomationRunner {
 
     private static func sc009(_ coordinator: AppCoordinator) async {
         let manager = coordinator.manager
+        let progress = AutomationProgress()
+        let limit = Double(ProcessInfo.processInfo.environment["PROJECTM_WATCHDOG"] ?? "") ?? 180
+        AutomationWatchdog.start(progress, report: "sc009", limit: limit, facts: reportFacts())
         coordinator.microphone.acknowledgeExplainer()
         var cycleNotes: [String] = []
         for i in 0..<50 {
+            progress.set("cycle \(i + 1)")
             coordinator.select(.inAppPlayback)
             try? await Task.sleep(for: .milliseconds(200))
             coordinator.select(.microphone)                    // switch
@@ -369,30 +405,45 @@ enum AutomationRunner {
         let cyclesFinal = ["screen": "\(coordinator.screen)", "state": manager.state.rawValue,
                            "activeMode": manager.activeMode?.rawValue ?? "none"]
 
+        progress.record(["step": "cyclesFinal", "mode": "both", "state": manager.state.rawValue])
+
         var scripts: [String: [[String: String]]] = [:]
         for mode in [AudioSourceMode.inAppPlayback, .microphone] {
+            progress.set("\(mode.rawValue) start")
             coordinator.select(mode)
             try? await Task.sleep(for: .seconds(2))
-            var steps: [[String: String]] = [step("started", manager)]
+            var steps: [[String: String]] = [step("started", manager, progress, mode)]
             for (name, post) in lifecycleSteps(mode) {
+                // The phase is set before the post: a post (or what its observers do on the main thread) that never
+                // returns leaves the watchdog naming it.
+                progress.set("\(mode.rawValue) \(name)")
                 post()
                 try? await Task.sleep(for: .seconds(2))
-                steps.append(step(name, manager))
+                steps.append(step(name, manager, progress, mode))
             }
+            progress.set("\(mode.rawValue) stop")
             coordinator.stop()
             try? await Task.sleep(for: .seconds(1))
-            steps.append(step("stopped", manager))
+            steps.append(step("stopped", manager, progress, mode))
             scripts[mode.rawValue] = steps
         }
+        guard progress.finish() else { return }   // the watchdog already wrote a partial report and exits
         write("sc009", [
             "cycles": 50, "intervalMs": 200, "cycleNotes": cycleNotes, "cyclesFinal": cyclesFinal,
-            "lifecycleScripts": scripts,
+            "lifecycleScripts": scripts, "elapsedSeconds": progress.elapsed, "partial": false,
             "notAutomated": "System/App Capture: every start shows the system picker, which needs a person",
         ])
+        exitSoon()   // a mode that keeps running leaves the device busy (docs/autotester.md)
     }
 
-    private static func step(_ name: String, _ manager: CaptureManager) -> [String: String] {
-        ["step": name, "state": manager.state.rawValue, "reason": manager.stopReason?.code ?? ""]
+    private static func step(_ name: String, _ manager: CaptureManager, _ progress: AutomationProgress? = nil,
+                             _ mode: AudioSourceMode? = nil) -> [String: String] {
+        var entry = ["step": name, "state": manager.state.rawValue, "reason": manager.stopReason?.code ?? ""]
+        if let progress {
+            entry["t"] = String(format: "%.1f", progress.elapsed)
+            if let mode { progress.record(entry.merging(["mode": mode.rawValue]) { a, _ in a }) }
+        }
+        return entry
     }
 
     /// The scripted sequence: the notifications iOS posts for each event.
@@ -454,6 +505,8 @@ enum AutomationRunner {
     }
 
     private static func perf001(_ coordinator: AppCoordinator) async {
+        let restore = chooseVisualFromEnvironment(coordinator)   // PERF-003-T15: the glow run
+        defer { restore() }
         coordinator.select(.inAppPlayback)
         try? await Task.sleep(for: .seconds(3))
         guard let visual = coordinator.activeStageTimedVisual else { return write("perf001", ["error": "no visual shown"]) }
@@ -493,13 +546,231 @@ enum AutomationRunner {
         exitSoon()
     }
 
+    // MARK: - PRE-005: the motion score distribution of real thumbnails (PRE-005-T17)
+
+    private static func pre005(_ coordinator: AppCoordinator) async {
+        guard let library = await waitForLibrary(coordinator) else { return write("pre005", ["error": "library not ready"]) }
+        coordinator.select(.inAppPlayback)   // thumbnails draw through the visible renderer's second engine
+        try? await Task.sleep(for: .seconds(3))
+        let presets = coordinator.presets
+        guard let thumbnails = presets.thumbnails else { return write("pre005", ["error": "no thumbnail model"]) }
+        let playable: [IndexedPreset] = library.presets.filter { presets.isPlayable($0) }
+        let requested = ProcessInfo.processInfo.environment["PROJECTM_PICKS"] ?? ""
+        let count = requested == "all" ? playable.count : min(playable.count, Int(requested) ?? 200)
+        guard count > 0 else { return write("pre005", ["error": "no playable presets"]) }
+        // Evenly spaced over the library's display order: every pack, deterministic between runs.
+        let picks: [IndexedPreset] = (0..<count).map { playable[$0 * playable.count / count] }
+        var scores: [String: Int] = [:]
+        var drawMs: [Double] = []
+        var missing: [String] = []
+        for preset in picks {
+            let start = Date()
+            _ = await thumbnails.image(for: preset, playable: true)
+            drawMs.append(Date().timeIntervalSince(start) * 1000)
+            if let entry = thumbnails.motionEntries[preset.id] { scores[preset.id] = entry.score } else { missing.append(preset.id) }
+        }
+        let sorted = scores.values.sorted()
+        func percentile(_ p: Double) -> Int {
+            sorted.isEmpty ? -1 : sorted[min(sorted.count - 1, Int(Double(sorted.count - 1) * p / 100 + 0.5))]
+        }
+        var classes: [String: Int] = [:]
+        for score in sorted { classes[PresetEnergy.of(score: score).rawValue, default: 0] += 1 }
+        let drawSorted = drawMs.sorted()
+        write("pre005", [
+            "presets": library.presets.count, "playable": playable.count, "picked": picks.count, "scored": sorted.count,
+            "unscored": missing, "scores": scores, "scoreVersion": PresetMotionScore.version,
+            "percentiles": ["p05": percentile(5), "p10": percentile(10), "p25": percentile(25), "p33": percentile(33.3),
+                            "p50": percentile(50), "p67": percentile(66.7), "p75": percentile(75), "p90": percentile(90),
+                            "p95": percentile(95), "max": sorted.last ?? -1],
+            "thresholds": ["moderate": PresetMotionScore.moderateThreshold, "energetic": PresetMotionScore.energeticThreshold],
+            "classCounts": classes,
+            "drawMsMedian": drawSorted.isEmpty ? 0 : drawSorted[drawSorted.count / 2], "drawMsMax": drawSorted.last ?? 0,
+            "note": "cached thumbnails are read, missing ones drawn; scores come from the PNG field (PRE-005 contract C3)",
+        ])
+        exitSoon()
+    }
+
+    // MARK: - PERF-004: texture allocations at start and at size changes only (PERF-004-T16)
+
+    private static func perf004(_ coordinator: AppCoordinator) async {
+        let restore = chooseVisualFromEnvironment(coordinator, defaultVisual: .circularSpectrum, defaultGlow: true)
+        signposter.emitEvent("QA-011 start")
+        coordinator.select(.inAppPlayback)
+        var marks: [String: Double] = ["start": 0]
+        let start = Date()
+        try? await Task.sleep(for: .seconds(10))
+        signposter.emitEvent("QA-011 rotate")
+        marks["rotate"] = Date().timeIntervalSince(start)
+        let landscape = requestOrientation(.landscapeRight)
+        try? await Task.sleep(for: .seconds(10))
+        signposter.emitEvent("QA-011 rotate back")
+        marks["rotateBack"] = Date().timeIntervalSince(start)
+        let portrait = requestOrientation(.portrait)
+        try? await Task.sleep(for: .seconds(8))
+        let metrics = coordinator.activeVisualMetrics
+        write("perf004", ["visual": coordinator.settings.visual.rawValue, "glow": coordinator.settings.glowEnabled,
+                          "markSeconds": marks, "rotationRequested": landscape && portrait,
+                          "fps": metrics.framesPerSecond, "signpost": "PERF-004 texture allocation"])
+        restore()
+        exitSoon()
+    }
+
+    /// Asks the window scene for an orientation (public UIKit API); false without a window scene.
+    private static func requestOrientation(_ mask: UIInterfaceOrientationMask) -> Bool {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else { return false }
+        scene.requestGeometryUpdate(.iOS(interfaceOrientations: mask)) { (error: any Error) in
+            print("QA-011 orientation request failed: \(error)")
+        }
+        return true
+    }
+
+    // MARK: - PERF-008: frame time per minute with a power profile (PERF-008-T16)
+
+    private static func perf008(_ coordinator: AppCoordinator) async {
+        let environment = ProcessInfo.processInfo.environment
+        let profile = PowerProfile(stored: environment["PROJECTM_POWER_PROFILE"])
+        let seconds = max(10, Int(environment["PROJECTM_SECONDS"] ?? "") ?? 300)
+        let stored = coordinator.powerProfile.profile
+        coordinator.powerProfile.profile = profile   // emits the "Power profile" signpost (PERF-008-R7)
+        coordinator.select(.inAppPlayback)
+        try? await Task.sleep(for: .seconds(3))
+        var fps: [Double] = [], frameMs: [Double] = []
+        for _ in 0..<seconds {
+            try? await Task.sleep(for: .seconds(1))
+            let metrics = coordinator.activeVisualMetrics
+            fps.append(metrics.framesPerSecond)
+            frameMs.append(metrics.meanFrameTimeMs)
+        }
+        func mean(_ values: ArraySlice<Double>) -> Double { values.isEmpty ? 0 : values.reduce(0, +) / Double(values.count) }
+        var minutes: [[String: Double]] = []
+        for minute in stride(from: 0, to: seconds, by: 60) {
+            let range = minute..<min(seconds, minute + 60)
+            minutes.append(["minute": Double(minute / 60 + 1), "fpsMean": mean(fps[range]), "frameMsMean": mean(frameMs[range])])
+        }
+        coordinator.powerProfile.profile = stored
+        write("perf008", ["profile": profile.rawValue, "seconds": seconds, "fps": fps, "frameMs": frameMs, "perMinute": minutes,
+                          "lowPowerMode": ProcessInfo.processInfo.isLowPowerModeEnabled,
+                          "thermalState": ProcessInfo.processInfo.thermalState.rawValue])
+        exitSoon()
+    }
+
+    // MARK: - PERF-011: nothing drawn and less memory while away, frames soon after the return (PERF-011-T21)
+
+    private static func perf011(_ coordinator: AppCoordinator) async {
+        let seconds = max(20, Int(ProcessInfo.processInfo.environment["PROJECTM_SECONDS"] ?? "") ?? 45)
+        coordinator.select(.inAppPlayback)
+        try? await Task.sleep(for: .seconds(3))
+        guard let renderer = coordinator.renderer else { return write("perf011", ["error": "no renderer"]) }
+        let tracker = BackgroundTracker(renderer: renderer)
+        let start = Date()
+        var samples: [[String: Double]] = []
+        var lastFrames = renderer.presentedFrameCount
+        for _ in 0..<seconds {
+            try? await Task.sleep(for: .seconds(1))
+            let frames = renderer.presentedFrameCount
+            let state: Double = UIApplication.shared.applicationState == .active ? 0 : (UIApplication.shared.applicationState == .inactive ? 1 : 2)
+            samples.append(["t": Date().timeIntervalSince(start), "state": state, "frames": Double(frames - lastFrames),
+                            "footprintMB": Double(ProcessMemory.footprintBytes() ?? -1) / 1_048_576])
+            lastFrames = frames
+        }
+        tracker.invalidate()
+        write("perf011", ["samples": samples, "stateCodes": "0 active, 1 inactive, 2 background",
+                          "backgroundedAt": tracker.backgroundedAt.map { $0.timeIntervalSince(start) } ?? -1,
+                          "activeAgainAt": tracker.activeAgainAt.map { $0.timeIntervalSince(start) } ?? -1,
+                          "firstFrameAfterReturnSeconds": tracker.firstFrameAfterReturn ?? -1])
+        exitSoon()
+    }
+
+    /// PERF-011: real lifecycle notifications; a background task keeps the sampler alive while away.
+    @MainActor
+    private final class BackgroundTracker {
+        private(set) var backgroundedAt: Date?
+        private(set) var activeAgainAt: Date?
+        private(set) var firstFrameAfterReturn: Double?
+        private var task: UIBackgroundTaskIdentifier = .invalid
+        private var tokens: [any NSObjectProtocol] = []
+        private let renderer: any VisualizerRenderer
+
+        init(renderer: any VisualizerRenderer) {
+            self.renderer = renderer
+            let center = NotificationCenter.default
+            tokens.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.enteredBackground() }
+            })
+            tokens.append(center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.becameActive() }
+            })
+        }
+
+        private func enteredBackground() {
+            guard backgroundedAt == nil else { return }
+            AutomationRunner.signposter.emitEvent("QA-011 background")
+            backgroundedAt = Date()
+            task = UIApplication.shared.beginBackgroundTask(withName: "QA-011 perf011") { [weak self] in
+                MainActor.assumeIsolated { self?.endTask() }
+            }
+        }
+
+        private func becameActive() {
+            guard backgroundedAt != nil, activeAgainAt == nil else { return }
+            AutomationRunner.signposter.emitEvent("QA-011 foreground")
+            let now = Date()
+            activeAgainAt = now
+            endTask()
+            let before = renderer.presentedFrameCount
+            Task { @MainActor [weak self] in
+                while let self, self.renderer.presentedFrameCount <= before, Date().timeIntervalSince(now) < 10 {
+                    try? await Task.sleep(for: .milliseconds(10))
+                }
+                guard let self else { return }
+                self.firstFrameAfterReturn = self.renderer.presentedFrameCount > before ? Date().timeIntervalSince(now) : nil
+            }
+        }
+
+        private func endTask() {
+            guard task != .invalid else { return }
+            UIApplication.shared.endBackgroundTask(task)
+            task = .invalid
+        }
+
+        func invalidate() {
+            tokens.forEach { NotificationCenter.default.removeObserver($0) }
+            tokens.removeAll()
+            endTask()
+        }
+    }
+
     // MARK: - Helpers
 
+    /// PROJECTM_VISUAL and PROJECTM_GLOW for this run only; returns the closure that restores the stored values.
+    private static func chooseVisualFromEnvironment(_ coordinator: AppCoordinator, defaultVisual: VisualChoice? = nil,
+                                                    defaultGlow: Bool? = nil) -> () -> Void {
+        let environment = ProcessInfo.processInfo.environment
+        let visualWas = coordinator.settings.visual, glowWas = coordinator.settings.glowEnabled
+        if let visual = environment["PROJECTM_VISUAL"].flatMap(VisualChoice.init(rawValue:)) ?? defaultVisual {
+            coordinator.settings.visual = visual
+        }
+        if let glow = environment["PROJECTM_GLOW"].map({ $0 == "1" }) ?? defaultGlow { coordinator.settings.glowEnabled = glow }
+        return {
+            coordinator.settings.visual = visualWas
+            coordinator.settings.glowEnabled = glowWas
+        }
+    }
+
+    /// Device model, OS version and app build (read on the main actor; the watchdog thread gets a copy).
+    static func reportFacts() -> [String: String] {
+        ["device": modelIdentifier(), "systemVersion": UIDevice.current.systemVersion,
+         "build": Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"]
+    }
+
     private static func write(_ name: String, _ body: [String: Any]) {
+        writeReport(name, body, facts: reportFacts())
+    }
+
+    /// Writes `Documents/automation-<name>-<time>.json`; callable from any thread (the watchdog).
+    nonisolated static func writeReport(_ name: String, _ body: [String: Any], facts: [String: String]) {
         var report = body
-        report["device"] = modelIdentifier()
-        report["systemVersion"] = UIDevice.current.systemVersion
-        report["build"] = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        for (key, value) in facts { report[key] = value }
         report["finishedAt"] = ISO8601DateFormatter().string(from: Date())
         let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "")
         let url = URL.documentsDirectory.appendingPathComponent("automation-\(name)-\(stamp).json")
@@ -529,6 +800,60 @@ enum AutomationRunner {
         var info = utsname()
         uname(&info)
         return withUnsafeBytes(of: &info.machine) { String(decoding: $0.prefix { $0 != 0 }, as: UTF8.self) }
+    }
+}
+
+/// A script's progress, shared between the main actor and the watchdog thread (AUD-014-T32).
+final class AutomationProgress: @unchecked Sendable {
+    private let lock = NSLock()
+    private let started = Date()
+    private var phase = "starting"
+    private var steps: [[String: String]] = []
+    private var ended = false
+    private var mainAnsweredAt = Date()
+
+    var elapsed: Double { Date().timeIntervalSince(started) }
+
+    func set(_ phase: String) { lock.withLock { self.phase = phase } }
+    func record(_ step: [String: String]) { lock.withLock { steps.append(step) } }
+    func mainAnswered() { lock.withLock { mainAnsweredAt = Date() } }
+
+    /// The script finished: true unless the watchdog fired first (then nothing more is written).
+    func finish() -> Bool { lock.withLock { () -> Bool in defer { ended = true }; return !ended } }
+
+    /// The watchdog's turn: the snapshot, once, when the script has not finished.
+    func claim() -> (phase: String, steps: [[String: String]], mainSilentSeconds: Double)? {
+        lock.withLock {
+            guard !ended else { return nil }
+            ended = true
+            return (phase, steps, Date().timeIntervalSince(mainAnsweredAt))
+        }
+    }
+}
+
+/// Writes a partial report and exits when a script has not finished in time. Runs on its own queue, so it also
+/// fires when the main thread is blocked (a synchronous call that never returns) and not merely waiting.
+enum AutomationWatchdog {
+    nonisolated(unsafe) private static var timer: DispatchSourceTimer?
+
+    /// Not main-actor isolated, so the timer's handler is not either (it runs on the watchdog queue).
+    static func start(_ progress: AutomationProgress, report name: String, limit: Double, facts: [String: String]) {
+        let queue = DispatchQueue(label: "org.projectmios.automation.watchdog")
+        let source = DispatchSource.makeTimerSource(queue: queue)
+        source.schedule(deadline: .now() + 1, repeating: 1)
+        source.setEventHandler {
+            DispatchQueue.main.async { progress.mainAnswered() }   // answered only while the main thread runs
+            guard progress.elapsed >= limit, let snapshot = progress.claim() else { return }
+            AutomationRunner.writeReport(name, [
+                "partial": true, "elapsedSeconds": progress.elapsed, "stalledAt": snapshot.phase, "stepsSoFar": snapshot.steps,
+                "mainThreadSilentSeconds": snapshot.mainSilentSeconds,
+                "error": "watchdog: not finished after \(Int(limit)) s, in phase \"\(snapshot.phase)\"; main thread silent for "
+                    + String(format: "%.0f", snapshot.mainSilentSeconds) + " s",
+            ], facts: facts)
+            queue.asyncAfter(deadline: .now() + 1) { exit(0) }
+        }
+        timer = source
+        source.resume()
     }
 }
 #endif

@@ -2232,7 +2232,8 @@ class QA011MatrixTests(unittest.TestCase):
         self.assertNotIn("bench-cmp008", d2, "a waived task adds no device")
         # xctest-angle-layer stays on D1-D3 by default (release evidence after CMP-001-T20 closed).
         self.assertEqual(d2, ["autorun-perf001", "launches-sc015", "thresholds", "xctest-materials", "xctest-angle-layer"])
-        self.assertEqual([c["id"] for c in rdm.plan(None, devices)], rdm.CASE_IDS)
+        self.assertEqual([c["id"] for c in rdm.plan(None, devices)],
+                         [c["id"] for c in rdm.CASES if not c.get("onDemand")], "on-demand cases only with --only")
         order = rdm.CASE_IDS
         self.assertEqual(order[-1], "xctest-offline-export", "the app-hosted suite replaces the app: last")
         self.assertLess(order.index("thresholds"), order.index("xctest-goldens"))
@@ -2603,6 +2604,145 @@ class MediaFixtureTests(unittest.TestCase):
         self.assertNotIn(".mp3", " ".join(n for n in mmf.CATALOG if n != "not-audio.mp3"), "no MP3 encoder on the Mac")
         cmd = itf.copy_command("DEV", Path("/x/photo-gps.heic"))
         self.assertEqual(cmd[-2:], ["--destination", "Documents/photo-gps.heic"])
+
+
+class QA011Batch2Tests(unittest.TestCase):
+    """QA-011 Batch 2 (2026-11-18): on-demand and prompting cases, xctrace parsing and verdicts, RendererLab's
+    flashcost budget, device goldens import."""
+
+    SIGNPOSTS = """<?xml version="1.0"?>
+<trace-query-result><node xpath='//x'><schema name="os-signpost">
+<col><mnemonic>time</mnemonic><name>Time</name><engineering-type>event-time</engineering-type></col>
+<col><mnemonic>event-type</mnemonic><name>Type</name></col>
+<col><mnemonic>name</mnemonic><name>Name</name></col>
+<col><mnemonic>process</mnemonic><name>Process</name></col>
+</schema>
+<row><event-time id="1" fmt="00:01.000">1000000000</event-time><event-type id="2" fmt="Event">Event</event-type><string id="3" fmt="QA-011 start">QA-011 start</string><process id="4" fmt="projectM-iOS (12)"><pid fmt="12">12</pid></process></row>
+<row><event-time id="5" fmt="00:02.000">2000000000</event-time><event-type id="6" fmt="Begin">Begin</event-type><string id="7" fmt="PERF-004 texture allocation">PERF-004 texture allocation</string><process ref="4"/></row>
+<row><event-time id="8" fmt="00:11.000">11000000000</event-time><event-type ref="2"/><string id="9" fmt="QA-011 rotate">QA-011 rotate</string><process ref="4"/></row>
+<row><event-time id="10" fmt="00:12.000">12000000000</event-time><event-type ref="6"/><string ref="7"/><process ref="4"/></row>
+<row><event-time id="11" fmt="00:21.000">21000000000</event-time><event-type ref="2"/><string id="12" fmt="QA-011 rotate back">QA-011 rotate back</string><process ref="4"/></row>
+<row><sentinel/><event-type ref="2"/><string ref="7"/><process ref="4"/></row>
+</node></trace-query-result>"""
+
+    def setUp(self):
+        from mac_driver import xctrace
+        self.xt = xctrace
+
+    def test_on_demand_and_prompting_cases(self):
+        devices = rdm.case_devices(rdm.load_inventory())
+        plain = [c["id"] for c in rdm.plan("D1", devices)]
+        for cid in ("autorun-sc009", "xctrace-perf008", "xctest-goldens-record"):
+            self.assertNotIn(cid, plain, f"{cid} is on demand")
+            self.assertEqual([c["id"] for c in rdm.plan("D1", devices, {cid})], [cid])
+        self.assertIn("D3", devices["autorun-sc009"], "AUD-014-T32 runs on D1 and D3")
+        self.assertIn("xctrace-perf004", plain)
+        self.assertEqual(rdm.CASE_IDS[-1], "xctest-offline-export")
+        case = next(c for c in rdm.CASES if c["id"] == "autorun-sc009")
+        runner = rdm.Runner(rdm.MatrixTarget("D1", "ID", False, Path("/tmp/x"), "UDID"), Path("/tmp/w"), 1, [], True)
+        runner.fresh_install = True
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = runner.run_case(case)
+        self.assertEqual(result["status"], "not-run")
+        self.assertIn("prompt-flow batch", result["detail"])
+
+    def test_record_command_and_toc(self):
+        cmd = self.xt.record_command("UDID", "Logging", 40, Path("/t/x.trace"), "org.b", env={"PROJECTM_AUTORUN": "perf004"},
+                                     instruments=["os_signpost"])
+        self.assertEqual(cmd[:4], ["xcrun", "xctrace", "record", "--template"])
+        self.assertEqual(cmd[-3:], ["--launch", "--", "org.b"])
+        self.assertIn("--env", cmd)
+        self.assertIn("PROJECTM_AUTORUN=perf004", cmd)
+        self.assertIn("40s", cmd)
+        toc = ('<trace-toc><run number="1"><data><table schema="os-signpost" category="x"/>'
+               '<table schema="metal-gpu-intervals"/><table schema="os-signpost"/></data></run></trace-toc>')
+        self.assertEqual(self.xt.parse_toc(toc), [{"run": 1, "schema": "os-signpost"}, {"run": 1, "schema": "metal-gpu-intervals"}])
+        self.assertIn('table[@schema="os-signpost"]', self.xt.export_command(Path("/t"), "os-signpost", Path("/o"))[-3])
+
+    def test_signposts_and_perf004_verdict(self):
+        rows = self.xt.parse_table(self.SIGNPOSTS)
+        self.assertEqual(len(rows), 6)
+        self.assertEqual(rows[3]["name"]["fmt"], "PERF-004 texture allocation", "refs resolve")
+        events = self.xt.signpost_events(rows)
+        self.assertEqual(len(events), 5, "the sentinel row has no time")
+        verdict = self.xt.perf004_verdict(events)
+        self.assertTrue(verdict["pass"], verdict)
+        self.assertEqual((verdict["atStart"], verdict["atSizeChanges"]), (1, 1))
+        stray = events + [(16.0, "PERF-004 texture allocation")]
+        self.assertFalse(self.xt.perf004_verdict(sorted(stray))["pass"])
+        self.assertFalse(self.xt.perf004_verdict([(1.0, "PERF-004 texture allocation")])["pass"], "no markers")
+        self.assertFalse(self.xt.perf004_verdict([(1.0, "QA-011 start")])["pass"], "nothing allocated: nothing measured")
+        self.assertEqual(self.xt.marker_times(events), {"start": 1.0, "rotate": 11.0, "rotate back": 21.0})
+
+    def test_perf011_verdict(self):
+        samples = [{"t": float(t), "state": 0 if t < 10 or t > 30 else 2, "frames": 0 if 10 <= t <= 30 else 60,
+                    "footprintMB": 300 if t < 10 or t > 30 else 180} for t in range(1, 41)]
+        report = {"samples": samples, "backgroundedAt": 10.0, "activeAgainAt": 30.5, "firstFrameAfterReturnSeconds": 0.4}
+        verdict = self.xt.perf011_verdict(report)
+        self.assertTrue(verdict["pass"], verdict)
+        events = [(5.0, "QA-011 background"), (26.0, "QA-011 foreground")]
+        gpu = [{"start": {"raw": str(int(20e9)), "fmt": "", "tag": "start-time"},
+                "process": {"raw": "projectM-iOS", "fmt": "projectM-iOS (12)", "tag": "process"}}]
+        self.assertFalse(self.xt.perf011_verdict(report, gpu, events)["pass"], "a GPU interval 15 s after backgrounding")
+        late = dict(report, firstFrameAfterReturnSeconds=3.5)
+        self.assertFalse(self.xt.perf011_verdict(late)["pass"])
+        self.assertFalse(self.xt.perf011_verdict(dict(report, backgroundedAt=-1))["pass"], "never backgrounded")
+
+    def test_flashcost_and_perf008_verdicts(self):
+        report = {"summary": {"presets": 2, "costMsMedian": 1.2, "costMsMax": 1.6},
+                  "flashCost": [{"id": "a", "costMs": 1.2}, {"id": "b", "costMs": 1.6}], "thermalStates": ["nominal"]}
+        self.assertTrue(rdm.flashcost_verdict(report, 2.0)["pass"])
+        over = {"summary": {"presets": 1, "costMsMedian": 2.4, "costMsMax": 2.4}, "flashCost": [{"id": "x", "costMs": 2.4}]}
+        verdict = rdm.flashcost_verdict(over, 2.0)
+        self.assertFalse(verdict["pass"])
+        self.assertEqual(verdict["over"], ["x"])
+        self.assertFalse(rdm.flashcost_verdict({"summary": {}}, 2.0)["pass"])
+        runs = [{"name": "perf008-standard", "report": {"profile": "standard", "fps": [60.0] * 9}, "tables": {}},
+                {"name": "perf008-batterySaver", "report": {"profile": "batterySaver", "fps": [30.0] * 9}, "tables": {}}]
+        self.assertTrue(rdm.verdict_perf008(runs)["pass"])
+        self.assertFalse(rdm.verdict_perf008(runs[:1])["pass"])
+        rows = [{"time": {"raw": str(int(t * 1e9)), "fmt": "", "tag": "event-time"},
+                 "energy-impact": {"raw": str(v), "fmt": "", "tag": "x"}} for t, v in ((10, 2), (50, 4), (70, 6))]
+        per = self.xt.per_minute(rows)
+        self.assertEqual(per["column"], "energy-impact")
+        self.assertEqual([m["mean"] for m in per["minutes"]], [3.0, 6.0])
+        self.assertEqual(rdm.dig({"a": {"b": 1}}, "a.b"), 1)
+        self.assertIsNone(rdm.dig({"a": {}}, "a.b"))
+
+    def test_device_goldens_import(self):
+        import base64
+        import import_device_goldens as idg
+        png = b"\x89PNG fake"
+        entry = {"scene": "photo-gradient", "frame": 7, "width": 128, "height": 96, "file": "photo-gradient-128x96-f7.png",
+                 "pixelSHA256": "ab", "fileSHA256": hashlib.sha256(png).hexdigest(), "osSensitive": False}
+        capture = {"kind": idg.KIND, "goldenClass": "ios-device-iphone15-4", "recordedOS": "27.0", "recordedGPU": "Apple A16 GPU",
+                   "entry": entry, "png": base64.b64encode(png).decode()}
+        second = json.loads(json.dumps(capture))
+        second["entry"].update(width=256, height=192, file="photo-gradient-256x192-f7.png")
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "attachments"
+            folder.mkdir()
+            (folder / "b.json").write_text(json.dumps(second))
+            (folder / "a.json").write_text(json.dumps(capture))
+            (folder / "other.json").write_text('{"kind": "something else"}')
+            captures = idg.read_captures(folder)
+            self.assertEqual(len(captures), 2)
+            golden_class, manifest, files = idg.build(captures)
+            out = idg.write(golden_class, manifest, files, Path(tmp) / "Goldens")
+            text = (out / "manifest.json").read_text()
+            self.assertTrue(text.endswith("}\n"))
+            self.assertIn('"platform" : "ios-device-iphone15-4"', text)
+            parsed = json.loads(text)
+            self.assertEqual([e["width"] for e in parsed["entries"]], [128, 256], "canonical order")
+            self.assertEqual((out / entry["file"]).read_bytes(), png)
+            bad = json.loads(json.dumps(capture))
+            bad["entry"]["fileSHA256"] = "00"
+            with self.assertRaises(ValueError):
+                idg.build([bad])
+            other_os = json.loads(json.dumps(second))
+            other_os["recordedOS"] = "26.5"
+            with self.assertRaises(ValueError):
+                idg.build([capture, other_os])
 
 
 if __name__ == "__main__":

@@ -36,12 +36,15 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import run_device_tests as rdt  # noqa: E402
 import check_performance_thresholds as cpt  # noqa: E402
+import import_device_goldens as idg  # noqa: E402
+from mac_driver import xctrace as xt  # noqa: E402
 
 ROOT = rdt.ROOT
 RUNS = ROOT / "docs/test-reports/qa-011/runs"
@@ -53,6 +56,9 @@ STATUSES = ("pass", "fail", "timeout", "blocked", "error", "skipped", "not-run")
 LOCK_RE = re.compile(r"(?i)(device is locked|is locked|passcode[- ]protected|unlock (?:the|your|this) device|"
                      r"\bLocked\b)")
 COMMIT_LIMIT = 1_000_000   # pulled reports up to this size are copied next to the record (committed)
+RENDERERLAB_BUNDLE = "org.projectmios.RendererLab"
+RENDERERLAB_PROJECT = ROOT / "RendererLab.xcodeproj"
+RENDERERLAB_BUILD = ROOT / "Build/rendererlab"
 
 
 def case(id: str, kind: str, title: str, closes: list[str], timeout: int, **params) -> dict:
@@ -60,6 +66,9 @@ def case(id: str, kind: str, title: str, closes: list[str], timeout: int, **para
 
 
 # In run order. `closes`: the tasks the case fully closes (category a); `partOf`: tasks of which it scripts a part.
+# `onDemand`: never in a plain run, only when named with --only (long benches, a prompt, recording goldens).
+# `prompts`: the case raises that permission prompt unless it was answered on the installed app, so it refuses to run
+# after this run's fresh install (owner rule 14, amended 2026-11-18: prompts belong to the prompt-flow batch).
 CASES: list[dict] = [
     # No case needs a person (owner ruling 2026-11-15): AUD-014's sc009 lifecycle script triggers the one-time
     # microphone prompt after the fresh install, so it moved to owner session B05 (the AutomationRunner mode stays).
@@ -70,6 +79,35 @@ CASES: list[dict] = [
          ["QA-010-T12"], 400, mode="sc015", repeat=10),
     case("warmstart-perf009", "warmstart", "PERF-009 cold and warm launches (10 each), medians",
          ["PERF-009-T16"], 600, repeat=10),
+    case("autorun-perf001-glow", "autorun", "AutomationRunner perf001 on the circular spectrum with the glow on: the "
+         "export carries the effect quality level at the device's real thermal state (PERF-003)", [], 300,
+         partOf=["PERF-003-T15"], mode="perf001", prefix="automation-perf001", wait=240,
+         env={"PROJECTM_VISUAL": "circularSpectrum", "PROJECTM_GLOW": "1"}, expect="frameTimings.effectQuality"),
+    case("autorun-pre005", "autorun", "AutomationRunner pre005: motion scores of 200 real thumbnails (evenly spaced "
+         "over the library), percentiles and class counts at today's thresholds", [], 900, partOf=["PRE-005-T17"],
+         mode="pre005", prefix="automation-pre005", wait=840),
+    case("autorun-sc009", "autorun", "AutomationRunner sc009: In-App Playback and Microphone lifecycle scripts "
+         "(watchdog: a partial report names the stalled phase)", ["AUD-014-T32"], 300, mode="sc009",
+         prefix="automation-sc009", wait=240, prompts="microphone", onDemand=True),
+    case("rendererlab-flashcost", "rendererlab", "RendererLab flashcost: strobe safety pass cost per starter preset, "
+         "Reduce flashing on minus off, at most 2 ms per frame (FX-019-S6)", [], 1200, partOf=["FX-019-T22"],
+         wait=1080, limitMs=2.0),
+    case("xctrace-perf004", "xctrace", "Instruments Logging (os_signpost): PERF-004 texture allocations only at the "
+         "start and within 3 s of a rotation", ["PERF-004-T16"], 900, verdict="perf004",
+         runs=[{"name": "perf004", "template": "Logging", "seconds": 40, "mode": "perf004",
+                "tables": [xt.SIGNPOST_SCHEMA]}]),
+    case("xctrace-perf011", "xctrace", "Instruments Metal System Trace: no GPU intervals and a lower footprint 10 s "
+         "after backgrounding (In-App Playback), frames within 2 s of the return", [], 900, partOf=["PERF-011-T21"],
+         verdict="perf011",
+         runs=[{"name": "perf011", "template": "Metal System Trace", "seconds": 60, "mode": "perf011",
+                "env": {"PROJECTM_SECONDS": "50"}, "instruments": ["os_signpost"],
+                "tables": [xt.SIGNPOST_SCHEMA, xt.GPU_SCHEMA], "background": [15, 35]}]),
+    case("xctrace-perf008", "xctrace", "Instruments Power Profiler: 5 min Standard, then 5 min Battery saver "
+         "(In-App Playback); frame time and energy per minute", [], 2400, partOf=["PERF-008-T16"], verdict="perf008",
+         onDemand=True,
+         runs=[{"name": f"perf008-{p}", "template": "Power Profiler", "seconds": 320, "mode": "perf008",
+                "env": {"PROJECTM_POWER_PROFILE": p, "PROJECTM_SECONDS": "300"}, "instruments": ["os_signpost"],
+                "tables": [xt.SIGNPOST_SCHEMA], "powerTables": True} for p in ("standard", "batterySaver")]),
     case("autorun-perf012", "autorun", "AutomationRunner perf012: a 1-minute overlay session, then the PERF-012 "
          "report (frame-interval percentiles, peak memory, audio age) for the QA-010 judge", [], 300,
          partOf=["QA-010-T12"], mode="perf012", prefix="performance-perf012", wait=180),
@@ -112,6 +150,10 @@ CASES: list[dict] = [
          ["SHD-010-T13"], 900, package="ParameterGraph",
          only=["ParameterExpressionTests/ExpressionCompileWorkTests/testInformationalHostCost"],
          env={"PARAMETER_EXPRESSION_BENCH": "1"}, configuration="Release"),
+    case("xctest-goldens-record", "xctest", "RenderGoldens suite recording this device model's goldens "
+         "(RECORD_DEVICE_GOLDENS); imported into Packages/RenderGoldens/Goldens/<class> for a commit", [], 900,
+         partOf=["QA-003-T17"], package="RenderGoldens", only=["RenderGoldensTests/GoldenRenderSuiteTests"],
+         env={"RECORD_DEVICE_GOLDENS": "1"}, importGoldens=True, onDemand=True),
     case("xctest-offline-export", "xctest", "REC-013 two offline exports of the fixture match frame checksums "
          "(app-hosted; replaces the installed app, so it runs last)", ["REC-013-T14"], 900, app=True,
          only=["projectM-iOSTests/OfflineExportAcceptanceTests"]),
@@ -120,7 +162,7 @@ CASE_IDS = [c["id"] for c in CASES]
 # Cases that stay release evidence on these devices even when every task they closed is done (2026-11-16: closing
 # CMP-001-T20 left xctest-angle-layer on no device and failed CI run 43918880546).
 DEFAULT_DEVICES = {"autorun-perf001": LABELS, "launches-sc015": LABELS, "thresholds": LABELS, "xctest-angle-layer": LABELS,
-                   "bench-rec003-encoder": ["D1", "D3"]}
+                   "bench-rec003-encoder": ["D1", "D3"], "autorun-sc009": ["D1", "D3"]}
 
 
 # MARK: - Which cases run where (from the inventory)
@@ -153,6 +195,8 @@ def plan(label: str | None, devices_by_case: dict[str, list[str]], only: set[str
     chosen = []
     for c in CASES:
         if only and c["id"] not in only:
+            continue
+        if c.get("onDemand") and not (only and c["id"] in only):
             continue
         if label is None or label in devices_by_case.get(c["id"], []):
             chosen.append(c)
@@ -519,11 +563,84 @@ def is_locked(text: str) -> bool:
     return bool(LOCK_RE.search(text)) and "Executed " not in text
 
 
+def dig(data, path: str):
+    """data["a"]["b"] for "a.b"; None when any part is missing."""
+    for part in path.split("."):
+        if not isinstance(data, dict) or part not in data:
+            return None
+        data = data[part]
+    return data
+
+
+def flashcost_verdict(report: dict, limit_ms: float) -> dict:
+    """FX-019-T22: RendererLab's flashcost summary against the 2 ms per frame budget (FX-019-S6)."""
+    summary = report.get("summary") or {}
+    results = report.get("flashCost") or []
+    costs = [r.get("costMs", 0) for r in results]
+    over = [r["id"] for r in results if r.get("costMs", 0) > limit_ms]
+    n = int(summary.get("presets", len(costs)))
+    worst, median = summary.get("costMsMax", max(costs, default=0)), summary.get("costMsMedian", 0)
+    detail = (f"{n} presets, median {median:.2f} ms, max {worst:.2f} ms per frame (limit {limit_ms} ms)"
+              + (f"; over: {', '.join(over[:5])}" if over else "")
+              + (f"; thermal {', '.join(report['thermalStates'])}" if report.get("thermalStates") else ""))
+    return {"pass": n > 0 and worst <= limit_ms, "detail": detail if n else "no presets measured", "presets": n,
+            "medianMs": median, "maxMs": worst, "over": over}
+
+
+def verdict_perf004(runs: list[dict]) -> dict:
+    run = runs[0] if runs else {}
+    rows = (run.get("tables") or {}).get(xt.SIGNPOST_SCHEMA)
+    if rows is None:
+        return {"pass": False, "detail": f"no {xt.SIGNPOST_SCHEMA} table exported (trace saved: {run.get('traceSaved')})"}
+    verdict = xt.perf004_verdict(xt.signpost_events(rows))
+    if run.get("report") and not run["report"].get("rotationRequested"):
+        verdict["pass"], verdict["detail"] = False, "the app could not request the rotation; " + verdict["detail"]
+    return verdict
+
+
+def verdict_perf011(runs: list[dict]) -> dict:
+    run = runs[0] if runs else {}
+    if not run.get("report"):
+        return {"pass": False, "detail": "no perf011 report pulled"}
+    tables = run.get("tables") or {}
+    events = xt.signpost_events(tables[xt.SIGNPOST_SCHEMA]) if xt.SIGNPOST_SCHEMA in tables else None
+    verdict = xt.perf011_verdict(run["report"], tables.get(xt.GPU_SCHEMA), events)
+    if xt.GPU_SCHEMA not in tables:
+        verdict["detail"] += f"; GPU intervals not checked (no {xt.GPU_SCHEMA} table exported)"
+    return verdict
+
+
+def verdict_perf008(runs: list[dict]) -> dict:
+    """PERF-008-T16: both profiles measured; Battery saver at its 30 fps cap and below Standard; per-minute frame
+    time (app report) and energy (Power Profiler tables, best effort) side by side."""
+    by = {}
+    for run in runs:
+        report = run.get("report") or {}
+        fps = sorted(report.get("fps") or [])
+        power = {schema: xt.per_minute(rows) for schema, rows in (run.get("tables") or {}).items()
+                 if xt.POWER_SCHEMA_RE.search(schema)}
+        by[report.get("profile", run["name"])] = {"fpsMedian": fps[len(fps) // 2] if fps else 0,
+                                                  "perMinute": report.get("perMinute", []), "energy": power,
+                                                  "traceSaved": run.get("traceSaved")}
+    std, saver = by.get("standard"), by.get("batterySaver")
+    if not std or not saver:
+        return {"pass": False, "detail": f"profiles measured: {sorted(by)}", "profiles": by}
+    ok = saver["fpsMedian"] <= 31 and saver["fpsMedian"] < std["fpsMedian"]
+    energy = "energy tables: " + (", ".join(sorted({k for v in by.values() for k in v["energy"]})) or "none exported")
+    return {"pass": ok, "profiles": by, "detail": f"Standard {std['fpsMedian']:.1f} fps, Battery saver "
+            f"{saver['fpsMedian']:.1f} fps (cap 30); {energy}"}
+
+
+XCTRACE_VERDICTS = {"perf004": verdict_perf004, "perf011": verdict_perf011, "perf008": verdict_perf008}
+
+
 class Runner:
     def __init__(self, target: MatrixTarget, work: Path, locked_wait: float, perf012: list[Path],
                  dry_run: bool):
         self.target, self.work, self.locked_wait, self.perf012, self.dry_run = target, work, locked_wait, perf012, dry_run
         self.derived = work / "derived-data"
+        self.fresh_install = False      # set when this run reinstalled the app (its permission answers are gone)
+        self.rendererlab_app: Path | None = None
 
     def run_case(self, c: dict) -> dict:
         result = {"id": c["id"], "kind": c["kind"], "title": c["title"], "closes": c["closes"],
@@ -558,7 +675,17 @@ class Runner:
     # Each case_* fills result["status"], ["detail"], ["artifacts"]; commands are printed by rdt.run.
 
     def case_autorun(self, c: dict, result: dict) -> None:
-        result["commands"].append(["PROJECTM_AUTORUN=" + c["mode"], "launch", rdt.BUNDLE])
+        if c.get("prompts") and self.fresh_install and not self.target.simulator:
+            result["status"] = "not-run"
+            result["detail"] = (f"raises the {c['prompts']} prompt after this run's fresh install (owner rule 14): run the "
+                                f"prompt-flow batch first, then --only {c['id']} --no-install")
+            print(f"!! {c['id']}: {result['detail']}", flush=True)
+            return
+        env = dict(c.get("env", {}))
+        result["commands"].append(["PROJECTM_AUTORUN=" + c["mode"]] + [f"{k}={v}" for k, v in env.items()]
+                                  + ["launch", rdt.BUNDLE])
+        if c.get("prompts") and self.target.simulator:   # a rehearsal grants it
+            rdt.run(["xcrun", "simctl", "privacy", self.target.identifier, "grant", c["prompts"], rdt.BUNDLE], check=False)
         if c.get("permission"):
             if self.target.simulator:   # a rehearsal grants it; on a device a person taps Allow once
                 rdt.run(["xcrun", "simctl", "privacy", self.target.identifier, "grant", c["permission"], rdt.BUNDLE],
@@ -566,18 +693,166 @@ class Runner:
             else:
                 print(f">>> {self.target.label}: the fresh install asks for {c['permission']} access during this "
                       f"case; tap Allow on the device (one tap; the case waits up to {c['wait']} s)", flush=True)
-        report = rdt.run_mode(self.target, c["mode"], c["prefix"], c["wait"])
+        if self.target.simulator and not self.dry_run:
+            self.sample_if_stalled(c)
+        report = rdt.run_mode(self.target, c["mode"], c["prefix"], c["wait"], env or None)
         if self.dry_run:
             result["status"] = "skipped"
             return
         if not report:
             result["status"], result["detail"] = "fail", f"no {c['prefix']} report within {c['wait']} s"
+            sample = self.work / "logs" / f"{c['id']}-sample.txt"
+            if sample.exists():
+                self.add(result, sample, False)
+                result["detail"] += f"; main-thread sample in {display_path(sample)}"
             return
         self.add(result, report, report.stat().st_size <= COMMIT_LIMIT)
         data = json.loads(report.read_text())
         error = data.get("error") if isinstance(data, dict) else None
-        result["status"] = "fail" if error else "pass"
-        result["detail"] = error or f"report {report.name}"
+        missing = c.get("expect") and not error and dig(data, c["expect"]) is None
+        result["status"] = "fail" if error or missing else "pass"
+        result["detail"] = error or (f"report {report.name} has no {c['expect']}" if missing else f"report {report.name}")
+
+    def sample_if_stalled(self, c: dict) -> None:
+        """Simulator rehearsal: when no report has come after most of the wait, sample the app's threads with the Mac's
+        `sample` (a simulator app is a Mac process), so a stall shows where the main thread waits."""
+        out = self.work / "logs" / f"{c['id']}-sample.txt"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        delay = max(30.0, c["wait"] * 0.8)
+
+        def later() -> None:
+            time.sleep(delay)
+            pids = capture(["pgrep", "-f", f"{rdt.SCHEME}.app/{rdt.SCHEME}"]).stdout.split()
+            if pids:
+                capture(["sample", pids[0], "3", "-file", str(out)])
+
+        threading.Thread(target=later, daemon=True).start()
+
+    # MARK: RendererLab (FX-019-T22)
+
+    def rendererlab_path(self) -> Path:
+        sdk = "iphonesimulator" if self.target.simulator else "iphoneos"
+        return self.rendererlab_app or RENDERERLAB_BUILD / f"Build/Products/Release-{sdk}/RendererLab.app"
+
+    def rendererlab_build(self) -> list[str]:
+        cmd = ["xcodebuild", "-project", str(RENDERERLAB_PROJECT), "-scheme", "RendererLab", "-configuration", "Release",
+               "-derivedDataPath", str(RENDERERLAB_BUILD)]
+        if self.target.simulator:
+            return cmd + ["-destination", f"id={self.target.identifier}", "CODE_SIGNING_ALLOWED=NO", "build"]
+        return cmd + ["-destination", "generic/platform=iOS", "-allowProvisioningUpdates", "build"]
+
+    def case_rendererlab(self, c: dict, result: dict) -> None:
+        t = self.target
+        lab = MatrixTarget(t.label, t.identifier, t.simulator, t.out_dir, t.udid)
+        lab.bundle, lab.app_name = RENDERERLAB_BUNDLE, "RendererLab"
+        app = self.rendererlab_path()
+        if not app.exists() or self.dry_run:
+            if not RENDERERLAB_PROJECT.exists():
+                result["commands"].append(["xcodegen", "generate", "--spec", "RendererLab.yml"])
+                rdt.run(["xcodegen", "generate", "--spec", str(ROOT / "RendererLab.yml")])
+            build = self.rendererlab_build()
+            result["commands"].append(build)
+            rdt.run(build, timeout=3600)
+        lab.install(app)
+        env = {"RL_BACKEND": "angle", "RL_MODE": "flashcost"}
+        result["commands"].append([f"{k}={v}" for k, v in env.items()] + ["launch", RENDERERLAB_BUNDLE])
+        report = rdt.run_mode(lab, "flashcost", "RendererLab-angle-flashcost", c["wait"], env)
+        if self.dry_run:
+            result["status"] = "skipped"
+            return
+        if not report:
+            result["status"], result["detail"] = "fail", f"no RendererLab flashcost report within {c['wait']} s"
+            return
+        self.add(result, report, report.stat().st_size <= COMMIT_LIMIT)
+        verdict = flashcost_verdict(json.loads(report.read_text()), c["limitMs"])
+        result["status"], result["detail"] = ("pass" if verdict["pass"] else "fail"), verdict["detail"]
+
+    # MARK: Instruments (PERF-004-T16, PERF-008-T16, PERF-011-T21)
+
+    def drive_background(self, at: list[float]) -> threading.Thread:
+        """PERF-011: the Mac sends the app to the background by opening Settings at at[0] s, and brings it back at
+        at[1] s (a launch of a running app activates it; no --terminate-existing)."""
+        t = self.target
+        if t.simulator:
+            away = ["xcrun", "simctl", "launch", t.identifier, "com.apple.Preferences"]
+            back = ["xcrun", "simctl", "launch", t.identifier, rdt.BUNDLE]
+        else:
+            away = ["xcrun", "devicectl", "device", "process", "launch", "--device", t.identifier, "com.apple.Preferences"]
+            back = ["xcrun", "devicectl", "device", "process", "launch", "--device", t.identifier, rdt.BUNDLE]
+
+        def act() -> None:
+            time.sleep(0 if self.dry_run else at[0])
+            rdt.run(away, check=False, capture=True)
+            time.sleep(0 if self.dry_run else at[1] - at[0])
+            rdt.run(back, check=False, capture=True)
+
+        thread = threading.Thread(target=act, daemon=True)
+        thread.start()
+        return thread
+
+    def case_xctrace(self, c: dict, result: dict) -> None:
+        t = self.target
+        folder = self.work / "traces" / c["id"]
+        runs: list[dict] = []
+        for run in c["runs"]:
+            trace = folder / f"{run['name']}.trace"
+            if not self.dry_run:
+                folder.mkdir(parents=True, exist_ok=True)
+                if trace.exists():
+                    shutil.rmtree(trace)
+            env = {"PROJECTM_AUTORUN": run["mode"], **run.get("env", {})}
+            cmd = xt.record_command(t.identifier if t.simulator else (t.udid or "<UDID>"), run["template"],
+                                    run["seconds"], trace, rdt.BUNDLE, env=env, instruments=run.get("instruments", []))
+            result["commands"].append(cmd)
+            before = set(t.container_files("Documents"))
+            driver = self.drive_background(run["background"]) if run.get("background") else None
+            # Never a short timeout: saving a trace takes minutes, and a killed save leaves it unreadable.
+            proc = rdt.run(cmd, check=False, capture=True, timeout=run["seconds"] + 1800)
+            if driver:
+                driver.join(timeout=5)
+            if self.dry_run:
+                continue
+            text = (proc.stdout or "") + (proc.stderr or "")
+            log = self.work / "logs" / f"{c['id']}-{run['name']}.log"
+            log.parent.mkdir(parents=True, exist_ok=True)
+            log.write_text(text)
+            self.add(result, log, False)
+            if proc.returncode != 0 and not t.simulator and is_locked(text):
+                raise Blocked(self.locked_message())
+            name = t.wait_for_report(f"automation-{run['mode']}", before, 120)
+            report = None
+            if name:
+                dest = t.out_dir / f"{c['id']}-{name}"
+                t.pull(f"Documents/{name}", dest)
+                self.add(result, dest, dest.stat().st_size <= COMMIT_LIMIT)
+                report = json.loads(dest.read_text())
+            tables = self.export_tables(trace, run, folder) if trace.exists() else {}
+            runs.append({"name": run["name"], "exit": proc.returncode, "report": report, "tables": tables,
+                         "traceSaved": trace.exists()})
+        if self.dry_run:
+            result["status"] = "skipped"
+            return
+        verdict = XCTRACE_VERDICTS[c["verdict"]](runs)
+        out = t.out_dir / f"{c['id']}-verdict.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(verdict, indent=2, sort_keys=True, default=str) + "\n")
+        self.add(result, out, True)
+        result["status"], result["detail"] = ("pass" if verdict["pass"] else "fail"), verdict["detail"]
+
+    def export_tables(self, trace: Path, run: dict, folder: Path) -> dict[str, list]:
+        """The run's tables as parsed rows (schema -> rows); the exported XML stays next to the trace."""
+        toc = capture(xt.toc_command(trace))
+        if toc.returncode != 0:
+            return {}
+        schemas = [e["schema"] for e in xt.parse_toc(toc.stdout) if e["run"] == 1]
+        wanted = [s for s in schemas
+                  if s in run.get("tables", []) or (run.get("powerTables") and xt.POWER_SCHEMA_RE.search(s))]
+        out = {}
+        for schema in wanted:
+            xml = folder / f"{run['name']}-{schema}.xml"
+            if capture(xt.export_command(trace, schema, xml)).returncode == 0 and xml.exists():
+                out[schema] = xt.parse_table(xml.read_text(errors="replace"))
+        return out
 
     def case_launches(self, c: dict, result: dict) -> None:
         dest = rdt.launches(self.target, c["mode"], c["repeat"])
@@ -673,13 +948,30 @@ class Runner:
             break
         self.add(result, log, False)
         self.add(result, bundle, False)
-        for exported in self.export_attachments(bundle, c["id"]):
-            self.add(result, exported, True)
+        if c.get("importGoldens"):   # QA-003-T17: the device goldens go into the package, not into the record
+            self.import_goldens(bundle, c, result)
+        else:
+            for exported in self.export_attachments(bundle, c["id"]):
+                self.add(result, exported, True)
         bench = [line for line in text.splitlines() if re.search(r"(?i)\b(bench|gpu time|QA-006 qa006)\b", line)
                  and "Test Case" not in line][:6]
         result["status"] = "pass" if proc.returncode == 0 else "fail"
         result["detail"] = test_counts(text) + (f"; exit {proc.returncode}" if proc.returncode else "") + (
-            "; " + " / ".join(x.strip()[:160] for x in bench) if bench else "")
+            "; " + " / ".join(x.strip()[:160] for x in bench) if bench else "") + result["detail"]
+
+    def import_goldens(self, bundle: Path, c: dict, result: dict) -> None:
+        out = self.work / "attachments" / c["id"]
+        exported = bundle.exists() and capture(["xcrun", "xcresulttool", "export", "attachments", "--path", str(bundle),
+                                                "--output-path", str(out)]).returncode == 0
+        captures = idg.read_captures(out) if exported else []
+        if not captures:
+            result["detail"] += "; no device-golden attachments exported"
+            return
+        golden_class, manifest, files = idg.build(captures)
+        folder = idg.write(golden_class, manifest, files, idg.DEST)
+        result["detail"] += f"; {len(files)} device goldens written to {display_path(folder)}"
+        print(f"device goldens: {display_path(folder)} ({len(files)} files); add them to the repository, rebuild the "
+              f"device tests and rerun xctest-goldens", flush=True)
 
     def export_attachments(self, bundle: Path, case_id: str) -> list[Path]:
         """JSON attachments (for example the QA-006 soak report) copied next to the record."""
@@ -739,6 +1031,7 @@ def run_target(label: str, args, devices_by_case: dict[str, list[str]], listing:
           + ("" if evidence else " — SIMULATOR REHEARSAL, NOT EVIDENCE") + " ===", flush=True)
     target = MatrixTarget(label, identifier or "", simulator, record_dir / "artifacts", udid)
     runner = Runner(target, work, args.locked_wait, [Path(p) for p in args.perf012_report], rdt.DRY_RUN)
+    runner.rendererlab_app = Path(args.rendererlab_app) if args.rendererlab_app else None
 
     unavailable = (not simulator and not rdt.DRY_RUN and facts.get("state") in ("not listed", "unavailable"))
     if args.build:
@@ -752,10 +1045,11 @@ def run_target(label: str, args, devices_by_case: dict[str, list[str]], listing:
     else:
         if simulator and not rdt.DRY_RUN:
             capture(["xcrun", "simctl", "boot", identifier])
-        if not args.no_install and any(c["kind"] in ("autorun", "launches", "warmstart") for c in cases):
+        if not args.no_install and any(c["kind"] in ("autorun", "launches", "warmstart", "xctrace") for c in cases):
             try:
                 target.uninstall()
                 target.install(app)
+                runner.fresh_install = True
             except subprocess.CalledProcessError as e:
                 record["stopReason"] = "install failed"
                 print(f"!! install failed on {label}: {e}", flush=True)
@@ -811,6 +1105,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--locked-wait", type=float, default=600, help="seconds a locked device is waited for")
     parser.add_argument("--work-dir", help="where xcresults and logs go (default Build/qa-011)")
     parser.add_argument("--inventory", default=str(INVENTORY))
+    parser.add_argument("--rendererlab-app", help="a built RendererLab.app for rendererlab-flashcost (default: built "
+                        "into Build/rendererlab when missing)")
     args = parser.parse_args(raw)
     if bool(args.device) == bool(args.simulator):
         parser.error("give --device D1|D2|D3|all or --simulator <udid>")
