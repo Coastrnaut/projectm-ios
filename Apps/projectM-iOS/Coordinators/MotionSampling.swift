@@ -43,6 +43,11 @@ final class CoreMotionSampler: MotionSampling {
         manager.stopDeviceMotionUpdates()
     }
 
+    #if DEBUG
+    /// QA-011 CAM-011-T15: CoreMotion's own state, for the device test's probe.
+    var isActive: Bool { manager.isDeviceMotionActive }
+    #endif
+
     /// The reading as a plain sample; its time is the sensor's (seconds since boot) in nanoseconds.
     nonisolated static func sample(_ motion: CMDeviceMotion) -> MotionSample {
         let seconds: Double = max(motion.timestamp, 0)

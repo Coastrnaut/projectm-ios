@@ -312,6 +312,9 @@ struct VisualizerView: View {
             VStack { HStack { UITestCameraEventPanel(coordinator: coordinator); Spacer() }; Spacer() }
                 .padding(.top, 220)
         }
+        if UITestCameraDeviceProbes.isRequested {   // QA-011 Batch 4: B06 camera device tests
+            UITestCameraDeviceProbes(coordinator: coordinator)
+        }
         if UITestRenderFaultPanel.isRequested {    // PERF-014: RenderFaultUITests
             VStack { HStack { UITestRenderFaultPanel(coordinator: coordinator); Spacer() }; Spacer() }
                 .padding(.top, 160)

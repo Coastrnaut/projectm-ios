@@ -6,6 +6,7 @@
 // sensor. Scene activity (`sceneBecame(active:)`) stops the sensor in the background.
 import Foundation
 import ParameterGraph
+import VisualParameters
 
 extension AppCoordinator {
     func makeMotionModulation(defaults: UserDefaults) -> MotionModulationCoordinator {
@@ -17,5 +18,22 @@ extension AppCoordinator {
 
     func connectMotion(_ host: NativeSpectrumHost) {
         motionModulation.connect(host)
+        #if DEBUG
+        bindGlowToMotionIfRequested(host)
+        #endif
     }
+
+    #if DEBUG
+    /// QA-011 CAM-011-T15 (B06CameraSystemDeviceTests): `-uitestBindGlowToMotion` binds the glow's intensity to Tilt
+    /// forward and its radius to Shake, so the scene reads motion and the real sensor runs on D1.
+    static let bindGlowToMotionArgument = "-uitestBindGlowToMotion"
+
+    private func bindGlowToMotionIfRequested(_ host: NativeSpectrumHost) {
+        guard ProcessInfo.processInfo.arguments.contains(Self.bindGlowToMotionArgument) else { return }
+        try? host.bind(AudioFeatureBinding(source: .motion(.pitch), target: VisualParameterIDs.bloomIntensity,
+                                           outputStart: 0, outputEnd: 1))
+        try? host.bind(AudioFeatureBinding(source: .motion(.shake), target: VisualParameterIDs.bloomRadius,
+                                           outputStart: 0, outputEnd: 1))
+    }
+    #endif
 }

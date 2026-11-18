@@ -5,6 +5,9 @@
 // CAM-001-T24: the back camera live under the spectrum, with the indicator badge, through rotation.
 // CAM-002-T21: the front camera the same way. CAM-002-T23: Back ↔ Front within 2 s with audio uninterrupted.
 // CAM-003-T11: the lens row on D1 (Wide ↔ Ultra Wide ten times while running) and no lens row on the iPads.
+// QA-011 Batch 4 (the extension at the end of this file; the system-UI camera tests are B06CameraSystemDeviceTests):
+// CAM-002-T21/T22 mirror and saved-picture orientation, CAM-004-T08, CAM-005-T14, FX-009-T18, REC-003-T23 (Camera),
+// and CAM-007-T15's Fit bars on the iPhone.
 import UIKit
 import XCTest
 
@@ -249,7 +252,16 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
                     pause(2)
                     let step = "\(position) \(label) \(orientation == .portrait ? "portrait" : "landscape")"
                     assertLive(task, step)
-                    _ = screen(task, step)
+                    let (_, pixels) = screen(task, step)
+                    // QA-011 Batch 4: on an iPhone the camera's 4:3 picture leaves Fit's bars below it (portrait) or
+                    // beside it (landscape), away from the spectrum ring and the overlay; Fill covers them.
+                    if UIDevice.current.userInterfaceIdiom == .phone {
+                        let band: (Double, Double, Double, Double) = orientation == .portrait ? (0.1, 0.86, 0.8, 0.06)
+                            : (0.88, 0.45, 0.08, 0.4)
+                        let lit = Self.region(pixels, width: lastSize.0, height: lastSize.1, band).nonBlack
+                        report(task, "\(step) bar band", ["nonBlack": lit])
+                        if label == "fit" { XCTAssertLessThan(lit, 0.15, "\(step): Fit shows a black bar there (\(lit))") }
+                    }
                 }
                 // Save Frame from the controls; the saved file is read back into the probe ("png WxH opaque").
                 let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
@@ -266,5 +278,323 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
                 app.terminate()
             }
         }
+    }
+}
+
+// MARK: QA-011 Batch 4: mirror and orientation, exposure, focus, trails, the camera recording
+// (shared helpers: B06CameraSystemDeviceTests.swift; probes: `-uitestCameraDeviceProbes`, Debug/UITestCameraDeviceProbes)
+// CAM-002-T21 (D1-D3): mirror on and off are each other's mirror image. CAM-002-T22 (D1): the flip is complete in the
+// first screenshot after Settings closes; Save Frame and a 3 s recording show the screen's way round, mirror on and
+// off. CAM-004-T08 (D1): the lock reads back locked; a lens change and a visual change release it. CAM-005-T14 (D1):
+// the focus point follows a double-tap; the front camera's mirror maps a tap to the mirrored point; Fit's bar does
+// nothing; the "Focus at centre" action focuses at the centre and is announced. FX-009-T18 (D1, D2): Trails' frame-rate
+// cost on Photo and Camera, and no ghost after a cue step. REC-003-T23 (D1, D3): 60 s of the Camera at Max.
+// The mirror tests need a left-right asymmetric scene in front of the camera; with a symmetric one they skip, saying so.
+extension B06CameraDeviceTests {
+    private var mirrorToggle: XCUIElement { app.switches["cameraMirrorToggle"] }
+    private static var noOverlay: [String: Any] { ["settings.performanceOverlay": false] }
+
+    /// Flips Mirror in Settings and closes Settings.
+    private func flipMirror() {
+        openSettingsForCamera()
+        XCTAssertTrue(revealCameraSetting(mirrorToggle), "the Mirror switch")
+        flipCameraSettingSwitch(mirrorToggle)
+        closeSettingsForCamera()
+    }
+
+    private func waitControlsHidden() {
+        let controls = app.otherElements["controls"]
+        _ = wait(8) { !controls.exists }
+    }
+
+    /// CAM-002-T21: the front camera with Mirror on, then off: one picture is the other's mirror image.
+    func testCAM002MirroredMatchesFlip() throws {
+        let task = "CAM-002-T21"
+        launchLiveCamera("front", settings: Self.noOverlay.merging(["settings.camera.mirrorFront": true]) { a, _ in a })
+        pause(1)
+        let (a, mask) = cameraScreenGrid(task, "mirror on")
+        let asymmetry = CameraGrid.asymmetry(a, mask)
+        report(task, "scene", ["asymmetry": asymmetry])
+        try XCTSkipIf(asymmetry < 0.15, "the front camera sees a left-right symmetric scene (asymmetry \(asymmetry)); "
+                      + "place the device facing something asymmetric")
+        flipMirror()
+        pause(1)
+        let (b, _) = cameraScreenGrid(task, "mirror off")
+        let mirrored = CameraGrid.correlation(a, CameraGrid.flipped(b), mask), direct = CameraGrid.correlation(a, b, mask)
+        report(task, "mirror", ["flippedCorrelation": mirrored, "directCorrelation": direct])
+        XCTAssertGreaterThan(mirrored, 0.8, "mirror off is the mirror image of mirror on (\(mirrored))")
+        XCTAssertGreaterThan(mirrored, direct + 0.1, "closer to the mirror image (\(mirrored)) than to the same picture (\(direct))")
+        XCTAssertTrue(waitCameraLive(), "still live")
+    }
+
+    private func saveFramePNG(_ label: String) {
+        waitControlsHidden()
+        showCameraControls()
+        app.buttons["saveFrame"].firstMatch.tap()
+        let png = app.buttons["PNG"].firstMatch
+        if wait(5, { png.exists }) { png.tap() }
+        let probe = app.staticTexts["frameCaptureProbe"]
+        XCTAssertTrue(wait(10) { ((probe.value as? String) ?? "").hasPrefix("png") }, "\(label): frame saved: \(String(describing: probe.value))")
+        pause(1)
+    }
+
+    private func recordCamera(seconds: Double, _ label: String) {
+        waitControlsHidden()
+        showCameraControls()
+        let button = app.buttons["record"]
+        XCTAssertTrue(wait(5) { button.exists && button.label == "Record" }, "\(label): Record is offered (\(button.label))")
+        button.tap()
+        let indicator = app.descendants(matching: .any)["recordingIndicator"].firstMatch
+        XCTAssertTrue(wait(5) { indicator.exists }, "\(label): the recording indicator")
+        pause(seconds)
+        showCameraControls()
+        app.buttons["record"].tap()
+        XCTAssertTrue(wait(30) { !indicator.exists }, "\(label): the recording stopped")
+        let probe = app.staticTexts["videoRecordingProbe"]
+        XCTAssertTrue(wait(30) { ((probe.value as? String) ?? "").hasPrefix("video ") }, "\(label): read back: \(String(describing: probe.value))")
+        pause(2)
+    }
+
+    /// The app's grids of the newest saved frame and recording (`cameraOrientationGrid`).
+    private func savedGrids(_ label: String) -> (frame: [Double], video: [Double]) {
+        waitControlsHidden()
+        let value = { (self.app.staticTexts["cameraOrientationGrid"].value as? String) ?? "" }
+        app.buttons["cameraOrientationGridRefresh"].tap()
+        XCTAssertTrue(wait(20) { value().hasPrefix("frame=") }, "\(label): the grids: \(value())")
+        var frame: [Double] = [], video: [Double] = []
+        for part in value().split(separator: " ") {
+            if part.hasPrefix("frame=") { frame = CameraGrid.grid(hex: String(part.dropFirst(6))) }
+            if part.hasPrefix("video=") { video = CameraGrid.grid(hex: String(part.dropFirst(6))) }
+        }
+        return (frame, video)
+    }
+
+    /// CAM-002-T22: Mirror flips at once (the first screenshot after Settings closes and one 0.2 s later agree), and
+    /// a saved frame and a 3 s recording show the screen's way round, with Mirror off and on.
+    func testCAM002MirrorAtOnceAndSavedPicturesMatchTheScreen() throws {
+        let task = "CAM-002-T22"
+        launchLiveCamera("front", settings: Self.noOverlay.merging(["settings.camera.mirrorFront": true]) { a, _ in a },
+                         extra: ["-uitestCaptureDirectory", "B06MirrorFrames", "-uitestRecordingDirectory", "B06MirrorRecordings"])
+        pause(1)
+        let (a, mask) = cameraScreenGrid(task, "mirror on")
+        let asymmetry = CameraGrid.asymmetry(a, mask)
+        report(task, "scene", ["asymmetry": asymmetry])
+        try XCTSkipIf(asymmetry < 0.15, "a left-right symmetric scene (asymmetry \(asymmetry)); face something asymmetric")
+        flipMirror()
+        let (b, _) = cameraScreenGrid(task, "right after the flip")
+        pause(0.2)
+        let (c, _) = cameraScreenGrid(task, "0.2 s later")
+        let flippedAB = CameraGrid.correlation(a, CameraGrid.flipped(b), mask), directAB = CameraGrid.correlation(a, b, mask)
+        let directBC = CameraGrid.correlation(b, c, mask), flippedBC = CameraGrid.correlation(b, CameraGrid.flipped(c), mask)
+        report(task, "at once", ["flippedAB": flippedAB, "directAB": directAB, "directBC": directBC, "flippedBC": flippedBC])
+        XCTAssertGreaterThan(flippedAB, directAB, "the first screenshot after closing Settings is already flipped")
+        XCTAssertGreaterThan(directBC, flippedBC, "and 0.2 s later it has not flipped again")
+
+        for label in ["mirror off", "mirror on"] {
+            if label == "mirror on" { flipMirror(); pause(1) }
+            waitControlsHidden()
+            let (shown, _) = cameraScreenGrid(task, "\(label) before saving")
+            saveFramePNG(label)
+            recordCamera(seconds: 3, label)
+            let saved = savedGrids(label)
+            for (name, grid) in [("saved frame", saved.frame), ("recording", saved.video)] {
+                XCTAssertFalse(grid.isEmpty, "\(label) \(name): a readable picture")
+                let same = CameraGrid.correlation(grid, shown, mask)
+                let mirrored = CameraGrid.correlation(grid, CameraGrid.flipped(shown), mask)
+                report(task, "\(label) \(name)", ["sameCorrelation": same, "mirroredCorrelation": mirrored])
+                XCTAssertGreaterThan(same, mirrored, "\(label) \(name): the screen's way round (\(same) vs mirrored \(mirrored))")
+            }
+        }
+    }
+
+    /// CAM-004-T08: Lock exposure reads back locked from the camera; a lens change (D1) and a visual change release it.
+    /// "Holds brightness under a real light change" stays a person's (no controlled light): the drift over 3 s is reported.
+    func testCAM004ExposureLockReleasedByLensAndVisualChange() {
+        let task = "CAM-004-T08"
+        launchLiveCamera("back")
+        let lock = app.switches["cameraExposureLock"]
+        func lockExposure(_ step: String) {
+            openSettingsForCamera()
+            XCTAssertTrue(revealCameraSetting(lock), "\(step): the Lock exposure row")
+            XCTAssertTrue(wait(5) { lock.isEnabled }, "\(step): the switch can be used")
+            XCTAssertEqual(lock.value as? String, "0", "\(step): automatic before the lock")
+            XCTAssertEqual(flipCameraSettingSwitch(lock), "1", "\(step): locked (read back from the camera)")
+            closeSettingsForCamera()
+            XCTAssertTrue(wait(3) { self.cameraState()["exposure"] == "locked" }, "\(step): the camera reports locked: \(cameraState())")
+        }
+        XCTAssertTrue(wait(3) { self.cameraState()["exposure"] == "continuousAuto" }, "automatic at the start: \(cameraState())")
+        lockExposure("lock")
+        let (first, _) = screen(task, "locked")
+        pause(3)
+        let (later, _) = screen(task, "locked +3 s")
+        report(task, "locked", ["lumaDrift": abs(first.meanLuma - later.meanLuma)])
+
+        if UIDevice.current.userInterfaceIdiom == .phone {
+            openSettingsForCamera()
+            let lens = app.segmentedControls["cameraLensPicker"]
+            XCTAssertTrue(revealCameraSetting(lens), "the Lens row")
+            lens.buttons.element(boundBy: 1).tap()
+            closeSettingsForCamera()
+            XCTAssertTrue(waitCameraLive(), "the other lens: live")
+            XCTAssertTrue(wait(5) { self.cameraState()["exposure"] == "continuousAuto" }, "a lens change releases it: \(cameraState())")
+            lockExposure("lock on the other lens")
+        }
+        chooseVisualForCamera("circularSpectrum")
+        XCTAssertTrue(wait(3) { self.cameraState()["exposure"] == "notRunning" }, "another visual: the camera stopped: \(cameraState())")
+        chooseVisualForCamera("camera")
+        XCTAssertTrue(waitCameraLive(), "Camera again: live")
+        XCTAssertTrue(wait(5) { self.cameraState()["exposure"] == "continuousAuto" }, "a visual change released it: \(cameraState())")
+        report(task, "released", ["automatic": cameraState()["exposure"] == "continuousAuto" ? 1 : 0])
+    }
+
+    private typealias FocusReading = (x: Double, y: Double, mode: String)
+
+    /// "x,y,mode" of the focus read back from the camera (`cameraFocusProbe`).
+    private var focus: FocusReading? {
+        let parts = cameraProbeText("cameraFocusProbe").split(separator: ",").map(String.init)
+        guard parts.count == 3, let x = Double(parts[0]), let y = Double(parts[1]) else { return nil }
+        return (x, y, parts[2])
+    }
+
+    private static func distance(_ a: FocusReading?, _ b: FocusReading?) -> Double {
+        guard let a, let b else { return .infinity }
+        return ((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y)).squareRoot()
+    }
+
+    /// Double-taps the visualization at a normalized point (after the controls have hidden).
+    private func doubleTapPicture(_ x: Double, _ y: Double) {
+        waitControlsHidden()
+        app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: y)).doubleTap()
+    }
+
+    /// Double-taps and waits for the focus point to move from where it was; returns the new reading.
+    private func focusAfterDoubleTap(_ x: Double, _ y: Double, _ step: String) -> FocusReading? {
+        let before = focus
+        doubleTapPicture(x, y)
+        let moved = wait(4) { Self.distance(self.focus, before) > 0.02 }
+        print("B06 CAM-005 \(step): \(cameraProbeText("cameraFocusProbe"))")
+        XCTAssertTrue(moved, "\(step): the focus point follows the double-tap: \(cameraProbeText("cameraFocusProbe"))")
+        return focus
+    }
+
+    /// CAM-005-T14: the focus point follows double-taps on the back camera; on the front camera with Mirror on a tap
+    /// focuses where the mirrored tap focuses with it off; a tap in Fit's bar does nothing (iPhone); the "Focus at
+    /// centre" custom action (VoiceOver's, performed through the DEBUG probe button) focuses at the centre and is
+    /// announced. Sharpness on near and far objects stays a person's.
+    func testCAM005FocusFollowsDoubleTap() {
+        let task = "CAM-005-T14"
+        launchLiveCamera("back")
+        XCTAssertTrue(wait(5) { self.focus != nil }, "the focus probe: \(cameraProbeText("cameraFocusProbe"))")
+        let a = focusAfterDoubleTap(0.3, 0.4, "back A")
+        let b = focusAfterDoubleTap(0.7, 0.6, "back B")
+        report(task, "back", ["ax": a?.x ?? -1, "ay": a?.y ?? -1, "bx": b?.x ?? -1, "by": b?.y ?? -1])
+        XCTAssertGreaterThan(Self.distance(a, b), 0.1, "two taps, two focus points")
+        app.terminate()
+
+        launchLiveCamera("front", settings: ["settings.camera.mirrorFront": true])
+        let mirroredTap = focusAfterDoubleTap(0.3, 0.4, "front mirror on")
+        app.terminate()
+        launchLiveCamera("front", settings: ["settings.camera.mirrorFront": false])
+        let plainTap = focusAfterDoubleTap(0.7, 0.4, "front mirror off, mirrored point")
+        let gap = Self.distance(mirroredTap, plainTap)
+        report(task, "front mirror", ["gap": gap])
+        XCTAssertLessThan(gap, 0.05, "Mirror on maps a tap to the mirrored point")
+
+        if UIDevice.current.userInterfaceIdiom == .phone {   // the iPads' 4:3 screens leave no bar
+            app.terminate()
+            launchLiveCamera("back", settings: ["settings.camera.cropMode": "fit"])
+            let before = focus
+            doubleTapPicture(0.5, 0.92)
+            pause(2)
+            report(task, "fit bar", ["moved": Self.distance(focus, before)])
+            XCTAssertLessThan(Self.distance(focus, before), 0.001, "a double-tap in Fit's bar does nothing")
+        }
+
+        // Focus at centre: off centre first, then the action.
+        _ = focusAfterDoubleTap(0.35, 0.4, "off centre")
+        waitControlsHidden()
+        let action = app.buttons["cameraFocusCentreAction"]
+        action.tap()
+        XCTAssertTrue(wait(3) { (action.value as? String) == "performed" }, "the custom action was found: \(String(describing: action.value))")
+        XCTAssertTrue(wait(4) { abs((self.focus?.x ?? 0) - 0.5) < 0.03 && abs((self.focus?.y ?? 0) - 0.5) < 0.03 },
+                      "focused at the centre: \(cameraProbeText("cameraFocusProbe"))")
+        XCTAssertTrue(wait(3) { self.cameraProbeText("announcementProbe").contains("Focusing at centre") },
+                      "announced: \(cameraProbeText("announcementProbe"))")
+    }
+
+    /// FX-009-T18: Trails (0.2 s) on Photo and on Camera within the effect tolerance of Trails off; after a cue step
+    /// (cue 4 → 5, the Text cue) the first screenshot carries no more of the old scene with Trails than without.
+    func testFX009TrailsFrameRateAndNoGhostAfterCueStep() {
+        let task = "FX-009-T18"
+        for visual in ["photo", "camera"] {
+            var rates: [Bool: Double] = [:]
+            for trails in [false, true] {
+                let settings: [String: Any] = ["settings.feedback.enabled": trails, "settings.feedback.halfLife": 0.2]
+                if visual == "camera" {
+                    launchLiveCamera("back", settings: settings)
+                } else {
+                    launch(visual: "photo", settings: settings, extra: ["-uitestSeedPhoto", "pattern"])
+                }
+                rates[trails] = assertFrameRate(task, "\(visual) trails \(trails ? "on" : "off")")
+                app.terminate()
+            }
+            let cost = (rates[false] ?? 0) - (rates[true] ?? 0)
+            report(task, "\(visual) trails cost", ["fps": cost])
+            XCTAssertLessThanOrEqual(cost, Self.effectToleranceFPS, "\(visual): Trails costs at most \(Self.effectToleranceFPS) fps")
+        }
+
+        var ghost: [Bool: Double] = [:]
+        for trails in [false, true] {
+            launch(visual: "circularSpectrum", settings: ["settings.feedback.enabled": trails, "settings.feedback.halfLife": 0.5],
+                   extra: ["-uitestShowSeed"])
+            for _ in 0..<3 {
+                showCameraControls()
+                app.buttons["showNextCue"].tap()
+                pause(1)
+            }
+            pause(2)
+            showCameraControls()
+            app.buttons["showNextCue"].tap()
+            let (first, _) = screen(task, "trails \(trails ? "on" : "off") right after the step")
+            pause(3)
+            let (settled, _) = screen(task, "trails \(trails ? "on" : "off") settled")
+            XCTAssertTrue(cameraProbeText("showAppliedScene").hasSuffix("|text"), "on the Text cue: \(cameraProbeText("showAppliedScene"))")
+            ghost[trails] = first.meanLuma - settled.meanLuma
+            app.terminate()
+        }
+        let extra = (ghost[true] ?? 0) - (ghost[false] ?? 0)
+        report(task, "cue step", ["ghostOn": ghost[true] ?? -1, "ghostOff": ghost[false] ?? -1, "extra": extra])
+        XCTAssertLessThan(extra, 0.03, "no ghost of the previous scene after a cue step with Trails")
+    }
+
+    /// REC-003-T23, the Camera part: 60 s of the back camera at Max (the drawable's size); the file reads back at the
+    /// recorded length; frames, dropped slots, size and the thermal state before and after are reported.
+    func testREC003SixtySecondCameraRecording() {
+        let task = "REC-003-T23"
+        let thermalBefore = ProcessInfo.processInfo.thermalState.rawValue
+        launchLiveCamera("back", settings: ["settings.recording.qualityProfile": "max"],
+                         extra: ["-uitestRecordingDirectory", "B06CameraRecording"])
+        recordCamera(seconds: 60, "camera 60 s")
+        let probe = cameraProbeText("videoRecordingProbe")
+        print("B06 \(task) camera: \(probe) facts \(cameraProbeText("recordingFacts"))")
+        let parts = probe.split(separator: " ").map(String.init)
+        let duration = parts.first { $0.hasPrefix("duration=") }.flatMap { Double($0.dropFirst("duration=".count)) } ?? 0
+        let size = parts.count > 2 ? parts[2].split(separator: "x").compactMap { Double($0) } : []
+        var facts: [String: Double] = [:]
+        for part in cameraProbeText("recordingFacts").split(separator: " ") {
+            let kv = part.split(separator: "=")
+            if kv.count == 2, let v = Double(kv[1]) { facts[String(kv[0])] = v }
+        }
+        let thermalAfter = ProcessInfo.processInfo.thermalState.rawValue
+        let written = facts["frames"] ?? 0, dropped = facts["dropped"] ?? 0
+        report(task, "camera 60 s", ["duration": duration, "width": size.first ?? 0, "height": size.last ?? 0,
+                                     "fps": facts["fps"] ?? 0, "written": written, "dropped": dropped,
+                                     "droppedShare": written + dropped > 0 ? dropped / (written + dropped) : 0,
+                                     "bytes": facts["bytes"] ?? 0, "thermalBefore": Double(thermalBefore),
+                                     "thermalAfter": Double(thermalAfter)])
+        XCTAssertGreaterThanOrEqual(duration, 58, "about 60 s recorded: \(probe)")
+        XCTAssertGreaterThan(written, 0, "frames written")
+        XCTAssertGreaterThan(facts["bytes"] ?? 0, 0, "the file exists")
+        XCTAssertTrue(waitCameraLive(), "the camera still runs after the recording")
     }
 }

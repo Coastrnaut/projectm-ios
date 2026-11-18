@@ -19,6 +19,7 @@ runs on hardware.
 | System tests | `B14SystemDeviceTests` (ACC-001, ACC-003, ACC-008), `B02…testPERF011SwitcherCardAndControlCenter`, `B03…testSCN002ForceQuitFromSwitcher` | Unattended tests that drive Settings, the switcher and Control Center; no prompts. |
 | Mac driver | `scripts/mac_device_driver.py`, `scripts/mac_driver/` | `follow`: answers `MAC-DO {json}` lines in an xcodebuild log with an action module (`audio.play/tone/stop` via `afplay`, `memory.warning` via `devicectl … sendMemoryWarning`, `device.crashlogs`; later batches add xctrace, osc, midi, peer); logs `MAC-DONE <id>`. `prompt-flow`: uninstall, install, fixtures, then the prompt flow alone. |
 | Media fixtures | `scripts/make_media_fixtures.py`, `scripts/fixtures/make_media.swift` | Build/fixtures/media: HEIC with GPS, 60 MP PNG/HEIC, a 45 MB JPEG, transparent PNG, 200-frame GIF, H.264 1080p, HEVC 4K60, HEVC 360p 10 min, HDR HEVC (HLG, 10-bit), WAV/AIFF/AAC/M4A AAC/ALAC, 10 MB and 60-min M4A, a damaged M4A, a PDF named .mp3, a JPEG named .milk, a 524,288-byte preset, a strobing preset, a 120 BPM click track (about 40 s on the Mac Studio). No MP3 (no encoder on the Mac). |
+| Camera probes | `Apps/projectM-iOS/Debug/UITestCameraDeviceProbes.swift` | DEBUG `-uitestCameraDeviceProbes` (Batch 4): `cameraDeviceState` (capture sessions running, starts, stops, `stopsAway`; exposure, white balance; the motion sensor), `cameraOrientationGrid` + `cameraOrientationGridRefresh` (12 × 16 luma grids of the newest saved frame and recording), `cameraFocusCentreAction` (the "Focus at centre" custom action). `-uitestBindGlowToMotion` binds glow to Tilt forward and Shake. |
 | Photo library seed | `Apps/projectM-iOS/Debug/UITestPhotoLibrarySeed.swift` | DEBUG `-uitestSeedPhotoLibrary <name,…>`: adds Documents fixtures to Photos (add-only), probe `photoLibrarySeed` ("status=… added=… missing=… failed=… done=1"). |
 | Files sharing (Debug host) | `DeviceTests.yml` (post-build script) | The Debug device-test app gets `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace`, so Documents shows in Files › On My iPhone/iPad › projectM for the real document picker. The shipping Info.plist is unchanged. |
 | Music fixture | `scripts/make_music_fixture.py` | A deterministic, generated 60 s stereo track (120 BPM drums, bass, chords, quiet intro, loud chorus, breakdown). No licence. Copied into the app's Documents before a run. |
@@ -233,6 +234,39 @@ python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build
 - **Simulator classes cover device-only reruns:** SHOW-007/008/009 and SHOW-012's row label run as
   `projectM-iOSUITests/ShowTimelineUITests`, `ShowKeyframeUITests`, `ShowKeyframeEasingUITests`, `CueNoteUITests` on
   the device through the DeviceAcceptance scheme.
+
+## Camera (QA-011 Batch 4, 2026-11-18)
+
+Tests: `B06CameraDeviceTests` (its Batch 4 extension: CAM-002-T21/T22, CAM-004-T08, CAM-005-T14, FX-009-T18,
+REC-003-T23 Camera, CAM-007-T15's Fit bars) and `B06CameraSystemDeviceTests` (CAM-001-T24/T26/T27, CAM-002-T21's
+indicator, CAM-012-T13, CAM-013-T17/T18, CAM-006-T09, CAM-011-T15). Camera access must be granted first
+(`PromptFlowDeviceTests` testZ); no Batch 4 test meets a prompt. They launch with `-uitestCameraDeviceProbes`.
+
+```bash
+xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination platform=iOS,id=<D1 UDID> \
+  -only-testing:projectM-iOSDeviceUITests/B06CameraDeviceTests \
+  -only-testing:projectM-iOSDeviceUITests/B06CameraSystemDeviceTests \
+  -skip-testing:projectM-iOSDeviceUITests/PromptFlowDeviceTests \
+  -test-timeouts-enabled YES -default-test-execution-time-allowance 300 > Build/b06-D1.log 2>&1
+```
+
+- **Session state, not the indicator, is asserted for "the camera stopped":** AVFoundation's start and stop
+  notifications, counted in the app. A backgrounded app cannot be read by XCUITest, so stops posted between
+  resign-active and become-active are counted (`stopsAway`) and read on return; the motion sensor the same way.
+- **The system indicator:** Control Center's header naming the app *and* "camera" is asserted while the camera runs
+  and must not read as in use after it stops ("recently" counts as not in use). SystemUI's
+  `controlCenterPrivacyUser()` matches the app's name alone, which Now Playing shows too while music plays, so the
+  camera tests use their own match. The green dot in a screenshot is reported, never asserted, until D1 shows that a
+  screenshot contains it. Check both on D1 first.
+- **Mirror and orientation from grids:** a 12 × 16 luma grid of the screenshot is correlated with its own mirror
+  image and with the app's grid of the saved frame or the recording's middle frame (top two rows, the bottom row and
+  the spectrum's centre disc masked). It needs a left-right asymmetric scene in front of the camera; with a symmetric
+  one (asymmetry < 0.15) the test skips and says so.
+- **Interruptions without a person:** the Camera app launched for 4 s (no photo is taken, nothing is added to Photos)
+  takes the camera; Siri (typed, must be on) interrupts without the background (white balance stays locked). Split
+  View on D2, a FaceTime call and Retry's back-off under a persisting interruption stay a person's.
+- **Revocation (CAM-013-T17):** the camera switch turned off in Settings while the app is in the background; iOS ends
+  the app; the next start shows the denied notice; the test and `SystemUI.restore()` turn it back on.
 
 ## Lessons learned
 

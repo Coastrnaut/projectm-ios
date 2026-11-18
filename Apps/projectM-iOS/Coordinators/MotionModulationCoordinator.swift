@@ -63,6 +63,15 @@ final class MotionModulationCoordinator {
     @ObservationIgnored private(set) var readoutOpen = false
     /// The host whose bindings decide `hostUsesMotion`; weak, so a released host stops the sensor at the next sample.
     @ObservationIgnored private weak var host: NativeSpectrumHost?
+    #if DEBUG
+    /// QA-011 CAM-011-T15 (`cameraDeviceState`, UITestCameraDeviceProbes): sensor stops, stops while the app was not
+    /// active, and samples that arrived while it was not active.
+    @ObservationIgnored private(set) var debugStops = 0
+    @ObservationIgnored private(set) var debugStopsWhileInactive = 0
+    @ObservationIgnored private(set) var debugSamplesWhileInactive = 0
+    /// The sensor's own state (`CMMotionManager.isDeviceMotionActive`); the stand-in reports `isSampling`.
+    var debugSensorActive: Bool { (sampler as? CoreMotionSampler)?.isActive ?? isSampling }
+    #endif
 
     init(defaults: UserDefaults, sampler: any MotionSampling,
          frameCap: @escaping @MainActor () -> Int = MotionModulationCoordinator.systemFrameCap) {
@@ -147,6 +156,10 @@ final class MotionModulationCoordinator {
                 sampler.stop()
                 isSampling = false
                 rateHz = 0
+                #if DEBUG
+                debugStops += 1
+                if !appActive { debugStopsWhileInactive += 1 }
+                #endif
             }
             return
         }
@@ -160,6 +173,9 @@ final class MotionModulationCoordinator {
 
     /// One sample: re-checks demand (a released host stops the sensor here), feeds the tracker, refreshes the readout.
     func receive(_ sample: MotionSample) {
+        #if DEBUG
+        if !appActive { debugSamplesWhileInactive += 1 }
+        #endif
         guard isSampling else { return }
         guard wantsSampling else {
             update()
