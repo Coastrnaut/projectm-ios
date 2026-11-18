@@ -166,6 +166,9 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
     @ViewBuilder private var probe: some View {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { SplitOutputProbe() }
+        if UITestAccessibilityActionProbe.isRequested, isOpen {   // QA-011 B07 UIX-007-T13: VoiceOver's swipes on the divider
+            VStack { HStack { Spacer(); UITestAccessibilityActionButtons(identifier: "splitEditorDivider") }; Spacer() }
+        }
         #endif
     }
 }

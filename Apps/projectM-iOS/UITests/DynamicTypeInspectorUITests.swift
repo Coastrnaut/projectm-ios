@@ -342,8 +342,12 @@ final class DynamicTypeInspectorUITests: XCTestCase {
 
     // MARK: - Navigation
 
+    /// ACC-006-T12 (QA-011 B07): `TEST_RUNNER_ACC006_LANDSCAPE=1` on the xcodebuild command runs every screen in
+    /// landscape (D1 and D2 at AX5, portrait and landscape); portrait otherwise.
+    private static let landscape: Bool = ProcessInfo.processInfo.environment["ACC006_LANDSCAPE"] == "1"
+
     private func launch(_ size: String, _ extra: [String] = [], autostart: Bool = true) {
-        XCUIDevice.shared.orientation = .portrait
+        XCUIDevice.shared.orientation = Self.landscape ? .landscapeLeft : .portrait
         let start: [String] = autostart ? ["-autostart", "inAppPlayback"] : []
         app.launchArguments = ["-uitestResetNotice", "-uitestKeepControls", "-uitestAppearance", "light", "-UIPreferredContentSizeCategoryName", self.size(size)]
             + start + extra + Self.noStore

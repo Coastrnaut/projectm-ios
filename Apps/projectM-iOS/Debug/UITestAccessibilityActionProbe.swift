@@ -57,16 +57,34 @@ enum UITestAccessibilityActionProbe {
     /// Depth-first search of the accessibility tree (views' subviews and accessibility children).
     @MainActor
     private static func collect(_ identifier: String, in object: NSObject, depth: Int, visited: inout Int,
-                                into matches: inout [NSObject]) {
+                                into matches: inout [NSObject], adjustableOnly: Bool = true) {
         guard depth < 80 else { return }
         visited += 1
-        if accessibilityID(of: object) == identifier, object.accessibilityTraits.contains(.adjustable),
+        if accessibilityID(of: object) == identifier, !adjustableOnly || object.accessibilityTraits.contains(.adjustable),
            !matches.contains(where: { (match: NSObject) -> Bool in match === object }) {
             matches.append(object)
         }
         for child in children(of: object) {
-            collect(identifier, in: child, depth: depth + 1, visited: &visited, into: &matches)
+            collect(identifier, in: child, depth: depth + 1, visited: &visited, into: &matches, adjustableOnly: adjustableOnly)
         }
+    }
+
+    /// QA-011 B07 (UIX-012-T13): calls `accessibilityPerformEscape()` (VoiceOver's two-finger scrub) on the on-screen
+    /// element with `identifier`; "performed escape: <its answer>" or "missing …".
+    @MainActor
+    static func performEscape(on identifier: String) -> String {
+        var matches: [NSObject] = []
+        var visited: Int = 0
+        for scene in UIApplication.shared.connectedScenes {
+            guard let windowScene = scene as? UIWindowScene else { continue }
+            for window in windowScene.windows where !window.isHidden {
+                collect(identifier, in: window, depth: 0, visited: &visited, into: &matches, adjustableOnly: false)
+            }
+        }
+        guard let element = matches.first(where: { (match: NSObject) -> Bool in isOnScreen(match) }) else {
+            return "missing after \(visited)"
+        }
+        return "performed escape: \(element.accessibilityPerformEscape())"
     }
 
     @MainActor
@@ -95,6 +113,25 @@ enum UITestAccessibilityActionProbe {
         }
         if let view = object as? UIView { result += view.subviews }
         return result
+    }
+}
+
+/// QA-011 B07 (UIX-012-T13): a probe button that performs the escape action on the element `identifier` (shown with
+/// `-uitestAccessibilityActions`); its value is the result.
+struct UITestAccessibilityEscapeButton: View {
+    let identifier: String
+    @State private var result = ""
+
+    var body: some View {
+        Button {
+            result = UITestAccessibilityActionProbe.performEscape(on: identifier)
+        } label: {
+            Image(systemName: "escape").font(.system(size: 9)).frame(width: 18, height: 18)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(identifier + ".uitestEscape")
+        .accessibilityValue(result)
+        .accessibilityIdentifier(identifier + ".uitestEscape")
     }
 }
 

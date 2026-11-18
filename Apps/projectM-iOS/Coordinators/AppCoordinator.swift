@@ -1420,9 +1420,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             // UserPresetsUITests: `-uitestImportPreset <path>` imports that file through the same
             // code path as the Files picker's result.
             if let path = defaults.string(forKey: "uitestImportPreset") {
-                // QA-011 PRE-015-T26: a path without a leading "/" is relative to Documents (as for `-uitestImportAudio`).
-                let url: URL = path.hasPrefix("/") ? URL(fileURLWithPath: path) : URL.documentsDirectory.appendingPathComponent(path)
-                await userPresets.importPicked(.success(url))
+                // QA-011 B07: `fixture:strobe` (written in the app) or a path relative to Documents on a device.
+                await userPresets.importPicked(.success(UITestVisualProbes.presetImportURL(path)))
             }
             // PresetArchiveImportUITests (FILE-003): previews a fixture archive after the trials ran.
             if defaults.bool(forKey: "uitestPresetArchiveFixture") { await userPresets.previewFixtureArchive() }
@@ -2292,6 +2291,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     static let bindGlowToLevelArgument = "-uitestBindGlowToLevel"
 
     private func bindGlowToLevelIfRequested(_ host: NativeSpectrumHost) {
+        UITestVisualProbes.bindGlowToSectionChangeIfRequested(host)   // QA-011 B07 ANL-015-T12
         guard ProcessInfo.processInfo.arguments.contains(Self.bindGlowToLevelArgument) else { return }
         try? host.bind(AudioFeatureBinding(source: .bandMean, target: VisualParameterIDs.bloomIntensity,
                                            outputStart: 0, outputEnd: 1))

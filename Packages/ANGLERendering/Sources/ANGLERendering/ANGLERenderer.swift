@@ -174,6 +174,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     #if DEBUG
     /// PERF-014-R15: faults to force (DEBUG builds only).
     public var faultInjection = RenderFaultInjection()
+    /// QA-011 B07 (FX-019-T23, ACC-012-T22; DEBUG builds only): while set, every sixth limited frame reads the
+    /// envelope's gain back (`PMFlashLimiterLastGain`, one texel: it waits for the GPU) into `debugFlashStats`.
+    public var debugFlashProbe = false
+    public private(set) var debugFlashStats = ANGLEDebugFlashStats()
+    private var debugFlashFrame = 0
     #endif
 
     private init(display: EGLDisplay, config: EGLConfig, context: EGLContext, placeholder: EGLSurface,
@@ -342,6 +347,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                 applyCalibration(to: limiter)   // OUT-009
         applyWarp(to: limiter)   // OUT-008
                 PMFlashLimiterFinish(limiter, 0, &parameters)
+                #if DEBUG
+                if debugFlashProbe { recordDebugFlashGain(limiter) }   // QA-011 B07
+                #endif
                 limitedFrame = limiter
                 timer?.end(.output)
             } else {
@@ -642,6 +650,15 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         eglMakeCurrent(display, surface, surface, context)
     }
 
+    #if DEBUG
+    /// QA-011 B07: one sampled gain (every sixth limited frame) into `debugFlashStats`.
+    private func recordDebugFlashGain(_ limiter: OpaquePointer) {
+        debugFlashFrame &+= 1
+        guard debugFlashFrame % 6 == 0 else { return }
+        debugFlashStats.record(PMFlashLimiterLastGain(limiter))
+    }
+    #endif
+
     /// The envelope's gain of the last frame, or nil while the pass was never created (tests).
     var flashLimiterGain: Float? {
         guard let flashLimiter, let surface else { return nil }
@@ -739,3 +756,26 @@ private final class ANGLEDisplayLinkProxy: NSObject {
     init(_ renderer: ANGLERenderer) { self.renderer = renderer }
     @MainActor @objc func fire(_ link: CADisplayLink) { renderer?.displayLinkFired(link) }
 }
+
+#if DEBUG
+/// QA-011 B07 (DEBUG): sampled gains of projectM's strobe safety envelope (FX-019). A gain below 0.98 counts as
+/// clamped; `recent` keeps the last 30 samples (about 3 s at 60 fps, one sample every sixth frame).
+public struct ANGLEDebugFlashStats: Sendable, Equatable {
+    public private(set) var sampled = 0
+    public private(set) var clamped = 0
+    public private(set) var minimumGain: Float = 1
+    public private(set) var lastGain: Float = 1
+    public private(set) var recent: [Float] = []
+
+    public static let clampedBelow: Float = 0.98
+
+    mutating func record(_ gain: Float) {
+        sampled += 1
+        lastGain = gain
+        minimumGain = min(minimumGain, gain)
+        if gain < Self.clampedBelow { clamped += 1 }
+        recent.append(gain)
+        if recent.count > 30 { recent.removeFirst(recent.count - 30) }
+    }
+}
+#endif

@@ -343,6 +343,22 @@ python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build
   `-uitestAutoRecordSeconds <n>` starts a recording 4 s after launch and stops it n s later, so `xctrace --launch` can
   trace one without taps. `xctrace --attach` could not find the app on D3 by pid or name (2026-11-18): launch it
   through xctrace instead.
+- **Visual, show and accessibility probes (QA-011 Batch 7, DEBUG, `-uitestVisualProbes`;
+  `Apps/projectM-iOS/Debug/UITestVisualProbes.swift`):** a 30 Hz main-actor sampler publishes near-transparent texts in
+  the visualizer layer: `flashGuardProbe` (the strobe envelope's gain on the visual shown: projectM's
+  `ANGLERenderer.debugFlashProbe` reads it back every sixth frame, which costs a few fps, so compare frame rates with the
+  probe on in both runs; native generators' `lastGain`; the Photo compositor's `lastFlashGain`; below 0.98 = clamped,
+  `recent*` = the last 3 s), `tunnelSpeedProbe`, `sectionChangeProbe` (playback positions of section-change fires;
+  `-uitestBindGlowToSectionChange` binds it to the glow), `pipelineArchiveProbe` (PERF-009 hits and misses),
+  `hapticProbe` (pulse host times), `presetFlashProbe` (current preset, may flash), `compareProbe` (the last comparison's
+  frames per second and worst thermal state, kept after Close), `renderFaultEventsProbe`, and `announcementsProbe` (the
+  announcer's spoken list, so "announced once" is countable). Probes in the visualizer layer cannot be read while a sheet
+  covers it: tests close Settings or the browser first and read the kept values. Elsewhere: `particleBoundsProbe` in the
+  Particle emitter editor (outside the box, newest spawns inside the path); `-uitestImportPreset fixture:strobe` writes
+  ACC-002's strobing preset in the app (relative values are taken from Documents), so no file is copied for FX-019;
+  `-uitestAccessibilityActions` also adds `colorSamplingLayer.uitestEscape` (VoiceOver's escape) and the split editor
+  divider's increment/decrement probes. `TEST_RUNNER_ACC006_LANDSCAPE=1` runs DynamicTypeInspectorUITests in landscape.
+  XCUITest on iOS cannot make two-finger swipes or three-finger taps (only taps, two-finger taps, pinch, rotate).
 - **UI test runs must not record the screen as video:** Xcode's default `PreferredScreenCaptureFormat =
   screenRecording` encodes the device screen for the whole UI test on the hardware video encoder. Any test that
   measures the app's own recording (or other encoder work) then competes with it: on D3 (A16) a 60 fps recording

@@ -56,6 +56,33 @@ final class ParticleEmitterPreview {
         return "\(live) \(noun), \(simulation.spawnedCount) spawned"
     }
 
+    #if DEBUG
+    /// QA-011 B07 (SHD-007-T13, SHD-008-T18; DEBUG `particleBoundsProbe`): live particles outside the emitter's box
+    /// (the simulation's collision region, `ParticleFountainSimulation.box`), the newest particles (at most two steps
+    /// old) and how many of them lie inside the spawn path, bounces and kills.
+    var boundsProbe: String {
+        _ = frame   // observed
+        let e: ParticleEmitterSettings = settings
+        let bottom: Double = -ParticleFountainConfiguration.emitterHeight
+        let boxed: Bool = e.bounds == .box
+        let left: Double = boxed ? -e.boxHalfWidth : -Double.infinity
+        let right: Double = boxed ? e.boxHalfWidth : Double.infinity
+        let top: Double = boxed ? bottom + e.boxHeight : Double.infinity
+        let floor: Double = e.bounds == .none ? -Double.infinity : bottom
+        let young: Double = 2 * ParticleFountainSimulation.stepSeconds + 1e-9
+        var outside = 0, newest = 0, newestInPath = 0
+        for i in 0..<simulation.liveCount {
+            let p: FountainParticle = simulation.particle(i)
+            if p.x < left - 1e-9 || p.x > right + 1e-9 || p.y < floor - 1e-9 || p.y > top + 1e-9 { outside += 1 }
+            guard e.shape == .path, p.age <= young, e.shapeWidth > 0, e.shapeHeight > 0 else { continue }
+            newest += 1
+            if e.path.contains(VectorPoint(x: p.x / e.shapeWidth + 0.5, y: 0.5 - p.y / e.shapeHeight)) { newestInPath += 1 }
+        }
+        return "live=\(simulation.liveCount) outside=\(outside) bounces=\(simulation.bounces) kills=\(simulation.boundKills) "
+            + "newest=\(newest) newestInPath=\(newestInPath) bounds=\(e.bounds.rawValue) shape=\(e.shape.rawValue)"
+    }
+    #endif
+
     private func restart() {
         simulation.reset()
         frame = 0

@@ -144,6 +144,9 @@ final class HapticBeatCoordinator {
         guard decision == .pulse else { return }
         let intensity: Double = clamp().limits.intensityLimit
         resolvedPlayer().play(strength: strength, intensity: intensity)
+        #if DEBUG
+        UITestVisualProbes.recordHapticPulse()   // QA-011 B07 ACC-007-T13: `hapticProbe`
+        #endif
     }
 
     private func resolvedPlayer() -> any HapticPlaying {

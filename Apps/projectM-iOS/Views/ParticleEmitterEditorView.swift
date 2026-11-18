@@ -274,6 +274,15 @@ private struct ParticleEmitterPreviewCanvas: View {
     var body: some View {
         VStack(spacing: 8) {
             canvas
+            #if DEBUG
+            if UITestVisualProbes.isRequested, let preview {   // QA-011 B07 SHD-007-T13, SHD-008-T18
+                Text(preview.boundsProbe)
+                    .font(.system(size: 1))
+                    .opacity(0.01)
+                    .accessibilityIdentifier("particleBoundsProbe")
+                    .accessibilityValue(preview.boundsProbe)
+            }
+            #endif
             if reduceMotion {
                 Button("Step 1 second") { () -> Void in preview?.advance(frames: Int(ParticleEmitterPreview.framesPerSecond)) }
                     .accessibilityIdentifier("particleEmitterStep")

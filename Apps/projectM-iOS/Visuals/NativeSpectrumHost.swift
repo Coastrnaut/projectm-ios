@@ -954,6 +954,13 @@ final class NativeSpectrumHost: PresentationBoundResource {
         field.tempo = tunnelTempo?() ?? .none
     }
 
+    #if DEBUG
+    /// QA-011 B07 probes (UITestVisualProbes): the generator (its flash gain, the tunnel's speed) and the last
+    /// section-change envelope (ANL-015).
+    var debugGenerator: any SpectrumTextureGenerator { generator }
+    var debugSectionChange: Float { sectionChange }
+    #endif
+
     /// "bound, manual 0.50, effective 0.73" (MOD-002-R12; the Debug readout and tests).
     var glowModulationReadout: String {
         let state = glowIntensityIsBound ? "bound" : "unbound"

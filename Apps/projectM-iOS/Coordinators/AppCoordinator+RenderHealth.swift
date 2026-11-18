@@ -56,6 +56,9 @@ extension AppCoordinator {
         guard let counts = Self.countsToLog(health, lastLogged: loggedRenderCounts[visual]) else { return }
         loggedRenderCounts[visual] = counts
         DiagnosticsLog.renderFault(health.summary(visual: visual))
+        #if DEBUG
+        UITestVisualProbes.renderFaultEvents += 1   // QA-011 B07 PERF-014-T22: `renderFaultEventsProbe`
+        #endif
     }
 
     /// PERF-014-R13: the counts to log when the fault or recovery count changed since the last log of

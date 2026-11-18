@@ -61,6 +61,11 @@ struct ColorSamplingLayer: View {
                 .accessibilityIdentifier("colorSamplingBanner")
             Button("Cancel", action: cancel)
                 .accessibilityIdentifier("colorSamplingCancel")
+            #if DEBUG
+            if UITestAccessibilityActionProbe.isRequested {   // QA-011 B07 UIX-012-T13: VoiceOver's escape, by probe
+                UITestAccessibilityEscapeButton(identifier: "colorSamplingLayer")
+            }
+            #endif
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

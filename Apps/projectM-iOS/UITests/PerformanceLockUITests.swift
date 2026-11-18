@@ -74,4 +74,29 @@ final class PerformanceLockUITests: XCTestCase {
         confirm.tap()
         XCTAssertTrue(poll(3) { !self.badge.exists }, "unlocked")
     }
+
+    /// SHOW-015-T12 (QA-011 B07; also run on D1): while locked, a swipe on a cue row in the show editor offers no Delete
+    /// or Skip (SCN-015-R6: no edit swipe actions), and the cue stays.
+    func testLockedCueSwipeHasNoDelete() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestShowSeed",
+                               "-uitestSettingsSection", "show"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        app.tapFreshControl("lockScene")
+        XCTAssertTrue(badge.appears(within: 3), "the Scene locked badge shows")
+        app.tapFreshControl("settings")
+        XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
+        let link = app.buttons["showEditorLink"]
+        XCTAssertTrue(link.appears(within: 3) || app.reveal(link, long: true), "the Show row")
+        link.tap()
+        XCTAssertTrue(app.navigationBars["Show"].appears(within: 5))
+        let cue = app.descendants(matching: .any)["showCue2"].firstMatch
+        XCTAssertTrue(cue.appears(within: 5) || app.reveal(cue), "cue 2")
+        cue.swipeLeft()
+        XCTAssertTrue(poll(1.5) { !self.app.buttons["Delete"].exists }, "no Delete on a cue's swipe while locked")
+        XCTAssertFalse(app.buttons["showCueSkip"].exists, "no edit swipe actions while locked")
+        cue.swipeRight()
+        XCTAssertTrue(cue.exists, "the cue stays")
+    }
 }
