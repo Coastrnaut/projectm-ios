@@ -62,7 +62,14 @@ final class B09OSCDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(5) { toggle.exists }, "the OSC switch")
         report(task, "stop", ["switchOff": (toggle.value as? String) == "0" ? 1 : 0, "badgeGone": badge.exists ? 0 : 1])
         XCTAssertEqual(toggle.value as? String, "0", "Settings shows OSC off after Stop")
-        // OSC-001-T26: turning OSC off stops changes; the driver sent 0.11 after Stop.
+        // OSC-001-T26: turning OSC off stops changes; the driver sent 0.11 after Stop. Off hides the test-value
+        // row, so turn OSC back on (nothing is sent now) and read it: still the 0.42 from before Stop.
+        // A SwiftUI Toggle row's centre is its label; tap the switch at the trailing edge.
+        toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
+        if !wait(3, { (toggle.value as? String) == "1" }) { toggle.switches.firstMatch.tap() }
+        XCTAssertTrue(wait(10) { self.app.descendants(matching: .any)["oscTestValue"].firstMatch.exists },
+                      "the test value row returns with OSC on (switch \(String(describing: toggle.value)))")
+        pause(2)
         let ignored = !testValue.contains("0.11")
         report("OSC-001-T26", "off stops changes", ["afterStopIgnored": ignored ? 1 : 0])
         XCTAssertTrue(ignored, "a value sent after Stop does not apply: \(testValue)")

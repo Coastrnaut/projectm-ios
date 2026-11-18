@@ -1701,7 +1701,7 @@
       "devicesInferred": false,
       "matrixCases": [],
       "estimatedMinutes": 5,
-      "text": "OSC-001-T26 `{device}` On D1 on Wi-Fi, a controller on another computer sends `/projectm/test ,f 0.42` to port 9000 → \"Test value 0.42\"; Local Network permission prompt appears on first enable; turning OSC off stops changes (quickstart D; OSC-001-S7). Owner, last stage."
+      "text": "OSC-001-T26 `{device}` On D1 on Wi-Fi, a controller on another computer sends `/projectm/test ,f 0.42` to port 9000 → \"Test value 0.42\"; Local Network permission prompt appears on first enable; turning OSC off stops changes (quickstart D; OSC-001-S7). Owner, last stage. — D1 automated 2026-11-18 (`docs/test-reports/qa-011/acceptance/D1-B09-osc001.md`): the Mac sent `/projectm/test ,f 0.42` over Wi-Fi to port 9000 and Settings showed \"Test value 0.42\"; after Stop a 0.11 sent by the Mac never applied (OSC turned back on still showed 0.42). Open: the Local Network prompt on first enable; D1 answered it earlier (`PermissionPrimerDeviceTests`), so seeing it again needs the owner to reset the device's privacy settings and run the human testing group"
     },
     {
       "id": "CAM-001-T24",

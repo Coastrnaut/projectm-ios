@@ -1,0 +1,58 @@
+{
+ "device": "D1",
+ "kind": "projectM-iOS.qa011.deviceAcceptance",
+ "logSha256": "516b57c74f7b146ecd5ef1e18b15c957cac9110662a9b8bed56a261a987ded04",
+ "measurements": [
+  {
+   "arrived": 1,
+   "device": "iPhone15,4",
+   "step": "test value",
+   "task": "OSC-001-T26"
+  },
+  {
+   "badgeGone": 1,
+   "device": "iPhone15,4",
+   "step": "stop",
+   "switchOff": 1,
+   "task": "OSC-007-T12"
+  },
+  {
+   "afterStopIgnored": 1,
+   "device": "iPhone15,4",
+   "step": "off stops changes",
+   "task": "OSC-001-T26"
+  }
+ ],
+ "passed": 2,
+ "schemaVersion": 1,
+ "session": "B09-osc001",
+ "tasks": {
+  "OSC-001-T26": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  },
+  "OSC-007-T12": {
+   "checks": {},
+   "fpsMedians": [],
+   "fpsMin": null,
+   "steps": 0
+  }
+ },
+ "tests": [
+  {
+   "class": "B09OSCDeviceTests",
+   "result": "passed",
+   "seconds": 13.451,
+   "test": "testOSC001TestValueFromTheMac"
+  },
+  {
+   "class": "B09OSCDeviceTests",
+   "result": "passed",
+   "seconds": 20.427,
+   "test": "testOSC007BadgeAndStop"
+  }
+ ],
+ "xcresult": "Build/device-acceptance-d1/osc4-1118152406.xcresult"
+}
