@@ -27,6 +27,10 @@ runs on hardware.
 | Release manifest | `scripts/release_manifest.py` | One commit's evidence: feature evidence, hashed reports, verified device records, gaps. |
 | Instruments helper | `scripts/mac_driver/xctrace.py` | `xctrace record`/`export` commands, the TOC and table XML parser (`ref`/`id` values, sentinels), signpost events and markers, the PERF-004, PERF-011 and per-minute energy verdicts. Used by the matrix's `xctrace` cases. |
 | Device goldens import | `scripts/import_device_goldens.py` | The `projectM-iOS.deviceGolden` attachments of a `RECORD_DEVICE_GOLDENS=1` run → `Packages/RenderGoldens/Goldens/<ios-device-model>/` (PNGs, canonical manifest). |
+| OSC driver | `scripts/osc_device_driver.py` | Follows a run's log, answers `OSC-READY <scenario>` by sending OSC through the system Perl; `--listen-port` receives the app's Send OSC; `--device` copies an OSC routes export off the device and checks it. |
+| MIDI driver | `scripts/mac_driver/midi.py` + `scripts/fixtures/midi_session.swift` | The Mac's CoreMIDI network session to the device; answers `MIDI-READY <scenario>` with CC, notes, programs, 14-bit pairs and clock; counts MIDI feedback. Needs the network-MIDI DEBUG exemption (see Batch 8). |
+| Two-device runner | `scripts/mac_driver/peer.py` | Runs one test on D1 and one on D2 from per-device product copies; starts the acting role on the waiting role's `PEER-READY` line; pairs `PEER-STEP`/`PEER-SEEN` times. |
+| Device facts | `scripts/mac_driver/devices.py` | D1-D3 by product type, Bonjour names, `dscacheutil` resolution, the Mac's own address, Documents copies. |
 
 ## Running it (D1 example)
 
@@ -161,6 +165,45 @@ xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination pla
 
 The camera B06 tests stopped on D1 at the camera prompt mid-run (2026-11-16) because the first primer set Camera at
 launch and so never asked; the prompt then appeared inside the automated batch. That is what this group prevents.
+
+## Control surfaces and two devices (QA-011 Batch 8, 2026-11-18)
+
+Tests: `B09OSCDeviceTests` (single device, Mac as controller), `B09OSCPeerDeviceTests` (two devices),
+`B10MIDIDeviceTests` (Mac as MIDI controller), `B11OutputDeviceTests` (the DEBUG fake external display). Shared steps
+are in `ControlSurfaceSupport.swift`; system UI goes through Batch 1's `SystemUI.swift` (one bridge section). Values
+the Mac knows reach a test as `TEST_RUNNER_<NAME>=<value>` on the xcodebuild command (`MAC_IP`, `PEER_IP`,
+`MIDI_SOURCE`); a missing one skips with the reason. AirPlay to the Mac and USB-cable steps (Airplane Mode, Wi-Fi
+outages) are not required (owner ruling 2026-11-18).
+
+```bash
+# Single device, OSC (D1): start the driver, then the tests (each -only-testing is its own argument).
+python3 scripts/osc_device_driver.py --log Build/b09-D1.log --host iPhone77.local --listen-port 9100 --device D1 &
+xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination platform=iOS,id=<D1 UDID> \
+  -only-testing:projectM-iOSDeviceUITests/B09OSCDeviceTests -test-timeouts-enabled YES \
+  -default-test-execution-time-allowance 300 TEST_RUNNER_MAC_IP=<Mac LAN address> > Build/b09-D1.log 2>&1
+# MIDI (D1): python3 scripts/mac_driver/midi.py --log Build/b10-D1.log --host iPhone77.local & then B10MIDIDeviceTests.
+# Fake external display (D1; UIX-008 on D2, D3): -only-testing:projectM-iOSDeviceUITests/B11OutputDeviceTests.
+# Two devices (D1 + D2 on the Mac's Wi-Fi):
+python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build/device-acceptance/Build/Products
+```
+
+- **The Mac receives OSC through Perl too:** the Send OSC check (`--listen-port`) binds a UDP socket in the system Perl,
+  like the sender, because Local Network privacy refuses the command-line Python (not yet confirmed for receiving).
+- **Log lag decides the design:** a device test never waits on the Mac's timing. It prints `<KIND>-READY`, then waits
+  up to 25-30 s for the effect it can see (a glow value, a cue, a badge). Senders repeat (OSC three times, cue steps
+  every 3-4 s) so a late start on the Mac still lands inside the window.
+- **Two devices from one build:** `peer.py` copies the products per device (`Build/peer/<D>/Products`) and starts the
+  waiting role first (receiver, announcer, follower), the acting role on its `PEER-READY` line. Latency across devices
+  uses the two device clocks (NTP); `PEER-LATENCY` reports median and max without correcting the offset.
+- **Network MIDI is excluded by the app's own policy:** the app drops network-attributed MIDI endpoints (MIDI-001-R2,
+  R14; ADR-0038) and both compliance scans reject `MIDINetwork*`, DEBUG included. `B10MIDIDeviceTests` skips until a
+  DEBUG exemption is approved (proposal in the Batch 8 report); the Mac helper also refuses to enable the Mac's own
+  session (Audio MIDI Setup › Network, the owner's setting) and only adds and removes its connection.
+- **Readouts limit what a test can prove:** MOD-002's glow readout has two decimals, so MIDI-005's "> 1,000 steps"
+  shows as at most ~100 distinct readings; a finer probe is needed for the full criterion.
+- **Simulator classes cover device-only reruns:** SHOW-007/008/009 and SHOW-012's row label run as
+  `projectM-iOSUITests/ShowTimelineUITests`, `ShowKeyframeUITests`, `ShowKeyframeEasingUITests`, `CueNoteUITests` on
+  the device through the DeviceAcceptance scheme.
 
 ## Lessons learned
 

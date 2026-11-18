@@ -2745,5 +2745,82 @@ class QA011Batch2Tests(unittest.TestCase):
                 idg.build([capture, other_os])
 
 
+class Batch8DriverTests(unittest.TestCase):
+    """QA-011 Batch 8: the OSC driver's decoder and checks, the MIDI scenarios, the two-device orchestrator."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib
+        cls.osc = importlib.import_module("osc_device_driver")
+        cls.midi = importlib.import_module("mac_driver.midi")
+        cls.peer = importlib.import_module("mac_driver.peer")
+        cls.dev = importlib.import_module("mac_driver.devices")
+
+    def test_osc_message_round_trips_through_the_decoder(self):
+        self.assertEqual(self.osc.decode(self.osc.message("/projectm/param/glow.intensity", 0.5)),
+                         ("/projectm/param/glow.intensity", [0.5]))
+        string_msg = self.osc.pad(b"/projectm/scene") + self.osc.pad(b",si") + self.osc.pad(b"Drop") + struct.pack(">i", 3)
+        self.assertEqual(self.osc.decode(string_msg), ("/projectm/scene", ["Drop", 3]))
+
+    def test_batch8_scenarios_send_the_documented_addresses(self):
+        self.assertEqual(self.osc.SIMPLE["glow-low"], ("/projectm/param/glow.intensity", 0.2))
+        self.assertEqual(self.osc.SIMPLE["learn"][0], "/b8/fader/9")
+        self.assertEqual(self.osc.SIMPLE["test2"], ("/projectm/test", 0.43))
+
+    def test_listen_check_needs_status_and_two_scene_messages(self):
+        ok, counts = self.osc.check_listen(["/projectm/status", "/projectm/scene", "/projectm/scene"])
+        self.assertTrue(ok)
+        self.assertEqual(counts["/projectm/scene"], 2)
+        self.assertFalse(self.osc.check_listen(["/projectm/scene", "/projectm/scene"])[0])
+
+    def test_export_check_finds_missing_routes_and_addresses(self):
+        text = "| /projectm/test | osc.receiver.testValue |\n| /projectm/param/glow.intensity | effect.bloom.intensity |\n"
+        self.assertEqual(self.osc.check_export(text, ["/projectm/test"]), [])
+        problems = self.osc.check_export(text + "listening on 192.168.1.4 port 9000\n", ["/projectm/test", "/b8/x"])
+        self.assertIn("missing route /b8/x", problems)
+        self.assertTrue(any("IP address" in p for p in problems))
+        self.assertTrue(any("port" in p for p in problems))
+        self.assertIn("the test printed no OSC-ROUTES line", self.osc.check_export(text, []))
+
+    def test_midi_scenarios_are_well_formed_helper_commands(self):
+        verbs = {"cc", "note", "off", "pc", "cc14", "ramp14", "sweep", "clock", "start", "stop", "sleep"}
+        for name, commands in self.midi.SCENARIOS.items():
+            for command in commands:
+                self.assertIn(command.split()[0], verbs, f"{name}: {command}")
+        self.assertEqual(self.midi.SCENARIOS["pad60"][-1], "note 0 60 0", "MIDI-006: velocity-0 note-on is the release")
+
+    def test_midi_feedback_fails_on_an_echo_after_the_moves(self):
+        quiet = self.midi.feedback_result([10.0, 10.5, 11.0], window_start=9.0, sends_end=11.0, now=14.0)
+        self.assertTrue(quiet["ok"])
+        echo = self.midi.feedback_result([10.0, 13.5], window_start=9.0, sends_end=11.0, now=14.0)
+        self.assertFalse(echo["ok"])
+        self.assertEqual(echo["afterTheMoves"], 1)
+
+    def test_peer_pairs_steps_with_the_followers_changes(self):
+        steps = self.peer.parse_marks(["x PEER-STEP cue=2 t=100.0", "PEER-STEP cue=3 t=104.0", "noise"], "STEP")
+        seen = self.peer.parse_marks(["PEER-SEEN cue=2 t=100.2", "PEER-SEEN cue=3 t=104.3"], "SEEN")
+        self.assertEqual(steps, [(2, 100.0), (3, 104.0)])
+        result = self.peer.pair_latencies(steps, seen)
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["max"], 0.3)
+        self.assertFalse(self.peer.pair_latencies(steps, [(2, 100.9), (3, 104.9)])["ok"], "0.9 s is too late")
+
+    def test_peer_command_passes_each_filter_and_runner_value_separately(self):
+        cmd = self.peer.test_command(Path("x.xctestrun"), "UDID", "B09OSCPeerDeviceTests/testOSC012Lead",
+                                     {"PEER_IP": "10.0.0.2", "MAC_IP": "10.0.0.1"})
+        self.assertIn("-only-testing:projectM-iOSDeviceUITests/B09OSCPeerDeviceTests/testOSC012Lead", cmd)
+        self.assertIn("TEST_RUNNER_PEER_IP=10.0.0.2", cmd)
+        self.assertIn("platform=iOS,id=UDID", cmd)
+        for plan in self.peer.PLANS.values():
+            self.assertNotEqual(plan["first"][0], plan["second"][0], "two devices")
+
+    def test_devices_parse_listing_dscacheutil_and_newest(self):
+        listing = {"result": {"devices": [{"identifier": "A", "hardwareProperties": {"productType": "iPhone15,4", "udid": "U1"}}]}}
+        self.assertEqual(self.dev.parse_device_list(listing), {"D1": {"identifier": "A", "udid": "U1"}})
+        self.assertEqual(self.dev.parse_dscacheutil("name: iPhone77.local\nip_address: 192.168.1.7\n"), "192.168.1.7")
+        names = ["Documents/projectM-osc-routes-20261118-100000Z.md", "projectM-osc-routes-20261118-110000Z.md", "a.md"]
+        self.assertEqual(self.dev.newest(names, "projectM-osc-routes-", ".md"), "projectM-osc-routes-20261118-110000Z.md")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
