@@ -387,6 +387,11 @@ they override any system-provided reminder.
       present and told first (`PermissionPrimerDeviceTests`: it waits and never taps). Automated batches run only
       tests whose prompts are already answered; never let a prompt appear mid-batch. `docs/autotester.md` keeps the
       group's list.
+    - *Amended 2026-11-18:* the owner said "automate everything all tests, reanalyze each test that you think requires a
+      human and find a way to automate it". Prompting tests are now automated: they answer the system prompt themselves
+      (Allow, Don't Allow, revoke in Settings) in their own prompt-flow batch, run alone and on schedule (after a
+      reinstall), never inside another batch. Only steps that need hardware or a person's body (external displays,
+      USB MIDI, headphones, real calls, the device lock, purchases with a real Apple ID) stay with the owner.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 

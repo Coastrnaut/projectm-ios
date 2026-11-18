@@ -25,3 +25,7 @@ be surprised mid-run.
 - Keep `docs/autotester.md` ("Human testing group") and CLAUDE.md owner rule 14 current.
 
 Related: [[maintain-autotester-doc]], [[unattended-autonomous-device-stage]].
+
+**Amended 2026-11-18:** the owner asked to "automate everything all tests, reanalyze each test that you think requires a
+human and find a way to automate it". Prompting tests now answer their prompts themselves in a separate prompt-flow
+batch run alone and on schedule (never mid-batch); only hardware or body steps stay with the owner.

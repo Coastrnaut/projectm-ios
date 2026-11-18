@@ -46,6 +46,11 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 Owner rule 14 (2026-11-16): any test that can raise a prompt needing a person runs in this group, together, with the
 owner present and told first; never in an automated batch. Automated batches assume these were answered.
 
+Amended 2026-11-18 (owner: "automate everything … find a way to automate it"): prompting tests answer the prompt
+themselves (springboard alert buttons, Settings toggles) in a separate prompt-flow batch that runs alone, after a
+reinstall, and never inside another batch. `PermissionPrimerDeviceTests` (waits for a person) stays for runs with the
+owner present; the automated prompt flow replaces it otherwise.
+
 | Test | Prompts | Notes |
 |---|---|---|
 | `PermissionPrimerDeviceTests.testA_Microphone` | Microphone | launch with `-autostart microphone` |
