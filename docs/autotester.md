@@ -647,6 +647,10 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     command buffers do not complete, so `waitUntilCompleted` (inside ANGLE) never returns.
 - **A probe that decodes positions from sample values must skip trailing zeros**: a track's last tap buffer ends in
   silence, which decoded as "no position" and hid the track change (AUD-003).
+- **Killing the app mid-test leaves its system state behind (2026-11-19).** A SIGABRT sent to get a stalled app's
+  stacks ended AUD-016 before its restore, so the 5 s Clock timer it had started rang on D2 over and over until the
+  owner stopped it. `startClockTimer` now stops a ringing timer first; after any forced kill, check for and stop
+  leftover timers, Control Center, Settings toggles and Files pickers before the next batch.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 - **Batch 7 on D1-D3 (2026-11-18), what the first run taught:**

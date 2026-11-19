@@ -601,6 +601,11 @@ final class SystemUI {
     /// Starts a Clock timer of `seconds` (at least 1) and returns to the app. When it ends, its alarm interrupts
     /// the app's audio session like any alarm. Stopped again by `stopClockTimer()` (also on restore).
     func startClockTimer(seconds: Int) {
+        // A timer left ringing by an earlier run that never reached its restore (the app was killed mid-test, D2
+        // 2026-11-19: the alarm repeated until a person stopped it) is stopped first.
+        let names = ["Stop", "Dismiss", "Stop Timer"]
+        let ringing = springboard.buttons.matching(NSPredicate(format: "label IN %@ OR identifier IN %@", names, names)).firstMatch
+        if ringing.exists { ringing.tap(); pause(0.5) }
         let clock = Self.clock
         clock.launch()
         XCTAssertTrue(clock.wait(for: .runningForeground, timeout: 10), "Clock is in front")
