@@ -593,6 +593,14 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   how the app links it: add it to the app target too (`DeviceTests.yml` merges a dependency into `projectM-iOS`).
 - **An app target that compiles a whole folder picks up new test folders**: exclude them (`DeviceUITests/**`).
 - **An unfiltered test case on a device ran every bundle in the scheme.** Map each case to its own bundle.
+- **`-only-testing` takes the target's BlueprintName, not its Swift module name** (`projectM-iOSDeviceUITests/B05…`,
+  not `projectM_iOSDeviceUITests/…`; `plutil -p <xctestrun> | grep BlueprintName`). With the module name xcodebuild
+  stops at once: "isn't a member of the specified test plan or scheme".
+- **The Mac's `/bin/bash` is 3.2**: no `mapfile`, and `"${args[@]}"` of an empty array fails under `set -u`. Read
+  filter files with `while IFS= read -r`, and expand with `${args[@]+"${args[@]}"}` (`run_device_ui_tests.sh`).
+- **"Timed out while enabling automation mode"** (D2, 2026-11-19, unlocked, after a lost connection mid-run): the
+  runner cannot turn on UI automation; retrying does not help. A person checks the device for a passcode prompt and
+  Settings › Developer › Enable UI Automation, then the run is started again.
 - **Parse the run total**: XCTest prints "Executed 134 tests, with 3 tests skipped and 0 failures"; the last
   "Executed" line can be a sub-suite.
 
