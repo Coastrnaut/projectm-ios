@@ -676,6 +676,9 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   stacks ended AUD-016 before its restore, so the 5 s Clock timer it had started rang on D2 over and over until the
   owner stopped it. `startClockTimer` now stops a ringing timer first; after any forced kill, check for and stop
   leftover timers, Control Center, Settings toggles and Files pickers before the next batch.
+- **Wait on a run by its process ID, never with `pgrep -f <name>` from a shell (2026-11-19).** A wait loop
+  `until ! pgrep -f round5.sh` matched its own command line, so it never ended and both iPads sat idle for an hour
+  after their runs had finished. Save `$!` when starting the run and poll `kill -0 <pid>`.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 - **Batch 7 on D1-D3 (2026-11-18), what the first run taught:**
