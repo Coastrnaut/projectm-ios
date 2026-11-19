@@ -124,41 +124,73 @@ final class B13ExtraDeviceTests: DeviceAcceptanceCase {
         return Double(text[range.upperBound...])
     }
 
-    /// Plays the music fixture at `decibels` of trim; returns the mean and max effective glow over ~10 s.
-    private func analysisLevel(_ task: String, decibels: Double) -> (mean: Double, max: Double) {
+    /// The music fixture's loud chorus (scripts/make_music_fixture.py: full level from 20 s to 40 s). Both trims are
+    /// sampled over the same track positions, so the comparison never sets one section against another.
+    static let sampledTrack: Range<Double> = 21..<33
+
+    /// Plays the music fixture at `decibels` of trim; returns the effective glow's samples in 1 s bins of the track
+    /// position (`playbackProbe` pos) inside `sampledTrack`, with their mean and max.
+    private func analysisLevel(_ task: String, decibels: Double) -> (mean: Double, max: Double, bins: [Int: [Double]]) {
         launch(visual: "circularSpectrum",
                settings: ["settings.circularSpectrum.glow": true, "settings.inputTrim.decibels": decibels],
-               extra: ["-uitestBindGlowToLevel"])
+               extra: ["-uitestBindGlowToLevel", "-uitestPlaybackProbe"])
         XCTAssertTrue(wait(10) { self.effectiveGlow() != nil }, "\(decibels) dB: the glow follows the level: "
                       + app.staticTexts["glowModulation"].label)
-        var samples: [Double] = []
-        for _ in 0..<40 {
-            if let value = effectiveGlow() { samples.append(value) }
-            pause(0.25)
+        let range = Self.sampledTrack
+        XCTAssertTrue(wait(40) { self.playbackNumber("pos") >= range.lowerBound },
+                      "\(decibels) dB: playback reaches \(range.lowerBound) s: \(probeValue("playbackProbe"))")
+        var bins: [Int: [Double]] = [:]
+        let started = Date()
+        while Date().timeIntervalSince(started) < range.upperBound - range.lowerBound + 4 {
+            let position = playbackNumber("pos")
+            if position >= range.upperBound { break }
+            if range.contains(position), let value = effectiveGlow() { bins[Int(position), default: []].append(value) }
+            pause(0.2)
         }
+        let samples = bins.values.flatMap { $0 }
         let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch.label
         let mean = samples.isEmpty ? 0 : samples.reduce(0, +) / Double(samples.count)
         // The system output volume (the trim never touches playback; it is read for the record, not asserted).
         let volume = Double(AVAudioSession.sharedInstance().outputVolume)
         report(task, "\(Int(decibels)) dB", ["levelMean": mean, "levelMax": samples.max() ?? 0,
-                                              "samples": Double(samples.count), "outputVolume": volume])
-        XCTAssertGreaterThanOrEqual(samples.count, 20, "\(decibels) dB: the readout was readable")
+                                              "samples": Double(samples.count), "bins": Double(bins.count),
+                                              "outputVolume": volume])
+        XCTAssertGreaterThanOrEqual(samples.count, 15, "\(decibels) dB: the readout was readable")
         XCTAssertTrue(overlay.contains("Active audio"), "\(decibels) dB: playback stays Active audio: \(overlay.prefix(120))")
         app.terminate()
-        return (mean, samples.max() ?? 0)
+        return (mean, samples.max() ?? 0, bins)
     }
+
+    /// The mean of each run's per-bin means over the bins both runs sampled.
+    static func pairedMeans(_ a: [Int: [Double]], _ b: [Int: [Double]]) -> (a: Double, b: Double, bins: Int) {
+        let common = Set(a.keys).intersection(b.keys).filter { !(a[$0] ?? []).isEmpty && !(b[$0] ?? []).isEmpty }
+        guard !common.isEmpty else { return (0, 0, 0) }
+        func mean(_ values: [Double]) -> Double { values.reduce(0, +) / Double(values.count) }
+        let ma = mean(common.map { mean(a[$0]!) }), mb = mean(common.map { mean(b[$0]!) })
+        return (ma, mb, common.count)
+    }
+
+    /// AUD-008-R4 with ANL-002's band mapping (decibels over a fixed −80 dB floor): +12 dB lifts each band above the
+    /// floor by 12/80 = 0.15 (less where the soft clip bites), an additive shift. The device runs raised the mean
+    /// band level by 0.07-0.11 on D1-D3 (2026-11-18); a quarter of the model's shift is the floor of the check.
+    static let minimumRaise = 0.04
 
     /// AUD-008-T13: +12 dB makes the analysis react more strongly than 0 dB; playback is not changed by the trim.
     func testAUD008PlusTwelveDecibelsDrivesTheAnalysisHarder() {
         let task = "AUD-008-T13"
         let flat = analysisLevel(task, decibels: 0)
         let raised = analysisLevel(task, decibels: 12)
-        report(task, "compare", ["flatMean": flat.mean, "raisedMean": raised.mean, "difference": raised.mean - flat.mean])
+        let paired = Self.pairedMeans(flat.bins, raised.bins)
+        report(task, "compare", ["flatMean": paired.a, "raisedMean": paired.b, "difference": paired.b - paired.a,
+                                 "commonBins": Double(paired.bins), "flatAllMean": flat.mean, "raisedAllMean": raised.mean])
         XCTAssertGreaterThan(flat.max, 0, "0 dB: the music moves the analysis")
-        // A relative margin: the band level's scale differs by device (0.035 on D3, 0.20 on D1 at 0 dB, 2026-11-18),
-        // while +12 dB raised it by 36-55 % on D1-D3. An absolute 0.02 failed D3 at +46 %.
-        XCTAssertGreaterThan(raised.mean, flat.mean * 1.2,
-                             "+12 dB reads a mean band level at least 20 % higher: \(raised.mean) vs \(flat.mean) at 0 dB")
+        XCTAssertGreaterThanOrEqual(paired.bins, 6, "both trims sampled at least 6 s of the same track positions")
+        // QA-011 device run 2026-11-19 (AUD-008 Clarifications): an absolute raise over the same track positions. The
+        // earlier relative +20 % rule compared two 10 s windows that started at different points of the fixture's
+        // quiet-intro/verse/chorus boundaries (D3 pass 3: 0 dB 0.248 with a max of 0.59 against +12 dB 0.281).
+        XCTAssertGreaterThanOrEqual(paired.b - paired.a, Self.minimumRaise,
+                                    "+12 dB raises the mean band level over the same track positions by at least "
+                                    + "\(Self.minimumRaise): \(paired.b) vs \(paired.a) at 0 dB (\(paired.bins) bins)")
     }
 
     // MARK: REC-003-T23 (60 s recording)

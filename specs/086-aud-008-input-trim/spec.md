@@ -102,6 +102,17 @@ first.
 - Q (clarify, 2026-11-13): Does CaptureLab or a diagnostics export carry the trim? → A: No.
   CaptureLab measures sources at their real level (FR-031 evidence must be unaltered); the trim lives
   only in the projectM-iOS app (AUD-008-R1).
+- Q (QA-011 device run 2026-11-19): AUD-008-T13's In-App Playback check failed on D3 in pass 3 (+12 dB mean band
+  level 0.281 against 0.248 at 0 dB; the rule asked for +20 %). Does the analysis saturate or normalize, so that a
+  relative rule is wrong? → A: There is no AGC (the Normalizer converts format and rate only). The band mapping
+  (ANL-002) is linear in decibels over a fixed −80 dB floor, so +12 dB is an additive lift of 12/80 = 0.15 for each
+  band above the floor, less where the soft clip (knee at −6 dBFS) bites on the loud music; a relative margin
+  therefore demands more lift the louder the baseline is. The failure itself came from the sampling: each run read
+  10 s starting wherever the launch left the music fixture, which has a quiet intro (0-10 s), a verse (10-20 s) and a
+  loud chorus (20-40 s), and the pass-3 0 dB window read a louder stretch (its max 0.59 is the +12 dB runs' max
+  elsewhere). Decision: both trims are sampled over the same track positions (21-33 s of the fixture, the chorus,
+  from the DEBUG `playbackProbe` position, in 1 s bins), and +12 dB must raise the paired mean by at least 0.04
+  absolute (a quarter of the model's 0.15; the mixed-window runs on D1-D3 on 2026-11-18 rose by 0.07-0.11).
 
 ## User Scenarios & Testing *(mandatory)*
 

@@ -347,6 +347,15 @@ struct VisualizerView: View {
                 .allowsHitTesting(false)
                 .accessibilityIdentifier("recordingFacts")
                 .accessibilityValue(facts)
+            // REC-004-R9: the audio decision the next (or current) recording gets, so a device test names why a file has
+            // no audio track (source, setting or microphone permission) before it records (QA-011 pass 3, D3).
+            let audioDecision: String = coordinator.videoRecording.audioStatusText
+            Text(audioDecision)
+                .font(.caption2)
+                .opacity(0.01)
+                .allowsHitTesting(false)
+                .accessibilityIdentifier("recordingAudioDecision")
+                .accessibilityValue(audioDecision)
         }
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {   // SHOW-001: ShowCueUITests
             let value = "\(coordinator.show.appliedSceneID ?? "none")|\(coordinator.settings.visual.rawValue)"

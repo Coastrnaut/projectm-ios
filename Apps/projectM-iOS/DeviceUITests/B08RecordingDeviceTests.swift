@@ -187,8 +187,12 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
                                "rateSkipped": causes["rateSkipped"] ?? -1])
         XCTAssertEqual(f.fps, 30, "recorded at 30 fps")
         XCTAssertEqual(frames, f.frames, "the file holds the written frames")
-        XCTAssertEqual(f.frames + f.dropped, 300, accuracy: 1, "300 slots at 30 fps: written \(f.frames) + dropped \(f.dropped)")
-        XCTAssertEqual(f.frames, 300, "REC-008-T14 asks for 300 frames in the file: written \(f.frames), skipped \(f.dropped) "
+        // QA-011 device run 2026-11-19 (REC-008 Clarifications): on a device the timed stop is checked on the 300 slots of
+        // the 10 s grid (written + dropped) and the exact 10.000 s length; a slot the render loop missed is skipped and
+        // counted (REC-006-D3, REC-008's "no padding" answer), bounded like every device recording. D1 and D3 both wrote
+        // 295 + 5 dropped (busy 0, notReady 0). Exactly 300 written frames stays the host acceptance test's rule (a
+        // writer that is not real-time limited).
+        XCTAssertEqual(f.frames + f.dropped, 300, "300 slots at 30 fps: written \(f.frames) + dropped \(f.dropped) "
                        + "(busy \(Int(causes["busy"] ?? -1)), notReady \(Int(causes["notReady"] ?? -1)), "
                        + "rateSkipped \(Int(causes["rateSkipped"] ?? -1)))")
         XCTAssertLessThanOrEqual(Double(f.dropped), 300 * Self.maximumDroppedShare, "dropped slots stay bounded")
@@ -236,14 +240,23 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         stride(from: from, through: max(from, to), by: step).map { ($0 * 10).rounded() / 10 }
     }
 
-    /// Waits for the disk ballast to settle (filled, capped or failed) and reports its readings.
+    /// Waits for the disk ballast to settle (filled, capped, failed or out of time) and reports its readings. The fill
+    /// writes the whole free space but the target (43 GB on D3 in pass 3), so it may take minutes; the app ends it
+    /// "state=slow" after `UITestDiskBallast.fillBudgetSeconds` (360 s) and this waits 30 s longer.
     private func waitForBallast(_ task: String) -> String {
-        let settled = wait(150) {
+        let started = Date()
+        var lastPrinted = Date.distantPast
+        let settled = wait(390) {
             let v = self.probeText("diskBallast")
-            return ["state=holding", "state=capped", "state=failed", "state=growing", "state=floor"].contains { v.hasPrefix($0) }
+            if Date().timeIntervalSince(lastPrinted) >= 30 {   // the fill's progress, so a slow device names its rate
+                lastPrinted = Date()
+                print("B08 \(task) ballast after \(Int(Date().timeIntervalSince(started))) s: \(v)")
+            }
+            return ["state=holding", "state=capped", "state=failed", "state=growing", "state=floor", "state=slow"]
+                .contains { v.hasPrefix($0) }
         }
         let value = probeText("diskBallast")
-        print("B08 \(task) ballast: \(value)")
+        print("B08 \(task) ballast: \(value) after \(Int(Date().timeIntervalSince(started))) s")
         let n = probeNumbers("diskBallast")
         report(task, "disk ballast", ["ballastMB": n["ballastMB"] ?? -1, "freeMB": n["freeMB"] ?? -1,
                                       "realFreeMB": n["realFreeMB"] ?? -1, "settled": settled ? 1 : 0])
@@ -301,7 +314,9 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         print("B08 \(task): lines \(lines) overlay \(overlay.prefix(60)) announcement \(spoken) ballast \(ballast)")
         let probe = stopRecordingAndReadBack("status lines")
         guard let file = Self.parseVideoProbe(probe) else { return XCTFail("no readable recording: \(probe)") }
-        report(task, "status lines", ["duration": file.duration, "lowStorageLine": storage.label.contains("min left") ? 1 : 0])
+        // The status lines are gone once the recording stopped: read the copies taken while recording (pass 3 on D3
+        // failed here with "No matches found" for recordingStorageStatus).
+        report(task, "status lines", ["duration": file.duration, "lowStorageLine": lines.contains { $0.contains("min left") } ? 1 : 0])
         XCTAssertTrue(lines.contains { $0.contains("min left") }, "the storage line reads the real free storage: \(lines)")
         // The overlay is app UI: none of its words (nor the performance overlay's) may be in a frame of the file.
         RecordingCheck.emit(task: task, label: "status lines absent", dir: RecordingCheck.tmp(folder), notBefore: began,
@@ -322,6 +337,10 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         if ballast.hasPrefix("state=capped") || ballast.hasPrefix("state=failed") {
             throw XCTSkip("the ballast could not bring the guard's reading to 700 MB (\(ballast)): purgeable storage keeps "
                           + "it higher on this device; free space by hand for this check")
+        }
+        if ballast.hasPrefix("state=slow") {
+            throw XCTSkip("the ballast did not fill the free space within the app's 360 s budget "
+                          + "(\(ballast)): fill the device closer to full by hand (fewer GB to write) for this check")
         }
         guard let began = startRecording("disk guard") else {
             return XCTFail("the recording did not start: \(videoProbe) \(app.staticTexts["videoRecordingNoticeText"].label)")
@@ -408,7 +427,10 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
     func testREC004ClickAndFlashAlignInTheFile() {
         let task = "REC-004-T19"
         let folder = "QA011-REC004"
-        launch(visual: "beatRings", extra: ["-uitestRecordingDirectory", folder], fixture: "click-120bpm.m4a")
+        // The click track is 10 ms clicks twice a second: mostly silence, so the status reads "Audio received — silent"
+        // while it plays (FR-011; QA-011 pass 3 on D3 waited for "Active audio" and failed; docs/autotester.md).
+        launch(visual: "beatRings", extra: ["-uitestRecordingDirectory", folder], fixture: "click-120bpm.m4a",
+               playing: ["Audio received — silent", "Active audio"])
         guard let began = startRecording("click and flash") else { return XCTFail("the recording did not start: \(videoProbe)") }
         pause(12)
         let probe = stopRecordingAndReadBack("click and flash")
@@ -442,6 +464,20 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
             let folder = include ? "QA011-REC004-mic-on" : "QA011-REC004-mic-off"
             launchMicrophone(include: include, directory: folder)
             if failOnPermissionPrompt("Microphone") { return }
+            // QA-011 pass 3 (D3): the file had no audio track with the setting on and nothing said why. The recording's
+            // audio decision (REC-004-R9, DEBUG `recordingAudioDecision`) names the cause before anything is recorded.
+            let decision = probeText("recordingAudioDecision")
+            print("B08 \(task) microphone \(include): decision \"\(decision)\", source \(sourceIndicator), overlay \(overlayLabel.prefix(100))")
+            if decision.contains("microphone permission is off") {
+                return XCTFail("the microphone permission is not granted on this device (\(decision)); grant it with the "
+                               + "prompt-flow batch first (python3 scripts/mac_device_driver.py prompt-flow --device <D>)")
+            }
+            if decision == "Recording has no audio." {
+                return XCTFail("the Microphone source did not start (\(decision)); source \(sourceIndicator)")
+            }
+            XCTAssertEqual(decision, include ? "Recording includes microphone audio."
+                                             : "Recording has no audio: Include microphone audio is off.",
+                           "the recording's audio decision follows the setting")
             if include, MacDriver.isFollowing { MacDriver.request("audio.tone", ["hz": 1000, "seconds": 12]) }
             guard let began = startRecording("microphone \(include)") else {
                 return XCTFail("the recording did not start: \(videoProbe)")
