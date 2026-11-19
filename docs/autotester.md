@@ -847,6 +847,22 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     Recording" sits below the first screen; scroll until its cell is built (REC-003).
   - *A host test that counts frames must not race a background queue.* Wait for the background work before the frame
     whose count matters (MED-011's clock test, 120 vs 119 in CI).
+- **Pass 6 on D3 (2026-11-19), the last recording, share and export failures:**
+  - *A reading that never changes is a finding.* REC-015 recorded 150 s while the ballast showed the real free space
+    at 122 MB, under the guard's 200 MiB reserve. The app's 5 s check read the same directory URL from a detached task,
+    and Foundation caches resource values per URL until a run-loop pass that never comes there, so every check got the
+    first reading. `VolumeStorageProbe` now reads through a fresh URL (host test reproduces it: same URL off the main
+    thread, 512 MiB written, 0 bytes difference before the fix). Compare the app's reading with an independent one.
+  - *System sheets differ by release after an activity is cancelled.* On iPadOS 26.5 a cancelled Messages compose
+    returns to the share sheet, which stays open over the panel; iPadOS 27.2 closes both. Close what is still up.
+  - *An identifier on a SwiftUI `Label` tags its icon too.* `exportSummary`'s first match was the checkmark image,
+    whose own label is "Selected"; read `staticTexts[id]` for the text (PRE-014).
+  - *When a system sheet never appears, compare it with a sibling that does, and try the simulator of that OS.*
+    REC-001's exporter never opened on iPadOS 26.5 for three passes while REC-003's mover (a modifier of the same
+    view) did. The iPadOS 26.5 simulator reproduced it at once: there the outer Files dialog modifier of a view shadows
+    the ones inside it. The exporter now has its own host view outside the mover
+    (`CaptureShareUITests.testSaveOpensTheFilesExporterAndTheMover`, red before the fix, green after). Keep one Files
+    dialog (importer, exporter, mover) per view.
 - **Pass 5 on D3 (2026-11-19), B07 files and presets:**
   - *Know which outcomes the app announces instead of alerting.* Import Preset… alerts only when the result needs
     attention (PRE-012-R28); a clean add is announced and its row appears. PRE-012 and PRE-014 waited 30 s for an

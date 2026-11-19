@@ -129,5 +129,31 @@ final class RecordingStorageTests: XCTestCase {
         let available = VolumeStorageProbe().availableBytes(at: FileManager.default.temporaryDirectory)
         XCTAssertGreaterThan(try XCTUnwrap(available), Int64(0))
     }
+
+    /// QA-011 pass 6 (D3, 2026-11-19): the recording's 5 s check reads the same directory URL from a detached task,
+    /// where Foundation's per-URL resource-value cache is never cleared, so every reading repeated the first one and
+    /// the guard never stopped. Two readings through one URL instance off the main thread must see 512 MiB written
+    /// between them.
+    func testVolumeProbeSeesNewWritesThroughTheSameURLOffTheMainThread() async throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("REC015-probe-\(UUID().uuidString)",
+                                                                                   isDirectory: true)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let (before, after) = try await Task.detached(priority: .utility) { () -> (Int64?, Int64?) in
+            let probe = VolumeStorageProbe()
+            let first = probe.availableBytes(at: folder)
+            let file = folder.appendingPathComponent("ballast.bin")
+            FileManager.default.createFile(atPath: file.path, contents: nil)
+            let handle = try FileHandle(forWritingTo: file)
+            let chunk = Data(repeating: 1, count: 16 * 1_048_576)
+            for _ in 0..<32 { try handle.write(contentsOf: chunk) }
+            try handle.synchronize()
+            try handle.close()
+            return (first, probe.availableBytes(at: folder))
+        }.value
+        let drop = try XCTUnwrap(before) - XCTUnwrap(after)
+        XCTAssertGreaterThan(drop, 256_000_000, "the second reading sees the write (before \(before ?? -1), after \(after ?? -1))")
+        XCTAssertEqual(VolumeStorageProbe.freshReadingURL(folder).standardizedFileURL.path, folder.standardizedFileURL.path)
+    }
     #endif
 }

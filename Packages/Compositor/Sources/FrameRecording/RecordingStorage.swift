@@ -12,7 +12,8 @@
 //   (required-reason APIs, Disk space, declared with E174.1 in the app's privacy manifest) and uses the smaller
 //   (`guardReading`; QA-011 device run 2026-11-19: on D3 the important-use figure stayed ~400 MB to 2.8 GB above the
 //   real free space while 77 GB were written, so purgeable space was not freed and a guard on it alone would let the
-//   reserve be all purgeable space); the values stay in memory.
+//   reserve be all purgeable space); every reading uses a fresh URL, since Foundation's per-URL cache is never cleared
+//   on the detached task that reads it (QA-011 pass 6, D3); the values stay in memory.
 // * `RecordingStorage.fileBytes`: the recording file's size (`fileSizeKey`; no file dates).
 // * `RecordingWriterFault`: the test seam that makes the recorder's writer fail after N frames.
 // Plain Swift + Foundation; builds on Linux (the volume probe is Apple-only).
@@ -37,12 +38,25 @@ public enum VolumeStorageReading {
 #if canImport(Darwin)
 /// The real probe: the smaller of `volumeAvailableCapacityForImportantUsage` and `volumeAvailableCapacity` of the
 /// directory's volume (REC-015-D1, amended QA-011 2026-11-19).
+///
+/// QA-011 pass 6 (D3, 2026-11-19), an app defect: Foundation caches resource values in the URL object and clears the
+/// cache only on a pass of the run loop, which never comes on the detached task the 5 s check reads from. The
+/// recording coordinator passes the same `directory` URL every time, so every check got the reading cached at the
+/// first one: REC-015-T17 recorded 150 s while the real free space fell to 122 MB (below the 200 MiB reserve) and
+/// the guard never stopped. Each reading now uses a fresh URL with no cached values (`freshReadingURL`).
 public struct VolumeStorageProbe: StorageProbe {
     public init() {}
 
+    /// A copy of `directory` that carries no cached resource values, so the volume is read now.
+    public static func freshReadingURL(_ directory: URL) -> URL {
+        var url = URL(fileURLWithPath: directory.path, isDirectory: true)
+        url.removeAllCachedResourceValues()
+        return url
+    }
+
     public func availableBytes(at directory: URL) -> Int64? {
-        let values = try? directory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey,
-                                                             .volumeAvailableCapacityKey])
+        let values = try? Self.freshReadingURL(directory).resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey,
+                                                                                    .volumeAvailableCapacityKey])
         return VolumeStorageReading.guardBytes(important: values?.volumeAvailableCapacityForImportantUsage,
                                                real: values?.volumeAvailableCapacity.map { Int64($0) })
     }
