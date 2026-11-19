@@ -403,14 +403,14 @@ final class B07FilesDeviceTests: B07Case {
 
     /// The visualizer's presented frames (`visualFrames`, `-uitestMemoryPressure`) over a browser-open window, as fps.
     private func framesWhileBrowsing(_ task: String, seconds: Double) -> (fps: Double, thumbnails: Int, rows: Int) {
-        let before = Int(text("visualFrames")) ?? -1, start = Date()
+        let before = Int(text("visualFrames").filter(\.isNumber)) ?? -1, start = Date()   // "1,234" past 999
         openBrowser()
         openNode("included")
         pause(seconds)
         let thumbnails = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'thumbnail:'")).count
         let shownRows = rows().count   // preset rows laid out on screen (thumbnails are made only for rows shown)
         closeBrowser()
-        let after = Int(text("visualFrames")) ?? -1
+        let after = Int(text("visualFrames").filter(\.isNumber)) ?? -1   // "1,234" past 999
         let fps = Double(after - before) / Date().timeIntervalSince(start)
         report(task, "browser open", ["fps": fps, "thumbnails": Double(thumbnails), "rows": Double(shownRows)])
         return (fps, thumbnails, shownRows)
