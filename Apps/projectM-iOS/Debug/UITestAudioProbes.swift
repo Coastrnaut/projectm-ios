@@ -242,6 +242,24 @@ final class UITestPlaybackAnalyzer {
     private var pendingTarget: Double?
     private var cutPending = false
     private var current: (k: Int, t: Double)?
+    /// `current` came from the buffer's start because its end could not be decoded: its track is known, its position
+    /// is up to one buffer early, so the next step checks only for a track change.
+    private var currentInexact = false
+    /// Trailing zeros (ms) of the last voiced buffer, not yet counted as a gap, and when that buffer was drained: they
+    /// count when the stream goes on (`settleTrail`), not when it stopped right after them (a pause or interruption).
+    private var pendingTrailMs = 0.0
+    /// When the last record was drained.
+    private var lastRecordAt: Date?
+    /// The last ramp position heard, kept across buffers that name none (`current` is nil then).
+    private var lastHeard: (k: Int, t: Double)?
+    /// The last buffer edges that named no position ("<first>/<voiced>/<lastVoiced>/<last>"), for the device log.
+    private var lastUndecoded = "none"
+    /// The drain time of the records being handled (tests pass their own clock).
+    private var now = Date()
+
+    /// A gap of trailing zeros counts unless the next record came more than this long after it in wall time (the tap
+    /// delivers about 10 buffers a second while the engine runs; a pause or an interruption delivers none).
+    static let stoppedAfterSeconds = 0.5
 
     func startPolling() {
         guard timer == nil else { return }
@@ -254,6 +272,7 @@ final class UITestPlaybackAnalyzer {
         poll()
         buffers = 0; cuts = 0; seeks = 0; staleSeeks = 0; disc = 0; rewinds = 0; wraps = 0; silentBuffers = 0
         maxSeekErrorMs = 0; silentRunMs = 0; maxSilentMs = 0; changes = []; pendingTarget = nil; cutPending = false
+        pendingTrailMs = 0; lastUndecoded = "none"
     }
 
     /// The next delivered cut is checked against `seconds`.
@@ -263,7 +282,14 @@ final class UITestPlaybackAnalyzer {
     }
 
     func poll() {
+        now = Date()
         PlaybackDebugProbe.shared.drain { handle($0) }
+    }
+
+    /// Tests: handles `record` as if drained at `time`.
+    func feed(_ record: PlaybackDebugProbe.Record, at time: Date) {
+        now = time
+        handle(record)
     }
 
     static func decode(_ value: Float) -> (k: Int, t: Double)? {
@@ -277,10 +303,12 @@ final class UITestPlaybackAnalyzer {
 
     private func duration(_ k: Int) -> Double { UITestAudioFixtures.ramps[k].seconds }
 
-    /// One step in the delivered audio from `a` to `b` (`gap` s of audio between them).
-    private func step(_ a: (k: Int, t: Double), _ b: (k: Int, t: Double), gap: Double) {
+    /// One step in the delivered audio from `a` to `b` (`gap` s of audio between them). With `inexact`, `a`'s position
+    /// is only approximate (a buffer edge could not be decoded): only a change of track counts.
+    private func step(_ a: (k: Int, t: Double), _ b: (k: Int, t: Double), gap: Double, inexact: Bool = false) {
         let nearEnd = a.t > duration(a.k) - 0.5, nearStart = b.t < 0.5
         if a.k == b.k {
+            if inexact { return }
             let dt = b.t - a.t - gap
             if abs(dt) < 0.1 { return }
             if nearEnd, nearStart { wraps += 1 } else if dt < 0 { rewinds += 1 } else { disc += 1 }
@@ -297,6 +325,7 @@ final class UITestPlaybackAnalyzer {
         // silent or start with zeros (the player starts inside a render cycle). Before 2026-11-18 a cut whose first
         // sample was 0 was dropped with the buffer, and AUD-006-T38 read `cuts=0` after 20 seeks on D1-D3.
         if r.firstAfterCut { cutPending = true }
+        noteArrival()
         if r.peak < 0.0001 {
             silentBuffers += 1
             silentRunMs += seconds * 1000
@@ -311,29 +340,71 @@ final class UITestPlaybackAnalyzer {
         // Zeros at the end (a track that played to its end) start a gap that runs on into the next buffers. The last
         // position heard is the last voiced sample: with `last` (a zero) the next track's start had no predecessor and
         // its change was never counted (QA-011 device run 2026-11-19, D2: AUD-003-T22 `changes=none`, track 2 playing).
+        // They count as a gap only once the next record shows the stream went on (`noteArrival`): when a pause or an
+        // interruption stops the player, the buffer it stopped in ends in zeros too (QA-011 pass 5, 5b and 6, D2:
+        // AUD-003-T22 "no gap" read 74 ms each time, with the one cut being the resume after the interruption).
         let trail = Int(r.trailingZeros)
         silentRunMs = Double(trail) / rate * 1000
-        if trail > 0 { maxSilentMs = max(maxSilentMs, silentRunMs) }
-        guard let a = Self.decode(lead > 0 ? r.voiced : r.first), let b = Self.decode(trail > 0 ? r.lastVoiced : r.last)
-        else { current = nil; return }
-        let heardSeconds = Double(Int(r.frames) - lead - trail) / rate
+        pendingTrailMs = silentRunMs
+        // The positions at the buffer's edges. A failed decode at one edge no longer forgets the track: the change from
+        // track 1 to track 2 at a track's end was lost on D2 in passes 4-6 (`changes=none`, track 2 playing, 64 ms of
+        // zeros between them) because one edge of the change named no ramp position and `current` became nil.
+        let a = Self.decode(lead > 0 ? r.voiced : r.first), b = Self.decode(trail > 0 ? r.lastVoiced : r.last)
+        if a == nil || b == nil {
+            func f(_ v: Float) -> String { String(format: "%.4f", Double(v)) }
+            lastUndecoded = "\(f(r.first))/\(f(r.voiced))/\(f(r.lastVoiced))/\(f(r.last))"
+        }
+        guard let start = a ?? b else {
+            current = nil   // no ramp here (`lastHeard` keeps the last track heard for a change)
+            return
+        }
+        // From the previous buffer's last position to this buffer's first one: `a` follows `lead` zeros; without `a`,
+        // `b` is the buffer's last voiced frame.
+        let startGap = a != nil ? Double(lead + 1) / rate : Double(Int(r.frames) - trail) / rate
         if cutPending {
             cutPending = false
             cuts += 1
-            if let previous = current, previous.k == a.k { cutJumpMs = (a.t - previous.t) * 1000 } else { cutJumpMs = 0 }
-            lastCut = "\(a.k):\(Double(Int(a.t * 100)) / 100)"
+            if a != nil, !currentInexact, let previous = current, previous.k == start.k {
+                cutJumpMs = (start.t - previous.t) * 1000
+            } else {
+                cutJumpMs = 0
+            }
+            lastCut = "\(start.k):\(Double(Int(start.t * 100)) / 100)"
             if let target = pendingTarget {
                 seeks += 1
-                let error = abs(a.t - target) * 1000
+                let error = abs(start.t - target) * 1000
                 maxSeekErrorMs = max(maxSeekErrorMs, error)
                 if error > 250 { staleSeeks += 1 }
                 pendingTarget = nil
             }
-        } else if let previous = current {
-            step(previous, a, gap: Double(lead + 1) / rate)
+        } else if let previous = current ?? lastHeard {
+            step(previous, start, gap: startGap, inexact: current == nil || currentInexact)
         }
-        step(a, b, gap: heardSeconds - 1 / rate)
-        current = b
+        if let a, let b {
+            step(a, b, gap: Double(Int(r.frames) - lead - trail) / rate - 1 / rate)
+            current = b
+            currentInexact = false
+        } else if let b {
+            current = b
+            currentInexact = false
+        } else {
+            current = a
+            currentInexact = true
+        }
+        lastHeard = current
+    }
+
+    /// Every record: whether the stream ran on since the last one. More than `stoppedAfterSeconds` of wall time
+    /// after it, the engine had stopped (paused, interrupted): the silence before is a stop, not a gap, and the
+    /// trailing zeros of the last buffer are dropped. Otherwise they are counted now.
+    private func noteArrival() {
+        if let last = lastRecordAt, now.timeIntervalSince(last) > Self.stoppedAfterSeconds {
+            silentRunMs = 0
+        } else if pendingTrailMs > 0 {
+            maxSilentMs = max(maxSilentMs, pendingTrailMs)
+        }
+        pendingTrailMs = 0
+        lastRecordAt = now
     }
 
     var summary: String {
@@ -342,7 +413,7 @@ final class UITestPlaybackAnalyzer {
         return "buffers=\(buffers) cuts=\(cuts) seeks=\(seeks) staleSeeks=\(staleSeeks) maxSeekErrMs=\(Int(maxSeekErrorMs)) "
             + "disc=\(disc) rewinds=\(rewinds) wraps=\(wraps) changes=\(changes.isEmpty ? "none" : changes.joined(separator: ",")) "
             + "silentBuffers=\(silentBuffers) maxSilentMs=\(Int(maxSilentMs)) cutJumpMs=\(Int(cutJumpMs)) lastCut=\(lastCut) "
-            + "\(track) lost=\(PlaybackDebugProbe.shared.lost)"
+            + "\(track) lost=\(PlaybackDebugProbe.shared.lost) undecoded=\(lastUndecoded)"
     }
 }
 

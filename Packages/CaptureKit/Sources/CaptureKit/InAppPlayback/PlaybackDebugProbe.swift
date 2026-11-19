@@ -34,6 +34,21 @@ public final class PlaybackDebugProbe: @unchecked Sendable {
         /// `changes=none` with track 2 playing). `lastVoiced` is the last position heard.
         public var trailingZeros: Int32 = 0
         public var lastVoiced: Float = 0
+
+        /// The app's analyzer tests build records by hand (the memberwise initializer is internal to CaptureKit).
+        public init(first: Float, last: Float, peak: Float, frames: Int32, sampleRate: Float, firstAfterCut: Bool,
+                    leadingZeros: Int32 = 0, voiced: Float = 0, trailingZeros: Int32 = 0, lastVoiced: Float = 0) {
+            self.first = first
+            self.last = last
+            self.peak = peak
+            self.frames = frames
+            self.sampleRate = sampleRate
+            self.firstAfterCut = firstAfterCut
+            self.leadingZeros = leadingZeros
+            self.voiced = voiced
+            self.trailingZeros = trailingZeros
+            self.lastVoiced = lastVoiced
+        }
     }
 
     public static let capacity = 8192

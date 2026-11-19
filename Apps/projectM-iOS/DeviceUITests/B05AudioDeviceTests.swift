@@ -422,7 +422,7 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertEqual(playbackNumber("rewinds"), 0, "no repeated fragment: \(probeValue("playbackProbe"))")
         XCTAssertEqual(playbackNumber("disc"), 0, "no jump")
         XCTAssertFalse((playback["changes"] ?? "").contains("!"), "no track change cut in at an edit")
-        XCTAssertLessThan(playbackNumber("maxSilentMs"), 50, "no gap")
+        XCTAssertLessThan(playbackNumber("maxSilentMs"), 50, "no gap: \(probeValue("playbackProbe"))")
         XCTAssertLessThan(abs(jump), 300, "the interruption resumed at its position")
         let queueBefore = probeFields("importProbe")["queue"] ?? ""
         app.terminate()

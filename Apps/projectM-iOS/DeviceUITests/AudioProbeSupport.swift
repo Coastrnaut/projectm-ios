@@ -40,6 +40,7 @@ extension DeviceAcceptanceCase {
         var values: [String: Double] = [:]
         for (key, value) in playback { if let number = Double(value) { values[key] = number } }
         report(task, step, values)
+        print("DEVICE-ACCEPT-NOTE \(task) \(step) playbackProbe: \(probeValue("playbackProbe"))")   // changes=, undecoded=
     }
 
     // MARK: Launch
@@ -242,6 +243,9 @@ extension DeviceAcceptanceCase {
     @discardableResult
     func pickFromAppDocuments(_ name: String) -> Bool {
         let system = SystemUI(app: app)
+        // QA-011 pass 6 (D2, 2026-11-19, fresh reinstall): the picker opened in On My iPad instead, and searching that
+        // grid for the file scrolled the projectM folder away. When the app's folder is shown, go into it first.
+        system.enterAppFolderIfShown()
         if system.findFile(name, initialWait: 8, swipes: 8) {
             system.tapFile(name)   // taps again when the first tap selected nothing (rerun 3, D3)
             return true

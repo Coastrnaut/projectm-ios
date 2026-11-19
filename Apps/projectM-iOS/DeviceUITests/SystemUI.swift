@@ -708,21 +708,32 @@ final class SystemUI {
     /// so the old "label BEGINSWITH <name with extension>" never matched; and the grid shows 4 files per row, so most
     /// fixtures sit below the first screen. `fileItem` matches that label and `findFile` scrolls the grid
     /// ("File View").
+    ///
+    /// QA-011 pass 6 (D2, iPadOS 27.2, 2026-11-19, after a fresh reinstall): the picker opened one level up, in
+    /// On My iPad, whose grid shows the projectM folder ("44 items") in its first row. The search for the file swiped
+    /// that grid up 6-8 times, which scrolled the folder's row off the top; the sidebar's On My iPad was already
+    /// selected, so tapping it left the grid scrolled, and "projectM" was no longer in the tree ("Files: no projectM"
+    /// in PRE-012, PRE-014, MED-001, MED-002, MED-006, MED-008, MED-010, MED-014). In pass 5b the picker had
+    /// remembered projectM itself. Now, when the grid where the picker opened shows the app's folder, the pick goes
+    /// into it before looking for the file, and each place on the path is found by scrolling the grid back to the top
+    /// and then down (`revealPlace`), so any starting location and scroll position works.
     @discardableResult
     func filesPick(path: [String] = [], name: String) -> Bool {
-        if path.isEmpty, findFile(name, initialWait: 3, swipes: 6) {   // the picker opened where the file is
-            if tapFile(name) { return true }
-            XCTFail("Files: the picker did not take \(name)")
-            cancelFilesPicker()
-            return false
+        if path.isEmpty {
+            enterAppFolderIfShown()
+            if findFile(name, initialWait: 3, swipes: 6) {   // the picker opened (or now is) where the file is
+                if tapFile(name) { return true }
+                XCTFail("Files: the picker did not take \(name)")
+                cancelFilesPicker()
+                return false
+            }
         }
         let browse = app.buttons["Browse"].firstMatch   // the iPhone tab bar; iPadOS 26 nests a second Browse button
         if wait(3, { browse.exists }) { browse.tap(); pause(0.5) }
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
                                      Self.appDisplayName] : path
         for place in places {
-            let item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", place)).firstMatch
-            guard wait(5, { item.exists }) else {
+            guard let item = revealPlace(place, wait: 5) else {
                 XCTFail("Files: no \(place)")
                 cancelFilesPicker()
                 return false
@@ -739,6 +750,65 @@ final class SystemUI {
         XCTFail("Files: the picker did not take \(name)")
         cancelFilesPicker()
         return false
+    }
+
+    /// A cell of the picker's file grid for the folder `place`: labelled "projectM" or "projectM, 44 items", or
+    /// holding a "projectM" text. Only grid cells, so the navigation title of the folder itself never counts.
+    func gridPlace(_ place: String) -> XCUIElement? {
+        let grid = app.collectionViews["File View"].firstMatch
+        guard grid.exists else { return nil }
+        let own = grid.cells.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", place, place + ","))
+            .firstMatch
+        if own.exists { return own }
+        let holding = grid.cells.containing(NSPredicate(format: "label == %@", place)).firstMatch
+        return holding.exists ? holding : nil
+    }
+
+    /// The location or folder `place`: its grid cell, else any element so labelled (the sidebar's locations).
+    func placeItem(_ place: String) -> XCUIElement {
+        gridPlace(place) ?? app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", place)).firstMatch
+    }
+
+    /// When the picker opened one level above the app's Documents (On My iPhone/iPad: its grid shows the app's
+    /// folder), taps that folder. Waits up to 3 s for the grid's first cells; returns whether it went in.
+    @discardableResult
+    func enterAppFolderIfShown() -> Bool {
+        let grid = app.collectionViews["File View"].firstMatch
+        _ = wait(3, { grid.exists && grid.cells.count > 0 })
+        guard gridPlace(Self.appDisplayName) != nil, let folder = revealPlace(Self.appDisplayName, wait: 0) else {
+            return false
+        }
+        print("DEVICE-ACCEPT-NOTE the Files picker opened above \(Self.appDisplayName); going into it")
+        folder.tap()
+        pause(0.8)
+        return true
+    }
+
+    /// Finds `place` from any scroll position: waits up to `seconds` for it on screen, then scrolls the file grid
+    /// back to the top (at most 4 swipes down) and down again (at most 8 swipes up) until it is wholly shown and
+    /// still. Returns that item, else an item so named that exists but could not be brought wholly into view (the
+    /// tap is tried), else nil.
+    func revealPlace(_ place: String, wait seconds: Double) -> XCUIElement? {
+        if wait(seconds, { self.isFullyShown(self.placeItem(place)) }) { return placeItem(place) }
+        let grid = app.collectionViews["File View"].firstMatch
+        if grid.exists {
+            for down in [false, true] {   // first back to the top, then down through the folder
+                for _ in 0..<(down ? 8 : 4) {
+                    if isFullyShown(placeItem(place)) {
+                        settle(placeItem(place))
+                        return placeItem(place)
+                    }
+                    if down { grid.swipeUp() } else { grid.swipeDown() }
+                    pause(0.6)
+                }
+            }
+            if isFullyShown(placeItem(place)) {
+                settle(placeItem(place))
+                return placeItem(place)
+            }
+        }
+        let item = placeItem(place)
+        return item.exists ? item : nil
     }
 
     /// How the Files picker names `name`: its own label (releases that show extensions), or the grid cell's

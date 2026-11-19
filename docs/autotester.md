@@ -868,6 +868,20 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     the labeled row does not fit), and the performance readout's fixed 0.6 backing ignored Increase Contrast.
   - *A missing permission grant is a precondition, not a result:* skip with the instruction only when a later step is
     sure to run the test with the grant (`AFTER_GRANTS` in the prompt flow).
+- **Pass 6 on D2 (2026-11-19, right after a reinstall), what it taught:**
+  - *A picker's starting folder is state; navigate from any of them.* After the reinstall the Files picker opened
+    one level up, in On My iPad, with the projectM folder in the grid's first row; the search for the file swiped that
+    grid away, the already selected sidebar row did not scroll it back, and nine B07 tests failed "Files: no projectM"
+    (in pass 5b the picker had remembered projectM itself). `SystemUI.filesPick` and `pickFromAppDocuments` now go
+    into the app's folder first when the grid shows it (`enterAppFolderIfShown`), and each place on a path is found by
+    scrolling the grid back to the top and down again (`revealPlace`; grid cells only, so a folder's own title never
+    counts). Rehearse a picker test once after a fresh install, not only on a warm one.
+  - *A probe must tell a stop from a gap.* The buffer a pause stops in ends in zeros; the playback analyzer counted
+    them as a 74 ms gap (AUD-003-T22 on D2, three runs). Trailing zeros now count only when the next tap buffer comes
+    within 0.5 s (the stream ran on). And a track change whose edges named no ramp position (64 ms of zeros at the end
+    of a lone looping track, D2 only) lost the change (`changes=none` with track 2 playing): the analyzer keeps the
+    last track heard across such edges and logs the raw edge values as `undecoded=` so the next run shows why they did
+    not decode (`PlaybackAnalyzerTests`).
 
 ### Policy and evidence
 
