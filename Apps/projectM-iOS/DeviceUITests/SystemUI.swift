@@ -563,9 +563,20 @@ final class SystemUI {
     }
 
     /// Stops a ringing timer from its alert or banner, or cancels a running one in Clock.
+    ///
+    /// On iPadOS 26.5 (D3, QA-011 pass 3, 2026-11-19) the ringing timer is a "Timer" banner at the top centre with a
+    /// repeat and an X button; it stayed up (and the alarm kept its interruption: no `ended` in seven runs) until the
+    /// test's teardown, covering the session panel's `session:routeLost`. Its X is matched by the usual stop/dismiss
+    /// labels; when none matches, the banner's buttons are printed for the next run.
     func stopClockTimer() {
-        let stop = springboard.buttons["Stop"]
+        let names = ["Stop", "Dismiss", "Close", "Clear", "Stop Timer"]
+        let stop = springboard.buttons.matching(NSPredicate(format: "label IN %@ OR identifier IN %@", names, names)).firstMatch
         if wait(2, { stop.exists }) { stop.tap(); return }
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label == 'Timer'")).firstMatch
+        if banner.exists {
+            print("SYSTEM-UI timer banner without a known stop button; SpringBoard buttons: "
+                  + springboard.buttons.allElementsBoundByIndex.prefix(20).map { "\($0.identifier)|\($0.label)" }.joined(separator: ", "))
+        }
         let clock = Self.clock
         guard clock.state != .notRunning else { return }
         clock.activate()
@@ -579,8 +590,15 @@ final class SystemUI {
     // MARK: Siri (a real interruption)
 
     /// Asks Siri `text` (typed recognition, no microphone), waits `seconds` and returns to the app. Siri must be on.
+    /// Once a step in this run found Siri unreachable (`SiriAvailability.knownUnavailable`), it only sets
+    /// `unavailableSeen` and returns, so the caller skips at once instead of waiting out XCUITest's 60 s timeout.
     func siriInterruption(_ text: String = "What time is it", seconds: Double = 4) {
+        if SiriAvailability.knownUnavailable { SiriAvailability.unavailableSeen = true; return }
         XCUIDevice.shared.siriService.activate(voiceRecognitionText: text)
+        if SiriAvailability.unavailableSeen {   // Siri did not come up: nothing to wait for
+            app.activate()
+            return
+        }
         pause(seconds)
         app.activate()
         _ = app.wait(for: .runningForeground, timeout: 10)

@@ -557,7 +557,10 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   then show them fresh. iPadOS 26's status-bar band swallows taps on top-edge DEBUG panels. The Camera app asks for
   location on its first launch (a person's prompt; the test skips with its text). The iPad Control Center privacy pill
   reads "projectM Controls" with a camera icon and no "camera" text. Siri off is recorded as an issue ("Unable to
-  activate Siri…"), not thrown: tests swallow exactly that issue and skip the Siri step. An interrupted
+  activate Siri…", or on iPadOS 26.5 after 60 s "Timed out waiting for Siri to activate"), not thrown: tests swallow
+  exactly those issues and skip the Siri step, and later Siri steps in the run skip at once
+  (`SiriAvailability.knownUnavailable`). A ringing Clock timer keeps its interruption (no `ended`) and its "Timer"
+  banner covers the top centre until someone stops it: the interruption helper stops it after `began`. An interrupted
   AVCaptureSession posts a stop without a matching start on resume, so start/stop counts do not say it runs. A result
   bundle from an interrupted run has no Info.plist; its screenshots are zstd blobs under `Data/`.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
@@ -636,6 +639,12 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   case. Read the spec's geometry before choosing a region (a vignette's clear core reached past the corner region).
 - **Controls shown after launch cover the picture for 5 s.** Wait them out (a frame-rate sample does) before a
   screenshot.
+- **Invisible elements still take the accessibility hit test.** `isHittable` asks the accessibility tree what lies at
+  the element's centre. At AX5 the performance overlay and a DEBUG probe text (opacity 0.01) grew over the transport,
+  which was drawn whole, and every button read "not hittable" (AUD-006-T41, D1-D3). DEBUG probes keep one text size
+  (`.dynamicTypeSize(.large)`); a test of a control's layout at AX5 runs without the overlay.
+- **A probe's delivered positions lag the audio by up to one tap block** (100 ms): compare a resume with the held,
+  shown position, not with the last delivered sample (AUD-006-T39).
 - **Few samples make a percentile meaningless.** The 5th percentile of 10 one-second windows is the worst second
   (a cold shader cache after a fresh install). Use 60 windows or more; record first-launch costs separately.
 
