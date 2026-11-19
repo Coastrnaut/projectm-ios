@@ -93,6 +93,14 @@ Five questions, each answered by Claude with the recommended option (owner rule 
 - Finding A4 (ambiguity): S2's "renders at different frame times" means static grain; T07 now names both two renders
   and two frame times. No constitution conflicts; every requirement has a task.
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: FX-017-T17's "still with Reduce Motion" changed 0.012-0.016 on D1-D3 against 0.01; does the grain move? → A: No:
+  the grain pattern was identical between the screenshots, and the whole frame was 3-5 % dimmer in the second one.
+  Reduce flashing follows Reduce Motion unless set, and its stricter composite flash envelope scales the frame with the
+  spectrum's flashes (as designed, FX-019). The device check pins Reduce flashing off in both grain runs so only Reduce
+  Motion differs; the 0.01 limit is unchanged.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Add a film texture (Priority: P1)

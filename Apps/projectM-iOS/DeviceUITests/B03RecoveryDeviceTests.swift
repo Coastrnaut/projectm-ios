@@ -65,9 +65,16 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
         // Settings sheet down and dismisses it (seen on D1, 2026-11-15).
         let list = app.collectionViews.firstMatch, nav = app.navigationBars["Settings"]
         // A status-bar tap scrolls the list to its top (Storage is dozens of sections down); swipes are the fallback.
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.01)).tap()
+        // On an iPad Settings is a 400 pt side panel at the trailing edge (D2: x 632-1032 of 1032), so the tap goes
+        // above the panel, not the window's centre (which scrolled nothing on D2 and D3, 2026-11-18), and the fallback
+        // swipes are fast: the panel is no sheet a pull at its top could dismiss, and ten slow swipes did not reach
+        // the visual rows from Storage.
+        let window = app.windows.firstMatch.frame
+        let panel = list.exists && list.frame.width > 0 && list.frame.width < window.width * 0.9
+        let x = panel ? list.frame.midX / max(window.width, 1) : 0.5
+        app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: 0.01)).tap()
         _ = wait(3) { row.exists }
-        for _ in 0..<10 where !row.exists && nav.exists { list.swipeDown(velocity: .slow) }
+        for _ in 0..<10 where !row.exists && nav.exists { list.swipeDown(velocity: panel ? .fast : .slow) }
         for _ in 0..<3 where row.exists && !row.isHittable && nav.exists { list.swipeDown(velocity: .slow) }
         XCTAssertTrue(nav.exists, "Settings is still open")
         XCTAssertTrue(row.isHittable, "the Linear Spectrum row is reachable")

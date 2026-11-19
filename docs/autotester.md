@@ -433,7 +433,31 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **Test-only defaults keys stay inside `#if DEBUG`:** the privacy key scan (`test_every_stored_defaults_key_is_allowed`)
   treats any defaults key named outside DEBUG code as stored by the shipping app (CI run 43804165117).
 - **Thresholds per kind of visual:** a line visual (oscilloscope) covers about 1 % of the screen, so "draws" uses
-  `minimumDraw: 0.005` there; filled visuals keep 0.02.
+  `minimumDraw: 0.005` there; filled visuals keep 0.02. The Lissajous and the Radial Waveform are line visuals too
+  (2026-11-18: the radial ring covers 1.0-1.1 % on D1-D3).
+- **The performance overlay is part of every screenshot** (full run, 2026-11-18): its text is about 1-2 % non-black
+  on D1 and changes every second, so whole-screen "draws" and "moves" figures carry it. D1 passed VIS-005 "draws" and
+  VIS-016 "calmer" on the overlay's text alone; triage a screen-statistic failure with the overlay's box left out
+  before reading anything into the visual.
+- **Sampling steps alias with the effect's grid:** screenshots are sampled every 8th pixel, and an 8 px square mosaic
+  shows each block's centre pixel, the very pixel the 1/8 nearest-neighbour scale reads: FX-012's 8 px change read 0.0
+  on D2 and D3. Sample with a step coprime to the effect's period (3 for FX-012, 1 for 1 px scanlines).
+- **Screen change saturates for fast small objects:** once every star moves further than its own size between two
+  screenshots, half speed changes the picture as much as full speed. Measure speed from the simulation
+  (`starfieldProbe`: respawns per step), not from screenshot pairs.
+- **Reduce Motion also turns on Reduce flashing** unless the test sets `settings.reduceFlashing`: its stricter
+  composite envelope scales the whole frame by a few percent as the spectrum flashes (FX-017's "still" Photo pair
+  differed by a uniform 3-5 % gain). Pin Reduce flashing when a check is about something else.
+- **"Controls exist" can be a fade-out:** CAM-007 on D1 found the controls existing 8 s after Settings closed, skipped
+  the tap that shows them, and Save Frame was gone a moment later. Wait for them to hide, then show them fresh.
+- **iPad Settings side panel and the status-bar tap:** the panel sits at the trailing edge (D2 x 632-1032), so a
+  status-bar tap at the window's centre scrolls nothing (PERF-010 on D2, D3). Tap above the panel (`list.frame.midX`);
+  the panel is not a sheet, so fast fallback swipes are safe there.
+- **An unexplained main-thread stall after a return from the background** (VIS-001-T36, D2 only, 2026-11-18): XCTest
+  waited 60 s for idle after `activate()` and every query then failed with "main thread busy for 30 s"; the overlay's
+  frame counter in the screenshot taken minutes later stood at about the frame count of the moment the app left, and
+  the attached spindumps held "No samples". D1, D3 and PERF-011 on D2 passed the same return. Not reproduced; on a
+  repeat, take a sysdiagnose on the device during the stall (the main thread's stack is the evidence).
 - **Device audits find what the simulator does not:** on D1 the Dynamic Type audit flagged two `Label`s that wrapped
   under their icon at AX3/AX5 ("Lock scene", "Import Folder or Archive…"; fixed with `IconTitleRow`), and its contrast
   audit (iOS 27.0.1) flagged accent-coloured list buttons measured at 5.8:1 that pass on the 27.2 simulator. Triage
@@ -498,7 +522,8 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   `recent*` = the last 3 s), `tunnelSpeedProbe`, `sectionChangeProbe` (playback positions of section-change fires;
   `-uitestBindGlowToSectionChange` binds it to the glow), `pipelineArchiveProbe` (PERF-009 hits and misses),
   `hapticProbe` (pulse host times), `presetFlashProbe` (current preset, may flash), `compareProbe` (the last comparison's
-  frames per second and worst thermal state, kept after Close), `renderFaultEventsProbe`, and `announcementsProbe` (the
+  frames per second and worst thermal state, kept after Close), `renderFaultEventsProbe`, `starfieldProbe` (the
+  starfield simulation's steps, near-plane respawns and Reduce Motion; VIS-016-T13), and `announcementsProbe` (the
   announcer's spoken list, so "announced once" is countable). Probes in the visualizer layer cannot be read while a sheet
   covers it: tests close Settings or the browser first and read the kept values. Elsewhere: `particleBoundsProbe` in the
   Particle emitter editor (outside the box, newest spawns inside the path); `-uitestImportPreset fixture:strobe` writes

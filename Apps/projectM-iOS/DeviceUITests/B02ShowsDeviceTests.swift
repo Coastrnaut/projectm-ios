@@ -38,8 +38,15 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(drawing, "the visual draws again after the return")
         XCTAssertGreaterThan(window.width, window.height, "the window follows the rotation made while away")
         assertStillCircular("after the return")
+        // In-App Playback paused while away resumes on the return (AUD-006-R22, AUD-015-R5); the visual moves with the
+        // music only once audio is active again (as VIS-001-T36 after background).
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        XCTAssertTrue(wait(15) { overlay.label.contains("Active audio") }, "playback resumes: \(overlay.label.prefix(160))")
         assertFrameRate(task, "after the return")
-        assertDrawingAndMoving(task, "after the return")
+        // D1 2026-11-18: one pair 1 s apart measured 0.00185 against 0.002 (a quiet passage): three pairs, the largest.
+        let (first, _) = screen(task, "after the return")
+        XCTAssertGreaterThan(first.nonBlack, 0.02, "\(task) after the return: the visual draws")
+        assertMovingSampled(task, "after the return")
     }
 
     /// PERF-011-T22 (QA-011 Batch 1, SystemUI): the app switcher card shows the picture (not black), the return from

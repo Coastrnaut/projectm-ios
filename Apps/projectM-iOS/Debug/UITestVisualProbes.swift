@@ -20,6 +20,9 @@
 // * `compareProbe` (PRE-009-T13): the open (or last) preset comparison's frames, seconds and frame rate, and the
 //   worst thermal state seen (0 nominal … 3 critical). It keeps the last session, so it is read after Close.
 // * `renderFaultEventsProbe` (PERF-014-T22): render fault events logged (`DiagnosticsLog.renderFault` calls).
+// * `starfieldProbe` (VIS-016-T13): the starfield simulation's steps run and stars that passed the near plane since its
+//   last reset, and whether Reduce Motion is applied ("steps=… respawns=… reduceMotion=on|off"). Respawns per step
+//   follow the flight speed, which screenshots 1 s apart cannot tell apart once every star moves further than its size.
 // * `announcementsProbe` (ACC-004, ACC-005, ACC-011, UIX-010, UIX-012): "count=N‖<kind>|<text>‖…", the announcer's
 //   spoken list (the last 12), so a test can tell an announcement made once from one made twice.
 // `presetImportURL(_:)` resolves `-uitestImportPreset`: `fixture:strobe` writes the strobing test fixture (ACC-002's
@@ -125,6 +128,7 @@ final class UITestVisualProbeModel {
     private(set) var compare = "open=no frames=0 seconds=0.0 rate=0.0 maxThermal=0"
     private(set) var renderFaults = "events=0"
     private(set) var announcements = "count=0‖"
+    private(set) var starfield = "none"
 
     @ObservationIgnored private weak var coordinator: AppCoordinator?
     @ObservationIgnored private var timer: Timer?
@@ -268,6 +272,11 @@ final class UITestVisualProbeModel {
         renderFaults = "events=\(UITestVisualProbes.renderFaultEvents)"
         let spoken: [String] = coordinator.announcer.spoken
         announcements = "count=\(spoken.count)‖" + spoken.suffix(12).joined(separator: "‖")
+        if coordinator.showsNativeVisual, let stars = coordinator.nativeVisual?.debugGenerator as? StarfieldGenerator {
+            let simulation: StarfieldSimulation = stars.simulation
+            starfield = "steps=\(simulation.stepsRun) respawns=\(simulation.respawnCount) "
+                + "reduceMotion=\(simulation.configuration.reduceMotion ? "on" : "off")"
+        }
     }
 
     private static func flashLine(_ source: String, sampled: Int, clamped: Int, minimum: Float, recent: [Float]) -> String {
@@ -295,6 +304,7 @@ struct UITestVisualProbesView: View {
                 probe("compareProbe", model.compare)
                 probe("renderFaultEventsProbe", model.renderFaults)
                 probe("announcementsProbe", model.announcements)
+                probe("starfieldProbe", model.starfield)
             }
         }
         .allowsHitTesting(false)

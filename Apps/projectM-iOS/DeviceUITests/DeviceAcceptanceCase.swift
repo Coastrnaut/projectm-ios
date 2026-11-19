@@ -206,6 +206,25 @@ class DeviceAcceptanceCase: XCTestCase {
         XCTAssertGreaterThan(motion, minimumChange, "\(task) \(label): the visual moves with the music")
     }
 
+    /// Motion over several pairs (autotester lesson "Motion checks need several samples"): `pairs` screenshot pairs 1 s
+    /// apart, `gap` seconds between pairs, asserted on the largest change, so one quiet passage of the music does not
+    /// fail a moving visual. Returns the changes.
+    @discardableResult
+    func assertMovingSampled(_ task: String, _ label: String, pairs: Int = 3, gap: Double = 3,
+                             minimumChange: Double = 0.002) -> [Double] {
+        var motions: [Double] = []
+        for i in 0..<pairs {
+            let (_, a) = screen(task, "\(label) \(i) a")
+            pause(1)
+            let (_, b) = screen(task, "\(label) \(i) b")
+            motions.append(Self.change(a, b))
+            if i < pairs - 1 { pause(gap) }
+        }
+        report(task, "\(label) motion", ["max": motions.max() ?? 0, "min": motions.min() ?? 0])
+        XCTAssertGreaterThan(motions.max() ?? 0, minimumChange, "\(task) \(label): the visual moves with the music \(motions)")
+        return motions
+    }
+
     static func rgba(_ image: UIImage, step: Int) -> [UInt8] {
         guard let cg = image.cgImage else { return [] }
         let width = cg.width / step, height = cg.height / step

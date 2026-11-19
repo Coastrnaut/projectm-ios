@@ -264,14 +264,10 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
                     }
                 }
                 // Save Frame from the controls; the saved file is read back into the probe ("png WxH opaque").
-                let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
-                if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
-                let save = app.buttons["saveFrame"].firstMatch
-                XCTAssertTrue(wait(5) { save.exists }, "\(position) \(label): Save Frame")
-                save.tap()
-                let png = app.buttons["PNG"].firstMatch   // the format choice (FrameCaptureUITests)
-                if wait(5, { png.exists }) { png.tap() }
-                XCTAssertTrue(wait(10) { (probe.value as? String ?? "").contains("x") }, "\(position) \(label): frame saved: \(String(describing: probe.value))")
+                // D1 2026-11-18: the controls still existed (fading out, 8 s after Settings closed) when checked, so
+                // nothing tapped them, and Save Frame was gone a moment later. Wait for them to hide, then show them
+                // fresh (as `saveFramePNG`, which the mirror tests use).
+                saveFramePNG("\(position) \(label)")
                 let text = probe.value as? String ?? ""
                 print("CAM-007 \(position) \(label): \(text)")
                 report(task, "\(position) \(label) save frame", ["saved": text.contains("x") ? 1 : 0])

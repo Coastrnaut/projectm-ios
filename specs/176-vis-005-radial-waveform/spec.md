@@ -44,6 +44,10 @@ conservative, local-first option.
 - Q: Which settings? → A: Two segmented choices: Ring (Small 0.40, Medium 0.55, Large 0.70 of half the shorter side; default Medium) and Amplitude (Low 0.10, Medium 0.18, High 0.25; default Medium). Stored as strings so a bad value reads as the default. Radii stay within 0.15…0.95, so no clamp of r is needed and the ring never crosses the centre. Rejected: continuous sliders (two Double keys, harder to test and to restore safely); a mirror or fill option (the brief marks it optional; a filled ring would need its own flash model) (VIS-005-R6, R9).
 - Q: Line drawing and joins? → A: As the Lissajous: flat rectangles of thickness 0.6 % of the shorter side (at least 1 px), butt ends, no joins (neighbouring segments turn by about 2π/1,024 plus the wobble, so gaps are sub-pixel at this thickness); palette color k of N oldest to newest; the shared premultiplied "over" pass. Persistence is not offered, so ACC-012's persistence caps do not apply (VIS-005-R7, R15).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: VIS-005-T12's "the visual draws" read 0.012-0.014 non-black on D2 and D3 against 0.02; is the ring missing? → A: No. The ring is a line (0.6 % of the shorter side thick) and covers about 1 % of the screen on every device once the performance overlay's text is left out (D1 1.1 %, D2 1.0 % in the 2026-11-18 screenshots); D1 had passed 0.02 only through the overlay's text. The device check uses the line-visual floor of 0.005, as the oscilloscope (and VIS-004's Lissajous), not a per-device threshold.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the waveform wrapped around a ring (Priority: P1)

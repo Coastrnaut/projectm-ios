@@ -47,6 +47,10 @@ local-first option.
 - Q: What resets the stars, and is there a seed setting? → A: The generator's loop restart (re-entering the visual builds a fresh generator; resuming the frame loop calls the restart) and a seed change. The seed is fixed (0x5EED0016) with no setting, as VIS-009; speed and density changes apply in place without a reset (VIS-016-R4, R8).
 - Q: Scenes and accessibility? → A: As VIS-015: no SCN-001 layer kind; label "Starfield visualization", identifier `starfield`, value "<Speed> speed, <n> stars, <glow>"; Speed is a segmented picker (`starfieldSpeedPicker`), Stars a stepper (`starfieldDensityStepper`) (VIS-016-R10, R11).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: VIS-016-T13 found Reduce Motion "not calmer" on D2 and D3 (screen change 0.0086 vs 0.0079); is the half speed missing? → A: The measurement could not tell: with the overlay's text left out, screenshots 1 s apart change the same (0.007-0.009) at Fast and at half speed on D1-D3, because every star moves further than its own size in a second either way (D1 passed on the overlay's changing text). The device check now reads the flight speed from the DEBUG `starfieldProbe` (stars passing the near plane per simulation step over 4 s) and requires Reduce Motion ≤ 0.75 × Fast (half speed gives about 0.5); the screenshots still show the stars move.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Fly through stars (Priority: P1)

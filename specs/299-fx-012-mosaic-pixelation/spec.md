@@ -85,6 +85,13 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   switch in `SceneEffectChain.swift`), to keep edits to the shared file small while FX-010 adds its own kind; the
   scene module's source-safety list names the new file. Applied to FX-012-R10.
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: FX-012-T18 read no change at all for 8 px squares on D2 and D3; is the mosaic off on iPads? → A: No, the test sampled
+  every 8th pixel, which is exactly the centre pixel each 8 px block shows, so where the composite is the screen's pixel
+  grid every sample was unchanged. Every 3rd pixel reads 0.010 on D2's and 0.011 on D1's screenshots of that run; the
+  0.003 limit for 8 px is unchanged.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pixelate the picture (Priority: P1)

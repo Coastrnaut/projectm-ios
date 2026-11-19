@@ -8,10 +8,12 @@ import XCTest
 
 @MainActor
 final class B01NativeVisualDeviceTests: B07DeviceCase {
-    private func visualCheck(_ task: String, _ visual: String, settings: [String: Any] = [:]) {
+    /// `minimumDraw`: a line visual (Lissajous, Radial Waveform) covers about 1 % of the screen, like the oscilloscope
+    /// (autotester "Thresholds per kind of visual"); filled visuals keep 0.02.
+    private func visualCheck(_ task: String, _ visual: String, settings: [String: Any] = [:], minimumDraw: Double = 0.02) {
         launch(visual: visual, settings: settings)
         assertFrameRate(task, visual)
-        assertDrawingAndMoving(task, visual)
+        assertDrawingAndMoving(task, visual, minimumDraw: minimumDraw)
     }
 
     /// FX-001-T27: glow off vs on at default and maximum radius; after rotation; Reduce flashing on.
@@ -46,8 +48,12 @@ final class B01NativeVisualDeviceTests: B07DeviceCase {
         assertDrawingAndMoving(task, "landscape")
     }
 
-    func testVIS004LissajousWithPersistence() { visualCheck("VIS-004-T13", "lissajous", settings: ["settings.lissajous.persistence": true]) }
-    func testVIS005RadialWaveform() { visualCheck("VIS-005-T12", "radialWaveform") }
+    // Line visuals (2026-11-18): with the overlay's text left out the radial waveform's ring covers 1.1 % of D1's screen
+    // and 1.0 % of D2's; D1 had passed 0.02 only through the performance overlay's text (VIS-005 spec Clarifications).
+    func testVIS004LissajousWithPersistence() {
+        visualCheck("VIS-004-T13", "lissajous", settings: ["settings.lissajous.persistence": true], minimumDraw: 0.005)
+    }
+    func testVIS005RadialWaveform() { visualCheck("VIS-005-T12", "radialWaveform", minimumDraw: 0.005) }
     func testVIS006BeatRings() { visualCheck("VIS-006-T14", "beatRings") }
     func testVIS007Mandala() { visualCheck("VIS-007-T13", "mandala") }
     func testVIS013NoiseField() { visualCheck("VIS-013-T15", "noiseField") }
@@ -283,21 +289,40 @@ final class B01NativeVisualDeviceTests: B07DeviceCase {
         visualCheck("VIS-012-T13", "reactionDiffusion", settings: ["settings.reactionDiffusion.speed": 16, "settings.reduceFlashing": true])
     }
 
-    /// VIS-016-T13: Starfield at 2000 stars and Fast; with Reduce Motion it moves less.
+    /// VIS-016-T13: Starfield at 2000 stars and Fast; with Reduce Motion it moves less. The screenshots show the stars
+    /// moving; "less" is the flight speed, read from `starfieldProbe` as stars passing the near plane per simulation step
+    /// over 4 s. Screenshots 1 s apart cannot tell the speeds apart: every star moves further than its own size at both,
+    /// so the change is the same (0.007-0.009 on D1-D3 2026-11-18 with the overlay's text left out; D1 had passed on the
+    /// overlay's changing text alone). Half speed (VIS-016, ACC-001) gives about half the rate; the limit is 0.75.
     func testVIS016StarfieldFastAndReduceMotion() {
         let task = "VIS-016-T13"
         let settings: [String: Any] = ["settings.starfield.density": 2000, "settings.starfield.speed": "fast"]
-        launch(visual: "starfield", settings: settings)
+        func respawnRate(_ label: String) -> (rate: Double, line: String) {
+            func read() -> (Double, Double) {
+                let line = probe("starfieldProbe")
+                return (Self.number(line, "steps") ?? 0, Self.number(line, "respawns") ?? 0)
+            }
+            XCTAssertTrue(wait(5) { read().0 > 0 }, "\(task) \(label): the starfield probe reads: \(probe("starfieldProbe"))")
+            let (steps0, respawns0) = read()
+            pause(4)
+            let (steps1, respawns1) = read()
+            let rate = steps1 > steps0 ? (respawns1 - respawns0) / (steps1 - steps0) : 0
+            return (rate, probe("starfieldProbe"))
+        }
+        launchProbed(visual: "starfield", settings: settings)
         assertFrameRate(task, "2000 stars, Fast")
         let (_, a) = screen(task, "fast a"); pause(1); let (_, b) = screen(task, "fast b")
         let normal = Self.change(a, b)
+        let fast = respawnRate("Fast")
         app.terminate()
-        launch(visual: "starfield", settings: settings, extra: ["-uitestReduceMotion", "YES"])
-        let (_, c) = screen(task, "reduce motion a"); pause(1); let (_, d) = screen(task, "reduce motion b")
-        let calm = Self.change(c, d)
-        report(task, "motion", ["normal": normal, "reduceMotion": calm])
+        launchProbed(visual: "starfield", settings: settings, extra: ["-uitestReduceMotion", "YES"])
+        let calm = respawnRate("Reduce Motion")
+        report(task, "motion", ["normal": normal, "respawnsPerStepFast": fast.rate, "respawnsPerStepReduceMotion": calm.rate])
         XCTAssertGreaterThan(normal, 0.002, "\(task): the stars move")
-        XCTAssertLessThanOrEqual(calm, normal, "\(task): Reduce Motion is calmer")
+        XCTAssertTrue(fast.line.contains("reduceMotion=off") && calm.line.contains("reduceMotion=on"),
+                      "\(task): Reduce Motion reaches the starfield (\(fast.line) / \(calm.line))")
+        XCTAssertGreaterThan(fast.rate, 0, "\(task): stars fly past at Fast (\(fast.line))")
+        XCTAssertLessThanOrEqual(calm.rate, fast.rate * 0.75, "\(task): Reduce Motion is calmer (\(calm.rate) vs \(fast.rate) per step)")
     }
 
     /// VIS-008-T14 and VIS-009-T10: Particle Fountain and Orbit; Reduce Motion fewer and slower.
@@ -471,6 +496,10 @@ final class B01PhotoEffectDeviceTests: B07DeviceCase {
 
     func testFX012Mosaic() {
         let task = "FX-012-T18"
+        // Every 3rd pixel, not every 8th: a square block shows its centre pixel (bx·N + N/2), and a nearest-neighbour
+        // scale to 1/8 reads pixel 8k + 4, the very pixel each 8 px block shows. On D2 and D3, whose composite is the
+        // screen's pixel grid, every sample was a block's own centre and the change read 0.0 (2026-11-18).
+        sampleStep = 3
         let base = baseline(task)
         for shape in ["square", "hexagon"] {
             for size in [8, 64] {
@@ -547,13 +576,20 @@ final class B01PhotoEffectDeviceTests: B07DeviceCase {
         }
         effectCheck(task, "monochrome", ["settings.filmGrain.enabled": true, "settings.filmGrain.opacity": 1.0,
                                          "settings.filmGrain.color": false], base: base)
+        // Reduce flashing pinned off in both runs: it follows Reduce Motion unless set (AppSettings.reduceFlashing), and
+        // its stricter composite flash envelope scales the whole frame with the spectrum's flashes. On D1-D3
+        // (2026-11-18) the Reduce Motion pair differed by a uniform 3-5 % gain over a static grain (0.012-0.016 against
+        // 0.01); this check is about the grain, so only Reduce Motion changes between the runs.
         let grain: [String: Any] = ["settings.filmGrain.enabled": true, "settings.filmGrain.opacity": 1.0,
-                                    "settings.filmGrain.animated": true]
+                                    "settings.filmGrain.animated": true, "settings.reduceFlashing": false]
         photo(grain)
+        // The controls still showed in the first "vary" screenshot on D2 and D3 (over the still region).
+        _ = wait(6) { !self.controls.exists }
         let (_, a) = screen(task, "vary a"); pause(1); let (_, b) = screen(task, "vary b")
         let varying = stillChange(a, b)
         app.terminate()
         photo(grain, extra: ["-uitestReduceMotion", "YES"])
+        _ = wait(6) { !self.controls.exists }
         let (_, c) = screen(task, "reduce motion a"); pause(1); let (_, d) = screen(task, "reduce motion b")
         let still = stillChange(c, d)
         report(task, "grain motion", ["vary": varying, "reduceMotion": still])

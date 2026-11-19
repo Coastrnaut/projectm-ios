@@ -54,6 +54,10 @@ human interaction); each answer is the conservative, local-first option, recomme
 - Q (clarify pass): What does changing the plot mode or persistence do while running? → A: It applies from the next frame without rebuilding the generator; a mode change clears the snapshots (ghosts in the old orientation would be misleading) and keeps the gain level; turning persistence off clears them. Pause/resume (the host's loop restart) resets both gain and snapshots (VIS-004-R8, Edge Cases).
 - Q (clarify pass): Does the stereo history cost anything when another visual is shown? → A: The tap keeps it whenever the native host runs (one extra copy of at most 16 KB and one atomic exchange per analysis read, on the analysis worker), the same rule as VIS-003's mono history; nothing runs on the audio callback and nothing allocates. Rejected: a switch to enable it only for the Lissajous (a cross-thread flag for a negligible saving) (VIS-004-R2, R17).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: Which "the visual draws" floor does VIS-004-T13 use on the devices? → A: The line-visual floor 0.005 (as the oscilloscope and VIS-005): the Lissajous trace covered 1.7-2.6 % of D2's and D3's screens on 2026-11-18, overlay text included, so the filled-visual 0.02 passed by chance there.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the stereo image of the music (Priority: P1)
