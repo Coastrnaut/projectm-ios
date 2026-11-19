@@ -93,6 +93,8 @@ final class B07FilesDeviceTests: B07Case {
         let alert = app.alerts["Import Preset"].firstMatch
         XCTAssertTrue(wait(30) { alert.exists }, "the import result for \(file)")
         let seconds = Date().timeIntervalSince(picked)
+        // Reading a missing alert's label fails the test at once and ended the run (PRE-012, PRE-014 on D2, 2026-11-19).
+        guard alert.exists else { return ("no Import Preset alert", seconds) }
         let text = alertText(alert)
         if alert.exists { alert.buttons.firstMatch.tap() }
         pause(0.5)
@@ -133,8 +135,17 @@ final class B07FilesDeviceTests: B07Case {
         return units[String(parts[1])].map { n * $0 }
     }
 
+    /// Launch arguments for tests that open Settings › Storage: a jump button to the Storage section
+    /// (`-uitestSettingsJump`, DEBUG), since swiping never reached it on the iPad panel (D2, D3, 2026-11-19).
+    static let storageJump = ["-uitestSettingsJump", "storage"]
+
     func openStorage() {
         openSettingsPanel()
+        let jump = app.buttons["uitestSettingsJump.storage"].firstMatch
+        if jump.exists {
+            jump.tap()
+            _ = wait(3) { self.app.buttons["storageLink"].exists }
+        }
         tapControl("storageLink")
         XCTAssertTrue(wait(10) { self.app.navigationBars["Storage"].exists }, "Settings › Storage")
         _ = wait(30) { !self.element("storageMeasuring").exists && Self.bytes(self.text("storage.total")) != nil }
@@ -369,7 +380,7 @@ final class B07FilesDeviceTests: B07Case {
     /// cleared first with Clear Caches) is within 10 % of the same window with them cached.
     func testPRE001FPSWhileThumbnailsGenerate() {
         let task = "PRE-001-T14"
-        launch(visual: "projectM", extra: ["-uitestMemoryPressure"])
+        launch(visual: "projectM", extra: ["-uitestMemoryPressure"] + Self.storageJump)
         openStorage()
         print("PRE-001-T14 \(clearCaches())")
         closeSettingsPanel()
@@ -480,7 +491,7 @@ final class B07FilesDeviceTests: B07Case {
     /// org.projectmios.ProjectMiOS --json-output f` (sum of sizes), in docs/autotester.md.
     func testFILE009StorageValuesWithRealMedia() {
         let task = "FILE-009-T12"
-        launch(visual: "photo")   // the music fixture is imported audio (-uitestImportAudio)
+        launch(visual: "photo", extra: Self.storageJump)   // the music fixture is imported audio (-uitestImportAudio)
         pickFromFiles("choosePhotoFromFiles", "photo-small.jpg")
         _ = settledSummary("photoSummary")
         closeSettingsPanel()
@@ -503,8 +514,9 @@ final class B07FilesDeviceTests: B07Case {
         XCTAssertGreaterThanOrEqual((values["total"] ?? -1) * 1.06, parts, "\(task): the total covers the rows (rounding)")
         closeSettingsPanel()
         let documentsAndData = iPhoneStorageDocumentsAndData()
-        report(task, "iPhone Storage", ["documentsAndData": documentsAndData ?? -1, "appTotal": values["total"] ?? -1,
-                                        "ratio": documentsAndData.map { ($0 + 1) / ((values["total"] ?? 0) + 1) } ?? -1])
+        let total = values["total"] ?? -1
+        report(task, "iPhone Storage", ["documentsAndData": documentsAndData ?? -1, "appTotal": total,
+                                        "ratio": total > 0 ? documentsAndData.map { $0 / total } ?? -1 : -1])
         print("FILE-009-T12 Documents & Data \(documentsAndData.map { String($0) } ?? "unread") vs Storage total \(values["total"] ?? -1)")
     }
 
@@ -516,7 +528,7 @@ final class B07FilesDeviceTests: B07Case {
     /// cross-check of Library/Caches: `devicectl device info files … --subdirectory Library/Caches` (docs/autotester.md).
     func testFILE010ClearCaches() {
         let task = "FILE-010-T11"
-        launch(visual: "projectM", extra: ["-uitestSeedPhoto", "pattern", "-uitestShowSeed"])
+        launch(visual: "projectM", extra: ["-uitestSeedPhoto", "pattern", "-uitestShowSeed"] + Self.storageJump)
         // The show seed stands on cue 1, a Circular Spectrum scene, and the preset controls are hidden under a native
         // visual (ControlsOverlay): back to projectM before browsing presets (D3, 2026-11-19: no Presets control).
         chooseVisual("projectM")
@@ -551,10 +563,23 @@ final class B07FilesDeviceTests: B07Case {
         XCTAssertEqual(after["photos"], before["photos"], "\(task): photos are kept")
         XCTAssertEqual(after["scenes"], before["scenes"], "\(task): scenes are kept")
         closeSettingsPanel()
-        let scene = text("showAppliedScene")
+        // `showAppliedScene` is "<scene applied by a step this launch>|<visual>": the step part is per launch (nil until
+        // a cue is stepped, ShowCoordinator.appliedSceneID), so after a relaunch only the visual is compared, and the
+        // show counts as loaded when its cue controls are back (D2 2026-11-19 read "none|photo" against
+        // "5CE7…01|photo", the same scene state).
+        let visual = text("showAppliedScene").split(separator: "|").last.map(String.init) ?? ""
         relaunch()
-        XCTAssertTrue(wait(15) { self.text("showAppliedScene") == scene }, "\(task): the scene and show load: \(text("showAppliedScene")) (was \(scene))")
+        XCTAssertTrue(wait(15) { self.text("showAppliedScene").hasSuffix("|\(visual)") },
+                      "\(task): the scene's visual loads: \(text("showAppliedScene")) (was \(visual))")
         XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo ") }, "\(task): the current scene's photo: \(photoValue)")
-        assertDrawingAndMoving(task, "after relaunch")
+        showControlsBar()
+        XCTAssertTrue(wait(5) { self.app.buttons["showNextCue"].exists }, "\(task): the show loads (its cue controls)")
+        // The music must be playing again before the spectrum over the photo can move; a stopped source is its own
+        // failure, not a motion one (D2 2026-11-19: motion 0.0001 with nothing to say why).
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        XCTAssertTrue(wait(15) { overlay.exists && overlay.label.contains("Active audio") },
+                      "\(task): music after relaunch: \(overlay.exists ? String(overlay.label.prefix(120)) : "no performance overlay")")
+        _ = wait(8) { !self.app.otherElements["controls"].exists }
+        assertMovingSampled(task, "after relaunch")
     }
 }

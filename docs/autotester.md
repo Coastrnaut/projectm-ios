@@ -713,6 +713,19 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   - *Hittable is not on screen.* XCUITest calls an element hittable when its centre is on screen, so a Files cell cut
     in half by the bottom edge counted as found and the tap selected nothing (D3, AUD-002-T27). `SystemUI.findFile`
     requires the item wholly inside the window and `tapFile` taps again while Open stays disabled.
+  - *A tap on a coasting grid only stops it.* In a single-selection Files picker on iPadOS 27.2 (D2, FILE-009,
+    PRE-012, PRE-014, 2026-11-19) the first tap after a swipe stopped the scroll and picked nothing; no Open button
+    came, so the old `tapFile` took the silence as a pick and the test went on behind a picker still up. `tapFile`
+    now waits for the item's frame to hold still, counts a single-selection pick only once the picker is gone, taps
+    again otherwise, and `filesPick` fails with "the picker did not take <file>".
+  - *Settings sections that swipes cannot reach:* on the iPad panel neither slow nor full-speed swipes reached
+    Settings › Storage below the photo visual's sections (D2, D3). Tests that also use the top of Settings launch
+    with `-uitestSettingsJump storage` (DEBUG): a faint button `uitestSettingsJump.storage` at the panel's bottom
+    left scrolls to the section on a tap (`openStorage`).
+  - *Never write a non-finite number in a report.* `JSONSerialization` raises an Objective-C exception on NaN or
+    infinity, which ends the whole xcodebuild run (FILE-009 on D3: a ratio over a zero total); `report` writes null.
+  - *Reading a missing alert's label fails at once.* Guard `alert.exists` before `label` (PRE-012 on D2 restarted
+    the runner).
   - *iPadOS takes a slow drag of a switcher card as a move.* Flick it (`swipeUp`, then a fast short drag) and check
     that the app ended after each try.
   - *Run an accessibility audit with the controls held up* (`-uitestKeepControls`); an audit during the fade catches

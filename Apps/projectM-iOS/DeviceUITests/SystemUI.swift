@@ -638,8 +638,10 @@ final class SystemUI {
     @discardableResult
     func filesPick(path: [String] = [], name: String) -> Bool {
         if path.isEmpty, findFile(name, initialWait: 3, swipes: 6) {   // the picker opened where the file is
-            tapFile(name)
-            return true
+            if tapFile(name) { return true }
+            XCTFail("Files: the picker did not take \(name)")
+            cancelFilesPicker()
+            return false
         }
         let browse = app.buttons["Browse"].firstMatch   // the iPhone tab bar; iPadOS 26 nests a second Browse button
         if wait(3, { browse.exists }) { browse.tap(); pause(0.5) }
@@ -660,8 +662,10 @@ final class SystemUI {
             cancelFilesPicker()
             return false
         }
-        tapFile(name)
-        return true
+        if tapFile(name) { return true }
+        XCTFail("Files: the picker did not take \(name)")
+        cancelFilesPicker()
+        return false
     }
 
     /// How the Files picker names `name`: its own label (releases that show extensions), or the grid cell's
@@ -731,20 +735,50 @@ final class SystemUI {
 
     /// Taps the file's item, then Open when the picker selects several (the audio importer) or asks to confirm. When
     /// Open is shown but stays disabled, the tap selected nothing (rerun 3, D3): the item is brought fully into view
-    /// and tapped once more.
-    func tapFile(_ name: String) {
+    /// and tapped once more. Returns whether the picker took the file.
+    ///
+    /// QA-011 pass 4 (D2, iPadOS 27.2, 2026-11-19): in a single-selection picker (photos, videos, presets) the first tap
+    /// after a grid swipe only stopped the scroll's momentum: no Open button came, the picker stayed up over the app,
+    /// and the test went on as if the file had been taken (FILE-009 stored no photo or video; PRE-012 and PRE-014 saw
+    /// no Import Preset alert). The tap now waits for the item to stop moving, and a single-selection pick counts only
+    /// once the item is gone (the picker closed); otherwise it taps again.
+    @discardableResult
+    func tapFile(_ name: String) -> Bool {
         let open = app.buttons["Open"].firstMatch
-        for attempt in 0..<2 {
+        for attempt in 0..<3 {
+            settle(fileItem(name))
             fileItem(name).tap()
-            guard open.waitForExistence(timeout: 2) else { return }   // a single-selection picker took the file
-            if wait(2, { open.isEnabled }) {
-                open.tap()
-                return
-            }
-            if attempt == 0 {
+            if open.waitForExistence(timeout: 2) {
+                if wait(2, { open.isEnabled }) {
+                    open.tap()
+                    return true
+                }
                 print("DEVICE-ACCEPT-NOTE \(name): the tap selected nothing (Open disabled); tapping again")
                 _ = findFile(name, initialWait: 0, swipes: 3)
+                continue
             }
+            if wait(3, { !self.pickerShows(name) }) { return true }   // a single-selection picker took the file
+            print("DEVICE-ACCEPT-NOTE \(name): the picker is still up after tap \(attempt + 1); tapping again")
+            _ = findFile(name, initialWait: 0, swipes: 2)
+        }
+        return !pickerShows(name)
+    }
+
+    /// Whether the Files picker is still up: its grid, or a cell for `name` (only cells: after a pick the app itself may
+    /// show the file's name in a label).
+    func pickerShows(_ name: String) -> Bool {
+        app.collectionViews["File View"].exists || app.cells.matching(Self.fileItemPredicate(name)).firstMatch.exists
+    }
+
+    /// Waits (at most 2 s) until `item`'s frame holds still, so a tap does not land on a grid still coasting from a swipe.
+    private func settle(_ item: XCUIElement) {
+        var last = item.exists ? item.frame : .zero
+        let end = Date().addingTimeInterval(2)
+        while Date() < end {
+            pause(0.3)
+            let now = item.exists ? item.frame : .zero
+            if now == last { return }
+            last = now
         }
     }
 

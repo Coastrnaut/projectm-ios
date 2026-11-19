@@ -274,7 +274,9 @@ class DeviceAcceptanceCase: XCTestCase {
 
     func report(_ task: String, _ label: String, _ values: [String: Double]) {
         var body: [String: Any] = ["task": task, "step": label, "device": deviceModel()]
-        for (k, v) in values { body[k] = (v * 1000).rounded() / 1000 }
+        // JSONSerialization raises an Objective-C exception (not a Swift error) on NaN or infinity, which ends the whole
+        // test run (FILE-009-T12 on D3, 2026-11-19: a ratio over a -1 + 1 total). Non-finite values are written as null.
+        for (k, v) in values { body[k] = v.isFinite ? (v * 1000).rounded() / 1000 : NSNull() }
         if let data = try? JSONSerialization.data(withJSONObject: body, options: [.sortedKeys]),
            let line = String(data: data, encoding: .utf8) {
             print("DEVICE-ACCEPT \(line)")
