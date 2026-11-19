@@ -131,8 +131,13 @@ def run_prompt_flow(args: argparse.Namespace) -> int:
         return 0
     log_dir.mkdir(parents=True, exist_ok=True)
     for cmd in (c for c in commands if c[0] != "env"):
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        ok = result.returncode == 0 or cmd[3] == "uninstall"   # nothing to uninstall is fine
+        for attempt in range(3):   # a devicectl copy can fail once over Wi-Fi (D2 2026-11-19): retry the step
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            ok = result.returncode == 0 or cmd[3] == "uninstall"   # nothing to uninstall is fine
+            if ok:
+                break
+            print(f"mac_device_driver: {' '.join(cmd[:4])}: attempt {attempt + 1} failed, retrying")
+            time.sleep(5)
         print(f"mac_device_driver: {' '.join(cmd[:4])}: {'ok' if ok else 'FAILED ' + result.stderr.strip()[-300:]}")
         if not ok:
             return 1
