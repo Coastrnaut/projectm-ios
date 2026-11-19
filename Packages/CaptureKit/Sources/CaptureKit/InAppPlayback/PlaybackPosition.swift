@@ -33,6 +33,22 @@ enum PlaybackPositionMath {
         return loops ? total % length : min(total, length)
     }
 
+    /// The track frame at `timeline` of a schedule (InAppPlaybackGraph: frames counted on across
+    /// passes, pass k covering `k·length …< (k+1)·length`) that ends at `end` (nil: it loops): the
+    /// timeline modulo the length, and `length` at or after the end.
+    static func frame(timeline: Int64, end: Int64?, length: Int64) -> Int64 {
+        guard length > 0 else { return 0 }
+        let timeline = max(0, timeline)
+        if let end, timeline >= end { return length }
+        return timeline % length
+    }
+
+    /// The first pass boundary (a multiple of `length`) after `timeline`, strictly.
+    static func passEnd(after timeline: Int64, length: Int64) -> Int64 {
+        guard length > 0 else { return 0 }
+        return (max(0, timeline) / length + 1) * length
+    }
+
     /// The frame nearest to `seconds`, limited to the track. NaN counts as 0.
     static func frame(seconds: Double, sampleRate: Double, length: Int64) -> Int64 {
         guard !seconds.isNaN, sampleRate > 0, length > 0 else { return 0 }
