@@ -620,6 +620,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     (`B07Case.hideControlsForShot()`) before measuring a screenshot, and leave out the Emergency Blackout button.
   - Seed the media a feature test needs (`-uitestSeedVideo`, `-uitestSeedPhoto`, `-uitestSeedLogo`) instead of picking
     it, so a picker failure fails only the picker tests.
+- **"Main thread busy for 30 s" is a deadlock until shown otherwise (2026-11-19):**
+  - XCTest attaches a `Spindump_*.txt` to a test that fails this way: export it with
+    `xcrun xcresulttool export attachments --path <bundle> --test-id <id> --output-path <dir>`; it names the blocking stack.
+  - A Time Profiler trace shows nothing for a blocked thread (it samples only running threads): in the D2 trace the main
+    and render threads had no samples for 120 s. To get every thread's stack, send the stuck app SIGABRT
+    (`devicectl device process signal --pid <pid> --signal SIGABRT`) and copy its crash report from `systemCrashLogs`.
+  - Never wait on the main thread for work that may need the GPU across a background transition: a backgrounded app's
+    command buffers do not complete, so `waitUntilCompleted` (inside ANGLE) never returns.
+- **A probe that decodes positions from sample values must skip trailing zeros**: a track's last tap buffer ends in
+  silence, which decoded as "no position" and hid the track change (AUD-003).
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 - **Batch 7 on D1-D3 (2026-11-18), what the first run taught:**
