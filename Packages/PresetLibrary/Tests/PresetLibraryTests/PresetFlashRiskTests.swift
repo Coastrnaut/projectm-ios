@@ -17,7 +17,7 @@ final class PresetFlashRiskTests: XCTestCase {
 
     func testEveryFixtureMatchesTheSharedExpectations() throws {
         let expected = try JSONDecoder().decode([String: [String]].self, from: Data(fixture("expected.json").utf8))
-        XCTAssertEqual(expected.count, 12)
+        XCTAssertEqual(expected.count, 16)
         for (name, rules) in expected {
             XCTAssertEqual(PresetFlashRisk.rules(in: try fixture(name)).map(\.rawValue), rules, name)
         }
@@ -67,6 +67,47 @@ final class PresetFlashRiskTests: XCTestCase {
         XCTAssertEqual(entries.filter(\.mayFlash).map(\.id), [ids["high-flash.milk"]])
         let again = await library.flashRisk()
         XCTAssertEqual(again, risk, "the cached result is the same")
+    }
+
+    private func shaderPreset(comp: [String], warp: [String] = []) -> String {
+        (["MILKDROP_PRESET_VERSION=201", "[preset00]", "per_frame_1=wave_r = 0.5 + 0.5*sin(time*0.7);"]
+            + warp.enumerated().map { "warp_\($0.offset + 1)=`\($0.element)" }
+            + comp.enumerated().map { "comp_\($0.offset + 1)=`\($0.element)" })
+            .joined(separator: "\n")
+    }
+
+    /// QA-011 2026-11-19: projectM 4 never applies per-frame invert or gamma to the picture, so a
+    /// preset that strobes only in its composite shader must be flagged by the shader rule; slow
+    /// smooth color cycling must not be; the high-flash fixture keeps its per-frame rules.
+    func testCompositeOnlyStrobesAreFlaggedAndSmoothCyclingIsNot() throws {
+        XCTAssertEqual(PresetFlashRisk.rules(in: try fixture("comp-inversion-strobe.milk")), [.shaderStrobe])
+        XCTAssertEqual(PresetFlashRisk.rules(in: try fixture("comp-switched-local.milk")), [.shaderStrobe])
+        XCTAssertEqual(PresetFlashRisk.rules(in: try fixture("comp-smooth-cycle.milk")), [])
+        XCTAssertEqual(PresetFlashRisk.rules(in: try fixture("warp-feedback-copy.milk")), [])
+        XCTAssertEqual(PresetFlashRisk.rules(in: try fixture("high-flash.milk")), [.toggleDriven, .lumaFlicker])
+        XCTAssertEqual(PresetFlashRisk.indexField(for: try fixture("comp-inversion-strobe.milk")), ["shader-strobe"])
+    }
+
+    func testShaderSwitchesNeedAFastUniformClockDrivingRet() {
+        func rules(comp: [String], warp: [String] = []) -> [PresetFlashRisk.Rule] {
+            PresetFlashRisk.rules(in: shaderPreset(comp: comp, warp: warp))
+        }
+        // The app's Strobe fixture (1.5 Hz) and a 30 Hz red-channel swap.
+        XCTAssertEqual(rules(comp: ["ret = lerp(ret, 1 - ret, step(0.5, frac(time * 1.5)));"]), [.shaderStrobe])
+        XCTAssertEqual(rules(comp: ["if (frame%2 == 0) ret.x = .71 - ret.y;"]), [.shaderStrobe])
+        XCTAssertEqual(rules(comp: ["ret *= 1 + step(1.2, bass);"]), [.shaderStrobe], "beat-driven")
+        XCTAssertEqual(rules(comp: ["ret = lerp(ret, 1 - ret, step(0.5, frac(time * 0.5)));"]), [], "0.5 Hz")
+        XCTAssertEqual(rules(comp: ["ret *= 1 + step(0.5, frac(time/4));"]), [], "0.25 Hz")
+        XCTAssertEqual(rules(comp: ["ret += step(0.5, frac(uv.x*10 + time*4));"]), [], "per pixel")
+        XCTAssertEqual(rules(comp: ["ret = tex2D(sampler_main, uv + 0.02*step(0.5, frac(time*8))).xyz;"]), [], "moves, no brightness")
+        XCTAssertEqual(rules(comp: ["ret += 0.05*step(0.5, frac(time*8));"]), [], "damped")
+        XCTAssertEqual(rules(comp: ["float s = step(0.5, frac(time*4)) * GetBlur1(uv).x;", "ret *= 1 + s;"]), [], "mixed with the picture")
+        XCTAssertEqual(rules(comp: ["ret = tex2D(sampler_main, uv).xyz;"], warp: ["if (frame%2 == 0) ret = 1 - ret;"]), [.shaderStrobe], "warp inversion")
+        XCTAssertEqual(rules(comp: ["ret = tex2D(sampler_main, uv).xyz;"], warp: ["if (frame%2 == 0) ret *= 2;"]), [], "warp gain settles")
+        XCTAssertEqual(rules(comp: ["// ret = 1 - ret*step(0.5, frac(time*4));", "/* ret = 1 - ret*step(0.5, frac(time*4)); */ ret = ret;"]), [], "comments")
+        XCTAssertEqual(PresetFlashRisk.fmodPeriods("step(1, fmod(time*3, 2))").map(\.period), [2])
+        XCTAssertEqual(PresetFlashRisk.clockRate("step(1, fmod(time*3, 2))", PresetFlashRisk.clockHz), 1.5)
+        XCTAssertEqual(PresetFlashRisk.clockRate("frame%4", PresetFlashRisk.clockHz), 15)
     }
 
     func testLiteralsReadLikePython() {

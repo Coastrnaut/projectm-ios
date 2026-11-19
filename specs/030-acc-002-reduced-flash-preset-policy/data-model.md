@@ -7,7 +7,7 @@ flagged.
 
 | Field | Type | Rule |
 |---|---|---|
-| rules | list of `toggle-driven`, `toggle-flip`, `luma-flicker` | In this order, each at most once |
+| rules | list of `toggle-driven`, `toggle-flip`, `luma-flicker`, `shader-strobe` (QA-011 2026-11-19) | In this order, each at most once |
 
 Computed by `preset_flash_risk.classify(text)` (build) and `PresetFlashRisk.rules(in:)` (app); the
 two agree on every fixture (ACC-002-R3).

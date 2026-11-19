@@ -3,6 +3,9 @@
   "calm.milk": [],
   "close-if.milk": [],
   "comment-and-init.milk": [],
+  "comp-inversion-strobe.milk": ["shader-strobe"],
+  "comp-smooth-cycle.milk": [],
+  "comp-switched-local.milk": ["shader-strobe"],
   "damped-idiom.milk": [],
   "dead-toggle.milk": [],
   "fast-sine.milk": ["luma-flicker"],
@@ -10,5 +13,6 @@
   "rand-gamma.milk": ["luma-flicker"],
   "slow-time-toggle.milk": [],
   "split-statement.milk": ["toggle-driven"],
-  "toggle-flip.milk": ["toggle-flip"]
+  "toggle-flip.milk": ["toggle-flip"],
+  "warp-feedback-copy.milk": []
 }

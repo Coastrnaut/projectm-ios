@@ -244,6 +244,32 @@ class FlashRiskTests(unittest.TestCase):
         self.assertTrue(preset_flash_risk.may_flash((FLASH_FIXTURES / "high-flash.milk").read_text()))
         self.assertFalse(preset_flash_risk.may_flash((FLASH_FIXTURES / "calm.milk").read_text()))
 
+    def test_shader_strobe_rule_matches_the_swift_cases(self):
+        """QA-011 2026-11-19: the same cases as PresetFlashRiskTests.testShaderSwitchesNeedAFastUniformClockDrivingRet."""
+        import preset_flash_risk as r
+
+        def rules(comp, warp=()):
+            lines = ["MILKDROP_PRESET_VERSION=201", "[preset00]", "per_frame_1=wave_r = 0.5 + 0.5*sin(time*0.7);"]
+            lines += [f"warp_{i + 1}=`{s}" for i, s in enumerate(warp)] + [f"comp_{i + 1}=`{s}" for i, s in enumerate(comp)]
+            return r.classify("\n".join(lines))
+
+        flagged = ["shader-strobe"]
+        self.assertEqual(rules(["ret = lerp(ret, 1 - ret, step(0.5, frac(time * 1.5)));"]), flagged)
+        self.assertEqual(rules(["if (frame%2 == 0) ret.x = .71 - ret.y;"]), flagged)
+        self.assertEqual(rules(["ret *= 1 + step(1.2, bass);"]), flagged)
+        self.assertEqual(rules(["ret = lerp(ret, 1 - ret, step(0.5, frac(time * 0.5)));"]), [])
+        self.assertEqual(rules(["ret *= 1 + step(0.5, frac(time/4));"]), [])
+        self.assertEqual(rules(["ret += step(0.5, frac(uv.x*10 + time*4));"]), [])
+        self.assertEqual(rules(["ret = tex2D(sampler_main, uv + 0.02*step(0.5, frac(time*8))).xyz;"]), [])
+        self.assertEqual(rules(["ret += 0.05*step(0.5, frac(time*8));"]), [])
+        self.assertEqual(rules(["float s = step(0.5, frac(time*4)) * GetBlur1(uv).x;", "ret *= 1 + s;"]), [])
+        self.assertEqual(rules(["ret = tex2D(sampler_main, uv).xyz;"], ["if (frame%2 == 0) ret = 1 - ret;"]), flagged)
+        self.assertEqual(rules(["ret = tex2D(sampler_main, uv).xyz;"], ["if (frame%2 == 0) ret *= 2;"]), [])
+        self.assertEqual(rules(["// ret = 1 - ret*step(0.5, frac(time*4));", "/* ret = 1 - ret*step(0.5, frac(time*4)); */ ret = ret;"]), [])
+        self.assertEqual([p for _, _, p in r._fmod_periods("step(1, fmod(time*3, 2))")], [2.0])
+        self.assertEqual(r._clock_rate("step(1, fmod(time*3, 2))", r.CLOCK_HZ), 1.5)
+        self.assertEqual(r._clock_rate("frame%4", r.CLOCK_HZ), 15.0)
+
     def test_index_carries_flash_only_for_flagged_records(self):
         import build_preset_index as bpi
         with tempfile.TemporaryDirectory() as d:
@@ -270,7 +296,7 @@ class FlashRiskTests(unittest.TestCase):
             for record in data["presets"]:
                 self.assertTrue(set(item["required"]) <= set(record))
                 self.assertTrue(set(record) <= set(item["properties"]), record.keys())
-            self.assertEqual(sorted(item["properties"]["flash"]["items"]["enum"]), sorted(["toggle-driven", "toggle-flip", "luma-flicker"]))
+            self.assertEqual(sorted(item["properties"]["flash"]["items"]["enum"]), sorted(["toggle-driven", "toggle-flip", "luma-flicker", "shader-strobe"]))
 
     def test_stamp_covers_the_classifier(self):
         import build_preset_index as bpi

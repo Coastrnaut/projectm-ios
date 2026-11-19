@@ -6,6 +6,8 @@
 // the rules in Tests/PresetLibraryTests/FlashFixtures/expected.json for every fixture (checked by
 // PresetFlashRiskTests and scripts/test_scripts.py). Change both together, with the fixtures.
 //
+// It reads per-frame equations and (rule shader-strobe, QA-011 2026-11-19) the warp and composite
+// shaders; the rule definitions are in the Python module's docstring.
 // It reads text only and measures nothing: FX-019's envelope (ADR-0011) still limits every frame.
 // Foundation only (NSRegularExpression, NSString(string:) rather than `as` bridging), so it runs on
 // Linux too.
@@ -20,6 +22,8 @@ public enum PresetFlashRisk {
         case toggleFlip = "toggle-flip"
         /// A whole-frame level driven by an undamped flicker source.
         case lumaFlicker = "luma-flicker"
+        /// A warp or composite shader assigns `ret` from a fast whole-frame switch (QA-011 2026-11-19).
+        case shaderStrobe = "shader-strobe"
     }
 
     static let toggles: Set<String> = ["invert", "solarize", "brighten", "darken"]
@@ -29,6 +33,9 @@ public enum PresetFlashRisk {
     static let minTimeRate = 18.0
     static let minFrameRate = 0.3
     static let damping = 0.1
+    static let clockHz: [String: Double] = ["time": 1, "frame": 60, "rand_frame": 60]   // audio levels are unbounded
+    static let pixel: Set<String> = ["uv", "uv_orig", "rad", "ang", "ret"]
+    static let minSwitchHz = 1.0
 
     /// The rules that flag this preset text, in `Rule.allCases` order; empty when none does.
     public static func rules(in text: String) -> [Rule] {
@@ -65,6 +72,7 @@ public enum PresetFlashRisk {
             }
             if !live.isDisjoint(with: levels) && flicker { hits.insert(.lumaFlicker) }
         }
+        if shaderCode(text).contains(where: { shaderStrobe($0.code, warp: $0.name == "warp") }) { hits.insert(.shaderStrobe) }
         return Rule.allCases.filter(hits.contains)
     }
 
@@ -204,6 +212,138 @@ public enum PresetFlashRisk {
         return best
     }
 
+    // MARK: - Shaders (shader-strobe)
+
+    /// The warp and composite shaders as (name, code): warp_N or comp_N lines in line-number order,
+    /// lowercased, the leading backtick and comments removed, joined by spaces; empty ones left out.
+    static func shaderCode(_ text: String) -> [(name: String, code: String)] {
+        var sections: [String: [(Int, String)]] = ["warp": [], "comp": []]
+        for raw in text.components(separatedBy: .newlines) {
+            let line = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+            guard let match = Pattern.shaderLine.matches(in: line).first,
+                  let number = Int(line.substring(match.range(at: 2))) else { continue }
+            var body = line.substring(match.range(at: 3))
+            if body.hasPrefix("`") { body.removeFirst() }
+            sections[line.substring(match.range(at: 1)), default: []].append((number, body.components(separatedBy: "//").first ?? body))
+        }
+        var out: [(name: String, code: String)] = []
+        for name in ["warp", "comp"] {
+            let ordered = (sections[name] ?? []).enumerated().sorted { (a: (offset: Int, element: (Int, String)), b: (offset: Int, element: (Int, String))) -> Bool in
+                a.element.0 != b.element.0 ? a.element.0 < b.element.0 : a.offset < b.offset   // stable, like Python's sort
+            }
+            let joined = ordered.map { $0.element.1 }.joined(separator: " ")
+            let code = Pattern.blockComment.regex.stringByReplacingMatches(
+                in: joined, range: NSRange(location: 0, length: NSString(string: joined).length), withTemplate: " ")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !code.isEmpty { out.append((name, code)) }
+        }
+        return out
+    }
+
+    /// (start, end, P) of the first argument of every fmod(x, P) in text with a literal P > 0.
+    static func fmodPeriods(_ text: String) -> [(start: Int, end: Int, period: Double)] {
+        let ns = NSString(string: text)
+        var out: [(start: Int, end: Int, period: Double)] = []
+        for m in Pattern.fmodCall.matches(in: text) {
+            let open = m.range.upperBound - 1
+            let args = arguments(ns, open)
+            guard args.count == 2, Pattern.signedNumber.fullyMatches(args[1]), let p = number(args[1]), p > 0 else { continue }
+            var depth = 0
+            var i = open + 1
+            let end = closing(ns, open)
+            while i < end {
+                let c = ns.character(at: i)
+                if c == Char.open {
+                    depth += 1
+                } else if c == Char.close {
+                    depth -= 1
+                } else if c == Char.comma && depth == 0 {
+                    out.append((open + 1, i, p))
+                    break
+                }
+                i += 1
+            }
+        }
+        return out
+    }
+
+    /// The largest rate of a clock read in text, each scaled by an adjacent literal (`time*8`,
+    /// `8*time`; `frame/4` and `frame%4` divide) and divided by P inside fmod(x, P); 0 when it
+    /// reads none.
+    static func clockRate(_ text: String, _ clocks: [String: Double]) -> Double {
+        let ns = NSString(string: text)
+        let periods = fmodPeriods(text)
+        var best = 0.0
+        for m in Pattern.word.matches(in: text) {
+            guard let base = clocks[ns.substring(with: m.range)] else { continue }
+            var factor = 1.0
+            let before = ns.substring(to: m.range.location)
+            if let after = Pattern.factorAfter.matches(in: text, from: m.range.upperBound, anchored: true).first,
+               let k = number(text.substring(after.range(at: 2))) {
+                factor = text.substring(after.range(at: 1)) == "*" ? k : (k > 0 ? 1 / k : 1)   // "/" and "%" divide
+            } else if let b = Pattern.factorBefore.matches(in: before).first {
+                factor = number(before.substring(b.range(at: 1))) ?? 1
+            }
+            for period in periods where period.start <= m.range.location && m.range.upperBound <= period.end {
+                factor /= period.period
+            }
+            best = max(best, factor == 0 ? 0 : base * factor)
+        }
+        return best
+    }
+
+    /// Whether text reads a per-pixel value or samples a texture.
+    static func perPixel(_ text: String, _ pixel: Set<String>) -> Bool {
+        Pattern.word.matches(in: text).contains { pixel.contains(text.substring($0.range)) }
+            || Pattern.sample.matches(in: text).first != nil
+    }
+
+    /// The rate of the switch call starting at `start` whose "(" is at `open`; 0 when its arguments
+    /// vary per pixel. The call itself is rated, so an fmod(x, P) switch divides by its own P.
+    static func switchRate(_ s: NSString, _ start: Int, _ open: Int, _ clocks: [String: Double], _ pixel: Set<String>) -> Double {
+        let end = closing(s, open)
+        if perPixel(s.substring(with: NSRange(location: open + 1, length: max(0, end - open - 1))), pixel) { return 0 }
+        return clockRate(s.substring(with: NSRange(location: start, length: min(s.length, end + 1) - start)), clocks)
+    }
+
+    /// Whether one shader assigns ret from an undamped fast whole-frame switch. The warp shader's
+    /// output is fed back into the next frame, so a switched copy or gain there settles instead of
+    /// alternating; only a switched inversion of ret (`1 - ret`, `-ret`) counts in it.
+    static func shaderStrobe(_ code: String, warp: Bool = false) -> Bool {
+        var clocks = clockHz
+        for name in audio { clocks[name] = .infinity }
+        var pixelVars = pixel
+        var switched: Set<String> = []
+        for statement in statements(code) {
+            let ns = NSString(string: statement)
+            var spans: [Span] = []
+            for m in Pattern.switchCall.matches(in: statement) {
+                let open = m.range.upperBound - 1
+                if switchRate(ns, m.range.location, open, clocks, pixelVars) >= minSwitchHz {
+                    spans.append((m.range.location, closing(ns, open) + 1))
+                }
+            }
+            for m in Pattern.word.matches(in: statement) where switched.contains(statement.substring(m.range)) {
+                spans.append((m.range.location, m.range.upperBound))
+            }
+            let excluded = dampedSpans(statement)
+                + Pattern.sample.matches(in: statement).map { (start: $0.range.location, end: closing(ns, $0.range.upperBound - 1) + 1) }
+            let live = spans.contains { span in !excluded.contains { $0.start <= span.start && span.end <= $0.end } }
+            let assigned = Set(Pattern.shaderAssignment.matches(in: statement).map { statement.substring($0.range(at: 1)) })
+            if live && assigned.contains("ret") && (!warp || Pattern.invertRet.matches(in: statement).first != nil) { return true }
+            let locals = assigned.subtracting(["ret"]).subtracting(clockHz.keys).subtracting(audio)
+            if locals.isEmpty { continue }
+            let rate = clockRate(statement, clocks)
+            let readsPixel = perPixel(statement, pixelVars)
+            for name in locals {
+                if live && !readsPixel { switched.insert(name) }   // a switch mixed with per-pixel values is no whole-frame switch
+                if rate > 0 { clocks[name] = max(clocks[name] ?? 0, rate) }
+                if readsPixel { pixelVars.insert(name) }
+            }
+        }
+        return false
+    }
+
     // MARK: - Helpers
 
     static func words(_ s: String) -> Set<String> {
@@ -303,6 +443,16 @@ public enum PresetFlashRisk {
         static let signedNumber = Pattern("-?\(num)")
         static let rateAfter = Pattern("\\s*\\*\\s*(\(num))")
         static let rateBefore = Pattern("(\(num))\\s*\\*\\s*$")
+        static let shaderLine = Pattern("^(warp|comp)_([0-9]+)\\s*=(.*)$")
+        static let blockComment = Pattern("/\\*.*?\\*/")
+        static let fmodCall = Pattern("(?<![a-z0-9_.])fmod\\s*\\(")
+        static let switchCall = Pattern("(?<![a-z0-9_.])(step|sign|round|floor|ceil|trunc|frac|fmod|if)\\s*\\(")
+        static let sample = Pattern("(?<![a-z0-9_.])(?:tex2d|tex3d|getblur1|getblur2|getblur3|getpixel|getmain)\\s*\\(")
+        static let word = Pattern("(?<![a-z0-9_.])[a-z_][a-z0-9_]*")   // a name, not a swizzle after "."
+        static let shaderAssignment = Pattern("(?<![a-z0-9_.])([a-z_][a-z0-9_]*)(?:\\.[a-z]+)?\\s*[-+*/]?=(?!=)")
+        static let factorAfter = Pattern("\\s*([*/%])\\s*(\(num))")
+        static let factorBefore = Pattern("(?<![a-z0-9_.])(\(num))\\s*\\*\\s*$")
+        static let invertRet = Pattern("(?:(?<![a-z0-9_.])\(num)|[=(,])\\s*-\\s*ret(?![a-z0-9_])")
     }
 }
 

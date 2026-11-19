@@ -42,6 +42,17 @@ pinned packs (`Vendor/presets`, 14,576 `.milk` files before de-duplication) guid
   (`invert = 0;` at the end) do not count for that target.
 - **Scope of reading**: only `per_frame_N` lines; comments (`//`) removed; statements split at
   top-level `;`.
+- **shader-strobe** (added QA-011 2026-11-19; spec Clarifications): projectM 4 never applies
+  per-frame `invert` or `gamma` to the picture, so strobes live in the `warp_N` and `comp_N`
+  shaders. A statement assigning `ret` that holds an undamped fast whole-frame switch (or a shader
+  local assigned from one) flags the preset. A switch is `step`, `sign`, `round`, `floor`, `ceil`,
+  `trunc`, `frac`, `fmod` or an `if(...)` condition whose arguments read a clock at 1 Hz or faster
+  (`time` 1 Hz per unit, `frame`/`rand_frame` 60 Hz per unit, audio unbounded; adjacent literals
+  scale, `/`, `%` and `fmod(x, P)` divide) and nothing per pixel (`uv`, `uv_orig`, `rad`, `ang`,
+  `ret`, texture samples, locals assigned from them). Reads inside a texture sample's coordinates,
+  damped terms and locals mixed with per-pixel values do not count; in the warp shader (fed back
+  into the next frame) only a switched inversion of `ret` counts. `/* */` and `//` comments are
+  removed.
 
 Rejected during the survey: following flicker *through* variables. It flagged 1,124 files, mostly
 sample-and-hold randoms (`entropy = if(chaos, int(rand(10)), entropy)`) that change on rare events,
@@ -61,12 +72,24 @@ small amplitude: any change inverts or doubles the whole picture.
   4 are flagged. Several of those names are jokes, and others flash through warp, zoom or shader
   code that the rules do not read. This is the screen's recall limit, recorded honestly.
 
+- QA-011 2026-11-19, after adding shader-strobe: the shipped index (12,847) has **317 flagged
+  (2.47 %)**, up from 83: shader-strobe 236 (234 newly flagged, all cream-of-the-crop),
+  toggle-driven 73, luma-flicker 10; Included 0. About 216 of the new flags are one copied
+  fragment, `if(frame%02==0)ret.x=.71-ret7.y` in the composite shader (a 30 Hz whole-frame
+  red-channel swap). The first draft flagged 375 pack files (2.6 %); not counting locals mixed
+  with the picture (fading zoom tunnels, sweeping bars) and switched copies in the warp shader
+  brought it to 236. Swift and Python agree on all 14,575 pack files (0 differences); the index
+  step takes 8.9 s. The name check is unchanged (4 of 100): those presets flash through shapes,
+  waves or `q` variables.
+
 ## ACC-002-D4: Known limits
 
 False negatives (flashing the screen does not flag):
 
-- Milkdrop 2 warp/composite shaders (`warp_N`, `comp_N`), e.g. `ret = 1 - ret` on a beat-driven `q`
-  variable; custom shapes and waves (`shapecode_*`, `wavecode_*`) that fill the screen; per-pixel
+- Shader strobes the shader-strobe rule does not see: `ret = 1 - ret` on a beat-driven `q`
+  variable from per-frame code, ternaries, `sin`/`cos` square waves, a switch mixed with the
+  picture in a local (a hard-edged ring pulse), switched copies or gains in the warp shader; custom
+  shapes and waves (`shapecode_*`, `wavecode_*`) that fill the screen; per-pixel
   and `per_frame_init` code.
 - Flicker that reaches a level through a variable (`x = rand(2); gamma = 1 + x`) — dropped on
   purpose (D2).

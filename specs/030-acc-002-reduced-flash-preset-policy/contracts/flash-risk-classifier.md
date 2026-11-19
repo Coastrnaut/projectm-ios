@@ -5,7 +5,7 @@ Definition: research ACC-002-D2; decision record ADR-0014.
 ## Python (`scripts/preset_flash_risk.py`)
 
 ```python
-RULES = ("toggle-driven", "toggle-flip", "luma-flicker")
+RULES = ("toggle-driven", "toggle-flip", "luma-flicker", "shader-strobe")   # shader-strobe: QA-011 2026-11-19
 def classify(text: str) -> list[str]   # rule ids in RULES order; [] = not flagged
 def may_flash(text: str) -> bool
 ```
@@ -18,7 +18,7 @@ includes `preset_flash_risk.py`, so changing a rule rebuilds the index.
 
 ```swift
 public enum PresetFlashRisk {
-    public enum Rule: String, CaseIterable, Sendable { case toggleDriven = "toggle-driven", toggleFlip = "toggle-flip", lumaFlicker = "luma-flicker" }
+    public enum Rule: String, CaseIterable, Sendable { case toggleDriven = "toggle-driven", toggleFlip = "toggle-flip", lumaFlicker = "luma-flicker", shaderStrobe = "shader-strobe" }
     public static func rules(in text: String) -> [Rule]   // in Rule.allCases order
     public static func mayFlash(_ text: String) -> Bool
 }

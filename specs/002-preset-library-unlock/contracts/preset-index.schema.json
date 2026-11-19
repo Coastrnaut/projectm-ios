@@ -72,7 +72,8 @@
               "enum": [
                 "toggle-driven",
                 "toggle-flip",
-                "luma-flicker"
+                "luma-flicker",
+                "shader-strobe"
               ]
             },
             "description": "ACC-002 (specs/030-acc-002-reduced-flash-preset-policy, ADR-0014): the flash risk rules that flag this preset's text, in this order. Present only on flagged records; absent means not flagged. Optional and additive, so version stays 1."

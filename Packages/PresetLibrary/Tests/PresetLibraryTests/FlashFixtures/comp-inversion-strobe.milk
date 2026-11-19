@@ -1,0 +1,24 @@
+MILKDROP_PRESET_VERSION=201
+PSVERSION=2
+PSVERSION_WARP=2
+PSVERSION_COMP=2
+[preset00]
+// ACC-002 test fixture written for projectM-iOS (MIT). Not a third-party preset.
+// QA-011 2026-11-19: strobes only in its composite shader (the whole frame inverts one frame in
+// four, 15 Hz at 60 fps); its per-frame code is calm.
+fDecay=0.980000
+zoom=1.010000
+wave_r=0.6
+wave_g=0.6
+wave_b=0.9
+per_frame_1=wave_r = 0.5 + 0.5*sin(time*0.7);
+per_frame_2=zoom = 1 + 0.02*mid_att;
+warp_1=`shader_body
+warp_2=`{
+warp_3=`    ret = tex2D(sampler_main, uv).xyz * 0.98;
+warp_4=`}
+comp_1=`shader_body
+comp_2=`{
+comp_3=`    ret = tex2D(sampler_main, uv).xyz;
+comp_4=`    ret = lerp(ret, 1 - ret, step(fmod(frame, 4), 1.5)); // the strobe
+comp_5=`}
