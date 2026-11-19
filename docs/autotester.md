@@ -695,12 +695,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     increment's "performed"; number each button's answers and wait for a new one. Probe buttons at the bottom-leading
     corner of the visualizer never got the test's taps on the iPads (the value stayed at its launch text): put probe
     buttons top-leading like the other DEBUG panels, and let a probe refresh itself when its input (a new file) appears.
-  - *Fixtures must produce the condition without the music.* ACC-002's Strobe fixture flashes only on strong bass;
-    FX-019's device test uses `fixture:flicker`, a whole-frame inversion two frames in four. *Prove a projectM fixture
+  - *Fixtures must produce the condition without the music.* ACC-002's Strobe fixture was meant to flash only on strong
+    bass; FX-019's device test uses `fixture:flicker`, a whole-frame inversion two frames in four. *Prove a projectM fixture
     renders as designed with a host test before a device run:* projectM 4 ignores per-frame `invert` and `gamma` (the
     fixed-function filters read the file's bInvert/fGammaAdj, and a version-201 preset takes the composite-shader
     path), so the first Flicker drew a steady dark frame on D3 (rerun 3, 2026-11-19). The inversion now lives in the
-    composite shader, and `FlashLimiterTests` renders the same text through projectM and the envelope.
+    composite shader, and `FlashLimiterTests` renders the same text through projectM and the envelope. The Strobe
+    fixture had the same flaw, hidden because its test passed: ACC-012-T22's Strict clamp came from the rise limit on
+    ordinary motion. It now inverts at 1.5 Hz in its composite shader (Standard allows it, Strict clamps it), also
+    proven on the host. *A passing check can be vacuous:* when a fixture's effect is the premise, assert the effect
+    (the frame really flashes; the reference really stays unclamped), not only the outcome under test.
   - *Hittable is not on screen.* XCUITest calls an element hittable when its centre is on screen, so a Files cell cut
     in half by the bottom edge counted as found and the tap selected nothing (D3, AUD-002-T27). `SystemUI.findFile`
     requires the item wholly inside the window and `tapFile` taps again while Open stays disabled.

@@ -199,6 +199,67 @@ final class FlashLimiterTests: XCTestCase {
         XCTAssertLessThan(flicker, ANGLEDebugFlashStats.clampedBelow, "the composite inversion strobes and is clamped")
     }
 
+    /// QA-011 ACC-012-T22 (2026-11-19): the device tests' Strobe fixture (`UITestVisualProbes.strobePreset`, keep the
+    /// two texts the same) must flash through projectM at a rate the always-on cap allows and Strict does not. Its
+    /// first version (ACC-002's high-flash.milk) flashed only through per-frame `invert`/`gamma`, which projectM 4
+    /// never reads back, so it drew a steady frame: Strict's clamp on the device came from the 0.10/s rise limit
+    /// holding ordinary motion down, not from a flash. The composite shader now inverts the whole frame at 1.5 Hz
+    /// (3 transitions per second): within Standard's 6 per window, over Strict's 2 and its rise limit.
+    /// Paced at 60 fps of wall time, so projectM's clock and the envelope's frame time agree.
+    func testTheStrobeFixtureFlashesWithinStandardAndStrictClampsIt() async throws {
+        let text = "MILKDROP_PRESET_VERSION=201\nPSVERSION=2\nPSVERSION_WARP=2\nPSVERSION_COMP=2\n[preset00]\n"
+            + "// ACC-002 test fixture written for projectM-iOS (MIT). Not a third-party preset.\n"
+            + "fDecay=0.980000\nzoom=1.010000\nrot=0.000000\nwave_r=0.6\nwave_g=0.6\nwave_b=0.9\n"
+            + "per_frame_1=// Strobes on purpose: inverts on every strong beat and pumps gamma at frame rate.\n"
+            + "per_frame_2=wave_r = 0.5 + 0.5*sin(time*1.3);\nper_frame_3=invert = above(bass, 1.2);\n"
+            + "per_frame_4=gamma = 1 + 2*equal(frame%2, 0);\n"
+            + "comp_1=`shader_body\ncomp_2=`{\ncomp_3=`    ret = tex2D(sampler_main, uv).xyz;\n"
+            + "comp_4=`    ret = lerp(ret, 1 - ret, step(0.5, frac(time * 1.5)));\ncomp_5=`}\n"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("acc012-strobe.milk")
+        try Data(text.utf8).write(to: url, options: .atomic)
+        try await renderer.setPreset(Preset(id: "tests/acc012-strobe", name: "Strobe", fileURL: url))
+        XCTAssertFalse(renderer.reduceFlashing)
+        // Renders until `until` s after `start` at 60 fps of wall time; the lowest gain after `from` s and the
+        // whole-frame luminance range seen there (the fixture really flashes).
+        func run(_ start: CFTimeInterval, from: Double, until: Double) -> (gain: Float, darkest: Double, brightest: Double) {
+            var lowest: Float = 1, darkest = 1.0, brightest = 0.0
+            var last = CACurrentMediaTime()
+            var n = 0
+            while CACurrentMediaTime() - start < until {
+                let next = last + 1.0 / 60
+                let wait = next - CACurrentMediaTime()
+                if wait > 0 { Thread.sleep(forTimeInterval: wait) }
+                let now = CACurrentMediaTime()
+                XCTAssertTrue(renderer.renderFrame(present: false, frameTime: now - last))
+                last = now
+                n += 1
+                guard now - start > from, let gain = renderer.flashLimiterGain else { continue }
+                lowest = min(lowest, gain)
+                if n % 3 == 0 {
+                    let whole = output()[FlashZones.wholeFrame].luminance
+                    darkest = min(darkest, whole)
+                    brightest = max(brightest, whole)
+                }
+            }
+            return (lowest, darkest, brightest)
+        }
+        // The switch blends for up to 2 s (softCutDuration); Standard (the always-on cap) is read from 2.5 s to 4 s,
+        // then Strict from the next frame on, with the envelope's history kept (FX-019-R11).
+        let start = CACurrentMediaTime()
+        let standard = run(start, from: 2.5, until: 4)
+        renderer.flashLimits = SafetyClamp(profile: SensorySafetyProfile(preset: .strict), reduceFlashingSetting: false)
+            .flashLimitsOverride
+        XCTAssertNotNil(renderer.flashLimits, "Strict overrides the envelope")
+        let strict = run(CACurrentMediaTime(), from: 0, until: 1.5)
+        print("ACC012-FIXTURE standard minGain \(standard.gain) luminance \(standard.darkest)…\(standard.brightest), "
+              + "strict minGain \(strict.gain)")
+        XCTAssertGreaterThan(standard.brightest - standard.darkest, 0.3, "the fixture flashes through projectM")
+        XCTAssertGreaterThanOrEqual(standard.gain, ANGLEDebugFlashStats.clampedBelow,
+                                    "Standard's always-on cap leaves a 1.5 Hz flash alone (3 flashes per second allowed)")
+        XCTAssertLessThan(strict.gain, standard.gain - 0.1, "Strict clamps the fixture well below Standard")
+        XCTAssertLessThan(strict.gain, ANGLEDebugFlashStats.clampedBelow)
+    }
+
     /// OUT-001-T12 (OUT-001-R8, S5): moving projectM's view to an external display re-lays out its
     /// window surface at the display's size. The envelope's history survives the new surface and size,
     /// so a strobe in progress gets no fresh budget on the external display.

@@ -67,6 +67,20 @@ Decided under the owner's standing delegation (rule 4); recommended option first
   envelope: 2 flashes per second, 0.25/s rise, plus intensity limit 0.5), Strict (1 flash per second,
   0.10/s rise, intensity limit 0.25) and Custom (`ACC-012-R1`).
 
+### Session 2026-11-19 (QA-011 device run, ACC-012-T22's fixture)
+
+- Q: Pass 3 passed ACC-012-T22 on D2 and D3 (Strict recentClamped 11 and 16, minGain 0.005 and 0.003; Standard
+  minGain 0.29 and 0.20), but the Strobe fixture flashed only through per-frame `invert`/`gamma`, which projectM 4
+  never copies into the picture. Was the check meaningful? → A: No: Strict's clamp was its 0.10/s rise limit on
+  ordinary motion, and Standard's minGain was the launch preset's, counted since launch. The DEBUG fixture
+  (`UITestVisualProbes.strobePreset`) keeps high-flash.milk's per-frame lines (ACC-002's "may flash" mark) and adds a
+  composite shader that inverts the whole frame at 1.5 Hz (3 transitions per second: within Standard's always-on
+  cap of 6, over Strict's 2 and its rise limit). A host render test
+  (FlashLimiterTests.testTheStrobeFixtureFlashesWithinStandardAndStrictClampsIt, iOS 27.2 simulator: whole-frame
+  luminance 0.03…0.77, Standard gain 1.0, Strict 0.008) proves it. The device test now compares the last 3 s
+  (`recentMin`), asserts Standard does not clamp the fixture (`recentClamped` 0) and Strict does, and Strict's
+  recentMin is at least 0.1 below Standard's. Pending device.
+
 ### Session 2026-11-18 (QA-011 device run, ACC-012-T22's automated part)
 
 - Q: The device test expected projectM's envelope to clamp the strobing fixture under Standard too; D2 measured no

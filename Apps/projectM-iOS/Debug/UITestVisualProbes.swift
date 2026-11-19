@@ -85,10 +85,19 @@ enum UITestVisualProbes {
     }
 
     /// ACC-002's high-flash fixture (Packages/PresetLibrary/Tests/PresetLibraryTests/FlashFixtures/high-flash.milk,
-    /// written for this repository, MIT): inverts on strong bass and pumps gamma at the frame rate.
+    /// written for this repository, MIT), with a composite shader that makes it flash. The per-frame lines are
+    /// high-flash.milk's (they give the library's "may flash" mark that ACC-002-T20 reads), but projectM 4 never reads
+    /// per-frame `invert`/`gamma` back into the picture, so that text drew a steady frame (2026-11-19): ACC-012-T22's
+    /// Strict clamp came from the 0.10/s rise limit holding ordinary motion down, not from a flash. The composite
+    /// shader now inverts the whole frame at 1.5 Hz (3 transitions per second), whatever the music does: within
+    /// Standard's always-on cap (6 per second), over Strict's 2 and its rise limit.
+    /// FlashLimiterTests.testTheStrobeFixtureFlashesWithinStandardAndStrictClampsIt renders this text through projectM
+    /// and the envelope (keep the two the same).
     static let strobePreset = """
     MILKDROP_PRESET_VERSION=201
     PSVERSION=2
+    PSVERSION_WARP=2
+    PSVERSION_COMP=2
     [preset00]
     // ACC-002 test fixture written for projectM-iOS (MIT). Not a third-party preset.
     fDecay=0.980000
@@ -101,6 +110,11 @@ enum UITestVisualProbes {
     per_frame_2=wave_r = 0.5 + 0.5*sin(time*1.3);
     per_frame_3=invert = above(bass, 1.2);
     per_frame_4=gamma = 1 + 2*equal(frame%2, 0);
+    comp_1=`shader_body
+    comp_2=`{
+    comp_3=`    ret = tex2D(sampler_main, uv).xyz;
+    comp_4=`    ret = lerp(ret, 1 - ret, step(0.5, frac(time * 1.5)));
+    comp_5=`}
 
     """
 
@@ -111,8 +125,8 @@ enum UITestVisualProbes {
     /// preset takes the composite-shader path anyway), so both fixtures drew a dark, steady frame. The inversion is
     /// now in the composite shader (`frame` is the shader's frame counter); the per-frame `invert` line only keeps the
     /// library's "may flash" mark. FlashLimiterTests.testTheFlickerFixtureStrobesThroughProjectMAndTheAlwaysOnCapClampsIt
-    /// renders this text through projectM and the envelope (keep the two the same). The Strobe fixture stays as it is
-    /// for ACC-002 and ACC-012 (whose Standard reading must stay near gain 1).
+    /// renders this text through projectM and the envelope (keep the two the same). The Strobe fixture (above) flashes at
+    /// 1.5 Hz instead, which Standard allows and Strict clamps (ACC-012-T22).
     static let flickerPreset = """
     MILKDROP_PRESET_VERSION=201
     PSVERSION=2

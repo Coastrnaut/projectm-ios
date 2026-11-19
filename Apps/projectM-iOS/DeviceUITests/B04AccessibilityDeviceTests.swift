@@ -326,15 +326,21 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
     /// ACC-012-T22: the Strict sensory safety profile on the device: Settings shows Strict's clamp (the SensorySafety
     /// probe), the strobing fixture is clamped by projectM's envelope (`flashGuardProbe`), and the frame rate with
     /// Strict stays within noise of Standard (both with the gain probe on, which costs a few fps).
+    /// 2026-11-19: the Strobe fixture never flashed (projectM 4 ignores per-frame `invert`/`gamma`), so Strict's clamp
+    /// (pass 3: recentClamped 11 on D2, 16 on D3) was its 0.10/s rise limit on ordinary motion, and Standard's minGain
+    /// (0.29, 0.20) was the launch preset's, counted since launch. The fixture now inverts the whole frame at 1.5 Hz in
+    /// its composite shader (UITestVisualProbes.strobePreset; FlashLimiterTests proves Standard leaves it at gain 1 and
+    /// Strict clamps it), and both profiles are compared over the probe's last 3 s (`recentMin`, `recentClamped`), long
+    /// after the blend from the launch preset: Standard must not clamp the fixture, Strict must.
     func testACC012SensorySafetyProfile() {
         let task = "ACC-012-T22"
         var fps: [String: Double] = [:]
-        var minGain: [String: Double] = [:]
+        var recentMin: [String: Double] = [:]
         for profile in ["standard", "strict"] {
-            // Reduce flashing pinned off: Standard with it off is today's picture, bit-identical (ACC-012 US2), so the
-            // envelope clamps nothing there (D2 clamped=0, D3 one sample at 0.963, 2026-11-18); with Reduce Motion
-            // on, Reduce flashing would follow it and Standard would clamp as Reduced. Strict keeps flashing reduced
-            // whatever the toggle says (ACC-012-R7).
+            // Reduce flashing pinned off: Standard with it off is today's picture, bit-identical (ACC-012 US2), and its
+            // always-on cap allows 3 flashes per second, so the fixture's 1.5 Hz flash passes unclamped; with Reduce
+            // Motion on, Reduce flashing would follow it and Standard would clamp as Reduced. Strict keeps flashing
+            // reduced whatever the toggle says (ACC-012-R7).
             launchProbed(visual: "projectM", settings: ["settings.sensorySafety.profile": profile,
                                                         "settings.reduceFlashing": false],
                          extra: ["-uitestImportPreset", "fixture:strobe", "-uitestSettingsSection", "safety"])
@@ -348,21 +354,24 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
             XCTAssertTrue(playStrobeFixture(), "\(task) \(profile): the strobing fixture plays")
             _ = wait(8) { !self.controls.exists }
             var line = ""
-            // Strict: wait for a clamp. Standard: the reference reading (its gain stays near 1; it is not asserted to
-            // clamp), compared with Strict's below.
+            // Strict: wait for a clamp. Standard: the reference reading, taken after the 8 s frame-rate sample.
             let clamped = profile == "strict"
                 ? wait(12) { line = self.probe("flashGuardProbe"); return (Self.number(line, "recentClamped") ?? 0) > 0 }
                 : false
             fps[profile] = Self.median(sampleFPS(seconds: 8))
             line = profile == "strict" ? line : probe("flashGuardProbe")
-            minGain[profile] = Self.number(line, "minGain") ?? -1
+            recentMin[profile] = Self.number(line, "recentMin") ?? -1
             report(task, profile, ["fps": fps[profile] ?? 0, "recentClamped": Self.number(line, "recentClamped") ?? -1,
-                                   "minGain": minGain[profile] ?? -1])
-            XCTAssertGreaterThan(Self.number(line, "sampled") ?? 0, 0, "\(task) \(profile): the gain probe samples projectM: \(line)")
+                                   "recentMin": recentMin[profile] ?? -1, "minGain": Self.number(line, "minGain") ?? -1])
+            XCTAssertGreaterThan(Self.number(line, "recentSampled") ?? 0, 5, "\(task) \(profile): the gain probe samples projectM: \(line)")
             if profile == "strict" { XCTAssertTrue(clamped, "\(task) strict: the envelope clamps the strobe: \(line)") }
+            if profile == "standard" {
+                XCTAssertEqual(Self.number(line, "recentClamped"), 0,
+                               "\(task) standard: a 1.5 Hz flash is within the always-on cap (3 flashes per second): \(line)")
+            }
             app.terminate()
         }
-        XCTAssertLessThan(minGain["strict"] ?? 1, (minGain["standard"] ?? 1) - 0.1, "\(task): Strict dims the strobe, Standard does not")
+        XCTAssertLessThan(recentMin["strict"] ?? 1, (recentMin["standard"] ?? 1) - 0.1, "\(task): Strict dims the strobe, Standard does not")
         XCTAssertGreaterThanOrEqual(fps["strict"] ?? 0, (fps["standard"] ?? 0) - Self.effectToleranceFPS,
                                     "\(task): Strict costs no frame rate")
     }
