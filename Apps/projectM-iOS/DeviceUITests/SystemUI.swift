@@ -134,8 +134,11 @@ final class SystemUI {
 
     /// All the text of a system alert (title, message, buttons), for asserting which prompt it is.
     func alertText(_ alert: XCUIElement) -> String {
-        ([alert.label] + alert.staticTexts.allElementsBoundByIndex.map(\.label)
-            + alert.buttons.allElementsBoundByIndex.map(\.label)).joined(separator: " | ")
+        // iPadOS 27.2 nests each button in a copy of itself and the alert's tree changes while it animates in or out:
+        // an index read after the count can find nothing ("No matches found for Element at index 2", D2 prompt flow
+        // 2026-11-19), so only elements that still exist are read.
+        let present = { (query: XCUIElementQuery) in query.allElementsBoundByIndex.filter(\.exists).map(\.label) }
+        return ([alert.label] + present(alert.staticTexts) + present(alert.buttons)).joined(separator: " | ")
     }
 
     /// Waits up to `timeout` s for a system alert and taps `button` (or one of its synonyms). Returns the alert's

@@ -107,10 +107,13 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         let knob = toggle.switches.firstMatch
         clearOfNavigationBar(knob.exists ? knob : toggle)
         let before = toggle.value as? String
+        // The first enable shows the Local Network explainer and leaves the switch off until Continue (D2, D3
+        // 2026-11-19): the explainer appearing also answers the tap.
+        let answered = { (toggle.value as? String) != before || self.explainer("localNetwork").exists }
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        if !wait(3, { (toggle.value as? String) != before }), knob.exists, knob.isHittable { knob.tap() }
-        XCTAssertTrue(wait(3) { (toggle.value as? String) != before },
-                      "the OSC switch changed from \(before ?? "nil") (frame \(toggle.frame), knob \(knob.frame))")
+        if !wait(3, answered), knob.exists, knob.isHittable { knob.tap() }
+        XCTAssertTrue(wait(3, answered),
+                      "the OSC switch changed from \(before ?? "nil") or explained (frame \(toggle.frame), knob \(knob.frame))")
     }
 
     /// iPad (D2, D3, 2026-11-19): `-uitestSettingsSection osc` scrolls the OSC section to the top of the split
