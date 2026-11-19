@@ -12,7 +12,9 @@
 // `long600` a 640 × 360, 30 fps, 10-minute clip. Each takes the Mac-made HEVC fixture from the app's Documents when it
 // is there (video-hevc-4k60.mov, video-hevc-360p-10min.mov: scripts/make_media_fixtures.py, installed with
 // install_test_fixtures.py --media; a copy is imported, the fixture stays) and otherwise writes an H.264 counter of
-// that shape. Not compiled into Release builds.
+// that shape. QA-011 MED-003-T20/MED-004-T22 (pass 4, 2026-11-19): `-uitestSeedVideo h264-1080p` imports the Mac-made
+// 10 s H.264 1080p clip (Documents/video-h264-1080p.mp4) the same way, else an H.264 counter of that shape, so the
+// loop and speed tests no longer depend on the Files picker (covered by MED-002). Not compiled into Release builds.
 #if DEBUG
 import AVFoundation
 import CoreVideo
@@ -26,24 +28,30 @@ enum UITestVideoFixture {
     static func seedIfRequested(_ videos: VideoCoordinator) {
         let arguments = ProcessInfo.processInfo.arguments
         guard let i = arguments.firstIndex(of: argument), i + 1 < arguments.count else { return }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-video-\(UUID().uuidString).mov")
+        let fixture: String? = ["uhd60": "video-hevc-4k60.mov", "long600": "video-hevc-360p-10min.mov",
+                                "h264-1080p": "video-h264-1080p.mp4"][arguments[i + 1]]
+        let stem: String = "uitest-video-\(UUID().uuidString)"
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(stem + ".mov")
+        // The Mac-made fixture keeps its own extension (an .mp4 copied under a .mov name would misname its container).
+        let fixtureURL: URL? = fixture.map { FileManager.default.temporaryDirectory.appendingPathComponent(stem + "." + ($0 as NSString).pathExtension) }
         Task { @MainActor in
             let shape: (width: Int, height: Int, frames: Int, end: Bool, fps: Int) = switch arguments[i + 1] {
             case "hd30": (1920, 1080, 900, true, 30)      // MED-005-T20: 30 s 1080p
             case "long120": (640, 360, 3600, true, 30)    // MED-005-T20: 2 minutes
             case "uhd60": (3840, 2160, 600, true, 60)     // MED-002-T27/T28: 4K60, 10 s
             case "long600": (640, 360, 18_000, true, 30)  // MED-002-T27: 10 minutes
+            case "h264-1080p": (1920, 1080, 300, true, 30) // MED-003-T20, MED-004-T22: 10 s 1080p
             default: (64, 48, 60, false, 30)
             }
-            let fixture: String? = ["uhd60": "video-hevc-4k60.mov", "long600": "video-hevc-360p-10min.mov"][arguments[i + 1]]
-            let written = await Task.detached(priority: .userInitiated) { () async -> Bool in
-                if let fixture, copyDocumentsFixture(fixture, to: url) { return true }
-                return (try? await writeCounter(to: url, frames: shape.frames, width: shape.width, height: shape.height,
-                                                endsAtLastFrame: shape.end, fps: shape.fps)) != nil
+            let written: URL? = await Task.detached(priority: .userInitiated) { () async -> URL? in
+                if let fixture, let fixtureURL, copyDocumentsFixture(fixture, to: fixtureURL) { return fixtureURL }
+                let made: Bool = (try? await writeCounter(to: url, frames: shape.frames, width: shape.width, height: shape.height,
+                                                          endsAtLastFrame: shape.end, fps: shape.fps)) != nil
+                return made ? url : nil
             }.value
-            guard written else { return }
-            await videos.importNow(at: url)
-            try? FileManager.default.removeItem(at: url)
+            guard let written else { return }
+            await videos.importNow(at: written)
+            try? FileManager.default.removeItem(at: written)
             if arguments[i + 1] == "corrupt", let stored = videos.video?.url {
                 try? Data(MediaFixtureBytes.movieWithOverrunningMoov()).write(to: stored, options: .atomic)
             }

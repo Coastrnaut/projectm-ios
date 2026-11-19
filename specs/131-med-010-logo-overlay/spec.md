@@ -90,6 +90,11 @@ Five questions, each answered by Claude with the recommended option (owner rules
 - Q: Does the layer inspector's solo and mute affect the logo? → A: Soloing another layer hides the
   logo while the solo lasts (CMP-012 semantics: only soloed layers show); the logo cannot itself
   be soloed or muted, because it is not an inspector layer (MED-010-R7).
+- (QA-011 device run 2026-11-19) What does device check T25's fringe count leave out? → A: The app's own
+  always-shown Emergency Blackout button (a white symbol on a black disc in the bottom-right corner) and, by hiding
+  them first, the controls; pass 4 on D2/D3 counted those as a 305-1400 pixel "dark fringe" while the drawn logo's own
+  edge had none. The four-corner sweep uses the white disc imported at launch through the picked-logo path; the Files
+  and Photos picks each check one corner. The 2 % fringe limit is unchanged.
 
 ## User Scenarios & Testing *(mandatory)*
 
