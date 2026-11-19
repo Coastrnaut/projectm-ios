@@ -645,6 +645,10 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     (`devicectl device process signal --pid <pid> --signal SIGABRT`) and copy its crash report from `systemCrashLogs`.
   - Never wait on the main thread for work that may need the GPU across a background transition: a backgrounded app's
     command buffers do not complete, so `waitUntilCompleted` (inside ANGLE) never returns.
+  - A lifecycle gate cannot catch a wait that begins while the app is only inactive (it must keep drawing then). Read
+    the frames under the wait before choosing a fix: the AUD-016 stalls on D2 and D3 waited inside ANGLE's emulation
+    of `GL_TRIANGLE_FAN`, so the fix removed fans and line loops from the engine (projectM patch 5) instead of gating
+    more lifecycle states.
 - **A probe that decodes positions from sample values must skip trailing zeros**: a track's last tap buffer ends in
   silence, which decoded as "no position" and hid the track change (AUD-003).
 - **Killing the app mid-test leaves its system state behind (2026-11-19).** A SIGABRT sent to get a stalled app's
