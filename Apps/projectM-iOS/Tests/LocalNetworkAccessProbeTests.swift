@@ -87,6 +87,25 @@ final class LocalNetworkAccessProbeTests: XCTestCase {
         XCTAssertEqual(probe.access, .denied)
     }
 
+    /// D2 (iPadOS 27.2, QA-011 2026-11-19): the browse kept running while iOS's prompt made the app inactive, the
+    /// settle granted before the answer and Don't Allow showed no notice. Inactive time must not count.
+    func testInactiveTimeDoesNotSettleAndTheDenialAfterThePromptDecides() async {
+        let browser = FakeBrowser()
+        let active = Mutex(true)
+        let probe = LocalNetworkAccessProbe(settleSeconds: 0.1, maximumSeconds: 0.3,
+                                            isActive: { active.withLock { $0 } }) { browser }
+        probe.start()
+        browser.deliver(.browsing)
+        active.withLock { $0 = false }   // iOS's prompt shows
+        await settle(0.5)
+        XCTAssertEqual(probe.access, .unknown, "no grant while the prompt shows")
+        XCTAssertTrue(probe.isRunning, "the time limit does not run out while inactive")
+        browser.deliver(.failed(.localNetworkDenied))   // Don't Allow
+        active.withLock { $0 = true }
+        await settle()
+        XCTAssertEqual(probe.access, .denied)
+    }
+
     func testTheBrowseEndsAfterTheMaximumWithoutAnAnswer() async {
         let browser = FakeBrowser()
         let probe = makeProbe(browser, settle: 5, maximum: 0.1)

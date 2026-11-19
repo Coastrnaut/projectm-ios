@@ -16,6 +16,7 @@
 // memory for this launch only (iOS ends the app when the permission is revoked in Settings).
 import Foundation
 import PerformanceControl
+import UIKit
 
 /// What the app knows about the Local Network permission this launch.
 enum LocalNetworkAccess: Equatable, Sendable {
@@ -36,6 +37,10 @@ final class LocalNetworkAccessProbe {
     var onChange: (@MainActor (LocalNetworkAccess) -> Void)?
 
     private let makeBrowser: @MainActor () -> (any OSCPeerBrowsing)?
+    /// Whether the app is active. The settle and the time limit count only while it is: on D2 (iPadOS 27.2, QA-011
+    /// 2026-11-19) the receiver kept browsing while iOS's prompt showed, the 2 s settle granted before the person
+    /// answered, and Don't Allow then showed no notice.
+    private let isActive: @MainActor () -> Bool
     private let settleSeconds: Double
     private let maximumSeconds: Double
     private var browser: (any OSCPeerBrowsing)?
@@ -43,7 +48,9 @@ final class LocalNetworkAccessProbe {
 
     init(settleSeconds: Double = LocalNetworkAccessProbe.defaultSettleSeconds,
          maximumSeconds: Double = LocalNetworkAccessProbe.defaultMaximumSeconds,
+         isActive: @escaping @MainActor () -> Bool = { true },
          makeBrowser: @escaping @MainActor () -> (any OSCPeerBrowsing)?) {
+        self.isActive = isActive
         self.settleSeconds = settleSeconds
         self.maximumSeconds = maximumSeconds
         self.makeBrowser = makeBrowser
@@ -51,7 +58,7 @@ final class LocalNetworkAccessProbe {
 
     /// The app's probe: the real browser without resolution, or none for the DEBUG fake receivers (no real network).
     static func system() -> LocalNetworkAccessProbe {
-        LocalNetworkAccessProbe {
+        LocalNetworkAccessProbe(isActive: { UIApplication.shared.applicationState == .active }) {
             #if DEBUG
             if UITestFakeOSC.isRequested || UITestOSCFailure.receiverIfRequested() != nil || UITestFakeDiscovery.isRequested { return nil }
             #endif
@@ -79,7 +86,7 @@ final class LocalNetworkAccessProbe {
         made.start { [weak self] (event: OSCBrowserEvent) -> Void in
             Task { @MainActor [weak self] in self?.handle(event, run: run) }
         }
-        after(maximumSeconds, run: run) { $0.finish(run: run, with: nil) }
+        whileActive(maximumSeconds, run: run) { $0.finish(run: run, with: nil) }
     }
 
     /// Cancels a running browse (the receiver stopped, for example while iOS's prompt shows).
@@ -92,7 +99,7 @@ final class LocalNetworkAccessProbe {
     private func handle(_ event: OSCBrowserEvent, run: Int) {
         guard run == generation, browser != nil else { return }
         if case .browsing = event {
-            after(settleSeconds, run: run) { $0.finish(run: run, with: .granted) }
+            whileActive(settleSeconds, run: run) { $0.finish(run: run, with: .granted) }
             return
         }
         guard let decision = Self.decision(for: event) else { return }
@@ -107,9 +114,16 @@ final class LocalNetworkAccessProbe {
         onChange?(decision)
     }
 
-    private func after(_ seconds: Double, run: Int, _ body: @escaping @MainActor (LocalNetworkAccessProbe) -> Void) {
+    /// Runs `body` once the app has been active for `seconds` in a row (checked every 50 ms), unless the
+    /// run ends first. Time spent inactive (iOS's prompt) restarts the count.
+    private func whileActive(_ seconds: Double, run: Int, _ body: @escaping @MainActor (LocalNetworkAccessProbe) -> Void) {
         Task { @MainActor [weak self] in
-            try? await Task.sleep(nanoseconds: UInt64(max(0, seconds) * 1_000_000_000))
+            var activeFor = 0.0
+            while activeFor < seconds {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                guard let self, run == self.generation else { return }
+                activeFor = self.isActive() ? activeFor + 0.05 : 0
+            }
             guard let self, run == self.generation else { return }
             body(self)
         }
