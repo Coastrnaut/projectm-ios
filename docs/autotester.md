@@ -180,6 +180,22 @@ Untried on a device when written (2026-11-18): Settings rows are found by their 
 Accessibility › Motion …) and the switcher and Control Center by coordinates in portrait; check the first run's
 screenshots and fix SystemUI.swift (not the tests) where iOS 26 or 27 differs.
 
+First run on D2 (iPadOS 27.2) and D3 (iPadOS 26.5), 2026-11-19:
+
+- **iPadOS 27.2 lists each prompt button twice, nested** (`kTCCServiceCamera-deny-button` inside itself), so
+  `alert.buttons["Don’t Allow"].tap()` failed with "Multiple matching elements found". `SystemUI.alertButton` picks one.
+  A prompt left open by a failed test is then answered by XCTest's default interruption handler with **Allow** at the
+  next test's first tap (D2: the camera was granted that way), so a prompt-answering failure spoils the tests after it.
+- **The iPad split editor hides the top row under the bar:** `-uitestSettingsSection osc` puts the OSC switch under
+  the navigation bar's scroll-edge area, where taps land on the bar ("Not hittable: Switch {{727, 126}, …}"). The test
+  drags the list down until the switch is clear of the bar and asserts that the switch changed.
+- **A plain UDP listener does not make iOS ask for Local Network:** with OSC turned on, D2 and D3 showed no prompt and
+  the receiver reported "Listening", so Local Network never appeared on the app's Settings page (testZ) and no denial
+  notice could show (testD). testC now prints `OSC-READY test` (the Mac sends with `--osc-host`) and names the cause.
+- **iPadOS 26.5 audits what the tutorial covers:** the accessibility audit reported the source chooser behind the
+  opaque tutorial although RootView hides it from accessibility; testA logs issues of covered (not hittable) elements
+  without counting them, and waits 0.8 s before each audit (a just-tapped Next/Play button "failed" contrast).
+
 ### Tests that wait for a person
 
 | Test | Prompts | Notes |
