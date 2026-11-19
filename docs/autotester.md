@@ -579,6 +579,25 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   Twelve slow swipes do not reach Storage at the end of the iPad Settings panel: follow with full-speed swipes.
   `-uitestDefaults` keys now survive a plain relaunch (no `-uitestDefaults`, no `-uitestResetNotice`); before, the
   relaunch removed them and the visual fell back to projectM.
+- **Pickers on the iPads, pass 4 (2026-11-19):**
+  - Tap a Files cell only once its scroll has stopped. A full-speed swipe of "File View" decelerates for 2 s or more,
+    and a tap on a moving grid only stops it: nothing was picked, no Open came, the picker stayed up (D2, iPadOS 27.2;
+    "No photo"/"No video"). `SystemUI.findFile` now waits until the cell's frame holds still (`settle`), and
+    `tapFile` taps again when the picker is still up 4 s later.
+  - The Photos picker's grid images ("PXGGridLayout-Info") exist but are never hittable on iPadOS 26.5 (another
+    process's view): pick by frame inside the window and tap by coordinate ("the Photos picker shows no items", D3).
+  - A one-item Photos picker closes on the tap, so do not look for its Add/Done: the "Done" found was the app's own
+    Settings Done, which closed the panel (D2). Tap Add/Done only for several items, never the Settings bar's Done.
+  - The library seed dates each fixture now, one second apart (`PHAssetCreationRequest.creationDate`). Undated, Photos
+    dated a PNG or GIF by the file (installed the day before), so "newest" was an older slide, not the GIF just
+    seeded (MED-008, D2). Picker labels carry minutes only: ties follow the grid's own direction.
+  - A notice row added below the Photo buttons is under the fold, and a SwiftUI List builds no off-screen rows: drag
+    the list before concluding the notice never came (MED-001-T24 "40 MB notice", D3). Same for a summary row after a
+    relaunch: scroll to it first (MED-006).
+  - An ACC-005 slider row is an adjustable element, not an XCUIElement slider: `app.sliders[id]` never matches. Find it
+    by identifier and drag its line (`dragRowSlider`), as UITestSliders does (MED-006 stayed at the default 5 s).
+  - A test whose Photos seed did not add every fixture (prompt still up, fixtures missing) stops at once
+    (`waitLibrarySeed` returns false): run `mac_device_driver.py prompt-flow` first on a fresh install.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 - **Batch 7 on D1-D3 (2026-11-18), what the first run taught:**
