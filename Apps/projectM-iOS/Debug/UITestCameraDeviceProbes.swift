@@ -16,7 +16,10 @@
 //   saved picture the screen's way round, or its mirror image).
 // * The button `cameraFocusCentreAction` (CAM-005-T14): performs the "Focus at centre" accessibility custom action
 //   of the visualization's tap area through its public `UIAccessibilityCustomAction`, the entry point VoiceOver's
-//   Actions rotor calls; its value says whether the action was found.
+//   Actions rotor calls; its value says whether the action was found. The test asks for it with the Darwin
+//   notification `UITestFocusCentreRequest.darwinName` (CoreFoundation's public Darwin notify center) and taps the
+//   button only as a fallback: on D2 and D3 (pass 3 at the bottom-leading corner, pass 4 at the top-leading one,
+//   2026-11-19) the synthesized tap on the hittable button never ran its action (the value stayed "none").
 #if DEBUG
 import AVFoundation
 import CoreGraphics
@@ -102,6 +105,26 @@ final class UITestCaptureSessionLog: @unchecked Sendable {
     }
 }
 
+/// CAM-005-T14's request for "Focus at centre" from the UI test runner: a Darwin notification (another process can
+/// post it), re-posted on the main queue as a local notification the probe view receives.
+enum UITestFocusCentreRequest {
+    static let darwinName = "org.projectmios.uitest.cameraFocusCentre"
+    static let received = Notification.Name("UITestFocusCentreRequest.received")
+    private static let installed = OSAllocatedUnfairLock(initialState: false)
+
+    /// Starts observing (idempotent; the observer stays for the process's life, DEBUG probes only).
+    static func install() {
+        let first: Bool = installed.withLock { (done: inout Bool) -> Bool in
+            defer { done = true }
+            return !done
+        }
+        guard first else { return }
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
+            DispatchQueue.main.async { NotificationCenter.default.post(name: UITestFocusCentreRequest.received, object: nil) }
+        }, darwinName as CFString, nil, .deliverImmediately)
+    }
+}
+
 struct UITestCameraDeviceProbes: View {
     static let argument = "-uitestCameraDeviceProbes"
     static var isRequested: Bool { ProcessInfo.processInfo.arguments.contains(argument) }
@@ -129,7 +152,13 @@ struct UITestCameraDeviceProbes: View {
             .padding(.leading, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .onAppear { UITestCaptureSessionLog.shared.install() }
+        .onAppear {
+            UITestCaptureSessionLog.shared.install()
+            UITestFocusCentreRequest.install()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UITestFocusCentreRequest.received)) { _ in
+            focusAction = Self.performFocusAtCentre()
+        }
         .task { await refreshGridOnNewFiles() }
     }
 

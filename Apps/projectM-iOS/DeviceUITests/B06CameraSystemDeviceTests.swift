@@ -63,7 +63,14 @@ extension DeviceAcceptanceCase {
         for attempt in 0..<2 {
             if attempt == 1 { _ = wait(8) { !controls.exists } }
             showCameraControls()
-            if wait(2, { settings.exists && settings.isHittable }) { settings.tap() }
+            // A tap at the button's place, not on the element: D2 pass 4 (2026-11-19, CAM-002-T22) found the button,
+            // then the controls faded before the tap and XCUITest's element tap failed the test at once ("No matches
+            // found for '"settings" IN identifiers'"). A coordinate tap on faded controls lands on the visualization
+            // instead, Settings does not open, and the second attempt shows the controls fresh.
+            var frame = CGRect.zero
+            if wait(2, { settings.exists && settings.isHittable && { frame = settings.frame; return true }() }) {
+                app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+            }
             if wait(5, { self.app.navigationBars["Settings"].exists }) { return }
         }
         XCTFail("Settings opens")
@@ -248,7 +255,15 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
                 .prefix(4).map(\.label)
             print("B06-SYSTEM Control Center app-name labels (iPad): \(named.prefix(6).map { "\($0.label) @\($0.frame)" })")
         }
-        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        let screenshot = XCUIScreen.main.screenshot()
+        // Pass 4 (2026-11-19, D2 and D3): the pill is drawn (screenshots) but sits in a remote process XCUITest cannot
+        // read, so only the full-screen app card matched. The pill's colour is the evidence there: system green while
+        // the camera is in use, grey once it was only "recently" used (`controlCenterGreenPillVisible`).
+        if labels.isEmpty, acceptPadPill, UIDevice.current.userInterfaceIdiom == .pad,
+           system.controlCenterGreenPillVisible(in: screenshot) {
+            labels = ["\(SystemUI.appDisplayName) (green camera pill in Control Center's screenshot)"]
+        }
+        let shot = XCTAttachment(screenshot: screenshot)
         shot.name = "Control Center"
         shot.lifetime = .keepAlways
         add(shot)
@@ -564,6 +579,12 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
                                     "samplesWhileAway": Double(cameraCount("awaySamples"))])
         XCTAssertTrue(stoppedAway, "the sensor stopped while the app was in the background: \(cameraState())")
         XCTAssertTrue(wait(5) { self.cameraState()["motion"] == "1" }, "back: the sensor runs again: \(cameraState())")
+        // In-App Playback paused while away resumes on the return (AUD-006-R22); the spectrum draws only once audio is
+        // active again. D2 pass 4 (2026-11-19): the first screenshot came while the overlay read "audio: Waiting"
+        // (nonBlack 0.006), the next one 1 s later drew (0.10); D3 had resumed sooner (0.09). Not a threshold: wait as
+        // B02's return tests do.
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        XCTAssertTrue(wait(15) { overlay.label.contains("Active audio") }, "playback resumes: \(overlay.label.prefix(160))")
         assertDrawingAndMoving(task, "glow bound to motion")
     }
 }
