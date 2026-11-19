@@ -162,6 +162,43 @@ final class FlashLimiterTests: XCTestCase {
         XCTAssertEqual(ANGLERenderer.flashLimitPerSecond, 0.25)
     }
 
+    /// QA-011 FX-019-T23 (2026-11-19, D3 rerun 3): the device test's Flicker fixture
+    /// (`UITestVisualProbes.flickerPreset`, keep the two texts the same) must really strobe through projectM. Its first
+    /// version set `invert` and `gamma` in per-frame code, which projectM 4 never reads back (Filters and VideoEcho read
+    /// the file's bInvert/fGammaAdj, and a version-201 preset uses the composite shader path anyway), so it drew a dark,
+    /// steady frame and the envelope rightly never clamped. The composite shader now inverts the whole frame two frames
+    /// in four; the per-frame-only version is the control and stays unclamped.
+    func testTheFlickerFixtureStrobesThroughProjectMAndTheAlwaysOnCapClampsIt() async throws {
+        func minimumGain(_ text: String, _ name: String) async throws -> Float {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("fx019-\(name).milk")
+            try Data(text.utf8).write(to: url, options: .atomic)
+            try await renderer.setPreset(Preset(id: "tests/\(name)", name: name, fileURL: url))
+            // The switch blends for up to 2 s of wall time (softCutDuration), and the simulator renders far faster than
+            // 60 fps, so a fixed frame count can end inside the blend: render 3.5 s, read the gain after 2.5 s.
+            var lowest: Float = 1
+            let start = CACurrentMediaTime()
+            while CACurrentMediaTime() - start < 3.5 {
+                XCTAssertTrue(renderer.renderFrame(present: false))
+                if CACurrentMediaTime() - start > 2.5, let gain = renderer.flashLimiterGain { lowest = min(lowest, gain) }
+            }
+            return lowest
+        }
+        let header = "MILKDROP_PRESET_VERSION=201\nPSVERSION=2\nPSVERSION_WARP=2\nPSVERSION_COMP=2\n[preset00]\n"
+            + "// FX-019 test fixture written for projectM-iOS (MIT). Not a third-party preset.\n"
+            + "fDecay=0.980000\nzoom=1.010000\nrot=0.000000\nwave_r=0.6\nwave_g=0.6\nwave_b=0.9\n"
+            + "per_frame_1=wave_r = 0.5 + 0.5*sin(time*1.3);\nper_frame_2=invert = below(frame%4, 2);\n"
+            + "per_frame_3=gamma = 1 + 2*equal(frame%2, 0);\n"
+        let perFrameOnly = try await minimumGain(header, "flicker-per-frame-only")
+        PMFlashLimiterReset(limiter)
+        let flicker = try await minimumGain(header + "comp_1=`shader_body\ncomp_2=`{\n"
+            + "comp_3=`    ret = tex2D(sampler_main, uv).xyz;\n"
+            + "comp_4=`    ret = lerp(ret, 1 - ret, step(fmod(frame, 4), 1.5));\ncomp_5=`}\n", "flicker")
+        print("FX019-FIXTURE per-frame-only minGain \(perFrameOnly), composite flicker minGain \(flicker)")
+        XCTAssertGreaterThanOrEqual(perFrameOnly, ANGLEDebugFlashStats.clampedBelow,
+                                    "per-frame invert/gamma do not reach the picture in projectM 4 (the old fixture)")
+        XCTAssertLessThan(flicker, ANGLEDebugFlashStats.clampedBelow, "the composite inversion strobes and is clamped")
+    }
+
     /// OUT-001-T12 (OUT-001-R8, S5): moving projectM's view to an external display re-lays out its
     /// window surface at the display's size. The envelope's history survives the new surface and size,
     /// so a strobe in progress gets no fresh budget on the external display.

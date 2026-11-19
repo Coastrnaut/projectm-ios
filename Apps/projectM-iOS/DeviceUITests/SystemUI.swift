@@ -684,26 +684,68 @@ final class SystemUI {
 
     /// Waits up to `initialWait` for `name` in the folder the picker shows, then scrolls the file grid down (at most
     /// `swipes` times) until its item is on screen.
+    ///
+    /// QA-011 rerun 3 (D3, iPadOS 26.5, 2026-11-19): after two swipes seed-damaged.m4a's cell sat on the screen's bottom
+    /// edge, cut in half. XCUITest calls an element hittable when its centre point is on screen, so the cell counted as
+    /// found; the tap landed on the edge and selected nothing (Open stayed disabled), the picker stayed up over the
+    /// app, no import alert came, and the next step's Import Audio tap failed as "not hittable". An item now counts only
+    /// when it is wholly inside the window, clear of the toolbar and the home indicator (`isFullyShown`); a partly shown
+    /// item is brought in with a short, slow drag (`nudge`), an item off screen with a full swipe.
     func findFile(_ name: String, initialWait: Double, swipes: Int) -> Bool {
-        if wait(initialWait, { self.fileItem(name).exists && self.fileItem(name).isHittable }) { return true }
+        if wait(initialWait, { self.isFullyShown(self.fileItem(name)) }) { return true }
         let grid = app.collectionViews["File View"].firstMatch
         guard grid.exists else { return fileItem(name).exists }
         for _ in 0..<swipes {
             let item = fileItem(name)
-            if item.exists && item.isHittable { return true }
-            grid.swipeUp()
+            if isFullyShown(item) { return true }
+            moveTowards(item, in: grid)
             pause(0.6)
         }
         let item = fileItem(name)
-        if item.exists && !item.isHittable { grid.swipeUp(velocity: .slow); pause(0.6) }
+        if item.exists && !isFullyShown(item) { moveTowards(item, in: grid); pause(0.6) }
         return fileItem(name).exists
     }
 
-    /// Taps the file's item, then Open when the picker selects several (the audio importer) or asks to confirm.
-    private func tapFile(_ name: String) {
-        fileItem(name).tap()
+    /// Whether `item` is hittable and wholly inside the window, at least 60 pt below its top (the picker's toolbar)
+    /// and 40 pt above its bottom (the home indicator).
+    func isFullyShown(_ item: XCUIElement) -> Bool {
+        guard item.exists, item.isHittable else { return false }
+        let window = app.windows.firstMatch.frame, frame = item.frame
+        guard !window.isEmpty else { return true }
+        return frame.minY >= window.minY + 60 && frame.maxY <= window.maxY - 40
+    }
+
+    /// Scrolls `grid` so `item` comes into view: a full swipe up while it is not built or wholly off screen, otherwise
+    /// a slow drag of a third of the grid that moves it towards the middle.
+    private func moveTowards(_ item: XCUIElement, in grid: XCUIElement) {
+        let window = app.windows.firstMatch.frame
+        guard item.exists, window.isEmpty || item.frame.intersects(window) else {
+            if item.exists, item.frame.maxY < window.minY { grid.swipeDown() } else { grid.swipeUp() }
+            return
+        }
+        let up = item.frame.midY > grid.frame.midY   // below the middle: drag the content up
+        let start = grid.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.7 : 0.35))
+        let end = grid.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.35 : 0.7))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.3)
+    }
+
+    /// Taps the file's item, then Open when the picker selects several (the audio importer) or asks to confirm. When
+    /// Open is shown but stays disabled, the tap selected nothing (rerun 3, D3): the item is brought fully into view
+    /// and tapped once more.
+    func tapFile(_ name: String) {
         let open = app.buttons["Open"].firstMatch
-        if open.waitForExistence(timeout: 2), open.isEnabled { open.tap() }
+        for attempt in 0..<2 {
+            fileItem(name).tap()
+            guard open.waitForExistence(timeout: 2) else { return }   // a single-selection picker took the file
+            if wait(2, { open.isEnabled }) {
+                open.tap()
+                return
+            }
+            if attempt == 0 {
+                print("DEVICE-ACCEPT-NOTE \(name): the tap selected nothing (Open disabled); tapping again")
+                _ = findFile(name, initialWait: 0, swipes: 3)
+            }
+        }
     }
 
     /// Cancels a Files picker that is still up (after a failed pick or save), so the app is in front again.

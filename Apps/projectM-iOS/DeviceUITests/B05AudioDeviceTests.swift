@@ -124,10 +124,14 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(app.buttons["importAudio"].waitForExistence(timeout: 15), "the chooser offers Import Audio…")
     }
 
-    /// The Import Audio alert's message (after a Files pick).
+    /// The Import Audio alert's message (after a Files pick). With no alert, a picker still up is cancelled, so the
+    /// next file's Import Audio tap is not blocked by it (rerun 3, D3 2026-11-19: "importAudio … not hittable").
     private func importAlertMessage() -> String {
         let alert = app.alerts["Import Audio"]
-        guard alert.waitForExistence(timeout: 20) else { return "" }
+        guard alert.waitForExistence(timeout: 20) else {
+            SystemUI(app: app).cancelFilesPicker()
+            return ""
+        }
         let text = alert.staticTexts.allElementsBoundByIndex.map(\.label).filter { $0 != "Import Audio" }.joined(separator: "\n")
         alert.buttons["OK"].tap()
         return text

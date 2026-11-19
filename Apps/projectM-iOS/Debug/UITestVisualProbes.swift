@@ -104,14 +104,20 @@ enum UITestVisualProbes {
 
     """
 
-    /// FX-019-T23's strobing preset: the high-flash fixture above, but the whole frame inverts two frames on, two off
-    /// (15 Hz at 60 fps) whatever the music does. Pass 3 (2026-11-19, D2 and D3) saw no clamp in 18 s of the Strobe
-    /// fixture: its scene was dark (mean luma 0.09), where the 1-to-3 gamma pump stays under WCAG's 0.1
-    /// relative-luminance step, and its inversion waits for bass above 1.2. The Strobe fixture stays as it is for
-    /// ACC-002 and ACC-012 (whose Standard reading must stay near gain 1). `invert` marks it "may flash".
+    /// FX-019-T23's strobing preset: the whole frame inverts two frames on, two off (15 Hz at 60 fps) whatever the
+    /// music does. Pass 3 (2026-11-19, D2 and D3) saw no clamp in 18 s of the Strobe fixture, and rerun 3 (D3) none
+    /// with this fixture's first version (mean luma 0.09, recentMin 1.000): projectM 4 never reads per-frame `invert`
+    /// or `gamma` back into the picture (Filters and VideoEcho use the file's bInvert/fGammaAdj, and a version-201
+    /// preset takes the composite-shader path anyway), so both fixtures drew a dark, steady frame. The inversion is
+    /// now in the composite shader (`frame` is the shader's frame counter); the per-frame `invert` line only keeps the
+    /// library's "may flash" mark. FlashLimiterTests.testTheFlickerFixtureStrobesThroughProjectMAndTheAlwaysOnCapClampsIt
+    /// renders this text through projectM and the envelope (keep the two the same). The Strobe fixture stays as it is
+    /// for ACC-002 and ACC-012 (whose Standard reading must stay near gain 1).
     static let flickerPreset = """
     MILKDROP_PRESET_VERSION=201
     PSVERSION=2
+    PSVERSION_WARP=2
+    PSVERSION_COMP=2
     [preset00]
     // FX-019 test fixture written for projectM-iOS (MIT). Not a third-party preset.
     fDecay=0.980000
@@ -120,10 +126,14 @@ enum UITestVisualProbes {
     wave_r=0.6
     wave_g=0.6
     wave_b=0.9
-    per_frame_1=// Strobes on purpose: the whole frame inverts two frames in four.
-    per_frame_2=wave_r = 0.5 + 0.5*sin(time*1.3);
-    per_frame_3=invert = below(frame%4, 2);
-    per_frame_4=gamma = 1 + 2*equal(frame%2, 0);
+    per_frame_1=wave_r = 0.5 + 0.5*sin(time*1.3);
+    per_frame_2=invert = below(frame%4, 2);
+    per_frame_3=gamma = 1 + 2*equal(frame%2, 0);
+    comp_1=`shader_body
+    comp_2=`{
+    comp_3=`    ret = tex2D(sampler_main, uv).xyz;
+    comp_4=`    ret = lerp(ret, 1 - ret, step(fmod(frame, 4), 1.5));
+    comp_5=`}
 
     """
 
