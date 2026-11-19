@@ -355,8 +355,14 @@ extension B06CameraDeviceTests {
     private func savedGrids(_ label: String) -> (frame: [Double], video: [Double]) {
         waitControlsHidden()
         let value = { (self.app.staticTexts["cameraOrientationGrid"].value as? String) ?? "" }
+        func refreshes() -> Int {
+            Int(value().split(separator: " ").first { $0.hasPrefix("n=") }?.dropFirst(2) ?? "") ?? 0
+        }
+        let before = refreshes()
         app.buttons["cameraOrientationGridRefresh"].tap()
-        XCTAssertTrue(wait(20) { value().hasPrefix("frame=") }, "\(label): the grids: \(value())")
+        // This refresh's answer (`n=` counts refreshes): the launch value "frame=none video=none" also starts with
+        // "frame=" and was read at once on D2 (2026-11-18), so both pictures looked unreadable.
+        XCTAssertTrue(wait(20) { value().hasPrefix("frame=") && refreshes() > before }, "\(label): the grids: \(value())")
         var frame: [Double] = [], video: [Double] = []
         for part in value().split(separator: " ") {
             if part.hasPrefix("frame=") { frame = CameraGrid.grid(hex: String(part.dropFirst(6))) }
@@ -443,6 +449,9 @@ extension B06CameraDeviceTests {
         report(task, "released", ["automatic": cameraState()["exposure"] == "continuousAuto" ? 1 : 0])
     }
 
+    /// specs/227-cam-005-focus-point/contracts/focus-point.md: the text for a camera without point focus.
+    private enum CameraFocusContract { static let unsupported = "This camera can't focus on a point." }
+
     private typealias FocusReading = (x: Double, y: Double, mode: String)
 
     /// "x,y,mode" of the focus read back from the camera (`cameraFocusProbe`).
@@ -487,23 +496,40 @@ extension B06CameraDeviceTests {
         XCTAssertGreaterThan(Self.distance(a, b), 0.1, "two taps, two focus points")
         app.terminate()
 
+        // The mirror mapping needs a front camera that focuses on a point. The iPads' front cameras do not (D2, D3
+        // 2026-11-18: the focus stayed "0.500,0.500,locked" and the app said "This camera can't focus on a point.",
+        // its contract for such a camera, CAM-005-T11): there the contract message is checked and the mapping is not.
         launchLiveCamera("front", settings: ["settings.camera.mirrorFront": true])
-        let mirroredTap = focusAfterDoubleTap(0.3, 0.4, "front mirror on")
-        app.terminate()
-        launchLiveCamera("front", settings: ["settings.camera.mirrorFront": false])
-        let plainTap = focusAfterDoubleTap(0.7, 0.4, "front mirror off, mirrored point")
-        let gap = Self.distance(mirroredTap, plainTap)
-        report(task, "front mirror", ["gap": gap])
-        XCTAssertLessThan(gap, 0.05, "Mirror on maps a tap to the mirrored point")
-
-        if UIDevice.current.userInterfaceIdiom == .phone {   // the iPads' 4:3 screens leave no bar
+        let frontBefore = focus
+        doubleTapPicture(0.3, 0.4)
+        let frontMoved = wait(4) { Self.distance(self.focus, frontBefore) > 0.02 }
+        let unsupported = cameraProbeText("announcementProbe").contains(CameraFocusContract.unsupported)
+        report(task, "front point focus", ["supported": frontMoved ? 1 : 0, "unsupportedAnnounced": unsupported ? 1 : 0])
+        if frontMoved {
+            let mirroredTap = focus
             app.terminate()
+            launchLiveCamera("front", settings: ["settings.camera.mirrorFront": false])
+            let plainTap = focusAfterDoubleTap(0.7, 0.4, "front mirror off, mirrored point")
+            let gap = Self.distance(mirroredTap, plainTap)
+            report(task, "front mirror", ["gap": gap])
+            XCTAssertLessThan(gap, 0.05, "Mirror on maps a tap to the mirrored point")
+        } else {
+            XCTAssertTrue(unsupported, "a front camera without point focus says so: \(cameraProbeText("announcementProbe")) "
+                          + "(focus \(cameraProbeText("cameraFocusProbe")))")
+            print("DEVICE-ACCEPT-NOTE \(task): the front camera cannot focus on a point; the mirror mapping is not checked here")
+        }
+
+        // The rest runs on the back camera (the iPads' front camera has no point focus and no "Focus at centre").
+        app.terminate()
+        if UIDevice.current.userInterfaceIdiom == .phone {   // the iPads' 4:3 screens leave no bar
             launchLiveCamera("back", settings: ["settings.camera.cropMode": "fit"])
             let before = focus
             doubleTapPicture(0.5, 0.92)
             pause(2)
             report(task, "fit bar", ["moved": Self.distance(focus, before)])
             XCTAssertLessThan(Self.distance(focus, before), 0.001, "a double-tap in Fit's bar does nothing")
+        } else {
+            launchLiveCamera("back")
         }
 
         // Focus at centre: off centre first, then the action.

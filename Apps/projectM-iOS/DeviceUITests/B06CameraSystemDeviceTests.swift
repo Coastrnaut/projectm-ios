@@ -56,10 +56,17 @@ extension DeviceAcceptanceCase {
         XCTAssertTrue(wait(5) { controls.exists }, "the controls are shown")
     }
 
+    /// Opens Settings from the controls. Controls that are fading out still exist when checked and are gone when their
+    /// button is tapped (D2 2026-11-18, CAM-002-T21: no "settings" button to tap); then they are let go and shown fresh.
     func openSettingsForCamera() {
-        showCameraControls()
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        let controls = app.otherElements["controls"], settings = app.buttons["settings"]
+        for attempt in 0..<2 {
+            if attempt == 1 { _ = wait(8) { !controls.exists } }
+            showCameraControls()
+            if wait(2, { settings.exists && settings.isHittable }) { settings.tap() }
+            if wait(5, { self.app.navigationBars["Settings"].exists }) { return }
+        }
+        XCTFail("Settings opens")
     }
 
     func closeSettingsForCamera() {
@@ -201,6 +208,12 @@ enum CameraGrid {
 final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
     private lazy var system = SystemUI(app: app)
 
+    /// Siri off on the device is a skip with a reason, not a failure (SiriAvailability, AudioProbeSupport.swift).
+    override func record(_ issue: XCTIssue) {
+        if SiriAvailability.swallow(issue) { return }
+        super.record(issue)
+    }
+
     override func tearDown() async throws {
         system.closeControlCenter()
         system.restore()   // a revoked camera permission is granted again here
@@ -210,7 +223,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
     /// Control Center's privacy header for the camera: an element naming the app and the camera. Opens and closes
     /// Control Center; nil when nothing names both. (SystemUI.controlCenterPrivacyUser matches the app's name alone,
     /// which Now Playing also shows while the music plays; this private helper also requires "camera".)
-    private func controlCenterCameraUser() -> String? {
+    private func controlCenterCameraUser(acceptPadPill: Bool = false) -> String? {
         XCUIDevice.shared.orientation = .portrait
         guard system.openControlCenter() else {
             print("B06-SYSTEM Control Center did not open")
@@ -219,7 +232,17 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         pause(0.8)
         let matches = SystemUI.springboard.descendants(matching: .any).matching(
             NSPredicate(format: "label CONTAINS[c] %@ AND label CONTAINS[c] %@", SystemUI.appDisplayName, "camera"))
-        let labels = matches.allElementsBoundByIndex.prefix(4).map(\.label)
+        var labels = matches.allElementsBoundByIndex.prefix(4).map(\.label)
+        // iPadOS (D2 27.2 and D3 26.5, 2026-11-18): the header is a green pill "projectM  Controls ›" whose camera is an
+        // icon, so no label names the camera; the run found nothing on any iPad. There the app's name in the top band
+        // (the privacy header, above the modules; Now Playing sits lower) counts, as the name of the sensor's user.
+        if labels.isEmpty, acceptPadPill, UIDevice.current.userInterfaceIdiom == .pad {
+            let height = XCUIScreen.main.screenshot().image.size.height
+            let named = SystemUI.springboard.descendants(matching: .any).matching(
+                NSPredicate(format: "label CONTAINS[c] %@", SystemUI.appDisplayName)).allElementsBoundByIndex
+            labels = named.filter { $0.frame.minY >= 0 && $0.frame.maxY < height * 0.1 }.prefix(4).map(\.label)
+            print("B06-SYSTEM Control Center app-name labels (iPad): \(named.prefix(6).map { "\($0.label) @\($0.frame.minY)" })")
+        }
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "Control Center"
         shot.lifetime = .keepAlways
@@ -236,10 +259,24 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
     }
 
     /// Launches the Camera app, lets it run its camera for `seconds` (no photo is taken) and returns to the app.
-    private func cameraAppInterruption(seconds: Double = 4) {
+    ///
+    /// The Camera app asks for location on its first launch on a device (D2 2026-11-18: "Allow “Camera” to use your
+    /// location?" stayed over the projectM app after the return, and the camera tests after it hung or failed). That
+    /// prompt is a person's to answer (owner rule 14): the test skips, naming it, and never taps it.
+    private func cameraAppInterruption(seconds: Double = 4) throws {
         SystemUI.camera.launch()
         XCTAssertTrue(SystemUI.camera.wait(for: .runningForeground, timeout: 10), "the Camera app is in front")
-        pause(seconds)
+        pause(1.5)
+        for owner in [SystemUI.springboard, SystemUI.camera] {
+            let alert = owner.alerts.firstMatch
+            if alert.exists {
+                let label = alert.label
+                app.activate()
+                throw XCTSkip("the Camera app shows a system prompt (\"\(label)\") on this device; a person answers it once "
+                              + "in the Camera app (Don't Allow is enough), then this test runs unattended")
+            }
+        }
+        pause(max(0, seconds - 1.5))
         app.activate()
         XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10), "back in the app")
     }
@@ -258,7 +295,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         for (task, position) in [("CAM-001-T24", "back"), ("CAM-002-T21", "front")] {
             launchLiveCamera(position)
             let dot = system.statusIndicatorDotVisible()
-            let header = controlCenterCameraUser()
+            let header = controlCenterCameraUser(acceptPadPill: true)
             report(task, "\(position) indicator", ["greenDot": dot ? 1 : 0, "controlCenterInUse": Self.inUse(header) ? 1 : 0])
             XCTAssertTrue(Self.inUse(header), "\(position): Control Center shows the app using the camera: \(header ?? "nothing")")
             XCTAssertTrue(waitCameraLive(), "\(position): still live after Control Center")
@@ -357,11 +394,11 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
 
     // MARK: CAM-001-T26: another app takes the camera; 3 minutes running
 
-    func testCAM001CameraAppInterruptionPictureReturns() {
+    func testCAM001CameraAppInterruptionPictureReturns() throws {
         let task = "CAM-001-T26"
         launchLiveCamera("back")
         let away = cameraCount("stopsAway")
-        cameraAppInterruption()
+        try cameraAppInterruption()
         let t0 = Date()
         XCTAssertTrue(waitCameraLive(), "the picture returns: \(cameraState())")
         report(task, "camera app", ["returnSeconds": Date().timeIntervalSince(t0),
@@ -402,7 +439,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
 
     // MARK: CAM-013-T17 (D1, D2), T18 (D3): real interruption, recovery probe, revocation
 
-    func testCAM013InterruptionRecoveryAndRevocation() {
+    func testCAM013InterruptionRecoveryAndRevocation() throws {
         let pad = UIDevice.current.userInterfaceIdiom == .pad
         let ios26 = ProcessInfo.processInfo.operatingSystemVersion.majorVersion < 27
         let task = ios26 ? "CAM-013-T18" : "CAM-013-T17"
@@ -410,7 +447,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         let recovery = { self.cameraProbeText("cameraRecovery") }
         XCTAssertTrue(wait(5) { recovery().hasPrefix("running|none|") }, "running, no reason: \(recovery())")
 
-        cameraAppInterruption()
+        try cameraAppInterruption()
         XCTAssertTrue(waitCameraLive(), "the picture returns after the Camera app: \(cameraState())")
         XCTAssertTrue(wait(5) { recovery().hasPrefix("running|none|") && recovery().contains("|no|") },
                       "running again, no reason, no retry pending: \(recovery())")
@@ -450,12 +487,14 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(3) { self.cameraState()["wb"] == "locked" }, "\(step): the camera reports locked: \(cameraState())")
     }
 
-    func testCAM006WhiteBalanceLockThroughSiriLensAndStop() {
+    func testCAM006WhiteBalanceLockThroughSiriLensAndStop() throws {
         let task = "CAM-006-T09"
         launchLiveCamera("back")
         lockWhiteBalance("lock")
         let (_, before) = screen(task, "locked")
+        SiriAvailability.unavailableSeen = false
         system.siriInterruption()
+        try XCTSkipIf(SiriAvailability.unavailableSeen, SiriAvailability.skipReason)
         XCTAssertTrue(waitCameraLive(), "after Siri: live")
         let (_, after) = screen(task, "after Siri")
         report(task, "siri", ["locked": cameraState()["wb"] == "locked" ? 1 : 0, "pictureChange": Self.change(before, after)])
@@ -495,7 +534,9 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         app.terminate()
 
         launch(visual: "circularSpectrum", settings: ["settings.circularSpectrum.glow": true],
-               extra: ["-uitestCameraDeviceProbes", "-uitestBindGlowToMotion"])
+               // Settings opens at Settings › Motion (as MotionCalibrationUITests): on D2 and D3 (2026-11-18) 16 swipes
+               // through the long Settings list did not reach Calibrate.
+               extra: ["-uitestCameraDeviceProbes", "-uitestBindGlowToMotion", "-uitestSettingsSection", "motion"])
         XCTAssertTrue(wait(5) { self.cameraState()["motion"] == "1" }, "glow bound to Tilt and Shake: the sensor runs: \(cameraState())")
         report(task, "bound", ["rateHz": Double(cameraState()["rate"] ?? "") ?? -1])
 

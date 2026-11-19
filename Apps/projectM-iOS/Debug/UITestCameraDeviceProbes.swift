@@ -5,7 +5,8 @@
 // * `cameraDeviceState` (refreshed every 0.25 s): the app's capture sessions as AVFoundation reports them
 //   (`AVCaptureSession.didStartRunningNotification` / `didStopRunningNotification`, counted from launch): running
 //   now, starts, stops, and stops posted while the app was not active (`stopsAway`, between resign-active and the
-//   next become-active: the camera stopping in the background). Then the camera's exposure and white balance modes
+//   next become-active: the camera stopping in the background), and interruptions and their ends; `running` is the
+//   newest session's own `isRunning && !isInterrupted`. Then the camera's exposure and white balance modes
 //   read back from the device (CAM-004, CAM-006), and the motion sensor (CAM-011): `CMMotionManager`'s own
 //   `isDeviceMotionActive`, the rate, stops, stops while the app was not active, and samples delivered while it was
 //   not active. A UI test cannot read a backgrounded app, so "stopped in the background" is read on return.
@@ -31,6 +32,11 @@ final class UITestCaptureSessionLog: @unchecked Sendable {
     private struct State {
         var starts = 0
         var stops = 0
+        /// AVCaptureSession's interruption notifications (another app took the camera, the background) and their ends.
+        var interruptions = 0
+        var interruptionEnds = 0
+        /// The session that posted the last start: `running` reads its own state (below).
+        weak var session: AVCaptureSession?
         var stopTimes: [TimeInterval] = []
         var resignedAt: TimeInterval?
         var activeAgainAt: TimeInterval?
@@ -50,7 +56,15 @@ final class UITestCaptureSessionLog: @unchecked Sendable {
         let center = NotificationCenter.default
         // queue nil: counted on the posting thread at the moment of the post (the app may be suspended right after).
         observers.append(center.addObserver(forName: AVCaptureSession.didStartRunningNotification, object: nil, queue: nil) {
-            [state] (_: Notification) -> Void in state.withLockUnchecked { $0.starts += 1 }
+            [state] (note: Notification) -> Void in
+            let session = note.object as? AVCaptureSession
+            state.withLockUnchecked { $0.starts += 1; $0.session = session }
+        })
+        observers.append(center.addObserver(forName: AVCaptureSession.wasInterruptedNotification, object: nil, queue: nil) {
+            [state] (_: Notification) -> Void in state.withLockUnchecked { $0.interruptions += 1 }
+        })
+        observers.append(center.addObserver(forName: AVCaptureSession.interruptionEndedNotification, object: nil, queue: nil) {
+            [state] (_: Notification) -> Void in state.withLockUnchecked { $0.interruptionEnds += 1 }
         })
         observers.append(center.addObserver(forName: AVCaptureSession.didStopRunningNotification, object: nil, queue: nil) {
             [state] (_: Notification) -> Void in
@@ -72,12 +86,19 @@ final class UITestCaptureSessionLog: @unchecked Sendable {
         })
     }
 
-    /// "running=<n> starts=<n> stops=<n> stopsAway=<n>".
+    /// "running=<0|1> starts=<n> stops=<n> stopsAway=<n> interruptions=<n> interruptionEnds=<n>".
+    ///
+    /// `running` is the newest session's own state (running and not interrupted), not starts − stops: an interrupted
+    /// session posts a stop, and the end of the interruption resumes it without a guaranteed start notification
+    /// (QA-011 device run 2026-11-18, D2 and D3: after the Camera app the recovery read "running" while starts − stops
+    /// was 0, so the counts alone could not say whether the picture had returned).
     var summary: String {
         let s = state.withLockUnchecked { $0 }
         let windows = s.awayWindows + (s.resignedAt.map { [($0, TimeInterval.infinity)] } ?? [])
         let away = s.stopTimes.filter { (t: TimeInterval) -> Bool in windows.contains { t >= $0.0 && t <= $0.1 } }.count
-        return "running=\(max(0, s.starts - s.stops)) starts=\(s.starts) stops=\(s.stops) stopsAway=\(away)"
+        let running = s.session.map { $0.isRunning && !$0.isInterrupted } ?? false
+        return "running=\(running ? 1 : 0) starts=\(s.starts) stops=\(s.stops) stopsAway=\(away)"
+            + " interruptions=\(s.interruptions) interruptionEnds=\(s.interruptionEnds)"
     }
 }
 
@@ -87,6 +108,7 @@ struct UITestCameraDeviceProbes: View {
 
     let coordinator: AppCoordinator
     @State private var grid = "frame=none video=none"
+    @State private var refreshes = 0
     @State private var focusAction = "none"
 
     var body: some View {
@@ -109,8 +131,12 @@ struct UITestCameraDeviceProbes: View {
                 .accessibilityValue(grid)
             HStack(spacing: 2) {
                 button("grid", id: "cameraOrientationGridRefresh") {
+                    // `n=<refreshes>` tells the test this refresh's answer from the launch value "frame=none video=none"
+                    // (D2 2026-11-18: the test read the old value at once and found no picture).
+                    refreshes += 1
+                    let count = refreshes
                     grid = "pending"
-                    Task { grid = await Self.orientationGrids() }
+                    Task { grid = await Self.orientationGrids() + " n=\(count)" }
                 }
                 button("focus", id: "cameraFocusCentreAction") { focusAction = Self.performFocusAtCentre() }
                     .accessibilityValue(focusAction)

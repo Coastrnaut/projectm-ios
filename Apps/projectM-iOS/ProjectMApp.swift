@@ -127,6 +127,9 @@ struct RootView: View {
             // to copy the files into the app's library, and are not kept.
             .fileImporter(isPresented: $coordinator.showAudioImporter, allowedContentTypes: [.audio],
                           allowsMultipleSelection: true) { coordinator.audioPicked($0) }
+            #if DEBUG
+            .fileDialogDefaultDirectory(UITestAudioProbes.pickerDirectory)   // QA-011 Files tests: nil unless requested
+            #endif
             .alert(UIStrings.importAlertTitle, isPresented: importResultShown) {
                 Button(UIStrings.ok) { coordinator.audioLibrary.resultMessage = nil }
             } message: {

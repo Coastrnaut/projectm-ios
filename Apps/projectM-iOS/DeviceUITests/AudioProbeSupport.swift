@@ -58,9 +58,14 @@ extension DeviceAcceptanceCase {
 
     // MARK: Controls
 
+    /// Shows the controls. Controls that still exist but are fading out (they hide 5 s after the last use) are let go
+    /// first and shown fresh: on D3 (2026-11-18) `controls` existed when checked and was gone when its buttons were
+    /// tapped, so the transport checks after a quiet moment failed.
     func revealControls() {
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
-        if controls.exists { return }
+        let anchor = app.buttons["transportPlayPause"]
+        if controls.exists, anchor.exists, anchor.isHittable { return }
+        if controls.exists { _ = wait(8) { !controls.exists } }
         area.tap()
         if !wait(2, { controls.exists }) { area.tap() }
         XCTAssertTrue(wait(5) { controls.exists }, "the controls are shown")
@@ -130,7 +135,16 @@ extension DeviceAcceptanceCase {
         let before = sessionCounts()
         switch kind {
         case .clockTimer: SystemUI(app: app).startClockTimer(seconds: 5)
-        case .siri: SystemUI(app: app).siriInterruption()
+        case .siri:
+            SiriAvailability.unavailableSeen = false
+            SystemUI(app: app).siriInterruption()
+            if SiriAvailability.unavailableSeen {   // Siri is off on this device: this step cannot run
+                let step = "\(task) siri \(whilePaused ? "paused" : "playing")"
+                SiriAvailability.skippedSteps.append(step)
+                print("DEVICE-ACCEPT-NOTE \(step): Siri is off on \(deviceModel()); the Siri interruption was not run")
+                report(task, "siri \(whilePaused ? "paused" : "playing")", ["siriUnavailable": 1])
+                return ["siriUnavailable": 1]
+            }
         }
         let began = wait(25) { self.sessionCounts().began > before.began }
         let ended = wait(20) { self.sessionCounts().ended > before.ended }
@@ -172,8 +186,18 @@ extension DeviceAcceptanceCase {
     }
 
     /// The synthetic lost output route (headphones unplugged): pauses with the route reason; Play continues.
+    ///
+    /// The session panel sits at the top edge, in the status-bar band; on D3 (iPadOS 26.5, 2026-11-18) the tap on
+    /// `session:routeLost` (x 483-605, y 6-31) changed nothing: playback went on. The tap is confirmed by the
+    /// session log's route count and repeated once at the button's lower edge.
     func routeLostThenPlay(_ task: String) {
+        let routesBefore = Int(probeFields("sessionLog")["routes"] ?? "") ?? -1
         tapPanel("session:routeLost")
+        if routesBefore >= 0, !wait(2, { (Int(self.probeFields("sessionLog")["routes"] ?? "") ?? -1) > routesBefore }) {
+            let button = app.buttons["session:routeLost"].firstMatch
+            print("DEVICE-ACCEPT-NOTE \(task) route lost: the first tap posted nothing (\(button.frame)); tapping its lower edge")
+            button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.92)).tap()
+        }
         let paused = waitForIndicator("· Paused", 5)
         XCTAssertTrue(paused, "\(task) route lost: paused: \(sourceIndicator)")
         tapTransport("transportPlayPause")
@@ -200,4 +224,43 @@ extension DeviceAcceptanceCase {
 
     /// `On My iPhone` / `On My iPad`: the Files location that holds the app's Documents (UIFileSharingEnabled).
     var onMyDevice: String { UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone" }
+
+    /// Picks `name` from the app's own Documents in the Files picker the app presents.
+    ///
+    /// The picker does not list the presenting app's own folder under On My iPhone/iPad (QA-011 device run
+    /// 2026-11-18: D1, D2 and D3 listed the other apps' folders and no projectM, although the installed build has
+    /// UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace). So the test host opens the picker in its Documents
+    /// (`-uitestPickerInDocuments`, DEBUG: `fileDialogDefaultDirectory`) and the file is tapped there; only when it is
+    /// not shown does this fall back to browsing On My … › projectM (which then fails, naming what is missing).
+    @discardableResult
+    func pickFromAppDocuments(_ name: String) -> Bool {
+        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+        if wait(8, { file.exists }) {
+            file.tap()
+            if app.buttons["Open"].waitForExistence(timeout: 2) { app.buttons["Open"].tap() }
+            return true
+        }
+        print("DEVICE-ACCEPT-NOTE the picker did not open in the app's Documents; browsing \(onMyDevice) > \(SystemUI.appDisplayName)")
+        return SystemUI(app: app).filesPick(path: [onMyDevice, SystemUI.appDisplayName], name: name)
+    }
+}
+
+/// Whether XCUITest could reach Siri. `XCUIDevice.siriService.activate` records the issue "Unable to activate Siri
+/// because it is not enabled on this device" (D3, 2026-11-18) instead of throwing. The test classes that use Siri
+/// pass every issue through `SiriAvailability.swallow` in `record(_:)`: that issue sets `unavailableSeen` and is not
+/// recorded, and the test skips its Siri steps with `skipReason` instead of failing.
+enum SiriAvailability {
+    nonisolated(unsafe) static var unavailableSeen = false
+    nonisolated(unsafe) static var skippedSteps: [String] = []
+
+    /// True when `issue` is XCUITest's "Siri is not enabled" (the caller then does not record it).
+    static func swallow(_ issue: XCTIssue) -> Bool {
+        let text = issue.compactDescription
+        guard text.contains("Siri"), text.contains("not enabled") else { return false }
+        unavailableSeen = true
+        return true
+    }
+
+    static let skipReason = "Siri is off on this device (XCUITest: \"Unable to activate Siri because it is not enabled\"); "
+        + "turn Siri on (typed requests are enough) to run the Siri interruption"
 }

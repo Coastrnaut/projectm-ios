@@ -1421,6 +1421,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             // UserPresetsUITests: `-uitestImportPreset <path>` imports that file through the same
             // code path as the Files picker's result.
             if let path = defaults.string(forKey: "uitestImportPreset") {
+                await UITestAudioProbes.seedBeforePresetImport()   // QA-011 PRE-015-T26: the seed exists before the import
                 // QA-011 B07: `fixture:strobe` (written in the app) or a path relative to Documents on a device.
                 await userPresets.importPicked(.success(UITestVisualProbes.presetImportURL(path)))
             }

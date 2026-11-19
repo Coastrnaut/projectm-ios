@@ -13,6 +13,19 @@ import XCTest
 final class B05AudioDeviceTests: DeviceAcceptanceCase {
     private var overlay: XCUIElement { app.descendants(matching: .any)["performanceOverlay"].firstMatch }
 
+    /// Siri off on the device is a skip with a reason, not a failure (SiriAvailability).
+    override func record(_ issue: XCTIssue) {
+        if SiriAvailability.swallow(issue) { return }
+        super.record(issue)
+    }
+
+    /// After the other steps ran: skips the test, naming the Siri steps that could not run.
+    private func skipIfSiriStepsSkipped() throws {
+        let steps = SiriAvailability.skippedSteps
+        SiriAvailability.skippedSteps = []
+        try XCTSkipIf(!steps.isEmpty, "\(SiriAvailability.skipReason); not run: \(steps.joined(separator: ", "))")
+    }
+
     /// Mean motion of the whole screen over three pairs of screenshots (the spectrum is most of the moving picture).
     private func motion(_ task: String, _ label: String) -> Double {
         var values: [Double] = []
@@ -103,7 +116,7 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
 
     private func chooserLaunch(_ extra: [String], resetLibrary: Bool = true) {
         XCUIDevice.shared.orientation = .portrait
-        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO"]
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO", "-uitestPickerInDocuments"]
             + (resetLibrary ? ["-uitestResetAudioLibrary"] : []) + extra
         app.launch()
         let acknowledge = app.buttons["acknowledgeNotice"]
@@ -184,7 +197,8 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
 
     /// AUD-006-T40 (automatable part): an alarm (Clock timer) while playing and while paused, Siri while playing, a
     /// lost output route then Play, and Next track between a 48 kHz and a 44.1 kHz track (no gap, no repeat).
-    func testAUD006InterruptionsRouteLossAndRateChange() {
+    func testAUD006InterruptionsRouteLossAndRateChange() throws {
+        SiriAvailability.skippedSteps = []
         let task = "AUD-006-T40"
         launchPlayback(task, files: ["ramp-seek.wav", "ramp-44k.wav"])
         pause(2)
@@ -206,12 +220,14 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertEqual(playbackNumber("track"), 6, "the 44.1 kHz track plays after Next: \(probeValue("playbackProbe"))")
         XCTAssertEqual(playbackNumber("rewinds"), 0, "no old audio after the change")
         XCTAssertLessThan(playbackNumber("maxSilentMs"), 100, "no gap longer than 100 ms at the change")
+        try skipIfSiriStepsSkipped()
     }
 
     /// AUD-014-T29 (D1) and AUD-014-T30 (D2 iPadOS 27, D3 iPadOS 26): real Clock-timer and Siri interruptions while
     /// playing and while paused; the session log records whether iOS delivered the end and `shouldResume`, and the
     /// transport follows the policy for what arrived. A seek while held then Play continues at the seek target.
-    func testAUD014RealSystemInterruptions() {
+    func testAUD014RealSystemInterruptions() throws {
+        SiriAvailability.skippedSteps = []
         let task = deviceModel().hasPrefix("iPhone") ? "AUD-014-T29" : "AUD-014-T30"
         launchPlayback(task, files: ["ramp-seek.wav"])
         pause(2)
@@ -233,6 +249,7 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         report(task, "session log", ["began": Double(sessionCounts().began), "ended": Double(sessionCounts().ended),
                                      "resume": Double(sessionCounts().resume)])
         print("DEVICE-ACCEPT-NOTE \(task) sessionLog: \(probeValue("sessionLog"))")
+        try skipIfSiriStepsSkipped()
     }
 
     /// AUD-002-T25: each container from a real encoder imports and reaches "Active audio": MP3 constant and variable
@@ -252,7 +269,7 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         // The same import through the real document picker (On My iPhone/iPad › projectM-iOS).
         chooserLaunch(["-uitestSeedAudio", "containers"])
         app.buttons["importAudio"].tap()
-        _ = SystemUI(app: app).filesPick(path: [onMyDevice, SystemUI.appDisplayName], name: "seed-alac.m4a")
+        pickFromAppDocuments("seed-alac.m4a")
         let row = app.buttons["importedTrack"].firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 20), "the picked file is listed")
         row.tap()
@@ -294,7 +311,7 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         chooserLaunch(["-uitestSeedAudio", "broken"])
         for (name, message) in expected.sorted(by: { $0.key < $1.key }) {
             app.buttons["importAudio"].tap()
-            _ = SystemUI(app: app).filesPick(path: [onMyDevice, SystemUI.appDisplayName], name: name)
+            pickFromAppDocuments(name)
             let shown = importAlertMessage()
             let announced = probeValue("importProbe").components(separatedBy: "announce=").last ?? ""
             report(task, name, ["messageMatches": shown == message ? 1 : 0, "announced": announced == message ? 1 : 0])
@@ -310,7 +327,7 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         let task = "AUD-001-T23"
         chooserLaunch(["-uitestSeedAudio", "original"])
         app.buttons["importAudio"].tap()
-        _ = SystemUI(app: app).filesPick(path: [onMyDevice, SystemUI.appDisplayName], name: "aud001-original.m4a")
+        pickFromAppDocuments("aud001-original.m4a")
         XCTAssertTrue(app.buttons["importedTrack"].firstMatch.waitForExistence(timeout: 20), "imported")
         app.terminate()
         // The original goes (the app deletes its own Documents copy, which is the picked location), then a relaunch.
@@ -393,7 +410,9 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         app.terminate()
         app.launchArguments = ["-uitestDiagnostics", "-uitestUnlocked", "NO", "-uitestAudioPanel"]
         app.launch()
-        XCTAssertTrue(app.buttons["importAudio"].waitForExistence(timeout: 15), "the chooser")
+        // The relaunch need not land on the chooser (D1 and D3 2026-11-18: no Import Audio within 15 s; without
+        // `-uitestResetNotice` the app may restore the last scene): `importProbe` is on every screen and reads the queue.
+        XCTAssertTrue(wait(15) { !(self.probeFields("importProbe")["queue"] ?? "").isEmpty }, "relaunched, the queue is read: \(probeValue("importProbe"))")
         let queueAfter = probeFields("importProbe")["queue"] ?? ""
         XCTAssertEqual(queueAfter, queueBefore, "a relaunch keeps the queue")
         app.terminate()
@@ -514,10 +533,17 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(scrubber.exists && window.contains(scrubber.frame), "the scrubber is inside the window")
         tapTransport("transportPlayPause")   // paused: the position stays put while it is read
         XCTAssertTrue(waitForIndicator("· Paused"))
-        // XCUITest has no public adjustable increment on iOS: the slider is moved to 50 % of the 60 s ramp instead, and
-        // the shown position and the delivered audio follow (the VoiceOver 10 s increment stays with a person).
+        // XCUITest has no public adjustable increment on iOS: the scrubber is moved to 50 % of the 60 s ramp instead, and
+        // the shown position and the delivered audio follow (the VoiceOver 10 s increment stays with a person). The
+        // scrubber is the app's own adjustable element (type Other, D2 2026-11-18: `adjust(toNormalizedSliderPosition:)`
+        // raised "Can only adjust position of slider elements"), so it is dragged as TransportUITests does.
         revealControls()
-        scrubber.adjust(toNormalizedSliderPosition: 0.5)
+        if scrubber.elementType == .slider {
+            scrubber.adjust(toNormalizedSliderPosition: 0.5)
+        } else {
+            scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
+                .press(forDuration: 0.2, thenDragTo: scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)))
+        }
         pause(1)
         let after = playbackNumber("pos")
         let value = (scrubber.value as? String) ?? ""
@@ -536,6 +562,8 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
     func testPRE015LargePresetOpensUnder2s() throws {
         let task = "PRE-015-T26"
         XCUIDevice.shared.orientation = .portrait
+        // D1 and D3 2026-11-18: the row was missing on a device's first run: the preset import hook raced the seed
+        // writer (two launch tasks); the DEBUG hook now writes the `bigpreset` seed itself before it imports.
         app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-uitestUnlocked", "NO", "-autostart", "inAppPlayback",
                                "-uitestSeedAudio", "bigpreset", "-uitestImportPreset", "pre015-large.milk"]
         app.launch()
@@ -555,7 +583,9 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         let started = Date()
         edit.tap()
         let editor = app.textViews["presetEditorText"]
-        let opened = editor.waitForExistence(timeout: 10)
+        // Polled every 0.2 s: `waitForExistence` checks about once a second on a device, so D2's 2.16 s (2026-11-18)
+        // carried up to a second of polling.
+        let opened = wait(10) { editor.exists }
         let seconds = Date().timeIntervalSince(started)
         report(task, "open editor", ["seconds": seconds])
         XCTAssertTrue(opened, "the editor opens")

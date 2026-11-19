@@ -46,6 +46,11 @@ enum UITestAudioProbes {
     /// The audio library's last announcement (import summary), as posted to VoiceOver.
     static var lastLibraryAnnouncement = ""
 
+    /// `-uitestPickerInDocuments`: the Import Audio picker opens in the app's Documents. The Files picker does not list
+    /// the presenting app's own folder under On My iPhone/iPad (QA-011 device run 2026-11-18, D1-D3), so the Files
+    /// tests (AUD-001-T23, AUD-002-T25, AUD-002-T27) could not reach their seeded files by browsing.
+    static var pickerDirectory: URL? { arguments.contains("-uitestPickerInDocuments") ? URL.documentsDirectory : nil }
+
     static func value(after flag: String) -> String? {
         guard let i = arguments.firstIndex(of: flag), i + 1 < arguments.count else { return nil }
         return arguments[i + 1]
@@ -67,6 +72,14 @@ enum UITestAudioProbes {
         if let name = value(after: "-uitestDeleteDocument") {
             try? FileManager.default.removeItem(at: URL.documentsDirectory.appendingPathComponent(name))
         }
+    }
+
+    /// PRE-015-T26: `-uitestImportPreset` runs in its own launch task (after the renderer's trial), not after
+    /// `prepare()`, so it could read `pre015-large.milk` before the seed was written (D1, D3 2026-11-18: not imported).
+    /// The preset hook calls this first; `write` keeps a file that exists.
+    static func seedBeforePresetImport() async {
+        guard let kinds = value(after: "-uitestSeedAudio"), kinds.split(separator: ",").contains("bigpreset") else { return }
+        await Task.detached(priority: .userInitiated) { UITestAudioFixtures.write(["bigpreset"]) }.value
     }
 
     static func noteImport(_ path: String, milliseconds: Double) {
@@ -227,6 +240,7 @@ final class UITestPlaybackAnalyzer {
     private var lastCut = "none"
     private var changes: [String] = []
     private var pendingTarget: Double?
+    private var cutPending = false
     private var current: (k: Int, t: Double)?
 
     func startPolling() {
@@ -239,7 +253,7 @@ final class UITestPlaybackAnalyzer {
     func reset() {
         poll()
         buffers = 0; cuts = 0; seeks = 0; staleSeeks = 0; disc = 0; rewinds = 0; wraps = 0; silentBuffers = 0
-        maxSeekErrorMs = 0; silentRunMs = 0; maxSilentMs = 0; changes = []; pendingTarget = nil
+        maxSeekErrorMs = 0; silentRunMs = 0; maxSilentMs = 0; changes = []; pendingTarget = nil; cutPending = false
     }
 
     /// The next delivered cut is checked against `seconds`.
@@ -279,15 +293,26 @@ final class UITestPlaybackAnalyzer {
     private func handle(_ r: PlaybackDebugProbe.Record) {
         buffers += 1
         let seconds = r.sampleRate > 0 ? Double(r.frames) / Double(r.sampleRate) : 0
+        // A cut is recognised on the first buffer after it that carries the ramp: the first buffer itself can be
+        // silent or start with zeros (the player starts inside a render cycle). Before 2026-11-18 a cut whose first
+        // sample was 0 was dropped with the buffer, and AUD-006-T38 read `cuts=0` after 20 seeks on D1-D3.
+        if r.firstAfterCut { cutPending = true }
         if r.peak < 0.0001 {
             silentBuffers += 1
             silentRunMs += seconds * 1000
             maxSilentMs = max(maxSilentMs, silentRunMs)
             return
         }
+        let rate = Double(max(r.sampleRate, 1))
+        let lead = Int(r.leadingZeros)
+        // Leading zeros away from a cut are part of a gap (with the silent buffers before them); after a cut they are
+        // the player's start inside the render cycle, which the cut's own checks cover.
+        if lead > 0, !cutPending { maxSilentMs = max(maxSilentMs, silentRunMs + Double(lead) / rate * 1000) }
         silentRunMs = 0
-        guard let a = Self.decode(r.first), let b = Self.decode(r.last) else { current = nil; return }
-        if r.firstAfterCut {
+        guard let a = Self.decode(lead > 0 ? r.voiced : r.first), let b = Self.decode(r.last) else { current = nil; return }
+        let heardSeconds = Double(Int(r.frames) - lead) / rate
+        if cutPending {
+            cutPending = false
             cuts += 1
             if let previous = current, previous.k == a.k { cutJumpMs = (a.t - previous.t) * 1000 } else { cutJumpMs = 0 }
             lastCut = "\(a.k):\(Double(Int(a.t * 100)) / 100)"
@@ -299,9 +324,9 @@ final class UITestPlaybackAnalyzer {
                 pendingTarget = nil
             }
         } else if let previous = current {
-            step(previous, a, gap: 1 / Double(max(r.sampleRate, 1)))
+            step(previous, a, gap: Double(lead + 1) / rate)
         }
-        step(a, b, gap: seconds - 1 / Double(max(r.sampleRate, 1)))
+        step(a, b, gap: heardSeconds - 1 / rate)
         current = b
     }
 

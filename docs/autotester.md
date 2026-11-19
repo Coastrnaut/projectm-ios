@@ -551,6 +551,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   (the prompt-flow and permission primers included) and xcodebuild reported nothing wrong. Use
   `scripts/run_device_ui_tests.sh <d1|d2|d3> <name> only:<id> skip:<id> …` (bash arrays; `MAC_DRIVER=1` starts the Mac
   driver on the log), and check the log's command line before trusting a run.
+- **iPad and iPadOS lessons from the first D2/D3 run (2026-11-18):** the Files picker never lists the presenting app's
+  own folder (On My iPad › projectM is absent even with file sharing on): open the picker in the app's Documents with
+  DEBUG `-uitestPickerInDocuments` and tap the file. Controls that are fading out still "exist": wait for them to hide,
+  then show them fresh. iPadOS 26's status-bar band swallows taps on top-edge DEBUG panels. The Camera app asks for
+  location on its first launch (a person's prompt; the test skips with its text). The iPad Control Center privacy pill
+  reads "projectM Controls" with a camera icon and no "camera" text. Siri off is recorded as an issue ("Unable to
+  activate Siri…"), not thrown: tests swallow exactly that issue and skip the Siri step. An interrupted
+  AVCaptureSession posts a stop without a matching start on resume, so start/stop counts do not say it runs. A result
+  bundle from an interrupted run has no Info.plist; its screenshots are zstd blobs under `Data/`.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 

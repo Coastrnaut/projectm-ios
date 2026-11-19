@@ -23,6 +23,11 @@ public final class PlaybackDebugProbe: @unchecked Sendable {
         public var frames: Int32
         public var sampleRate: Float
         public var firstAfterCut: Bool
+        /// Frames at the buffer's start before channel 0's first non-zero sample, and that sample. The first buffer after
+        /// a cut can start with zeros when the player starts inside a render cycle; `first` then names no position (QA-011
+        /// device run 2026-11-18, D1-D3: 20 seeks, no cut and no jump recognised). `voiced` is the first position heard.
+        public var leadingZeros: Int32 = 0
+        public var voiced: Float = 0
     }
 
     public static let capacity = 8192
@@ -69,10 +74,13 @@ public final class PlaybackDebugProbe: @unchecked Sendable {
                 for i in 0..<frames { let m = abs(p[i]); if m > peak { peak = m } }
             }
         }
+        var lead = 0
+        while lead < frames, abs(c0[lead * stride]) < 0.001 { lead += 1 }   // the ramps never go below 0.03; a literal, no static in the tap
         let index = written.load(ordering: .relaxed)
         records[index % Self.capacity] = Record(first: c0[0], last: c0[(frames - 1) * stride], peak: peak,
                                                 frames: Int32(frames), sampleRate: Float(sampleRate),
-                                                firstAfterCut: firstAfterCut)
+                                                firstAfterCut: firstAfterCut, leadingZeros: Int32(lead),
+                                                voiced: lead < frames ? c0[lead * stride] : 0)
         written.store(index + 1, ordering: .releasing)
     }
 
