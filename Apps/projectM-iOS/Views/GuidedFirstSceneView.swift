@@ -10,7 +10,17 @@
 //   selected trait.
 // * Only permission-free choices; Microphone, System/App Capture, Camera, Photo and Video are named,
 //   never requested (UIX-015 owns permission explanations).
+// * Secondary text (the step count, each visual's description) uses `GuidedFirstScenePalette.secondaryText`, not
+//   the system secondary grey, which measured about 3.5:1 on white and "nearly passed" the contrast audit on D2 and
+//   D3 (QA-011 prompt flow, 2026-11-19); WCAG asks 4.5:1 for text this size.
 import SwiftUI
+
+/// UIX-001: the tutorial's secondary text colour, at least 4.5:1 on the page and grouped backgrounds (light and
+/// dark) and 7:1 with Increase Contrast (`GuidedFirstScenePaletteTests`).
+enum GuidedFirstScenePalette {
+    static let secondaryEntry = PaletteEntry(light: 0x6C6C70, dark: 0xAEAEB2, lightIncreased: 0x48484A, darkIncreased: 0xD1D1D6)
+    static var secondaryText: Color { Color(uiColor: InterfacePalette.uiColor(secondaryEntry)) }
+}
 
 struct GuidedFirstSceneView: View {
     @Bindable var guide: GuidedFirstSceneCoordinator
@@ -27,7 +37,7 @@ struct GuidedFirstSceneView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     Text("Step \(guide.flow.position) of \(GuidedFirstSceneFlow.stepCount)")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(GuidedFirstScenePalette.secondaryText)
                     Text(title)
                         .font(.largeTitle.bold())
                         .fixedSize(horizontal: false, vertical: true)
@@ -140,7 +150,7 @@ struct GuidedFirstSceneView: View {
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(visual.title).font(.headline).foregroundStyle(.primary)
-                    Text(visual.detail).font(.subheadline).foregroundStyle(.secondary)
+                    Text(visual.detail).font(.subheadline).foregroundStyle(GuidedFirstScenePalette.secondaryText)
                 }
                 .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)

@@ -104,9 +104,36 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         let toggle = app.switches["oscReceiverToggle"].firstMatch
         reveal(toggle)
         XCTAssertTrue(toggle.exists, "the OSC switch")
+        let knob = toggle.switches.firstMatch
+        clearOfNavigationBar(knob.exists ? knob : toggle)
         let before = toggle.value as? String
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        if !wait(3, { (toggle.value as? String) != before }) { toggle.switches.firstMatch.tap() }
+        if !wait(3, { (toggle.value as? String) != before }), knob.exists, knob.isHittable { knob.tap() }
+        XCTAssertTrue(wait(3) { (toggle.value as? String) != before },
+                      "the OSC switch changed from \(before ?? "nil") (frame \(toggle.frame), knob \(knob.frame))")
+    }
+
+    /// iPad (D2, D3, 2026-11-19): `-uitestSettingsSection osc` scrolls the OSC section to the top of the split
+    /// editor's Settings list, where the switch sits under the navigation bar's scroll-edge area (0-141 pt on D3) and
+    /// taps land on the bar ("Not hittable: Switch {{727, 126}, {63, 28}}", the knob tap changed nothing). Drags the
+    /// list down until `element` is clear of the bar.
+    private func clearOfNavigationBar(_ element: XCUIElement) {
+        let bar = app.navigationBars["Settings"]
+        for _ in 0..<4 {
+            guard element.exists, bar.exists else { return }
+            let limit = bar.frame.maxY + 60
+            if element.frame.minY >= limit, element.isHittable { return }
+            let start = app.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: element.frame.midX, dy: limit + 120))
+            start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: 0, dy: 160)))
+            pause(0.6)
+        }
+    }
+
+    /// The OSC status line (Settings), for failure messages.
+    private var oscStatusText: String {
+        let status = app.descendants(matching: .any)["oscStatus"].firstMatch
+        return status.exists ? String(describing: status.value ?? status.label) : "not shown"
     }
 
     private func explainer(_ permission: String) -> XCUIElement {
@@ -134,6 +161,37 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
 
     private var cameraNotice: XCUIElement { app.otherElements["cameraNotice"] }
 
+    /// The accessibility audit of one tutorial step, of what is on screen.
+    /// * It waits 0.8 s first: on D2 (2026-11-19) "Play" failed contrast right after Next turned into Play while the
+    ///   button was still highlighted from the tap; the same button passed at the four earlier steps.
+    /// * Issues of elements the opaque tutorial covers (not hittable) are logged, not counted: iPadOS 26.5 (D3) audits
+    ///   the source chooser behind the tutorial although RootView hides it from accessibility while the tutorial shows
+    ///   ("Microphone", "No imported audio yet."); iPadOS 27.2 (D2) does not. The chooser has its own audits.
+    private func tutorialAuditIssues(_ screen: String) -> [String] {
+        pause(0.8)
+        var issues: [String] = [], covered: [String] = []
+        do {
+            try app.performAccessibilityAudit(for: .all) { (issue: XCUIAccessibilityAuditIssue) -> Bool in
+                let snapshot: XCUIElementSnapshot? = try? issue.element?.snapshot()
+                if DebugProbes.contains(snapshot?.identifier ?? "") { return true }
+                let line = "[\(screen)] type=\(issue.auditType.rawValue) id=\"\(snapshot?.identifier ?? "")\" "
+                    + "label=\"\(snapshot?.label ?? "")\": \(issue.compactDescription)"
+                if let element = issue.element, element.exists, !element.isHittable { covered.append(line) } else { issues.append(line) }
+                return true
+            }
+        } catch {
+            issues.append("[\(screen)] audit failed: \(error)")
+        }
+        for line in covered { print("PROMPT-FLOW audit, covered by the tutorial (not counted): \(line)") }
+        if !issues.isEmpty {
+            let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+            shot.name = "audit-\(screen)"
+            shot.lifetime = .keepAlways
+            add(shot)
+        }
+        return issues
+    }
+
     // MARK: A: UIX-001-T14
 
     /// Fresh install: the tutorial's five steps to Play with no sign-in, network or permission prompt at any step; an
@@ -151,7 +209,7 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         for step in ["welcome", "sound", "visual", "look", "play"] {
             XCTAssertTrue(wait(5) { self.app.staticTexts["guide.step.\(step)"].exists }, "step \(step)")
             XCTAssertNil(system.systemAlert(), "no system prompt at \(step)")
-            issues += auditIssues(app, "uix001-\(step)")
+            issues += tutorialAuditIssues("uix001-\(step)")
             let next = app.buttons["guide.next"]
             if !next.isHittable { app.swipeUp(velocity: .slow) }
             next.tap()
@@ -205,9 +263,18 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(5) { self.explainer("localNetwork").exists }, "the explainer before iOS's prompt")
         XCTAssertNil(system.systemAlert(), "no iOS prompt before Continue")
         app.buttons["permissionExplainerContinue"].tap()
-        let prompted = expectPrompt("Local Network", containing: ["local network", "Local Network", "devices on your"],
-                                    answer: "Don't Allow", timeout: 15)
+        // Listening alone may not make iOS ask (D2, D3 2026-11-19: no prompt, the receiver listened); traffic from
+        // the local network may. With the OSC driver (prompt-flow --osc-host) the Mac sends now.
+        let macSends = ProcessInfo.processInfo.environment["OSC_DRIVER"] == "1"
+        print("OSC-READY test")
+        let shown = system.systemAlert(timeout: macSends ? 30 : 15) != nil
+        XCTAssertTrue(shown, "Local Network: iOS showed no prompt after OSC was turned on (OSC status: \(oscStatusText); "
+                      + "Mac OSC driver: \(macSends ? "sending" : "off")). The receiver's UDP listener does not make iOS ask "
+                      + "(app defect, OSC-001-T26; QA-011 2026-11-19)")
+        let prompted = shown && expectPrompt("Local Network", containing: ["local network", "Local Network", "devices on your"],
+                                             answer: "Don't Allow", timeout: 1)
         report("OSC-001-T26", "first enable", ["localNetworkPrompt": prompted ? 1 : 0])
+        guard prompted else { return }   // nothing was denied: the notice checks below would only repeat the cause
         let text = app.staticTexts["localNetworkNoticeText"]
         XCTAssertTrue(wait(15) { text.exists }, "the denied notice")
         reveal(text)
@@ -249,8 +316,10 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         app.terminate()
 
         // Camera and Local Network: off in Settings (already denied by B and C; set here so D stands alone).
+        var networkListed = false
         for permission in [AppPermission.microphone, .camera, .localNetwork] {
             let listed = system.setAppPermission(permission, on: false, keep: true)
+            if permission == .localNetwork { networkListed = listed }
             print("PROMPT-FLOW FILE-013: \(permission.rawValue) off in Settings: \(listed ? "set" : "not listed")")
         }
         launchVisualizer()
@@ -267,7 +336,7 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         openSettings()
         tapOSCToggle()
         let text = app.staticTexts["localNetworkNoticeText"]
-        XCTAssertTrue(wait(15) { text.exists }, "Local Network: the notice")
+        XCTAssertTrue(wait(15) { text.exists }, "Local Network: the notice (OSC status: \(oscStatusText); \(networkListed ? "denied in Settings" : "not listed in Settings: iOS never asked, see testC"))")
         XCTAssertEqual(text.label, Self.networkDenied, "Local Network: the catalog's text")
         XCTAssertTrue(app.buttons["localNetworkOpenSettings"].exists, "Local Network: Open Settings")
         report(task, "local network", ["notice": text.exists ? 1 : 0])
@@ -405,7 +474,8 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         for permission in AppPermission.allCases {
             let listed = system.setAppPermission(permission, on: true, keep: true)
             print("PROMPT-FLOW grant \(permission.rawValue): \(listed ? "on" : "not listed (never asked on this install)")")
-            XCTAssertTrue(listed, "\(permission.rawValue) is listed on the app's Settings page")
+            XCTAssertTrue(listed, "\(permission.rawValue) is listed on the app's Settings page"
+                          + (permission == .localNetwork ? " (iOS lists it only after it asked; no prompt came in testC)" : ""))
         }
         SystemUI.preferences.terminate()
 

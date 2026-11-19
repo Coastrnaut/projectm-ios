@@ -145,13 +145,23 @@ final class SystemUI {
         guard let alert = systemAlert(timeout: timeout) else { return nil }
         let text = alertText(alert)
         print("SYSTEM-UI alert: \(text) -> \(button)")
-        for name in Self.synonyms(button) where alert.buttons[name].exists {
-            alert.buttons[name].tap()
+        for name in Self.synonyms(button) {
+            guard let target = alertButton(alert, name) else { continue }
+            target.tap()
             _ = wait(5) { !alert.exists }
             return text
         }
         XCTFail("the alert has no \(button) button: \(text)")
         return text
+    }
+
+    /// The alert's button `name` (identifier or label), one element: the first hittable match, else the first match.
+    /// iPadOS 27.2 exposes each permission prompt button twice, nested (`kTCCServiceCamera-deny-button` inside
+    /// itself; D2 2026-11-19), so tapping `alert.buttons[name]` failed with "Multiple matching elements found".
+    func alertButton(_ alert: XCUIElement, _ name: String) -> XCUIElement? {
+        let matches = alert.buttons.matching(identifier: name).allElementsBoundByIndex
+        guard let first = matches.first else { return nil }
+        return matches.first { $0.isHittable } ?? first
     }
 
     // MARK: Settings app
