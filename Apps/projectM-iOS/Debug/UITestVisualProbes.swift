@@ -69,7 +69,8 @@ enum UITestVisualProbes {
     /// The file `-uitestImportPreset <value>` imports.
     static func presetImportURL(_ value: String) -> URL {
         let fixtures: [String: (name: String, text: String)] = ["fixture:strobe": ("Strobe", strobePreset),
-                                                                "fixture:calm": ("Calm", calmPreset)]
+                                                                "fixture:calm": ("Calm", calmPreset),
+                                                                "fixture:flicker": ("Flicker", flickerPreset)]
         if let fixture = fixtures[value] {
             let folder = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-\(fixture.name.lowercased())",
                                                                                        isDirectory: true)
@@ -99,6 +100,29 @@ enum UITestVisualProbes {
     per_frame_1=// Strobes on purpose: inverts on every strong beat and pumps gamma at frame rate.
     per_frame_2=wave_r = 0.5 + 0.5*sin(time*1.3);
     per_frame_3=invert = above(bass, 1.2);
+    per_frame_4=gamma = 1 + 2*equal(frame%2, 0);
+
+    """
+
+    /// FX-019-T23's strobing preset: the high-flash fixture above, but the whole frame inverts two frames on, two off
+    /// (15 Hz at 60 fps) whatever the music does. Pass 3 (2026-11-19, D2 and D3) saw no clamp in 18 s of the Strobe
+    /// fixture: its scene was dark (mean luma 0.09), where the 1-to-3 gamma pump stays under WCAG's 0.1
+    /// relative-luminance step, and its inversion waits for bass above 1.2. The Strobe fixture stays as it is for
+    /// ACC-002 and ACC-012 (whose Standard reading must stay near gain 1). `invert` marks it "may flash".
+    static let flickerPreset = """
+    MILKDROP_PRESET_VERSION=201
+    PSVERSION=2
+    [preset00]
+    // FX-019 test fixture written for projectM-iOS (MIT). Not a third-party preset.
+    fDecay=0.980000
+    zoom=1.010000
+    rot=0.000000
+    wave_r=0.6
+    wave_g=0.6
+    wave_b=0.9
+    per_frame_1=// Strobes on purpose: the whole frame inverts two frames in four.
+    per_frame_2=wave_r = 0.5 + 0.5*sin(time*1.3);
+    per_frame_3=invert = below(frame%4, 2);
     per_frame_4=gamma = 1 + 2*equal(frame%2, 0);
 
     """

@@ -44,6 +44,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: What feedback does a tap give, including for VoiceOver and Reduce Motion? → A: A 64-point ring at the touch for 1 s; it fades in and out, or appears and disappears at once with Reduce Motion. VoiceOver users get an accessibility action "Focus at centre" on the visualization (focuses at the centre of the visible picture) and the announcement "Focusing at centre" (CAM-005-R6, R7).
 - Q: Is the focus point kept across lens or camera switches, stops or launches? → A: No: before a lens or position switch and on every stop the camera is returned to continuous automatic focus at the centre (0.5, 0.5); nothing is stored, so there is no new settings key (CAM-005-R8, R9).
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: CAM-005-T14 read "none" from the Focus at centre probe on D3; is the custom action missing? → A: The probe's button never received the test's tap (its value stayed the launch value "none", like the grid probe beside it, CAM-002-T22). The probe's buttons moved top-leading, where other DEBUG panels take taps, and the test logs the button's frame and hit state.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Focus where I touch (Priority: P1)

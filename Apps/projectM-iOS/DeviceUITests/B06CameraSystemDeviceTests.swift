@@ -236,12 +236,17 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         // iPadOS (D2 27.2 and D3 26.5, 2026-11-18): the header is a green pill "projectM  Controls ›" whose camera is an
         // icon, so no label names the camera; the run found nothing on any iPad. There the app's name in the top band
         // (the privacy header, above the modules; Now Playing sits lower) counts, as the name of the sensor's user.
+        // Pass 3 (2026-11-19, D3): the pill's element is "projectM, Settings" with its frame starting at the screen's
+        // top (minY 0), so "ends within the top 10 %" left it out although the pill is drawn at 4-6 % of the height
+        // (screenshot). The pill counts when it starts in the top 10 % and is no taller than 20 % (not a container).
         if labels.isEmpty, acceptPadPill, UIDevice.current.userInterfaceIdiom == .pad {
-            let height = XCUIScreen.main.screenshot().image.size.height
+            let height = app.windows.firstMatch.frame.height > 0 ? app.windows.firstMatch.frame.height
+                : XCUIScreen.main.screenshot().image.size.height
             let named = SystemUI.springboard.descendants(matching: .any).matching(
                 NSPredicate(format: "label CONTAINS[c] %@", SystemUI.appDisplayName)).allElementsBoundByIndex
-            labels = named.filter { $0.frame.minY >= 0 && $0.frame.maxY < height * 0.1 }.prefix(4).map(\.label)
-            print("B06-SYSTEM Control Center app-name labels (iPad): \(named.prefix(6).map { "\($0.label) @\($0.frame.minY)" })")
+            labels = named.filter { $0.frame.minY >= 0 && $0.frame.minY < height * 0.1 && $0.frame.height < height * 0.2 }
+                .prefix(4).map(\.label)
+            print("B06-SYSTEM Control Center app-name labels (iPad): \(named.prefix(6).map { "\($0.label) @\($0.frame)" })")
         }
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "Control Center"

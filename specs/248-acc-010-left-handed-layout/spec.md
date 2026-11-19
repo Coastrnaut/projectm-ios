@@ -48,6 +48,10 @@ each answer is the conservative, local-first option.
 - Q: Does the UIX-013 HUD, the status badges, the performance overlay or the controls card move? → A: No. They are full-width or top-anchored and keep their places; only the pad and the emergency button are edge-anchored performance controls (`ACC-010-R2`, `ACC-010-R3`).
 - Q: How do tests turn the switch on? → A: Through the argument domain (`-settings.controls.leftHanded YES`), as other preferences do; `-uitestResetNotice` removes the stored value first, and a launch argument still overrides it (`ACC-010-R7`).
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: ACC-010-T13 failed in landscape on D2 and D3 with Next cue at x 1332 of 1376 and 1136 of 1180 pt; is the pad not mirrored? → A: It is: User Story 1 scenario 1 puts the cue targets in the trailing column and Tap tempo and Black out in the leading one when left-handed. The device test expected the right-handed placement; it now checks Next cue trailing and Tap tempo leading.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Pad and emergency button on the left (Priority: P1) — MVP

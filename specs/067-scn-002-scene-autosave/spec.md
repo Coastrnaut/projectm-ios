@@ -58,6 +58,10 @@ interaction); each answer is the conservative, local-first option.
   included in the user's own device backups like the stored photo and video. No file timestamps are
   read (required-reason API).
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: SCN-002-T10 found the switcher card on D2 and D3 but the app never ended; does force quit fail? → A: The gesture did. A press-then-drag to the top at 750 pt/s (0.8 s) is taken by iPadOS as moving the card, which settles back. The test now flicks the card (a fast short swipe up), up to three times, each followed by a check that the app ended (`SystemUI.forceQuitFromSwitcher`).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - My last committed look survives a crash or a forced quit (Priority: P1)

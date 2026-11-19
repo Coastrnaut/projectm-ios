@@ -48,6 +48,10 @@ local-first option.
 
 - Q: VIS-019-T13 found no still run after a moving pair on D2 and Reduce Motion 0.0061 against 0.0060 on D1; does silence not settle it, or Reduce Motion not calm it? → A: On D2 the 15 s window opened in the reference track's gap (13 still pairs, then tones), so a still run anywhere counts while some pair moves. The music comparison used one pair each with the overlay's text in the picture and Reduce flashing following Reduce Motion; it now takes the mean of three pairs, the overlay's box left out, Reduce flashing pinned off in both runs.
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: VIS-019-T13 pass 3 on D3 read Reduce Motion 0.030 against 0.005 with music; does Reduce Motion not calm the figure? → A: One Reduce Motion pair straddled a mode change the music drove (a red diagonal mode to the orange cross, mean luma 0.04 → 0.13): Reduce Motion halves the blend (R9) but does not hold modes back, and the mean of three pairs was that one pair. The comparison is now the median of five pairs per run.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A tone draws its own figure (Priority: P1)

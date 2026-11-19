@@ -100,7 +100,15 @@ final class ClockLayerTests: XCTestCase {
         let (layer, compositor, output) = try makeClock()
         let text = newText()
         let minute = Date(timeIntervalSince1970: 1_772_633_100)   // 14:05:00
-        try show(minute, text: text, layer: layer, compositor: compositor, output: output)
+        // Deterministic first frame: prepare the picture size with no text yet, then wait for the clock's
+        // rasterization before any frame can show it. (Through `show`, the first rasterization started inside
+        // the frame's `prepare`, so whether that same frame showed it depended on the background queue winning
+        // the race against `render`: CI saw 120 frames shown instead of 119 on a slow runner.)
+        try frame(compositor, output)
+        XCTAssertEqual(layer.framesShown, 0, "no text before the clock's first string")
+        layer.spec = settings.spec(for: try XCTUnwrap(text.update(at: minute, timeZone: utc)))
+        layer.waitUntilRendered()
+        try frame(compositor, output)
         for second in 1..<60 {
             try show(minute.addingTimeInterval(TimeInterval(second)), text: text, layer: layer, compositor: compositor, output: output)
         }

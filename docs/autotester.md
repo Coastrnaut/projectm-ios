@@ -19,7 +19,7 @@ runs on hardware.
 | System tests | `B14SystemDeviceTests` (ACC-001, ACC-003, ACC-008), `B02…testPERF011SwitcherCardAndControlCenter`, `B03…testSCN002ForceQuitFromSwitcher` | Unattended tests that drive Settings, the switcher and Control Center; no prompts. |
 | Mac driver | `scripts/mac_device_driver.py`, `scripts/mac_driver/` | `follow`: answers `MAC-DO {json}` lines in an xcodebuild log with an action module (`audio.play/tone/stop` via `afplay`, `memory.warning` via `devicectl … sendMemoryWarning`, `device.crashlogs`; later batches add xctrace, osc, midi, peer); logs `MAC-DONE <id>`. `prompt-flow`: uninstall, install, fixtures, then the prompt flow alone. |
 | Media fixtures | `scripts/make_media_fixtures.py`, `scripts/fixtures/make_media.swift` | Build/fixtures/media: HEIC with GPS, 60 MP PNG/HEIC, a 45 MB JPEG, transparent PNG, 200-frame GIF, H.264 1080p, HEVC 4K60, HEVC 360p 10 min, HDR HEVC (HLG, 10-bit), WAV/AIFF/AAC/M4A AAC/ALAC, 10 MB and 60-min M4A, a damaged M4A, a PDF named .mp3, a JPEG named .milk, a 524,288-byte preset, a strobing preset, a 120 BPM click track (about 40 s on the Mac Studio). No MP3 (no encoder on the Mac). |
-| Camera probes | `Apps/projectM-iOS/Debug/UITestCameraDeviceProbes.swift` | DEBUG `-uitestCameraDeviceProbes` (Batch 4): `cameraDeviceState` (capture sessions running, starts, stops, `stopsAway`; exposure, white balance; the motion sensor), `cameraOrientationGrid` + `cameraOrientationGridRefresh` (12 × 16 luma grids of the newest saved frame and recording), `cameraFocusCentreAction` (the "Focus at centre" custom action). `-uitestBindGlowToMotion` binds glow to Tilt forward and Shake. |
+| Camera probes | `Apps/projectM-iOS/Debug/UITestCameraDeviceProbes.swift` | DEBUG `-uitestCameraDeviceProbes` (Batch 4): `cameraDeviceState` (capture sessions running, starts, stops, `stopsAway`; exposure, white balance; the motion sensor), `cameraOrientationGrid` + `cameraOrientationGridRefresh` (12 × 16 luma grids of the newest saved frame and recording, with `files=<frames>/<recordings>`; it also refreshes by itself when a new file appears; the buttons sit top-leading), `cameraFocusCentreAction` (the "Focus at centre" custom action). `-uitestBindGlowToMotion` binds glow to Tilt forward and Shake. |
 | Photo library seed | `Apps/projectM-iOS/Debug/UITestPhotoLibrarySeed.swift` | DEBUG `-uitestSeedPhotoLibrary <name,…>`: adds Documents fixtures to Photos (add-only), probe `photoLibrarySeed` ("status=… added=… missing=… failed=… done=1"). |
 | Files sharing (Debug host) | `DeviceTests.yml` (post-build script) | The Debug device-test app gets `UIFileSharingEnabled` and `LSSupportsOpeningDocumentsInPlace`, so Documents shows in Files › On My iPhone/iPad › projectM for the real document picker. The shipping Info.plist is unchanged. |
 | Music fixture | `scripts/make_music_fixture.py` | A deterministic, generated 60 s stereo track (120 BPM drums, bass, chords, quiet intro, loud chorus, breakdown). No licence. Copied into the app's Documents before a run. |
@@ -675,6 +675,29 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   permission), and the test fails on the named cause first.
 - **Few samples make a percentile meaningless.** The 5th percentile of 10 one-second windows is the worst second
   (a cold shader cache after a fresh install). Use 60 windows or more; record first-launch costs separately.
+- **Pass 3 on D2 and D3 (2026-11-19), what it taught:**
+  - *Read the spec's own placement before asserting one.* ACC-010's left-handed landscape pad puts the cue column
+    trailing; the test asserted the right-handed placement. SHOW-010 draws only bars when beats would be under 4 pt
+    apart (R2); the test assumed every beat is drawn. Derive the expectation (here the stride from the track width).
+  - *Don't time events off a display that redraws at the event's own rate.* The beat readout redraws twice a second
+    at 120 BPM: intervals between seen changes alias (0.73/0.29 s on D3). Fit the count over time instead.
+  - *Rare events need a statistical allowance.* Skipped refresh slots (7 vs 15 of 3,600) are Poisson counts; allow
+    3·√(a + b), not a fixed 5 slots.
+  - *Compare like with like.* A luma cut picks hues by itself (FX-002's bright pixels); compare the same cut with and
+    without the effect. A mean of three picture pairs is one outlier (a music-driven mode change, VIS-019): use the
+    median of five.
+  - *A probe answer must belong to this tap.* Two probe buttons sharing one `@State` answer let a decrement read the
+    increment's "performed"; number each button's answers and wait for a new one. Probe buttons at the bottom-leading
+    corner of the visualizer never got the test's taps on the iPads (the value stayed at its launch text): put probe
+    buttons top-leading like the other DEBUG panels, and let a probe refresh itself when its input (a new file) appears.
+  - *Fixtures must produce the condition without the music.* ACC-002's Strobe fixture flashes only on strong bass;
+    FX-019's device test uses `fixture:flicker`, a whole-frame inversion two frames in four.
+  - *iPadOS takes a slow drag of a switcher card as a move.* Flick it (`swipeUp`, then a fast short drag) and check
+    that the app ended after each try.
+  - *Run an accessibility audit with the controls held up* (`-uitestKeepControls`); an audit during the fade catches
+    half-transparent text.
+  - *A host test that counts frames must not race a background queue.* Wait for the background work before the frame
+    whose count matters (MED-011's clock test, 120 vs 119 in CI).
 
 ### Policy and evidence
 

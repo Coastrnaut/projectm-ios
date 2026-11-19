@@ -67,6 +67,10 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
   output by more than 10 %; any layer's opacity takes the same path to the output, so the step still proves the
   live update without depending on the music.
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: UIX-007-T13's divider decrement left "480 points, Wide" again in pass 3 (D3); does VoiceOver's decrement fail? → A: Not shown by the run: the two probe buttons shared one answer, so the decrement read the increment's earlier "performed" and its own tap was never confirmed. Each probe button now numbers its own answers ("performed #1 on …") and the test waits for this tap's answer before reading the width.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Edit properties beside the live output on iPad (Priority: P1)

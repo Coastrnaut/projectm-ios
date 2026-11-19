@@ -41,6 +41,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: Are camera pictures analysed in any way (faces, people, motion, color)? → A: No. This row only scales and draws pictures; no Vision and no image analysis of any kind (CAM-001-R9). Analysis would need its own specification and privacy review.
 - Q: What does the denied notice offer, and does it repeat? → A: A banner over the visualizer, not an alert: "Camera access is off. To show the camera, allow it in Settings." with an "Open Settings" button that opens the app's page in iOS Settings; it stays while Camera is chosen and access is off, and needs no dismissal (CAM-001-R5). The no-camera and interrupted notices are the same banner without the button. The app never asks again by itself: iOS shows its prompt only once.
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: CAM-001-T24 found nothing in Control Center on D3 although its green pill "projectM  Controls ›" was on screen; is the attribution missing? → A: No. The pill's element is labelled "projectM, Settings" and its frame starts at the top of the screen, so the test's "ends within the top 10 %" left it out. It counts now when it starts in the top 10 % and is no taller than 20 % of the screen (not a container). The green status dot was seen in both runs.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The live rear camera behind the music (Priority: P1)
