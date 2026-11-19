@@ -1,8 +1,9 @@
 // UITestPhotoLibrarySeed.swift — DEBUG only (QA-011 device automation, Batch 1). `-uitestSeedPhotoLibrary
 // <name,name,…>` adds files from the app's Documents (copied there by scripts/install_test_fixtures.py) to the
 // device's photo library with add-only access, so tests of the Photos picker have known pictures and clips to pick
-// without a person. It asks add-only access the way the app's Save to Photos does (one iOS prompt per device,
-// answered in PromptFlowDeviceTests); every run adds the files again (add-only access cannot see the library).
+// without a person, dated now in the order named so the picker shows them as its newest items. It asks add-only
+// access the way the app's Save to Photos does (one iOS prompt per device, answered in PromptFlowDeviceTests); every
+// run adds the files again (add-only access cannot see the library).
 // Movies (.mov, .mp4, .m4v) are added as videos, everything else as photos. The `photoLibrarySeed` probe (with
 // `-uitestDiagnostics`) and Documents/photo-library-seed.txt report "status=<…> added=<n> missing=<n> failed=<n>
 // done=1". Not compiled into Release builds.
@@ -34,9 +35,11 @@ final class UITestPhotoLibrarySeed {
                 return
             }
             var added = 0, failed = 0
-            for url in present {
+            let start = Date()
+            for (index, url) in present.enumerated() {
                 do {
-                    try await PHPhotoLibrary.shared().performChanges(Self.changes(for: url))
+                    let created = start.addingTimeInterval(Double(index))
+                    try await PHPhotoLibrary.shared().performChanges(Self.changes(for: url, created: created))
                     added += 1
                 } catch {
                     failed += 1
@@ -52,12 +55,18 @@ final class UITestPhotoLibrarySeed {
     }
 
     /// The change block, made outside the main actor (Photos runs it on its own queue; see LivePhotosSaver).
-    nonisolated private static func changes(for url: URL) -> @Sendable () -> Void {
+    ///
+    /// `created` is the asset's creation date: now, one second apart in the order named. Without it Photos dated a
+    /// fixture with no capture date by the file (installed the day before), so the Photos picker's newest item was not
+    /// the one just seeded and MED-008 picked a 640 × 480 slide instead of the GIF (pass 4, D2, 2026-11-19).
+    nonisolated private static func changes(for url: URL, created: Date) -> @Sendable () -> Void {
         { () -> Void in
             let video = ["mov", "mp4", "m4v"].contains(url.pathExtension.lowercased())
             let options = PHAssetResourceCreationOptions()
             options.originalFilename = url.lastPathComponent
-            PHAssetCreationRequest.forAsset().addResource(with: video ? .video : .photo, fileURL: url, options: options)
+            let request = PHAssetCreationRequest.forAsset()
+            request.creationDate = created
+            request.addResource(with: video ? .video : .photo, fileURL: url, options: options)
         }
     }
 }

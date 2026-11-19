@@ -695,19 +695,42 @@ final class SystemUI {
     /// app, no import alert came, and the next step's Import Audio tap failed as "not hittable". An item now counts only
     /// when it is wholly inside the window, clear of the toolbar and the home indicator (`isFullyShown`); a partly shown
     /// item is brought in with a short, slow drag (`nudge`), an item off screen with a full swipe.
+    ///
+    /// QA-011 pass 4 (D2, iPadOS 27.2, 2026-11-19): the first pick after a full-speed swipe tapped the cell about 2 s
+    /// after the swipe, while the grid was still decelerating. A touch on a moving scroll view only stops it: nothing
+    /// was picked, no Open button came, the picker stayed up (screenshots), and the test read "No photo"/"No video"
+    /// (MED-001-T23, MED-001-T24 HEIC, MED-002 H.264, MED-014 panorama); later picks in the same test, with no swipe,
+    /// worked. After any scroll the item's frame must now hold still before it counts as found (`settle`).
     func findFile(_ name: String, initialWait: Double, swipes: Int) -> Bool {
         if wait(initialWait, { self.isFullyShown(self.fileItem(name)) }) { return true }
         let grid = app.collectionViews["File View"].firstMatch
         guard grid.exists else { return fileItem(name).exists }
         for _ in 0..<swipes {
             let item = fileItem(name)
-            if isFullyShown(item) { return true }
+            if isFullyShown(item) { return settle(item) }
             moveTowards(item, in: grid)
             pause(0.6)
         }
         let item = fileItem(name)
         if item.exists && !isFullyShown(item) { moveTowards(item, in: grid); pause(0.6) }
-        return fileItem(name).exists
+        return fileItem(name).exists && settle(fileItem(name))
+    }
+
+    /// Waits (at most `timeout` s) until `item`'s frame is the same in two reads 0.4 s apart: the scroll view under it
+    /// has stopped, so a tap is a tap and not a scroll stop. True when it settled, or when it kept moving but is still
+    /// on screen (the tap is tried anyway; `tapFile` checks that the picker took it).
+    @discardableResult
+    func settle(_ item: XCUIElement, timeout: Double = 4) -> Bool {
+        var last = item.exists ? item.frame : .null
+        let end = Date().addingTimeInterval(timeout)
+        while Date() < end {
+            pause(0.4)
+            guard item.exists else { return false }
+            let now = item.frame
+            if now == last { return true }
+            last = now
+        }
+        return item.exists
     }
 
     /// Whether `item` is hittable and wholly inside the window, at least 60 pt below its top (the picker's toolbar)
@@ -770,18 +793,6 @@ final class SystemUI {
         app.collectionViews["File View"].exists || app.cells.matching(Self.fileItemPredicate(name)).firstMatch.exists
     }
 
-    /// Waits (at most 2 s) until `item`'s frame holds still, so a tap does not land on a grid still coasting from a swipe.
-    private func settle(_ item: XCUIElement) {
-        var last = item.exists ? item.frame : .zero
-        let end = Date().addingTimeInterval(2)
-        while Date() < end {
-            pause(0.3)
-            let now = item.exists ? item.frame : .zero
-            if now == last { return }
-            last = now
-        }
-    }
-
     /// Cancels a Files picker that is still up (after a failed pick or save), so the app is in front again.
     func cancelFilesPicker() {
         for label in ["Cancel", "Close"] {
@@ -834,42 +845,87 @@ final class SystemUI {
     /// icon, picked nothing, and every Photos step after it failed (MED-001-T22, MED-002, MED-006, MED-008, MED-014).
     /// Newest is by the label's date when every item's label has one (the grid's order differs by release), else the
     /// grid's order.
+    ///
+    /// QA-011 rerun 4 and pass 4 (2026-11-19):
+    /// * D3 (iPadOS 26.5): the grid's items existed (the log checked about 25 "PXGGridLayout-Info" images) and the
+    ///   screenshot shows the seeded fixtures in the picker, but XCUITest called none of them hittable (the grid is
+    ///   another process's view), so the filter left nothing: "the Photos picker shows no items". An item now counts
+    ///   when its frame lies inside the window (hittable ones first), and it is tapped at its centre by coordinate.
+    /// * D2 (iPadOS 27.2): a one-item picker closes on the tap, and the "Done" then found was the app's own Settings
+    ///   Done, which closed the panel: the next summary read "" (MED-014-T23). Add/Done is tapped only for several
+    ///   items, never the Settings navigation bar's Done.
     @discardableResult
     func photosPick(count: Int = 1) -> Bool {
         let grid = app.images.matching(identifier: "PXGGridLayout-Info")
         let skipped: Set<String> = ["PickerOnboardingHeaderViewIcon", "AdditionalDimmingOverlay"]
+        let window = app.windows.firstMatch.frame
+        func onScreen(_ e: XCUIElement) -> Bool {
+            guard e.exists else { return false }
+            let f = e.frame
+            return !f.isEmpty && (window.isEmpty || window.contains(f))
+        }
+        func candidates(_ all: [XCUIElement]) -> [XCUIElement] {
+            let shown = all.filter(onScreen)
+            let hittable = shown.filter { $0.isHittable }
+            return hittable.isEmpty ? shown : hittable
+        }
         var items: [XCUIElement] = []
         _ = wait(10) {
-            items = Array(grid.allElementsBoundByIndex.prefix(40)).filter { $0.exists && $0.isHittable }
+            items = candidates(Array(grid.allElementsBoundByIndex.prefix(40)))
             if items.isEmpty {   // another release's grid: plain thumbnails inside the picker's scroll view
-                items = Array(self.app.scrollViews.images.allElementsBoundByIndex.prefix(40)).filter {
-                    $0.exists && $0.isHittable && !skipped.contains($0.identifier) && $0.frame.width > 40 && $0.frame.width < 300
-                }
+                items = candidates(Array(self.app.scrollViews.images.allElementsBoundByIndex.prefix(40)).filter {
+                    !skipped.contains($0.identifier) && $0.frame.width > 40 && $0.frame.width < 300
+                })
             }
             return !items.isEmpty
         }
         guard !items.isEmpty else {
-            XCTFail("the Photos picker shows no items")
+            let seen = grid.allElementsBoundByIndex.prefix(4).map { "\($0.frame) hittable=\($0.isHittable)" }
+            XCTFail("the Photos picker shows no items (grid items seen: \(grid.count); first frames \(seen); window \(window))")
             return false
         }
-        for item in Self.newestFirst(items).prefix(count) { item.tap() }
-        for name in ["Add", "Done"] {
-            let button = app.buttons[name].firstMatch
-            if button.exists && button.isEnabled {
-                button.tap()
-                break
+        let picks = Array(Self.newestFirst(items).prefix(count))
+        print("DEVICE-ACCEPT-NOTE Photos picker: picking \(picks.map(\.label)) of \(items.count) shown")
+        for item in picks {
+            item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            pause(0.4)
+        }
+        if count > 1 {
+            let settingsDone = app.navigationBars["Settings"].buttons["Done"].firstMatch
+            let appDone = settingsDone.exists ? settingsDone.frame : .null
+            for name in ["Add", "Done"] {
+                let button = app.buttons.matching(identifier: name).allElementsBoundByIndex.first {
+                    $0.exists && $0.isEnabled && $0.frame != appDone
+                }
+                if let button {
+                    button.tap()
+                    break
+                }
             }
         }
-        return true
+        let closed = wait(10) { !grid.firstMatch.exists }
+        if !closed { XCTFail("the Photos picker is still up after picking \(count)") }
+        return closed
     }
 
     /// `items` newest first by the date in their labels ("Photo, November 18, 6:51 PM", "Video, Today, 9:05 AM"),
-    /// or in their own order when a label has no date this can read.
+    /// or in their own order when a label has no date this can read. Labels carry minutes only, so items added in
+    /// the same minute tie (the library seed adds several at once): ties follow the grid's own direction, read from
+    /// the labels that differ (newest-first grids keep their order, oldest-first grids are reversed).
     static func newestFirst(_ items: [XCUIElement]) -> [XCUIElement] {
-        let dates = items.map { photoDate($0.label) }
-        guard !dates.contains(where: { $0 == nil }) else { return items }
-        let order = items.indices.sorted { a, b in dates[a]! != dates[b]! ? dates[a]! > dates[b]! : a < b }
-        return order.map { items[$0] }
+        newestFirstOrder(items.map { photoDate($0.label) }).map { items[$0] }
+    }
+
+    /// The indices of `dates` newest first (see `newestFirst`); the given order when any date is nil.
+    static func newestFirstOrder(_ dates: [Date?]) -> [Int] {
+        guard !dates.contains(where: { $0 == nil }) else { return Array(dates.indices) }
+        let d = dates.map { $0! }
+        var rising = 0, falling = 0
+        for i in d.indices.dropFirst() where d[i] != d[i - 1] {
+            if d[i] > d[i - 1] { rising += 1 } else { falling += 1 }
+        }
+        let oldestFirstGrid = rising > falling
+        return d.indices.sorted { a, b in d[a] != d[b] ? d[a] > d[b] : (oldestFirstGrid ? a > b : a < b) }
     }
 
     /// The date in a Photos picker label: "<kind>, <Month day>[, <year>], <time>" or "<kind>, Today|Yesterday, <time>".

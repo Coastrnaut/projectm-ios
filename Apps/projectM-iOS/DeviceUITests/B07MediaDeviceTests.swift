@@ -168,17 +168,59 @@ class B07Case: ControlSurfaceCase {
     static func seedLibrary(_ names: [String]) -> [String] { ["-uitestSeedPhotoLibrary", names.joined(separator: ",")] }
 
     /// Waits for `-uitestSeedPhotoLibrary`; fails (never waits for a person) when add-only access was not granted.
-    func waitLibrarySeed(_ task: String) {
+    /// False when the seed did not add every fixture: the caller stops there, since its Photos steps would only pick
+    /// whatever else the library holds (pass 4, D2: the prompt was up and every later step failed behind it).
+    @discardableResult
+    func waitLibrarySeed(_ task: String) -> Bool {
         let done = wait(90) { self.text("photoLibrarySeed").contains("done=1") || self.ui.systemAlert() != nil }
         let value = text("photoLibrarySeed")
         if ui.systemAlert() != nil {
             XCTFail("\(task): the Photos add-only prompt appeared; run the prompt-flow batch first "
-                    + "(python3 scripts/mac_device_driver.py prompt-flow --device <D>)")
-            return
+                    + "(python3 scripts/mac_device_driver.py prompt-flow --device <D>); stopping here")
+            return false
         }
-        XCTAssertTrue(done && value.contains("status=granted") && value.contains("missing=0") && value.contains("failed=0"),
-                      "\(task): the library seed (\(value)); install the media fixtures (install_test_fixtures.py --media) and "
+        let seeded = done && value.contains("status=granted") && value.contains("missing=0") && value.contains("failed=0")
+        XCTAssertTrue(seeded, "\(task): the library seed (\(value)); install the media fixtures (install_test_fixtures.py --media) and "
                       + "grant Photos add-only (prompt-flow batch)")
+        return seeded
+    }
+
+    /// Waits up to `timeout` s for an element labelled with `text` (a notice). A notice row added below the Photo
+    /// section's buttons lies under the fold of the Settings list, and the list builds no off-screen rows, so it is
+    /// not in the tree until shown: MED-001-T24 on D3 (2026-11-19) never found "larger than 40 MB" although the app
+    /// refused the file (the hierarchy ends at Choose from Files…). The list is dragged up a third at a time (slowly,
+    /// at most three times) while the notice is missing; it clears itself after 6 s (PhotoCoordinator).
+    func waitForNotice(_ text: String, timeout: Double = 20) -> Bool {
+        let notice = labelled(text)
+        var drags = 0
+        return wait(timeout) {
+            if notice.exists { return true }
+            let list = self.app.collectionViews.firstMatch
+            if drags < 3, self.app.navigationBars["Settings"].exists, list.exists {
+                drags += 1
+                let a = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+                let b = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.42))
+                a.press(forDuration: 0.05, thenDragTo: b, withVelocity: .slow, thenHoldForDuration: 0.2)
+            }
+            return notice.exists
+        }
+    }
+
+    /// Drags an ACC-005 slider row (an adjustable element, not an XCUIElement slider: `app.sliders[id]` never
+    /// matches it) from `current` to `target` (0…1): the line runs 27 pt above the row's bottom, 34 pt in from each
+    /// side (as UITestSliders' `dragSlider`).
+    func dragRowSlider(_ e: XCUIElement, from current: CGFloat, to target: CGFloat) {
+        let rect = e.frame
+        let width = max(rect.width, 1)
+        let y: CGFloat = rect.height > 50 ? rect.height - 27 : rect.height / 2
+        let left: CGFloat = rect.height > 50 ? 34 : 14
+        let track = max(width - 2 * left, 1)
+        func x(_ p: CGFloat) -> CGFloat { left + min(max(p, 0), 1) * track }
+        let origin = e.coordinate(withNormalizedOffset: .zero)
+        let endX: CGFloat = target <= 0 ? -10 : (target >= 1 ? width + 10 : x(target))
+        origin.withOffset(CGVector(dx: x(current), dy: y))
+            .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: endX, dy: y)), withVelocity: .slow,
+                   thenHoldForDuration: 0.1)
     }
 
     // MARK: Pixels
@@ -224,7 +266,7 @@ final class B07MediaDeviceTests: B07Case {
     func testMED001PhotosPickerNoPrompt() {
         let task = "MED-001-T22"
         launch(visual: "photo", extra: Self.seedLibrary(["photo-small.jpg"]))
-        waitLibrarySeed(task)
+        guard waitLibrarySeed(task) else { return }
         pickFromPhotos("choosePhotoFromPhotos")
         assertNoPrompt(task, "Choose from Photos")
         let summary = settledSummary("photoSummary")
@@ -282,14 +324,14 @@ final class B07MediaDeviceTests: B07Case {
         XCTAssertTrue(panorama.contains("4096 × "), "\(task): the 60 MP panorama is stored at 4096 px: \(panorama)")
 
         pickFromFiles("choosePhotoFromFiles", "photo-45mb.jpg")
-        let notice = labelled("larger than 40 MB")
-        XCTAssertTrue(wait(20) { notice.exists }, "\(task): the 40 MB notice")
+        let noticeShown = waitForNotice("larger than 40 MB")
+        XCTAssertTrue(noticeShown, "\(task): the 40 MB notice")
         XCTAssertEqual(app.state, .runningForeground, "\(task): the app keeps running")
         XCTAssertEqual(settledSummary("photoSummary"), panorama, "\(task): the refused file leaves the photo")
         closeSettingsPanel()
         XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo 4096 × ") }, "\(task): the panorama renders: \(photoValue)")
         report(task, "HEIC, panorama, 45 MB", ["gpsStripped": metadata.contains("gps=none") ? 1 : 0,
-                                              "panoramaSeconds": seconds, "noticeShown": notice.exists ? 1 : 0])
+                                              "panoramaSeconds": seconds, "noticeShown": noticeShown ? 1 : 0])
     }
 
     /// MED-014-T23 (D1, D3): a real camera HEIC and a camera HEVC clip (Dolby Vision on iPhone 15 when HDR video is
@@ -531,7 +573,7 @@ final class B07MediaDeviceTests: B07Case {
         let slides = (1...5).map { "slide-\($0).png" }
         launch(visual: "photo", settings: ["settings.performanceOverlay": false],
                extra: Self.seedLibrary(slides) + ["-uitestTapInterval", "500"])
-        waitLibrarySeed(task)
+        guard waitLibrarySeed(task) else { return }
         openSettingsPanel()
         guard tapControl("slideshowAddFromPhotos") else { return }
         XCTAssertTrue(ui.photosPick(count: 5), "\(task): five at once")
@@ -543,8 +585,12 @@ final class B07MediaDeviceTests: B07Case {
         }
         XCTAssertTrue(wait(30) { self.text("slideshowSummary") == "7 pictures" }, "\(task): \(text("slideshowSummary"))")
         setSwitch("slideshowToggle", on: true)
-        let seconds = app.sliders["slideshowSecondsSlider"].firstMatch
-        if scrollTo(seconds) { seconds.adjust(toNormalizedSliderPosition: 0) }
+        // An ACC-005 adjustable row, not a slider: `app.sliders` never found it and Time stayed at the default 5 s
+        // (pass 4, D2: 4 changes in 16 s). From 5 s (3/58 of 2…60) to the 2 s end stop.
+        let seconds = element("slideshowSecondsSlider")
+        XCTAssertTrue(scrollTo(seconds), "\(task): Seconds per picture")
+        if seconds.exists { dragRowSlider(seconds, from: 3.0 / 58.0, to: 0) }
+        pause(0.5)
         closeSettingsPanel()
         let time = followSlides(seconds: 16, count: 7)
         XCTAssertGreaterThanOrEqual(time.sequence.count, 5, "\(task) Time: slides change: \(time.sequence)")
@@ -564,7 +610,9 @@ final class B07MediaDeviceTests: B07Case {
 
         relaunch()
         openSettingsPanel()
-        XCTAssertTrue(wait(10) { self.text("slideshowSummary") == "7 pictures" }, "\(task): relaunch keeps the pictures")
+        _ = scrollTo(app.switches["slideshowToggle"].firstMatch, swipes: 12)   // the list builds no off-screen rows
+        XCTAssertTrue(wait(10) { self.text("slideshowSummary") == "7 pictures" },
+                      "\(task): relaunch keeps the pictures: \(text("slideshowSummary"))")
         let mode = app.buttons["slideshowModePicker"].firstMatch
         _ = scrollTo(mode)
         XCTAssertTrue("\(mode.label) \(mode.value as? String ?? "")".contains("On the beat"), "\(task): relaunch keeps Beats: \(mode.label)")
@@ -679,7 +727,7 @@ final class B07MediaDeviceTests: B07Case {
     func testMED008LargeGIF() {
         let task = "MED-008-T12"
         launch(visual: "photo", settings: ["settings.performanceOverlay": false], extra: Self.seedLibrary(["animated-200.gif"]))
-        waitLibrarySeed(task)
+        guard waitLibrarySeed(task) else { return }
         pickFromPhotos("choosePhotoFromPhotos")
         _ = settledSummary("photoSummary")
         closeSettingsPanel()
