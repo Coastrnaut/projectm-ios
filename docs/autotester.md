@@ -717,6 +717,18 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     that the app ended after each try.
   - *Run an accessibility audit with the controls held up* (`-uitestKeepControls`); an audit during the fade catches
     half-transparent text.
+  - *Read a changing tree once.* The share sheet builds its rows after it appears; reading
+    `allElementsBoundByIndex` element by element failed with "No matches found for Element at index 36" (REC-012,
+    D2 and D3). Collect labels from one `app.snapshot()` instead.
+  - *A diagnostic overlay must sit below what a person taps.* With the performance overlay on, D3's narrower portrait
+    screen put it over "Frame ready"; Save… had hit point {-1, -1} and never opened the exporter (REC-001). The overlay
+    now draws below the panels (`VisualizerView.layers`).
+  - *A disk ballast must aim at the figure the guard reads.* On D3 the important-use capacity stayed 0.4-2.8 GB above
+    the real free space while 77 GB were written, so the ballast never reached its target and the guard never stopped
+    (REC-009, REC-015). The guard and the ballast now read the smaller of the two (`VolumeStorageReading.guardBytes`),
+    and the fill checks its time budget between 16 MB chunks.
+  - *Files folders hold the fixtures.* On My iPad › projectM lists about 50 fixture files by name, so a "Visualizer
+    Recording" sits below the first screen; scroll until its cell is built (REC-003).
   - *A host test that counts frames must not race a background queue.* Wait for the background work before the frame
     whose count matters (MED-011's clock test, 120 vs 119 in CI).
 

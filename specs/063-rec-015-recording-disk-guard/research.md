@@ -6,6 +6,10 @@
   recording folder (`<tmp>/Recordings`, created first). Nil or a thrown error = unknown.
 - **Rationale**: Apple's documented figure for user-initiated work; it includes space the system can
   purge for important use. One key, one category (Disk space), reason E174.1.
+- **Amended (QA-011 device run 2026-11-19)**: the guard reads the smaller of the important-use figure and
+  `volumeAvailableCapacityKey` (`VolumeStorageReading.guardBytes`). On D3 the important-use figure stayed
+  0.4-2.8 GB above the real free space while 77 GB were written (purgeable space was not freed), so the guard
+  never stopped a recording at 209 MB really free. See the spec's Clarifications.
 - **Alternatives**: `volumeAvailableCapacityKey` (ignores purgeable space; refuses recordings that
   fit); `...ForOpportunisticUsage` (too pessimistic for a user action); `attributesOfFileSystem` /
   `statfs` (same category, return more than needed).

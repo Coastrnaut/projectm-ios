@@ -103,15 +103,29 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         let files = XCUIApplication(bundleIdentifier: "com.apple.DocumentsApp")
         files.launch()
         XCTAssertTrue(files.wait(for: .runningForeground, timeout: 10), "Files is in front")
-        let browse = files.buttons["Browse"].firstMatch   // iPadOS 26's floating tab bar nests a second Browse button
-        if wait(5, { browse.exists }) { browse.tap(); browse.tap() }   // twice: back to Browse's root
+        // iPadOS 26's floating tab bar nests a second Browse button; a second tap goes back to Browse's root. On iPadOS
+        // 27.2 (D2, pass 4) the first tap already shows the root and Browse is gone: tap again only while it is there.
+        let browse = files.buttons["Browse"].firstMatch
+        if wait(5, { browse.exists }) {
+            browse.tap()
+            pause(1)
+            if browse.exists && browse.isHittable { browse.tap() }
+        }
         for item in [place, SystemUI.appDisplayName] {
             let row = files.descendants(matching: .any).matching(NSPredicate(format: "label == %@", item)).firstMatch
             XCTAssertTrue(wait(6) { row.exists }, "Files: \(item)")
             if row.exists { row.tap(); pause(1) }
         }
+        // The folder is sorted by name and holds the test fixtures (about 50 on D3): "Visualizer Recording …" sits
+        // below the first screen and the grid builds cells only near it (rerun 4, D3). Scroll until one is built.
         let recordings = files.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH 'Visualizer Recording'"))
-        XCTAssertTrue(wait(6) { recordings.count > 0 }, "Files lists the recording")
+        var listed = wait(4) { recordings.count > 0 }
+        for _ in 0..<12 where !listed {
+            files.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.8))
+                .press(forDuration: 0.05, thenDragTo: files.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.25)))
+            listed = wait(1) { recordings.count > 0 }
+        }
+        XCTAssertTrue(listed, "Files lists the recording")
         let labels = recordings.allElementsBoundByIndex.map(\.label)
         if let newest = labels.max(),
            let index = labels.firstIndex(of: newest) {
@@ -136,10 +150,19 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "label IN {'Save to Files', 'AirDrop', 'Copy'}")).firstMatch
     }
 
-    /// Every label the share sheet shows (its activities and actions).
+    /// Every label the share sheet shows (its activities and actions), from one snapshot of the tree. Reading
+    /// `allElementsBoundByIndex` element by element failed on D2 and D3 (rerun 4): the sheet was still building its
+    /// rows, so "Element at index 35/36" was gone by the time its label was read.
     private func sheetLabels() -> Set<String> {
-        Set(app.buttons.allElementsBoundByIndex.map(\.label) + app.cells.allElementsBoundByIndex.map(\.label)
-            + app.staticTexts.allElementsBoundByIndex.map(\.label))
+        guard let root = try? app.snapshot() else { return [] }
+        let kinds: Set<XCUIElement.ElementType> = [.button, .cell, .staticText]
+        var labels = Set<String>()
+        var stack: [any XCUIElementSnapshot] = [root]
+        while let node = stack.popLast() {
+            if kinds.contains(node.elementType), !node.label.isEmpty { labels.insert(node.label) }
+            stack += node.children
+        }
+        return labels
     }
 
     private func dismissSheet() {
@@ -281,12 +304,20 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         let alertField = app.alerts["Rename Recording"].textFields.firstMatch
         XCTAssertTrue(wait(5) { identified.exists || alertField.exists }, "the rename field")
         let field = identified.exists ? identified : alertField
-        field.tap()
+        // Put the cursor at the end before deleting: a tap in the middle of the field left the old name's tail after
+        // the deletes on D2 (pass 4: "QA011 REC010 5258|11-19 at 11.20").
+        field.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.5)).tap()
         let old = (field.value as? String) ?? ""
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count + 2) + stem)
-        app.alerts.buttons["Rename"].firstMatch.tap()
+        XCTAssertEqual((field.value as? String) ?? "", stem, "the rename field holds only the new name")
+        // On D2 (pass 4) the alert stayed up after one Rename tap: tap again while it is still shown.
+        let renameAlert = app.alerts["Rename Recording"]
+        for _ in 0..<3 where renameAlert.exists {
+            app.alerts.buttons["Rename"].firstMatch.tap()
+            _ = wait(3) { !renameAlert.exists }
+        }
         let renamed = app.descendants(matching: .any).matching(NSPredicate(format: "identifier == 'recordingLibraryRow' AND label CONTAINS %@", stem))
-        XCTAssertTrue(wait(5) { renamed.count == 1 }, "the row shows the new name")
+        XCTAssertTrue(wait(5) { renamed.count == 1 }, "the row shows the new name (alert still up: \(renameAlert.exists))")
         // Delete it (its row's Delete; rows are newest first, the renamed one is the first).
         app.buttons.matching(identifier: "recordingLibraryDelete").firstMatch.tap()
         let confirm = app.buttons["recordingLibraryConfirmDelete"].firstMatch

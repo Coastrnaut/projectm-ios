@@ -40,6 +40,15 @@ final class UITestDiskBallastTests: XCTestCase {
         XCTAssertEqual((try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? Int64) ?? -1, 0)
     }
 
+    /// QA-011 rerun 4 (D3): the ballast aims at the figure the disk guard reads, the smaller of the two capacities.
+    func testTheBallastReadsWhatTheGuardReads() throws {
+        _ = try importantFree()
+        let r = BallastWriter.readings(url)
+        XCTAssertEqual(r.reading, min(r.important, r.real))
+        let line = BallastWriter(url: url).fill(toFree: r.reading + 10_000_000_000)
+        XCTAssertTrue(line.contains(" guardMB="), line)
+    }
+
     func testTheFillStepIsBoundedSoProgressShows() {
         XCTAssertLessThanOrEqual(BallastWriter.fillStepBytes, 1_000_000_000, "a step a device writes in seconds")
         XCTAssertGreaterThan(UITestDiskBallast.fillBudgetSeconds, 0)

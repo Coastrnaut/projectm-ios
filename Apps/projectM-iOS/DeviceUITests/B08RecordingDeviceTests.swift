@@ -259,7 +259,8 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         print("B08 \(task) ballast: \(value) after \(Int(Date().timeIntervalSince(started))) s")
         let n = probeNumbers("diskBallast")
         report(task, "disk ballast", ["ballastMB": n["ballastMB"] ?? -1, "freeMB": n["freeMB"] ?? -1,
-                                      "realFreeMB": n["realFreeMB"] ?? -1, "settled": settled ? 1 : 0])
+                                      "realFreeMB": n["realFreeMB"] ?? -1, "guardMB": n["guardMB"] ?? -1,
+                                      "settled": settled ? 1 : 0])
         XCTAssertTrue(settled, "the ballast settled: \(value)")
         return value
     }
@@ -362,7 +363,7 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         let n = probeNumbers("diskBallast")
         print("B08 \(task): stopped=\(stopped) after \(seconds) s, notice \(notice), \(videoProbe), ballast \(probeText("diskBallast")), alerts \(alerts)")
         report(task, "real disk guard", ["stopped": stopped ? 1 : 0, "seconds": seconds, "frames": Double(file?.frames ?? 0),
-                                         "duration": file?.duration ?? 0, "freeMBAfter": n["freeMB"] ?? -1,
+                                         "duration": file?.duration ?? 0, "freeMBAfter": n["freeMB"] ?? -1, "guardMBAfter": n["guardMB"] ?? -1,
                                          "storageAlerts": Double(alerts.count)])
         XCTAssertTrue(stopped, "the guard stopped the recording within 150 s")
         XCTAssertEqual(notice, "Recording stopped because storage is almost full.")
