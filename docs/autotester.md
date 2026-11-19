@@ -618,8 +618,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **The Mac's `/bin/bash` is 3.2**: no `mapfile`, and `"${args[@]}"` of an empty array fails under `set -u`. Read
   filter files with `while IFS= read -r`, and expand with `${args[@]+"${args[@]}"}` (`run_device_ui_tests.sh`).
 - **"Timed out while enabling automation mode"** (D2, 2026-11-19, unlocked, after a lost connection mid-run): the
-  runner cannot turn on UI automation; retrying does not help. A person checks the device for a passcode prompt and
-  Settings › Developer › Enable UI Automation, then the run is started again.
+  runner cannot turn on UI automation; retrying does not help. Cause found later that day: a rebuilt (newly signed)
+  test runner makes iPadOS ask for the passcode before it allows UI automation, and the runner gives up after about
+  60 s if nobody answers. Toggling Enable UI Automation, killing leftover processes or restarting testmanagerd did
+  not help. After every rebuild of the device tests, start the run while the owner is at the devices and have them
+  enter the passcode at the prompt; batch rebuilds so this happens once per session.
 - **Siri can leave the device unable to start UI tests.** On D3 (2026-11-19) `siriService.activate` brought Siri up but
   its window "has not loaded accessibility"; the runner then exited and every later launch, on that run and the next,
   failed with "Timed out while enabling automation mode" (D2 showed the same after its lost connection). Siri steps
