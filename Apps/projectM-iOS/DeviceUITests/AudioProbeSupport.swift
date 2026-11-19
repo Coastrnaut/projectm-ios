@@ -261,14 +261,19 @@ extension DeviceAcceptanceCase {
 /// and is not recorded, and the test skips its Siri steps with `skipReason` instead of failing.
 enum SiriAvailability {
     nonisolated(unsafe) static var unavailableSeen = false
-    nonisolated(unsafe) static var knownUnavailable = false
+    /// Siri steps run only when the run asks for them (`TEST_RUNNER_SIRI=1`, its own batch): on D3 (2026-11-19) a Siri
+    /// request whose window never loaded accessibility was followed by "Timed out while enabling automation mode" for
+    /// every later test launch, which left the device unable to run UI tests until a person reset it.
+    nonisolated(unsafe) static var knownUnavailable = ProcessInfo.processInfo.environment["SIRI"] != "1"
     nonisolated(unsafe) static var skippedSteps: [String] = []
 
     /// True when `issue` is XCUITest's "Siri is not enabled" or "Timed out waiting for Siri to activate" (the caller
     /// then does not record it).
     static func swallow(_ issue: XCTIssue) -> Bool {
         let text = issue.compactDescription
-        guard text.contains("Siri"), text.contains("not enabled") || text.contains("Timed out waiting for Siri") else {
+        let siri = text.contains("Siri") || text.contains("com.apple.siri")
+        guard siri, text.contains("not enabled") || text.contains("Timed out waiting for Siri")
+            || text.contains("has not loaded accessibility") else {
             return false
         }
         unavailableSeen = true
@@ -277,6 +282,6 @@ enum SiriAvailability {
     }
 
     static let skipReason = "Siri is off or unreachable on this device (XCUITest: \"Unable to activate Siri because it "
-        + "is not enabled\" or \"Timed out waiting for Siri to activate\"); "
-        + "turn Siri on (typed requests are enough) to run the Siri interruption"
+        + "is not enabled\", \"Timed out waiting for Siri to activate\", or Siri's window never loaded accessibility), "
+        + "or the run did not ask for Siri: run the Siri steps in their own batch with SIRI=1 and Siri on"
 }

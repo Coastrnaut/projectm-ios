@@ -26,7 +26,7 @@ fi
 xcodebuild test-without-building -xctestrun "Build/device-acceptance-$dev/Products/DeviceAcceptance_iphoneos27.2-arm64.xctestrun" \
   -destination "platform=iOS,id=$udid" -resultBundlePath "Build/device-acceptance-$dev/$name-$(date +%m%d%H%M%S).xcresult" \
   ${args[@]+"${args[@]}"} -test-timeouts-enabled YES -default-test-execution-time-allowance 600 \
-  TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" > "$log" 2>&1
+  TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" > "$log" 2>&1
 [ -n "${driver:-}" ] && kill "$driver" 2>/dev/null
 echo "== $dev $name: $(grep -cE 'Test Case.*passed' "$log") passed, $(grep -cE 'Test Case.*failed' "$log") failed, $(grep -cE 'Test Case.*skipped' "$log") skipped"
 grep -E "Test Case.*failed" "$log" | sed 's/.*Tests\.//; s/\]. failed.*//' | sort -u

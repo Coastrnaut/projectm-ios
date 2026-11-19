@@ -620,6 +620,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **"Timed out while enabling automation mode"** (D2, 2026-11-19, unlocked, after a lost connection mid-run): the
   runner cannot turn on UI automation; retrying does not help. A person checks the device for a passcode prompt and
   Settings › Developer › Enable UI Automation, then the run is started again.
+- **Siri can leave the device unable to start UI tests.** On D3 (2026-11-19) `siriService.activate` brought Siri up but
+  its window "has not loaded accessibility"; the runner then exited and every later launch, on that run and the next,
+  failed with "Timed out while enabling automation mode" (D2 showed the same after its lost connection). Siri steps
+  now run only when asked for (`SIRI=1 scripts/run_device_ui_tests.sh …`, in their own batch, last); every other run
+  skips them at once with `SiriAvailability.skipReason`.
 - **Parse the run total**: XCTest prints "Executed 134 tests, with 3 tests skipped and 0 failures"; the last
   "Executed" line can be a sub-suite.
 
