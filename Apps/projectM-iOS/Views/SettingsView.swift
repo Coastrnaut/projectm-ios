@@ -700,7 +700,7 @@ struct SettingsView: View {
             return
         }
         let osc: OSCReceiverCoordinator = self.osc
-        let status: PermissionState = PermissionStatusSource.localNetwork(state: osc.state)
+        let status: PermissionState = PermissionStatusSource.localNetwork(state: osc.state, access: osc.localNetworkAccess)
         explainers.request(.localNetwork, status: status) { () -> Void in osc.setEnabled(true) }
     }
 

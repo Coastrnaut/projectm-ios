@@ -6,6 +6,8 @@
 - **Amends**: the FILE-012 network symbol scan (until now `NWBrowser` failed everywhere and `NWListener.Service`
   passed as a plain listener API), `check_compliance.py` (new discovery rules), OSC-001's "no Bonjour" note and
   `NSLocalNetworkUsageDescription`
+- **Amended by**: ADR-0125 (2026-11-19): the OSC receiver also runs one short browse, without resolution, to obtain
+  the Local Network permission
 
 ## Context
 

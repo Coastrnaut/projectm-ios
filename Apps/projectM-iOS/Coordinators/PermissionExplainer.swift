@@ -80,10 +80,10 @@ enum PermissionStatusSource {
         return PermissionCatalog.state(cameraAuthorization: AVCaptureDevice.authorizationStatus(for: .video))
     }
 
-    /// Local network: iOS has no query; an observed listener answers, otherwise "not asked" (the
-    /// explained flag remembers that iOS asked).
-    static func localNetwork(state: OSCReceiverState) -> PermissionState {
-        PermissionCatalog.state(localNetwork: state) ?? .notDetermined
+    /// Local network: iOS has no query; the listener's denial or the ADR-0125 browse answers, otherwise "not asked"
+    /// (the explained flag remembers that iOS asked).
+    static func localNetwork(state: OSCReceiverState, access: LocalNetworkAccess) -> PermissionState {
+        PermissionCatalog.state(localNetwork: state, access: access) ?? .notDetermined
     }
 }
 

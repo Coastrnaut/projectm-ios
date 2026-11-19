@@ -11,6 +11,9 @@
 //   read once for its remote address when ready, and cancelled: it sends nothing. A service whose address is not
 //   local (`OSCPeerAddress.isLocal`) is dropped; one not resolved within 5 s stays unresolved (no retry).
 // * At most `OSCDiscovery.maximumPeers` services are tracked.
+// * ADR-0125: `resolves: false` makes the Local Network permission probe the OSC receiver runs when it starts while
+//   the answer is unknown this launch: the same browse, but found services are only listed by name (no resolution
+//   flow at all), and the receiver cancels it within a few seconds.
 // * All state lives on one private serial queue. `cancel()` sets a flag synchronously, so no event is reported
 //   after it returns, then cancels the browser and every resolution on the queue.
 #if canImport(Network)
@@ -38,8 +41,12 @@ public final class NetworkOSCPeerBrowser: OSCPeerBrowsing, @unchecked Sendable {
     private var browser: NWBrowser?
     private var events: (@Sendable (OSCBrowserEvent) -> Void)?
     private var entries: [String: Entry] = [:]
+    /// False for the ADR-0125 permission probe: nothing is resolved, so no flow of any kind is created.
+    private let resolves: Bool
 
-    public init() {}
+    public init(resolves: Bool = true) {
+        self.resolves = resolves
+    }
 
     public func start(events: @escaping @Sendable (OSCBrowserEvent) -> Void) {
         queue.async { self.open(events) }
@@ -126,7 +133,7 @@ public final class NetworkOSCPeerBrowser: OSCPeerBrowsing, @unchecked Sendable {
         for name in current.keys.sorted() where entries[name] == nil {
             guard entries.count < OSCDiscovery.maximumPeers, let endpoint = current[name] else { break }
             entries[name] = Entry(endpoint: endpoint)
-            resolve(name, endpoint)
+            if resolves { resolve(name, endpoint) }
         }
         report()
     }

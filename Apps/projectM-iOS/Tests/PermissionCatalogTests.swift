@@ -145,11 +145,19 @@ final class PermissionCatalogTests: XCTestCase {
         XCTAssertNil(C.cameraNotice(for: .running))
     }
 
+    /// ADR-0125 (QA-011 device run 2026-11-19): listening proves nothing; the browse's answer and the listener's
+    /// policy failure decide.
     func testLocalNetworkMapping() {
-        XCTAssertEqual(C.state(localNetwork: .listening(port: 9000)), .granted)
-        XCTAssertEqual(C.state(localNetwork: .failed(port: 9000, .localNetworkDenied)), .denied)
-        XCTAssertNil(C.state(localNetwork: .failed(port: 9000, .portInUse)))
-        XCTAssertNil(C.state(localNetwork: .off), "iOS has no Local Network query")
+        XCTAssertNil(C.state(localNetwork: .listening(port: 9000), access: .unknown),
+                     "D2, D3: a UDP listener listens with the permission never asked")
+        XCTAssertEqual(C.state(localNetwork: .listening(port: 9000), access: .granted), .granted)
+        XCTAssertEqual(C.state(localNetwork: .listening(port: 9000), access: .denied), .denied)
+        XCTAssertEqual(C.state(localNetwork: .failed(port: 9000, .localNetworkDenied), access: .unknown), .denied)
+        XCTAssertEqual(C.state(localNetwork: .failed(port: 9000, .localNetworkDenied), access: .granted), .denied,
+                       "the listener's own policy failure wins")
+        XCTAssertNil(C.state(localNetwork: .failed(port: 9000, .portInUse), access: .unknown))
+        XCTAssertNil(C.state(localNetwork: .off, access: .unknown), "iOS has no Local Network query")
+        XCTAssertEqual(C.state(localNetwork: .off, access: .denied), .denied)
     }
 
     func testScreenCaptureMapping() {
