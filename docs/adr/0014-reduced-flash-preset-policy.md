@@ -41,3 +41,14 @@ flashing did not change which scenes the app picks.
   (0.65 %) are flagged; the screen adds about 5 s to a full index rebuild.
 - Rule changes rebuild the index (the stamp hashes the classifier) and must update the fixtures.
 - ACC-012 (sensory safety profile) can reuse the verdict and rule ids for finer per-user limits.
+
+## Amendment 2026-11-19 (QA-011): a fourth rule, `shader-strobe`
+
+QA-011 found that projectM 4 at the pinned commit never applies per-frame `invert`/`gamma` to the picture, so real
+strobing in a preset lives in its warp and composite shaders, which Decision 5 left unread. A fourth rule,
+`shader-strobe`, now reads `warp_N`/`comp_N` code for clock-driven hard switches (step, sign, round, floor, ceil,
+trunc, frac, fmod, `if`) that change the whole frame's brightness at 1 Hz or more (details and known misses:
+`specs/030-acc-002-reduced-flash-preset-policy/research.md`). In the shipped index 317 of 12,847 presets (2.47 %) are
+now flagged (`shader-strobe` 236, `toggle-driven` 73, `luma-flicker` 10); still none of the Included presets. The
+Swift and Python classifiers agree on all 14,575 pack files. Decision 5's limits still apply to custom shapes,
+waves, `q` variables and `sin`/`cos` square waves.
