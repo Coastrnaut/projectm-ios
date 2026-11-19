@@ -243,9 +243,7 @@ extension DeviceAcceptanceCase {
     func pickFromAppDocuments(_ name: String) -> Bool {
         let system = SystemUI(app: app)
         if system.findFile(name, initialWait: 8, swipes: 8) {
-            system.fileItem(name).tap()
-            let open = app.buttons["Open"].firstMatch
-            if open.waitForExistence(timeout: 2), open.isEnabled { open.tap() }
+            system.tapFile(name)   // taps again when the first tap selected nothing (rerun 3, D3)
             return true
         }
         print("DEVICE-ACCEPT-NOTE \(name) is not where the picker opened; browsing \(onMyDevice) > \(SystemUI.appDisplayName)")
