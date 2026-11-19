@@ -279,6 +279,15 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
             if composed { cancel.tap() }
             let deleteDraft = app.buttons["Delete Draft"]
             if wait(2, { deleteDraft.exists }) { deleteDraft.tap() }
+            // QA-011 pass 6 (D3, iPadOS 26.5, 2026-11-19), a test bug: there a cancelled Messages compose returns to the
+            // share sheet, which stays open as a popover over the panel (the screenshot 12 s later still shows it), so
+            // Share… was covered ("hit point {-1, -1}") and every later step failed. iPadOS 27.2 (D2) closes the sheet
+            // with the compose. A sheet still up after the compose is the system's; close it as a person would.
+            if wait(3, { self.sheetMarker.exists }) {
+                print("B08 \(task) \(kind): the share sheet stayed open after the Messages compose; closing it")
+                dismissSheet()
+                _ = wait(5) { !self.sheetMarker.exists }
+            }
             XCTAssertTrue(wait(8) { share.exists && share.isHittable }, "\(kind): back at the panel after Messages")
             noPrompt("\(kind) Messages")
         }

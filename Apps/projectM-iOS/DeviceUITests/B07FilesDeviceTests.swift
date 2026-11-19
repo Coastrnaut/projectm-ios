@@ -387,7 +387,11 @@ final class B07FilesDeviceTests: B07Case {
         saveSharedFileToDocuments(task)
         let summary = element("exportSummary")
         XCTAssertTrue(wait(15) { summary.exists }, "\(task): the export summary")
-        let line = text("exportSummary")
+        // QA-011 pass 6 (D3, iPadOS 26.5, 2026-11-19), a test bug: the summary is a Label whose identifier its icon
+        // shares; the first match was the icon (an Image), whose label is the symbol's own "Selected"
+        // (checkmark.circle), so the check read "Selected" although the summary showed. Read the summary's text.
+        let summaryText = app.staticTexts.matching(identifier: "exportSummary").firstMatch
+        let line = summaryText.exists ? summaryText.label : text("exportSummary")
         XCTAssertTrue(line.hasPrefix("Exported"), "\(task): \(line)")
         XCTAssertTrue((line + " " + exclusions).contains("full library"), "\(task): the pack copy is named as excluded: \(line) \(exclusions)")
         var present = ["preset-small", "preset-512k"]

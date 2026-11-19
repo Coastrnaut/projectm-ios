@@ -99,4 +99,60 @@ final class CaptureShareUITests: XCTestCase {
         }
         app.buttons["frameResultDiscard"].tap()
     }
+
+    /// The Files dialog's close button: "Cancel" on older layouts, the ✕ "Close" on iPadOS 26 (a "Cancel" exists there but
+    /// is not the visible one).
+    private func closeFilesDialog() -> Bool {
+        let buttons = ["Close", "Cancel"].map { app.buttons[$0].firstMatch }
+        guard poll(10, { buttons.contains { $0.exists && $0.isHittable } }) else { return false }
+        buttons.first { $0.exists && $0.isHittable }?.tap()
+        return true
+    }
+
+    private var filesDialogShown: Bool { app.buttons["Save"].firstMatch.exists || app.buttons["Move"].firstMatch.exists }
+
+    /// QA-011 pass 6 (D3, iPadOS 26.5, 2026-11-19): Save… on "Frame ready" opened no Files exporter at all (three passes
+    /// in a row; REC-001-T19 "Files: no Save button"), while the recording's Save… (the file mover) opened. Both file
+    /// dialogs were modifiers of one view, and on iPadOS 26 the outer one (the mover) shadowed the exporter; this test
+    /// failed on the iPadOS 26.5 simulator before the fix. Save… must open the exporter twice in a row, a close keeps the
+    /// frame offered, and the recording's Save… still opens the mover.
+    func testSaveOpensTheFilesExporterAndTheMover() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-settings.visual", "photo", "-uitestSeedPhoto", "solid"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        for round in 1...2 {
+            showControls()
+            app.buttons["saveFrame"].tap()
+            let png = app.buttons["saveFramePNG"].firstMatch
+            XCTAssertTrue(png.appears(within: 5), "round \(round): the format choice")
+            png.tap()
+            let save = app.buttons["frameResultSave"]
+            XCTAssertTrue(save.appears(within: 10), "round \(round): the Frame ready panel")
+            XCTAssertTrue(poll(5) { save.isHittable }, "round \(round): Save… is reachable")
+            save.tap()
+            XCTAssertTrue(poll(10) { self.filesDialogShown }, "round \(round): the Files exporter opens")
+            XCTAssertTrue(closeFilesDialog(), "round \(round): the exporter can be closed")
+            XCTAssertTrue(poll(10) { !self.filesDialogShown && save.exists },
+                          "round \(round): a close ends the exporter and keeps the frame offered")
+            app.buttons["frameResultDiscard"].tap()
+            XCTAssertTrue(poll(5) { !save.exists }, "round \(round): discarded")
+        }
+        // The recording's Save… (the mover) still opens.
+        showControls()
+        app.buttons["record"].tap()
+        let indicator = app.descendants(matching: .any)["recordingIndicator"].firstMatch
+        XCTAssertTrue(indicator.appears(within: 5), "the recording indicator")
+        XCTAssertTrue(poll(10) { indicator.label.hasPrefix("Recording, 0:01") || indicator.label.hasPrefix("Recording, 0:02") },
+                      indicator.label)
+        showControls()
+        app.buttons["record"].tap()
+        let moverSave = app.buttons["recordingResultSave"]
+        XCTAssertTrue(moverSave.appears(within: 10), "the Recording ready panel")
+        moverSave.tap()
+        XCTAssertTrue(poll(10) { self.filesDialogShown }, "the Files mover opens")
+        XCTAssertTrue(closeFilesDialog(), "the mover can be closed")
+        XCTAssertTrue(poll(10) { !self.filesDialogShown }, "the mover closed")
+    }
 }

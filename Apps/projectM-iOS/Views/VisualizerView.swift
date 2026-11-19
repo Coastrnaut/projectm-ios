@@ -616,16 +616,6 @@ struct VisualizerView: View {
         } message: {
             Text("The next frame of the visualization is saved where you choose in Files.")
         }
-        .fileExporter(isPresented: Binding(get: { coordinator.frameCapture.showExporter },
-                                           set: { (shown: Bool) in
-                                               coordinator.frameCapture.showExporter = shown
-                                               if !shown { coordinator.frameCapture.exportDismissed() }   // R10: no copy kept
-                                           }),
-                      document: coordinator.frameCapture.document,
-                      contentType: coordinator.frameCapture.document?.contentType ?? .png,
-                      defaultFilename: coordinator.frameCapture.offeredBaseName) { (result: Result<URL, any Error>) in
-            coordinator.frameCapture.exportFinished(result)
-        }
         // REC-003: the finished recording is moved (not copied) to the folder the user picks in Files.
         .fileMover(isPresented: Binding(get: { coordinator.videoRecording.showMover },
                                         set: { coordinator.videoRecording.showMover = $0 }),
@@ -634,6 +624,12 @@ struct VisualizerView: View {
         } onCancellation: {
             coordinator.videoRecording.moverCancelled()   // REC-003-R13: the temporary file is deleted
         }
+        // QA-011 pass 6 (D3, iPadOS 26.5, 2026-11-19), an app defect: on iPadOS 26 the outer Files dialog modifier of a
+        // view shadows the ones inside it. The exporter sat inside the mover, so Save… on "Frame ready" opened nothing
+        // (REC-001-T19 for three passes) while the recording's mover opened; reproduced on the iPadOS 26.5 simulator by
+        // CaptureShareUITests.testSaveOpensTheFilesExporterAndTheMover. The exporter is now on a host view of its own,
+        // outside the mover.
+        .background { FrameExporterHost(frameCapture: coordinator.frameCapture) }
     }
 
     /// Settings and state changes forwarded to the coordinator. Split into short chains (2026-11-14):
@@ -1103,3 +1099,25 @@ private struct UITestMemoryProbe: View {
     }
 }
 #endif
+
+/// REC-001: the Files exporter for the offered still, on a view of its own outside the recording's mover (on iPadOS 26
+/// the mover, an outer Files dialog on the same view, kept it from presenting; QA-011 pass 6, D3).
+private struct FrameExporterHost: View {
+    let frameCapture: FrameCaptureCoordinator
+
+    var body: some View {
+        Color.clear
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
+            .fileExporter(isPresented: Binding(get: { frameCapture.showExporter },
+                                               set: { (shown: Bool) in
+                                                   frameCapture.showExporter = shown
+                                                   if !shown { frameCapture.exportDismissed() }   // R10: no copy kept
+                                               }),
+                          document: frameCapture.document,
+                          contentType: frameCapture.document?.contentType ?? .png,
+                          defaultFilename: frameCapture.offeredBaseName) { (result: Result<URL, any Error>) in
+                frameCapture.exportFinished(result)
+            }
+    }
+}
