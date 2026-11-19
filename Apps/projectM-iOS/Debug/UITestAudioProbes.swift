@@ -435,8 +435,11 @@ struct UITestAudioProbeView: View {
         return "state=\(state) pos=\(position) \(UITestPlaybackAnalyzer.shared.summary)"
     }
 
+    /// The probes keep one text size: at AX5 `importProbe` grew to 96 pt and lay over the transport buttons, so
+    /// XCUITest's accessibility hit test found the (invisible) probe there and called them not hittable (AUD-006-T41,
+    /// D1-D3 2026-11-18/19).
     private func probe(_ id: String, _ value: String) -> some View {
-        Text(value).font(.caption2).opacity(0.01).allowsHitTesting(false)
+        Text(value).font(.caption2).dynamicTypeSize(.large).opacity(0.01).allowsHitTesting(false)
             .accessibilityIdentifier(id).accessibilityValue(value)
     }
 }

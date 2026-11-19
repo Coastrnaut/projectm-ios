@@ -147,6 +147,9 @@ extension DeviceAcceptanceCase {
             }
         }
         let began = wait(25) { self.sessionCounts().began > before.began }
+        // A ringing timer holds its interruption until someone stops it (D3 pass 3, 2026-11-19: no `ended` in seven
+        // runs, and its banner covered the session panel afterwards), so the test stops it as a person would.
+        if kind == .clockTimer, began { pause(2); SystemUI(app: app).stopClockTimer() }
         let ended = wait(20) { self.sessionCounts().ended > before.ended }
         if app.state != .runningForeground { app.activate(); _ = wait(10) { self.app.state == .runningForeground } }
         pause(2)
@@ -245,22 +248,30 @@ extension DeviceAcceptanceCase {
     }
 }
 
-/// Whether XCUITest could reach Siri. `XCUIDevice.siriService.activate` records the issue "Unable to activate Siri
-/// because it is not enabled on this device" (D3, 2026-11-18) instead of throwing. The test classes that use Siri
-/// pass every issue through `SiriAvailability.swallow` in `record(_:)`: that issue sets `unavailableSeen` and is not
-/// recorded, and the test skips its Siri steps with `skipReason` instead of failing.
+/// Whether XCUITest could reach Siri. With Siri off, `XCUIDevice.siriService.activate` records an issue instead of
+/// throwing: "Unable to activate Siri because it is not enabled on this device" (D3, 2026-11-18) or, after a 60 s
+/// wait, "Timed out waiting for Siri to activate" (D3 iPadOS 26.5, QA-011 pass 3, 2026-11-19). The test classes that
+/// use Siri pass every issue through `SiriAvailability.swallow` in `record(_:)`: either issue sets `unavailableSeen`
+/// (and `knownUnavailable` for the rest of the run, so later Siri steps skip at once instead of waiting another 60 s)
+/// and is not recorded, and the test skips its Siri steps with `skipReason` instead of failing.
 enum SiriAvailability {
     nonisolated(unsafe) static var unavailableSeen = false
+    nonisolated(unsafe) static var knownUnavailable = false
     nonisolated(unsafe) static var skippedSteps: [String] = []
 
-    /// True when `issue` is XCUITest's "Siri is not enabled" (the caller then does not record it).
+    /// True when `issue` is XCUITest's "Siri is not enabled" or "Timed out waiting for Siri to activate" (the caller
+    /// then does not record it).
     static func swallow(_ issue: XCTIssue) -> Bool {
         let text = issue.compactDescription
-        guard text.contains("Siri"), text.contains("not enabled") else { return false }
+        guard text.contains("Siri"), text.contains("not enabled") || text.contains("Timed out waiting for Siri") else {
+            return false
+        }
         unavailableSeen = true
+        knownUnavailable = true
         return true
     }
 
-    static let skipReason = "Siri is off on this device (XCUITest: \"Unable to activate Siri because it is not enabled\"); "
+    static let skipReason = "Siri is off or unreachable on this device (XCUITest: \"Unable to activate Siri because it "
+        + "is not enabled\" or \"Timed out waiting for Siri to activate\"); "
         + "turn Siri on (typed requests are enough) to run the Siri interruption"
 }

@@ -179,8 +179,17 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         tapTransport("transportPlayPause")
         XCTAssertTrue(waitForIndicator("· Active audio"), "Play continues: \(sourceIndicator)")
         pause(1)
+        // The 50 ms criterion is "by ear and by the shown time": the first sample delivered after Play (`lastCut`) is
+        // at the held, shown position. `cutJumpMs` compares it with the last sample the tap delivered before the
+        // pause, and the tap hands over 100 ms blocks: a pause can drop the block in progress, whose audio was rendered
+        // and heard but never delivered (D3 pass 3, 2026-11-19: lastCut 8.81 = held 8.81, cutJumpMs 74). So the jump
+        // may be up to one block forward, never backward (a repeat).
         let pausedJump = playbackNumber("cutJumpMs")
-        XCTAssertLessThan(abs(pausedJump), 50, "the first sample after Play continues the paused one: \(probeValue("playbackProbe"))")
+        let resumedAt = Double((playback["lastCut"] ?? "").split(separator: ":").last ?? "") ?? -1
+        XCTAssertLessThan(abs(resumedAt - after), 0.05,
+                          "the first sample after Play is at the held position \(after): \(probeValue("playbackProbe"))")
+        XCTAssertTrue(pausedJump > -50 && pausedJump < 150,
+                      "no repeat, and no jump past the tap's one undelivered block: \(probeValue("playbackProbe"))")
         // Playing across background (the policy pauses it away and resumes on return): continues at the same place.
         pause(2)
         XCUIDevice.shared.press(.home)
@@ -191,7 +200,8 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(waitForIndicator("· Active audio"), "playing playback resumes after the return: \(sourceIndicator)")
         pause(1)
         let playingJump = playbackNumber("cutJumpMs")
-        report(task, "positions", ["heldPos": held, "afterPos": after, "pausedJumpMs": pausedJump, "playingJumpMs": playingJump])
+        report(task, "positions", ["heldPos": held, "afterPos": after, "resumedAt": resumedAt, "pausedJumpMs": pausedJump,
+                                   "playingJumpMs": playingJump])
         XCTAssertLessThan(abs(playingJump), 50, "it continues from the position it left: \(probeValue("playbackProbe"))")
     }
 
@@ -518,11 +528,23 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
     /// AUD-006-T41 (D1 at the largest text size): every transport control is shown inside the window and hittable, the
     /// scrubber moves the position and its value reads the time, and the transport passes the
     /// accessibility audit for clipped text and descriptions. VoiceOver speech itself stays with a person.
+    ///
+    /// QA-011 pass 3 (2026-11-19; D1-D3 in every run): the transport was drawn whole on screen at AX5, but the
+    /// performance overlay (FR-048, a readout whose text grows to the whole screen at AX5) and the DEBUG `importProbe`
+    /// (96 pt tall at AX5) lay over it, so XCUITest's accessibility hit test reported the buttons not hittable. The
+    /// probes now keep one text size, and this test runs without the overlay: the transport's layout is under test.
+    /// At AX5 the controls scroll and open at their bottom (ACC-006-R2), so the test drags them down to the transport.
     func testAUD006TransportAtLargestTextSize() throws {
         let task = "AUD-006-T41"
-        launchPlayback(task, files: ["ramp-seek.wav"], extra: ["-UIPreferredContentSizeCategoryName",
-                                                               "UICTContentSizeCategoryAccessibilityXXXL"])
+        launchPlayback(task, files: ["ramp-seek.wav"], settings: ["settings.performanceOverlay": false],
+                       extra: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         revealControls()
+        let controls = app.otherElements["controls"], playPause = app.buttons["transportPlayPause"]
+        for _ in 0..<4 where controls.exists && !(playPause.exists && playPause.isHittable) {
+            let from = controls.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+            from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: 0, dy: 300)), withVelocity: .default,
+                       thenHoldForDuration: 0.1)
+        }
         let window = app.windows.firstMatch.frame
         for id in ["transportPrevious", "transportPlayPause", "transportStop", "transportNext"] {
             let button = app.buttons[id]
