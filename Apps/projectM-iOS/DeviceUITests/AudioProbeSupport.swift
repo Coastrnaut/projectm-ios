@@ -232,16 +232,21 @@ extension DeviceAcceptanceCase {
     /// UIFileSharingEnabled and LSSupportsOpeningDocumentsInPlace). So the test host opens the picker in its Documents
     /// (`-uitestPickerInDocuments`, DEBUG: `fileDialogDefaultDirectory`) and the file is tapped there; only when it is
     /// not shown does this fall back to browsing On My … › projectM (which then fails, naming what is missing).
+    ///
+    /// QA-011 pass 3 (D2, D3 2026-11-19): the picker did open in Documents, but its grid labels a file
+    /// "<stem>, <extension>, <date>, <size>" and lists most fixtures below the first screen, so the old
+    /// "label BEGINSWITH <name>" wait never matched; SystemUI's `findFile` matches that label and scrolls the grid.
     @discardableResult
     func pickFromAppDocuments(_ name: String) -> Bool {
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
-        if wait(8, { file.exists }) {
-            file.tap()
-            if app.buttons["Open"].waitForExistence(timeout: 2) { app.buttons["Open"].tap() }
+        let system = SystemUI(app: app)
+        if system.findFile(name, initialWait: 8, swipes: 8) {
+            system.fileItem(name).tap()
+            let open = app.buttons["Open"].firstMatch
+            if open.waitForExistence(timeout: 2), open.isEnabled { open.tap() }
             return true
         }
-        print("DEVICE-ACCEPT-NOTE the picker did not open in the app's Documents; browsing \(onMyDevice) > \(SystemUI.appDisplayName)")
-        return SystemUI(app: app).filesPick(path: [onMyDevice, SystemUI.appDisplayName], name: name)
+        print("DEVICE-ACCEPT-NOTE \(name) is not where the picker opened; browsing \(onMyDevice) > \(SystemUI.appDisplayName)")
+        return system.filesPick(path: [onMyDevice, SystemUI.appDisplayName], name: name)
     }
 }
 

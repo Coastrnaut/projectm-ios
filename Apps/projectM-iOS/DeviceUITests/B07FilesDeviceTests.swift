@@ -140,7 +140,10 @@ final class B07FilesDeviceTests: B07Case {
         _ = wait(30) { !self.element("storageMeasuring").exists && Self.bytes(self.text("storage.total")) != nil }
     }
 
-    func storage(_ id: String) -> Double { Self.bytes(element("storage.\(id)").value as? String ?? "") ?? -1 }
+    func storage(_ id: String) -> Double {
+        let row = element("storage.\(id)")
+        return row.exists ? Self.bytes(row.value as? String ?? "") ?? -1 : -1   // a missing row reads -1, not a hard failure
+    }
 
     func storageValues(_ ids: [String]) -> [String: Double] {
         var out: [String: Double] = [:]
@@ -348,17 +351,18 @@ final class B07FilesDeviceTests: B07Case {
     // MARK: PRE-001 thumbnails (D1)
 
     /// The visualizer's presented frames (`visualFrames`, `-uitestMemoryPressure`) over a browser-open window, as fps.
-    private func framesWhileBrowsing(_ task: String, seconds: Double) -> (fps: Double, thumbnails: Int) {
+    private func framesWhileBrowsing(_ task: String, seconds: Double) -> (fps: Double, thumbnails: Int, rows: Int) {
         let before = Int(text("visualFrames")) ?? -1, start = Date()
         openBrowser()
         openNode("included")
         pause(seconds)
         let thumbnails = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'thumbnail:'")).count
+        let shownRows = rows().count   // preset rows laid out on screen (thumbnails are made only for rows shown)
         closeBrowser()
         let after = Int(text("visualFrames")) ?? -1
         let fps = Double(after - before) / Date().timeIntervalSince(start)
-        report(task, "browser open", ["fps": fps, "thumbnails": Double(thumbnails)])
-        return (fps, thumbnails)
+        report(task, "browser open", ["fps": fps, "thumbnails": Double(thumbnails), "rows": Double(shownRows)])
+        return (fps, thumbnails, shownRows)
     }
 
     /// PRE-001-T14 (S7): the visualizer's frame rate while about 20 thumbnails generate behind the browser (cache
@@ -373,7 +377,11 @@ final class B07FilesDeviceTests: B07Case {
         let generating = framesWhileBrowsing(task, seconds: 10)
         pause(3)
         let cached = framesWhileBrowsing(task, seconds: 10)
-        XCTAssertGreaterThanOrEqual(generating.thumbnails, 10, "\(task): thumbnails were drawn")
+        // At least 10, or every row on screen when fewer show: the iPad's browser sheet drew 8 thumbnails both with and
+        // without the cache, all it had on screen (D3 2026-11-19; spec 132 Clarifications, QA-011 device run 2026-11-19).
+        XCTAssertGreaterThan(generating.thumbnails, 0, "\(task): thumbnails were drawn")
+        XCTAssertGreaterThanOrEqual(generating.thumbnails, min(10, generating.rows),
+                                    "\(task): every row shown has its thumbnail (\(generating.thumbnails) of \(generating.rows) rows)")
         XCTAssertGreaterThan(cached.fps, 0, "\(task): frames counted")
         XCTAssertGreaterThanOrEqual(generating.fps, cached.fps * 0.9,
                                     "\(task): \(generating.fps) fps generating vs \(cached.fps) fps cached (within 10 %)")
@@ -475,6 +483,8 @@ final class B07FilesDeviceTests: B07Case {
         launch(visual: "photo")   // the music fixture is imported audio (-uitestImportAudio)
         pickFromFiles("choosePhotoFromFiles", "photo-small.jpg")
         _ = settledSummary("photoSummary")
+        closeSettingsPanel()
+        chooseVisual("video")   // Settings lists Choose from Files… for a video only under the Video visual
         pickFromFiles("chooseVideoFromFiles", "video-h264-1080p.mp4")
         _ = settledSummary("videoSummary", timeout: 90)
         closeSettingsPanel()
@@ -507,6 +517,9 @@ final class B07FilesDeviceTests: B07Case {
     func testFILE010ClearCaches() {
         let task = "FILE-010-T11"
         launch(visual: "projectM", extra: ["-uitestSeedPhoto", "pattern", "-uitestShowSeed"])
+        // The show seed stands on cue 1, a Circular Spectrum scene, and the preset controls are hidden under a native
+        // visual (ControlsOverlay): back to projectM before browsing presets (D3, 2026-11-19: no Presets control).
+        chooseVisual("projectM")
         for i in 0..<3 {   // three preset switches through the browser
             openBrowser()
             openNode("included")

@@ -560,6 +560,19 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   activate Siri…"), not thrown: tests swallow exactly that issue and skip the Siri step. An interrupted
   AVCaptureSession posts a stop without a matching start on resume, so start/stop counts do not say it runs. A result
   bundle from an interrupted run has no Info.plist; its screenshots are zstd blobs under `Data/`.
+- **Pickers on the iPads, pass 3 (2026-11-19), corrects the lesson above:** On My iPad › projectM *is* listed (D3
+  browsed to it and showed every fixture); the files were "missing" because a Files grid cell is labelled
+  "<stem>, <extension>, <date>, <size>" (identifier "<stem>, <extension>"), never the file name, and most fixtures sit
+  below the first screen of a 4-wide grid. `SystemUI.fileItem`/`findFile` match that label and scroll "File View";
+  a failed pick cancels the picker so later steps do not fail behind it ("<control> is reachable in Settings"). The
+  Photos picker's first images are its "Private Access" header icon and a dimming overlay: pick the grid's
+  "PXGGridLayout-Info" images (labels "Photo, November 18, 6:51 PM"), newest by that date. iPadOS 26 lists menu
+  choices and the Files tab bar's Browse twice (a button inside a button): use `firstMatch`. A SwiftUI alert's
+  TextField has no accessibility identifier: query `alerts[<title>].textFields`. Reading `.value` of an element that
+  does not exist records a failure at once, so a `wait { el.value == x }` never retries: check `exists` first.
+  Twelve slow swipes do not reach Storage at the end of the iPad Settings panel: follow with full-speed swipes.
+  `-uitestDefaults` keys now survive a plain relaunch (no `-uitestDefaults`, no `-uitestResetNotice`); before, the
+  relaunch removed them and the visual fell back to projectM.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 - **Batch 7 on D1-D3 (2026-11-18), what the first run taught:**

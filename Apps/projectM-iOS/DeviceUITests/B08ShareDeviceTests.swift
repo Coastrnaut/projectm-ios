@@ -46,7 +46,8 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
     private func saveFrame(_ format: String) -> Bool {
         revealRecordingControls()
         app.buttons["saveFrame"].tap()
-        let choice = app.buttons["saveFrame\(format)"]
+        // firstMatch: iPadOS 26 lists each choice of the menu twice, a button inside a button (D3, 2026-11-19).
+        let choice = app.buttons["saveFrame\(format)"].firstMatch
         guard wait(5, { choice.exists }) else {
             XCTFail("Save Frame offers no \(format)")
             return false
@@ -102,7 +103,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         let files = XCUIApplication(bundleIdentifier: "com.apple.DocumentsApp")
         files.launch()
         XCTAssertTrue(files.wait(for: .runningForeground, timeout: 10), "Files is in front")
-        let browse = files.buttons["Browse"]
+        let browse = files.buttons["Browse"].firstMatch   // iPadOS 26's floating tab bar nests a second Browse button
         if wait(5, { browse.exists }) { browse.tap(); browse.tap() }   // twice: back to Browse's root
         for item in [place, SystemUI.appDisplayName] {
             let row = files.descendants(matching: .any).matching(NSPredicate(format: "label == %@", item)).firstMatch
@@ -144,8 +145,8 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
     private func dismissSheet() {
         let region = app.otherElements["PopoverDismissRegion"]
         if region.exists { region.tap(); return }
-        for name in ["Close", "Cancel"] where app.buttons[name].exists && app.buttons[name].isHittable {
-            app.buttons[name].tap()
+        for name in ["Close", "Cancel"] where app.buttons[name].firstMatch.exists && app.buttons[name].firstMatch.isHittable {
+            app.buttons[name].firstMatch.tap()
             return
         }
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
@@ -274,12 +275,16 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         // Rename.
         let stem = "QA011 REC010 \(Int(Date().timeIntervalSince1970) % 100_000)"
         app.buttons.matching(identifier: "recordingLibraryRename").firstMatch.tap()
-        let field = app.textFields["recordingLibraryRenameField"]
-        XCTAssertTrue(wait(5) { field.exists }, "the rename field")
+        // A SwiftUI alert's TextField does not carry its accessibility identifier (D3, 2026-11-19: the "Rename
+        // Recording" alert's field is an unnamed TextField, placeholder "Name"): the alert's first text field.
+        let identified = app.textFields["recordingLibraryRenameField"].firstMatch
+        let alertField = app.alerts["Rename Recording"].textFields.firstMatch
+        XCTAssertTrue(wait(5) { identified.exists || alertField.exists }, "the rename field")
+        let field = identified.exists ? identified : alertField
         field.tap()
         let old = (field.value as? String) ?? ""
         field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count + 2) + stem)
-        app.alerts.buttons["Rename"].tap()
+        app.alerts.buttons["Rename"].firstMatch.tap()
         let renamed = app.descendants(matching: .any).matching(NSPredicate(format: "identifier == 'recordingLibraryRow' AND label CONTAINS %@", stem))
         XCTAssertTrue(wait(5) { renamed.count == 1 }, "the row shows the new name")
         // Delete it (its row's Delete; rows are newest first, the renamed one is the first).

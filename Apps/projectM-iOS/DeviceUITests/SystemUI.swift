@@ -588,92 +588,199 @@ final class SystemUI {
 
     // MARK: Pickers and sheets the app presents (out of process, listed in the app's tree)
 
-    /// In the app's document picker (Files): Browse, a location ("On My iPhone"/"On My iPad" when `path` is empty,
-    /// then `projectM`), the folders in `path`, then the file `name`; taps Open when the picker asks.
+    /// In the app's document picker (Files): the file `name` where the picker opened (it remembers the last folder,
+    /// and the audio importer opens in Documents with DEBUG `-uitestPickerInDocuments`), else Browse, a location
+    /// ("On My iPhone"/"On My iPad" when `path` is empty, then `projectM`), the folders in `path`, then the file; taps
+    /// Open when the picker asks. When the file is not found the picker is cancelled, so the test's next steps act on
+    /// the app again instead of failing behind a picker that is still up.
     ///
-    /// The Files picker never lists the presenting app's own folder (D2, D3 2026-11-18: hierarchy dumps showed other
-    /// apps' folders only, with UIFileSharingEnabled on), so "On My iPad › projectM" cannot be browsed to. A test that
-    /// needs a file in the app's Documents opens the picker there (DEBUG `-uitestPickerInDocuments`, the audio
-    /// importer's `.fileDialogDefaultDirectory(URL.documentsDirectory)`): the file is then tapped where the picker
-    /// opened, before any browsing. Other pickers need the same DEBUG hook before such a test: the photo, video,
-    /// slideshow and logo file importers (SettingsView, SlideshowSection, LogoSection), the preset and bulk preset
-    /// importers (UserPresetsView, BulkPresetImportViews), the scene pack importer (ScenePackViews), the library backup
-    /// and folder importers (LibraryBackupSection), the MIDI and output profile importers, the offline export's audio
-    /// importer, the missing-media and library-check relink pickers, and the exporters (Save Frame's fileExporter in
-    /// VisualizerView, SnapshotBatchExportViews' document picker).
+    /// QA-011 pass 3 (D3, iPadOS 26.5, 2026-11-19): the picker does list On My iPad › projectM and shows the seeded
+    /// files, but a file's cell is labelled "<stem>, <extension>, <date>, <size>" (identifier "<stem>, <extension>"),
+    /// so the old "label BEGINSWITH <name with extension>" never matched; and the grid shows 4 files per row, so most
+    /// fixtures sit below the first screen. `fileItem` matches that label and `findFile` scrolls the grid
+    /// ("File View").
     @discardableResult
     func filesPick(path: [String] = [], name: String) -> Bool {
-        let here = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
-        if path.isEmpty, wait(3, { here.exists && here.isHittable }) {   // the picker opened where the file is
-            here.tap()
-            if app.buttons["Open"].waitForExistence(timeout: 2) { app.buttons["Open"].tap() }
+        if path.isEmpty, findFile(name, initialWait: 3, swipes: 6) {   // the picker opened where the file is
+            tapFile(name)
             return true
         }
-        let browse = app.buttons["Browse"]
-        if wait(5, { browse.exists }) { browse.tap(); pause(0.5) }
+        let browse = app.buttons["Browse"].firstMatch   // the iPhone tab bar; iPadOS 26 nests a second Browse button
+        if wait(3, { browse.exists }) { browse.tap(); pause(0.5) }
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
                                      Self.appDisplayName] : path
         for place in places {
             let item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", place)).firstMatch
             guard wait(5, { item.exists }) else {
                 XCTFail("Files: no \(place)")
+                cancelFilesPicker()
                 return false
             }
             item.tap()
-            pause(0.6)
+            pause(0.8)
         }
-        let file = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
-        guard wait(5, { file.exists }) else {
+        guard findFile(name, initialWait: 5, swipes: 10) else {
             XCTFail("Files: no \(name) in \(places.joined(separator: " › "))")
+            cancelFilesPicker()
             return false
         }
-        file.tap()
-        if app.buttons["Open"].waitForExistence(timeout: 2) { app.buttons["Open"].tap() }
+        tapFile(name)
         return true
     }
 
+    /// How the Files picker names `name`: its own label (releases that show extensions), or the grid cell's
+    /// "<stem>, <extension>" identifier and "<stem>, <extension>, <date>, <size>" label (iPadOS 26.5, 2026-11-19).
+    static func fileItemPredicate(_ name: String) -> NSPredicate {
+        let stem = (name as NSString).deletingPathExtension, ext = (name as NSString).pathExtension
+        var options = [NSPredicate(format: "label == %@", name), NSPredicate(format: "label BEGINSWITH %@", name + ",")]
+        if !ext.isEmpty {
+            let shown = "\(stem), \(ext)"
+            options += [NSPredicate(format: "identifier == %@", shown), NSPredicate(format: "label BEGINSWITH %@", shown + ",")]
+        }
+        return NSCompoundPredicate(orPredicateWithSubpredicates: options)
+    }
+
+    /// The picker's item for `name`: its cell when the picker shows cells, else any element so named.
+    func fileItem(_ name: String) -> XCUIElement {
+        let cell = app.cells.matching(Self.fileItemPredicate(name)).firstMatch
+        return cell.exists ? cell : app.descendants(matching: .any).matching(Self.fileItemPredicate(name)).firstMatch
+    }
+
+    /// Waits up to `initialWait` for `name` in the folder the picker shows, then scrolls the file grid down (at most
+    /// `swipes` times) until its item is on screen.
+    func findFile(_ name: String, initialWait: Double, swipes: Int) -> Bool {
+        if wait(initialWait, { self.fileItem(name).exists && self.fileItem(name).isHittable }) { return true }
+        let grid = app.collectionViews["File View"].firstMatch
+        guard grid.exists else { return fileItem(name).exists }
+        for _ in 0..<swipes {
+            let item = fileItem(name)
+            if item.exists && item.isHittable { return true }
+            grid.swipeUp()
+            pause(0.6)
+        }
+        let item = fileItem(name)
+        if item.exists && !item.isHittable { grid.swipeUp(velocity: .slow); pause(0.6) }
+        return fileItem(name).exists
+    }
+
+    /// Taps the file's item, then Open when the picker selects several (the audio importer) or asks to confirm.
+    private func tapFile(_ name: String) {
+        fileItem(name).tap()
+        let open = app.buttons["Open"].firstMatch
+        if open.waitForExistence(timeout: 2), open.isEnabled { open.tap() }
+    }
+
+    /// Cancels a Files picker that is still up (after a failed pick or save), so the app is in front again.
+    func cancelFilesPicker() {
+        for label in ["Cancel", "Close"] {
+            let button = app.buttons[label].firstMatch
+            if button.exists && button.isHittable {
+                button.tap()
+                pause(1)
+                return
+            }
+        }
+    }
+
     /// In the app's document picker for export: the location (On My iPhone/iPad › projectM by default), then Save
-    /// (or Move/Done, by release). The default path cannot work (the picker never lists the app's own folder; see
-    /// `filesPick`): a test that saves into the app's Documents opens the exporter there with a DEBUG default-directory
-    /// hook and passes `inCurrentLocation: true`, which taps Save where the picker opened, before any browsing.
+    /// (or Move/Done, by release). `inCurrentLocation: true` taps Save where the picker opened, before any browsing
+    /// (an exporter opened in the app's Documents with a DEBUG default-directory hook).
     @discardableResult
     func filesSave(path: [String] = [], inCurrentLocation: Bool = false) -> Bool {
         if inCurrentLocation {
-            for name in ["Save", "Move", "Done"] where app.buttons[name].waitForExistence(timeout: 3) {
-                app.buttons[name].tap()
+            for name in ["Save", "Move", "Done"] where app.buttons[name].firstMatch.waitForExistence(timeout: 3) {
+                app.buttons[name].firstMatch.tap()
                 return true
             }
         }
-        let browse = app.buttons["Browse"]
+        let browse = app.buttons["Browse"].firstMatch   // iPadOS 26 nests a second Browse button (REC-003, D3)
         if wait(5, { browse.exists }) { browse.tap(); pause(0.5) }
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
                                      Self.appDisplayName] : path
         for place in places {
             let item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", place)).firstMatch
-            if wait(5, { item.exists }) { item.tap(); pause(0.6) }
+            if wait(5, { item.exists }) { item.tap(); pause(0.8) }
         }
-        for name in ["Save", "Move", "Done", "Open"] where app.buttons[name].exists {
-            app.buttons[name].tap()
-            return true
+        for name in ["Save", "Move", "Done", "Open"] {
+            let button = app.buttons[name].firstMatch
+            if button.exists && button.isEnabled {
+                button.tap()
+                return true
+            }
         }
         XCTFail("Files: no Save button")
+        cancelFilesPicker()
         return false
     }
 
-    /// In the app's Photos picker (PHPicker): taps the newest `count` items, then Add when the picker allows several.
+    /// In the app's Photos picker (PHPicker): taps the newest `count` items, then Add (or Done) when the picker allows
+    /// several.
+    ///
+    /// The grid's items are images with identifier "PXGGridLayout-Info" and labels such as "Photo, November 18,
+    /// 6:51 PM" (iPadOS 26.5, 2026-11-19). The picker's other images (the "Private Access to Photos" header's icon, a
+    /// dimming overlay off screen) come first in the tree, so the old "first image in a scroll view" tapped the header
+    /// icon, picked nothing, and every Photos step after it failed (MED-001-T22, MED-002, MED-006, MED-008, MED-014).
+    /// Newest is by the label's date when every item's label has one (the grid's order differs by release), else the
+    /// grid's order.
     @discardableResult
     func photosPick(count: Int = 1) -> Bool {
-        let items = app.scrollViews.images
-        guard wait(8, { items.count > 0 }) else {
+        let grid = app.images.matching(identifier: "PXGGridLayout-Info")
+        let skipped: Set<String> = ["PickerOnboardingHeaderViewIcon", "AdditionalDimmingOverlay"]
+        var items: [XCUIElement] = []
+        _ = wait(10) {
+            items = Array(grid.allElementsBoundByIndex.prefix(40)).filter { $0.exists && $0.isHittable }
+            if items.isEmpty {   // another release's grid: plain thumbnails inside the picker's scroll view
+                items = Array(self.app.scrollViews.images.allElementsBoundByIndex.prefix(40)).filter {
+                    $0.exists && $0.isHittable && !skipped.contains($0.identifier) && $0.frame.width > 40 && $0.frame.width < 300
+                }
+            }
+            return !items.isEmpty
+        }
+        guard !items.isEmpty else {
             XCTFail("the Photos picker shows no items")
             return false
         }
-        for i in 0..<min(count, items.count) { items.element(boundBy: i).tap() }
-        for name in ["Add", "Done"] where app.buttons[name].exists {
-            app.buttons[name].tap()
-            break
+        for item in Self.newestFirst(items).prefix(count) { item.tap() }
+        for name in ["Add", "Done"] {
+            let button = app.buttons[name].firstMatch
+            if button.exists && button.isEnabled {
+                button.tap()
+                break
+            }
         }
         return true
+    }
+
+    /// `items` newest first by the date in their labels ("Photo, November 18, 6:51 PM", "Video, Today, 9:05 AM"),
+    /// or in their own order when a label has no date this can read.
+    static func newestFirst(_ items: [XCUIElement]) -> [XCUIElement] {
+        let dates = items.map { photoDate($0.label) }
+        guard !dates.contains(where: { $0 == nil }) else { return items }
+        let order = items.indices.sorted { a, b in dates[a]! != dates[b]! ? dates[a]! > dates[b]! : a < b }
+        return order.map { items[$0] }
+    }
+
+    /// The date in a Photos picker label: "<kind>, <Month day>[, <year>], <time>" or "<kind>, Today|Yesterday, <time>".
+    static func photoDate(_ label: String, now: Date = Date()) -> Date? {
+        let parts = label.components(separatedBy: ", ")
+        guard parts.count >= 3 else { return nil }
+        let time = parts[parts.count - 1], day = parts[1...(parts.count - 2)].joined(separator: ", ")
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.defaultDate = now   // a label without a year is this year
+        if day == "Today" || day == "Yesterday" {
+            formatter.dateFormat = "h:mm a"
+            guard let clock = formatter.date(from: time) else { return nil }
+            let calendar = Calendar.current
+            let c = calendar.dateComponents([.hour, .minute], from: clock)
+            let base = calendar.startOfDay(for: now).addingTimeInterval(day == "Today" ? 0 : -86_400)
+            return calendar.date(byAdding: DateComponents(hour: c.hour, minute: c.minute), to: base)
+        }
+        for format in ["MMMM d, yyyy h:mm a", "MMMM d h:mm a"] {
+            formatter.dateFormat = format
+            if let date = formatter.date(from: day + " " + time) { return date }
+        }
+        return nil
     }
 
     /// In the share sheet the app presents: taps the activity labelled `activity` ("Save to Files", "Copy" …).
@@ -682,7 +789,7 @@ final class SystemUI {
         let target = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", activity)).firstMatch
         if !wait(5, { target.exists }) {
             // The second row scrolls sideways; More lists every action.
-            let more = app.buttons["More"]
+            let more = app.buttons["More"].firstMatch
             if more.exists { more.tap() }
         }
         guard wait(5, { target.exists }) else {

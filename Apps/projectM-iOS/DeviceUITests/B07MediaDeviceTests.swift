@@ -28,7 +28,9 @@ class B07Case: ControlSurfaceCase {
         try await super.tearDown()
     }
 
-    /// A launch that keeps what the app stored (no reset, no seeds), as after a real relaunch.
+    /// A launch that keeps what the app stored (no reset, no seeds), as after a real relaunch. With no
+    /// `-uitestDefaults` and no `-uitestResetNotice` the app keeps the typed settings of `launch` too (the visual among
+    /// them; AppCoordinator.applyUITestDefaults, 2026-11-19).
     static let plainArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "NO"]
 
     func relaunch(_ extra: [String] = [], replacing: [String]? = nil) {
@@ -41,8 +43,15 @@ class B07Case: ControlSurfaceCase {
 
     // MARK: Values
 
-    var photoValue: String { app.descendants(matching: .any)["photoVisual"].firstMatch.value as? String ?? "" }
-    var videoValue: String { app.descendants(matching: .any)["videoVisual"].firstMatch.value as? String ?? "" }
+    /// The visual's VoiceOver value, or "" while it is not on screen (reading `value` of a missing element records a
+    /// failure at once instead of letting the caller's `wait` retry: MED-001, MED-008, MED-014 on D3, 2026-11-19).
+    var photoValue: String { visualValue("photoVisual") }
+    var videoValue: String { visualValue("videoVisual") }
+
+    func visualValue(_ id: String) -> String {
+        let visual = element(id)
+        return visual.exists ? (visual.value as? String ?? "") : ""
+    }
 
     /// Any element whose label contains `text`.
     func labelled(_ text: String) -> XCUIElement {
@@ -63,17 +72,33 @@ class B07Case: ControlSurfaceCase {
 
     // MARK: Settings
 
-    /// Taps a Settings control (a button, a PhotosPicker, a link) by identifier, scrolling to it.
+    /// Taps a Settings control (a button, a PhotosPicker, a link) by identifier, scrolling to it: slow swipes first
+    /// (precise near the top), then full-speed swipes for controls near the end of a long Settings list. On the iPad
+    /// panel 12 slow swipes in each direction never reached Storage below the projectM visual's sections (PRE-001-T14,
+    /// FILE-009-T12 on D3, 2026-11-19).
     @discardableResult
     func tapControl(_ id: String) -> Bool {
         let button = app.buttons[id].firstMatch
         let target = button.exists ? button : app.descendants(matching: .any)[id].firstMatch
-        if !scrollTo(target, swipes: 12) && !scrollTo(target, up: true, swipes: 12) {
+        if !scrollTo(target, swipes: 12) && !fastScrollTo(target, up: false) && !fastScrollTo(target, up: true) {
             XCTFail("\(id) is reachable in Settings")
             return false
         }
         target.tap()
         return true
+    }
+
+    /// Full-speed swipes of the frontmost list until `element` is hittable (a slow swipe settles one found just off
+    /// screen).
+    private func fastScrollTo(_ element: XCUIElement, up: Bool, swipes: Int = 15) -> Bool {
+        let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
+        for _ in 0..<swipes {
+            if element.exists && element.isHittable { return true }
+            if element.exists { return scrollTo(element, up: up, swipes: 3) }
+            if up { list.swipeDown() } else { list.swipeUp() }
+            pause(0.4)
+        }
+        return element.exists && element.isHittable
     }
 
     /// Chooses `option` in the menu picker `id` (menu items are buttons by their label).
@@ -724,13 +749,13 @@ final class B07MediaDeviceTests: B07Case {
             let issues = auditIssues(app, "text editor \(language) AX5", types: [.textClipped, .dynamicType])
             issues.forEach { print("MED-009-T23 audit: \($0)") }
             closeSettingsPanel()
-            let visual = app.descendants(matching: .any)["textVisual"].firstMatch
-            XCTAssertTrue(wait(10) { (visual.value as? String) == message },
-                          "\(task) \(language): the visual shows the text: \(String(describing: visual.value))")
+            XCTAssertTrue(wait(10) { self.visualValue("textVisual") == message },
+                          "\(task) \(language): the visual shows the text: \(visualValue("textVisual"))")
             _ = wait(10) { !["none", "drawing"].contains(self.text("textRendering")) }
             let rendering = text("textRendering")
             relaunch(ax5 + arguments)
-            XCTAssertTrue(wait(10) { (visual.value as? String) == message }, "\(task) \(language): relaunch keeps the text")
+            XCTAssertTrue(wait(10) { self.visualValue("textVisual") == message },
+                          "\(task) \(language): relaunch keeps the text: \(visualValue("textVisual"))")
             XCTAssertTrue(wait(10) { self.text("textRendering") == rendering },
                           "\(task) \(language): the same rendering (\(rendering) vs \(text("textRendering")))")
             report(task, language, ["auditIssues": Double(issues.count), "kept": text("textRendering") == rendering ? 1 : 0])
