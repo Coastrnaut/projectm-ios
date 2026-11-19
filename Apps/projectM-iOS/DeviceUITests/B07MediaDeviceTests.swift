@@ -1,0 +1,802 @@
+// B07MediaDeviceTests.swift — QA-011 Batch 5 (media layers): the MED-001/002/003/004/006/007/008/009/010/014 device
+// tasks, with the real Photos and Files pickers driven through Batch 1's SystemUI.swift on D1 (and D3 where listed).
+//
+// Fixtures: `python3 scripts/install_test_fixtures.py --device <D> --media` copies Build/fixtures/media
+// (scripts/make_media_fixtures.py) into the app's Documents, which the Debug device-test host shows in Files as
+// On My iPhone/iPad › projectM. Photos picks need pictures in the library: `-uitestSeedPhotoLibrary <names>` adds those
+// Documents files with add-only access, answered once per device in PromptFlowDeviceTests (testZ grants it); a seed
+// that would prompt fails the test instead of waiting. The Camera app's own clips and photos (`SystemUI.cameraApp`)
+// need no prompt of this app.
+//
+// Measurements are probes, not looks: `photoVisual`/`videoVisual` VoiceOver values ("Photo W × H", "Video W × H",
+// "Animated photo W × H, N frames"), `photoStoredMetadata` and `videoFrameRate` (Debug/UITestMediaDeviceProbes.swift),
+// `videoLoopRegion`, `videoLoopStats`, `videoSpeed`, `slideshowProbe`, `logoProbe`, `textRendering`, `memoryProbe`, and
+// screenshot statistics away from the centred spectrum (DeviceAcceptanceCase.stillRegion). Every value is printed as a
+// `DEVICE-ACCEPT {json}` line. No test waits for a person; tests that need one part a person does say so in their
+// comment (iCloud Drive eviction, real keyboards, VoiceOver speech, ProRAW).
+import UIKit
+import XCTest
+
+/// Shared steps of the Batch 5 tests (media here, files and presets in B07FilesDeviceTests.swift).
+@MainActor
+class B07Case: ControlSurfaceCase {
+    /// One SystemUI per test, so `restore()` undoes what this test changed.
+    lazy var ui = SystemUI(app: app)
+
+    override func tearDown() async throws {
+        ui.restore()
+        try await super.tearDown()
+    }
+
+    /// A launch that keeps what the app stored (no reset, no seeds), as after a real relaunch.
+    static let plainArguments = ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "NO"]
+
+    func relaunch(_ extra: [String] = [], replacing: [String]? = nil) {
+        app.terminate()
+        app.launchArguments = (replacing ?? Self.plainArguments) + extra
+        app.launch()
+        XCTAssertTrue(wait(20) { self.app.staticTexts["sourceStarts"].exists }, "the app relaunched")
+        pause(2)
+    }
+
+    // MARK: Values
+
+    var photoValue: String { app.descendants(matching: .any)["photoVisual"].firstMatch.value as? String ?? "" }
+    var videoValue: String { app.descendants(matching: .any)["videoVisual"].firstMatch.value as? String ?? "" }
+
+    /// Any element whose label contains `text`.
+    func labelled(_ text: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+    }
+
+    /// "a=1 b=x" → ["a": "1", "b": "x"].
+    static func fields(_ text: String) -> [String: String] {
+        var out: [String: String] = [:]
+        for part in text.split(separator: " ") {
+            let kv = part.split(separator: "=", maxSplits: 1)
+            if kv.count == 2 { out[String(kv[0])] = String(kv[1]) }
+        }
+        return out
+    }
+
+    func footprintMB() -> Int? { Int(text("memoryProbe").replacingOccurrences(of: "footprintMB=", with: "")) }
+
+    // MARK: Settings
+
+    /// Taps a Settings control (a button, a PhotosPicker, a link) by identifier, scrolling to it.
+    @discardableResult
+    func tapControl(_ id: String) -> Bool {
+        let button = app.buttons[id].firstMatch
+        let target = button.exists ? button : app.descendants(matching: .any)[id].firstMatch
+        if !scrollTo(target, swipes: 12) && !scrollTo(target, up: true, swipes: 12) {
+            XCTFail("\(id) is reachable in Settings")
+            return false
+        }
+        target.tap()
+        return true
+    }
+
+    /// Chooses `option` in the menu picker `id` (menu items are buttons by their label).
+    func chooseMenu(_ id: String, _ option: String) {
+        guard tapControl(id) else { return }
+        var item = app.buttons[option].firstMatch
+        if !wait(3, { item.exists }) {
+            item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", option)).firstMatch
+        }
+        XCTAssertTrue(wait(3) { item.exists }, "\(id) offers \(option)")
+        if item.exists { item.tap() }
+        pause(0.6)
+    }
+
+    /// Settings › the visual row `raw` (VisualChoice raw value), then Done.
+    func chooseVisual(_ raw: String) {
+        openSettingsPanel()
+        let row = app.buttons["visual.\(raw)"].firstMatch
+        if !scrollTo(row, up: true, swipes: 12) { _ = scrollTo(row, swipes: 12) }
+        XCTAssertTrue(row.exists, "the \(raw) row")
+        if row.exists { row.tap() }
+        closeSettingsPanel()
+    }
+
+    /// Settings › `button` (a "Choose from Files…") › the document picker › Documents/`name`.
+    func pickFromFiles(_ button: String, _ name: String) {
+        openSettingsPanel()
+        guard tapControl(button) else { return }
+        XCTAssertTrue(ui.filesPick(name: name), "Files: picked \(name)")
+        pause(1)
+    }
+
+    /// Settings › `button` (a "Choose from Photos…") › the Photos picker › the newest `count` items.
+    func pickFromPhotos(_ button: String, count: Int = 1) {
+        openSettingsPanel()
+        guard tapControl(button) else { return }
+        XCTAssertTrue(ui.photosPick(count: count), "Photos: picked \(count)")
+        pause(1)
+    }
+
+    /// A Settings summary row (`LabeledContent`): its value, or its label without the row title ("Photo, 320 × 240").
+    func summary(_ id: String) -> String {
+        var value = text(id)
+        for title in ["Photo, ", "Video, ", "Logo, "] where value.hasPrefix(title) { value = String(value.dropFirst(title.count)) }
+        return value
+    }
+
+    /// The summary row `id` once it no longer reads "Importing…" or "Loading…".
+    @discardableResult
+    func settledSummary(_ id: String, timeout: Double = 60) -> String {
+        _ = wait(timeout) {
+            let value = self.summary(id)
+            return !value.isEmpty && !value.contains("Importing") && !value.contains("Loading")
+        }
+        return summary(id)
+    }
+
+    /// No springboard alert (a permission prompt) is on screen.
+    func assertNoPrompt(_ task: String, _ step: String) {
+        if let alert = ui.systemAlert(timeout: 1) {
+            XCTFail("\(task) \(step): a system prompt appeared: \(ui.alertText(alert))")
+        }
+    }
+
+    // MARK: Photo library seed (Batch 1)
+
+    static func seedLibrary(_ names: [String]) -> [String] { ["-uitestSeedPhotoLibrary", names.joined(separator: ",")] }
+
+    /// Waits for `-uitestSeedPhotoLibrary`; fails (never waits for a person) when add-only access was not granted.
+    func waitLibrarySeed(_ task: String) {
+        let done = wait(90) { self.text("photoLibrarySeed").contains("done=1") || self.ui.systemAlert() != nil }
+        let value = text("photoLibrarySeed")
+        if ui.systemAlert() != nil {
+            XCTFail("\(task): the Photos add-only prompt appeared; run the prompt-flow batch first "
+                    + "(python3 scripts/mac_device_driver.py prompt-flow --device <D>)")
+            return
+        }
+        XCTAssertTrue(done && value.contains("status=granted") && value.contains("missing=0") && value.contains("failed=0"),
+                      "\(task): the library seed (\(value)); install the media fixtures (install_test_fixtures.py --media) and "
+                      + "grant Photos add-only (prompt-flow batch)")
+    }
+
+    // MARK: Pixels
+
+    /// Screenshot pixels at `step` (full width and height in samples).
+    func pixels(_ task: String, _ label: String, step: Int) -> (pixels: [UInt8], width: Int, height: Int) {
+        let saved = sampleStep
+        sampleStep = step
+        let p = screen(task, label).1
+        let size = lastSize
+        sampleStep = saved
+        return (p, size.0, size.1)
+    }
+
+    static func luma(_ p: [UInt8], _ i: Int) -> Double {
+        (0.2126 * Double(p[i]) + 0.7152 * Double(p[i + 1]) + 0.0722 * Double(p[i + 2])) / 255
+    }
+
+    /// "1:05" or "1:02:05" → seconds.
+    static func clock(_ text: String) -> Double? {
+        let parts = text.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "-", with: "").split(separator: ":")
+            .compactMap { Double($0) }
+        guard parts.count >= 2 else { return nil }
+        return parts.reduce(0) { $0 * 60 + $1 }
+    }
+
+    /// The In-App Playback position from the transport (`transportElapsed`), with the controls shown.
+    func musicPosition() -> Double? {
+        showControlsBar()
+        let elapsed = app.descendants(matching: .any)["transportElapsed"].firstMatch
+        guard wait(3, { elapsed.exists }) else { return nil }
+        return Self.clock(elapsed.label) ?? Self.clock(elapsed.value as? String ?? "")
+    }
+}
+
+@MainActor
+final class B07MediaDeviceTests: B07Case {
+    // MARK: MED-001 photo layer
+
+    /// MED-001-T22 (D1, D3): Choose from Photos… with no permission prompt; the photo renders; relaunch keeps it.
+    /// "Limited access" does not apply: the out-of-process PHPicker asks no library access (MED-001 research D1), so
+    /// there is no access level to vary; recorded as `limitedAccessApplies=0`.
+    func testMED001PhotosPickerNoPrompt() {
+        let task = "MED-001-T22"
+        launch(visual: "photo", extra: Self.seedLibrary(["photo-small.jpg"]))
+        waitLibrarySeed(task)
+        pickFromPhotos("choosePhotoFromPhotos")
+        assertNoPrompt(task, "Choose from Photos")
+        let summary = settledSummary("photoSummary")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo ") }, "\(task): the picked photo is shown: \(photoValue) (\(summary))")
+        let frames = Int(text("photoFramesShown")) ?? -1
+        pause(1)
+        XCTAssertGreaterThan(Int(text("photoFramesShown")) ?? -1, frames, "\(task): frames keep showing the photo")
+        let (stats, _) = screen(task, "picked photo")
+        XCTAssertGreaterThan(stats.nonBlack, 0.3, "\(task): the photo fills the screen")
+        let shown = photoValue
+        relaunch()
+        XCTAssertTrue(wait(20) { self.photoValue == shown }, "\(task): relaunch keeps it: \(photoValue) (was \(shown))")
+        assertNoPrompt(task, "relaunch")
+        report(task, "photos pick", ["kept": photoValue == shown ? 1 : 0, "limitedAccessApplies": 0])
+    }
+
+    /// MED-001-T23 (D1, D3): Choose from Files… from On My iPhone/iPad, relaunch, Remove Photo. The iCloud Drive file
+    /// not yet downloaded stays a person's (iCloud sign-in and eviction are not controllable here).
+    func testMED001FilesPickRelaunchRemove() {
+        let task = "MED-001-T23"
+        launch(visual: "photo")
+        pickFromFiles("choosePhotoFromFiles", "photo-small.jpg")
+        let stored = settledSummary("photoSummary")
+        XCTAssertTrue(stored.contains("320 × 240"), "\(task): the stored size: \(stored)")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(20) { self.photoValue == "Photo 320 × 240" }, "\(task): shown: \(photoValue)")
+        relaunch()
+        XCTAssertTrue(wait(20) { self.photoValue == "Photo 320 × 240" }, "\(task): after relaunch: \(photoValue)")
+        openSettingsPanel()
+        tapControl("removePhoto")
+        XCTAssertTrue(wait(5) { !self.app.buttons["removePhoto"].exists }, "\(task): removed")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(10) { self.photoValue == "No photo" }, "\(task): falls back: \(photoValue)")
+        relaunch()
+        XCTAssertTrue(wait(10) { self.photoValue == "No photo" }, "\(task): stays removed: \(photoValue)")
+    }
+
+    /// MED-001-T24 (D1, D3): a HEIC with GPS (the stored copy has none), a 60 MP panorama (stored at 4096 px), a
+    /// 45 MB JPEG (the 40 MB notice; the app keeps running and keeps the photo it had).
+    func testMED001HEICLocationPanoramaLarge() {
+        let task = "MED-001-T24"
+        launch(visual: "photo")
+        pickFromFiles("choosePhotoFromFiles", "photo-gps.heic")
+        let heic = settledSummary("photoSummary")
+        XCTAssertTrue(heic.contains("1024 × 768"), "\(task): the HEIC imports: \(heic)")
+        let metadata = text("photoStoredMetadata")
+        XCTAssertTrue(metadata.contains("gps=none"), "\(task): the stored copy has no location: \(metadata)")
+        print("MED-001-T24 stored HEIC copy: \(metadata)")
+
+        let started = Date()
+        pickFromFiles("choosePhotoFromFiles", "panorama-60mp.png")
+        let panorama = settledSummary("photoSummary", timeout: 90)
+        let seconds = Date().timeIntervalSince(started)
+        XCTAssertTrue(panorama.contains("4096 × "), "\(task): the 60 MP panorama is stored at 4096 px: \(panorama)")
+
+        pickFromFiles("choosePhotoFromFiles", "photo-45mb.jpg")
+        let notice = labelled("larger than 40 MB")
+        XCTAssertTrue(wait(20) { notice.exists }, "\(task): the 40 MB notice")
+        XCTAssertEqual(app.state, .runningForeground, "\(task): the app keeps running")
+        XCTAssertEqual(settledSummary("photoSummary"), panorama, "\(task): the refused file leaves the photo")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo 4096 × ") }, "\(task): the panorama renders: \(photoValue)")
+        report(task, "HEIC, panorama, 45 MB", ["gpsStripped": metadata.contains("gps=none") ? 1 : 0,
+                                              "panoramaSeconds": seconds, "noticeShown": notice.exists ? 1 : 0])
+    }
+
+    /// MED-014-T23 (D1, D3): a real camera HEIC and a camera HEVC clip (Dolby Vision on iPhone 15 when HDR video is
+    /// on, the default), the 60 MP HEIC panorama and the Mac's HLG HEVC: each imports and renders, no refusal. ProRAW
+    /// DNG stays the owner's (D1 is not a Pro model; a Pro-made DNG file would be needed).
+    func testMED014RealCameraMediaPanoramaAndHDR() {
+        let task = "MED-014-T23"
+        launch(visual: "photo")
+        ui.cameraApp(photo: true)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10), "\(task): back in the app")
+        pickFromPhotos("choosePhotoFromPhotos")
+        let camera = settledSummary("photoSummary")
+        XCTAssertFalse(labelled("isn't an image").exists || labelled("couldn't").exists, "\(task): the camera HEIC is not refused")
+        XCTAssertTrue(camera.contains(" × "), "\(task): the camera HEIC imports: \(camera)")
+        print("MED-014-T23 camera photo copy: \(text("photoStoredMetadata"))")
+
+        pickFromFiles("choosePhotoFromFiles", "panorama-60mp.heic")
+        let panorama = settledSummary("photoSummary", timeout: 90)
+        XCTAssertTrue(panorama.contains("4096 × "), "\(task): the HEIC panorama imports: \(panorama)")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo 4096") }, "\(task): it renders: \(photoValue)")
+
+        chooseVisual("video")
+        pickFromFiles("chooseVideoFromFiles", "video-hdr-hlg.mov")
+        let hlg = settledSummary("videoSummary", timeout: 90)
+        closeSettingsPanel()
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 1920 × 1080" }, "\(task): the HLG clip plays: \(videoValue) (\(hlg))")
+        assertDrawingAndMoving(task, "HLG HEVC")
+
+        ui.cameraApp(record: 3)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10), "\(task): back in the app")
+        pickFromPhotos("chooseVideoFromPhotos")
+        let clip = settledSummary("videoSummary", timeout: 90)
+        XCTAssertFalse(text("videoNotice").contains("couldn"), "\(task): the camera clip is not refused: \(text("videoNotice"))")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(30) { self.videoValue.hasPrefix("Video ") }, "\(task): the camera clip plays: \(videoValue) (\(clip), HLG was \(hlg))")
+        let frames = Int(text("videoFramesShown")) ?? -1
+        pause(1)
+        XCTAssertGreaterThan(Int(text("videoFramesShown")) ?? -1, frames, "\(task): its pictures keep coming")
+        report(task, "real and HDR media", ["cameraPhoto": camera.contains(" × ") ? 1 : 0,
+                                           "cameraClip": videoValue.hasPrefix("Video ") ? 1 : 0])
+    }
+
+    // MARK: MED-002 video layer
+
+    /// MED-002-T26 (D1, D3): a camera HEVC clip through Photos and the Mac's H.264 file through Files, no permission
+    /// prompt, Remove Video, relaunch.
+    func testMED002PhotosAndFilesVideoPicks() {
+        let task = "MED-002-T26"
+        launch(visual: "video")
+        ui.cameraApp(record: 3)
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10), "\(task): back in the app")
+        pickFromPhotos("chooseVideoFromPhotos")
+        assertNoPrompt(task, "Choose from Photos")
+        let camera = settledSummary("videoSummary", timeout: 90)
+        closeSettingsPanel()
+        XCTAssertTrue(wait(30) { self.videoValue.hasPrefix("Video ") }, "\(task): the camera clip plays: \(videoValue) (\(camera))")
+
+        openSettingsPanel()
+        tapControl("removeVideo")
+        XCTAssertTrue(wait(5) { !self.app.buttons["removeVideo"].exists }, "\(task): Remove Video")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(10) { self.videoValue == "No video" }, "\(task): no video: \(videoValue)")
+
+        pickFromFiles("chooseVideoFromFiles", "video-h264-1080p.mp4")
+        assertNoPrompt(task, "Choose from Files")
+        _ = settledSummary("videoSummary", timeout: 90)
+        closeSettingsPanel()
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 1920 × 1080" }, "\(task): the H.264 file plays: \(videoValue)")
+        relaunch()
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 1920 × 1080" }, "\(task): relaunch keeps it: \(videoValue)")
+        assertDrawingAndMoving(task, "H.264 after relaunch")
+    }
+
+    // MARK: MED-003 loop region, MED-004 speed (the Mac's 10 s H.264 1080p clip, picked in Files)
+
+    private func pickTenSecondClip(_ task: String) {
+        launch(visual: "video", extra: ["-uitestSettingsSection", "video"])
+        pickFromFiles("chooseVideoFromFiles", "video-h264-1080p.mp4")
+        _ = settledSummary("videoSummary", timeout: 90)
+        closeSettingsPanel()
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 1920 × 1080" }, "\(task): the picked clip plays: \(videoValue)")
+    }
+
+    /// "<in ms>-<out ms>" → seconds.
+    private func loopRegion() -> (Double, Double)? {
+        let parts = text("videoLoopRegion").split(separator: "-").compactMap { Double($0) }
+        return parts.count == 2 ? (parts[0] / 1000, parts[1] / 1000) : nil
+    }
+
+    private func loopStats() -> (wraps: Int, gap: Int, early: Int) {
+        let f = Self.fields(text("videoLoopStats"))
+        return (Int(f["wraps"] ?? "") ?? -1, Int(f["gap"] ?? "") ?? -1, Int(f["early"] ?? "") ?? -1)
+    }
+
+    /// Shown pictures (30 fps timeline) that fall outside `region` among `samples` readings 0.3 s apart.
+    private func indicesOutside(_ region: (Double, Double), samples: Int = 10) -> (outside: Int, read: Int) {
+        var outside = 0, read = 0
+        for _ in 0..<samples {
+            if let i = Int(text("videoMediaFrameIndex")) {
+                read += 1
+                let t = Double(i) / 30
+                if t < region.0 - 0.07 || t > region.1 + 0.07 { outside += 1 }
+            }
+            pause(0.3)
+        }
+        return (outside, read)
+    }
+
+    /// MED-003-T20 (D1): a picked clip, a region set with the Loop in/out sliders, five joints with no stall (the
+    /// layer's wrap lateness under one picture), background and relaunch inside the region, Reset.
+    func testMED003LoopRegion() {
+        let task = "MED-003-T20"
+        pickTenSecondClip(task)
+        openSettingsPanel()
+        let loopIn = app.sliders["videoLoopIn"].firstMatch, loopOut = app.sliders["videoLoopOut"].firstMatch
+        XCTAssertTrue(scrollTo(loopIn) && scrollTo(loopOut), "\(task): the loop sliders")
+        loopIn.adjust(toNormalizedSliderPosition: 0.2)
+        loopOut.adjust(toNormalizedSliderPosition: 0.5)
+        closeSettingsPanel()
+        XCTAssertTrue(wait(5) { self.loopRegion() != nil }, "\(task): a region applies: \(text("videoLoopRegion"))")
+        guard let region = loopRegion() else { return }
+        let length = region.1 - region.0
+        XCTAssertGreaterThan(length, 0.24, "\(task): region \(region)")
+        let started = loopStats().wraps
+        let joined = wait(length * 6 + 10) { self.loopStats().wraps >= started + 5 }
+        let stats = loopStats()
+        XCTAssertTrue(joined, "\(task): five joints (wraps \(started) → \(stats.wraps))")
+        XCTAssertEqual(stats.gap, 0, "\(task): no joint was late by a picture or more: \(text("videoLoopStats"))")
+        let inside = indicesOutside(region)
+        XCTAssertEqual(inside.outside, 0, "\(task): every shown picture lies in the region (\(inside.read) read)")
+
+        XCUIDevice.shared.press(.home)
+        pause(3)
+        app.activate()
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10), "\(task): back from the background")
+        let afterBackground = indicesOutside(region, samples: 6)
+        XCTAssertEqual(afterBackground.outside, 0, "\(task): inside after the background (\(afterBackground.read) read)")
+
+        relaunch()
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 1920 × 1080" }, "\(task): plays after relaunch")
+        XCTAssertTrue(wait(10) { self.loopRegion().map { abs($0.0 - region.0) < 0.01 && abs($0.1 - region.1) < 0.01 } ?? false },
+                      "\(task): relaunch keeps the region: \(text("videoLoopRegion"))")
+        let afterRelaunch = indicesOutside(region, samples: 6)
+        XCTAssertEqual(afterRelaunch.outside, 0, "\(task): inside after relaunch (\(afterRelaunch.read) read)")
+
+        openSettingsPanel()
+        tapControl("videoLoopReset")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(5) { self.text("videoLoopRegion") == "whole" }, "\(task): Reset: \(text("videoLoopRegion"))")
+        report(task, "loop region", ["inSeconds": region.0, "outSeconds": region.1, "wraps": Double(stats.wraps - started),
+                                     "gapFrames": Double(stats.gap), "earlyEnds": Double(stats.early)])
+    }
+
+    private func speedRatio() -> Double? {
+        Double(Self.fields(text("videoSpeed"))["ratio"] ?? "")
+    }
+
+    private func setSpeed(_ spoken: String, _ shown: String, percent: Int) {
+        openSettingsPanel()
+        guard tapControl("videoSpeedPicker") else { return }
+        var item = app.buttons[spoken].firstMatch
+        if !wait(3, { item.exists }) { item = app.buttons[shown].firstMatch }
+        XCTAssertTrue(wait(3) { item.exists }, "Speed offers \(spoken)")
+        if item.exists { item.tap() }
+        closeSettingsPanel()
+        XCTAssertTrue(wait(5) { self.text("videoSpeed").hasPrefix("\(percent) ") }, "speed \(percent): \(text("videoSpeed"))")
+    }
+
+    /// Video pictures per second and late pictures over `seconds` (the `videoFrameRate` probe, once a second).
+    private func videoRate(seconds: Int) -> (median: Double, late: Int) {
+        var rates: [Double] = [], late = 0
+        for _ in 0..<seconds {
+            pause(1)
+            let f = Self.fields(text("videoFrameRate"))
+            if let fps = Double(f["fps"] ?? "") { rates.append(fps) }
+            late += Int(f["late"] ?? "") ?? 0
+        }
+        return (Self.median(rates), late)
+    }
+
+    /// MED-004-T22 (D1): the picked clip at 2× keeps media time at 2 s per second (late pictures allowed, no
+    /// slowdown), at 0.25× steady (a quarter of the clip's 30 pictures per second, none late), and the In-App
+    /// Playback music advances 1 s per second at every speed.
+    func testMED004SpeedRates() {
+        let task = "MED-004-T22"
+        pickTenSecondClip(task)
+        for (spoken, shown, percent) in [("Double speed", "2×", 200), ("Quarter speed", "0.25×", 25), ("Normal speed", "1×", 100)] {
+            setSpeed(spoken, shown, percent: percent)
+            pause(3)   // the measured ratio restarts at the change
+            let musicStart = musicPosition(), startTime = Date()
+            let rate = videoRate(seconds: 6)
+            let ratio = speedRatio() ?? -1
+            let musicEnd = musicPosition()
+            let wall = Date().timeIntervalSince(startTime)
+            let expected = Double(percent) / 100
+            report(task, "\(percent) %", ["ratio": ratio, "videoFPS": rate.median, "late": Double(rate.late),
+                                          "musicAdvance": (musicEnd ?? -1) - (musicStart ?? -1)])
+            XCTAssertEqual(ratio, expected, accuracy: expected * 0.05, "\(task) \(percent) %: media time per second")
+            if percent == 25 {
+                XCTAssertEqual(rate.median, 7.5, accuracy: 1.5, "\(task) 0.25×: a steady quarter of 30 pictures per second")
+                XCTAssertEqual(rate.late, 0, "\(task) 0.25×: no late pictures")
+            }
+            if let a = musicStart, let b = musicEnd, b > a {   // a track change wraps the position
+                XCTAssertEqual(b - a, wall, accuracy: 1.6, "\(task) \(percent) %: the music keeps its own rate (1 s per s)")
+            }
+        }
+        XCTAssertTrue(overlayFPS() == nil || (overlayFPS() ?? 0) > 0, "the overlay reads")
+        XCTAssertEqual(app.state, .runningForeground, "no crash")
+    }
+
+    // MARK: MED-006 slideshow
+
+    private func slide() -> (index: Int, changes: Int)? {
+        let parts = text("slideshowProbe").split(separator: " ")
+        guard parts.count == 2, let i = Int(parts[0]), let c = Int(parts[1].replacingOccurrences(of: "changes=", with: "")) else { return nil }
+        return (i, c)
+    }
+
+    /// Follows the slideshow for `seconds`; returns the indices shown in turn and whether each step was the next one.
+    private func followSlides(seconds: Double, count: Int) -> (sequence: [Int], inOrder: Bool) {
+        var sequence: [Int] = [], inOrder = true
+        let end = Date().addingTimeInterval(seconds)
+        while Date() < end {
+            if let s = slide(), sequence.last != s.index {
+                if let last = sequence.last, s.index != (last + 1) % count { inOrder = false }
+                sequence.append(s.index)
+            }
+            pause(0.1)
+        }
+        return (sequence, inOrder)
+    }
+
+    /// MED-006-T22 (D1): five pictures chosen at once in the real Photos picker and two from Files cycle in their
+    /// saved order in Time mode (2 s) and Beats mode (every beat at a tapped 120 BPM: `-uitestTapInterval 500` spaces
+    /// the four taps exactly); relaunch keeps the order and the mode.
+    func testMED006SlideshowFromPhotosAndFiles() {
+        let task = "MED-006-T22"
+        let slides = (1...5).map { "slide-\($0).png" }
+        launch(visual: "photo", settings: ["settings.performanceOverlay": false],
+               extra: Self.seedLibrary(slides) + ["-uitestTapInterval", "500"])
+        waitLibrarySeed(task)
+        openSettingsPanel()
+        guard tapControl("slideshowAddFromPhotos") else { return }
+        XCTAssertTrue(ui.photosPick(count: 5), "\(task): five at once")
+        XCTAssertTrue(wait(60) { self.text("slideshowSummary") == "5 pictures" }, "\(task): \(text("slideshowSummary"))")
+        for name in ["photo-small.jpg", "photo-transparent.png"] {
+            guard tapControl("slideshowAddFromFiles") else { return }
+            XCTAssertTrue(ui.filesPick(name: name), "\(task): Files \(name)")
+            pause(1)
+        }
+        XCTAssertTrue(wait(30) { self.text("slideshowSummary") == "7 pictures" }, "\(task): \(text("slideshowSummary"))")
+        setSwitch("slideshowToggle", on: true)
+        let seconds = app.sliders["slideshowSecondsSlider"].firstMatch
+        if scrollTo(seconds) { seconds.adjust(toNormalizedSliderPosition: 0) }
+        closeSettingsPanel()
+        let time = followSlides(seconds: 16, count: 7)
+        XCTAssertGreaterThanOrEqual(time.sequence.count, 5, "\(task) Time: slides change: \(time.sequence)")
+        XCTAssertTrue(time.inOrder, "\(task) Time: in the saved order: \(time.sequence)")
+
+        openSettingsPanel()
+        chooseMenu("slideshowModePicker", "On the beat")
+        chooseMenu("slideshowBeatsPicker", "Every beat")
+        closeSettingsPanel()
+        showControlsBar()
+        let tap = app.buttons["tapTempo"].firstMatch
+        XCTAssertTrue(wait(5) { tap.exists }, "\(task): Tap tempo")
+        for _ in 0..<4 { if tap.exists { tap.tap() } }
+        let beats = followSlides(seconds: 6, count: 7)
+        XCTAssertGreaterThanOrEqual(beats.sequence.count, 6, "\(task) Beats: a slide per beat at 120 BPM: \(beats.sequence)")
+        XCTAssertTrue(beats.inOrder, "\(task) Beats: in order: \(beats.sequence)")
+
+        relaunch()
+        openSettingsPanel()
+        XCTAssertTrue(wait(10) { self.text("slideshowSummary") == "7 pictures" }, "\(task): relaunch keeps the pictures")
+        let mode = app.buttons["slideshowModePicker"].firstMatch
+        _ = scrollTo(mode)
+        XCTAssertTrue("\(mode.label) \(mode.value as? String ?? "")".contains("On the beat"), "\(task): relaunch keeps Beats: \(mode.label)")
+        closeSettingsPanel()
+        let after = followSlides(seconds: 12, count: 7)   // no tempo after a relaunch: the seconds fallback
+        XCTAssertTrue(after.inOrder, "\(task): relaunch keeps the order: \(after.sequence)")
+        report(task, "slideshow", ["timeSteps": Double(time.sequence.count), "beatSteps": Double(beats.sequence.count),
+                                   "afterRelaunchSteps": Double(after.sequence.count)])
+    }
+
+    // MARK: MED-007 Ken Burns
+
+    private func kenBurnsOn(duration2s: Bool = false) {
+        openSettingsPanel()
+        setSwitch("kenBurnsToggle", on: true)
+        if duration2s {
+            let slider = app.sliders["kenBurnsDurationSlider"].firstMatch
+            if scrollTo(slider) { slider.adjust(toNormalizedSliderPosition: 0) }
+            XCTAssertTrue(wait(3) { self.text("kenBurnsSummary").hasSuffix(" 2 s") }, "2 s: \(text("kenBurnsSummary"))")
+        }
+    }
+
+    /// MED-007-T16 (D1): Zoom in over 10 s moves steadily (the change from the first picture grows every 2 s) and holds
+    /// after 10 s; Reduce Motion (`-uitestReduceMotion YES`) holds the start framing; in a slideshow the movement
+    /// restarts at each slide (2 s movement, 5 s slides: moving early in each slide, still late in it).
+    func testMED007KenBurns() {
+        let task = "MED-007-T16"
+        let quiet: [String: Any] = ["settings.performanceOverlay": false]
+        launch(visual: "photo", settings: quiet, extra: ["-uitestSeedPhoto", "pattern", "-uitestSettingsSection", "kenBurns"])
+        kenBurnsOn()
+        XCTAssertEqual(text("kenBurnsSummary"), "Zoom in, 10 s", "\(task): the default movement")
+        closeSettingsPanel()
+        let first = screen(task, "zoom 0 s").1
+        var fromStart: [Double] = []
+        for k in 1...4 {
+            pause(2)
+            fromStart.append(stillChange(first, screen(task, "zoom \(2 * k) s").1))
+        }
+        pause(4)   // past 10 s
+        let held1 = screen(task, "held a").1
+        pause(2)
+        let held2 = screen(task, "held b").1
+        let hold = stillChange(held1, held2)
+        report(task, "zoom in", ["d2": fromStart[0], "d4": fromStart[1], "d6": fromStart[2], "d8": fromStart[3], "hold": hold])
+        XCTAssertGreaterThan(fromStart[0], 0.002, "\(task): the photo moves")
+        for (a, b) in zip(fromStart, fromStart.dropFirst()) {
+            XCTAssertGreaterThanOrEqual(b, a * 0.9, "\(task): the zoom keeps going one way: \(fromStart)")
+        }
+        XCTAssertLessThan(hold, 0.002, "\(task): it holds after 10 s")
+
+        relaunch(["-uitestReduceMotion", "YES", "-uitestSettingsSection", "kenBurns"])
+        openSettingsPanel()
+        XCTAssertTrue(wait(5) { self.app.descendants(matching: .any)["kenBurnsReduceMotionNote"].firstMatch.exists },
+                      "\(task): the Reduce Motion note")
+        closeSettingsPanel()
+        let r1 = screen(task, "reduce motion a").1
+        pause(2)
+        let still = stillChange(r1, screen(task, "reduce motion b").1)
+        report(task, "reduce motion", ["change": still])
+        XCTAssertLessThan(still, 0.002, "\(task): Reduce Motion holds the start framing")
+
+        launch(visual: "photo", settings: quiet, extra: ["-uitestSettingsSection", "kenBurns"])
+        openSettingsPanel()
+        for name in ["slide-1.png", "slide-2.png"] {
+            guard tapControl("slideshowAddFromFiles") else { return }
+            XCTAssertTrue(ui.filesPick(name: name), "\(task): Files \(name)")
+            pause(1)
+        }
+        XCTAssertTrue(wait(30) { self.text("slideshowSummary") == "2 pictures" }, "\(task): \(text("slideshowSummary"))")
+        setSwitch("slideshowToggle", on: true)   // Every few seconds, 5 s
+        kenBurnsOn(duration2s: true)
+        closeSettingsPanel()
+        var restarts = 0
+        for n in 0..<2 {
+            let before = slide()?.changes ?? -1
+            guard wait(8, { (self.slide()?.changes ?? -1) > before }) else { XCTFail("\(task): no slide change"); break }
+            pause(0.3)
+            let a = screen(task, "slide \(n) early a").1
+            pause(1)
+            let early = stillChange(a, screen(task, "slide \(n) early b").1)
+            pause(1.2)
+            let c = screen(task, "slide \(n) late a").1
+            pause(1)
+            let late = stillChange(c, screen(task, "slide \(n) late b").1)
+            report(task, "slide \(n)", ["early": early, "late": late])
+            if early > 0.002 && late < early / 2 { restarts += 1 }
+        }
+        XCTAssertEqual(restarts, 2, "\(task): the movement restarts at each slide")
+    }
+
+    // MARK: MED-008 animated GIF
+
+    /// The yellow bar's mean column in a band below the centred spectrum (animated-200.gif: a yellow bar sweeping a
+    /// 160 × 120 frame), or nil when it is off screen.
+    private func barColumn(_ p: [UInt8]) -> Double? {
+        let (w, h) = lastSize
+        guard w > 0, h > 0 else { return nil }
+        var sum = 0.0, n = 0
+        for y in Int(Double(h) * 0.70)..<Int(Double(h) * 0.74) {
+            for x in 0..<w {
+                let i = (y * w + x) * 4
+                guard i + 3 < p.count else { continue }
+                if p[i] > 190, p[i + 1] > 150, p[i + 2] < 100 { sum += Double(x); n += 1 }
+            }
+        }
+        return n > 3 ? sum / Double(n) / Double(w) : nil
+    }
+
+    /// MED-008-T12 (D1): the Mac's 200-frame GIF plays for a minute (the bar moves) within the device's animated-frame
+    /// budget (AnimatedFrameBudget: 32/64/128 MB by memory), with no growth; Reduce Motion holds frame 0. Also picked
+    /// once through Photos (`animatedThroughPhotos`): the Photos picker must keep the frames (preferred encoding).
+    func testMED008LargeGIF() {
+        let task = "MED-008-T12"
+        launch(visual: "photo", settings: ["settings.performanceOverlay": false], extra: Self.seedLibrary(["animated-200.gif"]))
+        waitLibrarySeed(task)
+        pickFromPhotos("choosePhotoFromPhotos")
+        _ = settledSummary("photoSummary")
+        closeSettingsPanel()
+        let viaPhotos = wait(15) { self.photoValue.hasPrefix("Animated photo") }
+        XCTAssertTrue(viaPhotos, "\(task): the GIF picked in Photos stays animated: \(photoValue)")
+
+        pickFromFiles("choosePhotoFromFiles", "animated-200.gif")
+        _ = settledSummary("photoSummary")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(15) { self.photoValue.hasPrefix("Animated photo 160 × 120, 200 frames") }, "\(task): \(photoValue)")
+        pause(3)
+        let baseline = footprintMB() ?? -1
+        var footprints: [Int] = [], columns: Set<Int> = [], seen = 0
+        for s in 0..<20 {   // 60 s
+            pause(3)
+            if let mb = footprintMB() { footprints.append(mb) }
+            if let c = barColumn(screen(task, "gif \(s)").1) { columns.insert(Int(c * 20)); seen += 1 }
+        }
+        let gib = Double(ProcessInfo.processInfo.physicalMemory) / 1_073_741_824
+        let budget = gib < 4 ? 32 : gib < 8 ? 64 : 128
+        let peak = footprints.max() ?? -1
+        let third = max(1, footprints.count / 3)
+        let early = footprints.prefix(third).reduce(0, +) / third, late = footprints.suffix(third).reduce(0, +) / third
+        report(task, "one minute", ["baselineMB": Double(baseline), "peakMB": Double(peak), "budgetMB": Double(budget),
+                                    "earlyMB": Double(early), "lateMB": Double(late), "barPositions": Double(columns.count),
+                                    "barSeen": Double(seen), "viaPhotosAnimated": viaPhotos ? 1 : 0])
+        XCTAssertGreaterThanOrEqual(columns.count, 3, "\(task): the animation plays (bar seen at \(columns.sorted()))")
+        XCTAssertLessThanOrEqual(peak - baseline, budget, "\(task): growth within the \(budget) MB animated-frame budget")
+        XCTAssertLessThanOrEqual(late, early + 10, "\(task): no growth over the minute (\(early) → \(late) MB)")
+
+        relaunch(["-uitestReduceMotion", "YES"])
+        XCTAssertTrue(wait(15) { self.photoValue.hasPrefix("Animated photo") }, "\(task): after relaunch: \(photoValue)")
+        pause(2)
+        let a = screen(task, "reduce motion a").1
+        let barA = barColumn(a)
+        pause(1.3)
+        let b = screen(task, "reduce motion b").1
+        let barB = barColumn(b)
+        report(task, "reduce motion", ["change": stillChange(a, b)])
+        XCTAssertEqual(barA.map { Int($0 * 100) }, barB.map { Int($0 * 100) }, "\(task): Reduce Motion holds frame 0")
+        XCTAssertLessThan(stillChange(a, b), 0.002, "\(task): the picture holds")
+    }
+
+    // MARK: MED-009 text
+
+    /// MED-009-T23 (D1, D3): the editor at the largest Dynamic Type size (AX5), right-to-left text typed in Arabic and
+    /// Hebrew (with the app in that language) and emoji with skin tones; relaunch shows the same text and the same
+    /// rendering. XCUITest types the characters itself; typing on the real Arabic and Hebrew keyboards stays a person's.
+    func testMED009LargestTypeRTLEmoji() {
+        let task = "MED-009-T23"
+        let ax5 = ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        let cases: [(String, [String], String)] = [
+            ("en", [], "Hello 👋🏽 👍🏿 🧑🏻‍🎤"),
+            ("ar", ["-AppleLanguages", "(ar)", "-AppleLocale", "ar"], "مرحبا بالعالم 👋🏾"),
+            ("he", ["-AppleLanguages", "(he)", "-AppleLocale", "he"], "שלום עולם 👍🏼"),
+        ]
+        for (language, arguments, message) in cases {
+            launch(visual: "text", settings: ["settings.performanceOverlay": false],
+                   extra: ax5 + arguments + ["-uitestSettingsSection", "text"])
+            openSettingsPanel()
+            let field = app.descendants(matching: .any)["textMessageField"].firstMatch
+            XCTAssertTrue(scrollTo(field), "\(task) \(language): the Message field at AX5")
+            field.tap()
+            let old = (field.value as? String) ?? ""
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: old.count + 4))
+            field.typeText(message)
+            let issues = auditIssues(app, "text editor \(language) AX5", types: [.textClipped, .dynamicType])
+            issues.forEach { print("MED-009-T23 audit: \($0)") }
+            closeSettingsPanel()
+            let visual = app.descendants(matching: .any)["textVisual"].firstMatch
+            XCTAssertTrue(wait(10) { (visual.value as? String) == message },
+                          "\(task) \(language): the visual shows the text: \(String(describing: visual.value))")
+            _ = wait(10) { !["none", "drawing"].contains(self.text("textRendering")) }
+            let rendering = text("textRendering")
+            relaunch(ax5 + arguments)
+            XCTAssertTrue(wait(10) { (visual.value as? String) == message }, "\(task) \(language): relaunch keeps the text")
+            XCTAssertTrue(wait(10) { self.text("textRendering") == rendering },
+                          "\(task) \(language): the same rendering (\(rendering) vs \(text("textRendering")))")
+            report(task, language, ["auditIssues": Double(issues.count), "kept": text("textRendering") == rendering ? 1 : 0])
+            app.terminate()
+        }
+    }
+
+    // MARK: MED-010 logo
+
+    /// Dark-fringe check in one corner: the logo's bright pixels, and how many of the pixels touching them are darker
+    /// than the background (a premultiplied-alpha fault draws a dark rim). `corner`: (0|1, 0|1) = (right?, bottom?).
+    private func fringe(_ shot: (pixels: [UInt8], width: Int, height: Int), corner: (Int, Int)) -> (bright: Int, edge: Int, dark: Int, bg: Double) {
+        let (p, w, h) = shot
+        let s = Double(min(w, h))
+        let span = Int(s * 0.28)   // margin 0.04 + size 0.15 of the short side, with room
+        let x0 = corner.0 == 0 ? 0 : w - span, y0 = corner.1 == 0 ? 0 : h - span
+        func at(_ x: Int, _ y: Int) -> Int { (y * w + x) * 4 }
+        // The background: the corner's pixel nearest the screen edge inside the margin.
+        let bx = corner.0 == 0 ? Int(s * 0.01) : w - 1 - Int(s * 0.01), by = corner.1 == 0 ? Int(s * 0.01) : h - 1 - Int(s * 0.01)
+        let bg = Self.luma(p, at(bx, by))
+        var bright = Set<Int>()
+        for y in y0..<(y0 + span) { for x in x0..<(x0 + span) where Self.luma(p, at(x, y)) > min(0.97, bg + 0.3) { bright.insert(y * w + x) } }
+        var edge = 0, dark = 0
+        for y in (y0 + 1)..<(y0 + span - 1) {
+            for x in (x0 + 1)..<(x0 + span - 1) where !bright.contains(y * w + x) {
+                let touches = bright.contains(y * w + x - 1) || bright.contains(y * w + x + 1)
+                    || bright.contains((y - 1) * w + x) || bright.contains((y + 1) * w + x)
+                guard touches else { continue }
+                edge += 1
+                if Self.luma(p, at(x, y)) < bg - 0.08 { dark += 1 }
+            }
+        }
+        return (bright.count, edge, dark, bg)
+    }
+
+    private func logoInEachCorner(_ task: String, _ source: String) {
+        let corners: [(String, (Int, Int))] = [("Top left", (0, 0)), ("Top right", (1, 0)), ("Bottom left", (0, 1)), ("Bottom right", (1, 1))]
+        for (name, corner) in corners {
+            openSettingsPanel()
+            chooseMenu("logoPositionPicker", name)
+            closeSettingsPanel()
+            pause(1.5)
+            let f = fringe(pixels(task, "\(source) \(name)", step: 2), corner: corner)
+            report(task, "\(source) \(name)", ["brightPixels": Double(f.bright), "edgePixels": Double(f.edge),
+                                               "darkEdgePixels": Double(f.dark), "backgroundLuma": f.bg])
+            XCTAssertGreaterThan(f.bright, 50, "\(task) \(source) \(name): the logo is drawn in that corner")
+            XCTAssertLessThanOrEqual(Double(f.dark), Double(max(f.edge, 1)) * 0.02, "\(task) \(source) \(name): no dark fringe")
+        }
+    }
+
+    /// MED-010-T25 (D1): the white-disc PNG from the real Photos picker and from Files, over the Photo visual (solid
+    /// orange), clean-edged in each corner.
+    func testMED010LogoCorners() {
+        let task = "MED-010-T25"
+        launch(visual: "photo", settings: ["settings.performanceOverlay": false],
+               extra: ["-uitestSeedPhoto", "solid"] + Self.seedLibrary(["logo-white-disc.png"]))
+        waitLibrarySeed(task)
+        pickFromPhotos("chooseLogoFromPhotos")
+        XCTAssertTrue(wait(20) { self.text("logoProbe").hasSuffix("logo=yes") }, "\(task): Photos logo stored: \(text("logoProbe"))")
+        closeSettingsPanel()
+        logoInEachCorner(task, "Photos")
+
+        pickFromFiles("chooseLogoFromFiles", "logo-white-disc.png")
+        XCTAssertFalse(text("logoNotice").contains("couldn"), "\(task): no refusal: \(text("logoNotice"))")
+        closeSettingsPanel()
+        XCTAssertTrue(text("logoProbe").hasSuffix("logo=yes"), "\(task): Files logo stored")
+        logoInEachCorner(task, "Files")
+    }
+}

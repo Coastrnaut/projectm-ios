@@ -60,6 +60,7 @@ struct MediaProbes: View {
         LogoProbe(logo: logo)
         ClockProbe(clock: clock)
         CountdownProbe(countdown: coordinator.countdown)   // MED-012
+        MediaDeviceProbes(coordinator: coordinator)   // QA-011 Batch 5: videoFrameRate, photoStoredMetadata
     }
 
     private var slideshow: SlideshowCoordinator { coordinator.slideshow }

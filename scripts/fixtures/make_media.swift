@@ -5,7 +5,7 @@
 //
 // Names: photo-gps.heic, panorama-60mp.png, panorama-60mp.heic, photo-45mb.jpg, photo-small.jpg,
 // photo-transparent.png, animated-200.gif, video-h264-1080p.mp4, video-hevc-4k60.mov, video-hevc-360p-10min.mov,
-// video-hdr-hlg.mov. Prints "make_media: <name> <bytes>" per file; exit 1 when one fails.
+// video-hdr-hlg.mov, slide-1.png … slide-5.png, logo-white-disc.png. Prints "make_media: <name> <bytes>" per file; exit 1 when one fails.
 import AVFoundation
 import CoreGraphics
 import CoreVideo
@@ -39,6 +39,48 @@ func pattern(width: Int, height: Int, noise: Int = 0, alpha: Bool = false) -> CG
             data[i + 2] = UInt8(b * Int(a) / 255); data[i + 3] = a
         }
     }
+    let provider = CGDataProvider(data: Data(data) as CFData)!
+    return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
+                   space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                   bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                   provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)
+}
+
+/// QA-011 Batch 5 (MED-006, MED-007): a 640 x 480 slide, a 40 px checkerboard of one colour and its third (the
+/// colour tells slides apart, the squares show Ken Burns movement).
+func slide(_ n: Int) -> CGImage? {
+    let colours: [(Int, Int, Int)] = [(230, 30, 30), (30, 200, 60), (40, 70, 230), (240, 220, 40), (220, 40, 220)]
+    let c = colours[(n - 1) % colours.count]
+    let width = 640, height = 480
+    var data = [UInt8](repeating: 255, count: width * height * 4)
+    for y in 0..<height {
+        for x in 0..<width {
+            let bright = ((x / 40) + (y / 40)) % 2 == 0
+            let i = (y * width + x) * 4
+            data[i] = UInt8(bright ? c.0 : c.0 / 3); data[i + 1] = UInt8(bright ? c.1 : c.1 / 3)
+            data[i + 2] = UInt8(bright ? c.2 : c.2 / 3)
+        }
+    }
+    return image(data, width: width, height: height)
+}
+
+/// QA-011 Batch 5 (MED-010): a 512 x 512 white disc (radius 200) on transparency with a 3 px anti-aliased edge, so a
+/// dark fringe from mishandled alpha shows against any background.
+func whiteDisc() -> CGImage? {
+    let size = 512
+    var data = [UInt8](repeating: 0, count: size * size * 4)
+    for y in 0..<size {
+        for x in 0..<size {
+            let d = ((Double(x) + 0.5 - 256) * (Double(x) + 0.5 - 256) + (Double(y) + 0.5 - 256) * (Double(y) + 0.5 - 256)).squareRoot()
+            let a = UInt8(max(0, min(255, (203 - d) / 3 * 255)))
+            let i = (y * size + x) * 4
+            data[i] = a; data[i + 1] = a; data[i + 2] = a; data[i + 3] = a   // premultiplied white
+        }
+    }
+    return image(data, width: size, height: size)
+}
+
+func image(_ data: [UInt8], width: Int, height: Int) -> CGImage? {
     let provider = CGDataProvider(data: Data(data) as CFData)!
     return CGImage(width: width, height: height, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: width * 4,
                    space: CGColorSpace(name: CGColorSpace.sRGB)!,
@@ -212,6 +254,12 @@ for name in arguments.dropFirst(2) {
         ok = video(url, codec: .hevc, fileType: .mov, width: 640, height: 360, fps: 30, seconds: 600, bitRate: 600_000)
     case "video-hdr-hlg.mov":
         ok = video(url, codec: .hevc, fileType: .mov, width: 1920, height: 1080, fps: 30, seconds: 5, bitRate: 10_000_000, hdr: true)
+    case "slide-1.png": ok = slide(1).map { write([$0], to: url, type: .png) } ?? false
+    case "slide-2.png": ok = slide(2).map { write([$0], to: url, type: .png) } ?? false
+    case "slide-3.png": ok = slide(3).map { write([$0], to: url, type: .png) } ?? false
+    case "slide-4.png": ok = slide(4).map { write([$0], to: url, type: .png) } ?? false
+    case "slide-5.png": ok = slide(5).map { write([$0], to: url, type: .png) } ?? false
+    case "logo-white-disc.png": ok = whiteDisc().map { write([$0], to: url, type: .png) } ?? false
     default:
         print("make_media: unknown name \(name)")
         ok = false

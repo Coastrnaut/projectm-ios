@@ -32,6 +32,8 @@ runs on hardware.
 | MIDI driver | `scripts/mac_driver/midi.py` + `scripts/fixtures/midi_session.swift` | The Mac's CoreMIDI network session to the device; answers `MIDI-READY <scenario>` with CC, notes, programs, 14-bit pairs and clock; counts MIDI feedback. Needs the network-MIDI DEBUG exemption (see Batch 8). |
 | Two-device runner | `scripts/mac_driver/peer.py` | Runs one test on D1 and one on D2 from per-device product copies; starts the acting role on the waiting role's `PEER-READY` line; pairs `PEER-STEP`/`PEER-SEEN` times. |
 | Recording checks | `scripts/recording_frame_check.py`, `scripts/fixtures/recording_inspect.swift` | Batch 6: reads `RECORDING-CHECK` lines from a run's log, copies each recording or still off the device and checks atoms, codec, `sips`, Vision OCR, centre correlation, click/flash alignment and QA-008's validator; `Build/recording-checks/<device>/report.json`. |
+| Device files | `scripts/mac_driver/files.py` | `files.pull` copies the newest Documents file by prefix/suffix to `Build/device-files/<D>/` and checks a ZIP's entries and manifest (`present`/`absent`); `files.push` copies one pulled from another device into this device's Documents (Batch 5: PRE-014, FILE-001). |
+| Media probes | `Apps/projectM-iOS/Debug/UITestMediaDeviceProbes.swift` | DEBUG, with `-uitestDiagnostics`: `videoFrameRate` ("fps=<x> late=<n> taken=<n> dropped=<n>": the clip's distinct pictures per second) and `photoStoredMetadata` ("gps=<none\|present> exif=… size=WxH bytes=n" of the stored copy). `-uitestSeedVideo uhd60` / `long600` import the Documents HEVC fixtures (4K60 10 s, 360p 10 min). |
 | Device facts | `scripts/mac_driver/devices.py` | D1-D3 by product type, Bonjour names, `dscacheutil` resolution, the Mac's own address, Documents copies. |
 | Audio probes (DEBUG) | `Apps/projectM-iOS/Debug/UITestAudioProbes.swift`, CaptureKit `PlaybackDebugProbe`, AudioCore `NoiseGateDebugProbe` | QA-011 audio (B05): generated fixtures (`-uitestSeedAudio`), what the playback tap delivered (`-uitestPlaybackProbe`), the audio-session notifications (`-uitestSessionLog`), the noise gate's transitions (`-uitestGateProbe`), import times and announcements (`importProbe`), and a panel for seeks, queue edits, repeat and shuffle (`-uitestAudioPanel`). See "Audio device tests" below. |
 | Audio device-test helpers | `Apps/projectM-iOS/DeviceUITests/AudioProbeSupport.swift` | Probe parsing, `launchPlayback`, real interruptions through `SystemUI` with the AUD-014 policy check, `MAC-DO` requests to the Mac driver. |
@@ -319,6 +321,65 @@ Devices: D1 for all; D3 for REC-001, REC-003-T25 and MED-011; D2 for REC-014 (Po
 - **Still a person's:** an AirDrop transfer (a receiver accepts), iCloud Drive destinations (iCloud signed in), the
   countdown with VoiceOver on, System/App Capture video only (the system picker), and the microphone prompt itself
   (answered by the prompt flow first; a prompt here fails the test and is left alone).
+## Media layers, files and presets (QA-011 Batch 5, 2026-11-18)
+
+Tests: `B07MediaDeviceTests` (photo, video, loop, speed, slideshow, Ken Burns, GIF, text, logo, real camera media),
+`B07FilesDeviceTests` (collections, preset import and export, thumbnails, scene archives, Storage, Clear Caches) and
+four more in `B13MediaDeviceTests` (4K60 and 10-minute playback, 3 minutes of 4K thermal, a real memory warning). The
+real Files and Photos pickers and the share sheet go through `SystemUI` (`filesPick`, `filesSave`, `photosPick`,
+`shareSheet`); Photos picks use `-uitestSeedPhotoLibrary` (add-only, granted by the prompt-flow batch; a seed that would
+prompt fails instead of waiting). Not yet run on a device when written: check the first run's screenshots.
+
+| Test | Tasks | Devices | Needs |
+|---|---|---|---|
+| `B07MediaDeviceTests/testMED001PhotosPickerNoPrompt` | MED-001-T22 | D1, D3 | Photos add-only granted |
+| `…/testMED001FilesPickRelaunchRemove` | MED-001-T23 (iCloud Drive part: person) | D1, D3 | media fixtures |
+| `…/testMED001HEICLocationPanoramaLarge` | MED-001-T24 | D1, D3 | media fixtures |
+| `…/testMED014RealCameraMediaPanoramaAndHDR` | MED-014-T23 (ProRAW: owner's file) | D1, D3 | Camera app (no prompt of this app) |
+| `…/testMED002PhotosAndFilesVideoPicks` | MED-002-T26 | D1, D3 | Camera app |
+| `…/testMED003LoopRegion` | MED-003-T20 | D1 | media fixtures |
+| `…/testMED004SpeedRates` | MED-004-T22 | D1 | media fixtures |
+| `…/testMED006SlideshowFromPhotosAndFiles` | MED-006-T22 | D1 | Photos add-only granted |
+| `…/testMED007KenBurns` | MED-007-T16 | D1 | media fixtures |
+| `…/testMED008LargeGIF` | MED-008-T12 | D1 | Photos add-only granted |
+| `…/testMED009LargestTypeRTLEmoji` | MED-009-T23 (real Arabic/Hebrew keyboards: person) | D1, D3 | none |
+| `…/testMED010LogoCorners` | MED-010-T25 | D1 | Photos add-only granted |
+| `B07FilesDeviceTests/testPRE007_A_SeedCreateAndReorder`, then install over, then `…_B_CollectionsSurviveInstallOver` | PRE-007-T23 (VoiceOver speech: person) | D1, D2, D3 | the Mac installs between A and B |
+| `…/testPRE012ImportThroughFilesPicker` | PRE-012-T31 (VoiceOver listening: person) | D1, D2, D3 | media fixtures |
+| `…/testPRE014ExportZipToFiles` | PRE-014-T25 | D1, D3 | Mac driver (`files.pull` checks the ZIP) |
+| `…/testPRE001FPSWhileThumbnailsGenerate` | PRE-001-T14 | D1 | none (`-uitestMemoryPressure` frame counter) |
+| `…/testFILE001_A_ExportSceneArchive` (D1), then `…_B_ImportSceneArchive` (D3) | FILE-001-T19 (offline: not required) | D1 → D3 | Mac driver (`files.pull` on D1, `files.push` on D3) |
+| `…/testFILE009StorageValuesWithRealMedia` | FILE-009-T12 | D1 | media fixtures |
+| `…/testFILE010ClearCaches` | FILE-010-T11 | D1 | media fixtures |
+| `B13MediaDeviceTests/testMED002UHD60PlaysAtItsRateWithFlatMemory`, `…/testMED002TenMinuteClipPlaysAtItsRateWithFlatMemory` | MED-002-T27 | D1, D3 | media fixtures (else generated clips) |
+| `B13MediaDeviceTests/testMED002ThreeMinutes4KThermal` | MED-002-T28 | D1, D3 | allowance 300 s |
+| `B13MediaDeviceTests/testPERF006RealMemoryWarning` | PERF-006-T17 | D1, D3 | Mac driver (`memory.warning`) |
+
+```bash
+python3 scripts/make_media_fixtures.py && python3 scripts/install_test_fixtures.py --device D1 --media
+python3 scripts/mac_device_driver.py follow --log Build/b07-D1.log --device D1 &        # for the Mac-driven tests
+xcodebuild test-without-building … -destination platform=iOS,id=<D1 UDID> TEST_RUNNER_MAC_DRIVER=1 \
+  -only-testing:projectM-iOSDeviceUITests/B07MediaDeviceTests -only-testing:projectM-iOSDeviceUITests/B07FilesDeviceTests/testPRE012ImportThroughFilesPicker \
+  -skip-testing:projectM-iOSDeviceUITests/PromptFlowDeviceTests -test-timeouts-enabled YES -default-test-execution-time-allowance 300 > Build/b07-D1.log 2>&1
+# PRE-007: run …/testPRE007_A_SeedCreateAndReorder, then
+xcrun devicectl device install app --device <id> Build/device-acceptance/Build/Products/Debug-iphoneos/projectM-iOS.app
+# then …/testPRE007_B_CollectionsSurviveInstallOver (a separate invocation; do not reset in between).
+# FILE-001: …/testFILE001_A_ExportSceneArchive on D1 (driver --device D1), then …/testFILE001_B_ImportSceneArchive on D3
+# (driver --device D3: it pushes Build/device-files/D1/<newest .pmscene>).
+# Mac cross-checks: devicectl device info files --device <id> --domain-type appDataContainer \
+#   --domain-identifier org.projectmios.ProjectMiOS [--subdirectory Library/Caches] --json-output f   (FILE-009, FILE-010)
+```
+
+- **Fixtures added for Batch 5** (`make_media_fixtures.py`): `slide-1.png` … `slide-5.png` (640 × 480 checkerboards in
+  five colours: slide order and Ken Burns movement), `logo-white-disc.png` (white disc, anti-aliased alpha edge: the
+  dark-fringe check), `preset-small.milk` (a second valid import).
+- **Results only the Mac sees:** `files.pull`'s `MAC-DONE <id> ok|FAIL …` line in the driver's log is PRE-014's ZIP
+  evidence; keep the driver log with the test log.
+- **Probes, not looks:** frame rates of a clip come from `videoFrameRate`, loop joints from `videoLoopStats`
+  (gap 0 = no joint late by a picture), slides from `slideshowProbe`, Ken Burns and GIF motion from screenshots away
+  from the centred spectrum (`stillRegion`), the logo edge from step-2 screenshot pixels around the corner.
+- **The browser sheet can hide the visualizer from XCUITest's tree** (untested on a device): PRE-001 counts presented frames (`visualFrames`) before
+  and after a browser-open window instead of reading the overlay behind the sheet.
 
 ## Lessons learned
 

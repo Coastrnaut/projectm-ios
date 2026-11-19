@@ -1,0 +1,547 @@
+// B07FilesDeviceTests.swift — QA-011 Batch 5 (files and presets): PRE-007, PRE-012, PRE-014, PRE-001, FILE-001,
+// FILE-009 and FILE-010 on the device, with the real Files picker and share sheet (Batch 1's SystemUI.swift).
+//
+// Fixtures: `python3 scripts/install_test_fixtures.py --device <D> --media` (preset-small.milk, preset-512k.milk,
+// not-a-preset.milk, photo-small.jpg, video-h264-1080p.mp4 …). The Debug device-test host shows the app's Documents in
+// Files as On My iPhone/iPad › projectM, so pickers read the fixtures and Save to Files writes back into Documents,
+// where the Mac reads the result: `scripts/mac_driver/files.py` (`files.pull`, `files.push`) through
+// `python3 scripts/mac_device_driver.py follow --log <log> --device <D>` beside the run. A test that needs the Mac
+// skips with the command when the run was started without it (`TEST_RUNNER_MAC_DRIVER=1`).
+//
+// Two-step tests run as separate xcodebuild invocations in name order (docs/autotester.md, Batch 5):
+// * PRE-007: `testPRE007_A_…` seeds and reorders; the Mac installs the same build over the app
+//   (`xcrun devicectl device install app …`, the update path); `testPRE007_B_…` checks the collections.
+// * FILE-001: `testFILE001_A_ExportSceneArchive` on D1 (the Mac pulls the archive), then
+//   `testFILE001_B_ImportSceneArchive` on D3 (the Mac pushes it into D3's Documents first).
+// Person-only parts: VoiceOver speaking the Move Up / Move Down actions and a VoiceOver pass over My Presets and
+// Quarantine (the tests use the same actions from the context menu and run accessibility audits); iCloud Drive;
+// "offline" import (Airplane Mode is a USB-cable step, not required, owner ruling 2026-11-18).
+import UIKit
+import XCTest
+
+@MainActor
+final class B07FilesDeviceTests: B07Case {
+    // MARK: Preset browser
+
+    func openBrowser() {
+        showControlsBar()
+        let presets = app.buttons["presets"].firstMatch
+        XCTAssertTrue(wait(5) { presets.exists }, "the Presets control")
+        presets.tap()
+        XCTAssertTrue(wait(10) { self.app.buttons["node:myPresets"].exists || self.app.buttons["node:included"].exists },
+                      "the preset browser opens")
+    }
+
+    func closeBrowser() {
+        let done = app.navigationBars.buttons["Done"].firstMatch
+        if done.exists { done.tap() }
+        _ = wait(5) { !self.app.buttons["node:included"].exists && !self.app.buttons["importPreset"].exists }
+    }
+
+    func openNode(_ id: String) {
+        let node = app.buttons["node:\(id)"].firstMatch
+        XCTAssertTrue(scrollTo(node), "node:\(id) is listed")
+        node.tap()
+        pause(0.8)
+    }
+
+    /// Rows whose identifier starts with `prefix`, top to bottom (names without the prefix).
+    func rows(_ prefix: String = "preset:") -> [String] {
+        app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix)).allElementsBoundByIndex
+            .filter { $0.exists && $0.frame.height > 0 }
+            .sorted { $0.frame.minY < $1.frame.minY }
+            .map { String($0.identifier.dropFirst(prefix.count)) }
+    }
+
+    /// Opens a row's context menu and taps `item` ("Move Up", "Add to Collection…", "Duplicate to My Presets").
+    func contextMenu(_ row: XCUIElement, _ item: String, hold: Double = 1.0) {
+        row.press(forDuration: hold)
+        var button = app.buttons[item].firstMatch
+        if !wait(3, { button.exists }) {
+            button = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", item)).firstMatch
+        }
+        XCTAssertTrue(wait(3) { button.exists }, "the menu offers \(item)")
+        if button.exists { button.tap() }
+        pause(0.8)
+    }
+
+    /// The alert's title and message.
+    func alertText(_ alert: XCUIElement) -> String {
+        ([alert.label] + alert.staticTexts.allElementsBoundByIndex.map(\.label)).joined(separator: " ")
+    }
+
+    /// Duplicates the first preset of the open folder into My Presets; returns its name.
+    func duplicateFirstPreset() -> String? {
+        if rows().isEmpty, let folder = rows("node:").first { openNode(folder) }   // a pack can open on folders
+        guard let name = rows().first else { XCTFail("no preset row"); return nil }
+        contextMenu(app.buttons["preset:\(name)"].firstMatch, "duplicatePreset", hold: 1.2)
+        let alert = app.alerts["Duplicate to My Presets"].firstMatch
+        if wait(10, { alert.exists }) {
+            print("B07 duplicate: \(alertText(alert))")
+            alert.buttons.firstMatch.tap()
+        }
+        return name
+    }
+
+    /// My Presets › Import Preset… › Files › `file`; returns the alert text and seconds from Open to the result.
+    func importPreset(_ file: String) -> (text: String, seconds: Double) {
+        let button = app.buttons["importPreset"].firstMatch
+        XCTAssertTrue(wait(5) { button.exists }, "Import Preset… (My Presets)")
+        button.tap()
+        XCTAssertTrue(ui.filesPick(name: file), "Files: \(file)")
+        let picked = Date()
+        let alert = app.alerts["Import Preset"].firstMatch
+        XCTAssertTrue(wait(30) { alert.exists }, "the import result for \(file)")
+        let seconds = Date().timeIntervalSince(picked)
+        let text = alertText(alert)
+        if alert.exists { alert.buttons.firstMatch.tap() }
+        pause(0.5)
+        return (text, seconds)
+    }
+
+    // MARK: Files and the Mac
+
+    /// Save to Files from a share sheet the app shows: the activity, then On My iPhone/iPad › projectM, Replace if asked.
+    func saveSharedFileToDocuments(_ task: String) {
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            XCTAssertTrue(wait(5) { self.app.popovers.count > 0 }, "\(task): the iPad share sheet is a popover")
+            report(task, "share sheet", ["popover": app.popovers.count > 0 ? 1 : 0])
+        }
+        XCTAssertTrue(ui.shareSheet("Save to Files"), "\(task): Save to Files")
+        XCTAssertTrue(ui.filesSave(), "\(task): saved in On My … › projectM")
+        let replace = app.buttons["Replace"].firstMatch
+        if wait(3, { replace.exists }) { replace.tap() }
+        pause(1)
+    }
+
+    func requireMac(_ task: String) throws {
+        guard MacDriver.isFollowing else {
+            throw XCTSkip("\(task) needs the Mac: python3 scripts/mac_device_driver.py follow --log <log> --device <D> & and "
+                          + "TEST_RUNNER_MAC_DRIVER=1 on the xcodebuild command")
+        }
+    }
+
+    // MARK: Storage
+
+    /// "Zero KB", "512 bytes", "12.3 MB" (ByteCountFormatter .file, decimal) → bytes; nil while calculating.
+    static func bytes(_ text: String) -> Double? {
+        let t = text.replacingOccurrences(of: "\u{00A0}", with: " ").replacingOccurrences(of: ",", with: "")
+        if t.hasPrefix("Zero") { return 0 }
+        let parts = t.split(separator: " ")
+        guard parts.count >= 2, let n = Double(parts[0]) else { return nil }
+        let units = ["bytes": 1.0, "byte": 1, "KB": 1e3, "MB": 1e6, "GB": 1e9, "TB": 1e12]
+        return units[String(parts[1])].map { n * $0 }
+    }
+
+    func openStorage() {
+        openSettingsPanel()
+        tapControl("storageLink")
+        XCTAssertTrue(wait(10) { self.app.navigationBars["Storage"].exists }, "Settings › Storage")
+        _ = wait(30) { !self.element("storageMeasuring").exists && Self.bytes(self.text("storage.total")) != nil }
+    }
+
+    func storage(_ id: String) -> Double { Self.bytes(element("storage.\(id)").value as? String ?? "") ?? -1 }
+
+    func storageValues(_ ids: [String]) -> [String: Double] {
+        var out: [String: Double] = [:]
+        for id in ids {
+            _ = scrollTo(element("storage.\(id)"))
+            out[id] = storage(id)
+        }
+        return out
+    }
+
+    /// Clear Caches… › Clear; returns the result line ("Cleared X." or the nothing-to-clear text).
+    func clearCaches() -> String {
+        tapControl("storageClearCaches")
+        let confirm = app.buttons["storageClearConfirm"].firstMatch
+        if wait(5, { confirm.exists }) {
+            print("B07 clear caches: \(alertText(app.alerts.firstMatch))")
+            confirm.tap()
+            let result = element("storageCleanupResult")
+            _ = wait(20) { result.exists }
+            return text("storageCleanupResult")
+        }
+        let alert = app.alerts.firstMatch
+        let message = alert.exists ? alertText(alert) : "no alert"
+        if alert.exists { alert.buttons.firstMatch.tap() }
+        return message
+    }
+
+    /// Records `seconds` from the controls and waits for the "Recording ready" panel.
+    func recordClip(_ task: String, seconds: Double) {
+        showControlsBar()
+        let record = app.buttons["record"].firstMatch
+        XCTAssertTrue(wait(5) { record.exists }, "\(task): Record")
+        record.tap()
+        XCTAssertTrue(wait(10) { self.element("recordingIndicator").exists }, "\(task): recording")
+        pause(seconds)
+        showControlsBar()
+        app.buttons["record"].firstMatch.tap()
+        XCTAssertTrue(wait(30) { self.app.buttons["recordingResultKeep"].exists || self.app.buttons["recordingResultShare"].exists },
+                      "\(task): the recording is ready")
+    }
+
+    // MARK: PRE-007 collections (D1, D2, D3)
+
+    /// The first three Included presets (the seed's positions 0, 1, 2), as the browser lists them.
+    private func includedTop3() -> [String] {
+        openNode("included")
+        let names = Array(rows().prefix(3))
+        goBack()
+        return names
+    }
+
+    /// PRE-007-T23 step A: seeds "Device set" (Included 0, 1, 2), times S8 (create a collection, add a preset, play it:
+    /// under 30 s from the open browser), and moves the second preset up with the Move Up action (the context menu;
+    /// VoiceOver's custom action of the same name calls the same move, VoiceOver speech stays a person's).
+    func testPRE007_A_SeedCreateAndReorder() {
+        let task = "PRE-007-T23"
+        launch(visual: "projectM", extra: ["-uitestSeedCollections", "Device set:0,1,2"])
+        openBrowser()
+        let top = includedTop3()
+        XCTAssertEqual(top.count, 3, "\(task): three Included presets")
+
+        let started = Date()   // S8 from the open browser
+        openNode("collections")
+        let new = app.buttons["newCollection"].firstMatch
+        XCTAssertTrue(wait(5) { new.exists }, "\(task): New Collection")
+        new.tap()
+        let name = app.textFields["collectionName"].firstMatch
+        XCTAssertTrue(wait(5) { name.exists }, "\(task): the name field")
+        name.tap()
+        name.typeText("S8 set")
+        app.buttons["saveCollectionName"].firstMatch.tap()
+        XCTAssertTrue(wait(5) { self.app.buttons["collection:S8 set"].exists }, "\(task): S8 set is listed")
+        goBack()
+        openNode("included")
+        if let first = rows().first {
+            contextMenu(app.buttons["preset:\(first)"].firstMatch, "Add to Collection…")
+            let target = app.buttons["addTo:S8 set"].firstMatch
+            XCTAssertTrue(wait(5) { target.exists }, "\(task): Add to S8 set")
+            target.tap()
+            pause(1)
+        }
+        goBack()
+        openNode("collections")
+        app.buttons["collection:S8 set"].firstMatch.tap()
+        pause(0.8)
+        if let only = rows().first { app.buttons["preset:\(only)"].firstMatch.tap() }
+        let playing = wait(15) { self.text("scopeLine").hasPrefix("S8 set") }
+        let s8 = Date().timeIntervalSince(started)
+        XCTAssertTrue(playing, "\(task): S8 set plays: \(text("scopeLine"))")
+        XCTAssertLessThan(s8, 30, "\(task) S8: create, add and play in under 30 s (\(s8) s)")
+
+        openBrowser()
+        openNode("collections")
+        app.buttons["collection:Device set"].firstMatch.tap()
+        pause(0.8)
+        XCTAssertEqual(rows(), top, "\(task): the seeded order")
+        if top.count == 3 {
+            contextMenu(app.buttons["preset:\(top[1])"].firstMatch, "Move Up")
+            XCTAssertEqual(rows(), [top[1], top[0], top[2]], "\(task): Move Up")
+            contextMenu(app.buttons["preset:\(top[1])"].firstMatch, "Move Down")
+            XCTAssertEqual(rows(), top, "\(task): Move Down")
+            contextMenu(app.buttons["preset:\(top[1])"].firstMatch, "Move Up")   // left moved for step B
+            XCTAssertEqual(rows(), [top[1], top[0], top[2]], "\(task): the order step B expects")
+        }
+        report(task, "S8 and reorder", ["s8Seconds": s8])
+    }
+
+    /// PRE-007-T23 step B, after the Mac installed the build over the app: both collections and the moved order.
+    func testPRE007_B_CollectionsSurviveInstallOver() {
+        let task = "PRE-007-T23"
+        relaunch()
+        openBrowser()
+        let top = includedTop3()
+        openNode("collections")
+        XCTAssertTrue(wait(5) { self.app.buttons["collection:Device set"].exists }, "\(task): Device set survives")
+        XCTAssertTrue(app.buttons["collection:S8 set"].exists, "\(task): S8 set survives")
+        app.buttons["collection:Device set"].firstMatch.tap()
+        pause(0.8)
+        XCTAssertEqual(rows(), top.count == 3 ? [top[1], top[0], top[2]] : top, "\(task): the order survives")
+        report(task, "after install over", ["collections": Double(rows("collection:").count)])
+    }
+
+    // MARK: PRE-012 import through Files (D1, D2, D3)
+
+    /// PRE-012-T31: a preset and a JPEG renamed .milk through the real Files picker: the preset is added (time from
+    /// Open to the result, the trial included), the JPEG is quarantined as "not text"; accessibility audits of My
+    /// Presets and Quarantine (a VoiceOver listening pass stays a person's).
+    func testPRE012ImportThroughFilesPicker() {
+        let task = "PRE-012-T31"
+        launch(visual: "projectM")
+        openBrowser()
+        openNode("myPresets")
+        let preset = importPreset("preset-small.milk")
+        XCTAssertTrue(preset.text.contains("Added") || preset.text.contains("already"), "\(task): \(preset.text)")
+        XCTAssertLessThan(preset.seconds, 15, "\(task): the trial and import finish quickly (\(preset.seconds) s)")
+        let jpeg = importPreset("not-a-preset.milk")
+        XCTAssertTrue(jpeg.text.contains("was put in Quarantine") && jpeg.text.contains("not text"), "\(task): \(jpeg.text)")
+        let myPresets = auditIssues(app, "My Presets", types: [.sufficientElementDescription, .hitRegion])
+        let quarantine = app.buttons["quarantineLink"].firstMatch
+        XCTAssertTrue(scrollTo(quarantine), "\(task): Quarantine is linked")
+        quarantine.tap()
+        let reason = element("quarantineReason:not-a-preset.milk")
+        XCTAssertTrue(wait(5) { reason.exists }, "\(task): the JPEG is in Quarantine")
+        let quarantined = auditIssues(app, "Quarantine", types: [.sufficientElementDescription, .hitRegion])
+        (myPresets + quarantined).forEach { print("PRE-012-T31 audit: \($0)") }
+        XCTAssertTrue(myPresets.isEmpty && quarantined.isEmpty, "\(task): audits: \(myPresets + quarantined)")
+        let delete = app.buttons["deleteQuarantined:not-a-preset.milk"].firstMatch
+        if delete.exists {   // leaves Quarantine empty for the next run
+            delete.tap()
+            let confirm = app.alerts.firstMatch
+            if wait(2, { confirm.exists }) { confirm.buttons.allElementsBoundByIndex.last?.tap() }
+        }
+        report(task, "Files import", ["presetSeconds": preset.seconds, "jpegSeconds": jpeg.seconds,
+                                      "auditIssues": Double(myPresets.count + quarantined.count)])
+    }
+
+    // MARK: PRE-014 export to Files (D1, D3)
+
+    /// PRE-014-T25: two imports, an Included copy and a pack copy (unlocked library); Export selects all, the share
+    /// sheet saves the ZIP in Files (a popover on D3), the summary names the excluded pack copy, and the Mac pulls the
+    /// ZIP and checks its entries (`files.pull`: imports and the Included copy present, the pack copy absent).
+    func testPRE014ExportZipToFiles() {
+        let task = "PRE-014-T25"
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "YES"]
+        app.launch()
+        XCTAssertTrue(wait(20) { self.app.staticTexts["sourceStarts"].exists }, "\(task): launched (unlocked)")
+        pause(2)
+        openBrowser()
+        openNode("myPresets")
+        for file in ["preset-small.milk", "preset-512k.milk"] {
+            let result = importPreset(file)
+            XCTAssertTrue(result.text.contains("Added") || result.text.contains("already"), "\(task) \(file): \(result.text)")
+        }
+        goBack()
+        openNode("included")
+        let included = duplicateFirstPreset()
+        goBack()
+        openNode("en-d")
+        let pack = duplicateFirstPreset()
+        closeBrowser()
+        openBrowser()
+        openNode("myPresets")
+        let export = app.buttons["exportPresets"].firstMatch
+        XCTAssertTrue(wait(5) { export.exists }, "\(task): Export")
+        export.tap()
+        XCTAssertTrue(wait(5) { self.element("presetExportSheet").exists }, "\(task): the export sheet")
+        app.buttons["exportSelectAll"].firstMatch.tap()
+        let exclusions = text("exportExclusions")
+        app.buttons["exportConfirm"].firstMatch.tap()
+        saveSharedFileToDocuments(task)
+        let summary = element("exportSummary")
+        XCTAssertTrue(wait(15) { summary.exists }, "\(task): the export summary")
+        let line = text("exportSummary")
+        XCTAssertTrue(line.hasPrefix("Exported"), "\(task): \(line)")
+        XCTAssertTrue((line + " " + exclusions).contains("full library"), "\(task): the pack copy is named as excluded: \(line) \(exclusions)")
+        var present = ["preset-small", "preset-512k"]
+        if let included { present.append(included) }
+        if !MacDriver.isFollowing { print("PRE-014-T25: no Mac driver; check the ZIP by hand (docs/autotester.md, Batch 5)") }
+        MacDriver.request("files.pull", ["prefix": "projectM-iOS Presets ", "suffix": ".zip", "present": present,
+                                         "absent": pack.map { ["\($0) copy"] } ?? []])
+        print("PRE-014-T25 check the driver log's MAC-DONE line for the ZIP entries (pack copy \(pack ?? "?") copy absent)")
+        report(task, "export", ["summaryShown": summary.exists ? 1 : 0])
+    }
+
+    // MARK: PRE-001 thumbnails (D1)
+
+    /// The visualizer's presented frames (`visualFrames`, `-uitestMemoryPressure`) over a browser-open window, as fps.
+    private func framesWhileBrowsing(_ task: String, seconds: Double) -> (fps: Double, thumbnails: Int) {
+        let before = Int(text("visualFrames")) ?? -1, start = Date()
+        openBrowser()
+        openNode("included")
+        pause(seconds)
+        let thumbnails = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'thumbnail:'")).count
+        closeBrowser()
+        let after = Int(text("visualFrames")) ?? -1
+        let fps = Double(after - before) / Date().timeIntervalSince(start)
+        report(task, "browser open", ["fps": fps, "thumbnails": Double(thumbnails)])
+        return (fps, thumbnails)
+    }
+
+    /// PRE-001-T14 (S7): the visualizer's frame rate while about 20 thumbnails generate behind the browser (cache
+    /// cleared first with Clear Caches) is within 10 % of the same window with them cached.
+    func testPRE001FPSWhileThumbnailsGenerate() {
+        let task = "PRE-001-T14"
+        launch(visual: "projectM", extra: ["-uitestMemoryPressure"])
+        openStorage()
+        print("PRE-001-T14 \(clearCaches())")
+        closeSettingsPanel()
+        pause(3)
+        let generating = framesWhileBrowsing(task, seconds: 10)
+        pause(3)
+        let cached = framesWhileBrowsing(task, seconds: 10)
+        XCTAssertGreaterThanOrEqual(generating.thumbnails, 10, "\(task): thumbnails were drawn")
+        XCTAssertGreaterThan(cached.fps, 0, "\(task): frames counted")
+        XCTAssertGreaterThanOrEqual(generating.fps, cached.fps * 0.9,
+                                    "\(task): \(generating.fps) fps generating vs \(cached.fps) fps cached (within 10 %)")
+    }
+
+    // MARK: FILE-001 scene archive (D1 → D3)
+
+    private func openSceneFolders(addCurrentScene: Bool) {
+        openSettingsPanel()
+        tapControl("showEditorLink")
+        if addCurrentScene {
+            let add = app.buttons["showAddCurrentScene"].firstMatch
+            XCTAssertTrue(scrollTo(add), "Add Current Scene")
+            add.tap()
+            pause(1)
+        }
+        tapControl("showSceneFoldersLink")
+        pause(1)
+    }
+
+    /// FILE-001-T19 on D1: a scene holding a photo and a video (the visual Video over the stored photo), exported as a
+    /// .pmscene through the real share sheet into Documents; the Mac pulls it for D3.
+    func testFILE001_A_ExportSceneArchive() throws {
+        let task = "FILE-001-T19"
+        try requireMac(task)
+        launch(visual: "video", extra: ["-uitestSeedPhoto", "pattern", "-uitestSeedVideo", "counter", "-uitestSettingsSection", "show"])
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 64 × 48" }, "\(task): the seeded video plays: \(videoValue)")
+        openSceneFolders(addCurrentScene: true)
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'sceneFolderScene.'")).firstMatch
+        XCTAssertTrue(wait(5) { row.exists }, "\(task): the new scene is listed")
+        let start = row.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
+        start.press(forDuration: 0.05, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)),
+                    withVelocity: .fast, thenHoldForDuration: 0.05)
+        let export = app.buttons.matching(NSPredicate(format: "identifier == %@ OR label == %@", "sceneFolderExportScene", "Export Scene")).firstMatch
+        XCTAssertTrue(wait(3) { export.exists }, "\(task): Export Scene")
+        export.tap()
+        saveSharedFileToDocuments(task)
+        XCTAssertTrue(wait(15) { self.text("scenePackStatus").hasPrefix("Exported") }, "\(task): \(text("scenePackStatus"))")
+        MacDriver.request("files.pull", ["prefix": "projectM-iOS Scene ", "suffix": ".pmscene"])
+        report(task, "export on \(deviceModel())", ["exported": text("scenePackStatus").hasPrefix("Exported") ? 1 : 0])
+    }
+
+    /// FILE-001-T19 on D3: the Mac pushes D1's archive into Documents; Import Scene… picks it in Files, the preview
+    /// lists the photo and the video, Import adds the cue, and applying it shows the video over the stored photo.
+    /// "Offline" (Airplane Mode) is a USB-cable step: not required (owner ruling 2026-11-18); nothing here uses the network.
+    func testFILE001_B_ImportSceneArchive() throws {
+        let task = "FILE-001-T19"
+        try requireMac(task)
+        MacDriver.request("files.push", ["from": "D1", "prefix": "projectM-iOS Scene ", "suffix": ".pmscene"])
+        launch(visual: "projectM", extra: ["-uitestSettingsSection", "show"])
+        pause(10)   // the push lands while the app launches (the log reaches the Mac a few seconds late)
+        openSceneFolders(addCurrentScene: true)   // Scene Folders shows once the show has a cue
+        tapControl("scenePackImportRow")
+        XCTAssertTrue(ui.filesPick(name: "projectM-iOS Scene "), "\(task): Files: D1's archive")
+        let media = element("scenePackMedia")
+        XCTAssertTrue(wait(15) { media.exists }, "\(task): the preview")
+        XCTAssertTrue(media.label.contains("1 photo") && media.label.contains("1 video"), "\(task): \(media.label)")
+        app.buttons["scenePackImport"].firstMatch.tap()
+        XCTAssertTrue(wait(15) { self.text("scenePackStatus").hasPrefix("Imported") }, "\(task): \(text("scenePackStatus"))")
+        closeSettingsPanel()
+        stepNextCue()
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 64 × 48" }, "\(task): the imported video plays: \(videoValue)")
+        openSettingsPanel()
+        _ = scrollTo(element("photoSummary"))
+        XCTAssertFalse(summary("photoSummary").contains("No photo"), "\(task): the imported photo is stored: \(summary("photoSummary"))")
+        closeSettingsPanel()
+        report(task, "import on \(deviceModel())", ["imported": 1])
+    }
+
+    // MARK: FILE-009 storage (D1)
+
+    static let storageRows = ["photos", "videos", "scenes", "presets", "importedAudio", "recordings", "savedRecordings",
+                              "sharesAndExports", "caches", "otherAppData", "total"]
+
+    /// The Settings app's "Documents & Data" for the app (General › iPhone Storage › projectM), or nil.
+    private func iPhoneStorageDocumentsAndData() -> Double? {
+        let settings = ui.preferences
+        ui.openSettings(path: ["General", UIDevice.current.userInterfaceIdiom == .pad ? "iPad Storage" : "iPhone Storage"])
+        let row = settings.descendants(matching: .any).matching(NSPredicate(format: "label == %@", SystemUI.appDisplayName)).firstMatch
+        guard wait(40, { row.exists }) else { return nil }   // iOS measures every app first
+        _ = ui.scrollTo(row, in: settings)
+        row.tap()
+        let cell = settings.cells.containing(NSPredicate(format: "label CONTAINS 'Documents'")).firstMatch
+        guard wait(10, { cell.exists }) else { return nil }
+        let labels = cell.staticTexts.allElementsBoundByIndex.map(\.label) + [cell.label]
+        let value = labels.compactMap { Self.bytes($0) }.first
+        settings.terminate()
+        app.activate()
+        return value
+    }
+
+    /// FILE-009-T12: a photo, a video and the imported music track, a kept recording; Settings › Storage shows each
+    /// category above zero and a total at least their sum, and is compared with iOS's "Documents & Data" for the app
+    /// (reported; iOS refreshes that figure lazily). The Mac's container size cross-check:
+    /// `xcrun devicectl device info files --device <id> --domain-type appDataContainer --domain-identifier
+    /// org.projectmios.ProjectMiOS --json-output f` (sum of sizes), in docs/autotester.md.
+    func testFILE009StorageValuesWithRealMedia() {
+        let task = "FILE-009-T12"
+        launch(visual: "photo")   // the music fixture is imported audio (-uitestImportAudio)
+        pickFromFiles("choosePhotoFromFiles", "photo-small.jpg")
+        _ = settledSummary("photoSummary")
+        pickFromFiles("chooseVideoFromFiles", "video-h264-1080p.mp4")
+        _ = settledSummary("videoSummary", timeout: 90)
+        closeSettingsPanel()
+        recordClip(task, seconds: 4)
+        let keep = app.buttons["recordingResultKeep"].firstMatch
+        if keep.exists { keep.tap() }
+        pause(1)
+        openStorage()
+        let values = storageValues(Self.storageRows)
+        report(task, "Settings › Storage", values)
+        for id in ["photos", "videos", "importedAudio"] {
+            XCTAssertGreaterThan(values[id] ?? -1, 0, "\(task): \(id) counts the imported media")
+        }
+        XCTAssertGreaterThan(max(values["recordings"] ?? -1, values["savedRecordings"] ?? -1), 0, "\(task): the recording counts")
+        let parts = Self.storageRows.dropLast().compactMap { values[$0] }.filter { $0 > 0 }.reduce(0, +)
+        XCTAssertGreaterThanOrEqual((values["total"] ?? -1) * 1.06, parts, "\(task): the total covers the rows (rounding)")
+        closeSettingsPanel()
+        let documentsAndData = iPhoneStorageDocumentsAndData()
+        report(task, "iPhone Storage", ["documentsAndData": documentsAndData ?? -1, "appTotal": values["total"] ?? -1,
+                                        "ratio": documentsAndData.map { ($0 + 1) / ((values["total"] ?? 0) + 1) } ?? -1])
+        print("FILE-009-T12 Documents & Data \(documentsAndData.map { String($0) } ?? "unread") vs Storage total \(values["total"] ?? -1)")
+    }
+
+    // MARK: FILE-010 Clear Caches (D1)
+
+    /// FILE-010-T11: preset switches (thumbnails and engine caches), a recording shared to Files (a share copy), then
+    /// Settings › Storage › Clear Caches frees the Caches and share copies; after a relaunch the app plays and the
+    /// current scene and the show load as before (`showAppliedScene`: applied scene ID | visual). The Mac's
+    /// cross-check of Library/Caches: `devicectl device info files … --subdirectory Library/Caches` (docs/autotester.md).
+    func testFILE010ClearCaches() {
+        let task = "FILE-010-T11"
+        launch(visual: "projectM", extra: ["-uitestSeedPhoto", "pattern", "-uitestShowSeed"])
+        for i in 0..<3 {   // three preset switches through the browser
+            openBrowser()
+            openNode("included")
+            let names = rows()
+            if names.count > i { app.buttons["preset:\(names[i])"].firstMatch.tap() }
+            pause(2)
+            closeBrowser()
+        }
+        chooseVisual("photo")
+        recordClip(task, seconds: 3)
+        let share = app.buttons["recordingResultShare"].firstMatch
+        if wait(5, { share.exists }) {
+            share.tap()
+            saveSharedFileToDocuments(task)
+        }
+        openStorage()
+        let before = storageValues(["caches", "sharesAndExports", "photos", "scenes", "total"])
+        let result = clearCaches()
+        pause(1)
+        let refresh = app.buttons["storageRefresh"].firstMatch
+        if refresh.exists { refresh.tap(); pause(2) }
+        let after = storageValues(["caches", "sharesAndExports", "photos", "scenes", "total"])
+        report(task, "before", before)
+        report(task, "after", after)
+        print("FILE-010-T11 \(result)")
+        XCTAssertTrue(result.hasPrefix("Cleared"), "\(task): \(result)")
+        XCTAssertLessThan(after["caches"] ?? -1, before["caches"] ?? -1, "\(task): the Caches size drops")
+        XCTAssertLessThanOrEqual(after["sharesAndExports"] ?? -1, before["sharesAndExports"] ?? -1, "\(task): share copies go")
+        XCTAssertEqual(after["photos"], before["photos"], "\(task): photos are kept")
+        XCTAssertEqual(after["scenes"], before["scenes"], "\(task): scenes are kept")
+        closeSettingsPanel()
+        let scene = text("showAppliedScene")
+        relaunch()
+        XCTAssertTrue(wait(15) { self.text("showAppliedScene") == scene }, "\(task): the scene and show load: \(text("showAppliedScene")) (was \(scene))")
+        XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo ") }, "\(task): the current scene's photo: \(photoValue)")
+        assertDrawingAndMoving(task, "after relaunch")
+    }
+}

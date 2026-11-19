@@ -10,6 +10,12 @@
 // * The 2-minute clip with Reverse on shows the 30-second sentence (MED-005-R5) and keeps playing forward (the shown
 //   picture's media index rises), with the probe reading `unsupported`.
 // Reverse is turned on with the real Settings switch. Nothing here raises a system prompt.
+// QA-011 Batch 5 (2026-11-18): MED-002-T27/T28 play `-uitestSeedVideo uhd60` (the Mac's HEVC 3840 × 2160 60 fps 10 s
+// fixture from Documents, else a generated counter of that shape) and `long600` (HEVC 640 × 360, 10 minutes; never
+// played to the end) and read the clip's own rate from the `videoFrameRate` probe (distinct pictures per second,
+// Debug/UITestMediaDeviceProbes.swift), the footprint from `memoryProbe` and the device's thermal state from the test
+// runner's `ProcessInfo.thermalState` (the runner shares the device). PERF-006-T17 asks the Mac for a real memory
+// warning (`MAC-DO memory.warning`: devicectl sendMemoryWarning) and reads the recovery counter (`-uitestMemoryPressure`).
 import UIKit
 import XCTest
 
@@ -78,6 +84,118 @@ final class B13MediaDeviceTests: DeviceAcceptanceCase {
         launch(visual: "video", extra: ["-uitestSeedVideo", seed, "-uitestSettingsSection", "video"])
         XCTAssertTrue(wait(90) { self.videoValue.contains(size) }, "\(task): the seeded clip plays: \(videoValue)")
         XCTAssertTrue(wait(10) { self.probe("videoReverse").hasPrefix("off") }, "\(task): forward first: \(probe("videoReverse"))")
+    }
+
+    // MARK: MED-002-T27, T28 (QA-011 Batch 5)
+
+    /// The clip's distinct pictures per second, once a second for `seconds` (the `videoFrameRate` probe).
+    private func clipRates(seconds: Int) -> [Double] {
+        var rates: [Double] = []
+        for _ in 0..<seconds {
+            pause(1)
+            let fps = probe("videoFrameRate").split(separator: " ").first { $0.hasPrefix("fps=") }
+            if let fps, let value = Double(fps.dropFirst(4)) { rates.append(value) }
+        }
+        return rates
+    }
+
+    /// Launches the Video visual with a Batch 5 seed and waits until it plays (`width` in its value).
+    private func launchSeeded(_ task: String, seed: String, width: String, timeout: Double) {
+        launch(visual: "video", extra: ["-uitestSeedVideo", seed])
+        XCTAssertTrue(wait(timeout) { self.videoValue.contains(width) }, "\(task): the \(seed) clip plays: \(videoValue)")
+        pause(3)
+    }
+
+    /// Footprint readings every `every` s for `seconds`; growth is the last third's mean over the first third's.
+    private func footprints(seconds: Int, every: Int) -> (values: [Int], growth: Double) {
+        var values: [Int] = []
+        for _ in 0..<(seconds / every) {
+            pause(Double(every))
+            if let mb = footprintMB() { values.append(mb) }
+        }
+        let third = max(1, values.count / 3)
+        let first = Double(values.prefix(third).reduce(0, +)) / Double(third)
+        let last = Double(values.suffix(third).reduce(0, +)) / Double(third)
+        return (values, first > 0 ? (last - first) / first : 0)
+    }
+
+    /// MED-002-T27 (D1, D3): the 4K60 HEVC clip plays at its rate (median ≥ 58 pictures per second; the clip loops
+    /// every 10 s) and memory stays flat over 60 s (≤ 10 % growth).
+    func testMED002UHD60PlaysAtItsRateWithFlatMemory() {
+        let task = "MED-002-T27"
+        launchSeeded(task, seed: "uhd60", width: "3840", timeout: 120)
+        let rates = clipRates(seconds: 15)
+        let memory = footprints(seconds: 45, every: 5)
+        let median = Self.median(rates)
+        report(task, "4K60", ["fpsMedian": median, "fpsMin": rates.min() ?? -1, "footprintFirstMB": Double(memory.values.first ?? -1),
+                              "footprintPeakMB": Double(memory.values.max() ?? -1), "growth": memory.growth])
+        XCTAssertGreaterThanOrEqual(rates.count, 10, "\(task): the probe reads (-uitestDiagnostics)")
+        XCTAssertGreaterThanOrEqual(median, 58, "\(task): 4K60 at its rate: \(rates)")
+        XCTAssertLessThanOrEqual(memory.growth, 0.10, "\(task): memory bounded: \(memory.values)")
+        XCTAssertEqual(app.state, .runningForeground, "no crash")
+    }
+
+    /// MED-002-T27 (D1, D3): the 10-minute clip plays at its rate (median ≥ 29 of 30), forward (the shown index rises,
+    /// no wrap inside a minute), and memory stays flat over 60 s.
+    func testMED002TenMinuteClipPlaysAtItsRateWithFlatMemory() {
+        let task = "MED-002-T27"
+        launchSeeded(task, seed: "long600", width: "640", timeout: 180)
+        let firstIndex = Int(probe("videoMediaFrameIndex")) ?? -1
+        let rates = clipRates(seconds: 15)
+        let memory = footprints(seconds: 45, every: 5)
+        let lastIndex = Int(probe("videoMediaFrameIndex")) ?? -1
+        let median = Self.median(rates)
+        report(task, "10 minutes", ["fpsMedian": median, "firstIndex": Double(firstIndex), "lastIndex": Double(lastIndex),
+                                    "footprintPeakMB": Double(memory.values.max() ?? -1), "growth": memory.growth])
+        XCTAssertGreaterThanOrEqual(median, 29, "\(task): the long clip at its rate: \(rates)")
+        XCTAssertGreaterThan(lastIndex, firstIndex + 30 * 50, "\(task): it plays forward for the minute (\(firstIndex) → \(lastIndex))")
+        XCTAssertLessThanOrEqual(memory.growth, 0.10, "\(task): memory bounded: \(memory.values)")
+    }
+
+    /// MED-002-T28 (D1, D3): 3 minutes of 4K60 playback with the thermal state below serious at every 10 s reading and
+    /// the frame rate recorded (about 3.3 minutes with the launch; run with -default-test-execution-time-allowance 300).
+    func testMED002ThreeMinutes4KThermal() {
+        let task = "MED-002-T28"
+        launchSeeded(task, seed: "uhd60", width: "3840", timeout: 120)
+        var worst = ProcessInfo.ThermalState.nominal, rates: [Double] = []
+        for step in 0..<18 {
+            let window = clipRates(seconds: 10)
+            rates += window
+            let state = ProcessInfo.processInfo.thermalState
+            if state.rawValue > worst.rawValue { worst = state }
+            report(task, "t=\((step + 1) * 10) s", ["thermalState": Double(state.rawValue), "fpsMedian": Self.median(window),
+                                                    "overlayFPS": overlayFPS() ?? -1])
+        }
+        report(task, "3 minutes", ["worstThermalState": Double(worst.rawValue), "fpsMedian": Self.median(rates),
+                                   "fpsMin": rates.min() ?? -1])
+        XCTAssertLessThan(worst.rawValue, ProcessInfo.ThermalState.serious.rawValue, "\(task): below serious (worst \(worst.rawValue))")
+        XCTAssertEqual(app.state, .runningForeground, "no crash")
+    }
+
+    // MARK: PERF-006-T17 (QA-011 Batch 5)
+
+    /// PERF-006-T17 (D1, D3): a real memory warning from the Mac (devicectl sendMemoryWarning to the app's pid): the
+    /// app survives, counts a recovery, keeps rendering and the music keeps playing.
+    func testPERF006RealMemoryWarning() throws {
+        let task = "PERF-006-T17"
+        guard MacDriver.isFollowing else {
+            throw XCTSkip("\(task) needs the Mac: python3 scripts/mac_device_driver.py follow --log <log> --device <D> & and "
+                          + "TEST_RUNNER_MAC_DRIVER=1 on the xcodebuild command")
+        }
+        launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestMemoryPressure"])
+        let starts = probe("sourceStarts")
+        let before = Int(probe("memoryRecoveries")) ?? -1
+        XCTAssertGreaterThanOrEqual(before, 0, "\(task): the recovery readout (-uitestMemoryPressure)")
+        MacDriver.request("memory.warning")
+        let recovered = wait(45) { (Int(self.probe("memoryRecoveries")) ?? -1) > before }
+        XCTAssertTrue(recovered, "\(task): a recovery after the real warning (\(before) → \(probe("memoryRecoveries")))")
+        XCTAssertEqual(app.state, .runningForeground, "\(task): the app survives")
+        assertDrawingAndMoving(task, "after the warning")
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        XCTAssertTrue(wait(10) { overlay.label.contains("Active audio") }, "\(task): the music plays: \(overlay.label.prefix(120))")
+        XCTAssertEqual(probe("sourceStarts"), starts, "\(task): the source did not restart")
+        report(task, "real warning", ["recoveries": Double(Int(probe("memoryRecoveries")) ?? -1),
+                                      "freedBytes": Double(Int(probe("memoryFreedBytes")) ?? -1)])
     }
 
     // MARK: MED-005-T20

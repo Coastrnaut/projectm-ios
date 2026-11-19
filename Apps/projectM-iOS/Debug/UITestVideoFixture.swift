@@ -7,7 +7,12 @@
 // container check must fail with the "couldn't be loaded" notice while the app keeps running.
 // QA-011 MED-005-T20 (device): `-uitestSeedVideo hd30` writes a 1920 × 1080, 30 fps, 30 s clip (the largest
 // reversible shape) and `-uitestSeedVideo long120` a 640 × 360, 30 fps, 2-minute clip (over the 30 s reverse limit),
-// both the same way; flat grey pictures keep the files small. Not compiled into Release builds.
+// both the same way; flat grey pictures keep the files small.
+// QA-011 MED-002-T27/T28 (device, Batch 5): `-uitestSeedVideo uhd60` imports a 3840 × 2160, 60 fps, 10 s clip and
+// `long600` a 640 × 360, 30 fps, 10-minute clip. Each takes the Mac-made HEVC fixture from the app's Documents when it
+// is there (video-hevc-4k60.mov, video-hevc-360p-10min.mov: scripts/make_media_fixtures.py, installed with
+// install_test_fixtures.py --media; a copy is imported, the fixture stays) and otherwise writes an H.264 counter of
+// that shape. Not compiled into Release builds.
 #if DEBUG
 import AVFoundation
 import CoreVideo
@@ -23,14 +28,18 @@ enum UITestVideoFixture {
         guard let i = arguments.firstIndex(of: argument), i + 1 < arguments.count else { return }
         let url = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-video-\(UUID().uuidString).mov")
         Task { @MainActor in
-            let shape: (width: Int, height: Int, frames: Int, end: Bool) = switch arguments[i + 1] {
-            case "hd30": (1920, 1080, 900, true)      // MED-005-T20: 30 s 1080p
-            case "long120": (640, 360, 3600, true)    // MED-005-T20: 2 minutes
-            default: (64, 48, 60, false)
+            let shape: (width: Int, height: Int, frames: Int, end: Bool, fps: Int) = switch arguments[i + 1] {
+            case "hd30": (1920, 1080, 900, true, 30)      // MED-005-T20: 30 s 1080p
+            case "long120": (640, 360, 3600, true, 30)    // MED-005-T20: 2 minutes
+            case "uhd60": (3840, 2160, 600, true, 60)     // MED-002-T27/T28: 4K60, 10 s
+            case "long600": (640, 360, 18_000, true, 30)  // MED-002-T27: 10 minutes
+            default: (64, 48, 60, false, 30)
             }
+            let fixture: String? = ["uhd60": "video-hevc-4k60.mov", "long600": "video-hevc-360p-10min.mov"][arguments[i + 1]]
             let written = await Task.detached(priority: .userInitiated) { () async -> Bool in
-                (try? await writeCounter(to: url, frames: shape.frames, width: shape.width, height: shape.height,
-                                         endsAtLastFrame: shape.end)) != nil
+                if let fixture, copyDocumentsFixture(fixture, to: url) { return true }
+                return (try? await writeCounter(to: url, frames: shape.frames, width: shape.width, height: shape.height,
+                                                endsAtLastFrame: shape.end, fps: shape.fps)) != nil
             }.value
             guard written else { return }
             await videos.importNow(at: url)
@@ -41,11 +50,19 @@ enum UITestVideoFixture {
         }
     }
 
+    /// QA-011 Batch 5: copies Documents/`name` to `url` (the import deletes `url` afterwards, never the fixture).
+    nonisolated static func copyDocumentsFixture(_ name: String, to url: URL) -> Bool {
+        guard let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return false }
+        let source = documents.appendingPathComponent(name)
+        guard FileManager.default.fileExists(atPath: source.path) else { return false }
+        return (try? FileManager.default.copyItem(at: source, to: url)) != nil
+    }
+
     /// 60 pictures at 30 fps; picture i is grey 8 + 8 × (i % 30). FILE-008 tests pass another `frames`
     /// count for a movie with different content. `endsAtLastFrame`: the session ends at frames / 30 s, so the track
     /// lasts exactly that long (the 30 s reverse limit is inclusive).
     nonisolated static func writeCounter(to url: URL, frames: Int = 60, width: Int = 64, height: Int = 48,
-                                         endsAtLastFrame: Bool = false) async throws {
+                                         endsAtLastFrame: Bool = false, fps: Int = 30) async throws {
         let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
         let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
             AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: width, AVVideoHeightKey: height,
@@ -78,12 +95,12 @@ enum UITestVideoFixture {
                 memset(base, Int32(8 + 8 * (frame % 30)), CVPixelBufferGetBytesPerRow(buffer) * height)
             }
             CVPixelBufferUnlockBaseAddress(buffer, [])
-            guard adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(frame), timescale: 30)) else {
+            guard adaptor.append(buffer, withPresentationTime: CMTime(value: CMTimeValue(frame), timescale: CMTimeScale(fps))) else {
                 throw writer.error ?? CocoaError(.fileWriteUnknown)
             }
         } }
         input.markAsFinished()
-        if endsAtLastFrame { writer.endSession(atSourceTime: CMTime(value: CMTimeValue(frames), timescale: 30)) }
+        if endsAtLastFrame { writer.endSession(atSourceTime: CMTime(value: CMTimeValue(frames), timescale: CMTimeScale(fps))) }
         await writer.finishWriting()   // awaited, not waited on: no priority inversion
         guard writer.status == .completed else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
     }

@@ -58,6 +58,14 @@ CATALOG: dict[str, tuple[str, str]] = {
     "not-a-preset.milk": ("python", "a JPEG named .milk"),
     "preset-512k.milk": ("python", "a valid preset of exactly 524,288 bytes (the size limit)"),
     "preset-strobe.milk": ("python", "a preset that inverts every frame (the flash classifier flags it)"),
+    # QA-011 Batch 5 (media layers, files and presets).
+    "preset-small.milk": ("python", "a small valid preset (a second import for PRE-012 and PRE-014)"),
+    "slide-1.png": ("swift", "640 x 480 red checkerboard (slideshow and Ken Burns slide 1)"),
+    "slide-2.png": ("swift", "640 x 480 green checkerboard (slide 2)"),
+    "slide-3.png": ("swift", "640 x 480 blue checkerboard (slide 3)"),
+    "slide-4.png": ("swift", "640 x 480 yellow checkerboard (slide 4)"),
+    "slide-5.png": ("swift", "640 x 480 magenta checkerboard (slide 5)"),
+    "logo-white-disc.png": ("swift", "512 x 512 white disc on transparency, anti-aliased edge (logo fringe check)"),
 }
 
 
@@ -97,6 +105,11 @@ def preset_of_size(size: int = PRESET_SIZE) -> bytes:
         out += (b"//" + b"x" * (rest - 3) + b"\n") if rest >= 3 else b"\n" * rest
     assert len(out) == size
     return out
+
+
+def small_preset() -> str:
+    """A small valid preset with its own wave colour (a second, distinct import)."""
+    return PRESET_HEAD.replace("wave_r=1.0\nwave_g=0.6\nwave_b=0.2", "wave_r=0.2\nwave_g=0.8\nwave_b=1.0")
 
 
 def strobe_preset() -> str:
@@ -240,6 +253,8 @@ def make(names: list[str], out: Path = OUT, force: bool = False) -> int:
                 shutil.copyfile(out / "photo-small.jpg", out / name)
             elif name == "preset-512k.milk":
                 (out / name).write_bytes(preset_of_size())
+            elif name == "preset-small.milk":
+                (out / name).write_text(small_preset(), encoding="utf-8")
             elif name == "preset-strobe.milk":
                 (out / name).write_text(strobe_preset(), encoding="utf-8")
             else:
