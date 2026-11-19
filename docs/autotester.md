@@ -640,6 +640,8 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **"Main thread busy for 30 s" is a deadlock until shown otherwise (2026-11-19):**
   - XCTest attaches a `Spindump_*.txt` to a test that fails this way: export it with
     `xcrun xcresulttool export attachments --path <bundle> --test-id <id> --output-path <dir>`; it names the blocking stack.
+  - The attached spindump can be empty ("No samples", D3 pass 5): then the SIGABRT crash report below is the only
+    source of the stacks.
   - A Time Profiler trace shows nothing for a blocked thread (it samples only running threads): in the D2 trace the main
     and render threads had no samples for 120 s. To get every thread's stack, send the stuck app SIGABRT
     (`devicectl device process signal --pid <pid> --signal SIGABRT`) and copy its crash report from `systemCrashLogs`.
