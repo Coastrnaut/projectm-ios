@@ -625,6 +625,8 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   failed with "Timed out while enabling automation mode" (D2 showed the same after its lost connection). Siri steps
   now run only when asked for (`SIRI=1 scripts/run_device_ui_tests.sh …`, in their own batch, last); every other run
   skips them at once with `SiriAvailability.skipReason`.
+- **GitHub skips a push whose head commit message contains the literal `[skip ci]` anywhere**, even quoted inside a
+  sentence. A follow-up commit that "undoes" a wrong skip must not mention the marker (2026-11-19).
 - **Parse the run total**: XCTest prints "Executed 134 tests, with 3 tests skipped and 0 failures"; the last
   "Executed" line can be a sub-suite.
 
