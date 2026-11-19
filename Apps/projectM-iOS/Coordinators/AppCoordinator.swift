@@ -2343,11 +2343,16 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     /// UserDefaults before any setting is read. Launch arguments alone arrive as strings, which the settings that
     /// read `NSNumber` ignore. The keys the previous launch wrote are removed first, so one test's settings never
     /// leak into the next (their list is kept under `uitest.defaults.keys`).
-    static func applyUITestDefaults(_ defaults: UserDefaults) {
+    ///
+    /// A launch with neither `-uitestDefaults` nor `-uitestResetNotice` is a test's relaunch "as after a real relaunch"
+    /// (QA-011 B07): it keeps what is stored, typed keys included. Removing them there turned the relaunched visual back
+    /// to projectM (MED-007, MED-009 on D3, 2026-11-19: the Ken Burns note and the text visual were gone after
+    /// relaunch). Every test launch passes one of the two flags, so tests stay isolated.
+    static func applyUITestDefaults(_ defaults: UserDefaults, arguments: [String] = ProcessInfo.processInfo.arguments) {
         let listKey = "uitest.defaults.keys"
+        guard arguments.contains("-uitestDefaults") || arguments.contains("-uitestResetNotice") else { return }
         for key in defaults.stringArray(forKey: listKey) ?? [] { defaults.removeObject(forKey: key) }
         defaults.removeObject(forKey: listKey)
-        let arguments = ProcessInfo.processInfo.arguments
         guard let i = arguments.firstIndex(of: "-uitestDefaults"), i + 1 < arguments.count,
               let data = arguments[i + 1].data(using: .utf8),
               let values = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else { return }

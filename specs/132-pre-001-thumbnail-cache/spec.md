@@ -55,6 +55,14 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Which image format is stored? → A: PNG: lossless, so the same render always gives the same bytes, decodable everywhere, and about 10-20 KB at 128 × 72. HEIC saves little at this size and its encoder output is not guaranteed to be stable.
 - Q: Is a preset that failed to render remembered across launches? → A: No. A failure is remembered for the session only (the row keeps its placeholder); the next launch tries once more. Failures are not written to the index, so a fixed engine or renderer version heals them without a migration.
 
+### QA-011 device run 2026-11-19
+
+- Q: PRE-001-T14 asks for "about 20 thumbnails" (at least 10 counted); what on a screen that shows fewer rows? → A: The
+  count must reach 10 or every preset row on screen, whichever is smaller. Thumbnails are made only for rows shown, and
+  the iPad's browser sheet (D3, iPadOS 26.5) drew 8 thumbnails both while generating and from the cache (QA-011
+  device run 2026-11-19), so 10 cannot be reached there by design; the frame-rate criterion (S7, within 10 %) is
+  unchanged. The test now reports the rows on screen beside the thumbnails.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I recognize presets by their picture (Priority: P1) — MVP
