@@ -3,6 +3,7 @@
 // 0.5 red, the rest encoded blue) reads back upright, linear and opaque; (b) a test preset draws a
 // non-black opaque frame; (c) the caller's EGL binding is restored. Simulator results are not device
 // evidence (CMP-001-T20 {device}).
+import UIKit
 import XCTest
 import AudioCore
 import CANGLE
@@ -86,6 +87,34 @@ final class ProjectMLayerTests: XCTestCase {
         XCTAssertTrue(near(pixels[0], blue), "top-left is blue (upright): \(pixels[0])")
         XCTAssertTrue(near(pixels[63 * 64 + 63], blue), "bottom-right is blue: \(pixels[63 * 64 + 63])")
         XCTAssertTrue(pixels.allSatisfy { abs($0.w - 1) < 1e-3 }, "opaque")
+    }
+
+    /// QA-011 device run 2026-11-19: no ANGLE draw while the app is in the background. A gated frame is skipped
+    /// (not a fault) and nothing reaches the engine; the next frame after the gate opens draws again.
+    func testABackgroundGatedFrameIsSkippedWithoutDrawing() throws {
+        let layer = try ProjectMLayerSource(device: device)
+        layer.drawsTestPattern = true
+        let gate = ProjectMLayerBackgroundGate(observing: false)
+        layer.backgroundGate = gate
+        let compositor = try Compositor(device: device, layers: [layer])
+        let out = try output()
+        try frame(compositor, out, 1)
+        XCTAssertEqual(compositor.outcome(ofLayer: 0), .rendered)
+        gate.setGated(true)
+        try frame(compositor, out, 2)
+        XCTAssertNotEqual(compositor.outcome(ofLayer: 0), .rendered, "the gated frame is not drawn")
+        if case .unavailable = compositor.outcome(ofLayer: 0) { XCTFail("a gated frame is a skip, not an unavailable layer") }
+        gate.setGated(false)
+        try frame(compositor, out, 3)
+        XCTAssertEqual(compositor.outcome(ofLayer: 0), .rendered, "drawn again after the return")
+    }
+
+    func testTheSharedGateFollowsUIKitsBackgroundNotifications() {
+        let gate = ProjectMLayerBackgroundGate.shared
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertTrue(gate.isGated, "set synchronously as the notification is posted")
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        XCTAssertFalse(gate.isGated)
     }
 
     func testPresetDrawsAnOpaqueNonBlackFrame() throws {
