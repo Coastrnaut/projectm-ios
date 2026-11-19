@@ -138,6 +138,17 @@ struct ShareSheetPresenter: UIViewControllerRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
+    /// Where the iPad's share popover points: a 44 pt square at the top trailing corner of the presenting view (the
+    /// sheet's Export button), so UIKit opens the popover downward over the sheet with nearly the whole screen's height.
+    /// Anchored to the whole view, it opened in the strip left below the Export Presets sheet, where only the file and
+    /// one contact row fitted and Save to Files lay below the screen (QA-011 pass 5, D3 iPadOS 26.5, PRE-014-T25,
+    /// 2026-11-19). An empty view keeps its own rectangle.
+    nonisolated static func popoverAnchor(in bounds: CGRect) -> CGRect {
+        guard bounds.width > 0, bounds.height > 0 else { return bounds }
+        let side = min(44, bounds.width, bounds.height)
+        return CGRect(x: bounds.maxX - side, y: bounds.minY, width: side, height: side)
+    }
+
     func makeUIViewController(context: Context) -> UIViewController {
         let controller = UIViewController()
         controller.view.isUserInteractionEnabled = false
@@ -158,7 +169,7 @@ struct ShareSheetPresenter: UIViewControllerRepresentable {
         }
         if let popover = activity.popoverPresentationController {   // iPad
             popover.sourceView = controller.view
-            popover.sourceRect = controller.view.bounds
+            popover.sourceRect = Self.popoverAnchor(in: controller.view.bounds)
         }
         Task { @MainActor in controller.present(activity, animated: true) }
     }

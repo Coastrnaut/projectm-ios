@@ -792,8 +792,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     again otherwise, and `filesPick` fails with "the picker did not take <file>".
   - *Settings sections that swipes cannot reach:* on the iPad panel neither slow nor full-speed swipes reached
     Settings › Storage below the photo visual's sections (D2, D3). Tests that also use the top of Settings launch
-    with `-uitestSettingsJump storage` (DEBUG): a faint button `uitestSettingsJump.storage` at the panel's bottom
-    left scrolls to the section on a tap (`openStorage`).
+    with `-uitestSettingsJump storage` (DEBUG): a navigation bar button `uitestSettingsJump.storage` scrolls to the
+    section on a tap (`openStorage`). It began as a faint 44 pt square overlaid on the list's bottom-left corner; on D3
+    (pass 5) XCUITest tapped it but the touch reached the visual row underneath ("Reaction Diffusion" was chosen) and
+    nothing scrolled, so FILE-009 never reached Storage and PRE-001 then had no Presets control under the native visual.
+    *A test-only control goes where no row can take its tap* (a bar, never overlaid on a list).
   - *Never write a non-finite number in a report.* `JSONSerialization` raises an Objective-C exception on NaN or
     infinity, which ends the whole xcodebuild run (FILE-009 on D3: a ratio over a zero total); `report` writes null.
   - *Reading a missing alert's label fails at once.* Guard `alert.exists` before `label` (PRE-012 on D2 restarted
@@ -816,6 +819,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     Recording" sits below the first screen; scroll until its cell is built (REC-003).
   - *A host test that counts frames must not race a background queue.* Wait for the background work before the frame
     whose count matters (MED-011's clock test, 120 vs 119 in CI).
+- **Pass 5 on D3 (2026-11-19), B07 files and presets:**
+  - *Know which outcomes the app announces instead of alerting.* Import Preset… alerts only when the result needs
+    attention (PRE-012-R28); a clean add is announced and its row appears. PRE-012 and PRE-014 waited 30 s for an
+    alert after a successful import and failed. `importPreset` now takes the alert or the new `preset:<name>` row.
+  - *A popover anchored to a whole sheet lands in the strip beside it.* The export share sheet pointed at the Export
+    Presets sheet's full bounds, so the iPad put the popover in the 260 pt below it with Save to Files off screen
+    (hit point {-1, -1}). `ShareSheetPresenter.popoverAnchor` points at the top trailing corner (the Export button);
+    `revealShareActivity` scrolls the popover when an activity is still not hittable.
+  - *Audits find real defects:* Quarantine's trash glyph failed the hit-region audit; it is now a 44 × 44 pt target.
 - **Pass 4 on D2 and rerun 4 on D3 (2026-11-19), what it taught:**
   - *Put a DEBUG probe button where nothing else is.* The split editor's divider probes sat at the window's top-right
     corner, on the editor's undo/redo bar; the bar took the decrement's tap (its numbered answer stayed empty). They now

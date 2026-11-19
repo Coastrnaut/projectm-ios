@@ -198,6 +198,34 @@ final class UserPresetsUITests: XCTestCase {
         #endif
     }
 
+    /// QA-011 pass 5 (D3, PRE-012-T31, 2026-11-19): the accessibility audit's hit-region check failed Quarantine's
+    /// delete button ("Hit area is too small": the bare trash glyph). The button is now a 44 × 44 pt target.
+    func testQuarantineDeleteButtonHasAFullSizeHitArea() throws {
+        #if !targetEnvironment(simulator)
+        throw XCTSkip("the app reads the test's file from the host; simulator only")
+        #else
+        if folder == nil { _ = try write([], named: "placeholder.txt") }
+        let photo = folder.appendingPathComponent("photo.milk")
+        try Data([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01]).write(to: photo)
+        start(reset: true, importing: photo)
+        openMyPresets()
+        _ = importAlertMessage()
+        open("quarantineLink")
+        let delete = app.buttons["deleteQuarantined:photo.milk"]
+        XCTAssertTrue(delete.appears(within: 5))
+        XCTAssertGreaterThanOrEqual(delete.frame.width, 44, "\(delete.frame)")
+        XCTAssertGreaterThanOrEqual(delete.frame.height, 44, "\(delete.frame)")
+        var issues: [String] = []
+        try app.performAccessibilityAudit(for: .hitRegion) { (issue: XCUIAccessibilityAuditIssue) -> Bool in
+            let id = (try? issue.element?.snapshot())?.identifier ?? ""
+            if id.hasPrefix("deleteQuarantined:") { issues.append("\(id): \(issue.compactDescription)") }
+            return true   // other screens' and system elements' issues are AccessibilityScreensUITests' business
+        }
+        XCTAssertTrue(issues.isEmpty, "\(issues)")
+        try? FileManager.default.removeItem(at: folder)
+        #endif
+    }
+
     /// S1, S3, US2: a binary file fails the static check, a preset with broken equations fails
     /// the real engine's off-screen trial; both end in Quarantine with their reason, neither is
     /// playable, and the picture keeps showing the preset it was showing.
