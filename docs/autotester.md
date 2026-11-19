@@ -313,7 +313,10 @@ Devices: D1 for all; D3 for REC-001, REC-003-T25 and MED-011; D2 for REC-014 (Po
   a recording file exists, so the real guard stops within seconds. It never leaves less than 200 MB of real free space,
   every DEBUG launch deletes an old ballast, and the ballast tests relaunch the app once in tearDown. Probe
   `diskBallast`; state `capped` (purgeable space keeps the reading high) skips REC-015 with the readings. iOS may show
-  "Storage Almost Full": the test dismisses only alerts that mention storage. Not yet run on a device.
+  "Storage Almost Full": the test dismisses only alerts that mention storage. First device run (QA-011 pass 3, D3,
+  43 GB free): one extension of the whole gap never returned within 300 s and the probe stayed "state=filling
+  ballastMB=0". The fill now grows in 1 GB steps with a progress line after each and ends `state=slow` after 360 s;
+  the tests wait 390 s, print the progress every 30 s, and REC-015 skips on `slow` with the readings.
 - **CPU (DEBUG):** `cpuProbe` reads "cpuSeconds=<user+system> uptime=<s>" each second (`getrusage`); a test takes
   Δcpu/Δuptime (100 % = one core).
 - **Files in tmp survive, offered ones do not:** a launch deletes `<tmp>/Recordings` (REC-003-R13), so every file the
@@ -658,6 +661,18 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   (`.dynamicTypeSize(.large)`); a test of a control's layout at AX5 runs without the overlay.
 - **A probe's delivered positions lag the audio by up to one tap block** (100 ms): compare a resume with the held,
   shown position, not with the last delivered sample (AUD-006-T39).
+- **Compare two runs over the same part of the fixture.** The music fixture has a quiet intro, a verse and a loud
+  chorus; each launch leaves playback at a slightly different point, so two 10 s windows taken "after launch" can
+  set one section against another (AUD-008-T13 on D3, pass 3). Sample by the track position (`-uitestPlaybackProbe`
+  `pos`) and compare per-second bins both runs hold. And check the measurement's form: the band levels are decibels
+  over a fixed floor, so a gain adds to them; a relative margin was the wrong rule.
+- **Wait for the state the fixture can reach.** A click or pulse fixture is mostly silence, so it reads "Audio
+  received — silent" while it plays (FR-011); `launch(..., playing:)` names the states that count as playing.
+- **Read a probe before the step that removes it.** The recording status lines exist only while recording; reading
+  one after Stop fails the query ("No matches found"). Keep the copy taken while it showed.
+- **Name the precondition before recording.** A file without its expected audio track says nothing about why; the
+  DEBUG `recordingAudioDecision` probe reads the decision the next recording gets (source, setting, microphone
+  permission), and the test fails on the named cause first.
 - **Few samples make a percentile meaningless.** The 5th percentile of 10 one-second windows is the worst second
   (a cold shader cache after a fresh install). Use 60 windows or more; record first-launch costs separately.
 

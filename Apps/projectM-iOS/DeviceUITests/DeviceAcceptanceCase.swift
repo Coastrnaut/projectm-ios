@@ -56,8 +56,12 @@ class DeviceAcceptanceCase: XCTestCase {
     /// Launches with `visual` and `settings` (UserDefaults keys → values), overlay on, music playing.
     /// `music`: the generated music fixture (scripts/make_music_fixture.py, copied into the app's Documents by the
     /// runner) plays instead of the reference track, which is a test signal with a silent gap.
+    /// `playing`: the overlay's audio states that count as "the fixture plays". A click or pulse fixture (10 ms clicks
+    /// twice a second) is mostly silence, so it reads "Audio received — silent" by design (FR-011: Active audio needs
+    /// −50 dBFS held for 250 ms; ReferenceToneCatalog's pulse fixtures say the same).
     func launch(visual: String, settings: [String: Any] = [:], extra: [String] = [],
-                orientation: UIDeviceOrientation = .portrait, music: Bool = true, fixture: String = "music-fixture.m4a") {
+                orientation: UIDeviceOrientation = .portrait, music: Bool = true, fixture: String = "music-fixture.m4a",
+                playing: [String] = ["Active audio"]) {
         XCUIDevice.shared.orientation = orientation
         // `-uitestResetNotice` clears the app's settings, media and committed scene first: otherwise launch restores
         // the last committed scene (SCN-002) and its effect values replace the test's settings.
@@ -84,7 +88,8 @@ class DeviceAcceptanceCase: XCTestCase {
         }
         if music, (values["settings.performanceOverlay"] as? Bool) ?? true {
             let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
-            XCTAssertTrue(wait(12) { overlay.label.contains("Active audio") }, "music is playing: \(overlay.label.prefix(120))")
+            XCTAssertTrue(wait(12) { playing.contains { overlay.label.contains($0) } },
+                          "\(fixture) is playing (\(playing.joined(separator: " or "))): \(overlay.label.prefix(120))")
         }
         pause(2)   // the visual's first frames and the music settle
         // The controls show after launch and hide after 5 s without interaction; screenshots need them hidden.

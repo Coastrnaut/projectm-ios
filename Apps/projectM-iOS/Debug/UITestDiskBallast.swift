@@ -7,6 +7,9 @@
 // launch deletes a ballast left by an earlier launch first (the tests also relaunch once in tearDown). The probe
 // `diskBallast` (with `-uitestDiagnostics`) reads "state=<…> ballastMB=<n> freeMB=<n> realFreeMB=<n> targetMB=<n>";
 // state `capped` means the device's purgeable space kept the reading above the target. The readings stay in memory.
+// QA-011 pass 3 (D3, 43 GB free): one extension of the whole gap never returned within 300 s and the probe read
+// "state=filling ballastMB=0" throughout. The fill now grows in steps of at most `fillStepBytes`, publishes
+// "state=filling ballastMB=<n> …" after each step, and ends "state=slow" when `fillBudgetSeconds` pass first.
 // Not compiled into Release builds.
 #if DEBUG
 import Foundation
@@ -21,6 +24,8 @@ final class UITestDiskBallast {
     nonisolated static let realFloorBytes: Int64 = 200_000_000
     /// Never grow below the disk guard's reserve (RecordingStoragePolicy.reserveBytes, 200 MiB).
     nonisolated static let reserveBytes: Int64 = 209_715_200
+    /// The longest a fill may take before it reports `state=slow` (the device tests wait a little longer).
+    nonisolated static let fillBudgetSeconds: Double = 360
     private(set) var value = "state=idle"
 
     static var isRequested: Bool { ProcessInfo.processInfo.arguments.contains(argument) }
@@ -49,7 +54,11 @@ final class UITestDiskBallast {
         value = "state=filling ballastMB=0 targetMB=\(freeMB)"
         Task.detached(priority: .userInitiated) {
             let worker = BallastWriter(url: Self.file)
-            let filled = worker.fill(toFree: target)
+            let filled = worker.fill(toFree: target, budgetSeconds: Self.fillBudgetSeconds) { (line: String) in
+                Task { @MainActor in   // a late progress line never replaces the final one
+                    if UITestDiskBallast.shared.value.hasPrefix("state=filling") { UITestDiskBallast.shared.value = line }
+                }
+            }
             await MainActor.run { UITestDiskBallast.shared.value = filled }
             guard grow > 0, !filled.hasPrefix("state=failed") else { return }
             for _ in 0..<1_200 {   // at most 10 minutes
@@ -116,21 +125,30 @@ final class BallastWriter: @unchecked Sendable {
         }
     }
 
-    /// Fills until the important-use reading is about `free`, never below the real-space floor.
-    func fill(toFree free: Int64) -> String {
+    /// The largest single extension of a fill (a progress line follows each one).
+    static let fillStepBytes: Int64 = 1_000_000_000
+
+    /// Fills until the important-use reading is about `free`, never below the real-space floor, in steps of at most
+    /// `fillStepBytes` (each step re-reads the volume, which moves as the system purges). `progress` gets a
+    /// "state=filling" line after every step. Ends `holding` (reached), `capped` (real space ran out first), `failed`,
+    /// or `slow` (`budgetSeconds` passed first).
+    func fill(toFree free: Int64, budgetSeconds: Double = .infinity,
+              progress: (String) -> Void = { (_: String) in }) -> String {
         target = free
         FileManager.default.createFile(atPath: url.path, contents: nil)
         handle = try? FileHandle(forWritingTo: url)
         guard handle != nil else { return line("failed") }
-        for _ in 0..<4 {   // the reading moves as the system purges; a few passes settle it
+        let started = Date()
+        for _ in 0..<1_000 {   // 1 TB at most
             let r = Self.readings(url)
             guard r.important > 0, r.real > 0 else { return line("failed") }
             let wanted = r.important - free
             if wanted <= 8_000_000 { return line("holding") }
             let allowed = r.real - UITestDiskBallast.realFloorBytes
             if allowed <= 0 { return line("capped") }
-            if !extend(by: min(wanted, allowed)) { return line("failed") }
-            if wanted > allowed { return line("capped") }
+            if Date().timeIntervalSince(started) >= budgetSeconds { return line("slow") }
+            if !extend(by: min(wanted, allowed, Self.fillStepBytes)) { return line("failed") }
+            progress(line("filling"))
         }
         return line("holding")
     }
