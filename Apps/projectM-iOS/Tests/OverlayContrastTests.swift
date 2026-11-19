@@ -481,6 +481,17 @@ final class OverlayContrastTests: XCTestCase {
         #endif
     }
 
+    /// QA-011 ACC-003-T17 (2026-11-19): the performance readout uses the shared scrim, opaque with Increase Contrast
+    /// (it was a fixed 0.6 that Increase Contrast never raised), and its white text passes over a white visual.
+    func testPerformanceOverlayBackingFollowsIncreaseContrast() {
+        XCTAssertEqual(PerformanceOverlay.backingOpacity(increasedContrast: false), OverlayContrast.scrimOpacity)
+        XCTAssertEqual(PerformanceOverlay.backingOpacity(increasedContrast: true), 1.0)
+        XCTAssertGreaterThan(PerformanceOverlay.backingOpacity(increasedContrast: true),
+                             PerformanceOverlay.backingOpacity(increasedContrast: false), "Increase Contrast raises it")
+        let backing: UInt32 = OverlayContrast.scrimOverWhite(PerformanceOverlay.backingOpacity(increasedContrast: false))
+        XCTAssertGreaterThanOrEqual(InterfacePalette.contrastRatio(0xFFFFFF, backing), OverlayContrast.normalTextMinimum)
+    }
+
     /// The measure itself: a uniform pair gives exactly the WCAG ratio, and identical renderings give no core.
     func testMeasureMatchesTheWCAGFormula() {
         let background = [Double](repeating: 0.2, count: 400)

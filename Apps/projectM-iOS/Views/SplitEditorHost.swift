@@ -140,6 +140,7 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
                                    onStep: { (width: Double) -> Void in setting.width = width })
                 editorPane(width: layout.editorWidth)
             }
+            .overlay(alignment: .bottomLeading) { dividerProbe }
             .ignoresSafeArea(.container, edges: .vertical)
             .transition(.move(edge: .trailing))
         }
@@ -166,8 +167,19 @@ struct SplitEditorHost<Backdrop: View, Content: View, Editor: View>: View {
     @ViewBuilder private var probe: some View {
         #if DEBUG
         if ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") { SplitOutputProbe() }
-        if UITestAccessibilityActionProbe.isRequested, isOpen {   // QA-011 B07 UIX-007-T13: VoiceOver's swipes on the divider
-            VStack { HStack { Spacer(); UITestAccessibilityActionButtons(identifier: "splitEditorDivider") }; Spacer() }
+        #endif
+    }
+
+    /// QA-011 B07 UIX-007-T13: the probe buttons for VoiceOver's swipes on the divider, stacked in the divider's own
+    /// column near its bottom. At the window's top-right corner (until 2026-11-19) the decrement button sat on the
+    /// editor's undo/redo bar, which took the tap: on D2 and D3 the decrement never reached the probe (its answer stayed
+    /// empty) and the width stayed at the increment's snap.
+    @ViewBuilder private var dividerProbe: some View {
+        #if DEBUG
+        if UITestAccessibilityActionProbe.isRequested {
+            UITestAccessibilityActionButtons(identifier: "splitEditorDivider", vertical: true)
+                .frame(width: CGFloat(SplitEditorLayout.dividerWidth))
+                .padding(.bottom, 60)   // clear of the home indicator (the column ignores the vertical safe area)
         }
         #endif
     }

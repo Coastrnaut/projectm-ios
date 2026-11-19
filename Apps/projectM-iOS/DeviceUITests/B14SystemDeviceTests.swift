@@ -147,7 +147,13 @@ final class B14SystemDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(5) { !badge.exists }, "step 5: restored")
 
         // Step 6: the controls and badges with Increase Contrast pass the contrast audit.
+        // Pass 4 (D2 2026-11-19): the audit ran while the 4 s "Output restored" caption (ACC-011) still sat under the
+        // performance readout at the top, so the readout's "frame … ms" line was measured over the caption's text.
+        // Audit once the caption is gone, and after the controls' fade has settled.
+        let caption = app.staticTexts["statusCaption"]
+        XCTAssertTrue(wait(8) { !caption.exists }, "the transient caption clears: \(caption.exists ? caption.label : "")")
         showControls()
+        pause(1)
         // The PERF-014 placeholder: caught while fading (opacity < 1) or hidden behind the live visual; at full opacity
         // its grey 0.55 on black is about 6:1 (the simulator audits' documented filter).
         let issues = auditIssues(app, "acc003 controls", types: [.contrast])

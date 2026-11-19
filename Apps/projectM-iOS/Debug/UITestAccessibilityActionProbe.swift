@@ -140,13 +140,22 @@ struct UITestAccessibilityEscapeButton: View {
 /// never arrived looked done (UIX-007-T13, pass 3 2026-11-19).
 struct UITestAccessibilityActionButtons: View {
     let identifier: String
+    /// Stacked (increment above decrement) for a narrow column such as the split editor's divider.
+    var vertical: Bool = false
     @State private var results: [ParameterStepDirection: String] = [:]
     @State private var taps: [ParameterStepDirection: Int] = [:]
 
     var body: some View {
-        HStack(spacing: 2) {
-            probe(.decrement, suffix: ".uitestDecrement", symbol: "minus")
-            probe(.increment, suffix: ".uitestIncrement", symbol: "plus")
+        if vertical {
+            VStack(spacing: 2) {
+                probe(.increment, suffix: ".uitestIncrement", symbol: "plus")
+                probe(.decrement, suffix: ".uitestDecrement", symbol: "minus")
+            }
+        } else {
+            HStack(spacing: 2) {
+                probe(.decrement, suffix: ".uitestDecrement", symbol: "minus")
+                probe(.increment, suffix: ".uitestIncrement", symbol: "plus")
+            }
         }
     }
 

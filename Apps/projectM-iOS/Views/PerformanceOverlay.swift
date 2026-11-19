@@ -25,6 +25,14 @@ struct PerformanceOverlay: View {
     var stageLines: () -> [String] = { [] }
     /// ANL-013: "stereo: r 0.98" (and "phase-inverted" while warned); nil without a native visual.
     var stereoLine: () -> String? = { nil }
+    @Environment(\.statusAppearance) private var appearance
+
+    /// ACC-008's scrim (QA-011 ACC-003-T17, 2026-11-19): the readout sits over the visual like every other overlay, so
+    /// it uses the shared scrim level, opaque with Increase Contrast (ACC-008-R6). It was a fixed 0.6, which Increase
+    /// Contrast never raised. No blur material: a backdrop blur would add GPU work to the frames being measured.
+    static func backingOpacity(increasedContrast: Bool) -> Double {
+        OverlayContrast.scrim(increasedContrast: increasedContrast)
+    }
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { _ in
@@ -52,7 +60,8 @@ struct PerformanceOverlay: View {
             .font(.system(.caption, design: .monospaced))
             .foregroundStyle(.white)
             .padding(6)
-            .background(.black.opacity(0.6), in: RoundedRectangle(cornerRadius: 6))
+            .background(.black.opacity(Self.backingOpacity(increasedContrast: appearance.increasedContrast)),
+                        in: RoundedRectangle(cornerRadius: 6))
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier("performanceOverlay")
         }

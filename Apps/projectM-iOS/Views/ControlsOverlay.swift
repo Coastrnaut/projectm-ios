@@ -126,9 +126,18 @@ struct ControlsOverlay: View {
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("controlsCompact")
             } else {
-                regular
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("controlsRegular")
+                // QA-011 (D2, D3 2026-11-19): in iPad portrait the labeled row (up to 11 buttons and the tempo group)
+                // is wider than the screen; the HStack then squeezed every title into a column one or two letters
+                // wide ("Sa / ve / Fr / ame"). When the labeled row does not fit, use the compact layout, built
+                // for narrow widths.
+                ViewThatFits(in: .horizontal) {
+                    regular
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("controlsRegular")
+                    compact
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("controlsCompact")
+                }
             }
         }
         .padding(12)
