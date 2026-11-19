@@ -7,9 +7,12 @@
 // * `RecordingStoragePolicy`: Record needs a 200 MiB reserve plus 60 s at that rate; while recording,
 //   the recording stops when less than the reserve plus two 5 s check intervals at the larger of the
 //   estimated and measured rates remains. An unknown free-space value never refuses or stops.
-// * `StorageProbe`: the free bytes available for important use (tests inject values).
-//   `VolumeStorageProbe` reads `volumeAvailableCapacityForImportantUsageKey` (a required-reason API,
-//   Disk space, declared with E174.1 in the app's privacy manifest); the value stays in memory.
+// * `StorageProbe`: the free bytes a recording can write into (tests inject values).
+//   `VolumeStorageProbe` reads `volumeAvailableCapacityForImportantUsageKey` and `volumeAvailableCapacityKey`
+//   (required-reason APIs, Disk space, declared with E174.1 in the app's privacy manifest) and uses the smaller
+//   (`guardReading`; QA-011 device run 2026-11-19: on D3 the important-use figure stayed ~400 MB to 2.8 GB above the
+//   real free space while 77 GB were written, so purgeable space was not freed and a guard on it alone would let the
+//   reserve be all purgeable space); the values stay in memory.
 // * `RecordingStorage.fileBytes`: the recording file's size (`fileSizeKey`; no file dates).
 // * `RecordingWriterFault`: the test seam that makes the recorder's writer fail after N frames.
 // Plain Swift + Foundation; builds on Linux (the volume probe is Apple-only).
@@ -21,14 +24,27 @@ public protocol StorageProbe: Sendable {
     func availableBytes(at directory: URL) -> Int64?
 }
 
+public enum VolumeStorageReading {
+    /// The figure the disk guard uses (REC-015-D1, amended QA-011 2026-11-19): the smaller of the important-use
+    /// capacity (counts purgeable space) and the real available capacity, so the 200 MiB reserve is space that is
+    /// free now. Either alone when only one is known; nil when neither is (or a reading is negative).
+    public static func guardBytes(important: Int64?, real: Int64?) -> Int64? {
+        let known = [important, real].compactMap { $0 }.filter { $0 >= 0 }
+        return known.min()
+    }
+}
+
 #if canImport(Darwin)
-/// The real probe: `volumeAvailableCapacityForImportantUsage` of the directory's volume (REC-015-D1).
+/// The real probe: the smaller of `volumeAvailableCapacityForImportantUsage` and `volumeAvailableCapacity` of the
+/// directory's volume (REC-015-D1, amended QA-011 2026-11-19).
 public struct VolumeStorageProbe: StorageProbe {
     public init() {}
 
     public func availableBytes(at directory: URL) -> Int64? {
-        let values = try? directory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
-        return values?.volumeAvailableCapacityForImportantUsage
+        let values = try? directory.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey,
+                                                             .volumeAvailableCapacityKey])
+        return VolumeStorageReading.guardBytes(important: values?.volumeAvailableCapacityForImportantUsage,
+                                               real: values?.volumeAvailableCapacity.map { Int64($0) })
     }
 }
 #endif

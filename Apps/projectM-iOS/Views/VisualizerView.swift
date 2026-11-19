@@ -72,10 +72,13 @@ struct VisualizerView: View {
             externalDisplayLayer
             pausedLayer
             tapLayers
+            // FR-048's overlay sits below the controls and panels: it draws over nothing a person acts on. QA-011
+            // rerun 4 (D3, iPad A16 portrait, 820 pt): drawn above them it covered "Frame ready"'s Save…, which
+            // accessibility could not reach (hit point {-1, -1}), so Save… never opened the exporter.
+            performanceLayer
             statusLayers
             keyCommandLayers
             SceneSwitcherLayer(coordinator: coordinator)   // UIX-002: the quick scene switcher
-            performanceLayer
             diagnostics
         }
         .statusBarHidden(coordinator.hidesSystemOverlays)

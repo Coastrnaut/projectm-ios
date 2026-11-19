@@ -75,4 +75,28 @@ final class CaptureShareUITests: XCTestCase {
         app.buttons["frameResultDiscard"].tap()
         XCTAssertTrue(poll(5) { self.probe == "copies=0 frame=no recording=no last=completed" }, "probe: \(probe)")
     }
+
+    /// QA-011 rerun 4 (D3, iPad A16 portrait): with the performance overlay on, the overlay was drawn above "Frame
+    /// ready" and covered Save…, which accessibility could not reach (hit point {-1, -1}), so the exporter never
+    /// opened. The overlay now sits below the panels: every panel button is hittable with the overlay shown.
+    func testFrameReadyButtonsStayReachableWithThePerformanceOverlay() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-settings.visual", "photo", "-uitestSeedPhoto", "solid",
+                               "-settings.performanceOverlay", "YES", "-uitestShareSimulation"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        XCTAssertTrue(overlay.appears(within: 10), "the performance overlay shows")
+        showControls()
+        app.buttons["saveFrame"].tap()
+        let png = app.buttons["PNG"].firstMatch
+        XCTAssertTrue(png.appears(within: 5), "the format choice")
+        png.tap()
+        XCTAssertTrue(app.buttons["frameResultSave"].appears(within: 10), "the Frame ready panel")
+        for id in ["frameResultSave", "frameResultShare", "frameResultPhotos", "frameResultDiscard"] {
+            XCTAssertTrue(app.buttons[id].isHittable, "\(id) is reachable with the overlay at \(overlay.frame)")
+        }
+        app.buttons["frameResultDiscard"].tap()
+    }
 }

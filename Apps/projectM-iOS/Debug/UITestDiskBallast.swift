@@ -5,14 +5,22 @@
 // within seconds instead of minutes. Safety: the ballast never leaves less
 // than 200 MB of real free space (`volumeAvailableCapacity`) or less than the guard's 200 MiB reserve, and every DEBUG
 // launch deletes a ballast left by an earlier launch first (the tests also relaunch once in tearDown). The probe
-// `diskBallast` (with `-uitestDiagnostics`) reads "state=<…> ballastMB=<n> freeMB=<n> realFreeMB=<n> targetMB=<n>";
+// `diskBallast` (with `-uitestDiagnostics`) reads "state=<…> ballastMB=<n> freeMB=<n> realFreeMB=<n> guardMB=<n>
+// targetMB=<n>" (freeMB the important-use figure, guardMB the smaller one the disk guard reads);
 // state `capped` means the device's purgeable space kept the reading above the target. The readings stay in memory.
 // QA-011 pass 3 (D3, 43 GB free): one extension of the whole gap never returned within 300 s and the probe read
 // "state=filling ballastMB=0" throughout. The fill now grows in steps of at most `fillStepBytes`, publishes
 // "state=filling ballastMB=<n> …" after each step, and ends "state=slow" when `fillBudgetSeconds` pass first.
+// QA-011 rerun 4 (D3, 2026-11-19): the fill aimed the important-use reading at 600 MB while it stayed 2.8 GB above the
+// real free space (purgeable space the system did not free), so the last step tried to write the real space down to
+// the 200 MB floor and never returned ("state=filling ballastMB=74000 freeMB=3755 realFreeMB=946" for 390 s); REC-015
+// held at freeMB=606 realFreeMB=209 and the guard never stopped. The guard now reads the smaller of the two
+// (`VolumeStorageReading.guardBytes`), and so does the ballast: it fills and grows against `guardMB`, the figure the
+// guard reads, and checks its time budget between 16 MB chunks, so one slow write cannot hold it in "filling".
 // Not compiled into Release builds.
 #if DEBUG
 import Foundation
+import FrameRecording
 
 @MainActor
 @Observable
@@ -82,21 +90,28 @@ final class BallastWriter: @unchecked Sendable {
 
     init(url: URL) { self.url = url }
 
-    static func readings(_ url: URL) -> (important: Int64, real: Int64) {
+    /// `reading` is what the disk guard reads (`VolumeStorageReading.guardBytes`: the smaller of the two); -1 unknown.
+    static func readings(_ url: URL) -> (important: Int64, real: Int64, reading: Int64) {
         let folder = url.deletingLastPathComponent()
         let values = try? folder.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey])
-        return (values?.volumeAvailableCapacityForImportantUsage ?? -1, Int64(values?.volumeAvailableCapacity ?? -1))
+        let important = values?.volumeAvailableCapacityForImportantUsage ?? -1
+        let real = Int64(values?.volumeAvailableCapacity ?? -1)
+        let reading = VolumeStorageReading.guardBytes(important: important > 0 ? important : nil, real: real > 0 ? real : nil)
+        return (important, real, reading ?? -1)
     }
 
     func line(_ state: String) -> String {
         let r = Self.readings(url)
         return "state=\(state) ballastMB=\(bytes / 1_000_000) freeMB=\(r.important / 1_000_000) "
-            + "realFreeMB=\(r.real / 1_000_000) targetMB=\(target / 1_000_000)"
+            + "realFreeMB=\(r.real / 1_000_000) guardMB=\(r.reading / 1_000_000) targetMB=\(target / 1_000_000)"
     }
 
-    /// Adds `count` bytes to the file; false when the volume refused.
-    private func extend(by count: Int64) -> Bool {
-        guard count > 0, let handle else { return count == 0 }
+    enum Extension { case done, refused, outOfTime }
+
+    /// Adds `count` bytes to the file (`refused` when the volume refused; `outOfTime` when `deadline` passed between
+    /// two 16 MB chunks, keeping what was written).
+    private func extend(by count: Int64, deadline: Date = .distantFuture) -> Extension {
+        guard count > 0, let handle else { return count == 0 ? .done : .refused }
         var store = fstore_t(fst_flags: UInt32(F_ALLOCATEALL), fst_posmode: Int32(F_PEOFPOSMODE), fst_offset: 0,
                              fst_length: off_t(count), fst_bytesalloc: 0)
         let fd = handle.fileDescriptor
@@ -105,30 +120,35 @@ final class BallastWriter: @unchecked Sendable {
             // Counted by the volume? Otherwise write the range for real.
             if before - Self.readings(url).real >= count / 2 {
                 bytes += count
-                return true
+                return .done
             }
+            _ = ftruncate(fd, off_t(bytes))   // not counted: write the range for real from the current end
         }
         do {
             try handle.seek(toOffset: UInt64(bytes))
             let chunk = Data(count: 16 * 1_048_576)
             var left = count
             while left > 0 {
+                if Date() >= deadline {
+                    try handle.synchronize()
+                    return .outOfTime
+                }
                 let piece = min(left, Int64(chunk.count))
                 try handle.write(contentsOf: piece == Int64(chunk.count) ? chunk : chunk.prefix(Int(piece)))
                 left -= piece
+                bytes += piece
             }
             try handle.synchronize()
-            bytes += count
-            return true
+            return .done
         } catch {
-            return false
+            return .refused
         }
     }
 
     /// The largest single extension of a fill (a progress line follows each one).
     static let fillStepBytes: Int64 = 1_000_000_000
 
-    /// Fills until the important-use reading is about `free`, never below the real-space floor, in steps of at most
+    /// Fills until the guard's reading is about `free`, never below the real-space floor, in steps of at most
     /// `fillStepBytes` (each step re-reads the volume, which moves as the system purges). `progress` gets a
     /// "state=filling" line after every step. Ends `holding` (reached), `capped` (real space ran out first), `failed`,
     /// or `slow` (`budgetSeconds` passed first).
@@ -142,12 +162,16 @@ final class BallastWriter: @unchecked Sendable {
         for _ in 0..<1_000 {   // 1 TB at most
             let r = Self.readings(url)
             guard r.important > 0, r.real > 0 else { return line("failed") }
-            let wanted = r.important - free
+            let wanted = r.reading - free
             if wanted <= 8_000_000 { return line("holding") }
             let allowed = r.real - UITestDiskBallast.realFloorBytes
             if allowed <= 0 { return line("capped") }
             if Date().timeIntervalSince(started) >= budgetSeconds { return line("slow") }
-            if !extend(by: min(wanted, allowed, Self.fillStepBytes)) { return line("failed") }
+            switch extend(by: min(wanted, allowed, Self.fillStepBytes), deadline: started.addingTimeInterval(budgetSeconds)) {
+            case .done: break
+            case .refused: return line("failed")
+            case .outOfTime: return line("slow")
+            }
             progress(line("filling"))
         }
         return line("holding")
@@ -156,8 +180,8 @@ final class BallastWriter: @unchecked Sendable {
     /// One growth step; "state=growing" while it may grow again.
     func grow(by step: Int64, floor: Int64) -> String {
         let r = Self.readings(url)
-        guard r.important - step > floor, r.real - step > UITestDiskBallast.realFloorBytes else { return line("floor") }
-        return extend(by: step) ? line("growing") : line("failed")
+        guard r.reading - step > floor, r.real - step > UITestDiskBallast.realFloorBytes else { return line("floor") }
+        return extend(by: step) == .done ? line("growing") : line("failed")
     }
 }
 #endif

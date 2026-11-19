@@ -107,6 +107,23 @@ final class RecordingStorageTests: XCTestCase {
         XCTAssertEqual(RecordingStorage.fileBytes(at: url), Int64(1234))
     }
 
+    /// QA-011 device run 2026-11-19 (D3): important-use 606 MB while only 209 MB was really free; the guard must read
+    /// the smaller figure, so its stop (reserve + 10 s) comes before the real space runs out.
+    func testGuardReadingIsTheSmallerOfImportantAndRealCapacity() {
+        XCTAssertEqual(VolumeStorageReading.guardBytes(important: 606_000_000, real: 209_000_000), 209_000_000)
+        XCTAssertEqual(VolumeStorageReading.guardBytes(important: 500_000_000, real: 900_000_000), 500_000_000)
+        XCTAssertEqual(VolumeStorageReading.guardBytes(important: nil, real: 300_000_000), 300_000_000)
+        XCTAssertEqual(VolumeStorageReading.guardBytes(important: 300_000_000, real: nil), 300_000_000)
+        XCTAssertEqual(VolumeStorageReading.guardBytes(important: -1, real: 300_000_000), 300_000_000)
+        XCTAssertNil(VolumeStorageReading.guardBytes(important: nil, real: nil))
+        // D3's reading stops a recording that the important-use figure alone would let run to the real floor.
+        let policy = RecordingStoragePolicy(estimate: RecordingStorageEstimate(bytesPerSecond: 2_000_000))
+        XCTAssertFalse(policy.shouldStop(availableBytes: 606_000_000, fileBytes: nil, recordedSeconds: 0))
+        XCTAssertTrue(policy.shouldStop(availableBytes: VolumeStorageReading.guardBytes(important: 606_000_000,
+                                                                                         real: 209_000_000),
+                                        fileBytes: nil, recordedSeconds: 0))
+    }
+
     #if canImport(Darwin)
     func testVolumeProbeReadsTheTemporaryVolume() throws {
         let available = VolumeStorageProbe().availableBytes(at: FileManager.default.temporaryDirectory)
