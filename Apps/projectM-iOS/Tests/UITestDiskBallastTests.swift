@@ -49,6 +49,30 @@ final class UITestDiskBallastTests: XCTestCase {
         XCTAssertTrue(line.contains(" guardMB="), line)
     }
 
+    /// QA-011 pass 5 (D3): the growth stopped up to a whole 10 MB step above the reserve (guardMB=211) while the guard
+    /// stops a low-rate recording only below reserve + about 1.6 MB, so REC-015-T17 ran 150 s without a stop. The last
+    /// step is shortened to land within the guard's lowest stop line, never below the reserve or the real floor.
+    func testTheLastGrowthStepLandsBelowTheGuardsLowestStopLine() {
+        let reserve = UITestDiskBallast.reserveBytes, realFloor = UITestDiskBallast.realFloorBytes, step: Int64 = 10_000_000
+        func grown(from reading: Int64) -> Int64 {
+            reading - BallastWriter.growthStep(step: step, reading: reading, real: reading, floor: reserve, realFloor: realFloor)
+        }
+        XCTAssertEqual(BallastWriter.growthStep(step: step, reading: reserve + 500_000_000, real: reserve + 500_000_000,
+                                                floor: reserve, realFloor: realFloor), step, "far from the floor: a whole step")
+        // The pass 5 case: 9 MB above the reserve, where the old rule refused the step.
+        let landed = grown(from: reserve + 9_000_000)
+        XCTAssertEqual(landed, reserve + BallastWriter.floorMarginBytes)
+        // The guard's lowest stop line: reserve + 10 s at the 1 Mb/s minimum rate with 25 % headroom.
+        let lowestStopLine = reserve + 10 * (1_000_000 * 125 + 799) / 800
+        XCTAssertLessThan(landed, lowestStopLine, "the guard stops even the lowest-rate recording")
+        XCTAssertEqual(BallastWriter.growthStep(step: step, reading: landed, real: landed, floor: reserve, realFloor: realFloor), 0,
+                       "at the floor: no more growth")
+        XCTAssertEqual(BallastWriter.growthStep(step: step, reading: reserve - 1, real: reserve - 1, floor: reserve, realFloor: realFloor), 0,
+                       "never below the reserve")
+        XCTAssertEqual(BallastWriter.growthStep(step: step, reading: reserve + 50_000_000, real: realFloor + 3_000_000,
+                                                floor: reserve, realFloor: realFloor), 3_000_000, "the real-space floor holds")
+    }
+
     func testTheFillStepIsBoundedSoProgressShows() {
         XCTAssertLessThanOrEqual(BallastWriter.fillStepBytes, 1_000_000_000, "a step a device writes in seconds")
         XCTAssertGreaterThan(UITestDiskBallast.fillBudgetSeconds, 0)

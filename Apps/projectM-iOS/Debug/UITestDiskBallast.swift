@@ -74,7 +74,7 @@ final class UITestDiskBallast {
                 guard Self.recordingFileExists() else { continue }   // grows only while a recording is being made
                 let line = worker.grow(by: grow * 500_000, floor: Self.reserveBytes)
                 await MainActor.run { UITestDiskBallast.shared.value = line }
-                if !line.hasPrefix("state=growing") { return }
+                if line.hasPrefix("state=failed") { return }   // at the floor: keep topping up while recording
             }
         }
     }
@@ -177,11 +177,32 @@ final class BallastWriter: @unchecked Sendable {
         return line("holding")
     }
 
-    /// One growth step; "state=growing" while it may grow again.
+    /// How far above the floor the last growth step stops: the disk guard stops a recording below
+    /// reserve + 10 s × at least 1 Mb/s × 1.25 (RecordingStoragePolicy.stopThreshold, about 1.56 MB above the
+    /// reserve), so the ballast must end closer to the reserve than that.
+    nonisolated static let floorMarginBytes: Int64 = 500_000
+
+    /// The bytes one growth step may add: `step`, shortened so the guard's reading ends `floorMarginBytes` above
+    /// `floor` and the real space above `realFloor`; 0 when it is there already.
+    ///
+    /// QA-011 pass 5 (D3, 2026-11-19): a whole 10 MB step that would cross the floor was refused, so the ballast
+    /// stopped anywhere up to 10 MB above the 200 MiB reserve ("state=floor … guardMB=211") and stayed there (the
+    /// loop ended). The guard stops below the reserve plus 10 s of video (about 1.6-15 MB above it by bit rate), so
+    /// a low-rate recording (the Photo visual) ran 150 s with the reading just above its stop line and the
+    /// recording's own writes too slow to cross it (REC-015-T17). The last step is now shortened to land just above
+    /// the reserve, and the ballast keeps topping up while the recording runs (the system may purge space meanwhile).
+    nonisolated static func growthStep(step: Int64, reading: Int64, real: Int64, floor: Int64, realFloor: Int64) -> Int64 {
+        let room = min(reading - floor - floorMarginBytes, real - realFloor)
+        return max(0, min(step, room))
+    }
+
+    /// One growth step; "state=growing" after a step, "state=floor" when the reading is at the floor already.
     func grow(by step: Int64, floor: Int64) -> String {
         let r = Self.readings(url)
-        guard r.reading - step > floor, r.real - step > UITestDiskBallast.realFloorBytes else { return line("floor") }
-        return extend(by: step) == .done ? line("growing") : line("failed")
+        let bytes = Self.growthStep(step: step, reading: r.reading, real: r.real, floor: floor,
+                                    realFloor: UITestDiskBallast.realFloorBytes)
+        guard bytes >= 4_096 else { return line("floor") }
+        return extend(by: bytes) == .done ? line("growing") : line("failed")
     }
 }
 #endif

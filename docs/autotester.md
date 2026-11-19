@@ -637,6 +637,25 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     (`B07Case.hideControlsForShot()`) before measuring a screenshot, and leave out the Emergency Blackout button.
   - Seed the media a feature test needs (`-uitestSeedVideo`, `-uitestSeedPhoto`, `-uitestSeedLogo`) instead of picking
     it, so a picker failure fails only the picker tests.
+- **Media and share tests on D3, pass 5 (2026-11-19):**
+  - *Set a slider through its VoiceOver step, not a drag,* when the value matters: a drag from a computed thumb position
+    missed on the iPad's Settings row and left Seconds per picture at 5 s (MED-006). Launch with
+    `-uitestAccessibilityActions`, tap `<id>.uitestDecrement` and read the value back.
+  - *Derive a rate check from the rule that limits it:* "a slide per beat at 120 BPM" is held to MED-006-R7's 1 s
+    safety floor, so 6 slides in 6 s can never pass. Measure the gaps between changes and assert the floor and the
+    median.
+  - *Keep pixel bands clear of the iPad's controls panel* (from 66 % of the height in portrait): MED-008's GIF bar was
+    measured at 70-74 % and was seen once in 20 pictures although the GIF played.
+  - *Parse counters as digits:* SwiftUI shows an interpolated `Int` with a grouping separator ("1,234"), so `Int(label)`
+    became nil past 999 (MED-014).
+  - *Tap a result panel only once it has stopped moving:* the panel moves up when the controls hide (5 s after they
+    were shown); a tap computed before the move hit the visualization, so Save… never opened the exporter (REC-001).
+  - *`app.snapshot()` can fail on a remote view (the share sheet) while queries still reach it:* check the labels you
+    need with queries (REC-012).
+  - *Files in iPad portrait keeps its sidebar over the folder* after a sidebar choice: tap the folder's cell, and close
+    the sidebar first when the cell is not hittable (REC-003).
+  - *A disk ballast must end within the guard's stop line,* not anywhere within a growth step of the reserve: shorten
+    the last step (REC-015).
 - **"Main thread busy for 30 s" is a deadlock until shown otherwise (2026-11-19):**
   - XCTest attaches a `Spindump_*.txt` to a test that fails this way: export it with
     `xcrun xcresulttool export attachments --path <bundle> --test-id <id> --output-path <dir>`; it names the blocking stack.

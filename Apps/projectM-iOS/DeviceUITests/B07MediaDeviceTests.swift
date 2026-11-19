@@ -70,6 +70,9 @@ class B07Case: ControlSurfaceCase {
 
     func footprintMB() -> Int? { Int(text("memoryProbe").replacingOccurrences(of: "footprintMB=", with: "")) }
 
+    /// A frame counter probe as a number (-1 when missing). The digits only: SwiftUI shows "1,234" past 999.
+    func probeCount(_ id: String) -> Int { Int(text(id).filter(\.isNumber)) ?? -1 }
+
     // MARK: Settings
 
     /// Taps a Settings control (a button, a PhotosPicker, a link) by identifier, scrolling to it: slow swipes first
@@ -330,9 +333,9 @@ final class B07MediaDeviceTests: B07Case {
         let summary = settledSummary("photoSummary")
         closeSettingsPanel()
         XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo ") }, "\(task): the picked photo is shown: \(photoValue) (\(summary))")
-        let frames = Int(text("photoFramesShown")) ?? -1
+        let frames = probeCount("photoFramesShown")
         pause(1)
-        XCTAssertGreaterThan(Int(text("photoFramesShown")) ?? -1, frames, "\(task): frames keep showing the photo")
+        XCTAssertGreaterThan(probeCount("photoFramesShown"), frames, "\(task): frames keep showing the photo")
         let (stats, _) = screen(task, "picked photo")
         XCTAssertGreaterThan(stats.nonBlack, 0.3, "\(task): the photo fills the screen")
         let shown = photoValue
@@ -426,9 +429,11 @@ final class B07MediaDeviceTests: B07Case {
         XCTAssertFalse(text("videoNotice").contains("couldn"), "\(task): the camera clip is not refused: \(text("videoNotice"))")
         closeSettingsPanel()
         XCTAssertTrue(wait(30) { self.videoValue.hasPrefix("Video ") }, "\(task): the camera clip plays: \(videoValue) (\(clip), HLG was \(hlg))")
-        let frames = Int(text("videoFramesShown")) ?? -1
+        // QA-011 pass 5 (D3): "-1 is not greater than -1": the probe read "1,234" (SwiftUI formats the count with a
+        // grouping separator once it passes 999) and Int() rejected it. `probeCount` keeps the digits only.
+        let frames = probeCount("videoFramesShown")
         pause(1)
-        XCTAssertGreaterThan(Int(text("videoFramesShown")) ?? -1, frames, "\(task): its pictures keep coming")
+        XCTAssertGreaterThan(probeCount("videoFramesShown"), frames, "\(task): its pictures keep coming (\(frames) before)")
         report(task, "real and HDR media", ["cameraPhoto": camera.contains(" × ") ? 1 : 0,
                                            "cameraClip": videoValue.hasPrefix("Video ") ? 1 : 0])
     }
@@ -611,28 +616,59 @@ final class B07MediaDeviceTests: B07Case {
         return (i, c)
     }
 
-    /// Follows the slideshow for `seconds`; returns the indices shown in turn and whether each step was the next one.
-    private func followSlides(seconds: Double, count: Int) -> (sequence: [Int], inOrder: Bool) {
-        var sequence: [Int] = [], inOrder = true
+    /// Follows the slideshow for `seconds`; returns the indices shown in turn, whether each step was the next one, and
+    /// the seconds between two seen changes (the probe is polled about every 0.15 s).
+    private func followSlides(seconds: Double, count: Int) -> (sequence: [Int], inOrder: Bool, intervals: [Double]) {
+        var sequence: [Int] = [], inOrder = true, changedAt: [Date] = []
         let end = Date().addingTimeInterval(seconds)
         while Date() < end {
             if let s = slide(), sequence.last != s.index {
                 if let last = sequence.last, s.index != (last + 1) % count { inOrder = false }
+                if !sequence.isEmpty { changedAt.append(Date()) }   // the first reading is not a change
                 sequence.append(s.index)
             }
             pause(0.1)
         }
-        return (sequence, inOrder)
+        let intervals = zip(changedAt.dropFirst(), changedAt).map { $0.timeIntervalSince($1) }
+        return (sequence, inOrder, intervals)
+    }
+
+    /// Seconds per picture through the slider's VoiceOver decrement (the DEBUG probe buttons,
+    /// `-uitestAccessibilityActions`): one step per tap, read back from the slider's spoken value.
+    private func setSlideSeconds(_ task: String, to target: Int) -> Bool {
+        let slider = element("slideshowSecondsSlider")
+        let down = app.buttons["slideshowSecondsSlider.uitestDecrement"].firstMatch
+        // The probe button, not the slider row: an ACC-005 row can report not hittable while on screen (autotester).
+        XCTAssertTrue(scrollTo(down), "\(task): Seconds per picture's decrement probe")
+        func seconds() -> Int? { Int(((slider.value as? String) ?? "").prefix { $0.isNumber }) }
+        for _ in 0..<60 {
+            guard let now = seconds(), now > target, down.exists else { break }
+            down.tap()
+            _ = wait(2) { (seconds() ?? now) < now }
+        }
+        let shown = seconds()
+        XCTAssertEqual(shown, target, "\(task): Seconds per picture reads \(slider.value as? String ?? "nothing")")
+        return shown == target
     }
 
     /// MED-006-T22 (D1): five pictures chosen at once in the real Photos picker and two from Files cycle in their
     /// saved order in Time mode (2 s) and Beats mode (every beat at a tapped 120 BPM: `-uitestTapInterval 500` spaces
     /// the four taps exactly); relaunch keeps the order and the mode.
+    ///
+    /// QA-011 pass 5 (D3, iPadOS 26.5, 2026-11-19), a test bug and a threshold, no app defect:
+    /// * Time saw [1, 2, 3, 4] in 16 s, a change about every 5 s: the slider drag (from 3/58 of the row) missed the
+    ///   thumb on the iPad's Settings row, so Seconds stayed at the default 5. The seconds are now set through the
+    ///   slider's own VoiceOver decrement (`-uitestAccessibilityActions` probe buttons) and read back as 2.
+    /// * Beats saw [6, 0, 1, 2, 3] in 6 s: four changes about 1.0-1.5 s apart, which is MED-006-R7's safety floor
+    ///   (1 s at the Standard profile: two changes are never closer, so "every beat" at 120 BPM changes on every second
+    ///   or third beat). Six slides in 6 s cannot happen on a correct app. The step now follows 9 s and checks the
+    ///   rule itself: at least 5 changes, none closer than the floor, and a median gap under the 2 s Time fallback
+    ///   (so the beat drives it). Spec 127 Clarifications.
     func testMED006SlideshowFromPhotosAndFiles() {
         let task = "MED-006-T22"
         let slides = (1...5).map { "slide-\($0).png" }
         launch(visual: "photo", settings: ["settings.performanceOverlay": false],
-               extra: Self.seedLibrary(slides) + ["-uitestTapInterval", "500"])
+               extra: Self.seedLibrary(slides) + ["-uitestTapInterval", "500", "-uitestAccessibilityActions"])
         guard waitLibrarySeed(task) else { return }
         openSettingsPanel()
         guard tapControl("slideshowAddFromPhotos") else { return }
@@ -645,16 +681,16 @@ final class B07MediaDeviceTests: B07Case {
         }
         XCTAssertTrue(wait(30) { self.text("slideshowSummary") == "7 pictures" }, "\(task): \(text("slideshowSummary"))")
         setSwitch("slideshowToggle", on: true)
-        // An ACC-005 adjustable row, not a slider: `app.sliders` never found it and Time stayed at the default 5 s
-        // (pass 4, D2: 4 changes in 16 s). From 5 s (3/58 of 2…60) to the 2 s end stop.
-        let seconds = element("slideshowSecondsSlider")
-        XCTAssertTrue(scrollTo(seconds), "\(task): Seconds per picture")
-        if seconds.exists { dragRowSlider(seconds, from: 3.0 / 58.0, to: 0) }
+        // An ACC-005 adjustable row, not a slider: `app.sliders` never found it, and a drag missed the thumb (pass 4,
+        // D2 and pass 5, D3: Time stayed at the default 5 s). From 5 s to 2 s by three VoiceOver decrements.
+        _ = setSlideSeconds(task, to: 2)
         pause(0.5)
         closeSettingsPanel()
         let time = followSlides(seconds: 16, count: 7)
+        let timeGap = Self.median(time.intervals)
         XCTAssertGreaterThanOrEqual(time.sequence.count, 5, "\(task) Time: slides change: \(time.sequence)")
         XCTAssertTrue(time.inOrder, "\(task) Time: in the saved order: \(time.sequence)")
+        XCTAssertEqual(timeGap, 2, accuracy: 0.4, "\(task) Time: a picture every 2 s: gaps \(time.intervals)")
 
         openSettingsPanel()
         chooseMenu("slideshowModePicker", "On the beat")
@@ -664,9 +700,16 @@ final class B07MediaDeviceTests: B07Case {
         let tap = app.buttons["tapTempo"].firstMatch
         XCTAssertTrue(wait(5) { tap.exists }, "\(task): Tap tempo")
         for _ in 0..<4 { if tap.exists { tap.tap() } }
-        let beats = followSlides(seconds: 6, count: 7)
-        XCTAssertGreaterThanOrEqual(beats.sequence.count, 6, "\(task) Beats: a slide per beat at 120 BPM: \(beats.sequence)")
+        // MED-006-R7: every beat at 120 BPM (0.5 s) is held to the 1 s Standard floor, so a change comes on the first
+        // beat at or after 1 s: gaps of 1.0 or 1.5 s (0.15 s polling). Time's 2 s fallback would give 2 s gaps.
+        let beats = followSlides(seconds: 9, count: 7)
+        let beatGap = Self.median(beats.intervals)
+        report(task, "beats", ["changes": Double(beats.sequence.count - 1), "medianGap": beatGap,
+                               "minGap": beats.intervals.min() ?? -1])
+        XCTAssertGreaterThanOrEqual(beats.sequence.count, 6, "\(task) Beats: at least 5 changes in 9 s: \(beats.sequence)")
         XCTAssertTrue(beats.inOrder, "\(task) Beats: in order: \(beats.sequence)")
+        XCTAssertGreaterThanOrEqual(beats.intervals.min() ?? 1, 0.8, "\(task) Beats: never closer than the 1 s floor: \(beats.intervals)")
+        XCTAssertLessThanOrEqual(beatGap, 1.7, "\(task) Beats: the beat drives it (not the 2 s fallback): \(beats.intervals)")
 
         relaunch()
         openSettingsPanel()
@@ -774,13 +817,19 @@ final class B07MediaDeviceTests: B07Case {
 
     // MARK: MED-008 animated GIF
 
-    /// The yellow bar's mean column in a band below the centred spectrum (animated-200.gif: a yellow bar sweeping a
-    /// 160 × 120 frame), or nil when it is off screen.
+    /// The yellow bar's mean column in a band above the centred spectrum (animated-200.gif: a yellow bar sweeping a
+    /// 160 × 120 frame, filled to the screen), or nil when it is off screen.
+    ///
+    /// QA-011 pass 5 (D3, 2026-11-19), a test bug: the GIF played (the bar sat at a different column in each of the 20
+    /// screenshots), but the band was 70-74 % of the height, which on an iPad in portrait lies under the controls
+    /// panel (it starts at 66 %), so the bar was found in one picture only ("bar seen at [19]"). The band is now
+    /// 12-20 %: below the status bar and a notification banner, above the spectrum, clear of the controls on every
+    /// device.
     private func barColumn(_ p: [UInt8]) -> Double? {
         let (w, h) = lastSize
         guard w > 0, h > 0 else { return nil }
         var sum = 0.0, n = 0
-        for y in Int(Double(h) * 0.70)..<Int(Double(h) * 0.74) {
+        for y in Int(Double(h) * 0.12)..<Int(Double(h) * 0.20) {
             for x in 0..<w {
                 let i = (y * w + x) * 4
                 guard i + 3 < p.count else { continue }

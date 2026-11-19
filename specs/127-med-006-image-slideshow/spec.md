@@ -94,6 +94,17 @@ Five questions, each answered by Claude with the recommended option (owner rules
   the real slide import, turns Slideshow on in Time mode at 2 s, and the probe `slideshowProbe` reads
   "<shown index> changes=<n>" (MED-006-R15).
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: What does MED-006-T22's Beats step expect at "Every beat" and 120 BPM? → A: MED-006-R7's floor, not one change
+  per beat: at the Standard profile two changes are never closer than 1 s, so a 0.5 s beat changes the slide on the
+  first beat at or after 1 s (gaps of 1.0 or 1.5 s). The step follows 9 s and asserts at least 5 changes, no gap under
+  0.8 s (0.15 s polling) and a median gap of at most 1.7 s (below Time's 2 s fallback, so the beat drives it)
+  (QA-011 device run 2026-11-19). Measured on D3 (iPad A16, iPadOS 26.5, pass 5): [6, 0, 1, 2, 3] in 6 s, four changes
+  in order; the old "6 slides in 6 s" could not hold on a correct app. The Time step sets Seconds per picture to 2
+  through the slider's VoiceOver decrement (the drag missed the thumb on the iPad row and left 5 s: [1, 2, 3, 4] in
+  16 s) and asserts a median gap of 2 ± 0.4 s. Rejected: keeping a count over 6 s (one or two changes of slack only).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cycle several pictures on a timer (Priority: P1)
