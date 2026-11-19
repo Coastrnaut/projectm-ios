@@ -18,8 +18,10 @@
 public protocol PresentationBoundResource: AnyObject {
     /// A stable name for diagnostics. No user content.
     var presentationResourceName: String { get }
-    /// Stop all work and release what is only useful while presenting. When this returns, no work
-    /// is running. Safe to call when already suspended.
+    /// Stop all work and release what is only useful while presenting: work on the caller's thread
+    /// has stopped when this returns; work on another thread is asked to stop at its next safe point
+    /// and is never waited for (QA-011 2026-11-19: a wait here blocked the main thread for good when
+    /// that work was stuck on the GPU in the background). Safe to call when already suspended.
     func suspendForPresentationLoss()
     /// Reacquire and continue from the state the user left (a user pause stays a pause). Safe to
     /// call when not suspended.
@@ -69,6 +71,10 @@ public final class PresentationResourceRegistry {
     public private(set) var canPresent = true
     /// Called once after each real change of `canPresent`, when its sweep has finished.
     public var onTransition: ((PresentationTransitionReport) -> Void)?
+    /// QA-011 2026-11-19: called after each suspend (`true`) or resume (`false`) call of a resource
+    /// in a sweep, with the resource's name and how long the call took on the main thread, so a
+    /// device log shows which resource held a background or foreground transition.
+    public var onResourceCall: ((_ name: String, _ suspend: Bool, _ duration: Duration) -> Void)?
 
     public init() {}
 
@@ -128,11 +134,13 @@ public final class PresentationResourceRegistry {
             guard entry.suspended != suspend, let resource = entry.resource,
                   entries.contains(where: { $0 === entry }) else { continue }
             entry.suspended = suspend
+            let start = ContinuousClock.now
             if suspend {
                 resource.suspendForPresentationLoss()
             } else {
                 resource.resumeForPresentation()
             }
+            onResourceCall?(entry.name, suspend, ContinuousClock.now - start)
         }
     }
 

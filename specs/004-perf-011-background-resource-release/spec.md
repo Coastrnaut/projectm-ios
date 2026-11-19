@@ -37,12 +37,16 @@ Answered under the standing delegation (recommended option first; no owner quest
 - Q: Does the inactive state (Control Center, a call banner, the app switcher with the app still on screen) count as "cannot present frames"? → A: No. Only background and device lock do. In the inactive state the app is still visible and the system still shows its frames, so stopping would freeze a visible picture; HEAD already keeps rendering there and only auto-lock handling reacts (FR-084). (R1, S5)
 - Q: What happens when the device is unlocked while the app is still in the background? → A: Nothing resumes. Background and lock are two independent conditions; frames can be presented only when neither holds. "Will enter foreground" clears both, so a missing unlock signal can never leave the app suspended. This corrects HEAD, where that unlock resumed the visualization. The capture layer still receives every event unchanged. (R1)
 - Q: How much does the visible renderer give up while suspended? → A: The frame loop, the window surface (its drawables) and the Reduce-flashing target. It keeps the engine, the current preset and its textures, because rebuilding those costs up to a second of shader compiles and would change the picture on return. The warm-up, which holds a second engine and context only to save time later, is torn down completely. (R6, R7)
-- Q: Must warm-up work have stopped by the time the suspend operation returns, or may it finish in the background? → A: It must have stopped. Suspend waits for the warm-up thread to reach its next safe point (it checks between loading a preset and each of its two frames) and to destroy its context. The wait is bounded by one engine call and happens once per background transition; no GPU work is then left running behind the app. (R7)
+- Q: Must warm-up work have stopped by the time the suspend operation returns, or may it finish in the background? → A: It must have stopped. Suspend waits for the warm-up thread to reach its next safe point (it checks between loading a preset and each of its two frames) and to destroy its context. The wait is bounded by one engine call and happens once per background transition; no GPU work is then left running behind the app. (R7) *Superseded 2026-11-19 (QA-011 device run, below): suspend no longer waits.*
 - Q: Is any of this state stored, and how is the change rolled back? → A: Nothing is stored. Availability is derived from live signals and starts as "can present" at launch; the registry lives in memory. There is no migration and no setting. Rollback is reverting the commits; no data is left behind. (R14)
 
 ### Session 2026-11-18 (QA-011 device run)
 
 - Q: PERF-011-T22's "after Control Center" motion read 0.0012 and 0.0017 against 0.002 on D3 (two runs) at 60 fps, while D1 and D2 passed; does the visual freeze? → A: No evidence of it: one pair 1 s apart can fall in a quiet passage (autotester lesson). After the switcher and after Control Center the test waits for Active audio and takes the largest of three pairs, as after the return from the background.
+
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: After a return from the background the app's main thread was busy for good on D2 (iPadOS 27.2, B05 AUD-006-T39 pause across background) and D3 (iPadOS 26.5, AUD-016-T30 after a Clock-timer trip); earlier passes showed the same stall in VIS-001, AUD-015, CAM-001 and CAM-012 background steps. Why, and what changes? → A: The failure's spindump (XCTest diagnostics in the D2 pass-4 result bundle) shows the main thread in `LifecycleCoordinator.handle` → `PresentationResourceRegistry.setCanPresent(false)` → `PresetWarmUpController.suspendForPresentationLoss` → `PresetPrewarmer.stop` → `NSCondition.wait` for 300 s, while the warm-up thread sat inside an engine call in ANGLE's `-[MTLCommandBuffer waitUntilCompleted]`: an engine call that began as the app went to the background never returned, because the GPU does not run a background app's work, so the "bounded by one engine call" wait of the 2026-11-12 answer was unbounded. Decision: suspend never waits for the warm-up. It drops the queue and asks the thread to stop; the thread ends at its next safe point and destroys its own context, engine and target (the EGL display is never terminated, so it always can); a request made while it is ending is kept and starts a new thread when it has ended. No new warm-up work starts while suspended, which is what R7 protects; the one engine call already in flight finishes when the GPU runs it, as it did before. The registry now times every resource call and the lifecycle handling (Points of Interest events, an app log error from 100 ms), so a device log names any resource that holds a transition. Host tests: `PresetWarmUpControllerTests.testStopAndSuspendReturnAtOnceWhileAnEngineCallDoesNotReturn`, `PresentationResourceRegistryTests.testReportsEachResourceCallWithItsDuration`. (R7)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -188,11 +192,13 @@ deallocated.
   Reduce-flashing render target, MUST NOT create them, and on resume MUST recreate the surface at
   the view's current size before the first frame. The engine, its current preset and the loaded
   textures are kept, so the picture continues from the same preset.
-- **PERF-011-R7**: While suspended, the preset warm-up MUST do no work: a request waiting for its
-  delay is cancelled, queued presets are dropped, the warm-up thread ends, and its graphics
-  context, engine instance and render target are destroyed. The suspend operation waits for the
-  thread to reach its next safe point (between a preset's load and each of its frames), so when
-  it returns no warm-up work is running.
+- **PERF-011-R7**: While suspended, the preset warm-up MUST start no work: a request waiting for
+  its delay is cancelled, queued presets are dropped, the warm-up thread ends at its next safe
+  point (between a preset's load and each of its frames), and it destroys its graphics context,
+  engine instance and render target. The suspend operation MUST NOT wait for the thread (QA-011
+  device run 2026-11-19: an engine call in flight can block on the GPU for as long as the app is
+  in the background), and no suspend or resume call of any presentation-bound resource may wait
+  on the main thread for work on another thread.
 - **PERF-011-R8**: On resume, the most recent warm-up request (made before or during suspension)
   MUST be issued again with the normal delay. Presets already warmed MUST NOT be warmed again.
 - **PERF-011-R9**: The fallback renderer's frame loop MUST obey R5.

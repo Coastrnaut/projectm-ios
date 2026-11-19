@@ -12,10 +12,16 @@
 // context is created and destroyed there. A new request replaces the queue; presets already warmed
 // are skipped.
 //
-// PERF-011-R7: `stop()` ends the thread and waits until its framebuffer, engine, surface and
-// context are destroyed; afterwards the prewarmer is idle and a later request starts a new thread.
-// The thread checks for a stop between a preset's load and each of its two frames, so the wait is
-// at most one engine call, and an interrupted preset is not recorded as warmed.
+// PERF-011-R7: `stop()` asks the thread to end and returns at once; it never waits. The thread
+// checks for a stop between a preset's load and each of its two frames, then destroys its
+// framebuffer, engine, surface and context itself; an interrupted preset is not recorded as warmed.
+// A request made while the thread is still ending is kept and starts a new thread when it has ended.
+// QA-011 device run 2026-11-19 (D2, D3): the old `stop()` waited for that safe point on the main
+// thread, but an engine call that began just before the app went to the background blocked inside
+// ANGLE in `-[MTLCommandBuffer waitUntilCompleted]` (the GPU does not run a background app's work),
+// so the main thread waited for good (spindump: LifecycleCoordinator.handle → setCanPresent(false) →
+// PresetWarmUpController.suspendForPresentationLoss → PresetPrewarmer.stop → NSCondition.wait).
+// The display is never terminated, so the ending thread can always release what it made.
 import CANGLE
 import Foundation
 import ProjectMBridge
@@ -25,8 +31,8 @@ import Rendering
 protocol PresetWarming: AnyObject, Sendable {
     /// Replaces the queue with `presets` (most likely first) and starts working if idle.
     func request(_ presets: [Preset], texturePaths: [String])
-    /// Drops the queue, ends all work and releases the worker's graphics resources. When it
-    /// returns, no work is running. The worker can be used again afterwards.
+    /// Drops the queue and asks all work to end; the worker then releases its graphics resources
+    /// by itself. Never waits (QA-011: the main thread calls it). The worker can be used again at once.
     func stop()
     var warmedCount: Int { get }
     /// PERF-006: the worker holds a thread or graphics resources (context, engine, target) now.
@@ -54,6 +60,7 @@ final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
     private var holdsContext = false
     /// Presets warmed so far (tests and automation reports).
     private var warmedIDs: Set<String> = []
+    private var startedThreads = 0
 
     init(display: EGLDisplay, config: EGLConfig) {
         self.display = display
@@ -65,15 +72,21 @@ final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
         condition.lock()
         queue = presets
         self.texturePaths = texturePaths
-        if thread == nil, !stopping, !unavailable {
-            let thread = Thread { [self] in run() }
-            thread.name = "projectM preset warm-up"
-            thread.qualityOfService = .utility
-            self.thread = thread
-            thread.start()
-        }
+        // While a stopped thread is still ending, the request waits in the queue: `finish` starts
+        // the next thread.
+        if thread == nil, !unavailable { startThread() }
         condition.signal()
         condition.unlock()
+    }
+
+    /// With the lock held.
+    private func startThread() {
+        let thread = Thread { [self] in run() }
+        thread.name = "projectM preset warm-up"
+        thread.qualityOfService = .utility
+        self.thread = thread
+        startedThreads += 1
+        thread.start()
     }
 
     var warmedCount: Int {
@@ -88,19 +101,42 @@ final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
         return warmedIDs.contains(id)
     }
 
-    /// Drops the queue, stops the thread and waits until its context and engine are gone. The
-    /// prewarmer is then idle; a later `request` starts a new thread. Does nothing when idle.
+    /// Drops the queue and asks the thread to end at its next safe point; returns at once (file
+    /// header, QA-011). The thread then destroys its context, engine and target. Does nothing when idle.
     func stop() {
         condition.lock()
         queue.removeAll()
         if thread != nil {
             stopping = true
             condition.broadcast()
-            while thread != nil { condition.wait() }
-            stopping = false
         }
         condition.unlock()
     }
+
+    /// Tests only, never the main thread of the app: waits until no thread exists (a stopped thread
+    /// has released its context, engine and target), at most `timeout`. True when idle.
+    func waitUntilIdle(timeout: TimeInterval) -> Bool {
+        let deadline = Date(timeIntervalSinceNow: timeout)
+        condition.lock()
+        defer { condition.unlock() }
+        while thread != nil {
+            if !condition.wait(until: deadline) { return thread == nil }
+        }
+        return true
+    }
+
+    /// Threads started so far (tests: a request during a stop starts one thread after it ends).
+    var threadStarts: Int {
+        condition.lock()
+        defer { condition.unlock() }
+        return startedThreads
+    }
+
+    #if DEBUG
+    /// Tests: called on the warm-up thread after a preset's load, before the stop check (an engine
+    /// call that does not return, as on device when the GPU does not run a background app's work).
+    var afterLoadForTesting: (@Sendable () -> Void)?
+    #endif
 
     /// The warm-up thread exists.
     var isRunning: Bool {
@@ -164,12 +200,16 @@ final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
                 } else {
                     try engine.loadPreset(atPath: preset.fileURL.path, smooth: false)
                 }
+                #if DEBUG
+                afterLoadForTesting?()
+                #endif
                 // Safe points: a stop (PERF-011) leaves after the current engine call.
                 if shouldStop { break }
                 engine.renderFrame(toFramebuffer: framebuffer)
                 if shouldStop { break }
                 engine.renderFrame(toFramebuffer: framebuffer)
                 PMANGLEFinish()
+                if shouldStop { break }   // stopped during the frames: not recorded
             } catch {
                 // A preset that fails here fails for the visible engine too; that path reports it.
             }
@@ -207,11 +247,15 @@ final class PresetPrewarmer: PresetWarming, @unchecked Sendable {
         }
     }
 
-    /// The thread is ending: the prewarmer is idle again (or unavailable for good).
+    /// The thread is ending: the prewarmer is idle again (or unavailable for good). A request made
+    /// while it was stopping starts the next thread now.
     private func finish(unavailable: Bool) {
         condition.lock()
         if unavailable { self.unavailable = true }
         thread = nil
+        let restart = stopping && !queue.isEmpty && !self.unavailable
+        stopping = false
+        if restart { startThread() }
         condition.broadcast()
         condition.unlock()
     }
