@@ -91,6 +91,14 @@ final class SystemUI {
         if !keep { undo.append((name, action)) }
     }
 
+    /// Drops the recorded undo steps for one setting (names starting with `prefix`): a later `keep: true` change sets
+    /// its final state, so an earlier undo of it is obsolete. CAM-013-T17 (D2 pass 4, 2026-11-19) revoked the camera,
+    /// granted it again with `keep: true`, and tearDown still ran "Camera on": a second trip to Settings whose query
+    /// on the backgrounded Settings app timed out (3 × 30 s, "Timed out while evaluating UI query").
+    private func forget(_ prefix: String) {
+        undo.removeAll { $0.name.hasPrefix(prefix) }
+    }
+
     // MARK: Waiting
 
     func pause(_ seconds: Double) {
@@ -230,7 +238,10 @@ final class SystemUI {
     /// The app's own page: Settings › Apps › projectM (iOS 18 and later), found by scrolling or the Apps search field.
     /// If Settings is already in front on that page (after the app's "Open Settings" button), it is used as is.
     func openAppSettingsPage() {
-        if preferences.state == .runningForeground, preferences.navigationBars[Self.appDisplayName].exists { return }
+        // Only while Settings, not the app, is in front: a query on a Settings app sent to the background never
+        // answers (D2 pass 4, 2026-11-19: 3 × 30 s "Timed out while evaluating UI query" in CAM-013's tearDown).
+        if preferences.state == .runningForeground, app.state != .runningForeground,
+           preferences.navigationBars[Self.appDisplayName].exists { return }
         openSettingsRoot()
         // Settings' own search first: it lists the app's page on every layout. On iPadOS 27.2 (D2, 2026-11-18) no
         // "Apps" row was found in the sidebar after 16 swipes, and the pre-iOS 18 fallback found no app row either.
@@ -345,6 +356,7 @@ final class SystemUI {
             row.tap()
             let choice = on ? "Add Photos Only" : "None"
             XCTAssertTrue(tapSettingsRow(choice), "Photos › \(choice)")
+            if keep { forget("Photos ") }
             if before != choice, !before.isEmpty {
                 let previous = before
                 remember("Photos \(previous)", keep: keep) { [weak self] in
@@ -356,6 +368,7 @@ final class SystemUI {
             return true
         }
         guard let before = setSwitch(permission.rawValue, on: on) else { return false }
+        if keep { forget("\(permission.rawValue) ") }
         if before != on {
             remember("\(permission.rawValue) \(before ? "on" : "off")", keep: keep) { [weak self] in
                 guard let self else { return }
@@ -404,7 +417,15 @@ final class SystemUI {
             .firstMatch
     }
 
-    var controlCenterIsOpen: Bool { controlCenterMarker.exists }
+    /// Control Center's own buttons are shown. Not while Settings is in front: springboard's queries reach into the
+    /// front app's windows (its full-screen "projectM" card matched in CAM-001), and Settings has rows of the same
+    /// names. D2 pass 4 (2026-11-19, CAM-013 tearDown): with Settings in front and Control Center closed a marker
+    /// matched, closeControlCenter swiped up, which went Home, and the restore that followed queried a backgrounded
+    /// Settings app until it timed out. No test opens Control Center over Settings.
+    var controlCenterIsOpen: Bool {
+        if preferences.state == .runningForeground { return false }
+        return controlCenterMarker.exists
+    }
 
     /// Opens Control Center with a swipe down from the top-right corner (iPhone with Face ID, iPad), portrait.
     @discardableResult
@@ -460,6 +481,40 @@ final class SystemUI {
             }
         }
         return hits >= 12
+    }
+
+    /// iPadOS Control Center's green privacy pill ("projectM  Controls ›" on system green, with a camera icon) in
+    /// `screenshot`, taken while Control Center is open. On D2 (iPadOS 27.2) and D3 (26.5) the pill lives in a remote
+    /// process whose accessibility tree XCUITest cannot read ("Ignoring failure to get hierarchy for remote element
+    /// ... kAXErrorServerNotFound"), so no label names it (QA-011 pass 4, 2026-11-19). Measured on those screenshots:
+    /// the pill is a system-green run of 182 pt (364 px: 22 % of D3's width, 18 % of D2's) in the top 5 % of the
+    /// right half, 31 (D2) and 53 (D3) pixel rows matching this rule; once the camera is no longer in use the pill
+    /// turns grey with only a small green icon (longest run 35 px, 0 rows). True when at least 8 pixel rows in the top
+    /// 8 % of the right half hold a green run of 10-30 % of the screen's width (in pixels, so the screenshot's scale does not matter).
+    func controlCenterGreenPillVisible(in screenshot: XCUIScreenshot) -> Bool {
+        let image = screenshot.image
+        guard let cg = image.cgImage else { return false }
+        let width = cg.width, height = max(1, cg.height * 8 / 100)
+        var data = [UInt8](repeating: 0, count: width * height * 4)
+        data.withUnsafeMutableBytes { (buffer: UnsafeMutableRawBufferPointer) -> Void in
+            guard let ctx = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
+                                      bytesPerRow: width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
+            ctx.draw(cg, in: CGRect(x: 0, y: height - cg.height, width: width, height: cg.height))
+        }
+        let minRun = width / 10, maxRun = width * 3 / 10
+        var rows = 0
+        for y in 0..<height {
+            var run = 0, longest = 0
+            for x in (width / 2)..<width {
+                let i = (y * width + x) * 4
+                let r = Int(data[i]), g = Int(data[i + 1]), b = Int(data[i + 2])
+                if g > 150 && g - r > 70 && g - b > 50 { run += 1; longest = max(longest, run) } else { run = 0 }
+            }
+            if longest >= minRun && longest <= maxRun { rows += 1 }
+        }
+        print("SYSTEM-UI Control Center green pill rows: \(rows) (width \(width) px)")
+        return rows >= 8
     }
 
     // MARK: App switcher

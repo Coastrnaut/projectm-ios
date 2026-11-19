@@ -553,8 +553,19 @@ extension B06CameraDeviceTests {
         // Pass 3 (2026-11-19, D3): the tap never reached the button at the bottom-leading corner (its value stayed
         // "none"); it sits top-leading now. Its frame and hit state are logged for the next run.
         print("CAM005-FOCUS-BUTTON exists=\(action.exists) hittable=\(action.exists && action.isHittable) frame=\(action.frame)")
-        action.tap()
-        XCTAssertTrue(wait(3) { (action.value as? String) == "performed" }, "the custom action was found: \(String(describing: action.value))")
+        // Pass 4 (2026-11-19, D2 and D3): at the top-leading corner too the hittable button's synthesized tap never ran
+        // its action (value "none"), so the focus stayed off centre and nothing was announced. The probe now takes a
+        // Darwin notification (UITestFocusCentreRequest); the tap stays as the fallback.
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+                                             CFNotificationName("org.projectmios.uitest.cameraFocusCentre" as CFString),
+                                             nil, nil, true)
+        var via = "notification"
+        if !wait(3, { (action.value as? String) != "none" }) {
+            via = "tap"
+            action.tap()
+        }
+        print("CAM005-FOCUS-ACTION via=\(via) value=\(String(describing: action.value))")
+        XCTAssertTrue(wait(3) { (action.value as? String) == "performed" }, "the custom action was found (\(via)): \(String(describing: action.value))")
         XCTAssertTrue(wait(4) { abs((self.focus?.x ?? 0) - 0.5) < 0.03 && abs((self.focus?.y ?? 0) - 0.5) < 0.03 },
                       "focused at the centre: \(cameraProbeText("cameraFocusProbe"))")
         XCTAssertTrue(wait(3) { self.cameraProbeText("announcementProbe").contains("Focusing at centre") },
