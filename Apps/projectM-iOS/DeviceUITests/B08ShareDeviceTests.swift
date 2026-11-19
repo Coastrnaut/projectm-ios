@@ -56,6 +56,26 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         return wait(8) { self.app.buttons["frameResultSave"].exists }
     }
 
+    /// Taps a result panel's button once the panel has stopped moving.
+    ///
+    /// QA-011 pass 5 (D3, iPadOS 26.5, 2026-11-19), a test bug: the panel sits below the controls bar while it shows
+    /// and moves up when the bar hides itself (5 s after `revealRecordingControls`). On D3 the frame was offered just
+    /// before that, so Save… was tapped where it had been (y 58 → 16): the tap landed on the visualization, no
+    /// exporter opened, and the Files step failed with "no Save button" for PNG and HEIF (REC-001-T19); REC-012's
+    /// Share… tap hit "Activation point invalid" mid-move. Wait for the bar to go, then for two equal frames.
+    private func tapSettled(_ button: XCUIElement) {
+        let controls = app.otherElements["controls"]
+        _ = wait(8) { !controls.exists }
+        var last = button.frame
+        for _ in 0..<10 {
+            pause(0.4)
+            let now = button.frame
+            if now == last { break }
+            last = now
+        }
+        button.tap()
+    }
+
     /// Records about `seconds` (no recording folder: the file is offered in "Recording ready").
     private func recordOffered(_ seconds: Double) -> Date? {
         guard let began = startRecording("offered") else { return nil }
@@ -74,7 +94,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         for (format, ext, uti) in [("PNG", ".png", "png"), ("HEIF", ".heic", "heic")] {
             let began = Date()
             guard saveFrame(format) else { return XCTFail("\(format): no Frame ready panel") }
-            app.buttons["frameResultSave"].tap()
+            tapSettled(app.buttons["frameResultSave"])
             XCTAssertTrue(system.filesSave(), "\(format): saved in \(place) › projectM")
             XCTAssertTrue(wait(10) { self.notice("frameCaptureNoticeText") == "Frame saved." },
                           "\(format): \(notice("frameCaptureNoticeText"))")
@@ -92,7 +112,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         let task = "REC-003-T25"
         launchPhoto()
         guard let began = recordOffered(4) else { return XCTFail("no Recording ready panel") }
-        app.buttons["recordingResultSave"].tap()
+        tapSettled(app.buttons["recordingResultSave"])
         XCTAssertTrue(system.filesSave(), "saved in \(place) › projectM")
         XCTAssertTrue(wait(10) { self.notice("videoRecordingNoticeText") == "Recording saved." },
                       "the mover finished: \(notice("videoRecordingNoticeText"))")
@@ -111,10 +131,28 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
             pause(1)
             if browse.exists && browse.isHittable { browse.tap() }
         }
-        for item in [place, SystemUI.appDisplayName] {
-            let row = files.descendants(matching: .any).matching(NSPredicate(format: "label == %@", item)).firstMatch
-            XCTAssertTrue(wait(6) { row.exists }, "Files: \(item)")
-            if row.exists { row.tap(); pause(1) }
+        // QA-011 pass 5 (D3, iPadOS 26.5 portrait, 2026-11-19), a test bug: after On My iPad was chosen in the sidebar,
+        // the sidebar stayed over the folder (x 10-330) and covered the projectM folder's cell (x 158-275), so the
+        // "projectM" text was found but "not hittable". The folder is now its cell in the File View ("projectM, 45
+        // items"), and while the sidebar covers it the sidebar is closed by a tap on the folder's empty right edge.
+        let placeRow = files.descendants(matching: .any).matching(NSPredicate(format: "label == %@", place)).firstMatch
+        XCTAssertTrue(wait(6) { placeRow.exists }, "Files: \(place)")
+        if placeRow.exists { placeRow.tap(); pause(1) }
+        let folderGrid = files.collectionViews["File View"]
+        let folder = folderGrid.cells.matching(NSPredicate(format: "label BEGINSWITH %@", SystemUI.appDisplayName + ",")).firstMatch
+        XCTAssertTrue(wait(6) { folder.exists }, "Files: \(SystemUI.appDisplayName)")
+        for _ in 0..<3 where folder.exists && !folder.isHittable {
+            let sidebar = files.navigationBars["DOCSidebarView"]
+            if sidebar.exists {   // tap right of the sidebar, below the last row of the root's few items
+                files.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.88)).tap()
+            } else {
+                folderGrid.swipeDown()
+            }
+            pause(1)
+        }
+        if folder.exists {
+            if folder.isHittable { folder.tap() } else { folder.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).tap() }
+            pause(1)
         }
         // The folder is sorted by name and holds the test fixtures (about 50 on D3): "Visualizer Recording …" sits
         // below the first screen and the grid builds cells only near it (rerun 4, D3). Scroll until one is built.
@@ -153,7 +191,30 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
     /// Every label the share sheet shows (its activities and actions), from one snapshot of the tree. Reading
     /// `allElementsBoundByIndex` element by element failed on D2 and D3 (rerun 4): the sheet was still building its
     /// rows, so "Element at index 35/36" was gone by the time its label was read.
+    ///
+    /// QA-011 pass 5 (D3, iPadOS 26.5, 2026-11-19): the snapshot came back empty ("frame sheet: []") although the sheet
+    /// was up and its Save to Files was then found and used: the sheet is another process's view, and `app.snapshot()`
+    /// failed on its remote hierarchy ("Ignoring failure to get hierarchy for remote element") while element queries
+    /// still reach it. The labels the test asks about are now also checked one by one with queries, and the reading is
+    /// repeated (up to 6 s) until the sheet shows its actions.
+    private static let askedLabels = ["AirDrop", "Save to Files", "Messages", "Copy", "Save Image", "Save Video",
+                                      "Assign to Contact", "Save to Camera Roll"]
+
     private func sheetLabels() -> Set<String> {
+        var labels = Set<String>()
+        _ = wait(6) {
+            labels = self.snapshotLabels()
+            for label in Self.askedLabels where !labels.contains(label) {
+                if self.app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch.exists {
+                    labels.insert(label)
+                }
+            }
+            return labels.contains("AirDrop") && labels.contains("Save to Files")
+        }
+        return labels
+    }
+
+    private func snapshotLabels() -> Set<String> {
         guard let root = try? app.snapshot() else { return [] }
         let kinds: Set<XCUIElement.ElementType> = [.button, .cell, .staticText]
         var labels = Set<String>()
@@ -180,7 +241,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
     private func checkShareSheet(_ task: String, kind: String, prefix: String, suffix: String, began: Date) {
         let shareID = kind == "frame" ? "frameResultShare" : "recordingResultShare"
         let share = app.buttons[shareID]
-        share.tap()
+        tapSettled(share)
         XCTAssertTrue(wait(8) { self.sheetMarker.exists }, "\(kind): the share sheet")
         noPrompt("\(kind) share sheet")
         let labels = sheetLabels()
@@ -207,7 +268,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         XCTAssertFalse(app.descendants(matching: .any)["captureShareNotice"].firstMatch.exists, "\(kind): no notice on cancel")
         // Messages: the compose sheet opens and is cancelled (nothing is sent).
         if labels.contains("Messages") {
-            share.tap()
+            tapSettled(share)
             XCTAssertTrue(wait(8) { self.sheetMarker.exists }, "\(kind): the sheet again")
             XCTAssertTrue(system.shareSheet("Messages"), "\(kind): Messages")
             let cancel = app.buttons.matching(NSPredicate(format: "label IN {'Cancel', 'Close'}")).firstMatch
@@ -222,7 +283,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
             noPrompt("\(kind) Messages")
         }
         // Save to Files completes.
-        share.tap()
+        tapSettled(share)
         XCTAssertTrue(wait(8) { self.sheetMarker.exists }, "\(kind): the sheet for Save to Files")
         XCTAssertTrue(system.shareSheet("Save to Files"), "\(kind): Save to Files")
         XCTAssertTrue(system.filesSave(), "\(kind): saved in \(place) › projectM")
