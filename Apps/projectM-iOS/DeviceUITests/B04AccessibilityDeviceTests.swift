@@ -276,8 +276,11 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
     }
 
     /// ACC-010-T13 (automated part, D1 and D2): Left-handed controls put the emergency button in the bottom-leading
-    /// corner and the pad's Next cue on the leading side in landscape (mirrored), and each pad target answers a
-    /// coordinate tap. Using it with a left hand stays a person's check; LeftHandedUITests also runs on D1 and D2.
+    /// corner and, in landscape, the pad's side columns swapped (ACC-010 US1 scenario 1: Tap tempo and Black out in the
+    /// leading column, the cue targets in the trailing one), and each pad target answers a coordinate tap. Using it
+    /// with a left hand stays a person's check; LeftHandedUITests also runs on D1 and D2.
+    /// 2026-11-19 (pass 3): the landscape check expected Next cue on the leading side, which is the right-handed
+    /// placement; D2 (1332 of 1376 pt) and D3 (1136 of 1180 pt) put it in the trailing column, as the spec says.
     func testACC010LeftHandedGeometryAndTaps() {
         let task = "ACC-010-T13"
         for orientation in [UIDeviceOrientation.portrait, .landscapeLeft] {
@@ -303,7 +306,9 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
             let tap = app.buttons["perfTapTempo"], next = app.buttons["perfNextCue"]
             XCTAssertTrue(appears(tap, 5), "\(task) \(label): the pad")
             if orientation != .portrait {
-                XCTAssertLessThan(next.frame.midX, window.midX, "\(task) \(label): Next cue on the leading side")
+                // Side columns swapped: the cue column trailing, Tap tempo (with Black out) leading.
+                XCTAssertGreaterThan(next.frame.midX, window.midX, "\(task) \(label): Next cue in the trailing column")
+                XCTAssertLessThan(tap.frame.midX, window.midX, "\(task) \(label): Tap tempo in the leading column")
             }
             tapPoint(CGPoint(x: tap.frame.midX, y: tap.frame.midY))
             XCTAssertTrue(wait(2) { self.value(tap) == "Tap 1 of 4" }, "\(task) \(label): Tap tempo answers")

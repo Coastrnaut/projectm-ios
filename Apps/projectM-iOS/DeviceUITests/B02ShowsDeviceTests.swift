@@ -194,9 +194,12 @@ final class B02ToneMappingHueDeviceTests: B07DeviceCase {
     /// FX-002-T18 (hue): the spectrum's coloured pixels (chroma over 0.15) in the photo body keep their hue with the glow
     /// at maximum radius: the circular mean hue moves by less than 10° against the glow off, also among the brightest
     /// (luma over 0.85) glow pixels, where hue-shifted clipping would show.
+    /// 2026-11-19 (pass 3, D2): the bright glow pixels were compared with every coloured pixel without the glow (10.6°
+    /// on D2, overall shift 3.1°), but a luma cut picks the spectrum's light hues (yellow, cyan) whatever the glow does.
+    /// They are now compared with the same cut without the glow (its brightest fifth when fewer than 20 pass 0.85).
     func testFX002GlowKeepsTheSpectrumHue() {
         let task = "FX-002-T18"
-        var hues: [Bool: [Double]] = [:], bright: [Double] = []
+        var hues: [Bool: [Double]] = [:], bright: [Double] = [], offLit: [(hue: Double, luma: Double)] = []
         for glow in [false, true] {
             launch(visual: "photo", settings: ["settings.circularSpectrum.glow": glow, "settings.circularSpectrum.glowRadius": 0.06],
                    extra: ["-uitestSeedPhoto", "bright"])
@@ -213,7 +216,8 @@ final class B02ToneMappingHueDeviceTests: B07DeviceCase {
                         let (h, chroma) = Self.hueChroma(c.0, c.1, c.2)
                         if chroma > 0.15 {
                             list.append(h)
-                            if glow, 0.2126 * c.0 + 0.7152 * c.1 + 0.0722 * c.2 > 0.85 { bright.append(h) }
+                            let luma = 0.2126 * c.0 + 0.7152 * c.1 + 0.0722 * c.2
+                            if glow { if luma > 0.85 { bright.append(h) } } else { offLit.append((h, luma)) }
                         }
                         x += 3
                     }
@@ -226,8 +230,16 @@ final class B02ToneMappingHueDeviceTests: B07DeviceCase {
         }
         let off = Self.circularMean(hues[false] ?? []), on = Self.circularMean(hues[true] ?? [])
         let brightMean = Self.circularMean(bright)
-        let difference = Self.angleDifference(off, on), brightDifference = Self.angleDifference(off, brightMean)
+        // The same luma cut without the glow; its brightest fifth when the cut leaves fewer than 20.
+        var offBright = offLit.filter { $0.luma > 0.85 }.map(\.hue)
+        if offBright.count < 20 {
+            offBright = offLit.sorted { $0.luma > $1.luma }.prefix(max(offLit.count / 5, 1)).map(\.hue)
+        }
+        let offBrightMean = Self.circularMean(offBright)
+        let difference = Self.angleDifference(off, on), brightDifference = Self.angleDifference(offBrightMean, brightMean)
         report(task, "hue", ["offHue": off, "onHue": on, "difference": difference, "brightSamples": Double(bright.count),
+                             "offBrightHue": offBrightMean, "offBrightSamples": Double(offBright.count),
+                             "brightToAllOff": Self.angleDifference(off, brightMean),
                              "brightDifference": brightDifference, "offSamples": Double(hues[false]?.count ?? 0)])
         XCTAssertGreaterThan(hues[false]?.count ?? 0, 50, "\(task): the spectrum's colours are on screen")
         XCTAssertLessThan(difference, 10, "\(task): the glow keeps the spectrum's hue")
@@ -255,6 +267,10 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
     /// 0.90), which is the envelope's job for third-party content, not "ordinary"; and the strobe read recentMin 1.000
     /// everywhere because the probe sampled every sixth frame, always the same phase of the fixture's 2-frame strobe
     /// (now every seventh, ANGLERenderer.recordDebugFlashGain). Clamps are counted as the rise of the cumulative count.
+    /// 2026-11-19 (pass 3, D2 and D3): still no clamp after the Strobe fixture started (clampedSinceStart 0 in 18 s; the
+    /// earlier clamps were the launch preset's): that fixture only strobes hard on bass above 1.2 and its gamma pump
+    /// on a dark scene is under WCAG's step. The strobing preset is now `fixture:flicker` ("Flicker", a whole-frame
+    /// inversion two frames in four, UITestVisualProbes.flickerPreset), which strobes whatever the music does.
     func testFX019StrobeClampedOrdinaryUnchanged() {
         let task = "FX-019-T23"
         func clampedCount() -> Double { Self.number(probe("flashGuardProbe"), "clamped") ?? -1 }
@@ -276,8 +292,8 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
         XCTAssertEqual(Self.number(ordinary, "clamped"), calmStart, "\(task): the ordinary preset is not clamped: \(ordinary)")
         app.terminate()
 
-        launchProbed(visual: "projectM", settings: ["settings.reduceFlashing": false], extra: ["-uitestImportPreset", "fixture:strobe"])
-        XCTAssertTrue(playImportedFixture("Strobe"), "the fixture plays: \(probe("presetFlashProbe"))")
+        launchProbed(visual: "projectM", settings: ["settings.reduceFlashing": false], extra: ["-uitestImportPreset", "fixture:flicker"])
+        XCTAssertTrue(playImportedFixture("Flicker"), "the fixture plays: \(probe("presetFlashProbe"))")
         _ = wait(8) { !self.controls.exists }
         pause(1)   // the blend from the launch preset is over, as for the calm fixture
         let strobeStart = clampedCount()
@@ -303,6 +319,12 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
     /// cue 1 active without a cue start, so the playhead does not count down and Play (already "playing", Hold off) has
     /// nothing to resume, while the test's tap on it paused. A scrub seeks into cue 1, which starts the playhead
     /// (SHOW-007-R2), as a person scrubbing before playing does.
+    /// 2026-11-19 (pass 3, D2 and D3): "ticks 75 bars 75" is the R2 density bound, not a missing beat: 300 beats over a
+    /// ~726 pt track are 2.4 pt apart (< 4 pt), so only bars are drawn (stride 4, a line every 2 s). The expected stride
+    /// is now derived from the track's width as `BeatGrid.stride` does. The readout redraws twice a second, so a beat's
+    /// change is seen up to one redraw late; D3 saw alternate beats 0.23 s late (intervals 0.73/0.29, bars every 2.02 s,
+    /// 18 beats in 9 s). The beat cadence is now the slope of the readout's beat count over time (a least-squares fit
+    /// over every sample), which a late redraw does not bend; the per-interval median is still reported.
     func testSHOW010BeatGridTicks() {
         let task = "SHOW-010-T12"
         launchPlain(["-uitestShowSeed", "-uitestShowTimelineSeed", "-uitestKeepControls", "-uitestTapInterval", "500",
@@ -325,9 +347,14 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
         let tickCount = parts.count == 4 ? Double(parts[1]) ?? 0 : 0, barCount = parts.count == 4 ? Double(parts[3]) ?? 0 : 0
         let scrub = element("showTimelineScrub")
         XCTAssertTrue(appears(scrub, 3), "the timeline scrub bar")
+        // R2: the drawing stride for 300 beats over the track (thumb inset 14 pt each side): 1, else 4, 8, 16 … until the
+        // drawn ticks are at least 4 pt apart (BeatGrid.stride).
+        let usable = max(Double(scrub.frame.width) - 28, 1)
+        var stride = 1.0
+        while usable * 0.5 * stride / 150 < 4 { stride = stride < 4 ? 4 : stride * 2 }
         dragSlider(scrub, from: 0, to: 0.05)   // one seek to about 0:07, inside cue 1
-        // Beats over the 150 s timeline: the ticks, or the ticks plus the bar lines when bars are drawn separately.
-        let spacing = [150 / max(tickCount, 1), 150 / max(tickCount + barCount, 1)].min { abs($0 - 0.5) < abs($1 - 0.5) } ?? 0
+        // Seconds between drawn ticks over the 150 s timeline, per beat of the drawing stride.
+        let spacing = 150 / max(tickCount, 1) / stride
         let play = app.buttons["showTimelinePlay"]
         func position(_ text: String) -> (bar: Int, beat: Int)? {
             guard let r = text.range(of: #"bar [0-9]+ beat [0-9]+"#, options: .regularExpression) else { return nil }
@@ -342,24 +369,39 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
         }()
         if !moved, play.exists { play.tap() }   // start the timeline
         var beatTimes: [Double] = [], barTimes: [Double] = []
+        var samples: [(t: Double, beat: Double)] = []   // the readout's absolute beat (bar × 4 + beat) over time
         var last = position(value(readout))
         let t0 = Date()
         while Date().timeIntervalSince(t0) < 9 {
             pause(0.1)
             guard let now = position(value(readout)) else { continue }
             let t = Date().timeIntervalSince(t0)
+            samples.append((t, Double(now.bar * 4 + now.beat)))
             if let l = last, now.bar != l.bar || now.beat != l.beat { beatTimes.append(t) }
             if let l = last, now.bar != l.bar { barTimes.append(t) }
             last = now
         }
         let beatIntervals = zip(beatTimes, beatTimes.dropFirst()).map { $1 - $0 }
         let barIntervals = zip(barTimes, barTimes.dropFirst()).map { $1 - $0 }
-        report(task, "grid", ["ticks": tickCount, "bars": barCount, "tickSpacing": spacing,
+        // Least-squares slope of beat count over time: beats per second.
+        let n = Double(samples.count)
+        let mt = samples.reduce(0) { $0 + $1.t } / max(n, 1), mb = samples.reduce(0) { $0 + $1.beat } / max(n, 1)
+        let sxx = samples.reduce(0) { $0 + ($1.t - mt) * ($1.t - mt) }
+        let sxy = samples.reduce(0) { $0 + ($1.t - mt) * ($1.beat - mb) }
+        let beatsPerSecond = sxx > 0 ? sxy / sxx : 0
+        let beatPeriod = beatsPerSecond > 0 ? 1 / beatsPerSecond : 0
+        report(task, "grid", ["ticks": tickCount, "bars": barCount, "stride": stride, "trackWidth": usable + 28,
+                              "tickSpacing": spacing, "beatPeriodFit": beatPeriod,
                               "beatMedian": Self.median(beatIntervals), "barMedian": Self.median(barIntervals),
                               "beats": Double(beatTimes.count), "barChanges": Double(barTimes.count)])
-        XCTAssertEqual(spacing, 0.5, accuracy: 0.02, "\(task): a tick every 0.5 s (\(ticks))")
+        XCTAssertEqual(spacing, 0.5, accuracy: 0.02, "\(task): a tick every 0.5 s per beat of stride \(stride) (\(ticks))")
+        if stride >= 4 {
+            XCTAssertEqual(barCount, tickCount, "\(task): only bars are drawn at stride \(stride) (\(ticks))")
+        } else {
+            XCTAssertEqual(barCount, tickCount / 4, accuracy: 1, "\(task): every fourth tick is a bar (\(ticks))")
+        }
         XCTAssertGreaterThanOrEqual(beatTimes.count, 12, "\(task): the readout counts beats while the show plays")
-        XCTAssertEqual(Self.median(beatIntervals), 0.5, accuracy: 0.05, "\(task): a beat every 0.5 s \(beatIntervals)")
+        XCTAssertEqual(beatPeriod, 0.5, accuracy: 0.025, "\(task): a beat every 0.5 s (fit over \(samples.count) samples; intervals \(beatIntervals))")
         XCTAssertEqual(Self.median(barIntervals), 2.0, accuracy: 0.15, "\(task): a bar every 2 s \(barIntervals)")
     }
 

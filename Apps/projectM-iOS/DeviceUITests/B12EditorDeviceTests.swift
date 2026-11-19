@@ -116,8 +116,11 @@ final class B12EditorDeviceTests: B07DeviceCase {
         XCTAssertTrue(up.contains(", "), "\(task): it lands on a named snap: \(up)")
         // D2 and D3 (2026-11-18): the decrement 0.5 s after the increment left "480 points, Wide". Let the new width
         // settle as a VoiceOver user's next swipe would, and keep the probe's answer (which element it stepped).
+        // Pass 3 (2026-11-19) left it at 480 again, but the answer read was the increment's: both probe buttons shared
+        // one answer, so the decrement's tap was never confirmed. Each button now numbers its own answers
+        // ("performed #1 on …") and `accessibilityStep` waits for this tap's.
         pause(1)
-        XCTAssertTrue(accessibilityStep("splitEditorDivider", up: false))
+        XCTAssertTrue(accessibilityStep("splitEditorDivider", up: false), "\(task): the decrement probe answered this tap")
         let answer = value(app.buttons["splitEditorDivider.uitestDecrement"])
         XCTAssertTrue(wait(3) { self.value(divider) == start },
                       "\(task): a decrement steps back: \(value(divider)) (from \(start); probe: \(answer))")

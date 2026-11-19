@@ -53,6 +53,10 @@ no human interaction); each answer is the safer option. ADR-0011 records the env
 
 - Q: FX-019-T23 saw the launch's first preset clamped (D1 0.50, D3 0.90) and the strobing fixture never "recently" clamped (recentMin 1.000) on D1-D3; is the envelope wrong? → A: No. The ordinary preset was third-party content the always-on cap may clamp (R7); the device test's ordinary preset is now ACC-002's calm fixture (`-uitestImportPreset fixture:calm`). The DEBUG probe read every sixth frame, always the same phase of the fixture's 2-frame gamma strobe; it reads every seventh now (coprime to strobe periods of 2-6 frames), and the test counts clamps after the fixture starts.
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: FX-019-T23 pass 3 (D2, D3) still read recentMin 1.000 for the strobing fixture, with no clamp after it started (clampedSinceStart 0 in 18 s; the run's 3 and 11 clamps were the launch preset's); is the envelope wrong? → A: No. ACC-002's Strobe fixture strobes hard only on bass above 1.2, and its frame-rate gamma pump on a dark scene (mean luma 0.09) stays under WCAG's 0.1 relative-luminance step, so nothing in it was a flash to clamp. The device test now plays `fixture:flicker` ("Flicker": the whole frame inverts two frames in four, 15 Hz at 60 fps, whatever the music does); the Strobe fixture stays as it is for ACC-002 and ACC-012, whose Standard reading must stay near gain 1.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Strobing content is held within the limits (Priority: P1)

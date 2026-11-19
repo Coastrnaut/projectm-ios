@@ -53,6 +53,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: Where are the camera choice and Mirror offered: in Settings only, or also in the visualizer's controls? → A: In Settings only, in a "Camera" section shown while Camera is the chosen visual (CAM-002-R1). The visualizer keeps CAM-012's badge with Stop camera; a quick switch in the controls can come with CMP-015 or CAM-003 (lens selection), which also add camera controls.
 - Q: How long may the fallback last after a camera switch before the user is told something is wrong? → A: The badge stays "starting" until the new camera delivers; if it does not start, the usual unavailable or "paused by the system" notice appears (CAM-002-R7). No extra timer: the camera's own failure reports end the wait, and the device stage measures the switch time on D1-D3 (CAM-002-S7).
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: CAM-002-T22 read "frame=none video=none" for the saved frame and the recording on D3; were they not written? → A: Unknown from the run: the grid probe's refresh button kept its launch value after the tap, so its tap never reached it (the focus probe beside it behaved the same, CAM-005-T14). The probe now refreshes by itself when a new file appears in the DEBUG folders, reports the folders' file counts (`files=<frames>/<recordings>`), and its buttons sit top-leading where other DEBUG panels take taps; the test waits for counts above those read before the label's frame and recording.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The front camera behind the music, mirrored like a mirror (Priority: P1)

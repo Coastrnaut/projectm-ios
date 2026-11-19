@@ -111,7 +111,54 @@ struct UITestCameraDeviceProbes: View {
     @State private var refreshes = 0
     @State private var focusAction = "none"
 
+    /// The newest file names and counts the grid was last computed for (the automatic refresh's signature).
+    @State private var gridSignature = ""
+
     var body: some View {
+        ZStack(alignment: .topLeading) {
+            readouts
+            // The buttons sit top-leading, where the other DEBUG panels take taps: at the bottom-leading corner the
+            // taps on "grid" and "focus" never reached them on D2 and D3 (pass 3, 2026-11-19: both kept their launch
+            // values after a synthesized tap). The grid also refreshes by itself when a new file appears.
+            HStack(spacing: 2) {
+                button("grid", id: "cameraOrientationGridRefresh") { refreshGrid() }
+                button("focus", id: "cameraFocusCentreAction") { focusAction = Self.performFocusAtCentre() }
+                    .accessibilityValue(focusAction)
+            }
+            .padding(.top, 280)
+            .padding(.leading, 4)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .onAppear { UITestCaptureSessionLog.shared.install() }
+        .task { await refreshGridOnNewFiles() }
+    }
+
+    /// `n=<refreshes>` tells the test this refresh's answer from the launch value "frame=none video=none" (D2
+    /// 2026-11-18: the test read the old value at once and found no picture); `files=<frames>/<recordings>` says how
+    /// many files the folders hold, so the test knows the grids are of the files it just made.
+    private func refreshGrid() {
+        refreshes += 1
+        let count = refreshes
+        grid = "pending"
+        Task {
+            let files: String = Self.fileCounts()
+            grid = await Self.orientationGrids() + " n=\(count) files=\(files)"
+        }
+    }
+
+    /// Recomputes the grids whenever the newest saved frame or recording changes (checked every second).
+    private func refreshGridOnNewFiles() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(1))
+            let signature: String = Self.folderSignature()
+            if signature != gridSignature, !signature.isEmpty {
+                gridSignature = signature
+                refreshGrid()
+            }
+        }
+    }
+
+    private var readouts: some View {
         VStack(alignment: .leading, spacing: 2) {
             Spacer()
             TimelineView(.periodic(from: .now, by: 0.25)) { _ in
@@ -129,23 +176,11 @@ struct UITestCameraDeviceProbes: View {
                 .allowsHitTesting(false)
                 .accessibilityIdentifier("cameraOrientationGrid")
                 .accessibilityValue(grid)
-            HStack(spacing: 2) {
-                button("grid", id: "cameraOrientationGridRefresh") {
-                    // `n=<refreshes>` tells the test this refresh's answer from the launch value "frame=none video=none"
-                    // (D2 2026-11-18: the test read the old value at once and found no picture).
-                    refreshes += 1
-                    let count = refreshes
-                    grid = "pending"
-                    Task { grid = await Self.orientationGrids() + " n=\(count)" }
-                }
-                button("focus", id: "cameraFocusCentreAction") { focusAction = Self.performFocusAtCentre() }
-                    .accessibilityValue(focusAction)
-            }
         }
         .padding(.leading, 4)
         .padding(.bottom, 30)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
-        .onAppear { UITestCaptureSessionLog.shared.install() }
+        .allowsHitTesting(false)
     }
 
     private var state: String {
@@ -191,6 +226,24 @@ struct UITestCameraDeviceProbes: View {
             }
         }
         return "frame=\(frame) video=\(video)"
+    }
+
+    /// "<frames>/<recordings>": the files in the DEBUG capture and recording folders.
+    static func fileCounts() -> String {
+        func count(_ directory: URL?) -> Int {
+            guard let directory else { return 0 }
+            return ((try? FileManager.default.contentsOfDirectory(atPath: directory.path)) ?? []).count
+        }
+        return "\(count(FrameCaptureCoordinator.debugDirectoryFromArguments()))/"
+            + "\(count(VideoRecordingCoordinator.debugDirectoryFromArguments()))"
+    }
+
+    /// The newest file of each folder and the counts ("" while both folders are empty).
+    static func folderSignature() -> String {
+        let frame: String = FrameCaptureCoordinator.debugDirectoryFromArguments().flatMap(newest(in:))?.lastPathComponent ?? ""
+        let video: String = VideoRecordingCoordinator.debugDirectoryFromArguments().flatMap(newest(in:))?.lastPathComponent ?? ""
+        if frame.isEmpty, video.isEmpty { return "" }
+        return frame + "|" + video + "|" + fileCounts()
     }
 
     private static func newest(in directory: URL) -> URL? {

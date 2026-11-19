@@ -99,6 +99,10 @@ Four questions, each answered by Claude with the recommended option (owner rule 
   device evidence); the output pass's GPU time with and without the tone map is measured on the Mac and
   recorded, and the device frame rate is checked in the last stage (FX-002-S6). Applied to FX-002-R9, S7.
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: FX-002-T18 on D2 read a 10.6° hue difference for the brightest glow pixels (the overall shift was 3.1°); does the glow shift hue where it clips? → A: The comparison was biased: the bright glow pixels were compared with every coloured pixel without the glow, but a luma cut above 0.85 selects the spectrum's light hues (yellow, cyan) whatever the glow does. They are now compared with the same cut without the glow (its brightest fifth when fewer than 20 pixels pass 0.85); the 10° limit is unchanged.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bright layers look right, never broken (Priority: P1)

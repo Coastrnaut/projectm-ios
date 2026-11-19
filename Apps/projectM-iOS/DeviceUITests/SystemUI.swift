@@ -499,16 +499,34 @@ final class SystemUI {
 
     /// In the open switcher, flicks the app's card up: the user's force quit. Waits until the app has ended, then
     /// goes to the Home Screen. Returns whether the app ended.
+    /// 2026-11-19 (pass 3, D2 and D3): the card was found, but a press-then-drag to the top (750 pt/s, 0.8 s long) left
+    /// the app running on both iPads: iPadOS takes a slow drag as moving the card and lets it settle back. The card
+    /// is now flicked (a short, fast swipe up), up to three times, each followed by a check that the app ended.
     @discardableResult
     func forceQuitFromSwitcher() -> Bool {
         _ = wait(3) { self.appSwitcherCard.exists }
-        let card = appSwitcherCard
-        print("SYSTEM-UI switcher card: \(card.exists ? "\(card.elementType.rawValue) \(card.identifier) \(card.frame)" : "none")")
-        let from = card.exists && card.frame.height > 0 ? card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-            : springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let to = springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02))
-        from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .fast, thenHoldForDuration: 0)
-        let ended = wait(8) { self.app.state == .notRunning }
+        var ended = false
+        for attempt in 0..<3 where !ended {
+            let card = appSwitcherCard
+            print("SYSTEM-UI switcher card (flick \(attempt + 1)): "
+                  + (card.exists ? "\(card.elementType.rawValue) \(card.identifier) \(card.frame)" : "none"))
+            if card.exists, card.frame.height > 0 {
+                if attempt == 0 {
+                    card.swipeUp(velocity: XCUIGestureVelocity(rawValue: 3000))
+                } else {
+                    // A flick from the card's lower part: a tiny press, then a fast short drag well past its top.
+                    let from = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.7))
+                    let to = card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -0.6))
+                    from.press(forDuration: 0.01, thenDragTo: to, withVelocity: XCUIGestureVelocity(rawValue: 4000),
+                               thenHoldForDuration: 0)
+                }
+            } else {
+                let from = springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55))
+                let to = springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+                from.press(forDuration: 0.01, thenDragTo: to, withVelocity: XCUIGestureVelocity(rawValue: 4000), thenHoldForDuration: 0)
+            }
+            ended = wait(4) { self.app.state == .notRunning }
+        }
         XCUIDevice.shared.press(.home)
         return ended
     }

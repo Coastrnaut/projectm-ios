@@ -351,18 +351,31 @@ extension B06CameraDeviceTests {
         pause(2)
     }
 
-    /// The app's grids of the newest saved frame and recording (`cameraOrientationGrid`).
-    private func savedGrids(_ label: String) -> (frame: [Double], video: [Double]) {
+    private var orientationGridValue: String { (app.staticTexts["cameraOrientationGrid"].value as? String) ?? "" }
+
+    /// The probe's file counts ("files=<frames>/<recordings>"); (0, 0) before its first refresh.
+    private func savedFileCounts() -> (frames: Int, videos: Int) {
+        guard let part = orientationGridValue.split(separator: " ").first(where: { $0.hasPrefix("files=") }) else { return (0, 0) }
+        let n = part.dropFirst(6).split(separator: "/").map { Int($0) ?? 0 }
+        return n.count == 2 ? (n[0], n[1]) : (0, 0)
+    }
+
+    /// The app's grids of the newest saved frame and recording (`cameraOrientationGrid`), once the folders hold more
+    /// files than `before` (the counts read before this label's frame and recording were made).
+    /// Pass 3 (2026-11-19, D3): the refresh button's tap never reached it (the grid kept its launch value
+    /// "frame=none video=none"); the probe now refreshes by itself when a new file appears (and its button moved
+    /// top-leading), and reports the folders' file counts.
+    private func savedGrids(_ label: String, after before: (frames: Int, videos: Int)) -> (frame: [Double], video: [Double]) {
         waitControlsHidden()
-        let value = { (self.app.staticTexts["cameraOrientationGrid"].value as? String) ?? "" }
-        func refreshes() -> Int {
-            Int(value().split(separator: " ").first { $0.hasPrefix("n=") }?.dropFirst(2) ?? "") ?? 0
-        }
-        let before = refreshes()
-        app.buttons["cameraOrientationGridRefresh"].tap()
-        // This refresh's answer (`n=` counts refreshes): the launch value "frame=none video=none" also starts with
-        // "frame=" and was read at once on D2 (2026-11-18), so both pictures looked unreadable.
-        XCTAssertTrue(wait(20) { value().hasPrefix("frame=") && refreshes() > before }, "\(label): the grids: \(value())")
+        let value = { self.orientationGridValue }
+        let button = app.buttons["cameraOrientationGridRefresh"]
+        print("CAM002-GRID-BUTTON \(label) exists=\(button.exists) hittable=\(button.exists && button.isHittable) frame=\(button.frame)")
+        if button.exists, button.isHittable { button.tap() }
+        XCTAssertTrue(wait(20) {
+            let counts = self.savedFileCounts()
+            return value().hasPrefix("frame=") && !value().contains("none") && counts.frames > before.frames
+                && counts.videos > before.videos
+        }, "\(label): the grids of the new frame and recording: \(value()) (before \(before))")
         var frame: [Double] = [], video: [Double] = []
         for part in value().split(separator: " ") {
             if part.hasPrefix("frame=") { frame = CameraGrid.grid(hex: String(part.dropFirst(6))) }
@@ -396,9 +409,10 @@ extension B06CameraDeviceTests {
             if label == "mirror on" { flipMirror(); pause(1) }
             waitControlsHidden()
             let (shown, _) = cameraScreenGrid(task, "\(label) before saving")
+            let before = savedFileCounts()
             saveFramePNG(label)
             recordCamera(seconds: 3, label)
-            let saved = savedGrids(label)
+            let saved = savedGrids(label, after: before)
             for (name, grid) in [("saved frame", saved.frame), ("recording", saved.video)] {
                 XCTAssertFalse(grid.isEmpty, "\(label) \(name): a readable picture")
                 let same = CameraGrid.correlation(grid, shown, mask)
@@ -536,6 +550,9 @@ extension B06CameraDeviceTests {
         _ = focusAfterDoubleTap(0.35, 0.4, "off centre")
         waitControlsHidden()
         let action = app.buttons["cameraFocusCentreAction"]
+        // Pass 3 (2026-11-19, D3): the tap never reached the button at the bottom-leading corner (its value stayed
+        // "none"); it sits top-leading now. Its frame and hit state are logged for the next run.
+        print("CAM005-FOCUS-BUTTON exists=\(action.exists) hittable=\(action.exists && action.isHittable) frame=\(action.frame)")
         action.tap()
         XCTAssertTrue(wait(3) { (action.value as? String) == "performed" }, "the custom action was found: \(String(describing: action.value))")
         XCTAssertTrue(wait(4) { abs((self.focus?.x ?? 0) - 0.5) < 0.03 && abs((self.focus?.y ?? 0) - 0.5) < 0.03 },

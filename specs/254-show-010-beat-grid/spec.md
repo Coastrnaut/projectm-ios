@@ -53,11 +53,16 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 
 - Consistency pass: R1 → T02, T03; R2 → T02, T03, T05; R3 → T02, T03; R4 → T04, T06; R5 → T05, T06, T07; R6 → T07, T08, T09; R7 → T03, T10. S1, S2 → T03; S3 → T03, T06; S4 → T09. No constitution conflict (no network, no storage, public APIs, ShowControl stays Foundation-only).
 - Fix applied: S3's 0.01-point tolerance was not named in the tasks; T03 and T06 now assert it.
- & Testing *(mandatory)*
 
 ### Session 2026-11-18 (QA-011 device run)
 
 - Q: SHOW-010-T12 read "ticks 0 bars 0" and a readout that never moved on D1-D3; is the grid missing? → A: No. The probe was read once before the row's twice-a-second redraw laid out the ticks (it is polled now, as ShowBeatGridUITests does). The show seed makes cue 1 active without a cue start, so the playhead is idle and Play (already "playing") had nothing to resume; the device test scrubs into cue 1 first (a seek starts the playhead, SHOW-007-R2).
+
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: SHOW-010-T12 pass 3 read "ticks 75 bars 75" (a tick every 2 s, not 0.5 s) on D2 and D3, and on D3 beats alternating 0.73 and 0.29 s apart; is the grid or the tempo wrong? → A: No. 300 beats over the ~726 pt track are 2.4 pt apart, under the 4 pt minimum (R2), so only bars are drawn (stride 4) — the bound working. The test now derives the stride from the track's width as `BeatGrid.stride` does. The tempo was right: 18 beat changes in 9 s and bars every 2.02 s on D3 (D2: beat median 0.54 s, bars 2.05 s). The readout redraws twice a second, so a change is seen up to one redraw late, and on D3 every other beat was seen 0.23 s late; the beat cadence is now the slope of the readout's beat count over time (least squares over every sample, 0.5 s ± 5 %), which a late redraw does not bend. Why every other redraw ran late on D3 is not known (the test's own accessibility queries on the main thread are a candidate).
+
+## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the beats on the show timeline (Priority: P1) — MVP
 

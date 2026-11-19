@@ -135,10 +135,13 @@ struct UITestAccessibilityEscapeButton: View {
     }
 }
 
-/// The two probe buttons beside an accessible slider.
+/// The two probe buttons beside an accessible slider. Each button keeps its own answer, numbered per tap
+/// ("performed #2 on …"): with one shared answer a decrement read the increment's earlier "performed", and a tap that
+/// never arrived looked done (UIX-007-T13, pass 3 2026-11-19).
 struct UITestAccessibilityActionButtons: View {
     let identifier: String
-    @State private var result = ""
+    @State private var results: [ParameterStepDirection: String] = [:]
+    @State private var taps: [ParameterStepDirection: Int] = [:]
 
     var body: some View {
         HStack(spacing: 2) {
@@ -150,13 +153,16 @@ struct UITestAccessibilityActionButtons: View {
     private func probe(_ direction: ParameterStepDirection, suffix: String, symbol: String) -> some View {
         let id: String = identifier + suffix
         return Button {
-            result = UITestAccessibilityActionProbe.perform(direction, on: identifier)
+            let n: Int = (taps[direction] ?? 0) + 1
+            taps[direction] = n
+            let answer: String = UITestAccessibilityActionProbe.perform(direction, on: identifier)
+            results[direction] = answer.hasPrefix("performed ") ? "performed #\(n) " + String(answer.dropFirst("performed ".count)) : answer
         } label: {
             Image(systemName: symbol).font(.system(size: 9)).frame(width: 18, height: 18)
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(id)
-        .accessibilityValue(result)
+        .accessibilityValue(results[direction] ?? "")
         .accessibilityIdentifier(id)
     }
 }

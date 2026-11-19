@@ -78,6 +78,10 @@ local-first option.
 
 - Q: SHD-006-T14 read the same Laplacian variance (0.0167-0.0170) for 3 and 6 octaves on D1-D3; does Detail not add detail? → A: It does: inside the preview image 6 octaves raise it 2.5× (D2 screenshots). The accessibility element is the full-width row, so the grid included the light background and measured the image's edges; the device test samples the centred square inset by 4 pt.
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: SHD-006-T14 pass 3 read 0.02273 for 6 octaves against 0.02275 for 3, the same on D2 and D3; does the metric resolve octaves? → A: Not in that grid: the inset square still crossed the image's edge, which dominates the Laplacian (Randomize seed steps through a fixed sequence, so both iPads drew the same picture). Inside the image, D3's own screenshots give 0.000018 for 3 octaves and 0.000045 for 6 (2 pt grid, 2.5×). The grid is now the central half of the square.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shape a procedural noise texture and see it at once (Priority: P1)

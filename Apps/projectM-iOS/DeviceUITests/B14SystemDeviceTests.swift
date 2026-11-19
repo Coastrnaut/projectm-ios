@@ -24,6 +24,8 @@ final class B14SystemDeviceTests: DeviceAcceptanceCase {
     // MARK: Helpers
 
     private func value(_ id: String) -> String { (app.staticTexts[id].value as? String) ?? "" }
+    /// RenderPlaceholder.note.
+    private static let placeholderNote = "Visual unavailable"
     private var area: XCUIElement { app.otherElements["visualizerTapArea"].firstMatch }
     private var controls: XCUIElement { app.otherElements["controls"] }
 
@@ -92,11 +94,15 @@ final class B14SystemDeviceTests: DeviceAcceptanceCase {
 
     /// Grayscale and Increase Contrast on (quickstart D1 step 1), then steps 2, 3, 5 and 6: every status keeps its
     /// words and its symbol state; the badges use the opaque Increase Contrast background (the probe).
+    /// 2026-11-19 (pass 3, D3): the step 6 audit ran while the controls faded out (they were hidden in the audit's
+    /// screenshot) and reported the PERF-014 placeholder "Visual unavailable" behind the live visual plus three
+    /// findings without an element. The controls stay up now (`-uitestKeepControls`, as VoiceOver keeps them), and the
+    /// placeholder is filtered with the reason the simulator audits give (AccessibilityScreensUITests, "controls").
     func testACC003GrayscaleIncreaseContrast() throws {
         let task = "ACC-003-T17"
         system.toggleAccessibility(.grayscale, on: true)
         system.toggleAccessibility(.increaseContrast, on: true)
-        launch(visual: "circularSpectrum", extra: ["-uitestAppearance", "dark"])
+        launch(visual: "circularSpectrum", extra: ["-uitestAppearance", "dark", "-uitestKeepControls"])
         XCTAssertTrue(wait(5) { self.value("statusAppearanceProbe").hasPrefix("contrast:increased") },
                       "the app sees Increase Contrast: \(value("statusAppearanceProbe"))")
         XCTAssertTrue(wait(5) { self.value("overlaySurfaceProbe") == "scrim:1.00" }, "opaque overlays (ACC-008-R6)")
@@ -142,7 +148,10 @@ final class B14SystemDeviceTests: DeviceAcceptanceCase {
 
         // Step 6: the controls and badges with Increase Contrast pass the contrast audit.
         showControls()
+        // The PERF-014 placeholder: caught while fading (opacity < 1) or hidden behind the live visual; at full opacity
+        // its grey 0.55 on black is about 6:1 (the simulator audits' documented filter).
         let issues = auditIssues(app, "acc003 controls", types: [.contrast])
+            .filter { !$0.contains("label=\"\(Self.placeholderNote)\"") }
         report(task, "contrast audit", ["issues": Double(issues.count)])
         XCTAssertTrue(issues.isEmpty, issues.joined(separator: "\n"))
     }

@@ -164,8 +164,9 @@ class B07DeviceCase: DeviceAcceptanceCase {
     func accessibilityStep(_ id: String, up: Bool) -> Bool {
         let button = app.buttons[id + (up ? ".uitestIncrement" : ".uitestDecrement")]
         guard appears(button, 5), button.isHittable || reveal(button) else { return false }
+        let before = value(button)   // each probe button numbers its taps: this tap's answer differs from the last
         button.tap()
-        return wait(3) { self.value(button).hasPrefix("performed") }
+        return wait(3) { self.value(button) != before && self.value(button).hasPrefix("performed") }
     }
 
     /// Luma (0…1) of a screen rectangle (window points), sampled every `step` points.

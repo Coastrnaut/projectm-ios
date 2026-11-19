@@ -107,6 +107,10 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   composites keep VIS-001's default; extending it is a follow-up (UIX-011's palette editing). Applied to
   ACC-003-R13.
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: ACC-003-T17's contrast audit on D3 flagged "Visual unavailable" and three findings without an element; do the controls fail Increase Contrast? → A: The audit ran while the controls faded out (they were hidden in its screenshot), which is when the fading text and the PERF-014 placeholder behind the live visual are caught. The device test now keeps the controls up (`-uitestKeepControls`, as VoiceOver does) and filters the placeholder with the simulator audits' documented reason (its grey 0.55 on black is about 6:1 at full opacity); findings without an element still fail.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I can tell every status apart without colour (Priority: P1)

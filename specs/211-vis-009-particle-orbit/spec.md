@@ -47,6 +47,10 @@ centre, y up.
 - Q: What does the beat-reactive centre do, and what changes under Reduce Motion? → A: VIS-006's `BeatRingTrigger` (confident ANL-005 beats, the ANL-007 kick as fallback) queues a beat (queue of 16, excess dropped and counted); the pulse p is set to 1 at the first step starting at or after it and decays as exp(−t / 0.2 s). The centre is a square of side 0.12 R × (1 + A·p), A = 0.5, alpha 0.7. Reduce Motion (ACC-001, applied at once): angular speeds × 0.5, A = 0.2, radius τ = 0.15 s and rate 1.5 R/s. Rejected: moving the centre on beats (whole-picture motion, a Reduce Motion concern); stopping the orbit (VIS-009-R5, R9).
 - Q: How are drawing and the frame budget made checkable without wall-clock tests? → A: Particles are flat squares of side max(0.022 R, 2 px), palette colour (k mod 16) of 16, alpha 0.75 (below ACC-012's 0.8). The budget is a fixed work bound: at 60 frames per second each frame runs exactly 4 steps over at most 256 particles (≤ 1,024 particle steps) and tessellates at most 257 squares (≤ 1,542 vertices), counted by the simulation and layout and asserted by a test over 600 frames with storage addresses unchanged; an XCTest `measure` baseline is reported, never asserted. Frame rate on D1 is a `{device}` task read from the PERF-001/007 overlay. One setting, Radius (Small/Medium/Large). Rejected: a wall-clock assertion (flaky); a particle-count slider (more keys, more GPU risk) (VIS-009-R6, R7).
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: VIS-009-T10 on D2 counted 15 skipped slots for Particle Orbit against the Mandala's 7 in 60 s (allowance 5 or 20 %); does the Orbit drop more frames? → A: Not measurably: skipped slots are rare independent events (D2: 7 and 15 of 3,600 slots, both 60 fps median; D3: 6 and 6), and 15 − 7 is within two standard deviations of the difference of two Poisson counts (√22 ≈ 4.7). The allowance is now 3·√(Mandala + Orbit), at least 5 slots: a real regression (say 100 against 7, allowance 31) still fails.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Bass-driven orbit (Priority: P1)

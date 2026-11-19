@@ -77,6 +77,10 @@ human interaction); each answer is the conservative, local-first option.
 - Q: Where are the clock's controls? → A: A "Clock" section in Settings' media sections, after the
   Logo section (both are overlays on the compositor visuals).
 
+### Session 2026-11-19 (QA-011 device run)
+
+- Q: ClockLayerTests.testTicksWithinAMinuteRasterizeAndRenderOnce counted 120 frames shown instead of 119 in CI; does a minute boundary or the wall clock leak in? → A: No, the clock was already fixed. The first rasterization started inside the first frame's `prepare`, on a background queue, so whether that same frame showed it depended on that queue beating `render` (a slow runner let it). The test now prepares the picture size with no text, waits for the clock's rasterization, then counts frames, so the count is deterministic.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Show the time over the visual (Priority: P1)
