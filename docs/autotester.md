@@ -606,6 +606,20 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     by identifier and drag its line (`dragRowSlider`), as UITestSliders does (MED-006 stayed at the default 5 s).
   - A test whose Photos seed did not add every fixture (prompt still up, fixtures missing) stops at once
     (`waitLibrarySeed` returns false): run `mac_device_driver.py prompt-flow` first on a fresh install.
+- **Camera and media tests on the iPads, pass 4 (2026-11-19):**
+  - XCUITest cannot read the iPad's Control Center camera pill ("kAXErrorServerNotFound" for the remote element):
+    `SystemUI.controlCenterGreenPillVisible` counts system-green rows in the screenshot's top right instead (camera
+    in use: 31-53 rows; recently used, grey pill: 0; pass at 8).
+  - After a return from the background, wait for "Active audio" in the performance overlay before any pixel check: D2
+    drew its first frame about 1 s later than D3 (CAM-011).
+  - A `keep: true` permission change must drop earlier restore steps for that permission; otherwise teardown queries a
+    backgrounded Settings app and times out (CAM-013).
+  - A synthesized tap on a DEBUG probe button was lost on the device every time (CAM-005): trigger the probe with a
+    Darwin notification posted by the test (`CFNotificationCenterGetDarwinNotifyCenter`), and keep the tap as a fallback.
+  - Closing Settings leaves the controls up for 5 s, covering the iPad's corners and the middle: hide them
+    (`B07Case.hideControlsForShot()`) before measuring a screenshot, and leave out the Emergency Blackout button.
+  - Seed the media a feature test needs (`-uitestSeedVideo`, `-uitestSeedPhoto`, `-uitestSeedLogo`) instead of picking
+    it, so a picker failure fails only the picker tests.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 - **Batch 7 on D1-D3 (2026-11-18), what the first run taught:**
