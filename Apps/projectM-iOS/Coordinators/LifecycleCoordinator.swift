@@ -16,6 +16,8 @@
 // The inactive scene phase is not an event here: the app is still visible. CaptureManager receives
 // every event exactly as before.
 import CaptureKit
+import Diagnostics
+import os
 import PresentationLifecycle
 
 /// What the coordinator needs from the visualization (AppCoordinator; a fake in tests).
@@ -44,12 +46,29 @@ final class LifecycleCoordinator {
         self.manager = manager
         self.visualization = visualization
         self.presentation = presentation
+        // QA-011 2026-11-19: each resource's suspend and resume is timed, so a device log names a
+        // resource that holds the main thread at a background or foreground transition.
+        presentation.onResourceCall = { (name: String, suspend: Bool, duration: Duration) -> Void in
+            DiagnosticsLog.presentationResourceCall(name, suspend: suspend, milliseconds: Self.milliseconds(duration))
+        }
+    }
+
+    private static func milliseconds(_ duration: Duration) -> Double {
+        Double(duration.components.seconds) * 1000 + Double(duration.components.attoseconds) / 1e15
     }
 
     func visualizationStarted() { visualizing = true }
     func visualizationEnded() { visualizing = false }
 
     func handle(_ event: AppLifecycleEvent) async {
+        // QA-011 2026-11-19: the whole handling is an interval with its duration in the log (a
+        // return from the background held the main thread for good on D2 and D3).
+        let interval = DiagnosticsLog.beginLifecycleEvent()
+        let start = ContinuousClock.now
+        defer {
+            DiagnosticsLog.endLifecycleEvent(interval, event: event.rawValue,
+                                             milliseconds: Self.milliseconds(ContinuousClock.now - start))
+        }
         let couldPresent = availability.canPresent
         let canPresent = availability.apply(Self.signal(for: event))
         if couldPresent, !canPresent {

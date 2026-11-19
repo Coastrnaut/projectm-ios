@@ -143,6 +143,7 @@ final class PresetWarmUpMemoryTests: XCTestCase {
         let release = cache.releaseForMemoryPressure(.warning)
         XCTAssertEqual(release.items, 1)
         XCTAssertTrue(release.bytesEstimated)
+        XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90), "the stopped thread ends (no wait in the release, QA-011)")
         XCTAssertFalse(prewarmer.isRunning, "S3: no thread")
         XCTAssertFalse(prewarmer.hasGraphicsContext, "S3: context, engine and target destroyed")
         XCTAssertEqual(prewarmer.warmedCount, 1, "the warmed record is kept")

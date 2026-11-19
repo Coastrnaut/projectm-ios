@@ -278,4 +278,24 @@ final class PresentationResourceRegistryTests: XCTestCase {
         XCTAssertEqual(snapshot.map(\.name), ["loop", "warm-up"])
         XCTAssertEqual(snapshot.map(\.suspended), [true, true])
     }
+
+    /// QA-011 2026-11-19: each resource call of a sweep is reported with its name, direction and
+    /// duration, so a device log names the resource that held a transition.
+    func testReportsEachResourceCallWithItsDuration() {
+        let resources = make("loop", "warm-up")
+        resources[1].onSuspend = { Thread.sleep(forTimeInterval: 0.05) }
+        var calls: [(String, Bool, Duration)] = []
+        registry.onResourceCall = { calls.append(($0, $1, $2)) }
+        registry.setCanPresent(false)
+        XCTAssertEqual(calls.map(\.0), ["warm-up", "loop"])
+        XCTAssertEqual(calls.map(\.1), [true, true])
+        XCTAssertGreaterThanOrEqual(calls[0].2, .milliseconds(45), "the slow suspend is measured")
+        XCTAssertLessThan(calls[1].2, .milliseconds(45))
+        calls = []
+        registry.setCanPresent(true)
+        XCTAssertEqual(calls.map(\.0), ["loop", "warm-up"])
+        XCTAssertEqual(calls.map(\.1), [false, false])
+        registry.setCanPresent(true)
+        XCTAssertEqual(calls.count, 2, "a repeated signal reports nothing")
+    }
 }

@@ -6,15 +6,16 @@
 // * A request starts after `delay`, once the visible switch's blend is over (warming during the
 //   blend cost D1 a third of its frame rate, 2026-11-10). A newer request replaces an older one.
 // * It is a presentation-bound resource. While the app cannot present frames (background, device
-//   lock) nothing is warmed: a request waiting for its delay is cancelled, the worker is stopped
-//   and has released its thread, context, engine and render target when suspension returns, and
-//   new requests are only remembered. On resume the most recent request is issued again with the
-//   normal delay; the worker skips presets it already warmed.
+//   lock) nothing is warmed: a request waiting for its delay is cancelled, the worker is asked to
+//   stop (it ends at its next safe point and releases its thread, context, engine and render target
+//   by itself; suspension never waits for it, QA-011 2026-11-19), and new requests are only
+//   remembered. On resume the most recent request is issued again with the normal delay; the
+//   worker skips presets it already warmed.
 // * PERF-006 (memory pressure): two recovery steps. The cache step "preset warm-up context" cancels a
-//   request waiting for its delay and stops the worker, which then holds no thread, context, engine
-//   or target; the most recent request and the warmed presets are kept, and the next request starts
-//   the worker again. The optional step "preset warm-up" does the same and then holds new requests
-//   (remembering the newest) until the cool-down ends; the restore issues the newest with the normal
+//   request waiting for its delay and stops the worker, which then releases its thread, context,
+//   engine and target (without a wait); the most recent request and the warmed presets are kept,
+//   and the next request starts the worker again. The optional step "preset warm-up" does the
+//   same and then holds new requests (remembering the newest) until the cool-down ends; the restore issues the newest with the normal
 //   delay, unless presentation is suspended (then the PERF-011 resume issues it). The two states are
 //   independent: a presentation resume during a shed schedules nothing.
 import Foundation
@@ -87,7 +88,7 @@ final class PresetWarmUpController: PresentationBoundResource {
         isSuspended = true
         pending?.cancel()
         pending = nil
-        worker.stop()   // waits: no warm-up work runs once this returns
+        worker.stop()   // never waits (QA-011): the thread ends at its next safe point
     }
 
     func resumeForPresentation() {
@@ -108,8 +109,8 @@ final class PresetWarmUpController: PresentationBoundResource {
         MemoryStep(controller: self, tier: .cache), MemoryStep(controller: self, tier: .optional),
     ]
 
-    /// Cancels a waiting request and stops the worker (its thread, context, engine and target are
-    /// gone when this returns). Keeps the last request and the warmed presets.
+    /// Cancels a waiting request and stops the worker (its thread then releases its context, engine
+    /// and target; this does not wait). Keeps the last request and the warmed presets.
     func releaseForMemoryPressure() -> MemoryPressureRelease {
         let held = worker.holdsGraphicsResources
         pending?.cancel()

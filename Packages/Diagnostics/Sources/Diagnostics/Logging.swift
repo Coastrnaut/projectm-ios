@@ -48,6 +48,45 @@ public enum DiagnosticsLog {
         app.info("presentation \(summary, privacy: .private)")
     }
 
+    /// QA-011 2026-11-19: one presentation-bound resource's suspend or resume call took `milliseconds`
+    /// on the main thread. Every call is a Points of Interest event; a call of 100 ms or more is also
+    /// an app log error, so a device log shows which resource held a background or foreground return.
+    public static func presentationResourceCall(_ name: String, suspend: Bool, milliseconds: Double) {
+        assertNotRealtime()
+        let summary = presentationResourceSummary(name, suspend: suspend, milliseconds: milliseconds)
+        signposter.emitEvent("Presentation resource", "\(summary, privacy: .private)")
+        if milliseconds >= slowMainThreadMilliseconds {
+            app.error("slow presentation resource \(summary, privacy: .private)")
+        }
+    }
+
+    /// From this duration a lifecycle event or resource call is logged as slow (QA-011).
+    public static let slowMainThreadMilliseconds = 100.0
+
+    /// For example "suspend preset warm-up 1.2 ms".
+    static func presentationResourceSummary(_ name: String, suspend: Bool, milliseconds: Double) -> String {
+        "\(suspend ? "suspend" : "resume") \(name) \((milliseconds * 10).rounded() / 10) ms"
+    }
+
+    /// QA-011 2026-11-19: an app lifecycle event (background, foreground, lock, unlock) as handled on
+    /// the main thread, from its arrival to the end of its handling: a Points of Interest interval, and
+    /// an app log line with its duration (an error from 100 ms), so the next device run shows how
+    /// long a return from the background held the main thread.
+    public static func beginLifecycleEvent() -> OSSignpostIntervalState {
+        signposter.beginInterval("Lifecycle event")
+    }
+
+    public static func endLifecycleEvent(_ state: OSSignpostIntervalState, event: String, milliseconds: Double) {
+        assertNotRealtime()
+        let summary = "\(event) \((milliseconds * 10).rounded() / 10) ms"
+        signposter.endInterval("Lifecycle event", state, "\(summary, privacy: .private)")
+        if milliseconds >= slowMainThreadMilliseconds {
+            app.error("slow lifecycle event \(summary, privacy: .private)")
+        } else {
+            app.info("lifecycle event \(summary, privacy: .private)")
+        }
+    }
+
     /// For example "unavailable active 2 -> 0 of 2".
     static func presentationSummary(canPresent: Bool, registered: Int, activeBefore: Int, activeAfter: Int) -> String {
         "\(canPresent ? "available" : "unavailable") active \(activeBefore) -> \(activeAfter) of \(registered)"

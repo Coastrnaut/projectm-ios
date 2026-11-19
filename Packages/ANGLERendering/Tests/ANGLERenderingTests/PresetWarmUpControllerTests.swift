@@ -1,6 +1,7 @@
 // PERF-011-T08, T15: the preset warm-up while the app cannot present frames (PERF-011-R7, R8).
 // The controller is tested with a fake worker (deterministic), and the real PresetPrewarmer on an
-// EGL display: after a stop it has no thread and no context, and it warms again afterwards.
+// EGL display: a stop never waits (QA-011 2026-11-19: the main thread waited for good on device);
+// once the thread has ended it has no context, and it warms again afterwards.
 import XCTest
 import PresentationLifecycle
 import Rendering
@@ -184,6 +185,7 @@ final class PresetWarmUpControllerTests: XCTestCase {
         XCTAssertTrue(prewarmer.hasGraphicsContext)
 
         prewarmer.stop()
+        XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90), "the stopped thread ends")
         XCTAssertFalse(prewarmer.isRunning, "S2: no thread")
         XCTAssertFalse(prewarmer.hasGraphicsContext, "S2: context, engine and target destroyed")
         XCTAssertEqual(prewarmer.queuedCount, 0)
@@ -193,6 +195,7 @@ final class PresetWarmUpControllerTests: XCTestCase {
         XCTAssertEqual(prewarmer.warmedCount, 2, "a new thread warms the preset that was not warmed yet")
         XCTAssertTrue(prewarmer.isWarmed("tests/200-wave.milk"))
         prewarmer.stop()
+        XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90))
         XCTAssertFalse(prewarmer.isRunning)
     }
 
@@ -202,13 +205,14 @@ final class PresetWarmUpControllerTests: XCTestCase {
         let files = ["100-square.milk", "101-per_frame.milk", "110-per_pixel.milk", "200-wave.milk"]
         prewarmer.request(files.map(preset), texturePaths: [])
         prewarmer.stop()   // at once: at most the preset in progress finishes or is abandoned
+        XCTAssertEqual(prewarmer.queuedCount, 0)
+        XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90))
         XCTAssertFalse(prewarmer.isRunning)
         XCTAssertFalse(prewarmer.hasGraphicsContext)
-        XCTAssertEqual(prewarmer.queuedCount, 0)
         let warmed = prewarmer.warmedCount
         XCTAssertLessThan(warmed, files.count, "the queue was dropped")
         try await Task.sleep(for: .milliseconds(300))
-        XCTAssertEqual(prewarmer.warmedCount, warmed, "no work after stop returned")
+        XCTAssertEqual(prewarmer.warmedCount, warmed, "no work after the thread ended")
     }
 
     func testRepeatedStopAndRestart() async throws {
@@ -218,6 +222,7 @@ final class PresetWarmUpControllerTests: XCTestCase {
             prewarmer.request([preset("100-square.milk")], texturePaths: [])
             if round.isMultiple(of: 2) { try await waitUntil { prewarmer.warmedCount == 1 } }
             prewarmer.stop()
+            XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90), "round \(round)")
             XCTAssertFalse(prewarmer.isRunning, "round \(round)")
             XCTAssertFalse(prewarmer.hasGraphicsContext, "round \(round)")
         }
@@ -234,6 +239,7 @@ final class PresetWarmUpControllerTests: XCTestCase {
         XCTAssertEqual(renderer.prewarmedCount, 1)
 
         renderer.warmUp.suspendForPresentationLoss()
+        XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90))
         XCTAssertFalse(prewarmer.isRunning)
         XCTAssertFalse(prewarmer.hasGraphicsContext)
         renderer.prewarm([preset("200-wave.milk")])   // requested in the background
@@ -245,4 +251,46 @@ final class PresetWarmUpControllerTests: XCTestCase {
         try await waitUntil { renderer.prewarmedCount == 2 }
         XCTAssertEqual(renderer.prewarmedCount, 2, "the request made while suspended is warmed after resume")
     }
+
+    /// QA-011 device run 2026-11-19 (D2, D3): an engine call that began before the app went to the
+    /// background did not return (ANGLE waited in `-[MTLCommandBuffer waitUntilCompleted]`), and the
+    /// suspension waited for it on the main thread for good. A stop and a suspension now return at
+    /// once while the thread is inside such a call; a request made meanwhile is warmed after it ends.
+    func testStopAndSuspendReturnAtOnceWhileAnEngineCallDoesNotReturn() async throws {
+        let renderer = try ANGLERenderer.make()
+        renderer.prewarmDelay = .zero
+        let prewarmer = try realPrewarmer(renderer)
+        let entered = DispatchSemaphore(value: 0), release = DispatchSemaphore(value: 0)
+        let once = OnceFlag()
+        prewarmer.afterLoadForTesting = {
+            guard once.first() else { return }
+            entered.signal()
+            release.wait()   // the blocked engine call
+        }
+        prewarmer.request([preset("100-square.milk")], texturePaths: [])
+        XCTAssertEqual(entered.wait(timeout: .now() + 90), .success, "the thread is inside the call")
+
+        let start = ContinuousClock.now
+        renderer.warmUp.suspendForPresentationLoss()
+        prewarmer.stop()
+        XCTAssertLessThan(ContinuousClock.now - start, .milliseconds(200), "neither waits for the thread")
+        XCTAssertTrue(prewarmer.isRunning, "the blocked thread still exists")
+        renderer.warmUp.resumeForPresentation()
+        prewarmer.request([preset("200-wave.milk")], texturePaths: [])   // while the old thread is ending
+
+        release.signal()
+        try await waitUntil { prewarmer.isWarmed("tests/200-wave.milk") }
+        XCTAssertTrue(prewarmer.isWarmed("tests/200-wave.milk"), "the request made during the stop is warmed")
+        XCTAssertFalse(prewarmer.isWarmed("tests/100-square.milk"), "the interrupted preset is not recorded")
+        XCTAssertEqual(prewarmer.threadStarts, 2, "one new thread after the stopped one ended")
+        prewarmer.stop()
+        XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90))
+        prewarmer.afterLoadForTesting = nil
+    }
+}
+
+private final class OnceFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var done = false
+    func first() -> Bool { lock.withLock { defer { done = true }; return !done } }
 }

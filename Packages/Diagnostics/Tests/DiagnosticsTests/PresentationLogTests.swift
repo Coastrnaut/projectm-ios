@@ -15,5 +15,15 @@ final class PresentationLogTests: XCTestCase {
         DiagnosticsLog.presentationTransition(canPresent: false, registered: 2, activeBefore: 2, activeAfter: 0)
         DiagnosticsLog.presentationTransition(canPresent: true, registered: 2, activeBefore: 0, activeAfter: 2)
     }
+
+    func testPresentationResourceSummaryNamesTheCallAndItsDuration() {
+        XCTAssertEqual(DiagnosticsLog.presentationResourceSummary("preset warm-up", suspend: true, milliseconds: 1.234),
+                       "suspend preset warm-up 1.2 ms")
+        XCTAssertEqual(DiagnosticsLog.presentationResourceSummary("ANGLE frame loop and surface", suspend: false, milliseconds: 250),
+                       "resume ANGLE frame loop and surface 250.0 ms")
+        DiagnosticsLog.presentationResourceCall("preset warm-up", suspend: true, milliseconds: 150)   // logs, no crash
+        let state = DiagnosticsLog.beginLifecycleEvent()
+        DiagnosticsLog.endLifecycleEvent(state, event: "foreground", milliseconds: 3)
+    }
 }
 #endif
