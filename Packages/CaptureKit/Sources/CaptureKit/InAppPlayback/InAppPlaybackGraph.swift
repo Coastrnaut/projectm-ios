@@ -13,9 +13,23 @@
 // Playing (AUD-006):
 // * A track is scheduled as a segment from a start frame. The position is that start frame plus
 //   the player's own time since `play()`, in the track's sample rate.
-// * `loops` true (one track in the play order): two passes are kept queued; each time the player
-//   has consumed one, another is queued, so the track repeats without a gap and the position
-//   wraps. `loops` false: one segment to the end, then `onTrackEnded`.
+// * The schedule is a timeline of track frames that starts at the start frame and counts on
+//   across passes (pass k covers `k·length …< (k+1)·length`, pass 0 from the start frame); the
+//   track frame is the timeline modulo the length. `endTimeline` is where the schedule ends: the
+//   end of the current pass when the track does not loop, none when it loops.
+// * Two player nodes run in lockstep (QA-011, 2026-11-19): `player` plays the even passes and is
+//   the clock for the position, `partner` plays the odd passes. The partner is started at the
+//   player's anchor (`startPlayers()`), so their timelines agree; pass k ≥ 1 is scheduled at its own player time
+//   (`k·length − start frame`), sample-exactly after pass k − 1 on the other node. At most two
+//   passes are queued; when one has been rendered (`.dataRendered`) the one after the next is
+//   queued, so each queued pass has a whole pass as lead time. Each node reads its own file handle.
+// * `loops` false: one pass to the end, then `onTrackEnded`. `loops` true: passes keep coming, so
+//   the track repeats without a gap and the position wraps.
+// * A change of looping while playing stops nothing (QA-011: a stop and restart left up to 50 ms
+//   of silence on device D3). Looping on: the next pass is queued on the other node. Looping off:
+//   the end becomes the end of the pass being played; a next pass already queued is on the other
+//   node and has not started, so that node is muted (its volume is 0 until the next schedule) and
+//   nothing of it is heard. The pass being played is never touched.
 // * Every jump (seek, track change, resume after pause) is a hard cut, `cut()`: stop the player,
 //   close the tap gate, replace the mixer tap, discard everything downstream that was not
 //   delivered yet (`PCMSink.discardBufferedAudio()`), then schedule from the new frame. After a
@@ -153,6 +167,8 @@ final class InAppPlaybackGraph {
 
     private let engine = AVAudioEngine()
     private let player = AVAudioPlayerNode()
+    /// QA-011: the odd passes of a looping track, in lockstep with `player` (file header).
+    private let partner = AVAudioPlayerNode()
     /// AUD-010: after the tapped main mixer, before the output. Only what is heard passes it.
     private let balanceNode = AVAudioMixerNode()
     private var content: Content
@@ -178,21 +194,28 @@ final class InAppPlaybackGraph {
     /// The player's time at the last successful read in the current schedule, in track frames
     /// since the schedule's start. Used with the tap's count when the player's time cannot be read.
     private var lastReadElapsed: AVAudioFramePosition?
-    /// Track frames rendered since the last cut by schedules that `updateLooping` replaced.
-    private var deliveredBeforeSchedule: AVAudioFramePosition = 0
     /// The sample rate of the installed tap (the mixer's output), for the tap's frame count.
     private var tapSampleRate: Double = 0
-    /// Whether the current schedule loops (`loops` at the time it was made).
+    /// Whether the current schedule loops (`loops` when it was made, or as `updateLooping` set it).
     private var scheduledLoops = true
-    /// Passes queued in the current schedule (loop): picks the file handle and the first frame.
-    private var passCount = 0
+    /// The schedule's timeline (file header): the start of the next pass to queue, the start of the
+    /// last pass queued, where the schedule ends (nil: it loops), and the end of the last pass that
+    /// was rendered.
+    private var nextTimeline: AVAudioFramePosition = 0
+    private var lastQueuedTimeline: AVAudioFramePosition = 0
+    private var endTimeline: AVAudioFramePosition?
+    private var renderedTimeline: AVAudioFramePosition = 0
+    /// Passes queued in the current schedule and not rendered yet (at most two).
+    private var pendingPasses = 0
     /// How many times content was handed to the player (tests: the loop, and its end after stop).
     private(set) var scheduleCount = 0
+    /// How many times the players were stopped (tests: a change of looping does not stop them).
+    private(set) var playerStopCount = 0
     private(set) var isRunning = false
 
     /// True: the track repeats without a gap and never ends. False: the track plays to its end
     /// once and `onTrackEnded` is called. Takes effect at the next cut (start, seek, resume,
-    /// replace); the transport sets it before those.
+    /// replace); the transport sets it before those, or calls `updateLooping` while playing.
     var loops = true
     /// Called on the main actor when a track that does not loop has been rendered to its end, or
     /// when playback is asked to continue from the end. Never called after `stop()`, nor for a
@@ -207,6 +230,7 @@ final class InAppPlaybackGraph {
     init(content: Content) {
         self.content = content
         engine.attach(player)
+        engine.attach(partner)
     }
 
     // MARK: - Position
@@ -220,8 +244,7 @@ final class InAppPlaybackGraph {
     var positionFrame: AVAudioFramePosition {
         if let heldFrame { return heldFrame }
         guard isRunning else { return 0 }
-        return PlaybackPositionMath.frame(start: startFrame, elapsed: elapsedFrames(), length: content.length,
-                                          loops: scheduledLoops)
+        return PlaybackPositionMath.frame(timeline: startFrame + elapsedFrames(), end: endTimeline, length: content.length)
     }
 
     /// Track frames rendered since the current schedule started (not wrapped).
@@ -241,12 +264,10 @@ final class InAppPlaybackGraph {
     }
 
     /// The frames the tap delivered since the current schedule started, in the track's sample rate:
-    /// the tap's count since the last cut, less what earlier schedules without a cut rendered
-    /// (AUD-003 `updateLooping`). At most one tap block behind the audio heard.
+    /// the tap's count since the last cut. At most one tap block behind the audio heard.
     private var deliveredTrackFrames: AVAudioFramePosition {
         guard tapSampleRate > 0 else { return 0 }
-        let delivered = AVAudioFramePosition((Double(gate.deliveredFrames) * content.sampleRate / tapSampleRate).rounded(.down))
-        return max(0, delivered - deliveredBeforeSchedule)
+        return max(0, AVAudioFramePosition((Double(gate.deliveredFrames) * content.sampleRate / tapSampleRate).rounded(.down)))
     }
 
     // MARK: - Setup
@@ -254,6 +275,7 @@ final class InAppPlaybackGraph {
     /// Connects the player and taps the app's own mix into `sink`. Call once, before `start()`.
     func installTap(into sink: PCMSink) throws {
         engine.connect(player, to: engine.mainMixerNode, format: content.format)
+        engine.connect(partner, to: engine.mainMixerNode, format: content.format)
         insertBalanceNode()   // AUD-010: after the mixer whose output is tapped below
         guard AudioFormat(asbd: engine.mainMixerNode.outputFormat(forBus: 0).streamDescription.pointee) != nil else {
             throw SourceError(.inAppPlaybackFailed)
@@ -372,7 +394,7 @@ final class InAppPlaybackGraph {
             tapInstalled = false
         }
         gate.close()
-        player.stop()
+        stopPlayer()
         engine.stop()
         isRunning = false
         heldFrame = nil
@@ -384,7 +406,7 @@ final class InAppPlaybackGraph {
         guard isRunning, heldFrame == nil else { return }
         let frame = positionFrame
         generation += 1
-        player.stop()
+        stopPlayer()
         heldFrame = frame
         engine.pause()
     }
@@ -400,7 +422,7 @@ final class InAppPlaybackGraph {
             cut()
             schedule(from: frame, play: true)
         } else if !atEnd {
-            player.play()
+            startPlayers()
         }
     }
 
@@ -427,12 +449,14 @@ final class InAppPlaybackGraph {
     func replace(content newContent: Content) throws {
         guard isRunning else { throw SourceError(.inAppPlaybackFailed) }
         generation += 1
-        player.stop()
+        stopPlayer()
         let formatChanged = newContent.format != content.format
         content = newContent
         if formatChanged {
-            engine.disconnectNodeOutput(player)
-            engine.connect(player, to: engine.mainMixerNode, format: newContent.format)
+            for node in [player, partner] {
+                engine.disconnectNodeOutput(node)
+                engine.connect(node, to: engine.mainMixerNode, format: newContent.format)
+            }
         }
         silenced = false
         // After a track that played to its end, its tail (up to one tap block, 100 ms) is still on
@@ -452,20 +476,32 @@ final class InAppPlaybackGraph {
         }
     }
 
-    /// AUD-003: the play order changed whether this track is alone in it. Takes effect now and keeps
-    /// the position: when playing, the player is re-queued at the frame it has reached, with the new
-    /// mode, so a lone track that loops plays on to its end once (and the reverse). This is not a cut:
-    /// the tap, the gate and everything downstream stay, nothing is discarded. Held (paused, an
-    /// interruption), at the end or silenced, only the flag changes; the next cut applies it.
+    /// AUD-003, AUD-004: the play order changed whether this track repeats. Takes effect now and
+    /// keeps the position, without stopping a player (QA-011, 2026-11-19: a stop and restart was
+    /// up to 50 ms of silence on device): looping on queues the next pass; looping off ends the
+    /// schedule at the end of the pass being played and mutes a next pass already queued (file
+    /// header). This is not a cut: the tap, the gate and everything downstream stay, nothing is
+    /// discarded. Held (paused, an interruption), at the end or silenced, only the flag changes;
+    /// the next cut applies it.
     func updateLooping(_ newValue: Bool) {
         loops = newValue
-        guard isRunning, heldFrame == nil, !atEnd, !silenced, scheduledLoops != newValue else { return }
-        let elapsed = elapsedFrames()
-        let frame = PlaybackPositionMath.frame(start: startFrame, elapsed: elapsed, length: content.length, loops: scheduledLoops)
-        deliveredBeforeSchedule += elapsed
-        generation += 1                            // the old schedule's completions are ignored
-        player.stop()
-        schedule(from: frame, play: true)
+        guard isRunning, heldFrame == nil, !atEnd, !silenced, !playedToEnd, scheduledLoops != newValue else { return }
+        scheduledLoops = newValue
+        if newValue {
+            endTimeline = nil
+            player.volume = 1
+            partner.volume = 1
+            queuePasses()
+        } else {
+            // The end of the pass being played. A pass that ends exactly where the position was read
+            // may already have been rendered; then the pass after it is the one being played.
+            let reached = max(startFrame + elapsedFrames(), renderedTimeline)
+            let end = PlaybackPositionMath.passEnd(after: reached, length: content.length)
+            endTimeline = end
+            if nextTimeline > end {
+                node(forPass: lastQueuedTimeline).volume = 0   // queued, not started: never heard
+            }
+        }
     }
 
     /// Stops the current track for good (the track that should replace it could not be loaded):
@@ -487,11 +523,10 @@ final class InAppPlaybackGraph {
     /// The hard cut (file header): after it, nothing rendered or queued before reaches the sink.
     private func cut() {
         generation += 1
-        player.stop()
+        stopPlayer()
         playedToEnd = false
         deliveredAtEnd = nil
         let token = gate.close()
-        deliveredBeforeSchedule = 0
         guard let sink else { return }
         if tapInstalled {
             engine.mainMixerNode.removeTap(onBus: 0)
@@ -501,26 +536,75 @@ final class InAppPlaybackGraph {
         installGatedTap(token: token)
     }
 
+    private func stopPlayer() {
+        playerStopCount += 1
+        player.stop()
+        partner.stop()
+    }
+
+    /// Starts both nodes on one timeline (file header). `play()` blocks for about one render cycle,
+    /// so two plain `play()` calls are a cycle apart in real time (measured on the Mac Studio
+    /// 2026-11-19: 300 of 300 starts 512 frames apart). The partner is therefore started at the
+    /// player's own anchor, the node time of its player time 0, which is readable as soon as
+    /// `play()` returns (100 of 100 starts, every one sample-exact). Offline, renders happen only
+    /// on the caller's thread, so two `play()` calls are in lockstep; that is also the fallback.
+    private func startPlayers() {
+        player.play()
+        if !engine.isInManualRenderingMode, let anchor = playerAnchor() {
+            partner.play(at: anchor)
+        } else {
+            partner.play()
+        }
+    }
+
+    /// The node time of the player's time 0, or nil while it cannot be read.
+    private func playerAnchor() -> AVAudioTime? {
+        guard engine.isRunning, player.isPlaying, let nodeTime = player.lastRenderTime, nodeTime.isSampleTimeValid,
+              let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid,
+              let anchor = player.nodeTime(forPlayerTime: AVAudioTime(sampleTime: 0, atRate: playerTime.sampleRate)),
+              anchor.isSampleTimeValid else { return nil }
+        return AVAudioTime(sampleTime: anchor.sampleTime, atRate: anchor.sampleRate)
+    }
+
+    /// The partner's player time less the player's, at the same node time; 0 when it cannot be
+    /// read. 0 after `startPlayers()`; a later pass on the partner is queued with it, so a start
+    /// that could not be anchored is corrected from the next odd pass on.
+    private func partnerOffset() -> AVAudioFramePosition {
+        guard engine.isRunning, player.isPlaying, partner.isPlaying, let nodeTime = player.lastRenderTime,
+              nodeTime.isSampleTimeValid,
+              let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.isSampleTimeValid,
+              let partnerTime = partner.playerTime(forNodeTime: nodeTime), partnerTime.isSampleTimeValid else { return 0 }
+        return partnerTime.sampleTime - playerTime.sampleTime
+    }
+
+    /// The node that plays the pass starting at `timeline`: even passes `player`, odd `partner`.
+    private func node(forPass timeline: AVAudioFramePosition) -> AVAudioPlayerNode {
+        (timeline / max(1, content.length)).isMultiple(of: 2) ? player : partner
+    }
+
     /// Queues the track from `frame` in the current generation and, if `play`, starts the player.
     private func schedule(from frame: AVAudioFramePosition, play: Bool) {
         playedToEnd = false
         deliveredAtEnd = nil
         lastReadElapsed = nil
         startFrame = normalized(frame)
-        passCount = 0
         atEnd = false
         scheduledLoops = loops
+        nextTimeline = startFrame
+        renderedTimeline = startFrame
+        endTimeline = loops ? nil : content.length
+        lastQueuedTimeline = startFrame
+        pendingPasses = 0
+        player.volume = 1
+        partner.volume = 1
         if silenced {
             atEnd = true
             return
         }
-        if loops {
-            scheduleNextPass()
-            scheduleNextPass()
-        } else if startFrame < content.length {
-            scheduleToEnd()
-        } else {
+        if !loops && startFrame >= content.length {
             atEnd = true
+        } else {
+            queuePasses()
         }
         guard play else { return }
         if atEnd {
@@ -528,52 +612,57 @@ final class InAppPlaybackGraph {
             let scheduled = generation
             Task { @MainActor [weak self] in self?.trackRendered(scheduled) }
         } else {
-            player.play()
+            startPlayers()
         }
     }
 
-    /// Queues one more pass of a looping track: the first from the start frame, the others whole,
-    /// alternating between the two file handles.
-    private func scheduleNextPass() {
-        let from = passCount == 0 ? startFrame : 0
-        let pass = passCount
-        passCount += 1
-        scheduleCount += 1
-        let scheduled = generation
-        let consumed: @Sendable (AVAudioPlayerNodeCompletionCallbackType) -> Void = { [weak self] _ in
-            // On the player's completion queue: hand over to the main actor and return at once.
-            Task { @MainActor [weak self] in self?.passConsumed(scheduled) }
-        }
-        switch content.storage {
-        case .file(let first, let second):
-            player.scheduleSegment(pass.isMultiple(of: 2) ? first : second, startingFrame: from, frameCount: frameCount(from: from),
-                                   at: nil, completionCallbackType: .dataConsumed, completionHandler: consumed)
-        case .buffer(let buffer):
-            guard let part = ToneContent.tail(of: buffer, from: from) else { return }
-            player.scheduleBuffer(part, at: nil, options: [], completionCallbackType: .dataConsumed, completionHandler: consumed)
+    /// Queues passes until two are pending, up to the schedule's end (file header).
+    private func queuePasses() {
+        guard content.length > 0 else { return }
+        while pendingPasses < 2 {
+            let from = nextTimeline
+            if let endTimeline, from >= endTimeline { return }
+            queuePass(from: from, to: PlaybackPositionMath.passEnd(after: from, length: content.length))
         }
     }
 
-    private func passConsumed(_ scheduled: Int) {
-        guard scheduled == generation, isRunning, heldFrame == nil, scheduledLoops else { return }
-        scheduleNextPass()
-    }
-
-    /// Queues a track that does not loop from the start frame to its end. `.dataRendered` is the
-    /// completion that also arrives in offline rendering (research AUD-006-D5).
-    private func scheduleToEnd() {
+    /// Queues the pass covering timeline frames `from..<to` on its node: pass 0 as soon as the
+    /// nodes play, a later pass at its own player time. `.dataRendered` is the completion that also
+    /// arrives in offline rendering (research AUD-006-D5).
+    private func queuePass(from: AVAudioFramePosition, to: AVAudioFramePosition) {
+        let first = from % content.length
+        let count = AVAudioFrameCount(min(to - from, AVAudioFramePosition(UInt32.max)))
+        let node = node(forPass: from)
+        let offset = node === partner ? partnerOffset() : 0
+        let when = from == startFrame ? nil : AVAudioTime(sampleTime: from - startFrame + offset, atRate: content.sampleRate)
+        lastQueuedTimeline = from
+        nextTimeline = to
+        pendingPasses += 1
         scheduleCount += 1
         let scheduled = generation
         let rendered: @Sendable (AVAudioPlayerNodeCompletionCallbackType) -> Void = { [weak self] _ in
-            Task { @MainActor [weak self] in self?.trackRendered(scheduled) }
+            // On the player's completion queue: hand over to the main actor and return at once.
+            Task { @MainActor [weak self] in self?.passRendered(scheduled, end: to) }
         }
         switch content.storage {
-        case .file(let first, _):
-            player.scheduleSegment(first, startingFrame: startFrame, frameCount: frameCount(from: startFrame), at: nil,
-                                   completionCallbackType: .dataRendered, completionHandler: rendered)
+        case .file(let firstFile, let secondFile):
+            node.scheduleSegment(node === player ? firstFile : secondFile, startingFrame: first, frameCount: count,
+                                 at: when, completionCallbackType: .dataRendered, completionHandler: rendered)
         case .buffer(let buffer):
-            guard let part = ToneContent.tail(of: buffer, from: startFrame) else { return }
-            player.scheduleBuffer(part, at: nil, options: [], completionCallbackType: .dataRendered, completionHandler: rendered)
+            guard let part = ToneContent.tail(of: buffer, from: first) else { return }
+            node.scheduleBuffer(part, at: when, options: [], completionCallbackType: .dataRendered, completionHandler: rendered)
+        }
+    }
+
+    private func passRendered(_ scheduled: Int, end: AVAudioFramePosition) {
+        // After the end only a muted pass can still be rendered: it was never heard and ends nothing.
+        guard scheduled == generation, isRunning, heldFrame == nil, !playedToEnd else { return }
+        pendingPasses = max(0, pendingPasses - 1)
+        renderedTimeline = max(renderedTimeline, end)
+        if let endTimeline, end >= endTimeline {
+            trackRendered(generation)
+        } else {
+            queuePasses()
         }
     }
 
@@ -593,10 +682,6 @@ final class InAppPlaybackGraph {
     var hasDeliveredTrackEnd: Bool {
         guard playedToEnd, let mark = deliveredAtEnd, tapSampleRate > 0, heldFrame == nil, isRunning else { return true }
         return gate.deliveredFrames >= mark + Int64((tapSampleRate * Self.tapBlockSeconds).rounded(.up))
-    }
-
-    private func frameCount(from frame: AVAudioFramePosition) -> AVAudioFrameCount {
-        AVAudioFrameCount(min(max(0, content.length - frame), AVAudioFramePosition(UInt32.max)))
     }
 
     private func warmUp(_ format: AVAudioFormat) {
