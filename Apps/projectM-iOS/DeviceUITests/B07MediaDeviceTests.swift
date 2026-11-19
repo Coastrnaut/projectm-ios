@@ -254,6 +254,64 @@ class B07Case: ControlSurfaceCase {
         guard wait(3, { elapsed.exists }) else { return nil }
         return Self.clock(elapsed.label) ?? Self.clock(elapsed.value as? String ?? "")
     }
+
+    // MARK: Screenshots without the controls
+
+    /// Hides the controls before a screenshot statistic. Closing Settings leaves the controls up for 5 s, and on an
+    /// iPad portrait screen they cover the lower half, `stillRegion` and both bottom corners (and show the status bar
+    /// in the top corners): QA-011 pass 4 (D2, D3 2026-11-19) MED-007's first Ken Burns and Reduce Motion pictures and
+    /// every MED-010 corner were taken with them up (nonBlack 0.81 against 0.997 without; the "dark fringe" was the
+    /// controls' text on their black panel).
+    func hideControlsForShot() {
+        let controls = app.otherElements["controls"]
+        let area = app.otherElements["visualizerTapArea"].firstMatch
+        if controls.exists, area.exists { area.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
+        if !wait(2, { !controls.exists }) { _ = wait(7) { !controls.exists } }   // else their own 5 s timeout
+        XCTAssertFalse(controls.exists, "the controls are hidden for the screenshot")
+        pause(0.6)   // their fade-out
+    }
+
+    // MARK: ACC-005 slider rows
+
+    /// An ACC-005 slider row by identifier, any element type (its frame is the whole row).
+    func sliderRow(_ id: String) -> XCUIElement { app.descendants(matching: .any)[id].firstMatch }
+
+    /// Scrolls until the row lies on screen below the navigation bar: frames only, since an ACC-005 row reports
+    /// `isHittable` false even when it is fully on screen (B07DeviceCase.reveal, 2026-11-18).
+    @discardableResult
+    func revealRow(_ e: XCUIElement, swipes: Int = 12) -> Bool {
+        let window = app.windows.firstMatch
+        func visible() -> Bool {
+            guard e.exists else { return false }
+            let f = e.frame, bar = app.navigationBars.firstMatch
+            let top: CGFloat = bar.exists ? bar.frame.maxY : window.frame.minY
+            return f.height > 0 && f.minY >= top && f.maxY <= window.frame.maxY
+        }
+        let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
+        var up = false
+        for i in 0..<swipes {
+            if visible() { return true }
+            if e.exists { up = e.frame.minY < window.frame.midY } else if i == swipes / 2 { up = true }
+            if up { list.swipeDown(velocity: .slow) } else { list.swipeUp(velocity: .slow) }
+        }
+        return visible()
+    }
+
+    /// Drags an ACC-005 slider row's thumb from `current` to `target` (0…1), as UITestSliders' `dragSlider`: the line
+    /// runs 27 pt above the row's bottom, 34 pt in from each side; 0 and 1 overshoot onto the end stops.
+    func dragRow(_ e: XCUIElement, from current: CGFloat, to target: CGFloat) {
+        let rect: CGRect = e.frame
+        let width: CGFloat = max(rect.width, 1)
+        let y: CGFloat = rect.height > 50 ? rect.height - 27 : rect.height / 2
+        let left: CGFloat = rect.height > 50 ? 34 : 14
+        let track: CGFloat = max(width - 2 * left, 1)
+        func x(_ p: CGFloat) -> CGFloat { left + min(max(p, 0), 1) * track }
+        let origin = e.coordinate(withNormalizedOffset: .zero)
+        let endX: CGFloat = target <= 0 ? -10 : (target >= 1 ? width + 10 : x(target))
+        origin.withOffset(CGVector(dx: x(current), dy: y))
+            .press(forDuration: 0.05, thenDragTo: origin.withOffset(CGVector(dx: endX, dy: y)), withVelocity: .slow,
+                   thenHoldForDuration: 0.1)
+    }
 }
 
 @MainActor
@@ -406,14 +464,15 @@ final class B07MediaDeviceTests: B07Case {
         assertDrawingAndMoving(task, "H.264 after relaunch")
     }
 
-    // MARK: MED-003 loop region, MED-004 speed (the Mac's 10 s H.264 1080p clip, picked in Files)
+    // MARK: MED-003 loop region, MED-004 speed (the Mac's 10 s H.264 1080p clip)
 
+    /// The Mac's 10 s H.264 1080p clip, imported at launch through the picked-file path (`-uitestSeedVideo h264-1080p`:
+    /// Documents/video-h264-1080p.mp4, else a counter of that shape). Picking it in Files is MED-002-T26's check; here a
+    /// failed pick hid the loop sliders and the Speed menu (they show only with a stored video), so MED-003 and
+    /// MED-004 measured nothing of their own (QA-011 pass 3 and 4, D2 and D3, 2026-11-19).
     private func pickTenSecondClip(_ task: String) {
-        launch(visual: "video", extra: ["-uitestSettingsSection", "video"])
-        pickFromFiles("chooseVideoFromFiles", "video-h264-1080p.mp4")
-        _ = settledSummary("videoSummary", timeout: 90)
-        closeSettingsPanel()
-        XCTAssertTrue(wait(30) { self.videoValue == "Video 1920 × 1080" }, "\(task): the picked clip plays: \(videoValue)")
+        launch(visual: "video", extra: ["-uitestSeedVideo", "h264-1080p", "-uitestSettingsSection", "video"])
+        XCTAssertTrue(wait(60) { self.videoValue == "Video 1920 × 1080" }, "\(task): the 1080p clip plays: \(videoValue)")
     }
 
     /// "<in ms>-<out ms>" → seconds.
@@ -447,10 +506,11 @@ final class B07MediaDeviceTests: B07Case {
         let task = "MED-003-T20"
         pickTenSecondClip(task)
         openSettingsPanel()
-        let loopIn = app.sliders["videoLoopIn"].firstMatch, loopOut = app.sliders["videoLoopOut"].firstMatch
-        XCTAssertTrue(scrollTo(loopIn) && scrollTo(loopOut), "\(task): the loop sliders")
-        loopIn.adjust(toNormalizedSliderPosition: 0.2)
-        loopOut.adjust(toNormalizedSliderPosition: 0.5)
+        // ACC-005 rows (any element type; the frame is the whole row), dragged by touch as VideoLoopUITests does.
+        let loopIn = sliderRow("videoLoopIn"), loopOut = sliderRow("videoLoopOut")
+        XCTAssertTrue(revealRow(loopOut) && loopIn.exists, "\(task): the loop sliders")
+        if revealRow(loopIn) { dragRow(loopIn, from: 0, to: 0.2) }
+        if revealRow(loopOut) { dragRow(loopOut, from: 1, to: 0.5) }
         closeSettingsPanel()
         XCTAssertTrue(wait(5) { self.loopRegion() != nil }, "\(task): a region applies: \(text("videoLoopRegion"))")
         guard let region = loopRegion() else { return }
@@ -625,26 +685,35 @@ final class B07MediaDeviceTests: B07Case {
 
     // MARK: MED-007 Ken Burns
 
-    private func kenBurnsOn(duration2s: Bool = false) {
+    private func kenBurnsOn() {
         openSettingsPanel()
         setSwitch("kenBurnsToggle", on: true)
-        if duration2s {
-            let slider = app.sliders["kenBurnsDurationSlider"].firstMatch
-            if scrollTo(slider) { slider.adjust(toNormalizedSliderPosition: 0) }
-            XCTAssertTrue(wait(3) { self.text("kenBurnsSummary").hasSuffix(" 2 s") }, "2 s: \(text("kenBurnsSummary"))")
-        }
     }
 
     /// MED-007-T16 (D1): Zoom in over 10 s moves steadily (the change from the first picture grows every 2 s) and holds
     /// after 10 s; Reduce Motion (`-uitestReduceMotion YES`) holds the start framing; in a slideshow the movement
-    /// restarts at each slide (2 s movement, 5 s slides: moving early in each slide, still late in it).
+    /// restarts at each slide.
+    ///
+    /// QA-011 pass 4 (D2, D3 2026-11-19), test bugs, no app defect found: (1) the first picture of the zoom and of
+    /// Reduce Motion was taken with the controls up (closing Settings shows them for 5 s; on an iPad they cover
+    /// `stillRegion`), so the zoom looked non-monotonic on D3 and Reduce Motion "moved" 0.264 on D2;
+    /// `hideControlsForShot` now hides them first. (2) The slideshow step expected a 2 s Duration to end inside a 5 s
+    /// slide, but MED-007-R8 runs every slide's movement over the slide's dwell (KenBurnsCoordinator
+    /// .slideDwellNanoseconds), so "still late in the slide" never held on a correct app. The step now checks R8 itself:
+    /// every slide moves during its dwell, and slides 0 and 2 (the same picture) start at the same framing, which holds
+    /// only when the movement restarts at each change. (3) No music (`music: false`): on D3 the held pictures differed
+    /// by a uniform 1.2 % brightness step (no edge moved) while the spectrum played; the photo's framing is what is
+    /// measured. The slides are seeded (`-uitestSeedPhoto kenBurnsSlides`: two patterned pictures, Time 5 s) instead
+    /// of picked in Files (MED-006 covers the pick).
     func testMED007KenBurns() {
         let task = "MED-007-T16"
         let quiet: [String: Any] = ["settings.performanceOverlay": false]
-        launch(visual: "photo", settings: quiet, extra: ["-uitestSeedPhoto", "pattern", "-uitestSettingsSection", "kenBurns"])
+        launch(visual: "photo", settings: quiet, extra: ["-uitestSeedPhoto", "pattern", "-uitestSettingsSection", "kenBurns"],
+               music: false)
         kenBurnsOn()
         XCTAssertEqual(text("kenBurnsSummary"), "Zoom in, 10 s", "\(task): the default movement")
         closeSettingsPanel()
+        hideControlsForShot()
         let first = screen(task, "zoom 0 s").1
         var fromStart: [Double] = []
         for k in 1...4 {
@@ -668,39 +737,39 @@ final class B07MediaDeviceTests: B07Case {
         XCTAssertTrue(wait(5) { self.app.descendants(matching: .any)["kenBurnsReduceMotionNote"].firstMatch.exists },
                       "\(task): the Reduce Motion note")
         closeSettingsPanel()
+        hideControlsForShot()
         let r1 = screen(task, "reduce motion a").1
         pause(2)
         let still = stillChange(r1, screen(task, "reduce motion b").1)
         report(task, "reduce motion", ["change": still])
         XCTAssertLessThan(still, 0.002, "\(task): Reduce Motion holds the start framing")
 
-        launch(visual: "photo", settings: quiet, extra: ["-uitestSettingsSection", "kenBurns"])
-        openSettingsPanel()
-        for name in ["slide-1.png", "slide-2.png"] {
-            guard tapControl("slideshowAddFromFiles") else { return }
-            XCTAssertTrue(ui.filesPick(name: name), "\(task): Files \(name)")
-            pause(1)
-        }
-        XCTAssertTrue(wait(30) { self.text("slideshowSummary") == "2 pictures" }, "\(task): \(text("slideshowSummary"))")
-        setSwitch("slideshowToggle", on: true)   // Every few seconds, 5 s
-        kenBurnsOn(duration2s: true)
+        launch(visual: "photo", settings: quiet,
+               extra: ["-uitestSeedPhoto", "kenBurnsSlides", "-uitestSettingsSection", "kenBurns"], music: false)
+        XCTAssertTrue(wait(20) { self.slide() != nil }, "\(task): the seeded slideshow runs: \(text("slideshowProbe"))")
+        kenBurnsOn()   // Time mode, 5 s slides: each slide's movement lasts 5 s (MED-007-R8)
         closeSettingsPanel()
-        var restarts = 0
-        for n in 0..<2 {
+        hideControlsForShot()
+        var starts: [[UInt8]] = [], within: [Double] = []
+        for n in 0..<3 {
             let before = slide()?.changes ?? -1
             guard wait(8, { (self.slide()?.changes ?? -1) > before }) else { XCTFail("\(task): no slide change"); break }
-            pause(0.3)
-            let a = screen(task, "slide \(n) early a").1
-            pause(1)
-            let early = stillChange(a, screen(task, "slide \(n) early b").1)
-            pause(1.2)
-            let c = screen(task, "slide \(n) late a").1
-            pause(1)
-            let late = stillChange(c, screen(task, "slide \(n) late b").1)
-            report(task, "slide \(n)", ["early": early, "late": late])
-            if early > 0.002 && late < early / 2 { restarts += 1 }
+            pause(0.4)
+            let a = screen(task, "slide \(n) start").1
+            pause(1.2)   // both pictures inside the 5 s slide (a screenshot takes about 1.3 s on D3)
+            let moved = stillChange(a, screen(task, "slide \(n) later").1)
+            report(task, "slide \(n)", ["moved": moved])
+            starts.append(a)
+            within.append(moved)
         }
-        XCTAssertEqual(restarts, 2, "\(task): the movement restarts at each slide")
+        XCTAssertTrue(within.count == 3 && within.allSatisfy { $0 > 0.002 },
+                      "\(task): every slide moves during its dwell: \(within)")
+        if starts.count == 3 {
+            let restart = stillChange(starts[0], starts[2])   // the same picture, both about 0.5 s into their slide
+            report(task, "restart", ["sameStartChange": restart, "minMoved": within.min() ?? 0])
+            XCTAssertLessThan(restart, (within.min() ?? 0) * 0.5,
+                              "\(task): the movement restarts at each slide (slides 0 and 2 start at the same framing)")
+        }
     }
 
     // MARK: MED-008 animated GIF
@@ -815,20 +884,29 @@ final class B07MediaDeviceTests: B07Case {
 
     /// Dark-fringe check in one corner: the logo's bright pixels, and how many of the pixels touching them are darker
     /// than the background (a premultiplied-alpha fault draws a dark rim). `corner`: (0|1, 0|1) = (right?, bottom?).
-    private func fringe(_ shot: (pixels: [UInt8], width: Int, height: Int), corner: (Int, Int)) -> (bright: Int, edge: Int, dark: Int, bg: Double) {
+    /// `excluded`: rectangles in sample coordinates left out of both counts (the app's own buttons in the corner).
+    private func fringe(_ shot: (pixels: [UInt8], width: Int, height: Int), corner: (Int, Int),
+                        excluded: [CGRect] = []) -> (bright: Int, edge: Int, dark: Int, bg: Double) {
         let (p, w, h) = shot
         let s = Double(min(w, h))
         let span = Int(s * 0.28)   // margin 0.04 + size 0.15 of the short side, with room
         let x0 = corner.0 == 0 ? 0 : w - span, y0 = corner.1 == 0 ? 0 : h - span
         func at(_ x: Int, _ y: Int) -> Int { (y * w + x) * 4 }
+        func skipped(_ x: Int, _ y: Int) -> Bool {
+            excluded.contains { $0.contains(CGPoint(x: Double(x) + 0.5, y: Double(y) + 0.5)) }
+        }
         // The background: the corner's pixel nearest the screen edge inside the margin.
         let bx = corner.0 == 0 ? Int(s * 0.01) : w - 1 - Int(s * 0.01), by = corner.1 == 0 ? Int(s * 0.01) : h - 1 - Int(s * 0.01)
         let bg = Self.luma(p, at(bx, by))
         var bright = Set<Int>()
-        for y in y0..<(y0 + span) { for x in x0..<(x0 + span) where Self.luma(p, at(x, y)) > min(0.97, bg + 0.3) { bright.insert(y * w + x) } }
+        for y in y0..<(y0 + span) {
+            for x in x0..<(x0 + span) where !skipped(x, y) && Self.luma(p, at(x, y)) > min(0.97, bg + 0.3) {
+                bright.insert(y * w + x)
+            }
+        }
         var edge = 0, dark = 0
         for y in (y0 + 1)..<(y0 + span - 1) {
-            for x in (x0 + 1)..<(x0 + span - 1) where !bright.contains(y * w + x) {
+            for x in (x0 + 1)..<(x0 + span - 1) where !bright.contains(y * w + x) && !skipped(x, y) {
                 let touches = bright.contains(y * w + x - 1) || bright.contains(y * w + x + 1)
                     || bright.contains((y - 1) * w + x) || bright.contains((y + 1) * w + x)
                 guard touches else { continue }
@@ -839,14 +917,33 @@ final class B07MediaDeviceTests: B07Case {
         return (bright.count, edge, dark, bg)
     }
 
-    private func logoInEachCorner(_ task: String, _ source: String) {
-        let corners: [(String, (Int, Int))] = [("Top left", (0, 0)), ("Top right", (1, 0)), ("Bottom left", (0, 1)), ("Bottom right", (1, 1))]
-        for (name, corner) in corners {
+    /// The app's always-shown buttons (Emergency Blackout: a black disc with a white eye in the bottom-right corner)
+    /// in sample coordinates, grown by 4 pt: on D2 and D3 its white symbol on black counted as the logo's "dark fringe"
+    /// (QA-011 pass 4, 2026-11-19).
+    private func cornerButtons(sampleWidth: Int) -> [CGRect] {
+        let window = app.windows.firstMatch.frame
+        guard window.width > 0 else { return [] }
+        let perPoint: CGFloat = CGFloat(sampleWidth) / window.width
+        return ["emergencyBlackout"].compactMap { (id: String) -> CGRect? in
+            let e = app.descendants(matching: .any)[id].firstMatch
+            guard e.exists, e.frame.width > 0 else { return nil }
+            let f = e.frame.insetBy(dx: -4, dy: -4)
+            return CGRect(x: (f.minX - window.minX) * perPoint, y: (f.minY - window.minY) * perPoint,
+                          width: f.width * perPoint, height: f.height * perPoint)
+        }
+    }
+
+    private func logoInCorners(_ task: String, _ source: String, _ names: [String] = ["Top left", "Top right", "Bottom left", "Bottom right"]) {
+        let all: [String: (Int, Int)] = ["Top left": (0, 0), "Top right": (1, 0), "Bottom left": (0, 1), "Bottom right": (1, 1)]
+        for name in names {
+            guard let corner = all[name] else { continue }
             openSettingsPanel()
             chooseMenu("logoPositionPicker", name)
             closeSettingsPanel()
-            pause(1.5)
-            let f = fringe(pixels(task, "\(source) \(name)", step: 2), corner: corner)
+            hideControlsForShot()
+            pause(0.9)
+            let shot = pixels(task, "\(source) \(name)", step: 2)
+            let f = fringe(shot, corner: corner, excluded: cornerButtons(sampleWidth: shot.width))
             report(task, "\(source) \(name)", ["brightPixels": Double(f.bright), "edgePixels": Double(f.edge),
                                                "darkEdgePixels": Double(f.dark), "backgroundLuma": f.bg])
             XCTAssertGreaterThan(f.bright, 50, "\(task) \(source) \(name): the logo is drawn in that corner")
@@ -854,22 +951,41 @@ final class B07MediaDeviceTests: B07Case {
         }
     }
 
-    /// MED-010-T25 (D1): the white-disc PNG from the real Photos picker and from Files, over the Photo visual (solid
-    /// orange), clean-edged in each corner.
+    /// MED-010-T25 (D1): the white-disc PNG over the Photo visual (solid orange), clean-edged in each corner; then the
+    /// same file picked in Files and in the real Photos picker is stored and drawn.
+    ///
+    /// QA-011 pass 4 (D2, D3 2026-11-19), test bugs, no app defect: every corner was photographed with the controls up
+    /// (closing Settings shows them for 5 s; on an iPad they fill both bottom corners, so their white text on the black
+    /// panel read as a "dark fringe" of 305 to 1400 pixels) and the Emergency Blackout button sat in the bottom-right
+    /// corner; with the logo actually drawn (Files, top corners on D2) the fringe count was 0. And the corner sweep
+    /// waited on two picks that failed for picker reasons (another lane's work), so it measured no logo at all on D3.
+    /// The sweep now runs on the white disc imported at launch through the picked-logo path (`-uitestSeedLogo
+    /// white-disc`: Documents/logo-white-disc.png), with the controls hidden and the button left out; the Files pick
+    /// (opened in Documents, `-uitestPickerInDocuments`) and the Photos pick each check one corner.
     func testMED010LogoCorners() {
         let task = "MED-010-T25"
-        launch(visual: "photo", settings: ["settings.performanceOverlay": false],
-               extra: ["-uitestSeedPhoto", "solid"] + Self.seedLibrary(["logo-white-disc.png"]))
+        let quiet: [String: Any] = ["settings.performanceOverlay": false]
+        launch(visual: "photo", settings: quiet,
+               extra: ["-uitestSeedPhoto", "solid", "-uitestSeedLogo", "white-disc", "-uitestPickerInDocuments"], music: false)
+        XCTAssertTrue(wait(20) { self.text("logoProbe").hasSuffix("logo=yes") }, "\(task): the white disc is stored: \(text("logoProbe"))")
+        logoInCorners(task, "Seeded")
+
+        openSettingsPanel()
+        tapControl("removeLogo")   // so the Files pick is what is shown
+        closeSettingsPanel()
+        _ = wait(5) { self.text("logoProbe").hasSuffix("logo=no") }
+        pickFromFiles("chooseLogoFromFiles", "logo-white-disc.png")
+        XCTAssertFalse(text("logoNotice").contains("couldn"), "\(task): no refusal: \(text("logoNotice"))")
+        closeSettingsPanel()
+        XCTAssertTrue(wait(20) { self.text("logoProbe").hasSuffix("logo=yes") }, "\(task): Files logo stored: \(text("logoProbe"))")
+        logoInCorners(task, "Files", ["Bottom right"])
+
+        launch(visual: "photo", settings: quiet,
+               extra: ["-uitestSeedPhoto", "solid"] + Self.seedLibrary(["logo-white-disc.png"]), music: false)
         waitLibrarySeed(task)
         pickFromPhotos("chooseLogoFromPhotos")
         XCTAssertTrue(wait(20) { self.text("logoProbe").hasSuffix("logo=yes") }, "\(task): Photos logo stored: \(text("logoProbe"))")
         closeSettingsPanel()
-        logoInEachCorner(task, "Photos")
-
-        pickFromFiles("chooseLogoFromFiles", "logo-white-disc.png")
-        XCTAssertFalse(text("logoNotice").contains("couldn"), "\(task): no refusal: \(text("logoNotice"))")
-        closeSettingsPanel()
-        XCTAssertTrue(text("logoProbe").hasSuffix("logo=yes"), "\(task): Files logo stored")
-        logoInEachCorner(task, "Files")
+        logoInCorners(task, "Photos", ["Top left"])
     }
 }

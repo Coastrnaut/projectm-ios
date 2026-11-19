@@ -5,7 +5,9 @@
 // short in place, as if it had been damaged on disk: the photo layer's load must fail with the
 // "couldn't be loaded" notice while the app keeps running. MED-006-R15: `slideshow5` instead imports five
 // solid-colour pictures (red, green, blue, yellow, magenta) through the slideshow's import and turns the
-// slideshow on in Time mode at 2 s. Not compiled into Release builds.
+// slideshow on in Time mode at 2 s. QA-011 MED-007-T16 (pass 4, 2026-11-19): `kenBurnsSlides` imports two patterned
+// pictures (the device pattern and its mirror) the same way, on, Time 5 s, so the Ken Burns restart check needs no
+// Files picker and has edges to measure. Not compiled into Release builds.
 #if DEBUG
 import CoreGraphics
 import Foundation
@@ -25,6 +27,10 @@ enum UITestPhotoFixture {
             seedSlideshow(slideshow)
             return
         }
+        if arguments[i + 1] == "kenBurnsSlides" {
+            seedSlides([patternPNG(), patternPNG(mirrored: true)], seconds: 5, slideshow)
+            return
+        }
         let kind = arguments[i + 1]
         // "bright" (QA-011 FX-002-T18): a near-white photo, so a glow over it pushes colours past 1 and tone mapping works.
         let data: Data? = kind == "pattern" ? patternPNG()
@@ -41,13 +47,18 @@ enum UITestPhotoFixture {
 
     /// MED-006: five solid pictures through the slideshow's import path, on, Time 2 s.
     static func seedSlideshow(_ slideshow: SlideshowCoordinator) {
+        seedSlides(slideshowColors.map { png(alpha: false, color: $0) }, seconds: 2, slideshow)
+    }
+
+    /// The pictures through the slideshow's import path, on, Time mode at `seconds`.
+    static func seedSlides(_ pictures: [Data?], seconds: Int, _ slideshow: SlideshowCoordinator) {
         var urls: [URL] = []
-        for (n, color) in slideshowColors.enumerated() {
+        for (n, data) in pictures.enumerated() {
             let url = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-slide-\(n)-\(UUID().uuidString).png")
-            guard let data = png(alpha: false, color: color), (try? data.write(to: url)) != nil else { continue }
+            guard let data, (try? data.write(to: url)) != nil else { continue }
             urls.append(url)
         }
-        slideshow.seedNow(at: urls, seconds: 2)
+        slideshow.seedNow(at: urls, seconds: seconds)
         for url in urls { try? FileManager.default.removeItem(at: url) }
     }
 
@@ -55,14 +66,16 @@ enum UITestPhotoFixture {
     /// QA-011 device acceptance: 256 × 192, eight vertical bars (red, yellow, green, cyan, blue, magenta, white, mid
     /// grey) crossed with an 8 px checkerboard at half brightness, so any part of the picture has edges, colour and
     /// a grey for effects to act on (blur, mosaic, hue keeping greys).
-    static func patternPNG() -> Data? {
+    /// `mirrored`: the bars run right to left (a second, different slide).
+    static func patternPNG(mirrored: Bool = false) -> Data? {
         let width = 256, height = 192
         let bars: [(UInt8, UInt8, UInt8)] = [(230, 40, 40), (230, 220, 40), (40, 200, 60), (40, 210, 220),
                                              (40, 70, 230), (220, 40, 220), (240, 240, 240), (128, 128, 128)]
         var bytes = [UInt8](repeating: 255, count: width * height * 4)
         for y in 0..<height {
             for x in 0..<width {
-                let bar = bars[x * bars.count / width]
+                let column: Int = mirrored ? width - 1 - x : x
+                let bar = bars[column * bars.count / width]
                 let dim: Bool = ((x / 8) + (y / 8)) % 2 == 1
                 let i = (y * width + x) * 4
                 bytes[i] = dim ? bar.0 / 2 : bar.0
