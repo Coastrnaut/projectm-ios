@@ -199,7 +199,8 @@ First run on D2 (iPadOS 27.2) and D3 (iPadOS 26.5), 2026-11-19:
   drags the list down until the switch is clear of the bar and asserts that the switch changed.
 - **A plain UDP listener does not make iOS ask for Local Network:** with OSC turned on, D2 and D3 showed no prompt and
   the receiver reported "Listening", so Local Network never appeared on the app's Settings page (testZ) and no denial
-  notice could show (testD). testC now prints `OSC-READY test` (the Mac sends with `--osc-host`) and names the cause.
+  notice could show (testD). Fixed in the app by ADR-0125 (one short Bonjour browse on start while the answer is
+  unknown makes iOS ask); testC also prints `OSC-READY test` (the Mac sends with `--osc-host`) and names the cause.
 - **iPadOS 26.5 audits what the tutorial covers:** the accessibility audit reported the source chooser behind the
   opaque tutorial although RootView hides it from accessibility; testA logs issues of covered (not hittable) elements
   without counting them, and waits 0.8 s before each audit (a just-tapped Next/Play button "failed" contrast).

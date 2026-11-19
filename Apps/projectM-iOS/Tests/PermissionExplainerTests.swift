@@ -53,10 +53,13 @@ final class PermissionStatusSourceTests: XCTestCase {
     }
 
     func testLocalNetworkStatus() {
-        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .off), .notDetermined)
-        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .listening(port: 9000)), .granted)
-        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .failed(port: 9000, .localNetworkDenied)), .denied)
-        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .failed(port: 9000, .portInUse)), .notDetermined)
+        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .off, access: .unknown), .notDetermined)
+        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .listening(port: 9000), access: .unknown), .notDetermined,
+                       "ADR-0125: listening alone does not mean iOS asked")
+        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .listening(port: 9000), access: .granted), .granted)
+        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .off, access: .denied), .denied)
+        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .failed(port: 9000, .localNetworkDenied), access: .unknown), .denied)
+        XCTAssertEqual(PermissionStatusSource.localNetwork(state: .failed(port: 9000, .portInUse), access: .unknown), .notDetermined)
     }
 }
 

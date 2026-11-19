@@ -50,6 +50,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: After a failure (port in use, permission denied, network lost), does the receiver retry by itself? → A: No automatic retry loop. The toggle stays on and the status shows the failure; the receiver tries again only when the user toggles it, changes the port, or the app returns to the foreground. This keeps the socket lifecycle tied to explicit user or app events (OSC-001-R3, R16).
 - Q: What does the receiver record about traffic? → A: In-memory counters only (datagrams received, applied, rejected by reason, dropped as non-local), readable by tests and later by OSC-007's status; never logged with payloads, never stored, never shown with peer addresses in this row (OSC-001-R13, R15).
 
+### Session 2026-11-19
+
+- Q: How does the receiver obtain and know the Local Network permission? (QA-011 device run 2026-11-19) → A: On D2 (iPadOS 27.2) and D3 (iPadOS 26.5) the UDP listener reached "Listening" without iOS ever asking, so Local Network never appeared on the app's Settings page and "listening" could not mean "granted". Decided (ADR-0125, amending ADR-0100's scope): when the receiver starts and the answer is unknown this launch, it runs one short Bonjour browse for the app's own declared type `_projectm-osc._udp` (`NetworkOSCPeerBrowser(resolves: false)`: no resolution, no connection, nothing announced), which makes iOS ask. A policy denial from the browse or the listener means denied; a found service, or browsing for 2 s while the app stays active, means granted; otherwise the state stays unknown. The browse stops when it decides and after 5 s at most, and runs again only at the next start while the answer is still unknown (iOS's prompt makes the app inactive, which stops it). The denied notice shows only while OSC is on. Host tests: `LocalNetworkAccessProbeTests`, `PermissionCatalogTests.testLocalNetworkMapping`, `PermissionStatusSourceTests.testLocalNetworkStatus`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Turn OSC on and control the test value (Priority: P1)

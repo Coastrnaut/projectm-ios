@@ -229,13 +229,15 @@ enum PermissionCatalog {
         }
     }
 
-    /// iOS has no Local Network query: listening proves access, a policy failure proves a denial,
-    /// anything else is unknown (nil).
-    static func state(localNetwork: OSCReceiverState) -> PermissionState? {
-        switch localNetwork {
-        case .listening: .granted
-        case .failed(_, .localNetworkDenied): .denied
-        default: nil
+    /// iOS has no Local Network query. A listener's policy failure or the ADR-0125 browse's denial proves a denial,
+    /// the browse's answer proves access; listening proves nothing (QA-011 device run 2026-11-19: a UDP listener
+    /// listens on D2 and D3 with the permission never asked). Anything else is unknown (nil).
+    static func state(localNetwork: OSCReceiverState, access: LocalNetworkAccess) -> PermissionState? {
+        if case .failed(_, .localNetworkDenied) = localNetwork { return .denied }
+        switch access {
+        case .denied: return .denied
+        case .granted: return .granted
+        case .unknown: return nil
         }
     }
 

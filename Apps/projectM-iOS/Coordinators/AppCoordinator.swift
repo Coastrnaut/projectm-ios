@@ -653,9 +653,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         #if DEBUG
         let fakeOSC: OSCReceiver? = UITestFakeOSC.receiverIfRequested(store: oscReceiver.store, routable: oscRoutable, defaults: defaults)   // OSC-004
         let receiver: OSCReceiver = UITestOSCFailure.receiverIfRequested() ?? fakeOSC ?? oscReceiver
-        let osc: OSCReceiverCoordinator = OSCReceiverCoordinator(settings: settings, receiver: receiver)
+        let osc: OSCReceiverCoordinator = OSCReceiverCoordinator(settings: settings, receiver: receiver,
+                                                                 localNetworkProbe: .system())   // ADR-0125
         #else
-        let osc: OSCReceiverCoordinator = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver)
+        let osc: OSCReceiverCoordinator = OSCReceiverCoordinator(settings: settings, receiver: oscReceiver,
+                                                                 localNetworkProbe: .system())   // ADR-0125
         #endif
         osc.routes = OSCRoutesCoordinator(routable: oscRoutable, defaults: defaults) { [weak osc] (routes: [OSCRoute]) -> Void in
             osc?.setRoutes(routes)
@@ -663,8 +665,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         return osc
     }
 
-    /// UIX-015-R2: OSC already on means iOS has already asked for local network access, and so does a
-    /// listener seen listening or denied.
+    /// UIX-015-R2: OSC already on means iOS has already asked for local network access, and so does an answer
+    /// (the listener's denial or the ADR-0125 browse's).
     private static func makeExplainers(settings: AppSettings, osc: OSCReceiverCoordinator,
                                        defaults: UserDefaults) -> PermissionExplainerCoordinator {
         let explainers: PermissionExplainerCoordinator = PermissionExplainerCoordinator(defaults: defaults)

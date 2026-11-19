@@ -24,6 +24,10 @@
 //   receiver's dispatcher.
 // * OSC-004 (specs/274-osc-004-osc-learn): `learn` is OSC learn on OSC Routes; every refresh tells it whether the
 //   receiver still listens (learn ends when it stops). `dispatcher` lets it arm the one-shot capture.
+// * ADR-0125 (QA-011 device run 2026-11-19): a UDP listener neither makes iOS ask for Local Network nor fails when it
+//   is off, so while the answer is unknown this launch each start also runs `localNetworkProbe`, one short Bonjour
+//   browse for the app's own type; its answer (`localNetworkAccess`) and the listener's policy failure decide the
+//   permission state. Listening alone proves nothing.
 // The test value feeds nothing that renders (OSC-001-R7). The networking itself lives in
 // PerformanceControl's OSCTransport/ folder (FR-068 amendment, ADR-0008).
 import Foundation
@@ -72,12 +76,22 @@ final class OSCReceiverCoordinator {
     /// UIX-015-R2: called when the listener shows that iOS has answered the local network prompt
     /// (listening or denied).
     @ObservationIgnored var onLocalNetworkDecided: (() -> Void)?
+    /// ADR-0125: the Local Network answer this launch (from `localNetworkProbe`).
+    private(set) var localNetworkAccess: LocalNetworkAccess = .unknown
+    /// ADR-0125: the browse that makes iOS ask and reports its answer (none in tests that do not pass one).
+    @ObservationIgnored let localNetworkProbe: LocalNetworkAccessProbe?
 
-    init(settings: AppSettings, receiver: OSCReceiver = .system(), appIsActive: Bool = true) {
+    init(settings: AppSettings, receiver: OSCReceiver = .system(), appIsActive: Bool = true,
+         localNetworkProbe: LocalNetworkAccessProbe? = nil) {
         self.settings = settings
         self.receiver = receiver
         self.appIsActive = appIsActive
+        self.localNetworkProbe = localNetworkProbe
         testValue = receiver.testValue
+        localNetworkProbe?.onChange = { [weak self] (access: LocalNetworkAccess) -> Void in
+            self?.localNetworkAccess = access
+            self?.refresh()
+        }
         receiver.onStateChange { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
@@ -147,8 +161,10 @@ final class OSCReceiverCoordinator {
     private func apply() {
         if settings.oscEnabled && appIsActive {
             receiver.start(port: UInt16(settings.oscPort))
+            localNetworkProbe?.start()   // ADR-0125: only while the answer is unknown this launch
         } else {
             receiver.stop()
+            localNetworkProbe?.stop()
         }
         sender?.conditionsChanged()   // OSC-005-R4, R5: sending follows the switch and the foreground
         discovery?.conditionsChanged()   // OSC-011-R5, R6: so do browsing and announcing
@@ -170,7 +186,7 @@ final class OSCReceiverCoordinator {
             liveValues = live
             applyLiveValues(live)
         }
-        if PermissionCatalog.state(localNetwork: state) != nil { onLocalNetworkDecided?() }
+        if PermissionCatalog.state(localNetwork: state, access: localNetworkAccess) != nil { onLocalNetworkDecided?() }
         learn?.receiverStateChanged()   // OSC-004-R9
     }
 
@@ -208,9 +224,11 @@ final class OSCReceiverCoordinator {
 
     var statusText: String { Self.statusText(for: state, enabled: isEnabled) }
 
-    /// FILE-013-R3, R4: the Local Network notice (with Open Settings) while the listener is denied.
+    /// FILE-013-R3, R4: the Local Network notice (with Open Settings) while OSC is on and access is denied (the
+    /// listener's policy failure or the ADR-0125 browse).
     var permissionNotice: PermissionNotice? {
-        PermissionCatalog.state(localNetwork: state).flatMap { (s: PermissionState) -> PermissionNotice? in
+        guard isEnabled else { return nil }
+        return PermissionCatalog.state(localNetwork: state, access: localNetworkAccess).flatMap { (s: PermissionState) -> PermissionNotice? in
             PermissionCatalog.notice(.localNetwork, s)
         }
     }
