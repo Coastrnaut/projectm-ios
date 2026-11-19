@@ -38,6 +38,8 @@ public enum ProjectMLayerError: Error, Equatable, Sendable {
 
 public final class ProjectMLayerSource: LayerSource {
     public static let requiredExtensions = ["EGL_ANGLE_metal_texture_client_buffer", "EGL_ANGLE_metal_shared_event_sync"]
+    /// QA-011 2026-11-19: skips frames while the app is in the background (the shared gate; tests set their own).
+    var backgroundGate: ProjectMLayerBackgroundGate = .shared
 
     public let layerName = "projectM"
     public let fallback = LayerFallback.lastGoodFrame
@@ -187,6 +189,8 @@ public final class ProjectMLayerSource: LayerSource {
     public func render(into picture: MTLTexture, commandBuffer: MTLCommandBuffer, frame: LayerFrameContext,
                        audio: LayerAudioContext) throws(LayerSourceError) {
         guard let texture, framebuffer != 0, picture.width == width, picture.height == height else { throw .notReady }
+        // QA-011 2026-11-19: no ANGLE draw while the app is in the background (ProjectMLayerBackgroundGate).
+        guard !backgroundGate.isGated else { throw .frameSkipped }
         let signaled = withContext { () -> Bool in
             if let pendingSync {   // the previous frame's sync; its signal is long submitted
                 eglDestroySync(display, pendingSync)

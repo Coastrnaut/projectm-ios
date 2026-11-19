@@ -1,6 +1,7 @@
 // Task T077: ANGLERenderer (ADR-0003 Option B) renders the engine's upstream test preset on the
 // iOS Simulator through ANGLE's Metal backend. The view is laid out off screen, frames are rendered
 // without presenting, and the window surface's framebuffer is read back.
+import UIKit
 import XCTest
 import AudioCore
 import PresentationLifecycle
@@ -175,6 +176,45 @@ final class ANGLERendererTests: XCTestCase {
         XCTAssertEqual(renderer.timedFrames(3, reduceFlashing: false), [])
         XCTAssertEqual(renderer.readPixels(), [])
         XCTAssertEqual(renderer.presentedFrameCount, presented)
+    }
+
+    /// QA-011 device run 2026-11-19 (D2): a display-link draw between UIKit's background transition and
+    /// the asynchronous PERF-011 suspension blocked the main thread in ANGLE for good. UIKit's own
+    /// notifications gate every draw synchronously: none from `didEnterBackground` until
+    /// `willEnterForeground`, the display link paused (a resume or a new link stays paused), and the
+    /// picture continues afterwards without a suspension in between.
+    func testNoDrawFromTheBackgroundNotificationUntilTheForegroundOne() async throws {
+        let renderer = try makeLaidOut()
+        let layerView = try XCTUnwrap(renderer.view as? MetalLayerView)
+        layerView.onWindowChange?(true)
+        try await renderer.setPreset(preset("100-square.milk"))
+        XCTAssertTrue(renderer.renderFrame(present: true))
+        let presented = renderer.presentedFrameCount
+
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        XCTAssertTrue(renderer.isBackgroundGated, "gated as the notification is posted, before any later tick")
+        XCTAssertEqual(renderer.isDisplayLinkPaused, true, "the display link is paused")
+        XCTAssertFalse(renderer.pacedTick(), "a display-link tick draws nothing")
+        XCTAssertFalse(renderer.presentationTick())
+        XCTAssertFalse(renderer.renderFrame(present: true))
+        XCTAssertFalse(renderer.renderFrame(present: false))
+        XCTAssertEqual(renderer.timedFrames(2, reduceFlashing: false), [])
+        renderer.resume()
+        XCTAssertEqual(renderer.isDisplayLinkPaused, true, "a resume does not unpause it in the background")
+        layerView.onWindowChange?(false)
+        layerView.onWindowChange?(true)
+        XCTAssertEqual(renderer.isDisplayLinkPaused, true, "a new link starts paused in the background")
+        XCTAssertEqual(renderer.presentedFrameCount, presented)
+        XCTAssertFalse(renderer.isPresentationSuspended, "the gate does not depend on the PERF-011 suspension")
+
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        XCTAssertFalse(renderer.isBackgroundGated)
+        XCTAssertEqual(renderer.isDisplayLinkPaused, false)
+        XCTAssertTrue(renderer.renderFrame(present: true), "frames continue after the return")
+        renderer.pause()
+        NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
+        NotificationCenter.default.post(name: UIApplication.willEnterForegroundNotification, object: nil)
+        XCTAssertEqual(renderer.isDisplayLinkPaused, true, "a user pause stays a pause across the return")
     }
 
     func testNothingRestartsTheLoopOrTheSurfaceWhileSuspended() async throws {

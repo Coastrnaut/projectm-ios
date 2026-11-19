@@ -21,6 +21,15 @@
 //   are released. The context, engine, preset and textures stay, so the picture continues where it
 //   was. Suspension is independent of pause()/resume() (FR-046): the loop runs only when neither
 //   applies. The warm-up is a second presentation-bound resource (PresetWarmUpController).
+// * QA-011 device run 2026-11-19 (D2, SIGABRT during the stall): the PERF-011 suspension arrives
+//   asynchronously (LifecycleObserver's stream), so the display link kept drawing for a moment after
+//   UIKit's `didEnterBackground`. A draw then blocked the main thread for good inside ANGLE
+//   (`GL_DrawElements` → `drawTriFanElements` → CPU tri-fan index generation → `Buffer::mapWithOpt` →
+//   `-[MTLCommandBuffer waitUntilCompleted]`): the buffer is still used by a command buffer the GPU
+//   never runs for a background app. The renderer therefore gates itself synchronously on UIKit's own
+//   notifications (delivered on the main thread as the state changes, before any later display-link
+//   tick): from `didEnterBackground` to `willEnterForeground` no engine call that draws runs and the
+//   display link is paused. The inactive state (Control Center, the switcher) still draws (PERF-011 R1).
 // * REC-001 (specs/055-rec-001-still-frame-capture, research REC-001-D1): `captureNextFrame` reads
 //   the next rendered frame back with glReadPixels after the FX-019 post-pass wrote framebuffer 0 and
 //   before eglSwapBuffers (the swap leaves the buffer undefined), i.e. the frame as shown. One
@@ -135,6 +144,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     private var presentationSuspended = false
     /// The view is in a window, so a display link is wanted whenever frames can be presented.
     private var inWindow = false
+    /// QA-011 (file header): UIKit says the app is in the background; no draw until it returns.
+    private(set) var isBackgroundGated = false
     private var observers: [NSObjectProtocol] = []
     /// REC-001: the handler waiting for the next rendered frame.
     private var pendingCapture: (@MainActor (ANGLECapturedFrame?) -> Void)?
@@ -207,6 +218,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
             if let link = self.displayLink { link.follow(self.layerView) } else { self.startDisplayLink() }   // OUT-013
         }
         observeFrameRatePressure()
+        observeApplicationState()
     }
 
     /// Creates the EGL display, context and engine. The display link starts when the view joins a
@@ -311,8 +323,31 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
 
     public func resume() {
         paused = false
-        displayLink?.isPaused = false
+        displayLink?.isPaused = isBackgroundGated
         resetPresentationHealth()
+    }
+
+    // MARK: - QA-011: the background gate (file header)
+
+    private func observeApplicationState() {
+        let center = NotificationCenter.default
+        // `queue: nil`: the block runs synchronously on the posting thread, the main thread for these.
+        observers.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil,
+                                            queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated { self?.setBackgroundGated(true) }
+        })
+        observers.append(center.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil,
+                                            queue: nil) { [weak self] _ in
+            MainActor.assumeIsolated { self?.setBackgroundGated(false) }
+        })
+    }
+
+    /// From `didEnterBackground` to `willEnterForeground`: no draw, the display link paused.
+    func setBackgroundGated(_ value: Bool) {
+        guard value != isBackgroundGated else { return }
+        isBackgroundGated = value
+        displayLink?.isPaused = paused || value
+        if value { meter.reset() }
     }
 
     // MARK: - Frames
@@ -321,7 +356,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// `frameTime` (seconds since the previous frame) sets the Reduce-flashing step.
     @discardableResult
     func renderFrame(present: Bool = true, frameTime: Double = 1.0 / 60) -> Bool {
-        guard !presentationSuspended, let engine, let surface else { return false }
+        guard !presentationSuspended, !isBackgroundGated, let engine, let surface else { return false }
         // PERF-001: shown frames only; FrameTiming comes with the Compositor product.
         let timer: FrameStageTimer? = present ? stageTimer : nil
         timer?.beginFrame()
@@ -392,7 +427,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// tick the window surface is recreated first. Returns true when a frame was presented.
     @discardableResult
     func presentationTick(frameTime: Double = 1.0 / 60) -> Bool {
-        guard advancePresentationTick() else { return false }
+        guard !isBackgroundGated, advancePresentationTick() else { return false }
         return renderFrame(frameTime: frameTime)
     }
 
@@ -410,7 +445,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// (counted) without waiting; a presented frame gets a fence, a frame that was not presented returns its slot.
     @discardableResult
     func pacedTick(frameTime: Double = 1.0 / 60) -> Bool {
-        guard advancePresentationTick() else { return false }
+        guard !isBackgroundGated, advancePresentationTick() else { return false }
         makeCurrent()
         frameFences.poll()
         guard outputPacing.tryBegin() else { return false }
@@ -497,7 +532,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     private func startDisplayLink() {
         guard displayLink == nil, !presentationSuspended else { return }
         displayLink = ScreenDisplayLink(view: layerView, target: ANGLEDisplayLinkProxy(self),
-                                        selector: #selector(ANGLEDisplayLinkProxy.fire(_:)), range: frameRateRange(), paused: paused)
+                                        selector: #selector(ANGLEDisplayLinkProxy.fire(_:)), range: frameRateRange(),
+                                        paused: paused || isBackgroundGated)
     }
 
     private func stopDisplayLink() {
@@ -673,7 +709,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// surface or pass. Tests use it for exact levels, which the engine's picture cannot give.
     @discardableResult
     func limitedSolidFrame(_ value: Float, _ frameTime: Double) -> Float? {
-        guard !presentationSuspended, let surface else { return nil }
+        guard !presentationSuspended, !isBackgroundGated, let surface else { return nil }
         eglMakeCurrent(display, surface, surface, context)
         guard let limiter = flashLimiterForFrame() else { return nil }
         let framebuffer = PMFlashLimiterBegin(limiter, Int32(surfaceSize.width), Int32(surfaceSize.height))
