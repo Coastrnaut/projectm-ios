@@ -83,18 +83,32 @@ final class B07FilesDeviceTests: B07Case {
         return name
     }
 
-    /// My Presets › Import Preset… › Files › `file`; returns the alert text and seconds from Open to the result.
+    /// My Presets › Import Preset… › Files › `file`; returns the result and seconds from Open to the result.
+    ///
+    /// The app shows the "Import Preset" alert only for an outcome that needs attention (warnings, waiting, Quarantine,
+    /// refused, a duplicate); a clean add is only announced and its row appears (PRE-012-R28, `needsAlert`). QA-011
+    /// pass 5 (D3, 2026-11-19): preset-small.milk and preset-512k.milk were added cleanly (their rows appeared, and
+    /// PRE-014's export listed both) while the test waited 30 s for an alert that never comes, then failed "no Import
+    /// Preset alert" and PRE-012's 15 s timing. The result is now the alert, or the new playable row
+    /// (`preset:<name>`, not there before the pick) reported as "Added … (announced, no alert)".
     func importPreset(_ file: String) -> (text: String, seconds: Double) {
         let button = app.buttons["importPreset"].firstMatch
         XCTAssertTrue(wait(5) { button.exists }, "Import Preset… (My Presets)")
+        let name = (file as NSString).deletingPathExtension
+        let row = app.buttons["preset:\(name)"].firstMatch
+        let listedBefore = row.exists   // a re-run: the duplicate gets an alert ("already in My Presets")
         button.tap()
         XCTAssertTrue(ui.filesPick(name: file), "Files: \(file)")
         let picked = Date()
         let alert = app.alerts["Import Preset"].firstMatch
-        XCTAssertTrue(wait(30) { alert.exists }, "the import result for \(file)")
+        let progress = element("importProgress")
+        let done = wait(30) { alert.exists || (!listedBefore && row.exists && !progress.exists) }
         let seconds = Date().timeIntervalSince(picked)
+        XCTAssertTrue(done, "the import result for \(file)")
         // Reading a missing alert's label fails the test at once and ended the run (PRE-012, PRE-014 on D2, 2026-11-19).
-        guard alert.exists else { return ("no Import Preset alert", seconds) }
+        guard alert.exists else {
+            return (row.exists && !listedBefore ? "Added “\(name)” to My Presets (announced, no alert)" : "no import result", seconds)
+        }
         let text = alertText(alert)
         if alert.exists { alert.buttons.firstMatch.tap() }
         pause(0.5)
@@ -108,12 +122,31 @@ final class B07FilesDeviceTests: B07Case {
         if UIDevice.current.userInterfaceIdiom == .pad {
             XCTAssertTrue(wait(5) { self.app.popovers.count > 0 }, "\(task): the iPad share sheet is a popover")
             report(task, "share sheet", ["popover": app.popovers.count > 0 ? 1 : 0])
+            revealShareActivity("Save to Files")
         }
         XCTAssertTrue(ui.shareSheet("Save to Files"), "\(task): Save to Files")
         XCTAssertTrue(ui.filesSave(), "\(task): saved in On My … › projectM")
         let replace = app.buttons["Replace"].firstMatch
         if wait(3, { replace.exists }) { replace.tap() }
         pause(1)
+    }
+
+    /// Scrolls the share popover until `activity` is hittable. QA-011 pass 5 (D3, 2026-11-19): the popover was squeezed
+    /// below the Export Presets sheet, showing only the file and a contact row; Save to Files sat below the screen
+    /// (y 1274 of 1180) and could not be tapped. The app now anchors its share popover at the sheet's top
+    /// (`ShareSheetPresenter.popoverAnchor`); this keeps the test working wherever the popover lands.
+    func revealShareActivity(_ activity: String) {
+        let target = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", activity)).firstMatch
+        guard wait(5, { target.exists }) else { return }
+        let popover = app.popovers.firstMatch
+        for _ in 0..<4 where !target.isHittable && popover.exists {
+            let scroller = popover.collectionViews.firstMatch.exists ? popover.collectionViews.firstMatch : popover
+            scroller.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+                .press(forDuration: 0.1, thenDragTo: scroller.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)),
+                       withVelocity: .slow, thenHoldForDuration: 0.3)
+            pause(0.5)
+        }
+        if !target.isHittable { print("DEVICE-ACCEPT-NOTE share sheet: \(activity) is not hittable at \(target.frame)") }
     }
 
     func requireMac(_ task: String) throws {
@@ -141,10 +174,17 @@ final class B07FilesDeviceTests: B07Case {
 
     func openStorage() {
         openSettingsPanel()
+        // A navigation bar button since pass 5: the faint overlay at the list's corner passed its tap to the row below.
         let jump = app.buttons["uitestSettingsJump.storage"].firstMatch
+        if app.launchArguments.contains("-uitestSettingsJump") {
+            XCTAssertTrue(wait(5) { jump.exists }, "the Storage jump button in Settings' navigation bar")
+        }
         if jump.exists {
             jump.tap()
-            _ = wait(3) { self.app.buttons["storageLink"].exists }
+            if !wait(3, { self.app.buttons["storageLink"].exists }) {
+                jump.tap()
+                _ = wait(3) { self.app.buttons["storageLink"].exists }
+            }
         }
         tapControl("storageLink")
         XCTAssertTrue(wait(10) { self.app.navigationBars["Storage"].exists }, "Settings › Storage")

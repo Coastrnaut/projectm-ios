@@ -286,7 +286,11 @@ struct PresetQuarantineView: View {
                     Button(role: .destructive) {
                         Task { await userPresets.remove(preset) }
                     } label: {
+                        // ACC: a 44 × 44 pt target. The bare glyph's hit area failed the accessibility audit's
+                        // hit-region check on D3 (QA-011 pass 5, PRE-012-T31, 2026-11-19: "Hit area is too small").
                         Image(systemName: "trash")
+                            .frame(minWidth: 44, minHeight: 44)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.borderless)
                     .accessibilityLabel("Delete \(preset.originalFileName)")

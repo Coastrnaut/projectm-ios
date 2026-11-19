@@ -63,4 +63,32 @@ final class StorageUsageUITests: XCTestCase {
         XCTAssertTrue(app.reveal(shared), "the shared-copies note")
         XCTAssertEqual(shared.label, "Shared copies of identical photos and videos save 4 KB.")
     }
+
+    /// QA-011 pass 5 (D3, 2026-11-19): `-uitestSettingsJump storage` (DEBUG) is a navigation bar button that scrolls
+    /// Settings to its Storage section; as a faint overlay at the list's corner its tap went to the visual row below
+    /// it (a different visual was chosen) and nothing scrolled. Settings opens at its top here, and one tap must bring
+    /// Storage's link on screen.
+    func testSettingsJumpButtonInTheNavigationBarReachesStorage() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestStorageFixture", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-uitestSettingsJump", "storage"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
+        if controls.exists { area.tap() }
+        area.tap()
+        if !controls.appears(within: 2) { area.tap() }
+        XCTAssertTrue(controls.appears(within: 5), "the controls are shown")
+        app.buttons["settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].appears(within: 5))
+        let link = app.buttons["storageLink"]
+        XCTAssertFalse(link.exists && link.isHittable, "Settings opens at its top, Storage far below")
+        let jump = app.navigationBars["Settings"].buttons["uitestSettingsJump.storage"].firstMatch
+        XCTAssertTrue(jump.appears(within: 3), "the jump is a navigation bar button")
+        jump.tap()
+        XCTAssertTrue(poll(5) { link.exists && link.isHittable }, "one tap brings Storage on screen")
+        link.tap()
+        XCTAssertTrue(app.navigationBars["Storage"].appears(within: 5))
+        XCTAssertFalse(app.buttons["uitestSettingsJump.storage"].exists, "Storage's own list offers no jump")
+    }
 }

@@ -163,4 +163,15 @@ final class UserPresetExportAppTests: XCTestCase {
         XCTAssertEqual(UserPresetsCoordinator.exportFileName(for: exportDate, timeZone: TimeZone(identifier: "UTC")!),
                        "projectM-iOS Presets 2027-01-15.zip")
     }
+
+    /// QA-011 pass 5 (D3, PRE-014-T25, 2026-11-19): the iPad share popover points at a 44 pt square at the top trailing
+    /// corner of the export sheet (its Export button), not at the whole sheet, which pushed the popover into the strip
+    /// below the sheet with Save to Files off screen.
+    func testSharePopoverAnchorsAtTheTopTrailingCorner() {
+        let sheet = CGRect(x: 0, y: 0, width: 580, height: 640)
+        XCTAssertEqual(ShareSheetPresenter.popoverAnchor(in: sheet), CGRect(x: 536, y: 0, width: 44, height: 44))
+        let offset = CGRect(x: 10, y: 20, width: 300, height: 30)
+        XCTAssertEqual(ShareSheetPresenter.popoverAnchor(in: offset), CGRect(x: 280, y: 20, width: 30, height: 30))
+        XCTAssertEqual(ShareSheetPresenter.popoverAnchor(in: .zero), .zero, "an empty view keeps its own rectangle")
+    }
 }

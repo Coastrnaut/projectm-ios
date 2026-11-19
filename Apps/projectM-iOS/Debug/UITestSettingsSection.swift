@@ -18,13 +18,18 @@
 // that scrolls the list to that section on a tap, so a test can use the top of Settings (pickers, the visual rows) and
 // still reach Storage at the end in one tap: on the iPad panel neither 12 slow nor 30 full-speed swipes reached
 // Storage below the photo visual's sections (QA-011 rerun 4, D3 iPadOS 26.5, and pass 4, D2, 2026-11-19).
+// QA-011 pass 5 (D3, 2026-11-19): the jump was first a faint 44 pt square overlaid on the list's bottom-left corner.
+// XCUITest found and tapped it, but the touch went to the list row under it (the visual row "Reaction Diffusion" was
+// chosen, screenshots) and the list never scrolled; FILE-009 then never reached Storage and PRE-001 lost its Presets
+// control under the native visual it had chosen by accident. The jump is now a navigation bar button (top leading),
+// clear of every row. Only Settings' own list offers it (`offersJumps`), not Storage's.
 import SwiftUI
 
 extension View {
     @ViewBuilder
-    func uitestSettingsSection(repeated: Bool = false) -> some View {
+    func uitestSettingsSection(repeated: Bool = false, offersJumps: Bool = true) -> some View {
         #if DEBUG
-        modifier(UITestSettingsSection(repeated: repeated))
+        modifier(UITestSettingsSection(repeated: repeated, offersJumps: offersJumps))
         #else
         self
         #endif
@@ -52,18 +57,19 @@ private struct UITestSettingsSection: ViewModifier {
     /// Scroll again 0.3 s and 1 s later: a list in a sheet presented at launch can drop the first scroll
     /// (laid out mid-presentation on a busy Mac: LibraryEraseUITests saw Storage stay at its top, 2026-11-14).
     var repeated = false
+    /// Whether this list shows the `-uitestSettingsJump` buttons (Settings' root list only).
+    var offersJumps = true
 
     func body(content: Content) -> some View {
-        if !jumps.isEmpty {
+        if offersJumps && !jumps.isEmpty {
             ScrollViewReader { (proxy: ScrollViewProxy) in
                 scrolled(content, proxy: proxy)
-                    .overlay(alignment: .bottomLeading) {   // clear of the rows' trailing switches
-                        HStack(spacing: 0) {
+                    .toolbar {   // in the navigation bar: a tap can never fall through to a row (pass 5, D3)
+                        ToolbarItemGroup(placement: .topBarLeading) {
                             ForEach(jumps, id: \.self) { (id: String) in
                                 Button { proxy.scrollTo(id, anchor: .top) } label: {
-                                    Color.gray.frame(width: 44, height: 44)
+                                    Image(systemName: "arrow.down.to.line")
                                 }
-                                .opacity(0.05)   // faint, but still hittable for XCUITest
                                 .accessibilityLabel("Jump to \(id)")
                                 .accessibilityIdentifier("uitestSettingsJump.\(id)")
                             }
