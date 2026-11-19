@@ -9,8 +9,9 @@ wait on an app probe.
 
 `prompt-flow` runs the self-answering prompt batch (owner rule 14, amended 2026-11-18) on one device: uninstall the
 app (a fresh install, so iOS asks every permission again), install the built app, copy the fixtures, then run
-PromptFlowDeviceTests alone with `follow` beside it (and scripts/osc_device_driver.py with --osc-host). It runs
-alone, never inside another batch; every other run passes
+PromptFlowDeviceTests alone with `follow` beside it (and scripts/osc_device_driver.py with --osc-host), then, in a
+second run, the tests that need its grants (AFTER_GRANTS). It runs alone, never inside another batch; every other run
+passes
 -skip-testing:projectM-iOSDeviceUITests/PromptFlowDeviceTests.
 
     python3 scripts/mac_device_driver.py follow --log <xcodebuild log> --device D1
@@ -37,6 +38,12 @@ import mac_driver  # noqa: E402
 ROOT = Path(__file__).resolve().parent.parent
 DEVICES = {"D1": "iPhone15,4", "D2": "iPad17,3", "D3": "iPad15,7"}
 PROMPT_FLOW = "projectM-iOSDeviceUITests/PromptFlowDeviceTests"
+# Tests that need a grant only the prompt flow gives (testZ: every permission on). In an ordinary batch on an install
+# without the grant they skip with the instruction; `prompt-flow` runs them right after the grants, in its own
+# xcodebuild run (XCTest orders classes by name, so they cannot share the prompt flow's run). QA-011 2026-11-19.
+AFTER_GRANTS = [
+    "projectM-iOSDeviceUITests/B08RecordingDeviceTests/testREC004MicrophoneRecordingHasAnAudioTrackOnlyWithTheSetting",
+]
 END_MARKERS = ("** TEST EXECUTE SUCCEEDED **", "** TEST EXECUTE FAILED **", "** TEST FAILED **", "** TEST SUCCEEDED **",
                "Testing failed:")
 
@@ -83,16 +90,22 @@ def follow(log: Path, context: mac_driver.Context, timeout: float = 1800, out=pr
 
 def prompt_flow_commands(device: str, udid: str, derived: Path, app: Path, log_dir: Path,
                          osc: bool) -> list[list[str]]:
-    """The fresh-install steps and the test command (xcodebuild last), for running or printing."""
+    """The fresh-install steps, the prompt-flow test command, then the after-grants command (the xcodebuild commands
+    start with `env`), for running or printing."""
     env = ["TEST_RUNNER_MAC_DRIVER=1"] + (["TEST_RUNNER_OSC_DRIVER=1"] if osc else [])
+
+    def xcodebuild(bundle: str, only: list[str]) -> list[str]:
+        return ["env", *env, "xcodebuild", "test-without-building", "-project", "ProjectM-DeviceTests.xcodeproj",
+                "-scheme", "DeviceAcceptance", "-destination", f"platform=iOS,id={udid}", "-derivedDataPath",
+                str(derived), "-resultBundlePath", str(log_dir / bundle), *[f"-only-testing:{t}" for t in only],
+                "-test-timeouts-enabled", "YES", "-default-test-execution-time-allowance", "300"]
+
     return [
         ["xcrun", "devicectl", "device", "uninstall", "app", "--device", device, mac_driver.BUNDLE],
         ["xcrun", "devicectl", "device", "install", "app", "--device", device, str(app)],
         [sys.executable, str(ROOT / "scripts" / "install_test_fixtures.py"), "--device-id", device, "--media"],
-        ["env", *env, "xcodebuild", "test-without-building", "-project", "ProjectM-DeviceTests.xcodeproj",
-         "-scheme", "DeviceAcceptance", "-destination", f"platform=iOS,id={udid}", "-derivedDataPath", str(derived),
-         "-resultBundlePath", str(log_dir / "prompt-flow.xcresult"), f"-only-testing:{PROMPT_FLOW}",
-         "-test-timeouts-enabled", "YES", "-default-test-execution-time-allowance", "300"],
+        xcodebuild("prompt-flow.xcresult", [PROMPT_FLOW]),
+        xcodebuild("after-grants.xcresult", AFTER_GRANTS),
     ]
 
 
@@ -117,14 +130,25 @@ def run_prompt_flow(args: argparse.Namespace) -> int:
             print(" ".join(cmd))
         return 0
     log_dir.mkdir(parents=True, exist_ok=True)
-    for cmd in commands[:-1]:
+    for cmd in (c for c in commands if c[0] != "env"):
         result = subprocess.run(cmd, capture_output=True, text=True)
         ok = result.returncode == 0 or cmd[3] == "uninstall"   # nothing to uninstall is fine
         print(f"mac_device_driver: {' '.join(cmd[:4])}: {'ok' if ok else 'FAILED ' + result.stderr.strip()[-300:]}")
         if not ok:
             return 1
-    log = log_dir / "xcodebuild.log"
-    driver_log = log_dir / "mac-driver.log"
+    tests = [c for c in commands if c[0] == "env"]
+    status = _run_tests(tests[0], log_dir, "xcodebuild", device, args, "prompt flow")
+    # The after-grants tests run whatever the prompt flow's result: without the grant they skip and say why.
+    after = _run_tests(tests[1], log_dir, "after-grants", device, args, "after-grants tests")
+    print(f"mac_device_driver: logs in {log_dir.relative_to(ROOT)}")
+    return status or after
+
+
+def _run_tests(command: list[str], log_dir: Path, name: str, device: str, args: argparse.Namespace,
+               what: str) -> int:
+    """One xcodebuild test run with the Mac driver (and the OSC driver with --osc-host) following its log."""
+    log = log_dir / f"{name}.log"
+    driver_log = log_dir / f"mac-driver-{name}.log"
     stop = threading.Event()
     context = mac_driver.Context(device=device)
     with driver_log.open("w") as sink:
@@ -139,15 +163,15 @@ def run_prompt_flow(args: argparse.Namespace) -> int:
             osc = subprocess.Popen([sys.executable, str(ROOT / "scripts" / "osc_device_driver.py"), "--log", str(log),
                                     "--host", args.osc_host])
         with log.open("w") as handle:
-            status = subprocess.run(commands[-1], cwd=ROOT, stdout=handle, stderr=subprocess.STDOUT).returncode
+            status = subprocess.run(command, cwd=ROOT, stdout=handle, stderr=subprocess.STDOUT).returncode
         stop.set()
         follower.join(timeout=10)
         if osc is not None and osc.poll() is None:
             osc.terminate()
     text = log.read_text(errors="replace")
     executed = [line for line in text.splitlines() if line.strip().startswith("Executed ")]
-    print(f"mac_device_driver: prompt flow on {args.device}: exit {status}; {executed[-1].strip() if executed else 'no tests ran'}")
-    print(f"mac_device_driver: logs in {log_dir.relative_to(ROOT)}")
+    print(f"mac_device_driver: {what} on {args.device}: exit {status}; "
+          f"{executed[-1].strip() if executed else 'no tests ran'}")
     return status
 
 

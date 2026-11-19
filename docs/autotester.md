@@ -176,6 +176,14 @@ the unattended batches. Never part of another batch; nothing waits for a person.
 | `testF_REC011SaveToPhotosAllowThenDeny` | Photos add-only: Allow; then Photos None in Settings | REC-011-T16 |
 | `testZ_GrantEverythingForUnattendedRuns` | none (every permission on in Settings; OSC 0.42 with the OSC driver; `-uitestSeedPhotoLibrary`) | grants for later batches |
 
+**After the grants (QA-011 2026-11-19).** Tests that need a grant only the prompt flow gives are listed in
+`AFTER_GRANTS` (`scripts/mac_device_driver.py`). In an ordinary batch on an install without the grant they
+`XCTSkip` with the instruction (an environment precondition, not a result); `prompt-flow` runs them in a second
+xcodebuild run right after `PromptFlowDeviceTests` (XCTest orders classes by name, so `B08…` cannot share the prompt
+flow's run and come after `testZ`). A skip is therefore always followed by a run with the grant. Today:
+`B08RecordingDeviceTests/testREC004MicrophoneRecordingHasAnAudioTrackOnlyWithTheSetting` (microphone). Add a test
+there when it needs camera, microphone, Local Network or Photos and skip it the same way.
+
 Untried on a device when written (2026-11-18): Settings rows are found by their visible labels (Apps › projectM,
 Accessibility › Motion …) and the switcher and Control Center by coordinates in portrait; check the first run's
 screenshots and fix SystemUI.swift (not the tests) where iOS 26 or 27 differs.
@@ -719,6 +727,18 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     half-transparent text.
   - *A host test that counts frames must not race a background queue.* Wait for the background work before the frame
     whose count matters (MED-011's clock test, 120 vs 119 in CI).
+- **Pass 4 on D2 and rerun 4 on D3 (2026-11-19), what it taught:**
+  - *Put a DEBUG probe button where nothing else is.* The split editor's divider probes sat at the window's top-right
+    corner, on the editor's undo/redo bar; the bar took the decrement's tap (its numbered answer stayed empty). They now
+    sit in the divider's own column (UIX-007-T13).
+  - *Let transient captions clear before a contrast audit.* The 4 s "Output restored" caption lay under the
+    performance readout and the audit measured the readout's text over the caption's (ACC-003-T17). Wait for
+    `statusCaption` to go.
+  - *Look at the audit's screenshot, not only its message.* ACC-003's "Save Frame" contrast failure came with every
+    iPad-portrait control title squeezed one or two letters wide: a real layout defect (now the compact layout when
+    the labeled row does not fit), and the performance readout's fixed 0.6 backing ignored Increase Contrast.
+  - *A missing permission grant is a precondition, not a result:* skip with the instruction only when a later step is
+    sure to run the test with the grant (`AFTER_GRANTS` in the prompt flow).
 
 ### Policy and evidence
 

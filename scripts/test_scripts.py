@@ -2561,6 +2561,13 @@ class MacDeviceDriverTests(unittest.TestCase):
         self.assertIn("TEST_RUNNER_MAC_DRIVER=1", test)
         self.assertIn("TEST_RUNNER_OSC_DRIVER=1", test)
         self.assertIn("platform=iOS,id=UDID", test)
+        # QA-011 2026-11-19: the tests that need the grants run right after, in their own run.
+        after = cmds[4]
+        self.assertEqual(after[0], "env")
+        self.assertIn("-only-testing:projectM-iOSDeviceUITests/B08RecordingDeviceTests/"
+                      "testREC004MicrophoneRecordingHasAnAudioTrackOnlyWithTheSetting", after)
+        self.assertNotIn(f"-only-testing:{mdd.PROMPT_FLOW}", after)
+        self.assertEqual(len(cmds), 5)
 
     def test_device_ids_map_product_types(self):
         listing = {"result": {"devices": [

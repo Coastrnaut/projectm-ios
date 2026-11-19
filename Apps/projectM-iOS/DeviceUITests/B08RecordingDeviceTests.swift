@@ -458,7 +458,11 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
 
     /// REC-004-T19 (quickstart step 3): a Microphone recording has an audio track only with "Include microphone audio"
     /// on; with the Mac driver following, the Mac plays a 1 kHz tone and the file's audio is not silent.
-    func testREC004MicrophoneRecordingHasAnAudioTrackOnlyWithTheSetting() {
+    ///
+    /// The microphone grant is an environment precondition only the prompt-flow batch gives (owner rule 14): without
+    /// it the test skips with that instruction, and `mac_device_driver.py prompt-flow` runs it right after its grants
+    /// (AFTER_GRANTS), so a skip here is always followed by a run with the grant (QA-011 2026-11-19, docs/autotester.md).
+    func testREC004MicrophoneRecordingHasAnAudioTrackOnlyWithTheSetting() throws {
         let task = "REC-004-T19"
         for include in [true, false] {
             let folder = include ? "QA011-REC004-mic-on" : "QA011-REC004-mic-off"
@@ -469,8 +473,10 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
             let decision = probeText("recordingAudioDecision")
             print("B08 \(task) microphone \(include): decision \"\(decision)\", source \(sourceIndicator), overlay \(overlayLabel.prefix(100))")
             if decision.contains("microphone permission is off") {
-                return XCTFail("the microphone permission is not granted on this device (\(decision)); grant it with the "
-                               + "prompt-flow batch first (python3 scripts/mac_device_driver.py prompt-flow --device <D>)")
+                app.terminate()
+                throw XCTSkip("the microphone permission is not granted on this install (\(decision)); "
+                              + "python3 scripts/mac_device_driver.py prompt-flow --device <D> grants it and then runs "
+                              + "this test (AFTER_GRANTS)")
             }
             if decision == "Recording has no audio." {
                 return XCTFail("the Microphone source did not start (\(decision)); source \(sourceIndicator)")
