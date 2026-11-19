@@ -42,6 +42,10 @@ local-first option.
 - Q: How is "without visible seams" guaranteed and tested? → A: The fold is computed per pixel from the polar angle with a floor-based modulo and an absolute-value reflection, `|mod(θ − rotation, 2π/N) − π/N|`, which is continuous across every wedge boundary and every mirror axis, and the source is evaluated procedurally at the folded point (no texture, so no clamp-to-edge line). The GPU test measures, on the rendered frame, the difference across each wedge boundary and mirror axis (and the boundary pixel against its neighbours' mean), and requires it to be no larger than the interior neighbour difference at the same radius. A CPU test proves the fold continuous at every boundary for several N. Rejected: blurring the boundary (hides a seam instead of preventing it) (VIS-014-R6, S2).
 - Q: Which controls and keys? → A: One setting, Wedges (2…24, default 6), stored as `settings.kaleidoscope.wedges` (Int; anything else → 6); palette and glow shared with the other native visuals, Bars hidden. Accessibility: identifier `kaleidoscope`, label "Kaleidoscope visualization", value "6 wedges, Glow off". Rejected: exposing the source's frequency, octaves and seed (they already belong to Noise Field) (VIS-014-R9, R12).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: VIS-014-T12's seam index (max over median of 1° angular steps) read 1.7-9.7 on seamless pictures and up to 47 on D1 and D3 against 4; is there a seam? → A: No: the screenshots show none, the 7-wedge pattern's sharp colour edges give 9-10, and the large values were the performance overlay's text crossing the sampled circle. A seam is a step that stays as the bins get finer; the test takes the largest radius-averaged luma step between 0.25° bins with the overlay's box left out, under 0.03 (seamless pictures 0.002-0.015 on D1-D3).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A seamless kaleidoscope (Priority: P1)

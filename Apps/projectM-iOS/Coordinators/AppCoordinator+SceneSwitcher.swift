@@ -75,7 +75,9 @@ extension AppCoordinator {
         guard let cue = show.list.cues.first(where: { (c: ShowCue) -> Bool in c.id == cueID }) else { return }
         sceneSwitcher.close(chose: true)
         sceneSwitcher.probe.begin(sceneID: cue.sceneID, cueID: cueID, now: start)
+        show.announcesAppliedCue = false   // UIX-002-R9: "Scene: <name>" below is this step's one announcement
         show.go(to: cueID)
+        show.announcesAppliedCue = true
         if sceneSwitcher.probe.isPending {
             sceneSwitcher.probe.finish(.failed, now: sceneSwitcher.now())
             return

@@ -71,7 +71,9 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         report(task, "switcher return", ["secondsToFirstFrameReading": Date().timeIntervalSince(t0)])
         XCTAssertTrue(drawing, "the visual draws again after the switcher")
         assertStillCircular("after the switcher")
-        assertDrawingAndMoving(task, "after the switcher")
+        let (afterSwitcher, _) = screen(task, "after the switcher")
+        XCTAssertGreaterThan(afterSwitcher.nonBlack, 0.02, "\(task) after the switcher: the visual draws")
+        assertMovingSampled(task, "after the switcher")
 
         XCTAssertTrue(system.openControlCenter(), "Control Center opens over the app")
         pause(2)
@@ -79,8 +81,15 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         system.closeControlCenter()
         XCTAssertTrue(wait(10) { self.app.state == .runningForeground }, "back from Control Center")
         assertStillCircular("after Control Center")
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        XCTAssertTrue(wait(15) { overlay.label.contains("Active audio") }, "playback after Control Center: \(overlay.label.prefix(160))")
         assertFrameRate(task, "after Control Center")
-        assertDrawingAndMoving(task, "after Control Center")
+        // D3 2026-11-18 (two runs): one pair 1 s apart read 0.0012 and 0.0017 against 0.002 at 60 fps, while D1, D2 and
+        // the other returns passed: a quiet passage. Three pairs, the largest (autotester "Motion checks need several
+        // samples"), as after the return from the background.
+        let (first, _) = screen(task, "after Control Center")
+        XCTAssertGreaterThan(first.nonBlack, 0.02, "\(task) after Control Center: the visual draws")
+        assertMovingSampled(task, "after Control Center")
     }
 
     /// VIS-001-T36: rotate, background/return, Reduce flashing; overlay frame rate; no crash, no fallback.
@@ -240,53 +249,60 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
     /// FX-019-T23: with Reduce flashing off, an ordinary preset is never clamped (gain 1: the picture is as without the
     /// envelope), and the strobing fixture (`-uitestImportPreset fixture:strobe`, ACC-002's high-flash preset) is: the
     /// envelope's sampled gain drops below 0.98 within a few seconds of it playing. D1 and D3.
+    /// The ordinary preset is ACC-002's calm fixture (`fixture:calm`), played the same way, counted from 3 s after it
+    /// starts (the blend from the launch preset is over) for 6 s. 2026-11-18: the launch's first library preset ("EoS -
+    /// dark side of the moon (plus a few more hits and a pill)") was clamped now and then on D1 and D3 (gain 0.50,
+    /// 0.90), which is the envelope's job for third-party content, not "ordinary"; and the strobe read recentMin 1.000
+    /// everywhere because the probe sampled every sixth frame, always the same phase of the fixture's 2-frame strobe
+    /// (now every seventh, ANGLERenderer.recordDebugFlashGain). Clamps are counted as the rise of the cumulative count.
     func testFX019StrobeClampedOrdinaryUnchanged() {
         let task = "FX-019-T23"
-        launchProbed(visual: "projectM", settings: ["settings.reduceFlashing": false],
-                     extra: ["-uitestImportPreset", "fixture:strobe"])
-        dismissImportAlert()
-        pause(4)
-        let ordinary = probe("flashGuardProbe")
-        let ordinaryPreset = probe("presetFlashProbe")
+        func clampedCount() -> Double { Self.number(probe("flashGuardProbe"), "clamped") ?? -1 }
+
+        launchProbed(visual: "projectM", settings: ["settings.reduceFlashing": false], extra: ["-uitestImportPreset", "fixture:calm"])
+        XCTAssertTrue(playImportedFixture("Calm"), "the calm fixture plays: \(probe("presetFlashProbe"))")
+        _ = wait(8) { !self.controls.exists }
+        pause(3)
+        let calmStart = clampedCount()
         let ordinaryFPS = assertFrameRate(task, "ordinary preset (probe on)", seconds: 6, minimum: 0)
-        report(task, "ordinary", ["recentClamped": Self.number(ordinary, "recentClamped") ?? -1,
+        let ordinary = probe("flashGuardProbe")
+        report(task, "ordinary", ["clampedIn6s": (Self.number(ordinary, "clamped") ?? -1) - calmStart,
                                   "recentSampled": Self.number(ordinary, "recentSampled") ?? -1,
                                   "recentMin": Self.number(ordinary, "recentMin") ?? -1, "fps": ordinaryFPS])
-        print("FX019-ORDINARY \(ordinaryPreset) \(ordinary)")
+        print("FX019-ORDINARY \(probe("presetFlashProbe")) \(ordinary)")
         XCTAssertTrue(ordinary.contains("source=projectM"), "\(task): projectM's envelope is sampled: \(ordinary)")
         XCTAssertGreaterThan(Self.number(ordinary, "recentSampled") ?? 0, 5, "\(task): gains sampled")
-        XCTAssertEqual(Self.number(ordinary, "recentClamped"), 0, "\(task): the ordinary preset is not clamped: \(ordinary)")
+        XCTAssertGreaterThanOrEqual(calmStart, 0, "\(task): the probe reads")
+        XCTAssertEqual(Self.number(ordinary, "clamped"), calmStart, "\(task): the ordinary preset is not clamped: \(ordinary)")
+        app.terminate()
 
-        // Play the fixture from My Presets.
-        tapFresh("presets")
-        XCTAssertTrue(appears(app.buttons["node:included"], 10), "library home")
-        let myPresets = app.buttons["node:myPresets"]
-        XCTAssertTrue(reveal(myPresets), "My Presets")
-        myPresets.tap()
-        let row = app.buttons["preset:Strobe"]
-        XCTAssertTrue(wait(30) { self.dismissImportAlert(); return row.exists }, "the imported fixture is listed")
-        row.tap()
-        let warning = app.alerts["May flash"]
-        if appears(warning, 3) { warning.buttons["Load Anyway"].firstMatch.tap() }
-        XCTAssertTrue(wait(15) { self.probe("presetFlashProbe").hasPrefix("name=Strobe|") }, "the fixture plays: \(probe("presetFlashProbe"))")
+        launchProbed(visual: "projectM", settings: ["settings.reduceFlashing": false], extra: ["-uitestImportPreset", "fixture:strobe"])
+        XCTAssertTrue(playImportedFixture("Strobe"), "the fixture plays: \(probe("presetFlashProbe"))")
         _ = wait(8) { !self.controls.exists }
+        pause(1)   // the blend from the launch preset is over, as for the calm fixture
+        let strobeStart = clampedCount()
         var strobe = ""
         let clamped = wait(12) {
             strobe = self.probe("flashGuardProbe")
-            return (Self.number(strobe, "recentClamped") ?? 0) > 0
+            return (Self.number(strobe, "clamped") ?? 0) > strobeStart && (Self.number(strobe, "recentMin") ?? 1) < 0.98
         }
         let strobeFPS = Self.median(sampleFPS(seconds: 6))
         screen(task, "strobe clamped")
         print("FX019-STROBE \(probe("presetFlashProbe")) \(strobe)")
-        report(task, "strobe", ["recentClamped": Self.number(strobe, "recentClamped") ?? -1,
+        report(task, "strobe", ["clampedSinceStart": (Self.number(strobe, "clamped") ?? -1) - strobeStart,
                                 "recentMin": Self.number(strobe, "recentMin") ?? -1, "fps": strobeFPS])
         XCTAssertTrue(clamped, "\(task): the envelope clamps the strobing preset with Reduce flashing off: \(strobe)")
-        XCTAssertLessThan(Self.number(strobe, "minGain") ?? 1, ANGLEDebugFlashStatsLimit.clampedBelow, "\(task): gain below 0.98")
+        XCTAssertLessThan(Self.number(strobe, "recentMin") ?? 1, ANGLEDebugFlashStatsLimit.clampedBelow, "\(task): gain below 0.98")
     }
 
     /// SHOW-010-T12: four taps 500 ms apart (`-uitestTapInterval 500`: 120 BPM, tap tempo) on the SHOW-007 timeline
     /// seed (2:30): the drawn grid has a tick every 0.5 s (`showBeatGridProbe`), and while the show plays the readout's
     /// beat advances every 0.5 s and its bar every 2 s (readout sampled every 0.1 s for 9 s).
+    /// 2026-11-18 (D1-D3): the probe was read once, before the row's next twice-a-second redraw had laid out the ticks
+    /// ("ticks 0 bars 0"; it is polled now, as ShowBeatGridUITests does); and the timeline never moved: the seed makes
+    /// cue 1 active without a cue start, so the playhead does not count down and Play (already "playing", Hold off) has
+    /// nothing to resume, while the test's tap on it paused. A scrub seeks into cue 1, which starts the playhead
+    /// (SHOW-007-R2), as a person scrubbing before playing does.
     func testSHOW010BeatGridTicks() {
         let task = "SHOW-010-T12"
         launchPlain(["-uitestShowSeed", "-uitestShowTimelineSeed", "-uitestKeepControls", "-uitestTapInterval", "500",
@@ -298,9 +314,18 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
         let readout = app.staticTexts["showBeatGridReadout"]
         XCTAssertTrue(appears(readout), "the beat grid readout")
         XCTAssertTrue(wait(5) { self.value(readout).hasPrefix("120 BPM, tap tempo") }, "tapped 120 BPM: \(value(readout))")
-        let ticks = app.staticTexts["showBeatGridProbe"].label   // "ticks N bars M"
+        let probeText = app.staticTexts["showBeatGridProbe"]
+        var ticks = ""   // "ticks N bars M"
+        _ = wait(3) {
+            ticks = probeText.exists ? probeText.label : ""
+            let parts = ticks.split(separator: " ")
+            return parts.count == 4 && (Double(parts[1]) ?? 0) > 0
+        }
         let parts = ticks.split(separator: " ")
         let tickCount = parts.count == 4 ? Double(parts[1]) ?? 0 : 0, barCount = parts.count == 4 ? Double(parts[3]) ?? 0 : 0
+        let scrub = element("showTimelineScrub")
+        XCTAssertTrue(appears(scrub, 3), "the timeline scrub bar")
+        dragSlider(scrub, from: 0, to: 0.05)   // one seek to about 0:07, inside cue 1
         // Beats over the 150 s timeline: the ticks, or the ticks plus the bar lines when bars are drawn separately.
         let spacing = [150 / max(tickCount, 1), 150 / max(tickCount + barCount, 1)].min { abs($0 - 0.5) < abs($1 - 0.5) } ?? 0
         let play = app.buttons["showTimelinePlay"]
@@ -353,15 +378,31 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
 
     private func probeScene() -> String { probe("showAppliedScene") }
 
-    /// SHOW-013-T13: the five-scene show seed with scene 3 disabled, Bars 4 at 120 BPM (ANL-006's `-uitestTempoEstimate
-    /// 120:0.9`; the music fixture is 120 BPM): scenes change every 8 s (± 0.3 s, a multiple of the bar), never to the
-    /// scene shown, never to the disabled scene; then Timer 15 s rotates every 15 s. Rotation is switched on by
-    /// `-uitestSceneRotation` (seed 1).
+    /// SHOW-013-T13 as the task reads ("120 BPM tapped, Rotate scenes on, Bars 4"): the five-scene show seed with scene 3
+    /// disabled, 120 BPM tapped (four taps 500 ms apart, `-uitestTapInterval 500`), then Rotate scenes turned on in
+    /// Settings: scenes change every 8 s (± 0.3 s, a multiple of the bar), never to the scene shown, never to the disabled
+    /// scene; then Timer 15 s rotates every 15 s (rotation on at launch by `-uitestSceneRotation`, seed 1). Reduce
+    /// flashing pinned off (its 15 s minimum gap would stretch 4 bars). 2026-11-18 (D1-D3): with ANL-006's scripted
+    /// estimate (`-uitestTempoEstimate 120:0.9`, a tempo without beat phase) and rotation on from launch, bars mode fell
+    /// back to the 60 s timer (SHOW-013-R3) and nothing changed in 34 s.
     func testSHOW013RotationOnTheBarAndTimer() {
         let task = "SHOW-013-T13"
         let disabled = Self.sceneID(3)
-        launchPlain(["-uitestShowSeed", "-uitestTempoEstimate", "120:0.9", "-uitestSceneRotation", "15"],
-                    settings: ["settings.show.rotation": ["$json": ["mode": "bars", "bars": 4, "disabledSceneIDs": [disabled]]]])
+        launchPlain(["-uitestShowSeed", "-uitestKeepControls", "-uitestTapInterval", "500",
+                     "-uitestSettingsSection", "sceneRotation", "-uitestSettingsSectionOnce"],
+                    settings: ["settings.show.rotation": ["$json": ["mode": "bars", "bars": 4, "disabledSceneIDs": [disabled]]],
+                               "settings.reduceFlashing": false])
+        showControls()
+        let tap = app.buttons["tapTempo"]
+        XCTAssertTrue(appears(tap), "Tap tempo")
+        for _ in 0..<4 { tap.tap() }
+        XCTAssertTrue(wait(3) { self.value(tap).contains("120 BPM") }, "tapped 120 BPM: \(value(tap))")
+        openSettings()
+        let toggle = app.switches["sceneRotation.toggle"].firstMatch
+        XCTAssertTrue(appears(toggle, 5) && reveal(toggle), "the Rotate scenes row")
+        if value(toggle) != "1" { flip(toggle) }
+        XCTAssertTrue(wait(3) { self.value(toggle) == "1" }, "Rotate scenes on: \(value(toggle))")
+        closeSettings()
         let bars = sceneChanges(seconds: 34)
         let barIntervals = zip(bars, bars.dropFirst()).map { $1.0 - $0.0 }
         print("SHOW013-BARS \(bars)")
@@ -388,14 +429,16 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
     func testPRE009SixtySecondComparison() {
         let task = "PRE-009-T13"
         launchProbed(visual: "projectM", extra: ["-uitestSeedPresetTags", "Calm:0,1,2"])
-        let current = app.staticTexts["currentPreset"].exists ? app.staticTexts["currentPreset"].label : ""
         tapFresh("presets")
         let chip = app.buttons["presetTagChip.Calm"]
         XCTAssertTrue(appears(chip, 10), "the Calm chip")
         if !chip.isSelected { chip.tap() }
         let rows = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH 'preset:'"))
         XCTAssertTrue(wait(5) { rows.count >= 3 }, "three Calm presets")
-        let names = rows.allElementsBoundByIndex.map { String($0.identifier.dropFirst("preset:".count)) }.filter { $0 != current }
+        // The playing preset's menu has no Compare… (D1-D3 2026-11-18: the first Calm row was the current preset; the
+        // overlay's `currentPreset` text did not match its name). Its row label says "current preset".
+        let names = rows.allElementsBoundByIndex.filter { !$0.label.contains("current preset") }
+            .map { String($0.identifier.dropFirst("preset:".count)) }
         guard names.count >= 2 else { return XCTFail("\(task): two Calm presets to compare: \(names)") }
         func menu(_ name: String, _ title: String) {
             app.buttons["preset:\(name)"].press(forDuration: 0.7)

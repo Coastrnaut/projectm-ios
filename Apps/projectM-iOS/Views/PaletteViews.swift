@@ -57,8 +57,12 @@ struct PaletteStrip: View {
 
 extension PaletteStrip {
     /// SHD-005: the drawn colours (colour × alpha on black, the native visuals' rule) sampled at 64 points, so
-    /// positions, alpha and Step's hard edges show as drawn.
+    /// positions and alpha show as drawn. Step draws flat bands with a hard edge at each stop's position
+    /// (`stepStops`): 64 samples blended by the gradient made each edge a 1/63-wide ramp (5 pt on D1-D3, 2026-11-18).
     static func sampledStops(_ palette: ColorPalette) -> [Gradient.Stop] {
+        if palette.interpolation == .step, let ramp = PaletteCoordinator.gradientRamp(for: palette) {
+            return stepStops(ramp)
+        }
         let visual: VisualPalette = PaletteCoordinator.visualPalette(for: palette)
         let count: Int = 64
         return (0..<count).map { (k: Int) -> Gradient.Stop in
@@ -67,6 +71,23 @@ extension PaletteStrip {
                               blue: Double(SRGB.encode(c.blue)), opacity: 1)
             return Gradient.Stop(color: color, location: Double(k) / Double(count - 1))
         }
+    }
+
+    /// SHD-005 Step: each stop's colour × alpha holds from its position (0 for the first: Step holds Stop 1 before
+    /// it) to the next stop's position (1 for the last); two gradient stops at one location make the edge hard.
+    static func stepStops(_ ramp: GradientRamp) -> [Gradient.Stop] {
+        let stops: [GradientRampStop] = ramp.stops
+        var result: [Gradient.Stop] = []
+        for (i, stop) in stops.enumerated() {
+            let start: Double = i == 0 ? 0 : Double(stop.position)
+            let end: Double = i == stops.count - 1 ? 1 : Double(stops[i + 1].position)
+            let c: LinearColor = stop.linear
+            let color = Color(.sRGB, red: Double(SRGB.encode(c.red * c.alpha)), green: Double(SRGB.encode(c.green * c.alpha)),
+                              blue: Double(SRGB.encode(c.blue * c.alpha)), opacity: 1)
+            result.append(Gradient.Stop(color: color, location: start))
+            result.append(Gradient.Stop(color: color, location: end))
+        }
+        return result
     }
 }
 

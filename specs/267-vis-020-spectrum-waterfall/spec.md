@@ -48,6 +48,10 @@ local-first option.
 - Q: Does the waterfall add to per-frame work when nothing new arrives? → A: No. Between row steps only the running sum of the current row (256 additions) and the envelope's gain run; texture copies and the flash cells' update happen only for rows written that frame (about 8.5 per second), and nothing is allocated per frame (VIS-020-R3, R7).
 - Q: Is the waterfall saved in scenes? → A: No, as VIS-013 to VIS-015: it is no SCN-001 layer kind; a scene captured while it is shown records no native layer (VIS-020-R11).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: VIS-020-T12's row shift read −30 (D2, D3) and 0 (D1); does the history move up? → A: No. A few seconds after launch the 60 s history covers only the top 15-20 % of the screen, so the compared middle band was black (every shift equal) and the overlay covered the drawn band on D1 and D3. Over the drawn band D2's pairs 1.5 s apart moved 16 sampled rows down. The test measures the drawn band with the overlay off.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the last minute of sound (Priority: P1)

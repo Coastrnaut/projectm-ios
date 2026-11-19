@@ -54,6 +54,10 @@ option.
 - Q: How strict is the GPU health check? → A: Strict: any non-finite value, any value above 1 or below 0 sets the flag (every pass clamps, so a flag can only mean a fault); the reference solver asserts the same after every iteration (VIS-012-R9).
 - Q: What happens to queued injections at a reload? → A: The queue, kick detector, clock and injection index start over, so a reload with the same bass timeline replays exactly (VIS-012-R6, R8).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: VIS-012-T13's flash probe counted 94-96 clamped samples of 480 on D1-D3 with Reduce flashing on (recent 3 s: 0); does a reload flash? → A: No. The envelope sees the bound (brightest stop × ramp, R11), which rises from 0 in the 1 s fade-in faster than Reduce flashing's rise limit, so the envelope slows the fade-in during the first seconds; that is the protection working. The device test asserts no luma step over 0.1 and no clamp after the fade-in (the clamped count unchanged from the first screenshot on).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A growing pattern from a chosen seed (Priority: P1)

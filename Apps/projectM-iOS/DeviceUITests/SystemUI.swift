@@ -148,11 +148,32 @@ final class SystemUI {
 
     // MARK: Settings app
 
-    /// Settings, freshly launched at its root list.
+    /// Settings, freshly launched at its root list. Settings reopens on the page it showed last (D1, iOS 27.0.1,
+    /// 2026-11-18: no Accessibility or Battery row after a relaunch), so pushed pages are popped first.
     func openSettingsRoot() {
         preferences.terminate()
         preferences.launch()
         XCTAssertTrue(preferences.wait(for: .runningForeground, timeout: 10), "Settings is in front")
+        let back = NSPredicate(format: "identifier == 'BackButton' OR label == 'Back' OR label == 'Settings'")
+        for _ in 0..<5 {
+            let button = preferences.navigationBars.buttons.matching(back).firstMatch
+            guard button.exists, button.isHittable else { break }
+            button.tap()
+            pause(0.6)
+        }
+    }
+
+    /// The Settings lists on screen, the one to scroll first first. On an iPad (and iOS 27's iPhone layout) the root
+    /// rows sit in `com.apple.settings.sidebar.collectionView` and a page's rows in the detail list beside it; scrolling
+    /// `collectionViews.firstMatch` moved the sidebar while the row looked for was on the page (D2, 2026-11-18).
+    private func settingsLists(in application: XCUIApplication, root: Bool) -> [XCUIElement] {
+        let screen = application.windows.firstMatch.frame
+        let shown = (application.collectionViews.allElementsBoundByIndex + application.tables.allElementsBoundByIndex)
+            .filter { $0.exists && $0.frame.width > 0 && screen.intersects($0.frame) }
+        let sidebar = shown.filter { $0.identifier.contains("sidebar") }
+        let pages = shown.filter { !$0.identifier.contains("sidebar") }
+        let ordered = root ? sidebar + pages : pages + sidebar
+        return ordered.isEmpty ? [application.windows.firstMatch] : ordered
     }
 
     /// A row of the frontmost Settings page by its visible label (cells, buttons or texts, first match).
@@ -165,23 +186,31 @@ final class SystemUI {
         return preferences.cells.matching(byLabel).firstMatch
     }
 
-    /// Scrolls the frontmost Settings list until `element` is hittable (at most `swipes` slow swipes each way).
+    /// Scrolls the Settings lists until `element` is hittable (at most `swipes` slow swipes each way per list): the
+    /// list that holds it when it exists, else the page list first (the sidebar first for a root row, `root`).
     @discardableResult
-    func scrollTo(_ element: XCUIElement, in application: XCUIApplication, swipes: Int = 8) -> Bool {
+    func scrollTo(_ element: XCUIElement, in application: XCUIApplication, swipes: Int = 8, root: Bool = false) -> Bool {
         if element.exists && element.isHittable { return true }
-        let list = application.collectionViews.firstMatch.exists ? application.collectionViews.firstMatch
-            : application.tables.firstMatch.exists ? application.tables.firstMatch : application.windows.firstMatch
-        for _ in 0..<swipes where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
-        for _ in 0..<swipes where !(element.exists && element.isHittable) { list.swipeDown(velocity: .slow) }
+        var lists = settingsLists(in: application, root: root)
+        if element.exists {
+            let x = element.frame.midX
+            lists = lists.filter { $0.frame.minX <= x && x <= $0.frame.maxX } + lists.filter { !($0.frame.minX <= x && x <= $0.frame.maxX) }
+        }
+        for list in lists.prefix(2) {
+            for _ in 0..<swipes where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
+            for _ in 0..<swipes where !(element.exists && element.isHittable) { list.swipeDown(velocity: .slow) }
+            if element.exists && element.isHittable { return true }
+        }
         return element.exists && element.isHittable
     }
 
-    /// Taps the Settings row `label`, scrolling to it first; false when it cannot be found.
+    /// Taps the Settings row `label`, scrolling to it first; false when it cannot be found. `root`: a row of the
+    /// Settings root (the sidebar on an iPad).
     @discardableResult
-    func tapSettingsRow(_ label: String) -> Bool {
+    func tapSettingsRow(_ label: String, root: Bool = false) -> Bool {
         _ = wait(3) { self.settingsRow(label).exists }
         var row = settingsRow(label)
-        if !scrollTo(row, in: preferences) {
+        if !scrollTo(row, in: preferences, root: root) {
             row = settingsRow(label)   // re-resolve after scrolling (cells are reused)
             guard row.exists, row.isHittable else { return false }
         }
@@ -193,8 +222,8 @@ final class SystemUI {
     /// Walks `rows` from the Settings root.
     func openSettings(path rows: [String]) {
         openSettingsRoot()
-        for row in rows {
-            XCTAssertTrue(tapSettingsRow(row), "Settings row \(row)")
+        for (i, row) in rows.enumerated() {
+            XCTAssertTrue(tapSettingsRow(row, root: i == 0), "Settings row \(row)")
         }
     }
 
@@ -203,7 +232,12 @@ final class SystemUI {
     func openAppSettingsPage() {
         if preferences.state == .runningForeground, preferences.navigationBars[Self.appDisplayName].exists { return }
         openSettingsRoot()
-        if tapSettingsRow("Apps") {
+        // Settings' own search first: it lists the app's page on every layout. On iPadOS 27.2 (D2, 2026-11-18) no
+        // "Apps" row was found in the sidebar after 16 swipes, and the pre-iOS 18 fallback found no app row either.
+        if searchSettings(for: Self.appDisplayName),
+           wait(5, { self.preferences.navigationBars[Self.appDisplayName].exists }) { return }
+        openSettingsRoot()
+        if tapSettingsRow("Apps", root: true) {
             let search = preferences.searchFields.firstMatch
             if search.waitForExistence(timeout: 2) {
                 search.tap()
@@ -212,16 +246,55 @@ final class SystemUI {
             }
             XCTAssertTrue(tapSettingsRow(Self.appDisplayName), "the app in Settings › Apps")
         } else {
-            XCTAssertTrue(tapSettingsRow(Self.appDisplayName), "the app in Settings (pre-iOS 18 layout)")
+            XCTAssertTrue(tapSettingsRow(Self.appDisplayName, root: true), "the app in Settings (pre-iOS 18 layout)")
         }
-        XCTAssertTrue(wait(5) { self.preferences.navigationBars[Self.appDisplayName].exists },
-                      "the app's Settings page is shown")
+        let shown = wait(5) { self.preferences.navigationBars[Self.appDisplayName].exists }
+        if !shown { print("SYSTEM-UI app page not reached; Settings shows:\n\(preferences.debugDescription.prefix(6000))") }
+        XCTAssertTrue(shown, "the app's Settings page is shown")
     }
 
-    /// A Settings switch's state: "1"/"0" (or "On"/"Off" on some releases).
-    func isOn(_ element: XCUIElement) -> Bool {
-        let value = (element.value as? String)?.lowercased() ?? ""
-        return value == "1" || value == "on"
+    /// Types `text` into the Settings root's search field and taps the first result named exactly `text` (a cell,
+    /// button or text; the app's row also carries a subtitle on some releases, so a prefix match is the fallback).
+    /// False when there is no search field or no such result.
+    @discardableResult
+    func searchSettings(for text: String) -> Bool {
+        let search = preferences.searchFields.firstMatch
+        guard search.waitForExistence(timeout: 3) else { return false }
+        search.tap()
+        search.typeText(text)
+        pause(1.5)
+        let exact = NSPredicate(format: "label == %@", text), prefix = NSPredicate(format: "label BEGINSWITH %@", text)
+        for predicate in [exact, prefix] {
+            for query in [preferences.cells, preferences.buttons, preferences.staticTexts] {
+                // Skip the search field itself, whose text is `text`.
+                let match = query.matching(predicate).allElementsBoundByIndex
+                    .first { $0.elementType != .searchField && $0.isHittable && $0.frame.minY > search.frame.maxY }
+                if let match {
+                    match.tap()
+                    pause(0.8)
+                    return true
+                }
+            }
+        }
+        print("SYSTEM-UI search \(text): no result")
+        return false
+    }
+
+    /// A Settings switch's state: "1"/"0" (or "On"/"Off", "true"/"false" on some releases, or a number).
+    func isOn(_ element: XCUIElement) -> Bool { switchState(element) ?? false }
+
+    /// The switch's state, or nil when its value is unreadable.
+    func switchState(_ element: XCUIElement) -> Bool? {
+        switch element.value {
+        case let number as NSNumber: return number.boolValue
+        case let text as String:
+            switch text.lowercased() {
+            case "1", "on", "true": return true
+            case "0", "off", "false": return false
+            default: return nil
+            }
+        default: return nil
+        }
     }
 
     /// The switch labelled `label` on the frontmost Settings page (the switch itself, or its row's switch).
@@ -239,11 +312,19 @@ final class SystemUI {
         let toggle = settingsSwitch(label)
         guard wait(3, { toggle.exists }) else { return nil }
         scrollTo(toggle, in: preferences)
+        let readable = switchState(toggle) != nil
         let before = isOn(toggle)
+        print("SYSTEM-UI switch \(label): value=\(String(describing: toggle.value)) frame=\(toggle.frame) want=\(on)")
         if before != on {
-            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-            if !wait(3, { self.isOn(toggle) == on }) { toggle.tap() }
-            XCTAssertTrue(wait(5) { self.isOn(toggle) == on }, "\(label) is \(on ? "on" : "off")")
+            // The knob, 26 pt in from the element's trailing edge: the element can be the whole row (iPadOS 27.2, D2),
+            // where 90 % of its width is not on the knob and a centre tap lands on the label.
+            let frame = toggle.frame
+            toggle.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5))
+                .withOffset(CGVector(dx: max(frame.width - 26, frame.width / 2), dy: 0)).tap()
+            // A second tap only when the state is readable and unchanged: a blind one turns the switch back off.
+            if readable, !wait(3, { self.isOn(toggle) == on }) { toggle.tap() }
+            XCTAssertTrue(wait(5) { self.isOn(toggle) == on },
+                          "\(label) is \(on ? "on" : "off") (value \(String(describing: toggle.value)))")
         }
         return before
     }
@@ -383,10 +464,19 @@ final class SystemUI {
 
     // MARK: App switcher
 
-    /// The app's card in the switcher, if springboard lists it by the app's name.
+    /// The app's bundle identifier (project.yml), which names its switcher card.
+    static let appBundleID = "org.projectmios.ProjectMiOS"
+
+    /// The app's card in the switcher: `card:<bundle id>:sceneID:…` (D1, iOS 27.0.1), else an element named like the
+    /// app that is not a Home Screen or Dock icon. On an iPad the Dock stays up in the switcher and its "projectM" Icon
+    /// came first, so the flick moved the icon and the app kept running (D2, D3, 2026-11-18).
     var appSwitcherCard: XCUIElement {
-        springboard.descendants(matching: .any)
-            .matching(NSPredicate(format: "label == %@ OR identifier == %@", Self.appDisplayName, Self.appDisplayName))
+        let card = springboard.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "card:\(Self.appBundleID)")).firstMatch
+        if card.exists { return card }
+        return springboard.descendants(matching: .any)
+            .matching(NSPredicate(format: "(label == %@ OR identifier == %@) AND elementType != %d", Self.appDisplayName,
+                                  Self.appDisplayName, Int(XCUIElement.ElementType.icon.rawValue)))
             .firstMatch
     }
 
@@ -411,7 +501,9 @@ final class SystemUI {
     /// goes to the Home Screen. Returns whether the app ended.
     @discardableResult
     func forceQuitFromSwitcher() -> Bool {
+        _ = wait(3) { self.appSwitcherCard.exists }
         let card = appSwitcherCard
+        print("SYSTEM-UI switcher card: \(card.exists ? "\(card.elementType.rawValue) \(card.identifier) \(card.frame)" : "none")")
         let from = card.exists && card.frame.height > 0 ? card.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             : springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         let to = springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.02))
@@ -429,17 +521,20 @@ final class SystemUI {
         let clock = Self.clock
         clock.launch()
         XCTAssertTrue(clock.wait(for: .runningForeground, timeout: 10), "Clock is in front")
-        for name in ["Timers", "Timer"] where clock.tabBars.buttons[name].exists {
-            clock.tabBars.buttons[name].tap()
-            break
-        }
+        // The Timers tab: a tab bar button on iOS 26; on iPadOS 27.2 (D2, 2026-11-18) the tab bar had no "Timers" or
+        // "Timer" button, Clock stayed on another tab and no wheels were found, so any button of that name is tried.
+        let tab = NSPredicate(format: "label IN %@ OR identifier IN %@", ["Timers", "Timer"], ["Timers", "Timer"])
+        let tabButton = clock.tabBars.buttons.matching(tab).firstMatch.exists ? clock.tabBars.buttons.matching(tab).firstMatch
+            : clock.buttons.matching(tab).firstMatch
+        if wait(3, { tabButton.exists }) { tabButton.tap() }
         let wheels = clock.pickerWheels
         if wait(3, { wheels.count >= 3 }) {
             // hours, minutes, seconds
-            wheels.element(boundBy: 0).adjust(toPickerWheelValue: "0")
-            wheels.element(boundBy: 1).adjust(toPickerWheelValue: "0")
-            wheels.element(boundBy: 2).adjust(toPickerWheelValue: "\(max(1, seconds))")
+            adjustWheel(wheels.element(boundBy: 0), to: 0)
+            adjustWheel(wheels.element(boundBy: 1), to: 0)
+            adjustWheel(wheels.element(boundBy: 2), to: max(1, seconds))
         } else {
+            print("SYSTEM-UI Clock has no timer wheels; Clock shows:\n\(clock.debugDescription.prefix(8000))")
             XCTFail("the Clock timer's wheels were not found")
         }
         let start = clock.buttons["Start"]
@@ -448,6 +543,23 @@ final class SystemUI {
         remember("Clock timer", keep: false) { [weak self] in self?.stopClockTimer() }
         app.activate()
         _ = app.wait(for: .runningForeground, timeout: 10)
+    }
+
+    /// Sets a timer wheel to `number`. The wheels' values carry their unit ("0 hours", "1 hour" on iPadOS 26.5, D3
+    /// 2026-11-18: a bare "0" was refused as not one of the values), so the value is built from the wheel's current
+    /// one: the same unit, singular for 1 where the unit is a full word.
+    func adjustWheel(_ wheel: XCUIElement, to number: Int) {
+        let current = (wheel.value as? String) ?? ""
+        let parts = current.split(separator: " ", maxSplits: 1).map(String.init)
+        guard parts.count == 2, Int(parts[0]) != nil else {
+            wheel.adjust(toPickerWheelValue: "\(number)")   // bare numbers (older releases)
+            return
+        }
+        var unit = parts[1]
+        let words = ["hour", "minute", "second"]
+        if let word = words.first(where: { unit == $0 || unit == $0 + "s" }) { unit = number == 1 ? word : word + "s" }
+        print("SYSTEM-UI wheel \(current) -> \(number) \(unit)")
+        wheel.adjust(toPickerWheelValue: "\(number) \(unit)")
     }
 
     /// Stops a ringing timer from its alert or banner, or cancels a running one in Clock.
@@ -478,8 +590,25 @@ final class SystemUI {
 
     /// In the app's document picker (Files): Browse, a location ("On My iPhone"/"On My iPad" when `path` is empty,
     /// then `projectM`), the folders in `path`, then the file `name`; taps Open when the picker asks.
+    ///
+    /// The Files picker never lists the presenting app's own folder (D2, D3 2026-11-18: hierarchy dumps showed other
+    /// apps' folders only, with UIFileSharingEnabled on), so "On My iPad › projectM" cannot be browsed to. A test that
+    /// needs a file in the app's Documents opens the picker there (DEBUG `-uitestPickerInDocuments`, the audio
+    /// importer's `.fileDialogDefaultDirectory(URL.documentsDirectory)`): the file is then tapped where the picker
+    /// opened, before any browsing. Other pickers need the same DEBUG hook before such a test: the photo, video,
+    /// slideshow and logo file importers (SettingsView, SlideshowSection, LogoSection), the preset and bulk preset
+    /// importers (UserPresetsView, BulkPresetImportViews), the scene pack importer (ScenePackViews), the library backup
+    /// and folder importers (LibraryBackupSection), the MIDI and output profile importers, the offline export's audio
+    /// importer, the missing-media and library-check relink pickers, and the exporters (Save Frame's fileExporter in
+    /// VisualizerView, SnapshotBatchExportViews' document picker).
     @discardableResult
     func filesPick(path: [String] = [], name: String) -> Bool {
+        let here = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch
+        if path.isEmpty, wait(3, { here.exists && here.isHittable }) {   // the picker opened where the file is
+            here.tap()
+            if app.buttons["Open"].waitForExistence(timeout: 2) { app.buttons["Open"].tap() }
+            return true
+        }
         let browse = app.buttons["Browse"]
         if wait(5, { browse.exists }) { browse.tap(); pause(0.5) }
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
@@ -504,9 +633,17 @@ final class SystemUI {
     }
 
     /// In the app's document picker for export: the location (On My iPhone/iPad › projectM by default), then Save
-    /// (or Move/Done, by release).
+    /// (or Move/Done, by release). The default path cannot work (the picker never lists the app's own folder; see
+    /// `filesPick`): a test that saves into the app's Documents opens the exporter there with a DEBUG default-directory
+    /// hook and passes `inCurrentLocation: true`, which taps Save where the picker opened, before any browsing.
     @discardableResult
-    func filesSave(path: [String] = []) -> Bool {
+    func filesSave(path: [String] = [], inCurrentLocation: Bool = false) -> Bool {
+        if inCurrentLocation {
+            for name in ["Save", "Move", "Done"] where app.buttons[name].waitForExistence(timeout: 3) {
+                app.buttons[name].tap()
+                return true
+            }
+        }
         let browse = app.buttons["Browse"]
         if wait(5, { browse.exists }) { browse.tap(); pause(0.5) }
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
@@ -622,16 +759,40 @@ enum MacDriver {
 
 // MARK: Accessibility audits
 
+/// The app's DEBUG test probes: near-transparent texts (opacity 0.01, `-uitestDiagnostics`, `-uitestVisualProbes` and
+/// the other UI-test hooks) that carry state for the tests and are not in a shipping build. An audit flags them
+/// (contrast, element description); on an iPad Settings is a side panel, so the visualizer's probes stay on screen
+/// beside it and every audit there listed them (ACC-003-T17, SHD-003-T20 on D2 and D3, 2026-11-18).
+enum DebugProbes {
+    static let identifiers: Set<String> = [
+        "cameraDeviceState", "cameraFramesShown", "cameraOrientationGrid", "cameraRecovery", "diskBallast",
+        "externalCalibration", "externalCornerPin", "externalDiagnostics", "externalGridWarp", "externalOutputMode",
+        "externalPlacement", "externalResolution", "externalResources", "gestureShortcutLast", "gestureShortcutPreset",
+        "oneHandedZone", "outputBlackout", "performanceSafeArea", "photoFramesShown", "photoLibrarySeed",
+        "photoStoredMetadata", "recordingFacts", "renderHealth", "renderPlaceholderShown", "sceneAutosave",
+        "sessionRecovery", "showAppliedScene", "sourceStarts", "splitOutputFrame", "textRendering", "videoFrameRate",
+        "visualRunning",
+    ]
+
+    /// True for a probe's identifier: the list above, or any `…Probe` / `uitest…` identifier.
+    static func contains(_ identifier: String) -> Bool {
+        identifiers.contains(identifier) || identifier.hasSuffix("Probe") || identifier.hasPrefix("uitest")
+            || identifier.contains(".uitest")
+    }
+}
+
 extension XCTestCase {
     /// Runs an accessibility audit of what `app` shows; returns one line per issue (and attaches the screen when
-    /// there are issues). The caller asserts, so a test can report issues per screen.
+    /// there are issues). The caller asserts, so a test can report issues per screen. Issues on the DEBUG probes
+    /// (`DebugProbes`) are left out unless `includeProbes`.
     @MainActor
     func auditIssues(_ app: XCUIApplication, _ screen: String,
-                     types: XCUIAccessibilityAuditType = .all) -> [String] {
+                     types: XCUIAccessibilityAuditType = .all, includeProbes: Bool = false) -> [String] {
         var issues: [String] = []
         do {
             try app.performAccessibilityAudit(for: types) { (issue: XCUIAccessibilityAuditIssue) -> Bool in
                 let snapshot: XCUIElementSnapshot? = try? issue.element?.snapshot()
+                if !includeProbes, DebugProbes.contains(snapshot?.identifier ?? "") { return true }
                 issues.append("[\(screen)] type=\(issue.auditType.rawValue) id=\"\(snapshot?.identifier ?? "")\" "
                               + "label=\"\(snapshot?.label ?? "")\": \(issue.compactDescription)")
                 return true

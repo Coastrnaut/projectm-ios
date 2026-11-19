@@ -54,8 +54,11 @@ final class B11OutputDeviceTests: ControlSurfaceCase {
         let save = app.buttons["saveFrame"].firstMatch
         if save.exists && save.isEnabled { saveFramePNG() }
         pause(4)
-        report(task, "blackout", ["refused": capture == before ? 1 : 0])
-        XCTAssertEqual(capture, before, "no frame is saved while blacked out")
+        // The probe records the refusal itself ("refused: outputBlackedOut", D1-D3 2026-11-18): that, or no change, is
+        // a frame not saved; a new "png …" line is the failure.
+        let refused = capture == before || capture.hasPrefix("refused")
+        report(task, "blackout", ["refused": refused ? 1 : 0])
+        XCTAssertTrue(refused, "no frame is saved while blacked out: \(before) → \(capture)")
         app.buttons["blackoutRestore"].firstMatch.tap()
     }
 
@@ -124,6 +127,9 @@ final class B11OutputDeviceTests: ControlSurfaceCase {
         closeSettingsPanel()
         disconnectFakeDisplay()
         connectFakeDisplay(small: true)   // a 1280 × 720 display
+        // The controls bar from the first visit was still fading out when `openSettingsPanel` saw it, and its
+        // Settings button was gone by the tap (D3, 2026-11-18): wait for the bar to hide, then show it fresh.
+        _ = wait(7) { !self.app.otherElements["controls"].exists }
         openSettingsPanel()
         let importRow = app.buttons["outputProfileImport"].firstMatch
         XCTAssertTrue(scrollTo(importRow), "Import output profile…")

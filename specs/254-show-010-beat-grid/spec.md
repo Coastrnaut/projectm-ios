@@ -55,6 +55,10 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Fix applied: S3's 0.01-point tolerance was not named in the tasks; T03 and T06 now assert it.
  & Testing *(mandatory)*
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: SHOW-010-T12 read "ticks 0 bars 0" and a readout that never moved on D1-D3; is the grid missing? → A: No. The probe was read once before the row's twice-a-second redraw laid out the ticks (it is polled now, as ShowBeatGridUITests does). The show seed makes cue 1 active without a cue start, so the playhead is idle and Play (already "playing") had nothing to resume; the device test scrubs into cue 1 first (a seek starts the playhead, SHOW-007-R2).
+
 ### User Story 1 - See the beats on the show timeline (Priority: P1) — MVP
 
 A VJ taps tempo at 120 BPM and plays a timed show. Tick marks appear along the timeline every half second, a taller tick

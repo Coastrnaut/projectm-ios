@@ -112,7 +112,10 @@ class B07DeviceCase: DeviceAcceptanceCase {
         return list
     }
 
-    /// Scrolls (held drags in the right margin, never a pull at the top of a sheet) until `e` is on screen and hittable.
+    /// Scrolls (held drags in the right margin, never a pull at the top of a sheet) until `e` lies on screen below the
+    /// navigation bar. Frames only, not `isHittable` (as UITestWaits' `reveal`): an ACC-005 slider row reports
+    /// `isHittable` false even when it is fully on screen, so every slider reveal failed on D1-D3 (2026-11-18: Stop 2's
+    /// position, the Warp amount and the emitter's Rate, each visible in the screenshots) and scrolled the list away.
     @discardableResult
     func reveal(_ e: XCUIElement, up: Bool = true, drags: Int = 12) -> Bool {
         let window = app.windows.firstMatch
@@ -120,7 +123,7 @@ class B07DeviceCase: DeviceAcceptanceCase {
             guard e.exists else { return false }
             let f = e.frame, bar = app.navigationBars.firstMatch
             let top: CGFloat = bar.exists ? bar.frame.maxY : window.frame.minY
-            return f.height > 0 && f.minY >= top && f.maxY <= window.frame.maxY && e.isHittable
+            return f.height > 0 && f.minY >= top && f.maxY <= window.frame.maxY
         }
         var downward = !up
         for i in 0..<drags {
@@ -200,6 +203,33 @@ class B07DeviceCase: DeviceAcceptanceCase {
         return values.reduce(0.0) { $0 + ($1 - mean) * ($1 - mean) } / Double(values.count)
     }
 
+    /// The performance overlay's box in window points, grown by 8 pt (`.null` while it is not shown). Its text changes
+    /// every second, so screen statistics leave it out (autotester "The performance overlay is part of every screenshot").
+    func overlayBox() -> CGRect {
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        guard overlay.exists, overlay.frame.width > 0 else { return .null }
+        return overlay.frame.insetBy(dx: -8, dy: -8)
+    }
+
+    /// `change(a, b)` of two `screen(…)` samples without the samples inside `excluded` (window points).
+    func change(_ a: [UInt8], _ b: [UInt8], excluding excluded: CGRect) -> Double {
+        let (w, h) = lastSize
+        let window = app.windows.firstMatch.frame
+        guard a.count == b.count, w > 0, h > 0, a.count >= w * h * 4, window.width > 0, !excluded.isNull else {
+            return Self.change(a, b)
+        }
+        let perPoint: CGFloat = CGFloat(w) / window.width
+        var sum = 0, n = 0
+        for y in 0..<h {
+            for x in 0..<w where !excluded.contains(CGPoint(x: CGFloat(x) / perPoint, y: CGFloat(y) / perPoint)) {
+                let i = (y * w + x) * 4
+                sum += abs(Int(a[i]) - Int(b[i])) + abs(Int(a[i + 1]) - Int(b[i + 1])) + abs(Int(a[i + 2]) - Int(b[i + 2]))
+                n += 3
+            }
+        }
+        return n > 0 ? Double(sum) / Double(n) / 255 : 0
+    }
+
     /// Taps a point given in window points.
     func tapPoint(_ p: CGPoint) {
         app.windows.firstMatch.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: p.x, dy: p.y)).tap()
@@ -210,7 +240,12 @@ class B07DeviceCase: DeviceAcceptanceCase {
     /// Plays the imported "Strobe" fixture from My Presets (Load Anyway when the May flash alert asks); true once the
     /// `presetFlashProbe` names it.
     @discardableResult
-    func playStrobeFixture() -> Bool {
+    func playStrobeFixture() -> Bool { playImportedFixture("Strobe") }
+
+    /// Plays an imported fixture (`-uitestImportPreset fixture:strobe` or `fixture:calm`) from My Presets by its
+    /// name ("Strobe", "Calm"); true once the `presetFlashProbe` names it.
+    @discardableResult
+    func playImportedFixture(_ name: String) -> Bool {
         func dismissImport() {
             let alert = app.alerts["Import Preset"]
             if alert.exists { alert.buttons["OK"].firstMatch.tap() }
@@ -221,12 +256,12 @@ class B07DeviceCase: DeviceAcceptanceCase {
         let myPresets = app.buttons["node:myPresets"]
         XCTAssertTrue(reveal(myPresets), "My Presets")
         myPresets.tap()
-        let row = app.buttons["preset:Strobe"]
-        XCTAssertTrue(wait(30) { dismissImport(); return row.exists }, "the imported fixture is listed")
+        let row = app.buttons["preset:\(name)"]
+        XCTAssertTrue(wait(30) { dismissImport(); return row.exists }, "the imported fixture \(name) is listed")
         row.tap()
         let warning = app.alerts["May flash"]
         if appears(warning, 3) { warning.buttons["Load Anyway"].firstMatch.tap() }
-        return wait(15) { self.probe("presetFlashProbe").hasPrefix("name=Strobe|") }
+        return wait(15) { self.probe("presetFlashProbe").hasPrefix("name=\(name)|") }
     }
 
     // MARK: Pixels

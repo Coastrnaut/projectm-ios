@@ -58,6 +58,15 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Does the split change where the performance overlay (FR-048) and the debug probes sit? → A: They stay in the output pane with the rest of the status layers; nothing is added to the editor pane except Settings.
 - Q: How do UI tests read the output's on-screen frame? → A: A DEBUG `-uitestDiagnostics` probe `splitOutputFrame` gives the device slot's frame in window coordinates ("x,y,w,h") and the window size, measured from the view hierarchy (not the computed layout), so a test checks what is actually shown.
 
+### Session 2026-11-18 (QA-011 device run, UIX-007-T13's automated part)
+
+- Q: Lowering the seeded Circular Spectrum layer from 60 % to about 15 % moved the output's summed luma by 0.4 % on D2
+  (8279 → 8310) and 0.8 % on D3 (2605 → 2625), inside the 2 % allowance, because that layer follows the audio and
+  the reference track is silent or quiet there. Which layer proves "a layer change is visible live"? → A: The seeded
+  Photo layer (row 1, 80 %, a still picture): lowered to about 15 % over the black background it must darken the
+  output by more than 10 %; any layer's opacity takes the same path to the output, so the step still proves the
+  live update without depending on the music.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Edit properties beside the live output on iPad (Priority: P1)

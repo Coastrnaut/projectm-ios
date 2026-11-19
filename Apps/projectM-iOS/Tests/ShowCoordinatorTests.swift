@@ -86,6 +86,29 @@ final class ShowCoordinatorTests: XCTestCase {
         XCTAssertEqual(appliedAgain(), [])
     }
 
+    /// ACC-004-R5 (QA-011 ACC-004-T12 on D1-D3, 2026-11-18): every applied step is announced once with the cue's
+    /// VoiceOver value; edits announce nothing; a caller that announces its own words turns it off for its step.
+    func testEachAppliedStepIsAnnouncedWithTheCueValue() throws {
+        let (show, _) = try coordinator(at: folder())
+        var announced: [String] = []
+        show.announce = { (message: String) in announced.append(message) }
+        for name in ["Intro", "Drop"] {
+            let document = ShowSceneSnapshot.document(look(.circularSpectrum), id: UUID().uuidString, name: name)
+            XCTAssertTrue(show.addScene(document, label: name))
+        }
+        XCTAssertEqual(announced, [], "adding never announces")
+        show.next()
+        show.next()
+        show.previous()
+        XCTAssertEqual(announced, ["Cue 1 of 2, Intro", "Cue 2 of 2, Drop", "Cue 1 of 2, Intro"])
+        XCTAssertEqual(show.next().outcome, .moved)
+        XCTAssertEqual(show.next().outcome, .atEnd)
+        XCTAssertEqual(announced.count, 4, "a step that does not move says nothing")
+        show.announcesAppliedCue = false
+        show.previous()
+        XCTAssertEqual(announced.count, 4, "the scene switcher's own announcement replaces it")
+    }
+
     func testTheLookRoundTripsThroughTheSnapshotIntoSettings() throws {
         let registry = try registry()
         let texts = TextOverlayCoordinator.makeDefault(defaults: UserDefaults(suiteName: "ShowCoordinatorTests-text-\(UUID().uuidString)")!)
@@ -155,7 +178,8 @@ final class ShowCoordinatorTests: XCTestCase {
         XCTAssertEqual(show.list.activeSceneID, bad.id)
         XCTAssertEqual(applied(), [good.id], "the output is unchanged")
         XCTAssertEqual(show.notice, "Cue 2: the scene could not be shown.")
-        XCTAssertEqual(announced, ["Cue 2: the scene could not be shown."])
+        XCTAssertEqual(announced, ["Cue 1 of 3, Good", "Cue 2: the scene could not be shown."],
+                       "the applied cue, then the notice instead of a cue announcement")
         XCTAssertTrue(show.isSceneMissing(show.list.cues[1]))
         show.next()
         XCTAssertEqual(applied(), [good.id], "an invalid scene is not applied")

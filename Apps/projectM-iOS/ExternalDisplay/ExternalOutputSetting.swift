@@ -142,7 +142,9 @@ final class ExternalOutputSetting {
 
     init(defaults: UserDefaults, external: ExternalDisplayCoordinator) {
         if ProcessInfo.processInfo.arguments.contains("-uitestResetNotice") {
-            for key in Self.keys { defaults.removeObject(forKey: key) }   // the UI-test reset
+            // The UI-test reset; keys a launch typed with DEBUG `-uitestDefaults` stay (REC-001-T20 Clean output: the
+            // typed `outputMode` was erased, D1-D3 2026-11-18; docs/autotester.md "Typed settings").
+            for key in Self.keys { defaults.removeForUITestReset(key) }
         }
         self.defaults = defaults
         self.external = external

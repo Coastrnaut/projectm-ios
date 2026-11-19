@@ -24,7 +24,7 @@ final class SplitEditorSetting {
 
     init(defaults: UserDefaults, arguments: [String] = ProcessInfo.processInfo.arguments) {
         if arguments.contains("-uitestResetNotice") {
-            defaults.removeObject(forKey: Self.key)   // the UI-test reset: Standard
+            defaults.removeForUITestReset(Self.key)   // the UI-test reset: Standard (a typed `-uitestDefaults` value stays)
         }
         #if DEBUG
         if let i = arguments.firstIndex(of: "-uitestSplitEditorWidth"), i + 1 < arguments.count,

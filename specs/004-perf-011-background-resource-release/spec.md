@@ -40,6 +40,10 @@ Answered under the standing delegation (recommended option first; no owner quest
 - Q: Must warm-up work have stopped by the time the suspend operation returns, or may it finish in the background? → A: It must have stopped. Suspend waits for the warm-up thread to reach its next safe point (it checks between loading a preset and each of its two frames) and to destroy its context. The wait is bounded by one engine call and happens once per background transition; no GPU work is then left running behind the app. (R7)
 - Q: Is any of this state stored, and how is the change rolled back? → A: Nothing is stored. Availability is derived from live signals and starts as "can present" at launch; the registry lives in memory. There is no migration and no setting. Rollback is reverting the commits; no data is left behind. (R14)
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: PERF-011-T22's "after Control Center" motion read 0.0012 and 0.0017 against 0.002 on D3 (two runs) at 60 fps, while D1 and D2 passed; does the visual freeze? → A: No evidence of it: one pair 1 s apart can fall in a quiet passage (autotester lesson). After the switcher and after Control Center the test waits for Active audio and takes the largest of three pairs, as after the return from the background.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Nothing draws while the app cannot be seen (Priority: P1)

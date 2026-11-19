@@ -174,7 +174,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     #if DEBUG
     /// PERF-014-R15: faults to force (DEBUG builds only).
     public var faultInjection = RenderFaultInjection()
-    /// QA-011 B07 (FX-019-T23, ACC-012-T22; DEBUG builds only): while set, every sixth limited frame reads the
+    /// QA-011 B07 (FX-019-T23, ACC-012-T22; DEBUG builds only): while set, every seventh limited frame reads the
     /// envelope's gain back (`PMFlashLimiterLastGain`, one texel: it waits for the GPU) into `debugFlashStats`.
     public var debugFlashProbe = false
     public private(set) var debugFlashStats = ANGLEDebugFlashStats()
@@ -651,10 +651,12 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     }
 
     #if DEBUG
-    /// QA-011 B07: one sampled gain (every sixth limited frame) into `debugFlashStats`.
+    /// QA-011 B07: one sampled gain (every seventh limited frame) into `debugFlashStats`. The gain is per frame, so the
+    /// period must not divide a strobe's: every sixth frame always read the same phase of ACC-002's 2-frame gamma
+    /// strobe, the unclamped one (FX-019-T23 read recentMin 1.000 on D1-D3, 2026-11-18). Seven is coprime to 2-6.
     private func recordDebugFlashGain(_ limiter: OpaquePointer) {
         debugFlashFrame &+= 1
-        guard debugFlashFrame % 6 == 0 else { return }
+        guard debugFlashFrame % 7 == 0 else { return }
         debugFlashStats.record(PMFlashLimiterLastGain(limiter))
     }
     #endif
@@ -759,7 +761,7 @@ private final class ANGLEDisplayLinkProxy: NSObject {
 
 #if DEBUG
 /// QA-011 B07 (DEBUG): sampled gains of projectM's strobe safety envelope (FX-019). A gain below 0.98 counts as
-/// clamped; `recent` keeps the last 30 samples (about 3 s at 60 fps, one sample every sixth frame).
+/// clamped; `recent` keeps the last 30 samples (about 3.5 s at 60 fps, one sample every seventh frame).
 public struct ANGLEDebugFlashStats: Sendable, Equatable {
     public private(set) var sampled = 0
     public private(set) var clamped = 0

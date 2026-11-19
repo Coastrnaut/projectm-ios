@@ -74,6 +74,10 @@ local-first option.
 - Q: Undo? → A: Editor changes are settings edits saved at once, not scene edits, so they are not in scene undo
   (like palette edits).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: SHD-006-T14 read the same Laplacian variance (0.0167-0.0170) for 3 and 6 octaves on D1-D3; does Detail not add detail? → A: It does: inside the preview image 6 octaves raise it 2.5× (D2 screenshots). The accessibility element is the full-width row, so the grid included the light background and measured the image's edges; the device test samples the centred square inset by 4 pt.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shape a procedural noise texture and see it at once (Priority: P1)

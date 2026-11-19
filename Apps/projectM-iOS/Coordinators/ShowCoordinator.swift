@@ -319,8 +319,15 @@ final class ShowCoordinator {
             post("Cue \(number): \(first)")
         } else {
             clearNotice()
+            // ACC-004-R5 (C3): the applied cue is announced on the cue lane, as its VoiceOver value reads
+            // ("Cue 2 of 5, Intro"); found missing on D1-D3, 2026-11-18. A caller that announces the choice in
+            // its own words (UIX-002-R9's "Scene: <name>") turns this off for its step.
+            if announcesAppliedCue { announce(accessibilityValue) }
         }
     }
+
+    /// ACC-004-R5: whether a cue applied without a note is announced (off only while the scene switcher steps).
+    @ObservationIgnored var announcesAppliedCue = true
 
     private func clearNotice() {
         noticeTask?.cancel()

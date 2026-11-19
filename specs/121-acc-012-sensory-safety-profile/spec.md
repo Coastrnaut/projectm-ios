@@ -67,6 +67,16 @@ Decided under the owner's standing delegation (rule 4); recommended option first
   envelope: 2 flashes per second, 0.25/s rise, plus intensity limit 0.5), Strict (1 flash per second,
   0.10/s rise, intensity limit 0.25) and Custom (`ACC-012-R1`).
 
+### Session 2026-11-18 (QA-011 device run, ACC-012-T22's automated part)
+
+- Q: The device test expected projectM's envelope to clamp the strobing fixture under Standard too; D2 measured no
+  clamp (minGain 1.000 over 251 samples) and D3 one sample at 0.963, while Strict clamped hard on both (minGain 0.004,
+  12 and 18 clamped samples in the last 3 s). What does the device check assert? → A: What US2 states: Standard with
+  Reduce flashing off is today's picture, so it is the reference, not a clamp. The test pins
+  `settings.reduceFlashing` off (Reduce Motion would otherwise turn it on and Standard would clamp as Reduced),
+  asserts the probe samples projectM in both runs, Strict clamps (`recentClamped` > 0), and Strict's lowest gain is
+  at least 0.1 below Standard's; the frame-rate check is unchanged.
+
 ### Session 2026-11-14 (speckit-clarify)
 
 Five questions, each answered with the recommended option under the owner's delegation (rule 4).

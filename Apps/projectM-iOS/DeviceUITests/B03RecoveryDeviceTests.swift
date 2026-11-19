@@ -114,7 +114,11 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
     private func launchScene(reset: Bool) {
         let values: [String: Any] = ["settings.visual": "circularSpectrum"]
         let json = (try? JSONSerialization.data(withJSONObject: values)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
-        app.launchArguments = (reset ? ["-uitestResetNotice", "-uitestDefaults", json] : [])
+        // The relaunch types the visual again: the DEBUG `-uitestDefaults` hook removes the keys the previous launch
+        // typed, so without it the visual fell back to the default and the Circular Spectrum and its Bars picker were
+        // gone (D1-D3, 2026-11-18). The visual is a stored setting, not part of the committed scene (SCN-002 restores
+        // the scene's parameters: the bar count under test).
+        app.launchArguments = (reset ? ["-uitestResetNotice"] : []) + ["-uitestDefaults", json]
             + ["-uitestDiagnostics", "-autostart", "inAppPlayback", "-uitestUnlocked", "NO"]
         app.launch()
         XCTAssertTrue(wait(15) { self.app.staticTexts["sourceStarts"].exists }, "the source started")

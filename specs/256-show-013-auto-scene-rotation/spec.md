@@ -61,6 +61,10 @@ Five questions, each answered with the recommended option (owner rules 4 and 9).
 - Consistency pass: R1 → T02, T03; R2 → T02, T03; R3 → T02, T03, T10; R4 → T04, T06; R5 → T04, T06; R6 → T04, T06; R7 → T07, T06, T09; R8 → T04, T08; R9 → T03, T11. S1 → T03; S2 → T03, T06, T10; S3 → T06; S4 → T09. No constitution conflict (no network, one excluded preference key, public APIs, ShowControl stays Foundation + ParameterGraph).
 - Fix applied: R7's status texts had no test; T06 now asserts the idle texts ("No scenes are in rotation.", "Only one scene is in rotation.") and the timer status.
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: SHOW-013-T13's bars phase saw no scene change in 34 s on D1-D3; does rotation ignore bars? → A: No. ANL-006's scripted estimate has no beat phase and rotation was on from launch, so bars mode fell back to the 60 s timer (R3). The device test follows the task: 120 BPM tapped (`-uitestTapInterval 500`, a tempo with phase), then Rotate scenes on in Settings, Reduce flashing pinned off.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Rotate scenes on a timer (Priority: P1) — MVP

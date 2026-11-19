@@ -59,7 +59,10 @@ final class B14SystemDeviceTests: DeviceAcceptanceCase {
     /// (0.00 s; 0.20 s before), with no relaunch, and the controls' VoiceOver labels are the same before and after.
     func testACC001LiveReduceMotionToggle() {
         let task = "ACC-001-T12"
-        launch(visual: "circularSpectrum", settings: ["settings.performanceOverlay": false], music: false)
+        // `-uitestReduceMotion system`: the real setting, with the probe panel (`motionProbe` exists only with the
+        // argument; without it the test found no probe on D1-D3, 2026-11-18).
+        launch(visual: "circularSpectrum", settings: ["settings.performanceOverlay": false],
+               extra: ["-uitestReduceMotion", "system"], music: false)
         XCTAssertTrue(wait(10) { self.value("motionProbe").hasPrefix("reduce=") }, "the motion probe")
         if value("motionProbe").hasPrefix("reduce=on") {   // start from off
             system.toggleAccessibility(.reduceMotion, on: false)
@@ -103,14 +106,15 @@ final class B14SystemDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(active.hasPrefix("In-App Playback · "), "step 2: words: \(active)")
         _ = screen(task, "active")
 
-        // Step 2: pause the track: the indicator's words change (not only its colour).
+        // Step 2: pause the track (the transport's play/pause; `pauseResume` freezes only the picture, so the source
+        // kept "Active audio" on D1-D3, 2026-11-18): the indicator's words change (not only its colour).
         showControls()
-        app.buttons["pauseResume"].tap()
+        app.buttons["transportPlayPause"].tap()
         XCTAssertTrue(wait(8) { indicator.label != active }, "step 2: paused changes the words: \(indicator.label)")
         report(task, "pause", ["labelChanged": indicator.label != active ? 1 : 0])
         print("ACC003 indicator active=\(active) paused=\(indicator.label)")
         showControls()
-        app.buttons["pauseResume"].tap()
+        app.buttons["transportPlayPause"].tap()
         XCTAssertTrue(wait(8) { indicator.label.hasPrefix("In-App Playback · ") }, "resumed: \(indicator.label)")
 
         // Step 3: record a few seconds and stop.
@@ -181,6 +185,9 @@ final class B14SystemDeviceTests: DeviceAcceptanceCase {
     private func measureOverlays(_ task: String, _ step: String) -> Double {
         let indicator = app.staticTexts["sourceIndicator"]
         XCTAssertTrue(wait(5) { indicator.exists }, "\(step): the source indicator")
+        // The indicator fades in (opacity transition) as the controls hide; measured mid-fade right after launch it
+        // read 1.39 (D2) and 3.27 (D3) at preset 0 while every settled reading passed (2026-11-18). Measure it settled.
+        pause(1)
         let ratio = contrastRatio(indicator, "\(task) \(step)")
         report(task, step, ["contrast": ratio])
         XCTAssertGreaterThanOrEqual(ratio, 4.5, "\(step): the overlay text keeps 4.5:1 over the picture")

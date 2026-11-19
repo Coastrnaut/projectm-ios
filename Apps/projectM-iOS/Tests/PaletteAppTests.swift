@@ -5,6 +5,7 @@
 // colours. Deleting the palette falls back to Spectrum with the notice, announced once. CPU only.
 import Foundation
 import SceneFormat
+import SwiftUI
 import TextLayer
 import VisualGenerators
 import XCTest
@@ -144,5 +145,26 @@ final class PaletteAppTests: XCTestCase {
 
         let relaunched = PaletteCoordinator(store: PaletteStore(directory: folder))
         XCTAssertEqual(relaunched.library.palette(id), edited, "saved at once")
+    }
+
+    /// SHD-005-T13 (device finding 2026-11-18): the strip draws Step as flat bands with a hard edge at the stop's
+    /// position; 64 blended samples had made the edge a 5 pt ramp. Smooth keeps the 64 samples.
+    func testTheStripDrawsStepWithHardEdges() throws {
+        let palettes = PaletteCoordinator(store: PaletteStore(directory: folder))
+        let id = try XCTUnwrap(palettes.create())
+        palettes.setStopPosition(id, at: 1, to: 0.3)
+        XCTAssertEqual(PaletteStrip.sampledStops(try XCTUnwrap(palettes.library.palette(id))).count, 64, "Smooth: 64 samples")
+
+        palettes.setInterpolation(id, .step)
+        let stops: [Gradient.Stop] = PaletteStrip.sampledStops(try XCTUnwrap(palettes.library.palette(id)))
+        XCTAssertEqual(stops.count, 4, "two flat bands")
+        guard stops.count == 4 else { return }
+        XCTAssertEqual(stops[0].location, 0)
+        XCTAssertEqual(stops[1].location, 0.3, accuracy: 1e-6)
+        XCTAssertEqual(stops[2].location, stops[1].location, "a hard edge at Stop 2's position")
+        XCTAssertEqual(stops[3].location, 1)
+        XCTAssertEqual(stops[0].color, stops[1].color, "Stop 1's band is flat")
+        XCTAssertEqual(stops[2].color, stops[3].color, "Stop 2's band is flat")
+        XCTAssertNotEqual(stops[1].color, stops[2].color)
     }
 }

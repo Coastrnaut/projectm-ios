@@ -517,7 +517,7 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **Visual, show and accessibility probes (QA-011 Batch 7, DEBUG, `-uitestVisualProbes`;
   `Apps/projectM-iOS/Debug/UITestVisualProbes.swift`):** a 30 Hz main-actor sampler publishes near-transparent texts in
   the visualizer layer: `flashGuardProbe` (the strobe envelope's gain on the visual shown: projectM's
-  `ANGLERenderer.debugFlashProbe` reads it back every sixth frame, which costs a few fps, so compare frame rates with the
+  `ANGLERenderer.debugFlashProbe` reads it back every seventh frame, which costs a few fps, so compare frame rates with the
   probe on in both runs; native generators' `lastGain`; the Photo compositor's `lastFlashGain`; below 0.98 = clamped,
   `recent*` = the last 3 s), `tunnelSpeedProbe`, `sectionChangeProbe` (playback positions of section-change fires;
   `-uitestBindGlowToSectionChange` binds it to the glow), `pipelineArchiveProbe` (PERF-009 hits and misses),
@@ -562,6 +562,20 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   bundle from an interrupted run has no Info.plist; its screenshots are zstd blobs under `Data/`.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
+- **Batch 7 on D1-D3 (2026-11-18), what the first run taught:**
+  - An ACC-005 slider row reports `isHittable` false even fully on screen: reveal by frames (as UITestWaits), or every
+    slider reveal fails and drags the list away, taking lazily built rows (and the probes in them) off the tree.
+  - A probe sampled every Nth frame aliases with a strobe whose period divides N: every sixth frame always read the
+    unclamped phase of the 2-frame strobe fixture. Sample at a period coprime to the strobes you test (7).
+  - An accessibility element's frame can be the whole row (an image centred in a full-width frame): measure inside the
+    content, or the background's edges dominate (SHD-006's Laplacian).
+  - Find where the content is before comparing pictures: the spectrum waterfall fills from the top over 60 s, so the
+    middle band was black; the performance overlay covered the drawn part on D1 and D3, and its text gave the
+    kaleidoscope's "seam". Leave `overlayBox()` out or turn the overlay off for picture statistics.
+  - Test the fixture's real structure, not its label: the music fixture's quiet-to-loud step is at 10 s (drums enter),
+    the "chorus" at 20 s is only +5 dB, so ANL-015 correctly fires once at about 12 s.
+  - Seeded shows start with cue 1 active but no running playhead: seek (scrub) before measuring the timeline, and tap a
+    tempo before turning on bar-synced rotation (a scripted estimate has no beat phase).
 
 ### Xcode and the device test host
 

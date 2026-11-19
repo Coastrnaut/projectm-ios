@@ -59,6 +59,10 @@ human interaction); each answer is the recommended, conservative option.
 - Q (speckit-clarify pass): What do the frame fields read before any signal and during settling? → A: The slow level reads the floor (−70 dB) until frames with signal arrive, and the envelope 0; both are always finite. A session start resets them (ANL-015-R7, R8).
 - Q (speckit-clarify pass): Test cost? → A: Fixtures of at most 12 s of synthetic audio through the per-frame detector (a few thousand frames) and one pipeline run of about 8 s (owner rule 7: each test under 2 s on the host).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: ANL-015-T12 saw one fire at 12.14-12.18 s and none in the chorus (20-40 s) on D1-D3; is the chorus missed? → A: No. In the music fixture the quiet intro (0.25, no drums) turns loud at 10 s (0.55 with drums, over 6 dB), and the chorus at 20 s is only +5.2 dB, under R4's 6 dB entry threshold. One fire 2 s after the 10 s step and none on the drum hits is the specified behaviour; the device test expects one fire before 40 s, at 11.8-12.9 s.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A quiet-to-loud change fires once, after the dwell (Priority: P1)

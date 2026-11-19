@@ -27,9 +27,11 @@ final class B12EditorDeviceTests: B07DeviceCase {
         for _ in 0..<4 { tapArea.twoFingerTap(); pause(0.3) }
         XCTAssertTrue(wait(3) { self.value(last) == "tapTempo:4" }, "\(task): four shortcuts ran: \(value(last))")
         XCTAssertFalse(controls.exists, "\(task): the controls stay hidden")
-        let hud = element("sceneHUD")
+        // The HUD is a container labelled "Show HUD"; its Tempo line (`hudTempo`) carries the reading (D1-D3 read the
+        // container's empty value, 2026-11-18).
+        let hud = element("hudTempo")
         XCTAssertTrue(wait(3) { hud.exists && (hud.label + " " + self.value(hud)).contains("120") },
-                      "\(task): the HUD shows the tapped tempo: \(hud.label) \(value(hud))")
+                      "\(task): the HUD shows the tapped tempo: \(hud.exists ? hud.label + " " + value(hud) : "no hudTempo")")
 
         let t0 = Date()
         tapArea.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap()
@@ -85,20 +87,24 @@ final class B12EditorDeviceTests: B07DeviceCase {
             }
             return sum
         }
-        let before = outputLuma("opacity 60")
+        // The photo layer (row 1, 80 %), whose picture holds still: the seeded spectrum (row 2, 60 % Screen) follows
+        // the reference track, which is silent or quiet here, and lowering it moved the output's luma by 0.4 % on D2
+        // and 0.8 % on D3 (2026-11-18) whether or not the change reached the output. Photo at 15 % over black must
+        // darken the output by far more than the 2 % noise allowance.
+        let before = outputLuma("opacity 80")
         let link = app.buttons["layersLink"]
         XCTAssertTrue(reveal(link), "Layers")
         link.tap()
-        let row = app.buttons["layerRow.2"]
-        XCTAssertTrue(appears(row, 5), "the Circular Spectrum layer")
+        let row = app.buttons["layerRow.1"]
+        XCTAssertTrue(appears(row, 5), "the Photo layer")
         row.tap()
         let opacity = element("layerControl.opacity")
         XCTAssertTrue(appears(opacity, 5), "the opacity slider")
-        dragSlider(opacity, from: 0.6, to: 0.15)
-        XCTAssertTrue(wait(5) { self.value(opacity) != "60 percent" }, "the opacity changed: \(value(opacity))")
+        dragSlider(opacity, from: 0.8, to: 0.15)
+        XCTAssertTrue(wait(5) { self.value(opacity) != "80 percent" }, "the opacity changed: \(value(opacity))")
         let after = outputLuma("opacity lowered")
         report(task, "layer live", ["lumaBefore": before, "lumaAfter": after])
-        XCTAssertNotEqual(after, before, accuracy: max(before * 0.02, 0.5), "\(task): the output changes live with the opacity")
+        XCTAssertLessThan(after, before * 0.9, "\(task): the output darkens live with the photo's opacity (\(before) → \(after))")
 
         // Step 5: the divider's VoiceOver steps.
         let divider = element("splitEditorDivider")
@@ -108,8 +114,13 @@ final class B12EditorDeviceTests: B07DeviceCase {
         XCTAssertTrue(wait(3) { self.value(divider) != start }, "\(task): an increment steps the width: \(value(divider))")
         let up = value(divider)
         XCTAssertTrue(up.contains(", "), "\(task): it lands on a named snap: \(up)")
+        // D2 and D3 (2026-11-18): the decrement 0.5 s after the increment left "480 points, Wide". Let the new width
+        // settle as a VoiceOver user's next swipe would, and keep the probe's answer (which element it stepped).
+        pause(1)
         XCTAssertTrue(accessibilityStep("splitEditorDivider", up: false))
-        XCTAssertTrue(wait(3) { self.value(divider) == start }, "\(task): a decrement steps back: \(value(divider))")
+        let answer = value(app.buttons["splitEditorDivider.uitestDecrement"])
+        XCTAssertTrue(wait(3) { self.value(divider) == start },
+                      "\(task): a decrement steps back: \(value(divider)) (from \(start); probe: \(answer))")
         report(task, "divider", ["stepped": up != start ? 1 : 0])
     }
 
@@ -176,7 +187,10 @@ final class B12EditorDeviceTests: B07DeviceCase {
         let escape = app.buttons["colorSamplingLayer.uitestEscape"]
         XCTAssertTrue(appears(escape, 3), "the escape probe")
         escape.tap()
-        XCTAssertTrue(wait(3) { self.value(escape).hasPrefix("performed escape") || !banner.exists }, "escape: \(value(escape))")
+        // The probe leaves with sampling mode: reading its value after that failed the test with "no matches" (D1-D3,
+        // 2026-11-18), so the banner is checked first and the probe only while it exists.
+        XCTAssertTrue(wait(3) { !banner.exists || (escape.exists && self.value(escape).hasPrefix("performed escape")) },
+                      "escape: \(escape.exists ? value(escape) : "probe gone")")
         XCTAssertTrue(wait(5) { !banner.exists }, "\(task): escape ends sampling mode")
         XCTAssertTrue(appears(app.navigationBars["Settings"], 5), "Settings returns")
         let unchanged = app.buttons["eyedropper.textColor"].firstMatch

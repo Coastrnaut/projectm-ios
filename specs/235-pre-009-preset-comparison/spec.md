@@ -54,6 +54,10 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Does Compare work when the main visual is not projectM (camera, photo, native)? → A: Yes: the comparison reads the same live input; the shown visual is paused while the sheet is open and the app's normal visual switch (`resumeActiveVisual`) restores whichever visual was shown when it closes.
 - Q: Which frame rate is "30 fps" measured against, and does it change during a session? → A: The tick rate is fixed when the session starts (30, or 15 under Low Power Mode or a serious thermal state); frame times stay n / rate for the whole session so they never jump.
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: PRE-009-T13 found no "Compare…" in the first Calm row's menu on D1-D3; is the action missing? → A: No: that row was the playing preset, whose menu offers no comparison (R1). The device test leaves out the row whose label says "current preset".
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Compare two presets live (Priority: P1) — MVP

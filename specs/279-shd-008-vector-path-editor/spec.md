@@ -64,6 +64,10 @@ interaction); each answer is the recommended, conservative option.
   Rejected: outline spawning (the line shape already covers thin emitters) and rejection sampling (a
   variable number of draws).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: SHD-008-T18 counted 10 of 12 young particles inside the drawn triangle on D2 and D3 (≥ 90 % required); do spawns leave the path? → A: No. The probe tested where a particle was after its first one or two steps (2.5-3.5 units/s against a 0.2-unit shape); it now runs the step backwards to the spawn point (`ParticleEmitterPreview.spawnPoint`, ParticleEmitterEditorTests: every spawn inside), and the test scrolls back to the probe after the path editor (D1 had lost it).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Draw a valid closed path (Priority: P1) 🎯 MVP

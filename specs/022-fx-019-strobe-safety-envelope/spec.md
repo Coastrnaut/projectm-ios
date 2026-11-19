@@ -49,6 +49,10 @@ no human interaction); each answer is the safer option. ADR-0011 records the env
 - Q: How exact must the projectM path be compared with the shared definition, given 8-bit textures on the GPU? → A: The GPU stores the envelope's state with 16-bit precision (two 8-bit channels per value, as T104 already did) and uses a 0.005 margin below each threshold, so 8-bit rounding of the output (at most 1/255 in encoded value) cannot complete a transition the decision did not permit. GPU tests compare the GPU gain with the shared reference within 0.01 and measure the output pixels against the limits (FX-019-R6, S1).
 - Q: Does this row add settings or stored values? → A: No. The Reduce flashing setting, its default (follows Reduce Motion), the notice (FR-071) and the stored keys stay exactly as spec 001 defines them. User-adjustable limits belong to ACC-012 (sensory safety profile), which builds on this envelope's configuration (FX-019-R12).
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: FX-019-T23 saw the launch's first preset clamped (D1 0.50, D3 0.90) and the strobing fixture never "recently" clamped (recentMin 1.000) on D1-D3; is the envelope wrong? → A: No. The ordinary preset was third-party content the always-on cap may clamp (R7); the device test's ordinary preset is now ACC-002's calm fixture (`-uitestImportPreset fixture:calm`). The DEBUG probe read every sixth frame, always the same phase of the fixture's 2-frame gamma strobe; it reads every seventh now (coprime to strobe periods of 2-6 frames), and the test counts clamps after the fixture starts.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Strobing content is held within the limits (Priority: P1)

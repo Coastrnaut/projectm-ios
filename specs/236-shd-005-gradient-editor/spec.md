@@ -62,6 +62,10 @@ local-first option.
 - Q: Are stop edits undoable scene edits? → A: No; like every palette edit (UIX-011) they are library edits saved
   at once, not scene edits, so they are not in scene undo. The scene's palette link is unchanged.
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: SHD-005-T13 found the strip's start 8.6-9.2 ΔE from Stop 1 (Smooth) and 5 hard edges for one Step boundary on D1-D3; are positions or Step wrong? → A: Neither. Smooth blends in linear light, so a channel near 0 rises fast (1 pt into the strip read 63 against 46): the device test checks Stop 1's colour on Step's flat first band and only "nearer Stop 1 than Stop 2" for Smooth. The strip did draw Step's edge as a 5 pt ramp (64 samples blended by the gradient), so Step now draws flat bands with a hard edge at each stop's position (`PaletteStrip.stepStops`, PaletteAppTests). The device test's slider reveals used `isHittable`, which an ACC-005 slider row reports false; they use frames now.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shape a gradient with positioned, translucent stops (Priority: P1)

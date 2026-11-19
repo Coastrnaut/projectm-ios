@@ -97,4 +97,25 @@ final class ParticleEmitterEditorTests: XCTestCase {
         a.advance(frames: 60)
         XCTAssertNotEqual(a.simulation.liveParticles, b.simulation.liveParticles, "another seed, another run")
     }
+
+    #if DEBUG
+    /// QA-011 SHD-008-T18 (device finding 2026-11-18): the DEBUG bounds probe counts a young particle by where it
+    /// spawned, not where its first steps took it; every spawn of a path emitter is inside the path (SHD-008-R7).
+    func testTheBoundsProbeCountsSpawnPointsInsideThePath() throws {
+        let triangle = try VectorPath([VectorPoint(x: 0.2, y: 0.8), VectorPoint(x: 0.5, y: 0.2), VectorPoint(x: 0.8, y: 0.8)])
+        let preview = ParticleEmitterPreview(settings: ParticleEmitterSettings(shape: .path, rate: 240, seed: 7, path: triangle))
+        var newest = 0, inside = 0
+        for _ in 0..<60 {
+            preview.advance()
+            let line: String = preview.boundsProbe
+            func number(_ key: String) -> Int {
+                line.split(separator: " ").first { $0.hasPrefix(key + "=") }.flatMap { Int($0.dropFirst(key.count + 1)) } ?? -1
+            }
+            newest += number("newest")
+            inside += number("newestInPath")
+        }
+        XCTAssertGreaterThan(newest, 20, "young particles seen")
+        XCTAssertEqual(inside, newest, "every spawn point lies inside the triangle")
+    }
+    #endif
 }

@@ -94,6 +94,10 @@ local-first option. The SHD-011 policy holds: no user-authored executable shader
   5 ms and 40 ms, with the last frame at exactly 10 s after the anchor. Because the spawn schedule depends only
   on the fixed steps, the jittery run must equal the 60 Hz run particle for particle.
 
+### Session 2026-11-18 (QA-011 device run)
+
+- Q: SHD-007-T13 failed at "the Rate slider" on D1-D3 and lost `particleBoundsProbe` on D2; does the box leak? → A: No: outside=0 with 415-527 bounces on D1 and D3. The slider reveal used `isHittable` (false for ACC-005 slider rows) and dragged the list until the preview row, which holds the probe, left the lazy list; the test reveals by frames and scrolls back to the probe.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Shape the fountain's emitter and see it at once (Priority: P1)

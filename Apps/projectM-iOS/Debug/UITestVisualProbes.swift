@@ -5,7 +5,7 @@
 // A main-actor timer samples at 30 Hz and publishes about four times a second, as near-transparent texts in the
 // visualizer's diagnostics layer (each one's identifier and value; docs/autotester.md lists them):
 // * `flashGuardProbe` (FX-019-T23, FX-020-T19, VIS-012-T13, ACC-012-T22): the strobe safety envelope's gain on the
-//   visual shown. projectM: `ANGLERenderer.debugFlashStats` (every sixth limited frame read back from the GPU; it
+//   visual shown. projectM: `ANGLERenderer.debugFlashStats` (every seventh limited frame read back from the GPU; it
 //   costs a few fps while on); native visuals: the generator's `lastGain`; compositor visuals (Photo): the composite
 //   flash guard's `lastFlashGain`. "source=… sampled=… clamped=… minGain=… recentClamped=… recentMin=…": a gain below
 //   0.98 counts as clamped; `recent` is the last 3 s.
@@ -25,8 +25,8 @@
 //   follow the flight speed, which screenshots 1 s apart cannot tell apart once every star moves further than its size.
 // * `announcementsProbe` (ACC-004, ACC-005, ACC-011, UIX-010, UIX-012): "count=N‖<kind>|<text>‖…", the announcer's
 //   spoken list (the last 12), so a test can tell an announcement made once from one made twice.
-// `presetImportURL(_:)` resolves `-uitestImportPreset`: `fixture:strobe` writes the strobing test fixture (ACC-002's
-// high-flash preset, written for this repository) in the app's temporary folder, and a relative path is taken from
+// `presetImportURL(_:)` resolves `-uitestImportPreset`: `fixture:strobe` and `fixture:calm` write ACC-002's high-flash
+// and calm test fixtures (written for this repository) in the app's temporary folder, and a relative path is taken from
 // Documents, so device tests need no file on the Mac side.
 #if DEBUG
 import ANGLERendering
@@ -68,11 +68,14 @@ enum UITestVisualProbes {
 
     /// The file `-uitestImportPreset <value>` imports.
     static func presetImportURL(_ value: String) -> URL {
-        if value == "fixture:strobe" {
-            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-strobe", isDirectory: true)
+        let fixtures: [String: (name: String, text: String)] = ["fixture:strobe": ("Strobe", strobePreset),
+                                                                "fixture:calm": ("Calm", calmPreset)]
+        if let fixture = fixtures[value] {
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("uitest-\(fixture.name.lowercased())",
+                                                                                       isDirectory: true)
             try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            let url = folder.appendingPathComponent("Fixture - Strobe.milk")
-            try? Data(strobePreset.utf8).write(to: url, options: .atomic)
+            let url = folder.appendingPathComponent("Fixture - \(fixture.name).milk")
+            try? Data(fixture.text.utf8).write(to: url, options: .atomic)
             return url
         }
         if value.hasPrefix("/") { return URL(fileURLWithPath: value) }
@@ -97,6 +100,28 @@ enum UITestVisualProbes {
     per_frame_2=wave_r = 0.5 + 0.5*sin(time*1.3);
     per_frame_3=invert = above(bass, 1.2);
     per_frame_4=gamma = 1 + 2*equal(frame%2, 0);
+
+    """
+
+    /// FX-019-T23's ordinary preset: ACC-002's calm fixture (Packages/PresetLibrary/Tests/PresetLibraryTests/
+    /// FlashFixtures/calm.milk, written for this repository, MIT): slow colour, rotation and zoom, no flashing. The
+    /// launch's first library preset is third-party content that the envelope may rightly clamp (D1 and D3 2026-11-18).
+    static let calmPreset = """
+    MILKDROP_PRESET_VERSION=201
+    PSVERSION=2
+    [preset00]
+    // ACC-002 test fixture written for projectM-iOS (MIT). Not a third-party preset.
+    fDecay=0.980000
+    zoom=1.010000
+    rot=0.000000
+    wave_r=0.6
+    wave_g=0.6
+    wave_b=0.9
+    per_frame_1=wave_r = 0.5 + 0.5*sin(time*0.7);
+    per_frame_2=rot = 0.02*sin(time*0.3) + 0.01*bass;
+    per_frame_3=decay = decay - 0.01*equal(frame%5, 0);
+    per_frame_4=zoom = 1 + 0.02*mid_att;
+    per_pixel_1=zoom = zoom + 0.01*sin(rad*4 + time);
 
     """
 }
