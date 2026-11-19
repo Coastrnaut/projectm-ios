@@ -228,7 +228,11 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         routeLostThenPlay(task)
         tapPanel("audio:probeReset")
         tapTransport("transportNext")
-        XCTAssertTrue(wait(5) { (self.playback["changes"] ?? "none") != "none" }, "Next track changed the track: \(probeValue("playbackProbe"))")
+        // Next is a hard cut (AUD-006), so the probe counts it as a cut into the next track, never in `changes` (which
+        // lists changes at a track's end without a cut). QA-011 pass 4 (D2, D3 2026-11-19): `cuts=1 lastCut=6:0.03
+        // track=6 changes=none`, the change done right; the old check read `changes`.
+        XCTAssertTrue(wait(5) { self.playbackNumber("cuts") >= 1 && (self.playback["lastCut"] ?? "").hasPrefix("6:") },
+                      "Next track cut to the 44.1 kHz track: \(probeValue("playbackProbe"))")
         pause(3)
         reportPlayback(task, "next track across sample rates")
         XCTAssertEqual(playbackNumber("track"), 6, "the 44.1 kHz track plays after Next: \(probeValue("playbackProbe"))")

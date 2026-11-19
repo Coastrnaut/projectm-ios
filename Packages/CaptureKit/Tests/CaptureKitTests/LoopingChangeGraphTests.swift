@@ -150,6 +150,40 @@ final class LoopingChangeGraphTests: XCTestCase {
         XCTAssertEqual(rig.graph.positionFrame, AVAudioFramePosition(54 * 1024 % length))
     }
 
+    /// QA-011 pass 4 (D2, 2026-11-19), AUD-003-T22: a track is added while a lone track loops. The
+    /// change of looping lands in an odd pass (played by the partner node, a next pass queued and
+    /// muted on the player); at the end the transport replaces the track. The next track starts
+    /// right after the last frame of that pass, from its own first frame, with nothing of the muted
+    /// pass in between and at most the rest of one render cycle of silence (the track change waits
+    /// for the end's completion on the main actor, as it did before the two-node schedule).
+    func testAddingATrackWhileALoneTrackLoopsEndsThePassAndTheNextTrackFollows() async throws {
+        let length = 22_050, nextLength = 11_025
+        let rig = try start(frames: length, loops: true)
+        defer { rig.graph.stop() }
+        let nextURL = try AudioFixtures.writeCounter(to: root.appendingPathComponent("next-\(nextLength).caf"), frames: nextLength)
+        let next = try InAppPlaybackGraph.load(.file(nextURL), bundle: .main)
+        let graph = rig.graph, ended = rig.ended
+        graph.onTrackEnded = {
+            ended.value += 1
+            guard ended.value == 1 else { return }                                  // the next track is the last
+            graph.loops = false
+            try? graph.replace(content: next)                                       // as the transport does at a track end
+        }
+        var stream = try await collect(rig, renders: 30)                           // 30,720 frames: in the second (odd) pass
+        let stops = rig.graph.playerStopCount
+        rig.graph.updateLooping(false)
+        XCTAssertEqual(rig.graph.playerStopCount, stops, "the change stops no player")
+        stream += try await collect(rig, renders: 45)                              // past both ends
+        let run = audible(stream)
+        XCTAssertLessThan(run.filter { $0 == nil }.count, 1024, "at most one render cycle of silence between the tracks")
+        let indices = run.compactMap { $0 }
+        XCTAssertEqual(indices.count, 2 * length + nextLength, "two passes, then the next track once; the muted pass is never heard")
+        XCTAssertEqual(Array(indices[(2 * length - 2)..<(2 * length + 2)]), [length - 2, length - 1, 0, 1],
+                       "the next track's first frame follows the pass's last frame")
+        XCTAssertEqual(indices.last, nextLength - 1)
+        XCTAssertEqual(ended.value, 2, "each track's end is reported once")
+    }
+
     // MARK: - Looping on (All Tracks or Off → One Track)
 
     func testLoopingOnMidTrackAppendsTheNextPassWithoutAStop() async throws {

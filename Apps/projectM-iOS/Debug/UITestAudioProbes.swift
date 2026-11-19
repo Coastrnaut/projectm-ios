@@ -308,9 +308,15 @@ final class UITestPlaybackAnalyzer {
         // Leading zeros away from a cut are part of a gap (with the silent buffers before them); after a cut they are
         // the player's start inside the render cycle, which the cut's own checks cover.
         if lead > 0, !cutPending { maxSilentMs = max(maxSilentMs, silentRunMs + Double(lead) / rate * 1000) }
-        silentRunMs = 0
-        guard let a = Self.decode(lead > 0 ? r.voiced : r.first), let b = Self.decode(r.last) else { current = nil; return }
-        let heardSeconds = Double(Int(r.frames) - lead) / rate
+        // Zeros at the end (a track that played to its end) start a gap that runs on into the next buffers. The last
+        // position heard is the last voiced sample: with `last` (a zero) the next track's start had no predecessor and
+        // its change was never counted (QA-011 device run 2026-11-19, D2: AUD-003-T22 `changes=none`, track 2 playing).
+        let trail = Int(r.trailingZeros)
+        silentRunMs = Double(trail) / rate * 1000
+        if trail > 0 { maxSilentMs = max(maxSilentMs, silentRunMs) }
+        guard let a = Self.decode(lead > 0 ? r.voiced : r.first), let b = Self.decode(trail > 0 ? r.lastVoiced : r.last)
+        else { current = nil; return }
+        let heardSeconds = Double(Int(r.frames) - lead - trail) / rate
         if cutPending {
             cutPending = false
             cuts += 1

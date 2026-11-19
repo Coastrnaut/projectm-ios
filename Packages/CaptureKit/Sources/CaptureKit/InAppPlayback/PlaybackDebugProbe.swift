@@ -28,6 +28,12 @@ public final class PlaybackDebugProbe: @unchecked Sendable {
         /// device run 2026-11-18, D1-D3: 20 seeks, no cut and no jump recognised). `voiced` is the first position heard.
         public var leadingZeros: Int32 = 0
         public var voiced: Float = 0
+        /// Frames at the buffer's end after channel 0's last non-zero sample, and that sample. A track that played to its
+        /// end leaves zeros after its last sample; `last` then names no position, and the change to the next track was
+        /// lost when the next buffer started with zeros too (QA-011 device run 2026-11-19, D2: AUD-003-T22 read
+        /// `changes=none` with track 2 playing). `lastVoiced` is the last position heard.
+        public var trailingZeros: Int32 = 0
+        public var lastVoiced: Float = 0
     }
 
     public static let capacity = 8192
@@ -76,11 +82,15 @@ public final class PlaybackDebugProbe: @unchecked Sendable {
         }
         var lead = 0
         while lead < frames, abs(c0[lead * stride]) < 0.001 { lead += 1 }   // the ramps never go below 0.03; a literal, no static in the tap
+        var trail = 0
+        while trail < frames - lead, abs(c0[(frames - 1 - trail) * stride]) < 0.001 { trail += 1 }
         let index = written.load(ordering: .relaxed)
         records[index % Self.capacity] = Record(first: c0[0], last: c0[(frames - 1) * stride], peak: peak,
                                                 frames: Int32(frames), sampleRate: Float(sampleRate),
                                                 firstAfterCut: firstAfterCut, leadingZeros: Int32(lead),
-                                                voiced: lead < frames ? c0[lead * stride] : 0)
+                                                voiced: lead < frames ? c0[lead * stride] : 0,
+                                                trailingZeros: Int32(trail),
+                                                lastVoiced: lead < frames ? c0[(frames - 1 - trail) * stride] : 0)
         written.store(index + 1, ordering: .releasing)
     }
 
