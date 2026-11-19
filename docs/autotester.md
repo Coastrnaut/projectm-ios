@@ -546,6 +546,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   audio server failing (-10879 on every engine start), such a call can wait in `mach_msg` for good, which looks idle
   in a sample. A main-actor timer would stall too, so sc009's watchdog runs on its own queue and reports
   `mainThreadSilentSeconds`; a simulator rehearsal also samples the app after 80 % of the wait.
+- **Skips must reach xcodebuild as separate arguments (2026-11-18, again):** a run built its `-skip-testing:` list in a
+  zsh variable; zsh does not split an unquoted `$VAR`, so the whole list was one argument, every "skipped" class ran
+  (the prompt-flow and permission primers included) and xcodebuild reported nothing wrong. Use
+  `scripts/run_device_ui_tests.sh <d1|d2|d3> <name> only:<id> skip:<id> …` (bash arrays; `MAC_DRIVER=1` starts the Mac
+  driver on the log), and check the log's command line before trusting a run.
 - **Run devices one at a time when the owner asks**, and never start a device the owner has not prepared (Auto-Lock,
   unlocked). Report each device idle at once with what passed, what did not and why (owner rule 11).
 
