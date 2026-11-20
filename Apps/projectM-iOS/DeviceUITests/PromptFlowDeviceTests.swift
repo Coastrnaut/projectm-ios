@@ -139,6 +139,12 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         return status.exists ? String(describing: status.value ?? status.label) : "not shown"
     }
 
+    /// ADR-0125 follow-up 2: the DEBUG probe text ("access=… runs=… | start 1, browsing, inactive, restart, …").
+    private var localNetworkProbeText: String {
+        let probe = app.descendants(matching: .any)["localNetworkProbe"].firstMatch
+        return probe.exists ? ((probe.value as? String) ?? probe.label) : "not shown"
+    }
+
     private func explainer(_ permission: String) -> XCUIElement {
         app.descendants(matching: .any)["permissionExplainer.\(permission)"].firstMatch
     }
@@ -279,7 +285,11 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
         report("OSC-001-T26", "first enable", ["localNetworkPrompt": prompted ? 1 : 0])
         guard prompted else { return }   // nothing was denied: the notice checks below would only repeat the cause
         let text = app.staticTexts["localNetworkNoticeText"]
-        XCTAssertTrue(wait(15) { text.exists }, "the denied notice")
+        // ADR-0125 follow-up 2: the probe's own events (DEBUG `localNetworkProbe`) say what the browse reported.
+        let noticeShown = wait(15) { text.exists }
+        print("PROMPT-FLOW UIX-015 local network probe: \(localNetworkProbeText)")
+        XCTAssertTrue(noticeShown, "the denied notice (probe: \(localNetworkProbeText); OSC status: \(oscStatusText))")
+        guard noticeShown else { return }
         reveal(text)
         XCTAssertEqual(text.label, Self.networkDenied)
         XCTAssertEqual(label("localNetworkNoticeFallback"), Self.networkFallback, "the fallback is named")

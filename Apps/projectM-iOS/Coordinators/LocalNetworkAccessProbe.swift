@@ -14,7 +14,17 @@
 // * any other failure, or `maximumSeconds` without an answer → still unknown.
 // The browse is cancelled as soon as it decides, and after `maximumSeconds` at the latest. The answer is kept in
 // memory for this launch only (iOS ends the app when the permission is revoked in Settings).
+//
+// ADR-0125 follow-up 2 (QA-011 pass 9, D2, 2026-11-19): after Don't Allow the denied notice still never showed, and
+// the run kept no trace of what the browse had reported. Two changes:
+// * A browse that saw the app inactive (iOS's prompt) is restarted when the app is active again, before anything
+//   is decided: a browse that was already running when the person answered need not report the new policy, while a
+//   fresh one reports the denial at once. (When the scene itself went inactive, the receiver already stopped the
+//   probe and starts it again; this covers the case where only the application's state changed.)
+// * DEBUG builds keep the last events (`diagnostic`, shown by the hidden `localNetworkProbe` text) so a device run
+//   says which events came (browsing, a policy denial, another failure with its code) and what was decided.
 import Foundation
+import Observation
 import PerformanceControl
 import UIKit
 
@@ -24,27 +34,32 @@ enum LocalNetworkAccess: Equatable, Sendable {
 }
 
 @MainActor
+@Observable
 final class LocalNetworkAccessProbe {
     static let defaultSettleSeconds: Double = 2
     static let defaultMaximumSeconds: Double = 5
+    /// How many events `diagnostic` keeps.
+    static let historyLimit = 12
 
     private(set) var access: LocalNetworkAccess = .unknown
     /// True while a browse runs.
     var isRunning: Bool { browser != nil }
     /// Browses started this launch (tests).
     private(set) var runs = 0
+    /// The last events, oldest first ("start 1", "browsing", "inactive", "restart", "failed dns -65570", "denied" …).
+    private(set) var history: [String] = []
     /// Called on the main actor when `access` changes.
-    var onChange: (@MainActor (LocalNetworkAccess) -> Void)?
+    @ObservationIgnored var onChange: (@MainActor (LocalNetworkAccess) -> Void)?
 
-    private let makeBrowser: @MainActor () -> (any OSCPeerBrowsing)?
+    @ObservationIgnored private let makeBrowser: @MainActor () -> (any OSCPeerBrowsing)?
     /// Whether the app is active. The settle and the time limit count only while it is: on D2 (iPadOS 27.2, QA-011
     /// 2026-11-19) the receiver kept browsing while iOS's prompt showed, the 2 s settle granted before the person
     /// answered, and Don't Allow then showed no notice.
-    private let isActive: @MainActor () -> Bool
-    private let settleSeconds: Double
-    private let maximumSeconds: Double
-    private var browser: (any OSCPeerBrowsing)?
-    private var generation = 0
+    @ObservationIgnored private let isActive: @MainActor () -> Bool
+    @ObservationIgnored private let settleSeconds: Double
+    @ObservationIgnored private let maximumSeconds: Double
+    @ObservationIgnored private var browser: (any OSCPeerBrowsing)?
+    @ObservationIgnored private var generation = 0
 
     init(settleSeconds: Double = LocalNetworkAccessProbe.defaultSettleSeconds,
          maximumSeconds: Double = LocalNetworkAccessProbe.defaultMaximumSeconds,
@@ -76,6 +91,23 @@ final class LocalNetworkAccessProbe {
         }
     }
 
+    /// A short name for an event in `history` (never a peer's name).
+    static func describe(_ event: OSCBrowserEvent) -> String {
+        switch event {
+        case .browsing: "browsing"
+        case .peers(let peers): "peers \(peers.count)"
+        case .failed(.localNetworkDenied): "failed policyDenied"
+        case .failed(.portInUse): "failed portInUse"
+        case .failed(.unavailable): "failed unavailable"
+        case .failed(.other(let code)): "failed \(code)"
+        }
+    }
+
+    /// "access=<a> runs=<n> running=<yes|no> | <last events>" (the DEBUG `localNetworkProbe` text).
+    var diagnostic: String {
+        "access=\(access) runs=\(runs) running=\(isRunning ? "yes" : "no") | " + history.joined(separator: ", ")
+    }
+
     /// One bounded browse, unless the answer is known or a browse already runs.
     func start() {
         guard access == .unknown, browser == nil, let made = makeBrowser() else { return }
@@ -83,32 +115,42 @@ final class LocalNetworkAccessProbe {
         runs += 1
         let run = generation
         browser = made
+        note("start \(runs)")
         made.start { [weak self] (event: OSCBrowserEvent) -> Void in
             Task { @MainActor [weak self] in self?.handle(event, run: run) }
         }
-        whileActive(maximumSeconds, run: run) { $0.finish(run: run, with: nil) }
+        whileActive(maximumSeconds, run: run) { $0.finish(run: run, with: nil, reason: "limit") }
+        watchActivity(run: run)
     }
 
     /// Cancels a running browse (the receiver stopped, for example while iOS's prompt shows).
     func stop() {
         generation += 1
+        if browser != nil { note("stop") }
         browser?.cancel()
         browser = nil
     }
 
+    private func note(_ entry: String) {
+        history.append(entry)
+        if history.count > Self.historyLimit { history.removeFirst(history.count - Self.historyLimit) }
+    }
+
     private func handle(_ event: OSCBrowserEvent, run: Int) {
         guard run == generation, browser != nil else { return }
+        note(Self.describe(event))
         if case .browsing = event {
-            whileActive(settleSeconds, run: run) { $0.finish(run: run, with: .granted) }
+            whileActive(settleSeconds, run: run) { $0.finish(run: run, with: .granted, reason: "settled") }
             return
         }
         guard let decision = Self.decision(for: event) else { return }
-        finish(run: run, with: decision == .unknown ? nil : decision)
+        finish(run: run, with: decision == .unknown ? nil : decision, reason: "event")
     }
 
-    private func finish(run: Int, with decision: LocalNetworkAccess?) {
+    private func finish(run: Int, with decision: LocalNetworkAccess?, reason: String) {
         guard run == generation, browser != nil else { return }
         stop()
+        note("\(reason) → \(decision.map { "\($0)" } ?? "unknown")")
         guard let decision, decision != access else { return }
         access = decision
         onChange?(decision)
@@ -126,6 +168,27 @@ final class LocalNetworkAccessProbe {
             }
             guard let self, run == self.generation else { return }
             body(self)
+        }
+    }
+
+    /// Follow-up 2: when the app turns active again while this run is undecided, the browse starts over (a new run;
+    /// the old browser's later events are ignored).
+    private func watchActivity(run: Int) {
+        Task { @MainActor [weak self] in
+            var wasInactive = false
+            while true {
+                try? await Task.sleep(nanoseconds: 50_000_000)
+                guard let self, run == self.generation, self.browser != nil else { return }
+                let active = self.isActive()
+                if !active, !wasInactive { self.note("inactive") }
+                if active, wasInactive {
+                    self.note("restart")
+                    self.stop()
+                    self.start()
+                    return
+                }
+                wasInactive = !active
+            }
         }
     }
 }

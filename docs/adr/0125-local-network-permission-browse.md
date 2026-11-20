@@ -65,3 +65,24 @@ reports DNS-SD's `kDNSServiceErr_PolicyDenied` (-65570), which the app already m
 - **Waiting for inbound traffic** to make iOS ask: depends on a controller sending at the right time, and the prompt
   would appear mid-show instead of at the user's tap.
 - **Keeping "listening means granted"**: false on D2 and D3; the denied notice could never appear.
+
+## Follow-ups
+
+1. **2026-11-19, prompt-flow on D2 (iPadOS 27.2), testC:** the settle and the 5 s limit count only while the
+   application is active (`isActive`), so a browse running while iOS's prompt shows cannot grant before the answer.
+2. **2026-11-19, QA-011 pass 9 on D2, testC still failing:** iOS's prompt appeared and was answered Don't Allow, yet
+   no denied notice showed within 15 s and the receiver listened (`OSC listening`, `osc=listening`). The run kept no
+   record of what the browse reported, so the cause could not be read from the logs. Decided (owner rules 4 and 12):
+   - A browse that saw the application inactive is **restarted** when it is active again, before anything is
+     decided: a browse already running when the person answered need not report the new policy, while a fresh browse
+     reports the denial (`kDNSServiceErr_PolicyDenied`) at once. When the scene itself went inactive the receiver
+     already stopped and restarted the probe; this covers the case where only the application's state changed. Still
+     bounded: each run stops after 5 s of active time at most, and no browse runs while OSC is off or the app is in
+     the background.
+   - DEBUG builds keep the probe's last 12 events (`LocalNetworkAccessProbe.history`: starts, browsing, inactive,
+     restart, a failure with its code, the decision; never a peer's name) in the hidden `localNetworkProbe` text, and
+     `testC_UIX015LocalNetworkExplainerThenPrompt` prints it and names it in its failure, so the next device run says
+     which events came. Host tests: `LocalNetworkAccessProbeTests` (restart after inactive; the diagnostic).
+   - To confirm on D2 with the prompt-flow batch. If the probe then shows a fresh browse that reports `browsing` and
+     no denial after Don't Allow, a browse alone cannot report a denial on iPadOS 27.2 and this ADR needs another
+     signal.

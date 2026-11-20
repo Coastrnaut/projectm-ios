@@ -479,6 +479,14 @@ struct VisualizerView: View {
                 .allowsHitTesting(false)
                 .accessibilityIdentifier("sessionRecovery")
                 .accessibilityValue(recoveryProbe)
+            if let localNetwork = coordinator.osc.localNetworkProbe {   // ADR-0125 follow-up 2: what the browse reported
+                Text(localNetwork.diagnostic)
+                    .font(.caption2)
+                    .opacity(0.01)
+                    .allowsHitTesting(false)
+                    .accessibilityIdentifier("localNetworkProbe")
+                    .accessibilityValue(localNetwork.diagnostic)
+            }
             if let autosave = coordinator.sceneAutosave {   // SCN-002-R12: the committed revision
                 Text(autosave.probe)
                     .font(.caption2)
