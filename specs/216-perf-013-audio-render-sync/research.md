@@ -32,16 +32,27 @@
   second) and memory (preallocated). Steps (AUD-013 offset slews, route changes) are not drift.
 - **Alternatives**: least squares on raw observations (jitter of ±5 ms gives ±150 ppm slope noise over 10 s); a
   PLL-style filter (harder to bound and prove "never overshoots").
+- **Revised (QA-011 device run 2026-11-20, D2 microphone)**: on the device the arrival floor wanders (fits from −753
+  to +316 ppm within two minutes), which a 10-bucket fit reads as drift. A verdict now needs 30 buckets, a straight fit
+  (von Neumann ratio: fit residual variance ≤ 2 × successive-difference noise variance), agreeing window halves
+  (3 standard errors), a slope steady over 10 consecutive fits and |slope| ≤ 300 ppm; it clears when any of these
+  fails (halves at 4 standard errors). A wander slow enough to look straight for a whole 64 s window remains
+  indistinguishable from drift by arrival times alone; D3's floor bound limits the damage.
 
 ## PERF-013-D3 Correction
 
 - **Decision**: target = slope × e (ns) while detected, 0 otherwise; the applied correction moves toward the target by
   at most 0.25 ms per presented frame and stops at it. Corrected audio time = bus host time + applied correction.
+- **Floor bound (QA-011 device run 2026-11-20)**: the target is limited to the residual floor's own movement since
+  the session start (latency steps excluded, carried to the current sample at the fitted slope) plus 2 ms, and is at
+  most 2 ms against that movement's direction. A slope fitted over the last 64 s and multiplied by a long session time
+  can no longer add latency the floor never showed (D2: ages from 65 to 104 ms).
 - **Rationale**: the intercept of the fit is the true pipeline latency, which belongs to the age; only the slope is
   clock error. Slew-limited, monotone approach to the target cannot overshoot the target; the target cannot overshoot
   the truth beyond the slope error × e.
-- **Budget**: ±500 ppm → verdict at about 11-13 s (error up to 6 ms before it), catch-up at 0.25 ms per frame,
-  error ≤ 3 ms from 15 s and ≤ 2 ms from 30 s to 60 s, correction ≤ 2 ms past the truth (four jitter sequences).
+- **Budget**: ±250 ppm → verdict at about 40 s (error up to 10 ms before it), catch-up at 0.25 ms per frame,
+  error ≤ 3 ms from 45 s and ≤ 2 ms from 55 s to 90 s, correction ≤ 2 ms past the truth (four jitter sequences);
+  80 ppm within the same budget (QA-011 device run 2026-11-20; was ±500 ppm, verdict at 11-13 s, 15 s and 30 s).
 
 ## PERF-013-D4 Age statistics
 

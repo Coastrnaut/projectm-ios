@@ -18,7 +18,7 @@ Tests are part of the acceptance (spec S1-S4) and use injected clocks only (owne
 
 **Independent test**: injected clocks with ±500 ppm drift and deterministic one-sided jitter.
 
-- [X] PERF-013-T04 [US2] Acceptance tests: ±500 ppm detected (four jitter seeds), age error ≤ 3 ms from 15 s and ≤ 2 ms from 30 s to 60 s, applied correction never past the true offset by > 2 ms, every step ≤ 0.25 ms; no drift → 0 corrections; a 100 ms latency step → no correction; session change resets; in Packages/Compositor/Tests/FrameTimingTests/AudioClockDriftTests.swift — Verified 2026-11-14: `swift test --package-path Packages/Compositor --filter AudioClockDriftTests`: 7 tests pass in 0.09 s
+- [X] PERF-013-T04 [US2] Acceptance tests: ±500 ppm detected (four jitter seeds), age error ≤ 3 ms from 15 s and ≤ 2 ms from 30 s to 60 s, applied correction never past the true offset by > 2 ms, every step ≤ 0.25 ms; no drift → 0 corrections; a 100 ms latency step → no correction; session change resets; in Packages/Compositor/Tests/FrameTimingTests/AudioClockDriftTests.swift — Verified 2026-11-14: `swift test --package-path Packages/Compositor --filter AudioClockDriftTests`: 7 tests pass in 0.09 s. Amended QA-011 device run 2026-11-20 (spec Clarifications, D2 microphone): ±250 ppm, budget from 45 s / 55 s of a 90 s run, plus jitter-only, wandering-latency, slow-wander floor-bound and 80 ppm cases — Verified 2026-11-20: `swift test --package-path Packages/Compositor --filter FrameTimingTests`: 69 tests (13 AudioClockDriftTests) pass in 0.28 s
 
 ## Phase 4: User Story 1 - See how old the audio on screen is (P1)
 

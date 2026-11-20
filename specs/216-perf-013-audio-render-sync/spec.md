@@ -93,8 +93,11 @@ brings the age error within budget in the documented time without overshooting; 
   session, with a fixed 0.1 ms resolution; unavailable values are absent, never 0.
 - **PERF-013-R3**: Drift between the analysis sample clock and the host clock is estimated from the arrival times of
   feature frames against their sample positions, robust to one-sided arrival jitter.
-- **PERF-013-R4**: Drift is reported as detected when its magnitude is at least 50 ppm and at least 3 standard errors
-  of the estimate over at least 10 s of audio, and cleared below 25 ppm; below detection no correction is applied.
+- **PERF-013-R4**: Drift is reported as detected when its magnitude is at least 50 ppm and at most 300 ppm, at least
+  3 standard errors of the estimate over at least 30 s of audio, the fit is straight and its slope is steady over 10
+  consecutive fits; it is cleared below 25 ppm or when the slope stops being straight or plausible. Below detection no
+  correction is applied, and the correction never exceeds the residual floor's own movement plus 2 ms (amended QA-011
+  device run 2026-11-20; was ≥ 10 s and no straightness, steadiness or floor bound).
 - **PERF-013-R5**: While drift is detected, the sample-to-host mapping is corrected toward the estimate; each step
   moves it by at most 0.25 ms per presented frame and never past the target.
 - **PERF-013-R6**: A sudden change of arrival latency (more than 10 ms between consecutive observation buckets beyond
@@ -121,8 +124,10 @@ brings the age error within budget in the documented time without overshooting; 
 
 ## Success Criteria *(mandatory)*
 
-- **PERF-013-S1**: With ±500 ppm injected drift and jittered arrivals, the age error is within 3 ms from 15 s of
-  audio after the session start and within 2 ms from 30 s to the end of a 60 s run, for every tested jitter sequence.
+- **PERF-013-S1**: With ±250 ppm injected drift and jittered arrivals, the age error is within 3 ms from 45 s of
+  audio after the session start and within 2 ms from 55 s to the end of a 90 s run, for every tested jitter sequence;
+  a constant 80 ppm is detected within the same budget (amended QA-011 device run 2026-11-20; was ±500 ppm, 15 s and
+  30 s of a 60 s run).
 - **PERF-013-S2**: With no drift, 0 corrections in 100% of runs (jittered arrivals included).
 - **PERF-013-S3**: No correction step exceeds 0.25 ms, and the applied correction never passes the true drift
   offset by more than 2 ms.
@@ -172,3 +177,28 @@ local-first option.
 - Q: Where are the signposts emitted? → A: On the overlay refresh (main thread, once a second) when the drift verdict
   changes, as `DiagnosticsLog` Points of Interest events with numbers only; never from the frame path or an audio
   callback (PERF-013-R10).
+
+### QA-011 device run 2026-11-20
+
+- Q: D2 (iPad Pro M5, iPadOS 27.2, microphone, pass 10) reported a drift verdict whose estimate went −753, −681,
+  −435, −89, +219, +316 … +252 ppm within two minutes, and the correction raised the audio age from 55-70 ms to
+  104 ms (167 ms in full8). Real drift or an estimator defect? → A: An app defect in the estimator. A real clock
+  difference is a constant rate, stable within a few ppm; a swing of 1,000 ppm means the arrival floor itself
+  wandered (the microphone heard near silence, -81 dB, so the input was quiet as well) and the 10-bucket fit
+  measured that wander. Worse, the target slope × session time was applied even though the floor had not moved by
+  anything like it, so the "correction" added latency. Fixed (PERF-013-R4, S1 amended):
+  - a verdict needs 30 buckets (30 s of audio), a straight fit (residual variance at most 2 × the noise variance
+    from successive bucket differences), the window's older and newer halves agreeing within 3 standard errors, and
+    the slope steady (range within 6 standard errors, at least 50 ppm) over 10 consecutive fits, so at about 40 s;
+  - a slope above 300 ppm is never drift (audio and host crystals differ by tens of ppm, ±100 ppm at worst; was
+    2,000 ppm), and a detection clears when the fit stops being straight, steady between halves (4 standard errors)
+    or plausible;
+  - the correction target is limited to the residual floor's own movement since the session start (latency steps
+    excluded) plus 2 ms, in the same direction, so a correction can never raise an age above what the floor's
+    movement justifies.
+  The acceptance tests inject ±250 ppm (still 2.5 × the worst plausible drift) and add jitter-only (0-30 ms: no
+  verdict, about 0 ppm), the D2 shape (a ±15 ms wander over 90-160 s: no verdict, no correction), in-cap wanders
+  (±3.5-5 ms: no verdict), a constant 80 ppm (detected within budget) and a ±8 ms wander over 200 s, which looks
+  straight over the whole window and cannot be told from drift by arrival times alone: its correction must keep the
+  measured age within 3 ms of the largest true age. Using the capture's `AVAudioTime` sample and host times instead
+  (research PERF-013-D1 alternative) would need them carried through the normalized ring; not done here.
