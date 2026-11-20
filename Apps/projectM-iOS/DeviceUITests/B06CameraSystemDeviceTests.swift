@@ -86,8 +86,8 @@ extension DeviceAcceptanceCase {
     @discardableResult
     func revealCameraSetting(_ element: XCUIElement) -> Bool {
         let list = app.collectionViews.firstMatch
-        for _ in 0..<10 where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
-        for _ in 0..<6 where !(element.exists && element.isHittable) { list.swipeDown(velocity: .slow) }
+        for _ in 0..<10 where !(element.exists && element.isHittable) { list.scrollStep(up: true) }
+        for _ in 0..<6 where !(element.exists && element.isHittable) { list.scrollStep(up: false) }
         return element.exists && element.isHittable
     }
 

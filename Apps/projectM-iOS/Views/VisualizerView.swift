@@ -1107,8 +1107,6 @@ private struct FrameExporterHost: View {
 
     var body: some View {
         Color.clear
-            .accessibilityHidden(true)
-            .allowsHitTesting(false)
             .fileExporter(isPresented: Binding(get: { frameCapture.showExporter },
                                                set: { (shown: Bool) in
                                                    frameCapture.showExporter = shown
@@ -1119,5 +1117,12 @@ private struct FrameExporterHost: View {
                           defaultFilename: frameCapture.offeredBaseName) { (result: Result<URL, any Error>) in
                 frameCapture.exportFinished(result)
             }
+            // QA-011 pass 6 D2 (iPadOS 27.2, 2026-11-19): at the host's full size the exporter's view sat in front of
+            // the split editor for accessibility, so no Settings control in the pane was hittable (about 20 device UI
+            // tests). Zero-sized, hidden and untouchable outside the exporter, it covers nothing
+            // (SettingsPanelReachUITests).
+            .frame(width: 0, height: 0)
+            .accessibilityHidden(true)
+            .allowsHitTesting(false)
     }
 }

@@ -31,7 +31,7 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
         openSettings()
         let row = app.buttons["visual.camera"]
         let list = app.collectionViews.firstMatch
-        for _ in 0..<4 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<4 where !(row.exists && row.isHittable) { list.scrollStep(up: true) }
         XCTAssertTrue(row.isHittable, "the Camera row")
         row.tap()
         closeSettings()
@@ -90,7 +90,7 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     private func openCameraSettings(_ element: XCUIElement) {
         openSettings()
         let list = app.collectionViews.firstMatch
-        for _ in 0..<8 where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<8 where !(element.exists && element.isHittable) { list.scrollStep(up: true) }
     }
 
     /// CAM-002-T23: Back → Front and back within 2 s each, no audio restart.

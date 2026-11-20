@@ -74,8 +74,8 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
         let x = panel ? list.frame.midX / max(window.width, 1) : 0.5
         app.coordinate(withNormalizedOffset: CGVector(dx: x, dy: 0.01)).tap()
         _ = wait(3) { row.exists }
-        for _ in 0..<10 where !row.exists && nav.exists { list.swipeDown(velocity: panel ? .fast : .slow) }
-        for _ in 0..<3 where row.exists && !row.isHittable && nav.exists { list.swipeDown(velocity: .slow) }
+        for _ in 0..<10 where !row.exists && nav.exists { list.scrollStep(up: false, velocity: panel ? .fast : .slow) }
+        for _ in 0..<3 where row.exists && !row.isHittable && nav.exists { list.scrollStep(up: false) }
         XCTAssertTrue(nav.exists, "Settings is still open")
         XCTAssertTrue(row.isHittable, "the Linear Spectrum row is reachable")
         row.tap()
@@ -107,7 +107,7 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
         app.buttons["settings"].tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
         let list = app.collectionViews.firstMatch
-        for _ in 0..<8 where !(bars.exists && bars.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<8 where !(bars.exists && bars.isHittable) { list.scrollStep(up: true) }
         XCTAssertTrue(bars.isHittable, "the Bars picker")
     }
 

@@ -229,7 +229,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
                 if address.hasPrefix("/") { addresses.insert(address) }
             }
             if export.exists && export.isHittable { break }
-            app.collectionViews.firstMatch.swipeUp(velocity: .slow)
+            app.collectionViews.firstMatch.scrollStep(up: true)
         }
         let json = (try? JSONSerialization.data(withJSONObject: addresses.sorted()))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "[]"

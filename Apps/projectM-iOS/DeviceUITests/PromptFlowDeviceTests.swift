@@ -88,8 +88,8 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
 
     private func reveal(_ element: XCUIElement) {
         let list = app.collectionViews.firstMatch
-        for _ in 0..<8 where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
-        for _ in 0..<4 where !(element.exists && element.isHittable) { list.swipeDown(velocity: .slow) }
+        for _ in 0..<8 where !(element.exists && element.isHittable) { list.scrollStep(up: true) }
+        for _ in 0..<4 where !(element.exists && element.isHittable) { list.scrollStep(up: false) }
     }
 
     private func tapVisualRow(_ raw: String) {

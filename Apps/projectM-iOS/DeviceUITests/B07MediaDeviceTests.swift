@@ -98,7 +98,7 @@ class B07Case: ControlSurfaceCase {
         for _ in 0..<swipes {
             if element.exists && element.isHittable { return true }
             if element.exists { return scrollTo(element, up: up, swipes: 3) }
-            if up { list.swipeDown() } else { list.swipeUp() }
+            list.scrollStep(up: !up, velocity: .fast)
             pause(0.4)
         }
         return element.exists && element.isHittable
@@ -295,7 +295,7 @@ class B07Case: ControlSurfaceCase {
         for i in 0..<swipes {
             if visible() { return true }
             if e.exists { up = e.frame.minY < window.frame.midY } else if i == swipes / 2 { up = true }
-            if up { list.swipeDown(velocity: .slow) } else { list.swipeUp(velocity: .slow) }
+            list.scrollStep(up: !up)
         }
         return visible()
     }

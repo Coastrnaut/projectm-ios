@@ -50,7 +50,7 @@ final class PermissionPrimerDeviceTests: XCTestCase {
         app.buttons["settings"].tap()
         let row = app.buttons["visual.camera"]
         let list = app.collectionViews.firstMatch
-        for _ in 0..<4 where !(row.exists && row.isHittable) { list.swipeUp(velocity: .slow) }
+        for _ in 0..<4 where !(row.exists && row.isHittable) { list.scrollStep(up: true) }
         row.tap()
         waitForAnswer("camera")
     }

@@ -540,7 +540,7 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         app.buttons["settings"].tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
         let start = app.buttons["countdownStartButton"]
-        for _ in 0..<6 where !(start.exists && start.isHittable) { app.swipeUp() }
+        for _ in 0..<6 where !(start.exists && start.isHittable) { app.scrollFrontList(up: true, velocity: .fast) }
         XCTAssertTrue(start.exists, "the countdown's Start")
         start.tap()
         app.navigationBars["Settings"].buttons["Done"].tap()

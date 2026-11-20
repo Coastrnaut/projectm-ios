@@ -81,7 +81,7 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
         let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
         for _ in 0..<swipes {
             if element.exists && element.isHittable { return true }
-            if up { list.swipeDown(velocity: .slow) } else { list.swipeUp(velocity: .slow) }
+            list.scrollStep(up: !up)   // inside the list, clear of the Home gesture (ListScrolling)
         }
         return element.exists && element.isHittable
     }

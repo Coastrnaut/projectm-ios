@@ -72,7 +72,7 @@ final class B13MediaDeviceTests: DeviceAcceptanceCase {
         let toggle = app.switches["videoReverseToggle"].firstMatch
         XCTAssertTrue(wait(5) { toggle.exists }, "the Reverse switch is offered while a video is stored")
         let list = app.collectionViews.firstMatch
-        for _ in 0..<4 where !toggle.isHittable { list.swipeUp() }
+        for _ in 0..<4 where !toggle.isHittable { list.scrollStep(up: true, velocity: .fast) }
         // A SwiftUI Toggle row's centre is its label; tap the switch at the trailing edge.
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
         if !wait(3, { (toggle.value as? String) == "1" }) { toggle.switches.firstMatch.tap() }

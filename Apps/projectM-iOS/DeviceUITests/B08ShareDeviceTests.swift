@@ -331,7 +331,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         app.buttons["settings"].tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings")
         let storage = app.buttons["storageLink"]
-        for _ in 0..<6 where !(storage.exists && storage.isHittable) { app.swipeUp() }
+        for _ in 0..<6 where !(storage.exists && storage.isHittable) { app.scrollFrontList(up: true, velocity: .fast) }
         storage.tap()
         let link = app.buttons["storage.savedRecordings"]
         XCTAssertTrue(wait(8) { link.exists }, "Storage › Saved recordings")
