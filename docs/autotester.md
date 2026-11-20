@@ -978,6 +978,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   - *An undecided permission probe needs its own trace.* After Don't Allow the Local Network notice never showed and
     the run held nothing about what the browse reported. DEBUG builds now show the probe's last events
     (`localNetworkProbe`), and testC prints them (ADR-0125 follow-up 2).
+- **Re-assert the orientation after launch.** On D2 (full run 12, 2026-11-20) the first launch after an install took 9 s;
+  the iPad's own sensor reported Landscape Right, then Face Up, and the interface came up in landscape although the test
+  had set Portrait. The screenshot stayed in the device's portrait pixel frame (2064 × 2752 under a 1376 pt wide window), so
+  SHD-005-T13 sampled the wrong place and "the palette strip was not found". `launch` and `launchPlain` now call
+  `settleOrientation`, which sets the orientation again (through the other one) until the window's shape matches.
+- **Re-derive a bound from every device, not the one it was set on.** REC-008-T14's 5 % dropped-slot bound came from D1
+  (5-8 of 300); D2 drops 4-19 with no code change between runs (same render-frame count), so the bound is now D2's
+  mean + 3 SD (27, REC-008 Clarifications 2026-11-20). Before moving a bound, check `git log` on the measured path and
+  the raw counts behind it, so a real regression is not absorbed.
 
 ### Policy and evidence
 

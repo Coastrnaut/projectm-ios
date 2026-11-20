@@ -31,6 +31,7 @@ class B07DeviceCase: DeviceAcceptanceCase {
         }
         app.launchArguments = args + extra
         app.launch()
+        settleOrientation(orientation)
         XCTAssertTrue(wait(20) { self.app.staticTexts["sourceStarts"].exists }, "the source started")
     }
 
