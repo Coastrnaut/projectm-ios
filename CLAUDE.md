@@ -110,7 +110,7 @@ tasks). `README.md` is background guidance; the constitution and spec win when t
   driver and CaptureLab for devices and runs the package tests on an iOS 27.2 simulator (about
   4.5 min). CI does not run the CaptureLab UI tests.
   - Since 2026-11-14 the package tests run in matrix jobs per package group (`PKGS_AUDIO`,
-    `PKGS_LIBRARY`, `PKGS_VISUAL`, `PKGS_COMPOSITOR` (Compositor alone since 2026-11-16) in the workflow env): `apple-package-tests` (host + iOS 26
+    `PKGS_LIBRARY`, `PKGS_VISUAL`, `PKGS_COMPOSITOR` (Compositor alone since 2026-11-16), `PKGS_SHOW` (ShowControl, LibraryBackup, ImportFuzz since 2026-11-20) in the workflow env): `apple-package-tests` (host + iOS 26
     simulator) and `build-ios27` (iOS 27.2 simulator), 45-minute limits each;
     `build-and-test-apple` only builds. A new package must be added to exactly one group (the docs
     job checks it). The single job had hit its 90-minute limit (run 43606196231).
