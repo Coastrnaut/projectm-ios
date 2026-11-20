@@ -354,6 +354,9 @@ Devices: D1 for all; D3 for REC-001, REC-003-T25 and MED-011; D2 for REC-014 (Po
   43 GB free): one extension of the whole gap never returned within 300 s and the probe stayed "state=filling
   ballastMB=0". The fill now grows in 1 GB steps with a progress line after each and ends `state=slow` after 360 s;
   the tests wait 390 s, print the progress every 30 s, and REC-015 skips on `slow` with the readings.
+  Since 2026-11-20 REC-009 and REC-015 also pass `-uitestDiskGuardReserveMB 8000` (DEBUG): the guard keeps 8 GB
+  instead of 200 MiB, and the ballast aims at 8390 / 8490 MB, so the real guard reads real free space and stops a real
+  recording while the device still has 8 GB free.
 - **CPU (DEBUG):** `cpuProbe` reads "cpuSeconds=<user+system> uptime=<s>" each second (`getrusage`); a test takes
   Δcpu/Δuptime (100 % = one core).
 - **Files in tmp survive, offered ones do not:** a launch deletes `<tmp>/Recordings` (REC-003-R13), so every file the
@@ -707,6 +710,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     the "chorus" at 20 s is only +5 dB, so ANL-015 correctly fires once at about 12 s.
   - Seeded shows start with cue 1 active but no running playhead: seek (scrub) before measuring the timeline, and tap a
     tempo before turning on bar-synced rotation (a scripted estimate has no beat phase).
+
+  - *Never fill a device to within a gigabyte of full.* D2 left the network (devicectl "unavailable", xcodebuild
+    waiting for the destination for two hours) during REC-015 twice, at 199 and 700 MB of real free space (pass 4,
+    full run 12, 2026-11-20); it passed once at 209 MB. Low storage makes iOS purge and its wireless developer
+    services drop. Test a storage guard by raising its threshold in DEBUG, not by emptying the disk.
+  - *A run that waits on a missing device must end.* full run 12 sat at "Waiting for the destination to become ready"
+    for two hours. Check `xcrun devicectl list devices` whenever a run's log stops growing for 10 minutes.
+  - *A host render test must know its own frame rate.* A GitHub runner's simulator rendered so slowly that the 1.5 Hz
+    strobe fixture was sampled once and read no flash (run 44681007689); the test now counts its frames and skips
+    with the numbers below 8 fps.
 
 ### Xcode and the device test host
 
