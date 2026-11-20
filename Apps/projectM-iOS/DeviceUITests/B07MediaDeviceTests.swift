@@ -79,13 +79,21 @@ class B07Case: ControlSurfaceCase {
     /// (precise near the top), then full-speed swipes for controls near the end of a long Settings list. On the iPad
     /// panel 12 slow swipes in each direction never reached Storage below the projectM visual's sections (PRE-001-T14,
     /// FILE-009-T12 on D3, 2026-11-19).
+    /// `raised`: once reachable, the control is dragged into the upper third of the list first (`raiseInList`).
     @discardableResult
-    func tapControl(_ id: String) -> Bool {
+    func tapControl(_ id: String, raised: Bool = false) -> Bool {
         let button = app.buttons[id].firstMatch
         let target = button.exists ? button : app.descendants(matching: .any)[id].firstMatch
         if !scrollTo(target, swipes: 12) && !fastScrollTo(target, up: false) && !fastScrollTo(target, up: true) {
             XCTFail("\(id) is reachable in Settings")
             return false
+        }
+        if raised {
+            raiseInList(id)
+            if !(target.exists && target.isHittable) && !scrollTo(target, swipes: 4) {
+                XCTFail("\(id) is reachable in Settings after raising it")
+                return false
+            }
         }
         target.tap()
         return true
@@ -126,12 +134,36 @@ class B07Case: ControlSurfaceCase {
         closeSettingsPanel()
     }
 
-    /// Settings › `button` (a "Choose from Files…") › the document picker › Documents/`name`.
-    func pickFromFiles(_ button: String, _ name: String) {
+    /// Settings › `button` (a "Choose from Files…") › the document picker › Documents/`name`. `roomBelow`: the button
+    /// is first dragged into the upper third of the Settings list, so the rows the app adds below it (a refusal notice)
+    /// are on screen when the picker closes, and no pause follows the pick (the notice lives 6 s).
+    func pickFromFiles(_ button: String, _ name: String, roomBelow: Bool = false) {
         openSettingsPanel()
-        guard tapControl(button) else { return }
+        if roomBelow {
+            guard tapControl(button, raised: true) else { return }
+        } else {
+            guard tapControl(button) else { return }
+        }
         XCTAssertTrue(ui.filesPick(name: name), "Files: picked \(name)")
-        pause(1)
+        if !roomBelow { pause(1) }
+    }
+
+    /// Drags the Settings list (slowly, held so it does not fling) until the button `id` sits about a third of the way
+    /// down. MED-001-T24 on D2 (full run 12, 2026-11-20): Choose from Files… was hittable in the lower part of the
+    /// 1376 pt iPad panel, so the 40 MB notice row appeared below the fold; each recovery drag in `waitForNotice`
+    /// took 3.5 s there, and the notice (6 s) was gone before the first drag settled.
+    func raiseInList(_ id: String) {
+        let list = app.collectionViews.firstMatch, target = app.buttons[id].firstMatch
+        guard list.exists, target.exists else { return }
+        let lf = list.frame, tf = target.frame
+        let fromY = min(tf.midY, lf.maxY - max(lf.height * 0.15, 100))
+        let distance = fromY - (lf.minY + lf.height * 0.3)
+        guard distance > 40 else { return }
+        let origin = list.coordinate(withNormalizedOffset: .zero)
+        let start = origin.withOffset(CGVector(dx: lf.width * 0.9, dy: fromY - lf.minY))
+        start.press(forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -distance)), withVelocity: .slow,
+                    thenHoldForDuration: 0.3)
+        pause(0.5)
     }
 
     /// Settings › `button` (a "Choose from Photos…") › the Photos picker › the newest `count` items.
@@ -384,10 +416,13 @@ final class B07MediaDeviceTests: B07Case {
         let seconds = Date().timeIntervalSince(started)
         XCTAssertTrue(panorama.contains("4096 × "), "\(task): the 60 MP panorama is stored at 4096 px: \(panorama)")
 
-        pickFromFiles("choosePhotoFromFiles", "photo-45mb.jpg")
+        pickFromFiles("choosePhotoFromFiles", "photo-45mb.jpg", roomBelow: true)
         let noticeShown = waitForNotice("larger than 40 MB")
         XCTAssertTrue(noticeShown, "\(task): the 40 MB notice")
         XCTAssertEqual(app.state, .runningForeground, "\(task): the app keeps running")
+        // The summary row sits above the picker buttons; a recovery drag in waitForNotice can take it off screen, and
+        // the list builds no off-screen rows (full run 12 on D2 read "").
+        _ = scrollTo(element("photoSummary"), up: true, swipes: 6)
         XCTAssertEqual(settledSummary("photoSummary"), panorama, "\(task): the refused file leaves the photo")
         closeSettingsPanel()
         XCTAssertTrue(wait(20) { self.photoValue.hasPrefix("Photo 4096 × ") }, "\(task): the panorama renders: \(photoValue)")
