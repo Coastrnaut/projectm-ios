@@ -77,6 +77,7 @@ class DeviceAcceptanceCase: XCTestCase {
         args += ["-uitestDefaults", json]
         app.launchArguments = args + extra
         app.launch()
+        settleOrientation(orientation)
         let started = wait(15) { self.app.staticTexts["sourceStarts"].exists }
         if !started, music, app.navigationBars["Choose source"].exists {
             XCTFail("the app stayed on Choose source: music-fixture.m4a is missing from the app's Documents on this "
@@ -94,6 +95,31 @@ class DeviceAcceptanceCase: XCTestCase {
         pause(2)   // the visual's first frames and the music settle
         // The controls show after launch and hide after 5 s without interaction; screenshots need them hidden.
         _ = wait(8) { !self.app.otherElements["controls"].exists }
+    }
+
+    /// Holds the interface in `orientation` after a launch. The orientation set before `app.launch()` does not always
+    /// survive it: on D2 (full run 12, 2026-11-20) the first launch after the install took 9 s, the iPad's own sensor
+    /// reported Landscape Right and then Face Up meanwhile, and the interface came up in landscape although the test set
+    /// Portrait. A screenshot's pixels stay in the device's portrait frame (2064 × 2752 with a 1376 pt wide window), so
+    /// every point-based sample was read from the wrong place (SHD-005-T13: "the palette strip was not found").
+    /// When the window's shape does not match, the orientation is set again (through the other one, so the set is a
+    /// real change) until it does. Face-up and unknown requests are left alone.
+    func settleOrientation(_ orientation: UIDeviceOrientation) {
+        guard orientation.isPortrait || orientation.isLandscape else { return }
+        let window = app.windows.firstMatch
+        func matches() -> Bool {
+            let f = window.frame
+            guard f.width > 0, f.height > 0 else { return false }
+            return orientation.isPortrait ? f.height > f.width : f.width > f.height
+        }
+        for _ in 0..<3 {
+            if wait(2, matches) { return }
+            XCUIDevice.shared.orientation = orientation.isPortrait ? .landscapeLeft : .portrait
+            pause(0.5)
+            XCUIDevice.shared.orientation = orientation
+        }
+        XCTAssertTrue(wait(2, matches), "the interface turned to \(orientation.isPortrait ? "portrait" : "landscape") "
+                      + "(window \(window.frame.size))")
     }
 
     // MARK: Waiting

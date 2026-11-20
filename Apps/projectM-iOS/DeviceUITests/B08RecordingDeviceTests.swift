@@ -46,6 +46,11 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
 
     /// Dropped slots are skipped by design and reported (REC-006 Clarifications); the device test bounds them at 5 %.
     static let maximumDroppedShare = 0.05
+    /// REC-008-T14's bound on the 300 slots of a 10 s, 30 fps timed stop (QA-011 device run 2026-11-20, REC-008
+    /// Clarifications): 27 slots (9 %), D2's mean + 3 SD over its six runs (4, 10, 11, 12, 13, 19 dropped; mean 11.5,
+    /// SD 4.8), rounded up. The 5 % share came from D1 alone (5-8); D3 drops 2-5. A real degradation such as D3's 49
+    /// (2026-11-16, before the B08 fixes) still fails.
+    static let timedStopMaximumDropped = 27.0
 
     private func showControls() {
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
@@ -191,11 +196,11 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         // the 10 s grid (written + dropped) and the exact 10.000 s length; a slot the render loop missed is skipped and
         // counted (REC-006-D3, REC-008's "no padding" answer), bounded like every device recording. D1 and D3 both wrote
         // 295 + 5 dropped (busy 0, notReady 0). Exactly 300 written frames stays the host acceptance test's rule (a
-        // writer that is not real-time limited).
+        // writer that is not real-time limited). The bound is REC-008's own (2026-11-20): D2 drops 4-19 per run.
         XCTAssertEqual(f.frames + f.dropped, 300, "300 slots at 30 fps: written \(f.frames) + dropped \(f.dropped) "
                        + "(busy \(Int(causes["busy"] ?? -1)), notReady \(Int(causes["notReady"] ?? -1)), "
                        + "rateSkipped \(Int(causes["rateSkipped"] ?? -1)))")
-        XCTAssertLessThanOrEqual(Double(f.dropped), 300 * Self.maximumDroppedShare, "dropped slots stay bounded")
+        XCTAssertLessThanOrEqual(Double(f.dropped), Self.timedStopMaximumDropped, "dropped slots stay bounded")
     }
 
     /// REC-006-T15: a 24 fps recording of the Photo visual (rendering at 60 Hz) reads back at 24 fps.
