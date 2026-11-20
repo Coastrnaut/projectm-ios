@@ -94,14 +94,18 @@ public struct RecordingStoragePolicy: Sendable, Equatable {
     public static let horizonChecks: Int64 = 2
 
     public let estimate: RecordingStorageEstimate
+    /// The reserve this policy keeps: `reserveBytes` in the app. Only the app's DEBUG device tests raise it
+    /// (`-uitestDiskGuardReserveMB`, QA-011 REC-015-T17), so the real guard trips gigabytes before the device is full.
+    public let reserve: Int64
 
-    public init(estimate: RecordingStorageEstimate) {
+    public init(estimate: RecordingStorageEstimate, reserve: Int64 = RecordingStoragePolicy.reserveBytes) {
         self.estimate = estimate
+        self.reserve = reserve
     }
 
     /// Reserve + 60 s at the estimated rate.
     public var bytesNeededToStart: Int64 {
-        Self.reserveBytes + Self.minimumStartSeconds * estimate.bytesPerSecond
+        reserve + Self.minimumStartSeconds * estimate.bytesPerSecond
     }
 
     /// False only when the free space is known and below `bytesNeededToStart`.
@@ -121,7 +125,7 @@ public struct RecordingStoragePolicy: Sendable, Equatable {
         let measured: Int64 = measuredBytesPerSecond(fileBytes: fileBytes, recordedSeconds: recordedSeconds) ?? 0
         let rate: Int64 = max(estimate.bytesPerSecond, measured)
         let horizon: Int64 = Self.horizonChecks * Self.checkIntervalSeconds
-        return Self.reserveBytes + horizon * rate
+        return reserve + horizon * rate
     }
 
     /// True when the free space is known and below `stopThreshold`.

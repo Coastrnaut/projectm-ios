@@ -300,7 +300,7 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         let folder = "QA011-REC009"
         usedBallast = true
         launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestRecordingDirectory", folder,
-                                        "-uitestDiskBallast", "600"])
+                                        "-uitestDiskBallast", "8390", "-uitestDiskGuardReserveMB", "8000"])
         let ballast = waitForBallast(task)
         guard let began = startRecording("status lines") else { return XCTFail("the recording did not start: \(videoProbe)") }
         let dropped = app.descendants(matching: .any)["recordingDroppedFrames"].firstMatch
@@ -332,11 +332,12 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
     func testREC015RealDiskGuardStopsTheRecording() throws {
         let task = "REC-015-T17"
         usedBallast = true
-        launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestDiskBallast", "700",
-                                        "-uitestDiskBallastGrowMBps", "20"])
+        // An 8 GB guard reserve (DEBUG): the ballast stops 8.5 GB above full, not 700 MB (D2 left the network twice).
+        launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestDiskBallast", "8490",
+                                        "-uitestDiskBallastGrowMBps", "20", "-uitestDiskGuardReserveMB", "8000"])
         let ballast = waitForBallast(task)
         if ballast.hasPrefix("state=capped") || ballast.hasPrefix("state=failed") {
-            throw XCTSkip("the ballast could not bring the guard's reading to 700 MB (\(ballast)): purgeable storage keeps "
+            throw XCTSkip("the ballast could not bring the guard's reading to 8490 MB (\(ballast)): purgeable storage keeps "
                           + "it higher on this device; free space by hand for this check")
         }
         if ballast.hasPrefix("state=slow") {

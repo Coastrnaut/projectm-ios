@@ -56,6 +56,15 @@ final class RecordingStorageTests: XCTestCase {
         XCTAssertFalse(policy.shouldStop(availableBytes: nil, fileBytes: 5_000_000, recordedSeconds: 3), "unknown: no stop")
     }
 
+    func testARaisedReserveMovesBothThresholds() {
+        let reserve: Int64 = 8_000_000_000   // the DEBUG device tests' -uitestDiskGuardReserveMB 8000 (REC-015-T17)
+        let policy = RecordingStoragePolicy(estimate: RecordingStorageEstimate(bytesPerSecond: 1_000_000), reserve: reserve)
+        XCTAssertEqual(policy.bytesNeededToStart, reserve + 60_000_000)
+        XCTAssertEqual(policy.stopThreshold(fileBytes: nil, recordedSeconds: 0), reserve + 10_000_000)
+        XCTAssertTrue(policy.shouldStop(availableBytes: reserve + 9_999_999, fileBytes: nil, recordedSeconds: 0))
+        XCTAssertEqual(RecordingStoragePolicy(estimate: policy.estimate).reserve, RecordingStoragePolicy.reserveBytes)
+    }
+
     func testMeasuredRateWinsWhenLarger() {
         let policy = RecordingStoragePolicy(estimate: RecordingStorageEstimate(bytesPerSecond: 1_000_000))
         XCTAssertNil(policy.measuredBytesPerSecond(fileBytes: 9_000_000, recordedSeconds: 0.5), "under one second: not measured")

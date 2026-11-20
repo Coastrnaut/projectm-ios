@@ -38,6 +38,17 @@ final class UITestDiskBallast {
 
     static var isRequested: Bool { ProcessInfo.processInfo.arguments.contains(argument) }
 
+    /// `-uitestDiskGuardReserveMB <n>`: the disk guard keeps n MB instead of its 200 MiB reserve (QA-011 2026-11-20).
+    /// D2 left the network twice when REC-015-T17 filled it to 199 and 700 MB of real free space (pass 4, full run 12):
+    /// with an 8 GB reserve the real guard reads the real free space and stops a real recording 8 GB before full.
+    nonisolated static let guardReserveArgument = "-uitestDiskGuardReserveMB"
+    nonisolated static var guardReserveBytes: Int64 {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let i = arguments.firstIndex(of: guardReserveArgument), i + 1 < arguments.count,
+              let mb = Int64(arguments[i + 1]), mb > 0 else { return reserveBytes }
+        return max(reserveBytes, mb * 1_000_000)
+    }
+
     nonisolated static var file: URL {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
@@ -72,7 +83,7 @@ final class UITestDiskBallast {
             for _ in 0..<1_200 {   // at most 10 minutes
                 try? await Task.sleep(for: .milliseconds(500))
                 guard Self.recordingFileExists() else { continue }   // grows only while a recording is being made
-                let line = worker.grow(by: grow * 500_000, floor: Self.reserveBytes)
+                let line = worker.grow(by: grow * 500_000, floor: Self.guardReserveBytes)
                 await MainActor.run { UITestDiskBallast.shared.value = line }
                 if line.hasPrefix("state=failed") { return }   // at the floor: keep topping up while recording
             }

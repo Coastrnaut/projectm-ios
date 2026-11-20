@@ -533,7 +533,12 @@ final class VideoRecordingCoordinator {
             var startAvailable: Int64?
             if let geometry = RecordingGeometry(drawableWidth: Int(size.width), drawableHeight: Int(size.height),
                                                 settings: settings) {   // REC-014: the planned aspect and cap
-                let rules = RecordingStoragePolicy(estimate: RecordingStorageEstimate(geometry: geometry, settings: settings))
+                let estimate = RecordingStorageEstimate(geometry: geometry, settings: settings)
+                #if DEBUG
+                let rules = RecordingStoragePolicy(estimate: estimate, reserve: UITestDiskBallast.guardReserveBytes)
+                #else
+                let rules = RecordingStoragePolicy(estimate: estimate)
+                #endif
                 startAvailable = storageProbe.availableBytes(at: directory)
                 guard rules.allowsStart(availableBytes: startAvailable) else {
                     refuse(.lowStorage)
