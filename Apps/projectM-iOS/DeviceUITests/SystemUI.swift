@@ -963,9 +963,27 @@ final class SystemUI {
         if wait(5, { browse.exists }) { browse.tap(); pause(0.5) }
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
                                      Self.appDisplayName] : path
-        for place in places {
+        // QA-011 pass 9 (D2, iPadOS 27.2, 2026-11-19), a test bug: the mover opened in projectM, the test chose On My
+        // iPad (the root), and the tap on the first element labelled exactly "projectM" did not open the folder, so
+        // Save wrote the recording to the root of On My iPad (the Files app showed it there, beside earlier runs'
+        // recordings) and "Files lists the recording" failed in projectM. A folder below the location is now its
+        // cell in the grid ("projectM, 44 items"), tapped at its centre, and the step waits until the cell is gone
+        // (the folder is open); the exact-label element stays the fallback (sidebar locations, other releases).
+        for (index, place) in places.enumerated() {
+            let folder = app.cells.matching(NSPredicate(format: "label BEGINSWITH %@", place + ",")).firstMatch
             let item = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", place)).firstMatch
-            if wait(5, { item.exists }) { item.tap(); pause(0.8) }
+            if index > 0, wait(5, { folder.exists }) {
+                if folder.isHittable { folder.tap() } else { folder.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).tap() }
+                if !wait(4, { !folder.exists }) {
+                    print("DEVICE-ACCEPT-NOTE Files: the \(place) folder is still listed after the tap; tapping again")
+                    if folder.exists { folder.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).tap() }
+                    _ = wait(4) { !folder.exists }
+                }
+                pause(0.8)
+            } else if wait(5, { item.exists }) {
+                item.tap()
+                pause(0.8)
+            }
         }
         for name in ["Save", "Move", "Done", "Open"] {
             let button = app.buttons[name].firstMatch

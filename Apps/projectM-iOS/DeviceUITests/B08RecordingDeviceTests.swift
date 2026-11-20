@@ -380,24 +380,43 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         revealRecordingControls()
         let button = app.buttons["record"]
         XCTAssertTrue(wait(5) { button.exists && button.label == "Record" }, "Record is offered")
+        // The touch lies somewhere between `beforeTap` and `tapped`: XCUITest waits for idle and checks for interruptions
+        // before it synthesizes the touch, and waits for idle again before tap() returns (D2 pass 9, 2026-11-19: 0.53 s
+        // before, 0.82 s after). The app counts from the touch (begin + 1, + 2, + 3 s; VideoRecordingCoordinator), so
+        // a clock started when tap() returns reads up to 0.8 s short: 2.82-2.87 s against ">= 2.9" on D2 while the app
+        // was on time. The checks use the bound that cannot be wrong, and the gap after the shown "1", which the loop
+        // sees within one poll because "Recording in 1" appears long after tap() returned.
+        let beforeTap = Date()
         button.tap()
         let tapped = Date()
         let countdown = app.descendants(matching: .any)["recordingCountdown"].firstMatch
         var spoken: [String] = [], shown: [String] = []
-        var startedAfter: Double?
+        var firstSeen: [String: Date] = [:]
+        var startedAt: Date?
         while Date().timeIntervalSince(tapped) < 8 {
             let said = (app.staticTexts["announcementProbe"].value as? String) ?? ""
             if spoken.last != said { spoken.append(said) }
-            if countdown.exists, shown.last != countdown.label { shown.append(countdown.label) }
-            if recordingIndicator.exists { startedAfter = Date().timeIntervalSince(tapped); break }
+            if countdown.exists, shown.last != countdown.label {
+                shown.append(countdown.label)
+                if firstSeen[countdown.label] == nil { firstSeen[countdown.label] = Date() }
+            }
+            if recordingIndicator.exists { startedAt = Date(); break }
             pause(0.1)
         }
+        let startedAfter = startedAt.map { $0.timeIntervalSince(tapped) }
+        let sinceBeforeTap = startedAt.map { $0.timeIntervalSince(beforeTap) }
+        let afterOne = startedAt.flatMap { end in firstSeen["Recording in 1"].map { end.timeIntervalSince($0) } }
         let texts = spoken.map { $0.split(separator: "|", maxSplits: 1).last.map(String.init) ?? $0 }
-        print("B08 \(task): shown \(shown) spoken \(texts) started after \(startedAfter ?? -1) s")
-        report(task, "countdown", ["startedAfter": startedAfter ?? -1])
-        XCTAssertNotNil(startedAfter, "the countdown started the recording")
-        XCTAssertGreaterThanOrEqual(startedAfter ?? 0, 2.9, "the recording starts after \"1\"")
-        XCTAssertLessThanOrEqual(startedAfter ?? 99, 4.5, "and right after it")
+        print("B08 \(task): shown \(shown) spoken \(texts) started after \(startedAfter ?? -1) s (tap took "
+              + "\(tapped.timeIntervalSince(beforeTap)) s; \(afterOne ?? -1) s after \"1\" showed)")
+        report(task, "countdown", ["startedAfter": startedAfter ?? -1, "sinceBeforeTap": sinceBeforeTap ?? -1,
+                                   "afterOne": afterOne ?? -1])
+        XCTAssertNotNil(startedAt, "the countdown started the recording")
+        XCTAssertEqual(shown, ["Recording in 3", "Recording in 2", "Recording in 1"], "3, 2, 1 are shown before the start")
+        XCTAssertGreaterThanOrEqual(sinceBeforeTap ?? 0, 2.9, "the recording starts after \"1\" (from before the tap)")
+        XCTAssertGreaterThanOrEqual(afterOne ?? 0, 0.75, "the recording starts when \"1\" has been shown for its second")
+        XCTAssertLessThanOrEqual(afterOne ?? 99, 2.5, "and right after it")
+        XCTAssertLessThanOrEqual(startedAfter ?? 99, 4.5, "and right after it (from the end of the tap)")
         for word in ["Recording in 3", "2", "1"] {
             XCTAssertEqual(texts.filter { $0 == word }.count, 1, "\"\(word)\" is announced once: \(texts)")
         }

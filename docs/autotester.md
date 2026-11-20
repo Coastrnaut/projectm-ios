@@ -917,6 +917,26 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     of a lone looping track, D2 only) lost the change (`changes=none` with track 2 playing): the analyzer keeps the
     last track heard across such edges and logs the raw edge values as `undecoded=` so the next run shows why they did
     not decode (`PlaybackAnalyzerTests`).
+- **Pass 9 on D2 (2026-11-19), what it taught:**
+  - *A self-hiding control can go between the query and the tap.* The controls hide 5 s after they are shown;
+    FILE-010 closed Settings 4.7 s after showing them, found Presets, and the bar faded under the tap ("Activation point
+    invalid", then "no matches"). `B07FilesDeviceTests.openBrowser` taps the button's last frame by coordinate (a miss
+    only shows the bar again) and retries once with a fresh bar.
+  - *XCUITest's `tap()` is not an instant.* It waits for idle before the touch and again after it (0.53 s and 0.82 s on
+    D2). A clock started after `tap()` returns is late by up to a second: REC-007 read 2.82-2.87 s for a countdown the
+    app runs to 3 s exactly. Bracket the touch (`Date()` before and after `tap()`) and check each bound against the
+    side that cannot be wrong, or time between two things the loop sees on screen (from "Recording in 1" to the start).
+  - *A timed user flow must not time the test's own pauses.* PRE-007's S8 (under 30 s) read 31.4 s, of which 6.2 s
+    were fixed settle pauses and 1.1 s an XCUITest retry; the app answered every step at once. Inside a timed span,
+    wait on the element the next step needs instead of pausing, and wait for a button to be hittable after typing (the
+    keyboard moves the sheet).
+  - *Pick folders by their grid cell, not by an exact label.* The Files mover opened in projectM; the test chose On My
+    iPad, then tapped the first element labelled exactly "projectM", which did not open the folder, so the recording was
+    saved at the root of On My iPad (beside a dozen from earlier runs) and REC-003 found none in projectM. `SystemUI.filesSave` taps
+    the folder's cell ("projectM, 44 items") and waits until the cell is gone. Look at where the file actually landed.
+  - *An undecided permission probe needs its own trace.* After Don't Allow the Local Network notice never showed and
+    the run held nothing about what the browse reported. DEBUG builds now show the probe's last events
+    (`localNetworkProbe`), and testC prints them (ADR-0125 follow-up 2).
 
 ### Policy and evidence
 

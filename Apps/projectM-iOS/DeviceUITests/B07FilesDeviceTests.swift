@@ -24,12 +24,21 @@ final class B07FilesDeviceTests: B07Case {
     // MARK: Preset browser
 
     func openBrowser() {
-        showControlsBar()
-        let presets = app.buttons["presets"].firstMatch
-        XCTAssertTrue(wait(5) { presets.exists }, "the Presets control")
-        presets.tap()
-        XCTAssertTrue(wait(10) { self.app.buttons["node:myPresets"].exists || self.app.buttons["node:included"].exists },
-                      "the preset browser opens")
+        let opened = { self.app.buttons["node:myPresets"].exists || self.app.buttons["node:included"].exists }
+        // The controls' 5 s auto-hide can run out between finding Presets and the tap: FILE-010 on D2 (pass 9,
+        // 2026-11-19) closed Settings 4.7 s after showing the bar, and the bar faded under the tap ("Activation point
+        // invalid", then no Presets button). The tap goes to the button's last frame (a coordinate tap never fails on
+        // a vanished element; a miss only shows the bar again), and a missed open is retried once with a fresh bar.
+        for attempt in 0..<2 where !opened() {
+            showControlsBar()
+            let presets = app.buttons["presets"].firstMatch
+            XCTAssertTrue(wait(5) { presets.exists }, "the Presets control")
+            guard presets.exists else { continue }
+            let frame = presets.frame
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+            _ = wait(attempt == 0 ? 5 : 10, opened)
+        }
+        XCTAssertTrue(opened(), "the preset browser opens")
     }
 
     func closeBrowser() {
@@ -38,11 +47,12 @@ final class B07FilesDeviceTests: B07Case {
         _ = wait(5) { !self.app.buttons["node:included"].exists && !self.app.buttons["importPreset"].exists }
     }
 
-    func openNode(_ id: String) {
+    func openNode(_ id: String, settle: Double = 0.8) {
         let node = app.buttons["node:\(id)"].firstMatch
+        _ = wait(3) { node.exists }   // a push or pop animation still running
         XCTAssertTrue(scrollTo(node), "node:\(id) is listed")
         node.tap()
-        pause(0.8)
+        pause(settle)
     }
 
     /// Rows whose identifier starts with `prefix`, top to bottom (names without the prefix).
@@ -54,7 +64,7 @@ final class B07FilesDeviceTests: B07Case {
     }
 
     /// Opens a row's context menu and taps `item` ("Move Up", "Add to Collection…", "Duplicate to My Presets").
-    func contextMenu(_ row: XCUIElement, _ item: String, hold: Double = 1.0) {
+    func contextMenu(_ row: XCUIElement, _ item: String, hold: Double = 1.0, settle: Double = 0.8) {
         row.press(forDuration: hold)
         var button = app.buttons[item].firstMatch
         if !wait(3, { button.exists }) {
@@ -62,7 +72,7 @@ final class B07FilesDeviceTests: B07Case {
         }
         XCTAssertTrue(wait(3) { button.exists }, "the menu offers \(item)")
         if button.exists { button.tap() }
-        pause(0.8)
+        pause(settle)
     }
 
     /// The alert's title and message.
@@ -256,8 +266,14 @@ final class B07FilesDeviceTests: B07Case {
         let top = includedTop3()
         XCTAssertEqual(top.count, 3, "\(task): three Included presets")
 
-        let started = Date()   // S8 from the open browser
-        openNode("collections")
+        // S8 from the open browser. Inside the timed steps the test waits on what the next step needs, never on a
+        // fixed pause: on D2 (pass 9, 2026-11-19) the 31.4 s held 6.2 s of the test's own settle pauses, a 1.1 s
+        // XCUITest retry of Save while the keyboard still moved the sheet, and about 1 s per tap of XCUITest's event
+        // synthesis and idle waits; the app answered every step at once (scopeLine read "S8 set" on the first check).
+        let started = Date()
+        let anyPreset = app.buttons.matching(NSPredicate(format: "identifier BEGINSWITH %@", "preset:")).firstMatch
+        let back = app.navigationBars.firstMatch.buttons.element(boundBy: 0)   // goBack() without its settle pause
+        openNode("collections", settle: 0)
         let new = app.buttons["newCollection"].firstMatch
         XCTAssertTrue(wait(5) { new.exists }, "\(task): New Collection")
         new.tap()
@@ -265,21 +281,26 @@ final class B07FilesDeviceTests: B07Case {
         XCTAssertTrue(wait(5) { name.exists }, "\(task): the name field")
         name.tap()
         name.typeText("S8 set")
-        app.buttons["saveCollectionName"].firstMatch.tap()
+        let save = app.buttons["saveCollectionName"].firstMatch
+        _ = wait(3) { save.exists && save.isHittable }
+        save.tap()
         XCTAssertTrue(wait(5) { self.app.buttons["collection:S8 set"].exists }, "\(task): S8 set is listed")
-        goBack()
-        openNode("included")
+        back.tap()
+        openNode("included", settle: 0)
+        _ = wait(5) { anyPreset.exists }
         if let first = rows().first {
-            contextMenu(app.buttons["preset:\(first)"].firstMatch, "Add to Collection…")
+            contextMenu(app.buttons["preset:\(first)"].firstMatch, "Add to Collection…", settle: 0)
             let target = app.buttons["addTo:S8 set"].firstMatch
             XCTAssertTrue(wait(5) { target.exists }, "\(task): Add to S8 set")
             target.tap()
-            pause(1)
+            _ = wait(5) { !target.exists }
         }
-        goBack()
-        openNode("collections")
-        app.buttons["collection:S8 set"].firstMatch.tap()
-        pause(0.8)
+        back.tap()
+        openNode("collections", settle: 0)
+        let s8set = app.buttons["collection:S8 set"].firstMatch
+        _ = wait(5) { s8set.exists }
+        s8set.tap()
+        _ = wait(5) { anyPreset.exists }
         if let only = rows().first { app.buttons["preset:\(only)"].firstMatch.tap() }
         let playing = wait(15) { self.text("scopeLine").hasPrefix("S8 set") }
         let s8 = Date().timeIntervalSince(started)
