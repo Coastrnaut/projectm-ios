@@ -116,13 +116,20 @@ class B07Case: ControlSurfaceCase {
         pause(0.6)
     }
 
-    /// Settings › the visual row `raw` (VisualChoice raw value), then Done.
+    /// Settings › the visual row `raw` (VisualChoice raw value), then Done. The row must read as selected afterwards: a
+    /// refused change (a locked scene) fails here, by name, not at a later step. Settings opens at its top, so the
+    /// search goes towards the row first (FILE-010-T11 on D2, full run 12: twelve upward steps at the top took 60 s
+    /// before the one downward step that reached Photo).
     func chooseVisual(_ raw: String) {
         openSettingsPanel()
         let row = app.buttons["visual.\(raw)"].firstMatch
-        if !scrollTo(row, up: true, swipes: 12) { _ = scrollTo(row, swipes: 12) }
+        let list = app.frontList
+        let above = row.exists && list.exists && row.frame.maxY <= list.frame.minY
+        if !scrollTo(row, up: above, swipes: 12) { _ = scrollTo(row, up: !above, swipes: 12) }
         XCTAssertTrue(row.exists, "the \(raw) row")
-        if row.exists { row.tap() }
+        if row.exists && !row.isSelected { row.tap() }
+        XCTAssertTrue(wait(3) { row.exists && row.isSelected },
+                      "the \(raw) visual is chosen\(element("sceneLockBadge").exists ? " (the scene is locked)" : "")")
         closeSettingsPanel()
     }
 

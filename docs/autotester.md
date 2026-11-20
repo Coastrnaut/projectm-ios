@@ -886,6 +886,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     Settings panel leave the start point to XCUITest, and one prompt-flow run ended on the Home Screen. Settings
     scrolling in the device tests goes through `ListScrolling.swift` (`scrollStep(up:velocity:)`: drags in the
     list's right-hand margin, at least 15 % of its height and 120 pt / 100 pt clear of its top and bottom).
+  - *A scroll step must not start on a switch.* The right-hand margin is where a row's switch sits: in full run 12 on
+    D2 (2026-11-20) FILE-010-T11's search for the Photo row made twelve downward steps at the top of Settings, each
+    starting on the "Lock scene" switch, and one turned the scene lock on. Every visual change after it was refused,
+    so Record refused ("Recording is available for the Camera, Photo, Video, Text and spectrum visuals") and the
+    relaunch showed projectM; the test read it as "recording" and "the current scene's photo" failures. The screenshots
+    in the result bundle showed it (the switch on, "Scene locked" over the visual). `scrollStep` now moves its start
+    point along the drag until it is clear of every switch and slider (one snapshot per step); `chooseVisual` searches
+    towards the row first and asserts the row reads as selected, naming a locked scene; `recordClip` prints the
+    refusal notice. When a later step fails "for no reason", look for a setting an earlier drag changed.
   - *Close a Files dialog by what is on screen.* On iPhone (iOS 26.5) the exporter can open inside On My iPhone with
     no Cancel or Close at all (only Browse, More and Save); pull the sheet down instead, and retry a close the remote
     view drops (`CaptureShareUITests.closeFilesDialog`). The exporter and mover checks are two tests, each under 30 s.
