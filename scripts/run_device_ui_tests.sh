@@ -26,7 +26,22 @@ fi
 xcodebuild test-without-building -xctestrun "Build/device-acceptance-$dev/Products/DeviceAcceptance_iphoneos27.2-arm64.xctestrun" \
   -destination "platform=iOS,id=$udid" -resultBundlePath "Build/device-acceptance-$dev/$name-$(date +%m%d%H%M%S).xcresult" \
   ${args[@]+"${args[@]}"} -test-timeouts-enabled YES -default-test-execution-time-allowance 600 \
-  TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" > "$log" 2>&1
+  TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" > "$log" 2>&1 &
+xcb=$!
+# Watchdog (2026-11-20): full run 12 waited two hours at "Waiting for the destination to become ready" after D2 left
+# the network. A log that has not grown for 10 minutes while xcodebuild waits for its destination ends the run.
+last_size=-1; still=0
+while kill -0 "$xcb" 2>/dev/null; do
+  sleep 30
+  size=$(wc -c < "$log")
+  if [ "$size" = "$last_size" ]; then still=$((still + 30)); else still=0; last_size=$size; fi
+  if [ "$still" -ge 600 ] && tail -3 "$log" | grep -q "Waiting for the destination to become ready"; then
+    echo "== $dev $name: DEVICE LOST: xcodebuild waited 10 minutes for $udid; stopping the run" | tee -a "$log"
+    kill "$xcb" 2>/dev/null; sleep 5; kill -9 "$xcb" 2>/dev/null
+    break
+  fi
+done
+wait "$xcb" 2>/dev/null
 [ -n "${driver:-}" ] && kill "$driver" 2>/dev/null
 echo "== $dev $name: $(grep -cE 'Test Case.*passed' "$log") passed, $(grep -cE 'Test Case.*failed' "$log") failed, $(grep -cE 'Test Case.*skipped' "$log") skipped"
 grep -E "Test Case.*failed" "$log" | sed 's/.*Tests\.//; s/\]. failed.*//' | sort -u

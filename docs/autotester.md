@@ -716,7 +716,8 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     full run 12, 2026-11-20); it passed once at 209 MB. Low storage makes iOS purge and its wireless developer
     services drop. Test a storage guard by raising its threshold in DEBUG, not by emptying the disk.
   - *A run that waits on a missing device must end.* full run 12 sat at "Waiting for the destination to become ready"
-    for two hours. Check `xcrun devicectl list devices` whenever a run's log stops growing for 10 minutes.
+    for two hours. `scripts/run_device_ui_tests.sh` now ends a run whose log has not grown for 10 minutes while
+    xcodebuild waits for its destination ("DEVICE LOST" in the log); then check `xcrun devicectl list devices`.
   - *A host render test must know its own frame rate.* A GitHub runner's simulator rendered so slowly that the 1.5 Hz
     strobe fixture was sampled once and read no flash (run 44681007689); the test now counts its frames and skips
     with the numbers below 8 fps.
