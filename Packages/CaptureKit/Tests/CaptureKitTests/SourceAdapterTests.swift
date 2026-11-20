@@ -50,10 +50,14 @@ final class FakeMicrophoneBackend: MicrophoneBackend {
     var grantOnRequest = true
     var isInputAvailable = true
     var startError: SourceError?
+    /// The next this many `resume` calls fail like a refused session activation (then they succeed).
+    var resumeFailures = 0
+    private(set) var resumeCalls = 0
     private(set) var requestCount = 0
     private(set) var started = false
     private(set) var paused = false
     private(set) var resumed = 0
+    private(set) var onEvent: (@Sendable (SourceEvent) -> Void)?
 
     func requestPermission() async -> Bool {
         requestCount += 1
@@ -64,11 +68,20 @@ final class FakeMicrophoneBackend: MicrophoneBackend {
     func start(sink: PCMSink, onEvent: @escaping @Sendable (SourceEvent) -> Void) throws {
         if let startError { throw startError }
         started = true
+        self.onEvent = onEvent
     }
 
     func stop() { started = false }
     func pause() { paused = true }
-    func resume() throws { resumed += 1; paused = false }
+    func resume() throws {
+        resumeCalls += 1
+        if resumeFailures > 0 {
+            resumeFailures -= 1
+            throw SourceError(.microphoneUnavailable)
+        }
+        resumed += 1
+        paused = false
+    }
 }
 
 @MainActor
@@ -343,6 +356,46 @@ final class MicrophoneSourceTests: XCTestCase {
         XCTAssertTrue(backend.paused)
         backend.permission = .denied                     // FR-053
         await assertThrows(.permissionDenied) { try await source.resume() }
+    }
+
+    /// QA-011 full 8 and pass 9 (D2, 2026-11-19): right after a real Clock alarm ended with shouldResume, the one
+    /// restart failed (iOS refused the activation for a moment) and the microphone stayed "Microphone unavailable".
+    /// A refused restart is tried again; a lasting refusal still fails, after `resumeAttempts` tries.
+    func testRefusedRestartIsTriedAgain() async throws {
+        let backend = FakeMicrophoneBackend()
+        backend.permission = .granted
+        let source = MicrophoneSource(backend: backend, resumeRetryDelay: .milliseconds(1))
+        _ = try await source.start(into: PCMSink())
+        await source.suspend()
+        backend.resumeFailures = 2
+        try await source.resume()
+        XCTAssertEqual(backend.resumeCalls, 3)
+        XCTAssertEqual(backend.resumed, 1)
+
+        backend.resumeFailures = 100
+        await assertThrows(.microphoneUnavailable) { try await source.resume() }
+        XCTAssertEqual(backend.resumeCalls, 3 + MicrophoneSource.resumeAttempts)
+    }
+
+    func testInterruptionEndedWithAMomentaryRefusalRunsAgain() async throws {
+        let backend = FakeMicrophoneBackend()
+        backend.permission = .granted
+        let manager = CaptureManager(sources: [MicrophoneSource(backend: backend, resumeRetryDelay: .milliseconds(1))],
+                                     runsAnalysisTimer: false)
+        await manager.select(.microphone)
+        let send = try XCTUnwrap(backend.onEvent)
+        send(.interruptionBegan)
+        try await waitUntil { manager.state == .interrupted }
+        backend.resumeFailures = 1
+        send(.interruptionEnded(shouldResume: true))
+        try await waitUntil { backend.resumed == 1 }
+        XCTAssertNotEqual(manager.state, .interrupted)
+        XCTAssertTrue(manager.state.isRunning, "running again, not failed: \(manager.state)")
+    }
+
+    private func waitUntil(_ condition: @MainActor () -> Bool) async throws {
+        for _ in 0..<200 where !condition() { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertTrue(condition())
     }
 
     func testBackgroundForegroundViaManagerResumesWithinTwoSeconds() async {

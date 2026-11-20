@@ -5,13 +5,16 @@
     MAC-DO {"action": "audio.stop"}
 
 Paths are relative to the repository and must stay inside it. `afplay` (macOS) plays in the background; a new play
-stops the previous one.
+stops the previous one. The answer names the Mac's output volume and warns when the output is muted or quiet, or when
+afplay exited at once, so a microphone test that hears nothing can be told from an app fault.
 """
 from __future__ import annotations
 
 import math
+import re
 import struct
 import tempfile
+import time
 import wave
 from pathlib import Path
 
@@ -51,17 +54,54 @@ def fixture_path(name: str) -> Path:
     return path
 
 
+# Below this output volume (0-100) a device next to the Mac may not hear it (QA-011 pass 9, D2, 2026-11-19: every
+# play request ran on time, yet the microphone tests read the room as quieter with the music than without).
+QUIET_VOLUME = 25
+
+
+def parse_volume_settings(text: str) -> tuple[int | None, bool | None]:
+    """`osascript -e "get volume settings"` → (output volume 0-100, muted); None for what the text does not say."""
+    volume = re.search(r"output volume:(\d+)", text)
+    muted = re.search(r"output muted:(true|false)", text)
+    return (int(volume.group(1)) if volume else None, (muted.group(1) == "true") if muted else None)
+
+
+def output_note(context) -> str:
+    """What the Mac's output looks like, for the MAC-DONE line; a warning when the device may not hear it."""
+    if context.dry_run:
+        return ""
+    result = context.command(["osascript", "-e", "get volume settings"])
+    volume, muted = parse_volume_settings(result.stdout or "")
+    if volume is None and muted is None:
+        return ""
+    if muted:
+        return " WARNING: the Mac's output is muted; the device will hear nothing"
+    if volume is not None and volume < QUIET_VOLUME:
+        return f" WARNING: the Mac's output volume is {volume}; the device may hear nothing"
+    return f" (Mac output volume {volume})"
+
+
+def started_note(context) -> str:
+    """An afplay that exits at once (unreadable file, no output device) is reported instead of silence."""
+    proc = context.background.get("audio")
+    if proc is None or context.dry_run:
+        return ""
+    time.sleep(0.2)
+    code = proc.poll()
+    return "" if code is None else f" ERROR: afplay exited at once (code {code})"
+
+
 def play(request: dict, context) -> str:
     path = fixture_path(str(request.get("file", "Build/fixtures/music-fixture.m4a")))
     context.start("audio", afplay(path, request))
-    return f"playing {path.name}"
+    return f"playing {path.name}{started_note(context)}{output_note(context)}"
 
 
 def tone(request: dict, context) -> str:
     hz, seconds = float(request.get("hz", 440)), float(request.get("seconds", 5))
     path = tone_wav(Path(tempfile.gettempdir()) / f"mac-driver-tone-{int(hz)}.wav", hz, seconds)
     context.start("audio", afplay(path, {k: v for k, v in request.items() if k == "volume"}))
-    return f"tone {hz:g} Hz for {seconds:g} s"
+    return f"tone {hz:g} Hz for {seconds:g} s{started_note(context)}{output_note(context)}"
 
 
 def stop(request: dict, context) -> str:

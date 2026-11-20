@@ -15,7 +15,9 @@
 //   the analyzer here reads them against the ramps and publishes `playbackProbe`: "state=<s> pos=<s> buffers=<n>
 //   cuts=<n> seeks=<n> staleSeeks=<n> maxSeekErrMs=<ms> disc=<n> rewinds=<n> wraps=<n> changes=<a>b,…
 //   silentBuffers=<n> maxSilentMs=<ms> cutJumpMs=<ms> lastCut=<k>:<s> track=<k> t=<s> lost=<n>". `cutJumpMs`: at the
-//   last cut, the first delivered position minus the last one before it (a resume continues within it). `staleSeeks` counts seeks whose first delivered
+//   last cut, the first delivered position minus the last one before it (a resume continues within it). `maxSilentMs`
+//   is the longest silence anywhere except between a track that played to its end and the next one; that silence is
+//   `changeGapMs` (the next track is scheduled when the last one has rendered, AUD-006-R17: no gapless promise). `staleSeeks` counts seeks whose first delivered
 //   buffer is more than 0.25 s from the target; `disc`/`rewinds` count jumps forward/back inside a track that no cut
 //   explains; a change marked `!` happened away from a track's end (an edit cut in).
 // * `-uitestSessionLog`: the last 20 AVAudioSession notifications with their user info (`sessionLog`), and counts.
@@ -235,6 +237,11 @@ final class UITestPlaybackAnalyzer {
     private var timer: Timer?
     private var buffers = 0, cuts = 0, seeks = 0, staleSeeks = 0, disc = 0, rewinds = 0, wraps = 0, silentBuffers = 0
     private var maxSeekErrorMs = 0.0, silentRunMs = 0.0, maxSilentMs = 0.0
+    /// The silence still running (ms): it is counted once the next voiced buffer shows where it ended, into
+    /// `changeGapMs` when that is the start of the next track after a track's end, otherwise into `maxSilentMs`.
+    private var openGapMs = 0.0
+    /// The longest silence between a track that played to its end and the next one (no cut).
+    private var changeGapMs = 0.0
     /// At the last cut: how far the first delivered sample is from the last one before it (same track), in ms.
     private var cutJumpMs = 0.0
     private var lastCut = "none"
@@ -272,7 +279,7 @@ final class UITestPlaybackAnalyzer {
         poll()
         buffers = 0; cuts = 0; seeks = 0; staleSeeks = 0; disc = 0; rewinds = 0; wraps = 0; silentBuffers = 0
         maxSeekErrorMs = 0; silentRunMs = 0; maxSilentMs = 0; changes = []; pendingTarget = nil; cutPending = false
-        pendingTrailMs = 0; lastUndecoded = "none"
+        pendingTrailMs = 0; lastUndecoded = "none"; openGapMs = 0; changeGapMs = 0
     }
 
     /// The next delivered cut is checked against `seconds`.
@@ -329,14 +336,14 @@ final class UITestPlaybackAnalyzer {
         if r.peak < 0.0001 {
             silentBuffers += 1
             silentRunMs += seconds * 1000
-            maxSilentMs = max(maxSilentMs, silentRunMs)
+            noteGap(silentRunMs)
             return
         }
         let rate = Double(max(r.sampleRate, 1))
         let lead = Int(r.leadingZeros)
         // Leading zeros away from a cut are part of a gap (with the silent buffers before them); after a cut they are
         // the player's start inside the render cycle, which the cut's own checks cover.
-        if lead > 0, !cutPending { maxSilentMs = max(maxSilentMs, silentRunMs + Double(lead) / rate * 1000) }
+        if lead > 0, !cutPending { noteGap(silentRunMs + Double(lead) / rate * 1000) }
         // Zeros at the end (a track that played to its end) start a gap that runs on into the next buffers. The last
         // position heard is the last voiced sample: with `last` (a zero) the next track's start had no predecessor and
         // its change was never counted (QA-011 device run 2026-11-19, D2: AUD-003-T22 `changes=none`, track 2 playing).
@@ -358,6 +365,16 @@ final class UITestPlaybackAnalyzer {
             current = nil   // no ramp here (`lastHeard` keeps the last track heard for a change)
             return
         }
+        // The silence before this buffer ends here: between a track's end and the next track's start (no cut) it is
+        // the change's gap (QA-011 pass 9, D2: AUD-003-T22 "no gap" read 74 ms, `undecoded=0.0000/0.1300/...`, the
+        // first buffer of track 2 after track 1 ended; 64 ms in the same test's add-to-a-looping-track step).
+        if let previous = current ?? lastHeard, !cutPending, previous.k != start.k,
+           previous.t > duration(previous.k) - 0.5, start.t < 0.5 {
+            changeGapMs = max(changeGapMs, openGapMs)
+        } else {
+            maxSilentMs = max(maxSilentMs, openGapMs)
+        }
+        openGapMs = 0
         // From the previous buffer's last position to this buffer's first one: `a` follows `lead` zeros; without `a`,
         // `b` is the buffer's last voiced frame.
         let startGap = a != nil ? Double(lead + 1) / rate : Double(Int(r.frames) - trail) / rate
@@ -399,20 +416,26 @@ final class UITestPlaybackAnalyzer {
     /// trailing zeros of the last buffer are dropped. Otherwise they are counted now.
     private func noteArrival() {
         if let last = lastRecordAt, now.timeIntervalSince(last) > Self.stoppedAfterSeconds {
+            maxSilentMs = max(maxSilentMs, openGapMs)   // silent buffers delivered before the stop were a gap
+            openGapMs = 0
             silentRunMs = 0
         } else if pendingTrailMs > 0 {
-            maxSilentMs = max(maxSilentMs, pendingTrailMs)
+            noteGap(pendingTrailMs)
         }
         pendingTrailMs = 0
         lastRecordAt = now
     }
+
+    /// A silence of `ms` so far, still running.
+    private func noteGap(_ ms: Double) { openGapMs = max(openGapMs, ms) }
 
     var summary: String {
         func r(_ v: Double) -> String { String(Double(Int((v * 100).rounded())) / 100) }
         let track = current.map { "track=\($0.k) t=\(r($0.t))" } ?? "track=none t=-1"
         return "buffers=\(buffers) cuts=\(cuts) seeks=\(seeks) staleSeeks=\(staleSeeks) maxSeekErrMs=\(Int(maxSeekErrorMs)) "
             + "disc=\(disc) rewinds=\(rewinds) wraps=\(wraps) changes=\(changes.isEmpty ? "none" : changes.joined(separator: ",")) "
-            + "silentBuffers=\(silentBuffers) maxSilentMs=\(Int(maxSilentMs)) cutJumpMs=\(Int(cutJumpMs)) lastCut=\(lastCut) "
+            + "silentBuffers=\(silentBuffers) maxSilentMs=\(Int(max(maxSilentMs, openGapMs))) changeGapMs=\(Int(changeGapMs)) "
+            + "cutJumpMs=\(Int(cutJumpMs)) lastCut=\(lastCut) "
             + "\(track) lost=\(PlaybackDebugProbe.shared.lost) undecoded=\(lastUndecoded)"
     }
 }

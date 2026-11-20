@@ -9,6 +9,7 @@ import json
 import math
 import re
 import struct
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -2518,6 +2519,26 @@ class MacDeviceDriverTests(unittest.TestCase):
                                       "volume": 0.5}, context)
         self.assertEqual(result, "playing make_music_fixture.py")
         self.assertTrue(context.log[-1].startswith("afplay ") and "-t 2.0 -v 0.5 &" in context.log[-1], context.log)
+
+    def test_audio_play_reports_the_macs_output(self):
+        from mac_driver import audio
+        self.assertEqual(audio.parse_volume_settings("output volume:69, input volume:missing value, alert volume:100, "
+                                                     "output muted:false"), (69, False))
+        self.assertEqual(audio.parse_volume_settings(""), (None, None))
+
+        class Answer:
+            def __init__(self, text):
+                self.text = text
+
+            def __call__(self, cmd, **kwargs):
+                return subprocess.CompletedProcess(cmd, 0, self.text, "")
+
+        context = mac_driver.Context(run=Answer("output volume:5, output muted:false"))
+        self.assertIn("volume is 5", audio.output_note(context))
+        context = mac_driver.Context(run=Answer("output volume:69, output muted:true"))
+        self.assertIn("muted", audio.output_note(context))
+        context = mac_driver.Context(run=Answer("output volume:69, output muted:false"))
+        self.assertEqual(audio.output_note(context), " (Mac output volume 69)")
 
     def test_memory_warning_finds_the_app_pid(self):
         processes = {"result": {"runningProcesses": [

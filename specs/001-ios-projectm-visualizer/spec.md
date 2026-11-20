@@ -54,6 +54,7 @@ approved."
 ### Session 2026-11-14
 
 - Q: Later features add actions to the controls (Switch Source, Black out, Lock scene, Save Frame, Record, Performance layout). Where do they go in compact width (FR-087)? → A: In a secondary row of icon buttons above the main row. The main row holds only the FR-082 controls (Stop, Pause/Resume, Previous, Next, Random, Presets, Settings) and stays one row at standard text sizes; both rows wrap only at accessibility sizes (ACC-006). A single grid of all 13 buttons needed 416 pt and wrapped on a 402 pt iPhone (fix 2026-11-14). A "More" menu was rejected: it would hide one-tap show actions (Black out) behind two taps.
+- Q: What does the Microphone do when its restart fails right after an interruption ended with "may resume" (FR-051)? (QA-011 device run 2026-11-19) → A: It tries again: `MicrophoneSource.resume()` makes up to 4 attempts 250 ms apart (under a second, inside FR-050's 2 s) before it reports "Microphone unavailable"; a lost permission or a missing input still fails at once. On D2 (iPadOS 27.2, full 8 and pass 9) a real Clock timer ended with `shouldResume` and the microphone stayed "Stopped, Microphone unavailable" with its input present: the one restart (session activation and engine start) had failed. Host tests `MicrophoneSourceTests.testRefusedRestartIsTriedAgain` and `testInterruptionEndedWithAMomentaryRefusalRunsAgain`; the device rerun of AUD-008-T13 and AUD-011-T12 confirms it.
 
 ## Delivery Gating *(mandatory for this feature)*
 
