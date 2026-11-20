@@ -904,6 +904,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     tap fell through to the visualizer's tap area and toggled the controls; the probe stayed `last=none`. iPhone
     simulators passed. A content shape over the row fixed it (2026-11-19). When a tap "does nothing" on iPad only,
     print a state the tap area flips (the controls) after the tap, and give DEBUG buttons a content shape or surface.
+    The content shape alone was not enough on the iPad Pro 13-inch (M5) iOS 27.2 simulator (3 of 7 runs still dropped
+    the tap, 2026-11-20). The row now has the result panels' own backing (`overlaySurface`, one accessibility
+    container), and the test's `simulateShare` checks the probe after each tap and retries a dropped one (`finish`
+    ignores a second delivery). Afterwards 7 of 7 on the M5 clone, 3 of 3 on iPad (A16) and iPhone 17 iOS 26.5, every
+    first tap taken. Rule: DEBUG controls over the visualizer get the same surface as real overlay panels.
   - *Put a DEBUG probe button where nothing else is.* The split editor's divider probes sat at the window's top-right
     corner, on the editor's undo/redo bar; the bar took the decrement's tap (its numbered answer stayed empty). They now
     sit in the divider's own column (UIX-007-T13).

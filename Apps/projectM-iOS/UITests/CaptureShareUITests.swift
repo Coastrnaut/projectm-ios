@@ -26,6 +26,19 @@ final class CaptureShareUITests: XCTestCase {
 
     private var probe: String { (app.staticTexts["captureShareProbe"].value as? String) ?? "" }
 
+    /// Taps a DEBUG simulation button and verifies its outcome on the probe instead of assuming the tap took: a tap
+    /// the simulator drops (iPad Pro 13-inch (M5), iOS 27.2, 2026-11-20) is retried while the button is still offered.
+    /// `finish` ignores a second delivery, so a retry can never double-count.
+    private func simulateShare(_ id: String, until expected: String) {
+        let button = app.buttons[id]
+        XCTAssertTrue(button.appears(within: 5), "\(id) is offered")
+        for _ in 0..<3 {
+            if button.exists { button.tap() }
+            if poll(3, { self.probe == expected }) { return }
+        }
+        XCTFail("\(id) gave no outcome; probe: \(probe)")
+    }
+
     func testCancelledShareKeepsTheFrameAndCompletedShareCleansUp() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
@@ -48,8 +61,7 @@ final class CaptureShareUITests: XCTestCase {
         XCTAssertTrue(app.buttons["frameResultDiscard"].exists)
         frameShare.tap()
         XCTAssertTrue(poll(5) { self.probe.hasPrefix("copies=1 frame=yes") }, "probe: \(probe)")
-        app.buttons["simulateShareCancelled"].tap()
-        XCTAssertTrue(poll(5) { self.probe == "copies=0 frame=yes recording=no last=cancelled" }, "probe: \(probe)")
+        simulateShare("simulateShareCancelled", until: "copies=0 frame=yes recording=no last=cancelled")
         XCTAssertTrue(frameShare.exists, "the frame is still offered after the cancel")
         XCTAssertFalse(app.descendants(matching: .any)["captureShareNotice"].firstMatch.exists, "no notice on cancel")
 
@@ -66,8 +78,7 @@ final class CaptureShareUITests: XCTestCase {
         XCTAssertTrue(recordingShare.appears(within: 10), "the Recording ready panel")
         recordingShare.tap()
         XCTAssertTrue(poll(5) { self.probe.hasPrefix("copies=1 frame=yes recording=yes") }, "probe: \(probe)")
-        app.buttons["simulateShareCompleted"].tap()
-        XCTAssertTrue(poll(5) { self.probe == "copies=0 frame=yes recording=yes last=completed" }, "probe: \(probe)")
+        simulateShare("simulateShareCompleted", until: "copies=0 frame=yes recording=yes last=completed")
         XCTAssertEqual(app.staticTexts["captureShareNoticeText"].label, "Shared.")
 
         // Discard ends both offers.

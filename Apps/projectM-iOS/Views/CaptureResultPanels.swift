@@ -140,9 +140,15 @@ struct CaptureResultPanels: View {
                 // A test-hook defect (2026-11-19): on the iPad (A16) simulators (iPadOS 26.5 and 27.2) the bare caption
                 // buttons, with no surface of their own, took no touches: accessibility found them hittable, but every
                 // tap fell through to the visualizer's tap area and toggled the controls, so "Simulate share cancelled"
-                // never reached `finish` (CaptureShareUITests line 52). A content shape over the row lets the taps land.
-                .padding(6)
-                .contentShape(Rectangle())
+                // never reached `finish` (CaptureShareUITests line 52). A content shape over the row let the taps land
+                // there, but not on the iPad Pro 13-inch (M5) iOS 27.2 simulator (3 of 7 runs, 2026-11-20). The row now
+                // has the same backing as the real result panels, whose buttons always take taps: the overlay surface
+                // and one accessibility container.
+                .padding(10)
+                .contentShape(RoundedRectangle(cornerRadius: 12))
+                .overlaySurface(RoundedRectangle(cornerRadius: 12))
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("captureShareSimulation")
             }
         }
     }
