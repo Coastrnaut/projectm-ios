@@ -873,6 +873,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     `revealShareActivity` scrolls the popover when an activity is still not hittable.
   - *Audits find real defects:* Quarantine's trash glyph failed the hit-region audit; it is now a 44 × 44 pt target.
 - **Pass 4 on D2 and rerun 4 on D3 (2026-11-19), what it taught:**
+  - *"Hittable" is not "takes the tap": check what the tap changed.* REC-012's DEBUG "Simulate share cancelled" row
+    (bare caption buttons, no surface) was `isHittable` on the iPad (A16) simulators (iPadOS 26.5 and 27.2), yet every
+    tap fell through to the visualizer's tap area and toggled the controls; the probe stayed `last=none`. iPhone
+    simulators passed. A content shape over the row fixed it (2026-11-19). When a tap "does nothing" on iPad only,
+    print a state the tap area flips (the controls) after the tap, and give DEBUG buttons a content shape or surface.
   - *Put a DEBUG probe button where nothing else is.* The split editor's divider probes sat at the window's top-right
     corner, on the editor's undo/redo bar; the bar took the decrement's tap (its numbered answer stayed empty). They now
     sit in the divider's own column (UIX-007-T13).
