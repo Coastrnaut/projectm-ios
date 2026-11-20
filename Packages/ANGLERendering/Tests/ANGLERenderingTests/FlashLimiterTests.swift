@@ -221,8 +221,9 @@ final class FlashLimiterTests: XCTestCase {
         XCTAssertFalse(renderer.reduceFlashing)
         // Renders until `until` s after `start` at 60 fps of wall time; the lowest gain after `from` s and the
         // whole-frame luminance range seen there (the fixture really flashes).
-        func run(_ start: CFTimeInterval, from: Double, until: Double) -> (gain: Float, darkest: Double, brightest: Double) {
-            var lowest: Float = 1, darkest = 1.0, brightest = 0.0
+        func run(_ start: CFTimeInterval, from: Double, until: Double)
+            -> (gain: Float, darkest: Double, brightest: Double, frames: Int) {
+            var lowest: Float = 1, darkest = 1.0, brightest = 0.0, measured = 0
             var last = CACurrentMediaTime()
             var n = 0
             while CACurrentMediaTime() - start < until {
@@ -235,23 +236,31 @@ final class FlashLimiterTests: XCTestCase {
                 n += 1
                 guard now - start > from, let gain = renderer.flashLimiterGain else { continue }
                 lowest = min(lowest, gain)
+                measured += 1
                 if n % 3 == 0 {
                     let whole = output()[FlashZones.wholeFrame].luminance
                     darkest = min(darkest, whole)
                     brightest = max(brightest, whole)
                 }
             }
-            return (lowest, darkest, brightest)
+            return (lowest, darkest, brightest, measured)
         }
         // The switch blends for up to 2 s (softCutDuration); Standard (the always-on cap) is read from 2.5 s to 4 s,
         // then Strict from the next frame on, with the envelope's history kept (FX-019-R11).
         let start = CACurrentMediaTime()
         let standard = run(start, from: 2.5, until: 4)
+        // A host that renders under 8 fps (fewer than two frames per half-period of the flash) cannot sample a
+        // 1.5 Hz flash, which proves nothing either way: skip with the numbers. A GitHub runner's simulator took 29 s
+        // for this test's 5.5 s on 2026-11-20. The device tests (ACC-012) measure the fixture on real GPUs.
+        if standard.frames < 12 {
+            throw XCTSkip("host rendered \(standard.frames) frames in Standard's 1.5 s window (under 8 fps): "
+                          + "too few to sample a 1.5 Hz flash")
+        }
         renderer.flashLimits = SafetyClamp(profile: SensorySafetyProfile(preset: .strict), reduceFlashingSetting: false)
             .flashLimitsOverride
         XCTAssertNotNil(renderer.flashLimits, "Strict overrides the envelope")
         let strict = run(CACurrentMediaTime(), from: 0, until: 1.5)
-        print("ACC012-FIXTURE standard minGain \(standard.gain) luminance \(standard.darkest)…\(standard.brightest), "
+        print("ACC012-FIXTURE standard frames \(standard.frames) minGain \(standard.gain) luminance \(standard.darkest)…\(standard.brightest), "
               + "strict minGain \(strict.gain)")
         XCTAssertGreaterThan(standard.brightest - standard.darkest, 0.3, "the fixture flashes through projectM")
         XCTAssertGreaterThanOrEqual(standard.gain, ANGLEDebugFlashStats.clampedBelow,
