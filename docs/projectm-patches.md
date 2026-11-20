@@ -9,6 +9,9 @@ proposed upstream. Nothing else goes on the fork branch.
   2026-11-09; CMake version 4.2.0).
 - Pinned commit: `e5b77ab4c975793c2fc97ca0ec1de1b38f1f7fc9` (2026-11-19, patch 5; was `c88894e` from 2026-11-09).
   The owner pushes the commit to the fork's `ios` branch.
+- Moving the pin: push the fork commit, bump the submodule, rebuild with `python3 scripts/build_projectm_xcframework.py`,
+  and rerun `python3 scripts/collect_licenses.py` (the LGPL note names the pinned commit; CI's licenses check fails
+  otherwise, as it did for patch 5 on 2026-11-19).
 
 | # | Fork commit | What | Why | Upstream status |
 |---|-------------|------|-----|-----------------|
