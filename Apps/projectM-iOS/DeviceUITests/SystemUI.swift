@@ -908,12 +908,20 @@ final class SystemUI {
     /// and the test went on as if the file had been taken (FILE-009 stored no photo or video; PRE-012 and PRE-014 saw
     /// no Import Preset alert). The tap now waits for the item to stop moving, and a single-selection pick counts only
     /// once the item is gone (the picker closed); otherwise it taps again.
+    ///
+    /// QA-011 full run 12 (D2, iPadOS 27.2, 2026-11-20): PRE-014 tapped preset-512k.milk's cell three times and the
+    /// picker never took it. XCUITest taps an element at its accessibility activation point. For every other grid cell
+    /// in that run and in full run 8 that point was the thumbnail's centre (59, 46 pt into a 117.5 × 190 icon cell),
+    /// but this cell reported (11.8, 19): its top-left margin, outside the thumbnail and the name, so each tap selected
+    /// nothing (session log: "Computed hit point {503.3, 985.0}" for a cell at {491.5, 966}). The tap no longer trusts
+    /// the activation point: it aims at where a person taps (`tapItem`), the thumbnail first, then the name, then the
+    /// cell's middle on later attempts.
     @discardableResult
     func tapFile(_ name: String) -> Bool {
         let open = app.buttons["Open"].firstMatch
         for attempt in 0..<3 {
             settle(fileItem(name))
-            fileItem(name).tap()
+            tapItem(fileItem(name), name: name, attempt: attempt)
             if open.waitForExistence(timeout: 2) {
                 if wait(2, { open.isEnabled }) {
                     open.tap()
@@ -928,6 +936,34 @@ final class SystemUI {
             _ = findFile(name, initialWait: 0, swipes: 2)
         }
         return !pickerShows(name)
+    }
+
+    /// Taps the picker item for `name` where a person would, not at its accessibility activation point (full run 12,
+    /// `tapFile`). In the icon grid (a cell taller than wide) attempt 0 aims at the thumbnail's centre (half the width,
+    /// 24% down: the usual activation point, 46 of 190 pt), attempt 1 at the file's name below it, attempt 2 at the
+    /// cell's middle. A list row or any other element gets its own tap first, then its name, then its middle.
+    func tapItem(_ item: XCUIElement, name: String, attempt: Int) {
+        guard item.exists else { item.tap(); return }   // fails with XCUITest's own message
+        let frame = item.frame
+        let iconCell = item.elementType == .cell && frame.height > frame.width
+        let stem = (name as NSString).deletingPathExtension
+        let title = item.staticTexts.matching(NSPredicate(format: "label == %@ OR label BEGINSWITH %@", name, stem))
+            .firstMatch
+        if attempt > 0 {
+            let image = item.images.firstMatch
+            print("DEVICE-ACCEPT-NOTE \(name): tap \(attempt + 1) of the cell \(frame); its image "
+                  + "\(image.exists ? "\(image.frame)" : "missing"), its name \(title.exists ? "\(title.frame)" : "missing")")
+        }
+        switch attempt {
+        case 0 where iconCell:
+            item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.24)).tap()
+        case 0:
+            item.tap()
+        case 1 where title.exists && !title.frame.isEmpty && frame.contains(CGPoint(x: title.frame.midX, y: title.frame.midY)):
+            title.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        default:
+            item.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        }
     }
 
     /// Whether the Files picker is still up: its grid, or a cell for `name` (only cells: after a pick the app itself may

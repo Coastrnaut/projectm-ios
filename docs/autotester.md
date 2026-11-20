@@ -849,6 +849,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     came, so the old `tapFile` took the silence as a pick and the test went on behind a picker still up. `tapFile`
     now waits for the item's frame to hold still, counts a single-selection pick only once the picker is gone, taps
     again otherwise, and `filesPick` fails with "the picker did not take <file>".
+  - *Don't trust a cell's activation point.* `element.tap()` aims at the accessibility activation point. In the Files
+    icon grid that is normally the thumbnail's centre (59, 46 pt into a 117.5 × 190 cell), but in full run 12 (D2,
+    PRE-014-T25, 2026-11-20) preset-512k.milk's cell reported (11.8, 19), its empty top-left margin: three taps picked
+    nothing. Find it in the session log (`Computing hit point for Cell, {{x, y}, {w, h}}` then `Computed hit point`).
+    `SystemUI.tapItem` taps by coordinate where a person would: the thumbnail, then the name, then the cell's middle.
   - *Settings sections that swipes cannot reach:* on the iPad panel neither slow nor full-speed swipes reached
     Settings › Storage below the photo visual's sections (D2, D3). Tests that also use the top of Settings launch
     with `-uitestSettingsJump storage` (DEBUG): a navigation bar button `uitestSettingsJump.storage` scrolls to the
