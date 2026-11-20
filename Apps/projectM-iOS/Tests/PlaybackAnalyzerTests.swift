@@ -74,6 +74,38 @@ final class PlaybackAnalyzerTests: XCTestCase {
         XCTAssertNotEqual(f["undecoded"], "none", analyzer.summary)
     }
 
+    /// QA-011 pass 9 (D2): track 1 played to its end, then 74 ms of zeros, then track 2 from 0:00 (no cut). That is the
+    /// change's gap (`changeGapMs`), not a gap in a playing track: `maxSilentMs` stays 0.
+    func testSilenceAtATrackChangeIsTheChangeGap() {
+        let analyzer = UITestPlaybackAnalyzer()
+        analyzer.feed(buffer(1, from: 11.8), at: t0)
+        analyzer.feed(buffer(1, from: 11.9, trail: 1152), at: t0.addingTimeInterval(0.1))   // 24 ms of zeros
+        analyzer.feed(buffer(2, from: 0, lead: 2400), at: t0.addingTimeInterval(0.2))      // + 50 ms
+        analyzer.feed(buffer(2, from: 0.1), at: t0.addingTimeInterval(0.3))
+        let f = fields(analyzer)
+        XCTAssertEqual(f["changes"], "1>2", analyzer.summary)
+        XCTAssertEqual(f["maxSilentMs"], "0", analyzer.summary)
+        XCTAssertEqual(f["changeGapMs"], "74", analyzer.summary)
+    }
+
+    /// The same silence inside one track is still a gap, and silent buffers before a stop still count.
+    func testSilenceInsideATrackAndBeforeAStopStayGaps() {
+        let analyzer = UITestPlaybackAnalyzer()
+        analyzer.feed(buffer(1, from: 5.0, trail: 1152), at: t0)
+        analyzer.feed(buffer(1, from: 5.1, lead: 2400), at: t0.addingTimeInterval(0.1))
+        XCTAssertEqual(fields(analyzer)["maxSilentMs"], "74", analyzer.summary)
+        XCTAssertEqual(fields(analyzer)["changeGapMs"], "0", analyzer.summary)
+
+        analyzer.reset()
+        analyzer.feed(buffer(1, from: 6.0), at: t0.addingTimeInterval(1))
+        var silent = buffer(1, from: 6.1)
+        silent.peak = 0
+        analyzer.feed(silent, at: t0.addingTimeInterval(1.1))
+        analyzer.feed(silent, at: t0.addingTimeInterval(1.2))
+        analyzer.feed(buffer(1, from: 6.5, cut: true), at: t0.addingTimeInterval(3))   // resumed after a stop
+        XCTAssertEqual(fields(analyzer)["maxSilentMs"], "200", analyzer.summary)
+    }
+
     /// With exact edges the change is counted as before, and steady playback counts nothing.
     func testExactChangeAndSteadyPlayback() {
         let analyzer = UITestPlaybackAnalyzer()

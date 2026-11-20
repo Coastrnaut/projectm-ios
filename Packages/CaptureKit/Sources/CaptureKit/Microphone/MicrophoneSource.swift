@@ -33,8 +33,14 @@ public final class MicrophoneSource: AudioSource {
     private var explainerAcknowledged = false
     private var running = false
 
-    public init(backend: any MicrophoneBackend) {
+    /// Attempts of `resume()` before it fails, and the wait between them (FR-051).
+    public static let resumeAttempts = 4
+    public static let resumeRetryDelay: Duration = .milliseconds(250)
+    private let retryDelay: Duration
+
+    public init(backend: any MicrophoneBackend, resumeRetryDelay: Duration = MicrophoneSource.resumeRetryDelay) {
         self.backend = backend
+        self.retryDelay = resumeRetryDelay
     }
 
     public var availability: SourceAvailability { .available }
@@ -89,14 +95,29 @@ public final class MicrophoneSource: AudioSource {
     }
 
     /// Re-checks permission and input on return (FR-053), then restarts the engine.
+    ///
+    /// Right after an interruption ends (a Clock alarm stopped, a call hung up) iOS can refuse the session's
+    /// activation for a moment, so a failed restart is tried again, `resumeAttempts` times in all, `resumeRetryDelay`
+    /// apart (under a second, inside FR-050's 2 s). QA-011 full 8 and pass 9 (D2, iPadOS 27.2, 2026-11-19): after a
+    /// real Clock timer with `shouldResume`, the one restart failed and the microphone stayed "Stopped, Microphone
+    /// unavailable" although the input was there. A lost permission or a missing input fails at once.
     public func resume() async throws {
         guard running else { return }
-        guard backend.permission == .granted else { throw SourceError(.permissionDenied) }
-        guard backend.isInputAvailable else { throw SourceError(.microphoneUnavailable) }
-        do {
-            try backend.resume()
-        } catch {
-            throw (error as? SourceError) ?? SourceError(.microphoneUnavailable)
+        var attempt = 0
+        while true {
+            guard backend.permission == .granted else { throw SourceError(.permissionDenied) }
+            guard backend.isInputAvailable else { throw SourceError(.microphoneUnavailable) }
+            do {
+                try backend.resume()
+                return
+            } catch {
+                attempt += 1
+                guard attempt < Self.resumeAttempts, running else {
+                    throw (error as? SourceError) ?? SourceError(.microphoneUnavailable)
+                }
+            }
+            try? await Task.sleep(for: retryDelay)
+            guard running else { return }   // stopped while waiting: nothing to resume
         }
     }
 }

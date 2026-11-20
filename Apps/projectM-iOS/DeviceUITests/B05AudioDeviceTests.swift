@@ -422,7 +422,10 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertEqual(playbackNumber("rewinds"), 0, "no repeated fragment: \(probeValue("playbackProbe"))")
         XCTAssertEqual(playbackNumber("disc"), 0, "no jump")
         XCTAssertFalse((playback["changes"] ?? "").contains("!"), "no track change cut in at an edit")
-        XCTAssertLessThan(playbackNumber("maxSilentMs"), 50, "no gap: \(probeValue("playbackProbe"))")
+        // The silence between a track that played to its end and the next one is `changeGapMs`, reported, not part of
+        // this check: the next track is scheduled once the last one has rendered (AUD-006-R17, no gapless promise).
+        // QA-011 pass 9 (D2, 2026-11-19): 74 ms there (1>2, `undecoded=0.0000/0.1300/…`), 64 ms in the step below.
+        XCTAssertLessThan(playbackNumber("maxSilentMs"), 50, "no gap at an edit: \(probeValue("playbackProbe"))")
         XCTAssertLessThan(abs(jump), 300, "the interruption resumed at its position")
         let queueBefore = probeFields("importProbe")["queue"] ?? ""
         app.terminate()

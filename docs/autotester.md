@@ -61,6 +61,18 @@ runs on hardware.
   "fixture":"music-fixture.m4a","seconds":N,"loop":true,...}` (and `"action":"stop"`); `scripts/mac_device_driver.py`
   plays it with `afplay` next to the device. Keep the device within about 30 cm of the Mac and the Mac's volume up.
   The tests wait on the gate or level probes, never on the Mac's log.
+- **Mic preflight (QA-011 pass 9, 2026-11-19):** the first microphone test that needs the Mac's sound measures, once
+  per run, the gate probe's level with the Mac silent and then with the music (`requireMicHearsMac`, DEVICE-ACCEPT
+  step "mic preflight"); under +10 dB every such test fails at once with "ENVIRONMENT, not the app". On D2 in pass 9
+  the driver played every request on time (the MAC-DO ids, which are epoch milliseconds, matched the MAC-DONE times)
+  yet the level went from -75 dB quiet to -81 dB with music, and five tests failed late with gate, trim and "silent"
+  messages; in full 8 the same iPad read -61.5 dB quiet and the music opened the gate. The driver's `audio.play` and
+  `audio.tone` answers now name the Mac's output volume and warn when it is muted or below 25, or when afplay exited
+  at once.
+- **The microphone has no transport:** after a real interruption it runs again by itself ("Active audio", or "Audio
+  received — silent" in a quiet room) or shows "Interrupted"; `realInterruption` checks that and never looks for
+  `transportPlayPause` in Microphone mode. On iPad the app's icon is on the Home Screen and in the Dock: tap the first
+  hittable match, not `icons[name]`.
 - **Which batch:** the microphone tests need the permission already granted; the Files-picker (AUD-001-T23,
   AUD-002-T25, AUD-002-T27) and Siri tests drive system UI and run in the prompt-flow batch (owner rule 14 as amended),
   never inside an unattended batch.

@@ -160,6 +160,24 @@ extension DeviceAcceptanceCase {
                                         "paused": whilePaused ? 1 : 0]
         let label = "\(kind.rawValue) \(whilePaused ? "paused" : "playing")"
         XCTAssertTrue(began, "\(task) \(label): iOS delivered an interruption to the app: \(probeValue("sessionLog").suffix(300))")
+        if sourceIndicator.hasPrefix("Microphone") {
+            // The microphone has no transport and no pause (FR-051, InterruptionPolicy): with shouldResume it runs
+            // again by itself, "Active audio" with sound and "Audio received — silent" in a quiet room; without it,
+            // it shows "Interrupted". QA-011 full 8 and pass 9 (D2, 2026-11-19): the old check waited for "Active
+            // audio" and then looked for the In-App Playback transport, which Microphone mode does not have.
+            let running = { self.sourceIndicator.hasSuffix("· Active audio") || self.sourceIndicator.contains("· Audio received") }
+            if resumeHint {
+                let resumed = wait(10, running)
+                result["autoResumed"] = resumed ? 1 : 0
+                XCTAssertTrue(resumed, "\(task) \(label): with shouldResume the microphone runs again: \(sourceIndicator)")
+            } else {
+                let held = waitForIndicator("· Interrupted", 5)
+                result["held"] = held ? 1 : 0
+                XCTAssertTrue(held, "\(task) \(label): without shouldResume the microphone shows Interrupted: \(sourceIndicator)")
+            }
+            report(task, label, result)
+            return result
+        }
         if whilePaused {
             let stayed = waitForIndicator("· Paused", 5)
             result["stayedPaused"] = stayed ? 1 : 0

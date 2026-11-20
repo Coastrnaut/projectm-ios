@@ -37,6 +37,52 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
         _ = wait(8) { !self.app.otherElements["controls"].exists }
     }
 
+    // MARK: Preflight: does the microphone hear the Mac?
+
+    /// The result of the once-per-run check that the device's microphone hears the Mac's speaker; nil before it ran.
+    private static var macAudible: (heard: Bool, detail: String)?
+
+    /// Median of `count` readings of the gate probe's detector level (dB), 0.2 s apart.
+    private func envelopeDb(_ count: Int) -> Double {
+        var values: [Double] = []
+        for _ in 0..<count {
+            if let v = Double(probeFields("gateProbe")["envDb"] ?? "") { values.append(v) }
+            pause(0.2)
+        }
+        return values.isEmpty ? -200 : Self.median(values)
+    }
+
+    /// Checks once per run, before any test that needs sound from the Mac, that the microphone hears it: the gate
+    /// probe's level with the Mac silent, then with the music fixture playing. QA-011 pass 9 (D2, 2026-11-19): the Mac
+    /// driver played every request on time (its MAC-DONE lines match the tests' MAC-DO ids), yet the level fell from
+    /// -75 dB (quiet) to -81 dB (music), so five tests failed later with gate, trim and "silent" messages; in full 8 the
+    /// same iPad read -61.5 dB quiet and the music opened the gate. Without the sound reaching the microphone those
+    /// tests prove nothing about the app, so they stop at once with this environment message instead.
+    @discardableResult
+    private func requireMicHearsMac(_ task: String) -> Bool {
+        if Self.macAudible == nil {
+            launchMicrophone("mic preflight", settings: ["settings.noiseGate.enabled": true], extra: ["-uitestGateProbe"])
+            pause(2)
+            let quiet = envelopeDb(5)
+            macPlayMusic(seconds: 10)
+            pause(2)
+            var loud = -200.0
+            let end = Date().addingTimeInterval(6)
+            while Date() < end { loud = max(loud, envelopeDb(3)) }
+            macStopAudio()
+            app.terminate()
+            let heard = loud - quiet >= 10
+            report("QA-011", "mic preflight", ["quietDb": quiet, "musicDb": loud, "heard": heard ? 1 : 0])
+            Self.macAudible = (heard, String(format: "quiet %.1f dB, Mac music %.1f dB", quiet, loud))
+        }
+        guard let result = Self.macAudible, !result.heard else { return true }
+        XCTFail("\(task): ENVIRONMENT, not the app: the microphone does not hear the Mac's speaker (\(result.detail); "
+                + "needs at least +10 dB). Check that scripts/mac_device_driver.py follows this run (MAC-DONE lines), the "
+                + "Mac's output device and volume (its MAC-DONE line for audio.play names them), and that the device lies "
+                + "next to the Mac's speaker with its microphones uncovered.")
+        return false
+    }
+
     // MARK: AUD-007-T16
 
     /// The route indicator names the built-in microphone in Microphone mode and no capture source.
@@ -48,7 +94,9 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(route.waitForExistence(timeout: 5), "the route indicator is in the controls")
         let label = route.label
         report(task, "microphone route", ["namesMicrophone": label.contains("Microphone") ? 1 : 0])
-        XCTAssertTrue(label.hasPrefix("Input:") && label.contains("Microphone"), "names the built-in input: \(label)")
+        // The element's label is the VoiceOver label, "Audio input: iPad Microphone" (UIStrings.routeAccessibilityLabel);
+        // the visible text is "Input: …". QA-011 full 8 and pass 9 (D2, 2026-11-19) read the VoiceOver label.
+        XCTAssertTrue(label.hasPrefix("Audio input:") && label.contains("Microphone"), "names the built-in input: \(label)")
         XCTAssertFalse(label.contains("System/App Capture") || label.lowercased().contains("captur"), "no capture source named")
     }
 
@@ -80,6 +128,7 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
     /// alarm the trim stays and the analysis resumes.
     func testAUD008MicrophoneTrimRaisesTheBands() {
         let task = "AUD-008-T13"
+        guard requireMicHearsMac(task) else { return }
         let flat = micLevel(task, decibels: 0)
         let boosted = micLevel(task, decibels: 12)
         XCTAssertGreaterThan(flat, 0, "the microphone hears the Mac")
@@ -87,8 +136,8 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
         launchMicrophone(task, visual: "circularSpectrum",
                          settings: ["settings.circularSpectrum.glow": true, "settings.inputTrim.decibels": 12.0],
                          extra: ["-uitestBindGlowToLevel"])
+        macPlayMusic(seconds: 40)   // before the alarm: a running microphone in a quiet room reads "silent"
         realInterruption(task, .clockTimer, whilePaused: false, ramp: false)
-        macPlayMusic(seconds: 15)
         let resumed = wait(10) { (self.effectiveGlow() ?? 0) > flat }
         report(task, "after alarm", ["analysisResumed": resumed ? 1 : 0])
         XCTAssertTrue(resumed, "after the interruption the trimmed analysis resumes")
@@ -111,6 +160,7 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
         XCTAssertLessThan(invMid, invSide / 3, "inverted feed: Mid (L+R) cancels, Side moves: mid \(invMid), side \(invSide)")
         XCTAssertGreaterThan(motion["music-fixture-left.m4a mid"] ?? 0, 0.004, "left-only: Mid follows")
         XCTAssertGreaterThan(motion["music-fixture-left.m4a side"] ?? 0, 0.004, "left-only: Side follows")
+        guard requireMicHearsMac(task) else { return }
         for mode in ["mid", "side"] {
             launchMicrophone(task, settings: ["settings.analysisChannel.mode": mode])
             macPlayMusic(seconds: 15)
@@ -130,6 +180,7 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
     /// Playback is not gated.
     func testAUD011NoiseGate() {
         let task = "AUD-011-T12"
+        guard requireMicHearsMac(task) else { return }
         launchMicrophone(task, settings: ["settings.noiseGate.enabled": true], extra: ["-uitestGateProbe"])
         pause(3)
         let quiet = probeFields("gateProbe")
@@ -187,6 +238,7 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
     /// the indicator ends on the new source's live status each time and the visual keeps moving with the new audio.
     func testAUD012SwitchesNeverFreezeOnOldAudio() {
         let task = "AUD-012-T20"
+        guard requireMicHearsMac(task) else { return }
         launch(visual: "linearSpectrum", extra: ["-uitestSessionLog", "-uitestSessionEvents", "-uitestKeepControls"])
         macPlayMusic(seconds: 120)
         let steps: [(String, String, () -> Void)] = [
@@ -203,8 +255,10 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
                 during()
             }
             print("DEVICE-ACCEPT-NOTE \(task) step \(i) \(mode): \(seen.joined(separator: " → "))")
-            if !sourceIndicator.hasSuffix("· Active audio"), sourceIndicator.hasPrefix(name) {
-                tapTransport("transportPlayPause")   // a lost route or a background trip may leave playback paused
+            // A lost route or a background trip may leave In-App Playback paused. The microphone has no transport
+            // (QA-011 pass 9, D2: "transportPlayPause is shown" failed on a silent microphone step).
+            if mode == "inAppPlayback", !sourceIndicator.hasSuffix("· Active audio"), sourceIndicator.hasPrefix(name) {
+                tapTransport("transportPlayPause")
             }
             let live = waitForIndicator("· Active audio", 10) && sourceIndicator.hasPrefix(name)
             let moving = peakMotion(task, "step \(i) \(mode)")
@@ -220,6 +274,7 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
     /// restarts on return; In-App Playback pauses away and resumes on return (contract background-policy.md).
     func testAUD015BackgroundPerSource() {
         let task = "AUD-015-T13"
+        guard requireMicHearsMac(task) else { return }
         for source in ["microphone", "inAppPlayback"] {
             for viaIcon in [false, true] {
                 if source == "microphone" { launchMicrophone(task); macPlayMusic(seconds: 30) } else { launch(visual: "linearSpectrum") }
@@ -228,9 +283,12 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
                 _ = wait(10) { self.app.state != .runningForeground }
                 pause(3)
                 if viaIcon {
-                    let icon = SystemUI.springboard.icons[SystemUI.appDisplayName]
-                    XCTAssertTrue(icon.waitForExistence(timeout: 5), "the app's Home Screen icon")
-                    icon.tap()
+                    // On iPad the icon is on the Home Screen and in the Dock (recent apps): QA-011 full 8 and pass 9
+                    // (D2) failed with "Multiple matching elements found". Tap the first one that can be hit.
+                    let icons = SystemUI.springboard.icons.matching(identifier: SystemUI.appDisplayName)
+                    XCTAssertTrue(icons.firstMatch.waitForExistence(timeout: 5), "the app's Home Screen icon")
+                    let hittable = icons.allElementsBoundByIndex.first { $0.isHittable } ?? icons.firstMatch
+                    hittable.tap()
                 } else {
                     app.activate()
                 }
@@ -258,18 +316,27 @@ final class B05AudioMicDeviceTests: DeviceAcceptanceCase {
         pause(5)
         var ages: [Double] = []
         var drift = false
+        var driftPPM: [Double] = []
         for _ in 0..<(seconds / 10) {
             pause(10)
             let label = overlayLabel
             if let range = label.range(of: #"audio age ([0-9.]+) ms"#, options: .regularExpression) {
                 ages.append(Double(label[range].split(separator: " ")[2]) ?? 999)
             }
-            if label.contains(", drift ") { drift = true }
+            if label.contains(", drift ") {
+                drift = true
+                // The estimate, for deciding whether a detection is false (PERF-013-S5): "drift <ppm> ppm corrected".
+                if let range = label.range(of: #"drift -?[0-9.]+ ppm"#, options: .regularExpression) {
+                    driftPPM.append(Double(label[range].split(separator: " ")[1]) ?? 0)
+                }
+            }
+            print("DEVICE-ACCEPT-NOTE \(task) reading \(ages.count): \(label.range(of: "audio age").map { String(label[$0.lowerBound...].prefix(120)) } ?? label.prefix(120).description)")
         }
         report(task, "\(seconds) s", ["ageMax": ages.max() ?? -1, "ageMedian": Self.median(ages), "readings": Double(ages.count),
-                                      "drift": drift ? 1 : 0])
+                                      "drift": drift ? 1 : 0, "driftPPMFirst": driftPPM.first ?? 0,
+                                      "driftPPMLast": driftPPM.last ?? 0])
         XCTAssertGreaterThanOrEqual(ages.count, seconds / 20, "the audio age line was readable: \(overlayLabel.prefix(200))")
         XCTAssertLessThan(ages.max() ?? 999, 100, "audio age < 100 ms at every reading: \(ages)")
-        XCTAssertFalse(drift, "no drift verdict")
+        XCTAssertFalse(drift, "no drift verdict: estimates \(driftPPM) ppm, ages \(ages)")
     }
 }
