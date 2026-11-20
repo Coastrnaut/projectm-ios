@@ -10,7 +10,7 @@
       "file": "app.txt"
     },
     {
-      "version": "https://github.com/Coastrnaut/projectm/tree/ios at c88894e",
+      "version": "https://github.com/Coastrnaut/projectm/tree/ios at e5b77ab",
       "id": "projectm",
       "name": "libprojectM",
       "group": "Visualization engine",
@@ -228,6 +228,6 @@
   ],
   "lgplNote": {
     "title": "libprojectM source and replacement (LGPL-2.1)",
-    "text": "libprojectM is licensed under the GNU Lesser General Public License, version 2.1. This app uses it\nas a separate dynamic framework (projectM-4.framework) and does not restrict your rights under that\nlicense.\n\nCorresponding source: the engine source used in this app, including every change made for iOS, is\nat https://github.com/Coastrnaut/projectm/tree/ios (commit c88894e966b3a862be148466b5d5c6e68d8bb9f1). The changes are listed in docs/projectm-patches.md of the app's\nrepository.\n\nReplacing the library: the complete source of this app is at https://github.com/Coastrnaut/projectm-ios under the MIT License. To use a\nmodified engine, change the engine source (Vendor/projectM), run\nscripts/build_projectm_xcframework.py and scripts/build_angle_xcframework.py, run xcodegen generate,\nthen build the app in Xcode and install it on your device with your own signing team. You can also\nrequest the source by opening an issue in that repository.\n"
+    "text": "libprojectM is licensed under the GNU Lesser General Public License, version 2.1. This app uses it\nas a separate dynamic framework (projectM-4.framework) and does not restrict your rights under that\nlicense.\n\nCorresponding source: the engine source used in this app, including every change made for iOS, is\nat https://github.com/Coastrnaut/projectm/tree/ios (commit e5b77ab4c975793c2fc97ca0ec1de1b38f1f7fc9). The changes are listed in docs/projectm-patches.md of the app's\nrepository.\n\nReplacing the library: the complete source of this app is at https://github.com/Coastrnaut/projectm-ios under the MIT License. To use a\nmodified engine, change the engine source (Vendor/projectM), run\nscripts/build_projectm_xcframework.py and scripts/build_angle_xcframework.py, run xcodegen generate,\nthen build the app in Xcode and install it on your device with your own signing team. You can also\nrequest the source by opening an issue in that repository.\n"
   }
 }
