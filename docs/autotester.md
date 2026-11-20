@@ -631,6 +631,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   - A notice row added below the Photo buttons is under the fold, and a SwiftUI List builds no off-screen rows: drag
     the list before concluding the notice never came (MED-001-T24 "40 MB notice", D3). Same for a summary row after a
     relaunch: scroll to it first (MED-006).
+  - A notice that clears itself (6 s) cannot be found by dragging afterwards on a slow device: on D2 each slow drag
+    of the 1376 pt panel took 3.5 s, and the 40 MB notice was gone before the first one settled (MED-001-T24, every D2
+    run). Make room before the action instead: `pickFromFiles(..., roomBelow: true)` drags the picker button into
+    the upper third of the list first (`raiseInList`) and skips the pause after the pick. Scroll back to a summary row
+    above the buttons before reading it.
   - An ACC-005 slider row is an adjustable element, not an XCUIElement slider: `app.sliders[id]` never matches. Find it
     by identifier and drag its line (`dragRowSlider`), as UITestSliders does (MED-006 stayed at the default 5 s).
   - A test whose Photos seed did not add every fixture (prompt still up, fixtures missing) stops at once
