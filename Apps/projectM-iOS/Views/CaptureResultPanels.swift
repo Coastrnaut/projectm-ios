@@ -137,6 +137,12 @@ struct CaptureResultPanels: View {
                         .accessibilityIdentifier("simulateShareCancelled")
                 }
                 .font(.caption)
+                // A test-hook defect (2026-11-19): on the iPad (A16) simulators (iPadOS 26.5 and 27.2) the bare caption
+                // buttons, with no surface of their own, took no touches: accessibility found them hittable, but every
+                // tap fell through to the visualizer's tap area and toggled the controls, so "Simulate share cancelled"
+                // never reached `finish` (CaptureShareUITests line 52). A content shape over the row lets the taps land.
+                .padding(6)
+                .contentShape(Rectangle())
             }
         }
     }
