@@ -238,7 +238,9 @@ final class B07FilesDeviceTests: B07Case {
         let record = app.buttons["record"].firstMatch
         XCTAssertTrue(wait(5) { record.exists }, "\(task): Record")
         record.tap()
-        XCTAssertTrue(wait(10) { self.element("recordingIndicator").exists }, "\(task): recording")
+        // A refused start names its reason in the notice (full run 12 on D2: the visual change had been refused).
+        XCTAssertTrue(wait(10) { self.element("recordingIndicator").exists },
+                      "\(task): recording; notice: \(text("videoRecordingNoticeText").isEmpty ? "none" : text("videoRecordingNoticeText"))")
         pause(seconds)
         showControlsBar()
         app.buttons["record"].firstMatch.tap()

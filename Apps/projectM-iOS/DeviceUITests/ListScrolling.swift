@@ -7,6 +7,13 @@
 // the top edge pulls down Notification Centre, so every step here keeps at least 15 % of the list's height (and
 // 120 pt at the top, 100 pt at the bottom) clear of its edges, in the list's right-hand margin (a drag through a
 // slider's thumb mid-row moves the slider; the left edge is the navigation back gesture).
+//
+// QA-011 full run 12 D2 (2026-11-20, FILE-010-T11): the right-hand margin is where a row's switch sits. With Settings
+// at its top, a downward step started at (992, 206), on the "Lock scene" switch, and one of twelve such steps turned
+// the scene lock on (screenshots: the switch on, "Scene locked" over the visual); every visual change after that was
+// refused, so Photo was never chosen, Record refused ("Recording is available for the Camera, Photo, Video, Text and
+// spectrum visuals") and the relaunch showed projectM. A step now never starts on a switch or a slider: it moves its
+// start point along the drag, into the list, until it is clear of them.
 import XCTest
 
 extension XCUIElement {
@@ -19,15 +26,45 @@ extension XCUIElement {
         let bottom = frame.maxY - max(frame.height * 0.15, 100)
         let x = frame.minX + frame.width * 0.9
         // A list too short for the margins: its middle third.
-        let (from, to): (CGFloat, CGFloat) = bottom - top > 60
+        let (planned, to): (CGFloat, CGFloat) = bottom - top > 60
             ? (up ? (bottom, top) : (top, bottom))
             : (up ? (frame.midY + frame.height / 6, frame.midY - frame.height / 6)
                   : (frame.midY - frame.height / 6, frame.midY + frame.height / 6))
+        let from = Self.dragStart(x: x, from: planned, to: to, avoiding: dragSensitiveFrames())
         let origin = coordinate(withNormalizedOffset: .zero)
         let start = origin.withOffset(CGVector(dx: x - frame.minX, dy: from - frame.minY))
         let end = origin.withOffset(CGVector(dx: x - frame.minX, dy: to - frame.minY))
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: velocity,
                     thenHoldForDuration: velocity.rawValue <= XCUIGestureVelocity.slow.rawValue ? 0.1 : 0)
+    }
+
+    /// The first start point on the way from `from` towards `to` (steps of 22 pt, at most half the drag) that lies
+    /// outside every frame in `avoiding` grown by 12 pt; `from` itself when none is clear.
+    static func dragStart(x: CGFloat, from: CGFloat, to: CGFloat, avoiding: [CGRect]) -> CGFloat {
+        guard !avoiding.isEmpty else { return from }
+        let zones = avoiding.map { $0.insetBy(dx: -12, dy: -12) }
+        let direction: CGFloat = to >= from ? 1 : -1
+        let limit = abs(to - from) / 2
+        var offset: CGFloat = 0
+        while offset <= limit {
+            let y = from + direction * offset
+            if !zones.contains(where: { $0.contains(CGPoint(x: x, y: y)) }) { return y }
+            offset += 22
+        }
+        return from
+    }
+
+    /// The on-screen frames of this list's switches and sliders, which a drag starting on them would change (one
+    /// snapshot; empty when it cannot be taken).
+    func dragSensitiveFrames() -> [CGRect] {
+        guard let root = try? snapshot() else { return [] }
+        var frames: [CGRect] = []
+        var pending: [any XCUIElementSnapshot] = [root]
+        while let node = pending.popLast() {
+            if node.elementType == .switch || node.elementType == .slider { frames.append(node.frame) }
+            pending.append(contentsOf: node.children)
+        }
+        return frames
     }
 }
 
