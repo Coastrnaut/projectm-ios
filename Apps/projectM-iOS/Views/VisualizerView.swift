@@ -627,7 +627,7 @@ struct VisualizerView: View {
         // QA-011 pass 6 (D3, iPadOS 26.5, 2026-11-19), an app defect: on iPadOS 26 the outer Files dialog modifier of a
         // view shadows the ones inside it. The exporter sat inside the mover, so Save… on "Frame ready" opened nothing
         // (REC-001-T19 for three passes) while the recording's mover opened; reproduced on the iPadOS 26.5 simulator by
-        // CaptureShareUITests.testSaveOpensTheFilesExporterAndTheMover. The exporter is now on a host view of its own,
+        // CaptureShareUITests.testSaveOpensTheFilesExporterTwice. The exporter is now on a host view of its own,
         // outside the mover.
         .background { FrameExporterHost(frameCapture: coordinator.frameCapture) }
     }

@@ -100,46 +100,66 @@ final class CaptureShareUITests: XCTestCase {
         app.buttons["frameResultDiscard"].tap()
     }
 
-    /// The Files dialog's close button: "Cancel" on older layouts, the ✕ "Close" on iPadOS 26 (a "Cancel" exists there but
-    /// is not the visible one).
+    /// The Files dialog is up: its Save (exporter) or Move (mover) button, in the system's remote view.
+    private var filesDialogShown: Bool { app.buttons["Save"].firstMatch.exists || app.buttons["Move"].firstMatch.exists }
+
+    /// Closes the Files dialog and waits until it is gone. Its close button differs by layout: the ✕ "Close" on
+    /// iPadOS 26 (a "Cancel" exists there but is not the visible one), "Cancel" on older layouts, and none at all on the
+    /// iPhone (iOS 26.5) when the exporter opens inside "On My iPhone" (only "Browse", More and Save; 2026-11-19). Without
+    /// a hittable close button the sheet is pulled down from its top, the system's own dismissal. A close that the
+    /// remote view drops (iPad 26.5, round 2, once) is retried.
     private func closeFilesDialog() -> Bool {
         let buttons = ["Close", "Cancel"].map { app.buttons[$0].firstMatch }
-        guard poll(10, { buttons.contains { $0.exists && $0.isHittable } }) else { return false }
-        buttons.first { $0.exists && $0.isHittable }?.tap()
-        return true
+        for _ in 0..<3 {
+            if poll(3, { buttons.contains { $0.exists && $0.isHittable } }) {
+                buttons.first { $0.exists && $0.isHittable }?.tap()
+            } else {
+                let window = app.windows.firstMatch
+                let from = window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1))
+                from.press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)))
+            }
+            if poll(5, { !self.filesDialogShown }) { return true }
+        }
+        return false
     }
-
-    private var filesDialogShown: Bool { app.buttons["Save"].firstMatch.exists || app.buttons["Move"].firstMatch.exists }
 
     /// QA-011 pass 6 (D3, iPadOS 26.5, 2026-11-19): Save… on "Frame ready" opened no Files exporter at all (three passes
     /// in a row; REC-001-T19 "Files: no Save button"), while the recording's Save… (the file mover) opened. Both file
     /// dialogs were modifiers of one view, and on iPadOS 26 the outer one (the mover) shadowed the exporter; this test
-    /// failed on the iPadOS 26.5 simulator before the fix. Save… must open the exporter twice in a row, a close keeps the
-    /// frame offered, and the recording's Save… still opens the mover.
-    func testSaveOpensTheFilesExporterAndTheMover() {
+    /// failed on the iPadOS 26.5 simulator before the fix. Save… must open the exporter twice in a row and a close keeps
+    /// the frame offered. Split from the mover's check (2026-11-19) to stay under 30 s: the out-of-process Files
+    /// dialog takes 4-9 s to appear on the simulator.
+    func testSaveOpensTheFilesExporterTwice() {
         XCUIDevice.shared.orientation = .portrait
         app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
                                "-settings.visual", "photo", "-uitestSeedPhoto", "solid"] + Self.noStore
         app.launch()
         XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        showControls()
+        app.buttons["saveFrame"].tap()
+        let png = app.buttons["saveFramePNG"].firstMatch
+        XCTAssertTrue(png.appears(within: 5), "the format choice")
+        png.tap()
+        let save = app.buttons["frameResultSave"]
+        XCTAssertTrue(save.appears(within: 10), "the Frame ready panel")
         for round in 1...2 {
-            showControls()
-            app.buttons["saveFrame"].tap()
-            let png = app.buttons["saveFramePNG"].firstMatch
-            XCTAssertTrue(png.appears(within: 5), "round \(round): the format choice")
-            png.tap()
-            let save = app.buttons["frameResultSave"]
-            XCTAssertTrue(save.appears(within: 10), "round \(round): the Frame ready panel")
             XCTAssertTrue(poll(5) { save.isHittable }, "round \(round): Save… is reachable")
             save.tap()
             XCTAssertTrue(poll(10) { self.filesDialogShown }, "round \(round): the Files exporter opens")
             XCTAssertTrue(closeFilesDialog(), "round \(round): the exporter can be closed")
-            XCTAssertTrue(poll(10) { !self.filesDialogShown && save.exists },
-                          "round \(round): a close ends the exporter and keeps the frame offered")
-            app.buttons["frameResultDiscard"].tap()
-            XCTAssertTrue(poll(5) { !save.exists }, "round \(round): discarded")
+            XCTAssertTrue(poll(5) { save.exists }, "round \(round): a close keeps the frame offered")
         }
-        // The recording's Save… (the mover) still opens.
+        app.buttons["frameResultDiscard"].tap()
+        XCTAssertTrue(poll(5) { !save.exists }, "discarded")
+    }
+
+    /// The recording's Save… (REC-003, the Files mover) still opens beside the frame's exporter (see above).
+    func testRecordingSaveOpensTheFilesMover() {
+        XCUIDevice.shared.orientation = .portrait
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-settings.visual", "photo", "-uitestSeedPhoto", "solid"] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
         showControls()
         app.buttons["record"].tap()
         let indicator = app.descendants(matching: .any)["recordingIndicator"].firstMatch
@@ -153,6 +173,5 @@ final class CaptureShareUITests: XCTestCase {
         moverSave.tap()
         XCTAssertTrue(poll(10) { self.filesDialogShown }, "the Files mover opens")
         XCTAssertTrue(closeFilesDialog(), "the mover can be closed")
-        XCTAssertTrue(poll(10) { !self.filesDialogShown }, "the mover closed")
     }
 }

@@ -861,8 +861,22 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     REC-001's exporter never opened on iPadOS 26.5 for three passes while REC-003's mover (a modifier of the same
     view) did. The iPadOS 26.5 simulator reproduced it at once: there the outer Files dialog modifier of a view shadows
     the ones inside it. The exporter now has its own host view outside the mover
-    (`CaptureShareUITests.testSaveOpensTheFilesExporterAndTheMover`, red before the fix, green after). Keep one Files
+    (`CaptureShareUITests.testSaveOpensTheFilesExporterTwice`, red before the fix, green after). Keep one Files
     dialog (importer, exporter, mover) per view.
+  - *A host view in a `.background` is still in front for accessibility.* That exporter host (a `Color.clear` the
+    size of the whole visualizer) showed up as a bare full-screen element after the Settings pane, so on D2 (full 8,
+    iPadOS 27.2) no Settings row in the split editor was hittable and about 20 tests failed to reach visual rows,
+    Storage, Camera and OSC controls, while swipes still scrolled. The iPad 27.2 simulator reproduced it in 8 s
+    (`SettingsPanelReachUITests`, red at ca105200, green with the host zero-sized, hidden and untouchable outside its
+    modifier). When every control in one area stops being hittable at once, diff the hierarchy for a new element in
+    front of it before touching the tests.
+  - *Scroll steps start inside the list, away from the screen edges.* `swipeUp()`/`swipeDown()` on the full-height
+    Settings panel leave the start point to XCUITest, and one prompt-flow run ended on the Home Screen. Settings
+    scrolling in the device tests goes through `ListScrolling.swift` (`scrollStep(up:velocity:)`: drags in the
+    list's right-hand margin, at least 15 % of its height and 120 pt / 100 pt clear of its top and bottom).
+  - *Close a Files dialog by what is on screen.* On iPhone (iOS 26.5) the exporter can open inside On My iPhone with
+    no Cancel or Close at all (only Browse, More and Save); pull the sheet down instead, and retry a close the remote
+    view drops (`CaptureShareUITests.closeFilesDialog`). The exporter and mover checks are two tests, each under 30 s.
 - **Pass 5 on D3 (2026-11-19), B07 files and presets:**
   - *Know which outcomes the app announces instead of alerting.* Import Preset… alerts only when the result needs
     attention (PRE-012-R28); a clean add is announced and its row appears. PRE-012 and PRE-014 waited 30 s for an
