@@ -780,6 +780,13 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     voiceRecognitionText:)` answered silently and iOS sent no interruption, so AUD-006/AUD-014's Siri steps now record
     `siriInterrupted=0` and check the app is undisturbed; the clock timer covers the interruption path.
 
+  - *A maximized window hides, it does not cover.* On D2 (iPadOS 27.2) "Open in New Window" over a full-size window
+    opened the editor maximized and moved the output to "1 Hidden Window", unlisted in springboard's cards, so
+    Left and Right tiled the editor beside an empty half. Once tiled, iPadOS remembers the editor's half-width size and
+    later runs open it beside the output (UIX-008 passed twice, 2026-11-21). The test shrinks a full-size output first
+    when it finds the resize handle, and a run that still ends with one window fails with the frames. Capture the
+    device's screen with `xcrun devicectl device capture screenshot --device <id> --destination x.png`.
+
 ### Xcode and the device test host
 
 - **Package tests cannot run on a device by themselves**: "Tool-hosted testing is unavailable on device destinations".

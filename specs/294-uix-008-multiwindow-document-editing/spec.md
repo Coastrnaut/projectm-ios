@@ -41,6 +41,7 @@ The gap is real: there is one window and no document editor for stored scenes.
 Answered by Claude under the owner's standing approval (owner rules 4 and 9: best judgement, no human
 interaction); each answer is the conservative, local-first option.
 
+- (QA-011 device run 2026-11-21) With Windowed Apps on, Open in New Window opens the editor over the output window (full size, or at its last size); no public iPadOS API places a new window, so iPadOS keeps deciding placement and the device test UIX-008-T16 tiles the two windows itself through the system window controls (resize, then Fill & Arrange › Left and Right). It skips only when the editor truly replaces the output (Full Screen Apps).
 - Q: What is a "scene document" here? → A: A saved scene in the library: a SHOW-001 stored scene (one file per
   scene ID). The live look (SCN-002 `current.scene`) is not a document window; it stays the main window's.
 - Q: What does a second window show? → A: A scene editor window for one saved scene, opened with "Open in New

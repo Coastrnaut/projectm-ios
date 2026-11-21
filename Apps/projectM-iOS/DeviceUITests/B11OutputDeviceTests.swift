@@ -192,6 +192,7 @@ final class B11OutputDeviceTests: ControlSurfaceCase {
         let task = "UIX-008-T16"
         guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("windows are an iPadOS feature (D2, D3)") }
         launch(visual: "circularSpectrum", extra: ["-uitestShowSeed", "-uitestSettingsSection", "show", "-uitestSceneEditorProbe"])
+        unmaximizeTheOutputWindow()
         openSettingsPanel()
         let showLink = app.buttons["showEditorLink"].firstMatch
         XCTAssertTrue(scrollTo(showLink), "Show")
@@ -254,6 +255,27 @@ final class B11OutputDeviceTests: ControlSurfaceCase {
     /// editor is first made smaller with its resize handle (a full-size window shows no window controls), then
     /// Window Controls › hold Zoom › Fill & Arrange › "Left and Right" (iPadOS 26 and later, Windowed Apps or Stage
     /// Manager on). Returns the number of the app's windows on screen and whether the two no longer overlap.
+    /// D2 (iPadOS 27.2, 2026-11-21): a new window opened over a maximized one opens maximized and hides it ("1 Hidden
+    /// Window"); Left and Right then tiled the editor beside an empty half. With Windowed Apps on, the output window is
+    /// first made smaller by its resize handle, as a person would, so the editor opens as a window over it, not instead.
+    private func unmaximizeTheOutputWindow() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let screen = springboard.windows.firstMatch.frame
+        _ = wait(5) { !self.appWindowFrames(springboard).isEmpty }   // springboard lists the window a moment after launch
+        print("UIX008 at launch: \(appWindowFrames(springboard).map { NSCoder.string(for: $0) })")
+        guard let window = appWindowFrames(springboard).first, window.width >= screen.width - 1 else { return }
+        let grabber = springboard.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier == 'resize-grabber' AND label CONTAINS 'projectM'")).firstMatch
+        guard grabber.exists else { return }   // Full Screen Apps: nothing to resize
+        let origin = springboard.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
+        origin.withOffset(CGVector(dx: grabber.frame.minX + 10, dy: grabber.frame.minY + 10))
+            .press(forDuration: 0.3, thenDragTo: origin.withOffset(CGVector(dx: screen.width * 0.7, dy: screen.height * 0.8)),
+                   withVelocity: .slow, thenHoldForDuration: 0.3)
+        _ = wait(3) { (self.appWindowFrames(springboard).first?.width ?? screen.width) < screen.width - 1 }
+        print("UIX008 output window: \(appWindowFrames(springboard).map { NSCoder.string(for: $0) })")
+        app.activate()
+    }
+
     private func arrangeBesideTheOutput() -> (appWindows: Int, beside: Bool, detail: String) {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let origin = springboard.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
@@ -267,9 +289,14 @@ final class B11OutputDeviceTests: ControlSurfaceCase {
         _ = wait(3) { self.appWindowFrames(springboard).count >= 2 }
         var (count, beside, detail) = state()
         print("UIX008 opened: \(detail)")
-        guard count >= 2, !beside else { return (count, beside, detail) }
+        // D2 (iPadOS 27.2, 2026-11-21): the editor opened maximized and the output window went to "1 Hidden Window ·
+        // Show All Windows", unlisted, so one window showed. A window's resize handle means windowed mode: arrange.
+        let grabberQuery = NSPredicate(format: "identifier == 'resize-grabber' AND label CONTAINS 'projectM'")
+        let windowed = springboard.descendants(matching: .any).matching(grabberQuery).firstMatch.exists
+        guard (count >= 2 || windowed), !beside, let editor = appWindowFrames(springboard).first else {
+            return (count, beside, detail)
+        }
         let screen = springboard.windows.firstMatch.frame
-        let editor = appWindowFrames(springboard)[0]
         if editor.width >= screen.width - 1 {
             // A full-size window: drag its resize handle (bottom right) inwards; the window becomes a smaller one.
             let grabber = springboard.descendants(matching: .any)
@@ -314,6 +341,15 @@ final class B11OutputDeviceTests: ControlSurfaceCase {
             print("UIX008 no window controls in the front window \(NSCoder.string(for: front))")
         }
         _ = wait(5) { state().1 }
+        if appWindowFrames(springboard).count < 2 {   // the output is still hidden: Show All Windows, then the editor
+            let hidden = springboard.descendants(matching: .any)
+                .matching(NSPredicate(format: "label CONTAINS 'Hidden Window'")).firstMatch
+            if hidden.exists && !hidden.frame.isEmpty {
+                point(CGPoint(x: hidden.frame.midX, y: hidden.frame.midY)).tap()
+                _ = wait(5) { self.appWindowFrames(springboard).count >= 2 }
+            }
+            print("UIX008 after Show All Windows: \(state().2)")
+        }
         (count, beside, detail) = state()
         print("UIX008 arranged: \(detail)")
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
