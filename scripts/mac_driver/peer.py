@@ -4,15 +4,15 @@
 Each device runs from its own copy of the build products (autotester: parallel devices from one build), so one
 run never disturbs the other. The role that waits starts first; the acting role starts when the first prints its
 `PEER-READY <tag>` line. Each test gets the other device's address (`TEST_RUNNER_PEER_IP`) and the Mac's
-(`TEST_RUNNER_MAC_IP`). Mac-side drivers follow the logs where a scenario needs them (OSC for OSC-008, MIDI for
-MIDI-012's import). Scenarios:
+(`TEST_RUNNER_MAC_IP`). Mac-side drivers follow the logs where a scenario needs them (OSC for OSC-008; no MIDI driver:
+MIDI-012's import comes from the app's own DEBUG virtual MIDI source, 2026-11-21). Scenarios:
 
   osc008   D1 testOSC008AllowlistReceiver (+ osc_device_driver.py on D1), then D2 testOSC008AllowlistSender
   osc011   D2 testOSC011Announce, then D1 testOSC011Find
   osc012   D2 testOSC012Follow, then D1 testOSC012Lead; pairs D1's PEER-STEP with D2's PEER-SEEN lines and checks
            each cue lands on D2 within 0.5 s (device clocks: both NTP-synced; the offset is not corrected)
   midi012  D1 testMIDI012ProfileExport; copies "Profile 1.pmmidi" from D1's Documents to D2's; D2
-           testMIDI012ProfileImport (+ mac_driver/midi.py on D2)
+           testMIDI012ProfileImport (CC 21 from the in-app virtual source, `-uitestVirtualMIDISource`)
 
 Wi-Fi only; no USB-cable step (owner ruling 2026-11-18). Logs: Build/peer/<scenario>-<device>.log.
 
@@ -43,7 +43,7 @@ PLANS: dict[str, dict] = {
     "osc012": {"first": ("D2", "B09OSCPeerDeviceTests/testOSC012Follow"), "ready": "osc012-follow",
                "second": ("D1", "B09OSCPeerDeviceTests/testOSC012Lead"), "pair": True},
     "midi012": {"first": ("D1", "B10MIDIDeviceTests/testMIDI012ProfileExport"), "sequential": True,
-                "copy": "Profile 1.pmmidi", "second": ("D2", "B10MIDIDeviceTests/testMIDI012ProfileImport"), "midi": "D2"},
+                "copy": "Profile 1.pmmidi", "second": ("D2", "B10MIDIDeviceTests/testMIDI012ProfileImport")},
 }
 
 
@@ -163,10 +163,6 @@ def main(argv: list[str] | None = None) -> int:
                     with tempfile.TemporaryDirectory() as tmp:
                         local = devices.pull(ids[names[0]]["identifier"], name, Path(tmp) / name)
                         devices.push(ids[names[1]]["identifier"], local, name)
-            if plan.get("midi"):
-                d = plan["midi"]
-                driver([str(ROOT / "scripts" / "mac_driver" / "midi.py"), "--log", str(logs[d]), "--host",
-                        devices.DEVICES[d]["host"]])
             second = start(plan["second"])
             if second is not None:
                 status |= second.wait()

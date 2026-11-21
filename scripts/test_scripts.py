@@ -2843,6 +2843,16 @@ class Batch8DriverTests(unittest.TestCase):
                 self.assertIn(command.split()[0], verbs, f"{name}: {command}")
         self.assertEqual(self.midi.SCENARIOS["pad60"][-1], "note 0 60 0", "MIDI-006: velocity-0 note-on is the release")
 
+    def test_in_app_virtual_midi_source_sends_the_same_scenarios(self):
+        """QA-011 device run 2026-11-21: B10 runs from the app's DEBUG virtual source; its table must match SCENARIOS."""
+        swift = (Path(__file__).resolve().parent.parent / "Apps" / "projectM-iOS" / "Debug" / "UITestVirtualMIDISource.swift").read_text(encoding="utf-8")
+        block = swift.split("static let scenarios: [String: [String]] = [", 1)[1].split("\n    ]\n", 1)[0]
+        table = {name: re.findall(r'"([^"]*)"', body)
+                 for name, body in re.findall(r'"([a-z0-9-]+)":\s*\[([^\]]*)\]', block)}
+        self.assertEqual(table, self.midi.SCENARIOS)
+        order = swift.split("static let scenarioOrder: [String] = [", 1)[1].split("]", 1)[0]
+        self.assertEqual(sorted(re.findall(r'"([^"]*)"', order)), sorted(self.midi.SCENARIOS), "one probe button each")
+
     def test_midi_feedback_fails_on_an_echo_after_the_moves(self):
         quiet = self.midi.feedback_result([10.0, 10.5, 11.0], window_start=9.0, sends_end=11.0, now=14.0)
         self.assertTrue(quiet["ok"])

@@ -33,7 +33,11 @@ class DeviceAcceptanceCase: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = true
         #if targetEnvironment(simulator)
-        throw XCTSkip("device acceptance runs on D1/D2 only (simulator results are never evidence)")
+        // A rehearsal (`xcodebuild … TEST_RUNNER_SIMULATOR_REHEARSAL=1`) runs the steps on a simulator to debug a test
+        // before a device run; its results are never evidence (QA-011 device run 2026-11-21, B10).
+        if ProcessInfo.processInfo.environment["SIMULATOR_REHEARSAL"] != "1" {
+            throw XCTSkip("device acceptance runs on D1/D2 only (simulator results are never evidence)")
+        }
         #endif
     }
 

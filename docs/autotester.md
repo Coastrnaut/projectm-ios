@@ -29,7 +29,7 @@ runs on hardware.
 | Instruments helper | `scripts/mac_driver/xctrace.py` | `xctrace record`/`export` commands, the TOC and table XML parser (`ref`/`id` values, sentinels), signpost events and markers, the PERF-004, PERF-011 and per-minute energy verdicts. Used by the matrix's `xctrace` cases. |
 | Device goldens import | `scripts/import_device_goldens.py` | The `projectM-iOS.deviceGolden` attachments of a `RECORD_DEVICE_GOLDENS=1` run → `Packages/RenderGoldens/Goldens/<ios-device-model>/` (PNGs, canonical manifest). |
 | OSC driver | `scripts/osc_device_driver.py` | Follows a run's log, answers `OSC-READY <scenario>` by sending OSC through the system Perl; `--listen-port` receives the app's Send OSC; `--device` copies an OSC routes export off the device and checks it. |
-| MIDI driver | `scripts/mac_driver/midi.py` + `scripts/fixtures/midi_session.swift` | The Mac's CoreMIDI network session to the device; answers `MIDI-READY <scenario>` with CC, notes, programs, 14-bit pairs and clock; counts MIDI feedback. Needs the network-MIDI DEBUG exemption (see Batch 8). |
+| MIDI controller | `Apps/projectM-iOS/Debug/UITestVirtualMIDISource.swift` (`-uitestVirtualMIDISource`) | A DEBUG CoreMIDI virtual source and destination ("QA011 Test Source") inside the app; `B10MIDIDeviceTests` tap `midiProbe.<scenario>` and it sends CC, notes, programs, 14-bit pairs and clock through the system's MIDI service; the destination counts the app's MIDI feedback. The Mac driver `scripts/mac_driver/midi.py` is retired (network MIDI is excluded); its `SCENARIOS` table stays as the byte reference. |
 | Two-device runner | `scripts/mac_driver/peer.py` | Runs one test on D1 and one on D2 from per-device product copies; starts the acting role on the waiting role's `PEER-READY` line; pairs `PEER-STEP`/`PEER-SEEN` times. |
 | Recording checks | `scripts/recording_frame_check.py`, `scripts/fixtures/recording_inspect.swift` | Batch 6: reads `RECORDING-CHECK` lines from a run's log, copies each recording or still off the device and checks atoms, codec, `sips`, Vision OCR, centre correlation, click/flash alignment and QA-008's validator; `Build/recording-checks/<device>/report.json`. |
 | Device files | `scripts/mac_driver/files.py` | `files.pull` copies the newest Documents file by prefix/suffix to `Build/device-files/<D>/` and checks a ZIP's entries and manifest (`present`/`absent`); `files.push` copies one pulled from another device into this device's Documents (Batch 5: PRE-014, FILE-001). |
@@ -239,10 +239,10 @@ launch and so never asked; the prompt then appeared inside the automated batch. 
 ## Control surfaces and two devices (QA-011 Batch 8, 2026-11-18)
 
 Tests: `B09OSCDeviceTests` (single device, Mac as controller), `B09OSCPeerDeviceTests` (two devices),
-`B10MIDIDeviceTests` (Mac as MIDI controller), `B11OutputDeviceTests` (the DEBUG fake external display). Shared steps
+`B10MIDIDeviceTests` (the app's DEBUG virtual MIDI source as controller), `B11OutputDeviceTests` (the DEBUG fake external display). Shared steps
 are in `ControlSurfaceSupport.swift`; system UI goes through Batch 1's `SystemUI.swift` (one bridge section). Values
-the Mac knows reach a test as `TEST_RUNNER_<NAME>=<value>` on the xcodebuild command (`MAC_IP`, `PEER_IP`,
-`MIDI_SOURCE`); a missing one skips with the reason. AirPlay to the Mac and USB-cable steps (Airplane Mode, Wi-Fi
+the Mac knows reach a test as `TEST_RUNNER_<NAME>=<value>` on the xcodebuild command (`MAC_IP`, `PEER_IP`); a
+missing one skips with the reason. AirPlay to the Mac and USB-cable steps (Airplane Mode, Wi-Fi
 outages) are not required (owner ruling 2026-11-18).
 
 ```bash
@@ -251,7 +251,9 @@ python3 scripts/osc_device_driver.py --log Build/b09-D1.log --host iPhone77.loca
 xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination platform=iOS,id=<D1 UDID> \
   -only-testing:projectM-iOSDeviceUITests/B09OSCDeviceTests -test-timeouts-enabled YES \
   -default-test-execution-time-allowance 300 TEST_RUNNER_MAC_IP=<Mac LAN address> > Build/b09-D1.log 2>&1
-# MIDI (D1): python3 scripts/mac_driver/midi.py --log Build/b10-D1.log --host iPhone77.local & then B10MIDIDeviceTests.
+# MIDI (D1, D2): -only-testing:projectM-iOSDeviceUITests/B10MIDIDeviceTests, no Mac driver (the in-app virtual source).
+# Rehearse on a simulator first (never evidence): copy music-fixture.m4a into the app's Documents, then
+#   TEST_RUNNER_SIMULATOR_REHEARSAL=1 xcodebuild test-without-building -xctestrun <simulator xctestrun> …
 # Fake external display (D1; UIX-008 on D2, D3): -only-testing:projectM-iOSDeviceUITests/B11OutputDeviceTests.
 # Two devices (D1 + D2 on the Mac's Wi-Fi):
 python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build/device-acceptance/Build/Products
@@ -265,10 +267,29 @@ python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build
 - **Two devices from one build:** `peer.py` copies the products per device (`Build/peer/<D>/Products`) and starts the
   waiting role first (receiver, announcer, follower), the acting role on its `PEER-READY` line. Latency across devices
   uses the two device clocks (NTP); `PEER-LATENCY` reports median and max without correcting the offset.
-- **Network MIDI is excluded by the app's own policy:** the app drops network-attributed MIDI endpoints (MIDI-001-R2,
-  R14; ADR-0038) and both compliance scans reject `MIDINetwork*`, DEBUG included. `B10MIDIDeviceTests` skips until a
-  DEBUG exemption is approved (proposal in the Batch 8 report); the Mac helper also refuses to enable the Mac's own
-  session (Audio MIDI Setup › Network, the owner's setting) and only adds and removes its connection.
+- **Network MIDI is excluded by the app's own policy, so B10 uses an in-app virtual source (2026-11-21):** the app
+  drops network-attributed MIDI endpoints (MIDI-001-R2, R14; ADR-0038) and both compliance scans reject `MIDINetwork*`,
+  DEBUG included, so the Mac's network session can never reach it and USB-cable tests are not required. With
+  `-uitestVirtualMIDISource` a DEBUG build creates a CoreMIDI virtual source and destination named "QA011 Test Source"
+  and a small probe window above every sheet; the test taps `midiProbe.<scenario>` and the source sends the retired Mac
+  driver's bytes (`scripts/mac_driver/midi.py` `SCENARIOS`; `test_scripts.py` keeps the tables equal) through the
+  system's MIDI service to the app's real discovery, input, mappings, clock and feedback (MIDI-001 Clarifications,
+  QA-011 device run 2026-11-21). Readouts: `midiProbeStatus` ("ready" or "failed <status> <step>"), `midiProbeQueued`,
+  `midiProbeRuns`, `midiProbeFeedback` (MIDI-009's verdict: at most 60 messages back, none 1 s after the moves).
+- **Virtual MIDI endpoints need `audio` in UIBackgroundModes:** iOS refuses `MIDISourceCreate`/`MIDIDestinationCreate`
+  with -10844 otherwise (CoreMIDI headers; seen on the simulator too). Only the Debug device-test host built from
+  `DeviceTests.yml` gets `audio` (post-build script); `project.yml`'s app and every shipping build keep
+  `[screen-capture]` alone (ADR-0001 ruling 17). A B10 test fails with "failed -10844" when the key is missing.
+- **A post-build Info.plist edit needs the plist as an input file:** without `inputFiles: [$(TARGET_BUILD_DIR)/
+  $(INFOPLIST_PATH)]` the build system ran the device-test host's plist script before Info.plist processing on a
+  rebuild, and the processed plist dropped its keys (the file-sharing keys too). Check the built plist with PlistBuddy.
+- **A window above the sheets is not "hittable" to XCUITest:** the probe window (window level alert + 1, never key)
+  is drawn and receives touches, but `isHittable` is false and `tap()` fails to "scroll to visible"; tap its buttons at
+  their screen point (`coordinate(withNormalizedOffset:)`) and confirm with a readout (`midiProbeQueued`). Turn off the
+  hosting controller's safe-area regions so its content stays inside the small window.
+- **MIDI moves the glow's live value, not its manual value:** the MOD-002 readout's "manual" never changes with MIDI or
+  OSC input (they are `externalValues`); read "effective" with the glow unbound. `-uitestDefaults` is written at every
+  launch, so a relaunch that must keep learned state removes those keys from it first (MIDI-003-T17).
 - **Readouts limit what a test can prove:** MOD-002's glow readout has two decimals, so MIDI-005's "> 1,000 steps"
   shows as at most ~100 distinct readings; a finer probe is needed for the full criterion.
 - **Simulator classes cover device-only reruns:** SHOW-007/008/009 and SHOW-012's row label run as
@@ -1033,8 +1054,8 @@ not required, owner ruling 2026-11-18), a real face or hands in front of the
 camera, a USB MIDI device's own transport, real projectors and curved screens, a 240 fps camera, and the iOS prompts
 that guard UI automation and permissions. Stand-ins that are automatable: a CoreMIDI virtual source for a controller,
 the Mac sending OSC over Wi-Fi for a LAN controller, Siri and a Clock timer for an interruption (SystemUI), Settings
-toggles for permissions and accessibility settings (SystemUI), `xctrace` for Instruments. AirPlay steps are not
-required (owner ruling 2026-11-18).
+toggles for permissions and accessibility settings (SystemUI), `xctrace` for Instruments. The virtual MIDI source
+runs inside the app (`-uitestVirtualMIDISource`, B10). AirPlay steps are not required (owner ruling 2026-11-18).
 
 ## For another repository
 

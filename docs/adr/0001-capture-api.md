@@ -216,6 +216,10 @@ follows for this project:
   `UIBackgroundModes: [screen-capture]` and no other mode. T041 on D1, 2026-11-09 (`docs/test-reports/t041-lifecycle.md`): without the mode, background and an app switch end capture 1 ms later with -3824; with it (diagnostic build 9001), capture ran unbroken for 53 s in the background. A lock ends capture either way (-3817).
   The mode keeps a running capture alive while CaptureLab is in the background; visualization
   stays foreground-only. The text below describes the state before the amendment.
+  **Test-host note 2026-11-21 (QA-011 device run; MIDI-001 Clarifications):** the Debug device-test host built from
+  `DeviceTests.yml` (never shipped) also gets `audio`, written into its built Info.plist by a post-build script, because
+  iOS creates CoreMIDI virtual endpoints only for apps with that mode and `B10MIDIDeviceTests` drive the app from a DEBUG
+  virtual MIDI source. `project.yml` and every shipping build are unchanged: `[screen-capture]` only.
   `scripts/check_compliance.py` rejects a `UIBackgroundModes` key in `project.yml` whether it is
   written plain, quoted or in flow style (ruling 13), except exactly
   `UIBackgroundModes: [screen-capture]` (ruling 17); a mode set outside `project.yml`'s keys, for

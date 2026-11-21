@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""QA-011 Batch 8: the MIDI controller on the Mac for B10MIDIDeviceTests, over a CoreMIDI network session.
+"""QA-011 Batch 8: the MIDI controller on the Mac for B10MIDIDeviceTests, over a CoreMIDI network session (retired).
 
-Builds scripts/fixtures/midi_session.swift once (Build/mac-tools/midi_session), connects the Mac's network session
-to the device (its Bonjour address, RTP-MIDI port 5004), follows the xcodebuild log and answers each
-`MIDI-READY <scenario>` line with the scenario's commands (`SCENARIOS`). MIDI-009's feedback check counts the
-messages the device sends back in a window (`MIDI-FEEDBACK {json}`); the exit status is 1 when a check fails or the
-helper cannot run.
+Retired 2026-11-21 (QA-011 device run; specs/107-midi-001-midi-endpoint-discovery Clarifications): the app excludes
+network MIDI by policy (MIDI-001-R2, R14; ADR-0038), DEBUG included, so this driver can never reach it. B10 now runs
+from the app's own DEBUG virtual MIDI source (Apps/projectM-iOS/Debug/UITestVirtualMIDISource.swift, launch argument
+`-uitestVirtualMIDISource`), which sends the same `SCENARIOS` bytes; scripts/test_scripts.py checks the two tables
+match. `SCENARIOS` and `feedback_result` stay here as that reference; the driver itself is kept only for history.
 
-Two prerequisites, neither changed by this script:
-* the Mac's network session is enabled (owner, once: Audio MIDI Setup › MIDI Studio › Network › Session 1);
-* the app accepts a network session in a DEBUG build: it does not today. The app drops network-attributed MIDI
-  endpoints by design (MIDI-001-R2, R14; ADR-0038) and scripts/check_compliance.py and check_network_symbols.py
-  reject `MIDINetwork*` in any app source, DEBUG included. Until the proposed DEBUG exemption lands, the device
-  tests skip with that message (QA-011 Batch 8 report).
+Original design: builds scripts/fixtures/midi_session.swift once (Build/mac-tools/midi_session), connects the Mac's
+network session to the device (its Bonjour address, RTP-MIDI port 5004), follows the xcodebuild log and answers each
+`MIDI-READY <scenario>` line with the scenario's commands. MIDI-009's feedback check counts the messages the device
+sends back in a window (`MIDI-FEEDBACK {json}`); the exit status is 1 when a check fails or the helper cannot run.
 
     python3 scripts/mac_driver/midi.py --log <xcodebuild log> --host iPhone77.local [--port 5004]
 """
@@ -41,12 +39,12 @@ SCENARIOS: dict[str, list[str]] = {
     "cc21-low": ["cc 0 21 10"], "cc21-high": ["cc 0 21 120"],                           # MIDI-003, MIDI-012
     "cc21-0": ["cc 0 21 0"], "cc21-127": ["cc 0 21 127"],                               # MIDI-004 (inverted)
     "learn14": ["cc14 0 1 4096", "sleep 200", "cc14 0 1 8192", "sleep 200", "cc14 0 1 12288"],   # MIDI-005
-    "ramp14": ["ramp14 0 1 2000 4"],                                                    # MIDI-005: 0→16383 in 8 s
+    "ramp14": ["ramp14 0 1 2000 8"],   # MIDI-005: 0→16383 in 16 s (slow enough for the readout)
     "pad60": ["note 0 60 100", "sleep 150", "note 0 60 0"],                             # MIDI-006: vel-0 note-on = off
     "hold61": ["note 0 61 100", "sleep 4000", "off 0 61"],                              # MIDI-006: hold for 4 s
     "hold61-long": ["note 0 61 100"],                                                   # MIDI-013: held until Panic
     "release61": ["off 0 61"],
-    "pad61": ["note 0 61 100", "sleep 300", "off 0 61"],                                # MIDI-013: the next press
+    "pad61": ["note 0 61 100", "sleep 1500", "off 0 61"],   # MIDI-013: the next press (held long enough to see)
     "pc3": ["pc 0 3", "sleep 1500", "pc 0 3"],                                          # MIDI-007: twice
     "ccbtn20": ["cc 0 20 127", "sleep 100", "cc 0 20 0"],                               # MIDI-008
     "note62": ["note 0 62 100", "sleep 150", "off 0 62"],                               # MIDI-008: Play/Pause

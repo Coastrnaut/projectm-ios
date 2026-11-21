@@ -39,6 +39,10 @@ targets:
     postBuildScripts:
       - name: Device test host file sharing (Debug)
         basedOnDependencyAnalysis: false
+        # The built Info.plist as an input orders this phase after Info.plist processing; without it the build system
+        # may run the phase first and the processed plist then overwrites the keys (seen 2026-11-21 on a rebuild).
+        inputFiles:
+          - $(TARGET_BUILD_DIR)/$(INFOPLIST_PATH)
         script: |
           if [ "$CONFIGURATION" = "Debug" ]; then
             plist="$TARGET_BUILD_DIR/$INFOPLIST_PATH"
@@ -46,6 +50,13 @@ targets:
               /usr/libexec/PlistBuddy -c "Delete :$key" "$plist" >/dev/null 2>&1 || true
               /usr/libexec/PlistBuddy -c "Add :$key bool true" "$plist"
             done
+            # QA-011 device run 2026-11-21 (MIDI-001 Clarifications): B10MIDIDeviceTests drive the app from a DEBUG
+            # CoreMIDI virtual source (Debug/UITestVirtualMIDISource.swift), and iOS creates virtual endpoints only for
+            # an app with `audio` in UIBackgroundModes (-10844 otherwise). Only this Debug device-test host gets it;
+            # project.yml's app keeps `[screen-capture]` alone (ADR-0001 ruling 17).
+            if ! /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$plist" 2>/dev/null | grep -qx '[[:space:]]*audio'; then
+              /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes: string audio" "$plist"
+            fi
           fi
   CompositorDeviceTests:
     templates: [DeviceTestBundle]

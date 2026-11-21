@@ -1,44 +1,72 @@
-// B10MIDIDeviceTests.swift — QA-011 Batch 8: the MIDI device tasks with the Mac as the controller, over a CoreMIDI
-// network session (scripts/mac_driver/midi.py follows this run's log and answers each `MIDI-READY <scenario>`).
+// B10MIDIDeviceTests.swift — QA-011 Batch 8: the MIDI device tasks, driven by the app's own DEBUG virtual MIDI source
+// (QA-011 device run 2026-11-21; specs/107-midi-001-midi-endpoint-discovery Clarifications).
 //
-// Each test first looks for the Mac's session among Settings › MIDI's inputs (a row whose label contains
-// `TEST_RUNNER_MIDI_SOURCE`, default "Session") and skips when it is not listed. Today it never is: the app drops
-// network-attributed endpoints by design (MIDI-001-R2, R14; ADR-0038), and the compliance scans reject `MIDINetwork*`
-// even in DEBUG code, so no DEBUG hook can enable the device's session yet (proposal in the Batch 8 report). The
-// tests are written against the app's real MIDI screens so they run as soon as a DEBUG session is allowed. A
-// class-compliant USB route (the Mac's IDAM MIDI port) needs the USB cable: not required (owner ruling 2026-11-18).
+// The tests were first written for the Mac as the controller over a CoreMIDI network session, which the app excludes
+// by policy (MIDI-001-R2, R14; ADR-0038), DEBUG included, so they always skipped; USB-cable tests are not required
+// (owner ruling 2026-11-18). Now each test launches with `-uitestVirtualMIDISource`: the app creates a CoreMIDI virtual
+// source and destination named "QA011 Test Source" (Debug/UITestVirtualMIDISource.swift). The test taps a scenario's
+// probe button (`midiProbe.<scenario>`, a small window above every sheet) and the source sends the same bytes the Mac
+// driver sent (scripts/mac_driver/midi.py `SCENARIOS`) through the system's MIDI service to the app's real discovery,
+// input, mappings, clock and feedback. Virtual endpoints need `audio` in UIBackgroundModes on iOS: only the Debug
+// device-test host gets it (DeviceTests.yml); the probe reports "failed -10844" otherwise and the tests fail with it.
 //
-// MIDI-001-T18 (listed as an input; hot-plug stays with a USB controller), MIDI-002-T20 (monitor), MIDI-003-T17
-// (learn, relaunch), MIDI-004-T16 (inverted), MIDI-005-T14 (14-bit), MIDI-006-T16 (pad and hold), MIDI-007-T15
-// (program change), MIDI-008-T12 (CC button, Play/Pause), MIDI-009-T15 (feedback without an echo loop; the driver
-// judges it), MIDI-010-T12 (clock), MIDI-012-T15 (profile export on D1, import on D2: scripts/mac_driver/peer.py),
-// MIDI-013-T13 (panic). MIDI-011-T12 (drop and restore the connection) is not written: dropping a network session is
-// only a stand-in for an unplug once the session is allowed at all; it is listed in the report.
+// MIDI-001-T18 (the virtual source listed as an input and an output; hot-plug stays with a USB controller),
+// MIDI-002-T20 (monitor), MIDI-003-T17 (learn, relaunch), MIDI-004-T16 (inverted), MIDI-005-T14 (14-bit), MIDI-006-T16
+// (pad and hold), MIDI-007-T15 (program change), MIDI-008-T12 (CC button, Play/Pause), MIDI-009-T15 (feedback without
+// an echo loop; the probe's destination counts what the app sends back), MIDI-010-T12 (clock), MIDI-012-T15 (profile
+// export on D1, import on D2: scripts/mac_driver/peer.py), MIDI-013-T13 (panic). MIDI-011-T12 (drop and restore the
+// connection) is not written here: a USB controller's unplug is the real case.
 import UIKit
 import XCTest
 
 @MainActor
 final class B10MIDIDeviceTests: ControlSurfaceCase {
-    private var sourceName: String { runnerValue("MIDI_SOURCE") ?? "Session" }
+    /// The in-app virtual endpoints' name (UITestVirtualMIDISource.endpointName).
+    private let sourceName = "QA011 Test Source"
 
-    /// Listening on, `mappings` stored, Settings open at MIDI; skips unless the Mac's session is a listed input.
-    private func prepare(_ task: String, mappings: [String]? = nil, settings: [String: Any] = [:], extra: [String] = []) throws {
+    /// Listening on, `mappings` stored, Settings open at MIDI, the in-app virtual source ready and listed as an input
+    /// and an output.
+    private func prepare(_ task: String, mappings: [String]? = nil, settings: [String: Any] = [:], extra: [String] = []) {
         var values: [String: Any] = Self.glowSettings.merging(["settings.midi.enabled": true]) { a, _ in a }
         if let mappings { values["settings.midi.mappings"] = mappings }
         values.merge(settings) { (_: Any, given: Any) -> Any in given }
         launch(visual: "circularSpectrum", settings: values,
-               extra: Self.glowReadoutArguments + ["-uitestSettingsSection", "midi", "-uitestResetMIDIProfiles"] + extra)
+               extra: Self.glowReadoutArguments + ["-uitestSettingsSection", "midi", "-uitestResetMIDIProfiles",
+                                                   "-uitestVirtualMIDISource"] + extra)
+        let status = { self.text("midiProbeStatus") }
+        XCTAssertTrue(wait(15) { status() == "ready" || status().hasPrefix("failed") }, "the virtual MIDI probe starts: \(status())")
+        XCTAssertEqual(status(), "ready", "the virtual source and destination exist (-10844: no audio background mode)")
         unbindGlow()
         openSettingsPanel()
         let rows = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'midiEndpoint.'"))
-        let start = Date()
-        let listed = wait(8) { rows.allElementsBoundByIndex.contains { $0.label.contains(self.sourceName) } }
-        report(task, "mac session listed", ["listed": listed ? 1 : 0, "seconds": Date().timeIntervalSince(start)])
-        guard listed else {
-            throw XCTSkip("the Mac's MIDI session (\"\(sourceName)\") is not a listed input: the app excludes network MIDI "
-                          + "(MIDI-001-R2, R14) and no DEBUG hook may enable it yet (Batch 8 proposal); rows: "
-                          + "\(rows.allElementsBoundByIndex.map(\.label))")
+        func ours(_ direction: String) -> Bool {
+            rows.allElementsBoundByIndex.contains { $0.label.contains(self.sourceName) && $0.label.contains(direction) }
         }
+        let start = Date()
+        let listed = wait(8) { ours("Input") && ours("Output") }
+        report(task, "virtual source listed", ["listed": listed ? 1 : 0, "seconds": Date().timeIntervalSince(start)])
+        XCTAssertTrue(listed, "\(sourceName) is listed as an Input and an Output: \(rows.allElementsBoundByIndex.map(\.label))")
+    }
+
+    /// Runs one scenario on the in-app virtual source (queued on its serial queue; returns at once). The probe window
+    /// sits above every sheet but is never key, so XCUITest does not call its buttons hittable: the tap goes to the
+    /// button's screen point, and `midiProbeQueued` going up proves it landed.
+    private func send(_ scenario: String) {
+        let button = app.buttons["midiProbe." + scenario].firstMatch
+        XCTAssertTrue(wait(5) { button.exists }, "probe button \(scenario)")
+        let before = Int(text("midiProbeQueued")) ?? 0
+        button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        XCTAssertTrue(wait(3) { (Int(self.text("midiProbeQueued")) ?? 0) > before }, "the probe took \(scenario) (\(button.frame))")
+        print("MIDI-SENT \(scenario)")
+    }
+
+    /// The glow the visual shows: the readout's "effective" value. MIDI mappings write live values on top of the manual
+    /// glow (`NativeSpectrumHost.externalValues`), so "manual" never moves with MIDI; with the glow unbound from MOD-002
+    /// (`unbindGlow()`), "effective" is the manual glow with the MIDI values applied (simulator rehearsal 2026-11-21).
+    private func liveGlow() -> Double? {
+        let label = app.staticTexts["glowModulation"].firstMatch.label
+        guard let range = label.range(of: "effective ") else { return nil }
+        return Double(label[range.upperBound...].prefix(while: { $0.isNumber || $0 == "." }))
     }
 
     private func openMappings() {
@@ -48,41 +76,44 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         XCTAssertTrue(wait(5) { self.app.navigationBars["MIDI Mappings"].exists })
     }
 
-    /// The glow after `scenario` (read with Settings closed), or nil when it never changed.
+    /// The glow after `scenario` (read with Settings closed), or nil when it never changed. The scenario sets an
+    /// absolute value, so it is sent again every 4 s while nothing changed (a source still connecting after a
+    /// relaunch misses the first one).
     private func glow(after scenario: String, from: Double?) -> Double? {
-        ready("MIDI", scenario)
-        var seen: Double?
-        let changed = wait(25) {
-            seen = self.manualGlow()
-            guard let v = seen else { return false }
-            return from.map { abs(v - $0) > 0.005 } ?? true
+        var changed = false
+        for _ in 0..<3 where !changed {
+            send(scenario)
+            changed = wait(4) {
+                guard let v = self.liveGlow() else { return false }
+                return from.map { abs(v - $0) > 0.005 } ?? true
+            }
         }
         pause(1)
-        return changed ? manualGlow() : nil
+        return changed ? liveGlow() : nil
     }
 
-    func testMIDI001SessionListedAsInput() throws {
-        try prepare("MIDI-001-T18")
+    func testMIDI001VirtualSourceListed() {
+        prepare("MIDI-001-T18")
         XCTAssertTrue(text("midiStatus").hasPrefix("Listening"), "status: \(text("midiStatus"))")
     }
 
-    func testMIDI002MonitorShowsCCAndNotes() throws {
+    func testMIDI002MonitorShowsCCAndNotes() {
         let task = "MIDI-002-T20"
-        try prepare(task)
+        prepare(task)
         let link = app.buttons["midiMonitorLink"].firstMatch
         XCTAssertTrue(scrollTo(link), "MIDI Monitor")
         link.tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["MIDI Monitor"].exists })
         let rows = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'midiMonitorEntry.'"))
         func labels() -> [String] { rows.allElementsBoundByIndex.map(\.label) }
-        ready("MIDI", "monitor")
-        let cc = wait(30) { labels().contains { $0.hasPrefix("Control change, channel 1, controller 7") } }
+        send("monitor")
+        let cc = wait(15) { labels().contains { $0.hasPrefix("Control change, channel 1, controller 7") } }
         let note = wait(10) { labels().contains { $0.hasPrefix("Note on, channel 1, note 60") } }
         report(task, "monitor", ["cc": cc ? 1 : 0, "note": note ? 1 : 0, "rows": Double(labels().count)])
         XCTAssertTrue(cc && note, "CC 7 and note 60 rows: \(labels().prefix(6))")
         goBack()
-        ready("MIDI", "monitor-closed")
-        pause(6)
+        send("monitor-closed")
+        pause(3)
         link.tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["MIDI Monitor"].exists })
         let empty = labels().isEmpty
@@ -90,62 +121,73 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         XCTAssertTrue(empty, "closing stopped receiving and the monitor reopens empty: \(labels().prefix(3))")
     }
 
-    func testMIDI003LearnGlow() throws {
+    func testMIDI003LearnGlow() {
         let task = "MIDI-003-T17"
-        try prepare(task, mappings: [])
+        prepare(task, mappings: [])
         openMappings()
         let row = element("midiMapping.effect.bloom.intensity")
         XCTAssertTrue(wait(5) { row.exists })
         app.buttons["midiLearn.effect.bloom.intensity"].firstMatch.tap()
-        ready("MIDI", "learn21")
-        let learned = wait(30) { row.label == "Glow intensity, CC 21, channel 1" }
+        send("learn21")
+        let learned = wait(15) { row.label == "Glow intensity, CC 21, channel 1" }
         report(task, "learn", ["learned": learned ? 1 : 0])
         XCTAssertTrue(learned, "row: \(row.label)")
         goBack()
         closeSettingsPanel()
-        let low = glow(after: "cc21-low", from: manualGlow())
+        let low = glow(after: "cc21-low", from: liveGlow())
         let high = glow(after: "cc21-high", from: low)
         XCTAssertNotNil(low, "CC 21 moves the glow")
         if let low, let high { XCTAssertGreaterThan(high, low, "120 gives more glow than 10") }
         // Relaunch without the reset: the learned mapping is kept, and a new CC 21 value still moves the glow.
+        // A launch with `-uitestDefaults` first removes every key the previous launch wrote (the learned mapping too),
+        // so the relaunch drops `-uitestDefaults` and its JSON as well as `-uitestResetNotice`: the app then keeps what
+        // is stored, "as after a real relaunch" (AppCoordinator.applyUITestDefaults; simulator rehearsal 2026-11-21).
         app.terminate()
-        app.launchArguments = app.launchArguments.filter { $0 != "-uitestResetNotice" }
+        var arguments = app.launchArguments.filter { $0 != "-uitestResetNotice" }
+        if let i = arguments.firstIndex(of: "-uitestDefaults"), i + 1 < arguments.count { arguments.removeSubrange(i...(i + 1)) }
+        app.launchArguments = arguments
         app.launch()
         XCTAssertTrue(wait(15) { self.app.staticTexts["sourceStarts"].exists })
+        XCTAssertTrue(wait(10) { self.text("midiProbeStatus") == "ready" }, "the virtual source after the relaunch")
         unbindGlow()
-        let after = glow(after: "cc21-low", from: manualGlow())
-        report(task, "after relaunch", ["moved": after == nil ? 0 : 1])
-        XCTAssertNotNil(after, "the mapping survives a relaunch")
+        // The glow may already sit at CC 21's low value after the relaunch, so the proof is the same pair as before:
+        // low, then high moves it up.
+        let start = liveGlow()
+        let lowAgain = glow(after: "cc21-low", from: start) ?? start
+        let after = glow(after: "cc21-high", from: lowAgain)
+        report(task, "after relaunch", ["start": start ?? -1, "low": lowAgain ?? -1, "high": after ?? -1])
+        XCTAssertNotNil(after, "the mapping survives a relaunch: CC 21 still moves the glow")
+        if let lowAgain, let after { XCTAssertGreaterThan(after, lowAgain, "120 gives more glow than 10 after the relaunch") }
     }
 
-    func testMIDI004InvertedFader() throws {
+    func testMIDI004InvertedFader() {
         let task = "MIDI-004-T16"
-        try prepare(task, mappings: ["cc:0:21=effect.bloom.intensity;invert=1"])
+        prepare(task, mappings: ["cc:0:21=effect.bloom.intensity;invert=1"])
         closeSettingsPanel()
-        let atZero = glow(after: "cc21-0", from: manualGlow())
+        let atZero = glow(after: "cc21-0", from: liveGlow())
         let atTop = glow(after: "cc21-127", from: atZero)
         report(task, "inverted", ["at0": atZero ?? -1, "at127": atTop ?? -1])
         XCTAssertNotNil(atZero)
         if let atZero, let atTop { XCTAssertGreaterThan(atZero, atTop, "inverted: brightest at 0, dimmest at 127") }
     }
 
-    func testMIDI005FourteenBit() throws {
+    func testMIDI005FourteenBit() {
         let task = "MIDI-005-T14"
-        try prepare(task, mappings: [])
+        prepare(task, mappings: [])
         openMappings()
         app.buttons["midiLearn.effect.bloom.intensity"].firstMatch.tap()
-        ready("MIDI", "learn14")
+        send("learn14")
         let curve = app.buttons["midiCurve.effect.bloom.intensity"].firstMatch
-        let detected = wait(30) { ((curve.value as? String) ?? "").contains("14-bit") }
+        let detected = wait(15) { ((curve.value as? String) ?? "").contains("14-bit") }
         report(task, "learn pair", ["detected": detected ? 1 : 0])
         XCTAssertTrue(detected, "learn detects the CC 1/33 pair: \(String(describing: curve.value))")
         goBack()
         closeSettingsPanel()
-        ready("MIDI", "ramp14")
+        send("ramp14")   // 0 → 16383 in 2,000 steps of 8 ms (about 16 s), starting at once
         var values = Set<String>()
-        let end = Date().addingTimeInterval(16)
+        let end = Date().addingTimeInterval(17)   // the whole ramp: the two-decimal readout is read about 5 times a second
         while Date() < end {
-            if let v = manualGlow() { values.insert(String(format: "%.2f", v)) }
+            if let v = liveGlow() { values.insert(String(format: "%.2f", v)) }
             pause(0.05)
         }
         // The readout has two decimals, so it can show at most ~100 steps of the 16,384; the > 1,000-step criterion
@@ -154,34 +196,39 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         XCTAssertGreaterThan(values.count, 40, "the 14-bit ramp moves the glow smoothly: \(values.count) readings")
     }
 
-    func testMIDI006NoteTriggers() throws {
+    func testMIDI006NoteTriggers() {
         let task = "MIDI-006-T16"
-        try prepare(task, mappings: ["note:0:60=cue.next", "note:0:61=blackout;mode=hold"], extra: ["-uitestShowSeed"])
+        prepare(task, mappings: ["note:0:60=cue.next", "note:0:61=blackout;mode=hold"], extra: ["-uitestShowSeed"])
         closeSettingsPanel()
         let before = appliedCue() ?? 1
-        ready("MIDI", "pad60")
-        let stepped = wait(25) { (self.appliedCue() ?? 0) == before + 1 }
+        send("pad60")
+        let stepped = wait(10) { (self.appliedCue() ?? 0) == before + 1 }
         pause(2)
         XCTAssertTrue(stepped, "one press, one step (velocity-0 note-on is its release): cue \(appliedCue() ?? -1)")
         XCTAssertEqual(appliedCue(), before + 1, "the release did not step again")
         let badge = element("blackoutBadge")
-        ready("MIDI", "hold61")
-        let black = wait(25) { badge.exists }
+        // Black is the badge's "Blacked out" phase; after note off the output fades back in (OUT-010: "Fading in", 1 s)
+        // before the badge goes, so the held time ends when the phase leaves "Blacked out" (simulator rehearsal
+        // 2026-11-21: the badge itself stayed ~1.7 s past the note off).
+        let blackedOut = { badge.exists && (badge.value as? String) == "Blacked out" }
+        send("hold61")
+        let black = wait(10) { blackedOut() }
         let t0 = Date()
-        let released = wait(10) { !badge.exists }
+        let releasing = wait(10) { !blackedOut() }
         let held = Date().timeIntervalSince(t0)
+        let released = releasing && wait(10) { !badge.exists }
         report(task, "hold", ["black": black ? 1 : 0, "heldSeconds": held])
         XCTAssertTrue(black && released, "Black out while held, back after release")
         XCTAssertEqual(held, 4, accuracy: 1.5, "black only between note on and note off")
     }
 
-    func testMIDI007ProgramChange() throws {
+    func testMIDI007ProgramChange() {
         let task = "MIDI-007-T15"
-        try prepare(task, mappings: ["pc:0:3=cue.go:\(Self.seedSceneID(3))"], extra: ["-uitestShowSeed"])
+        prepare(task, mappings: ["pc:0:3=cue.go:\(Self.seedSceneID(3))"], extra: ["-uitestShowSeed"])
         closeSettingsPanel()
         var changes = 0, last = appliedScene
-        ready("MIDI", "pc3")
-        let end = Date().addingTimeInterval(25)
+        send("pc3")   // program 3, then again 1.5 s later
+        let end = Date().addingTimeInterval(15)
         while Date() < end {
             if appliedScene != last { changes += 1; last = appliedScene }
             if appliedCue() == 3 && changes > 0 { pause(4); if appliedScene != last { changes += 1 }; break }
@@ -192,65 +239,75 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         XCTAssertEqual(changes, 1, "the repeat does nothing")
     }
 
-    func testMIDI008Transport() throws {
+    func testMIDI008Transport() {
         let task = "MIDI-008-T12"
-        try prepare(task, mappings: ["ccbtn:0:20=cue.next", "note:0:62=transport.toggle"], extra: ["-uitestShowSeed"])
+        prepare(task, mappings: ["ccbtn:0:20=cue.next", "note:0:62=transport.toggle"], extra: ["-uitestShowSeed"])
         closeSettingsPanel()
         let before = appliedCue() ?? 1
-        ready("MIDI", "ccbtn20")
-        XCTAssertTrue(wait(25) { (self.appliedCue() ?? 0) == before + 1 }, "the CC button steps once")
-        ready("MIDI", "ccbtn20")
-        XCTAssertTrue(wait(25) { (self.appliedCue() ?? 0) == before + 2 }, "and again")
+        send("ccbtn20")
+        XCTAssertTrue(wait(10) { (self.appliedCue() ?? 0) == before + 1 }, "the CC button steps once")
+        send("ccbtn20")
+        XCTAssertTrue(wait(10) { (self.appliedCue() ?? 0) == before + 2 }, "and again")
         let paused = app.staticTexts["pausedLabel"].firstMatch
-        ready("MIDI", "note62")
-        let didPause = wait(25) { paused.exists }
-        ready("MIDI", "note62")
-        let resumed = wait(25) { !paused.exists }
+        send("note62")
+        let didPause = wait(10) { paused.exists }
+        send("note62")
+        let resumed = wait(10) { !paused.exists }
         report(task, "transport", ["cue": Double(appliedCue() ?? -1), "paused": didPause ? 1 : 0, "resumed": resumed ? 1 : 0])
         XCTAssertEqual(appliedCue(), before + 2, "each press acted once")
         XCTAssertTrue(didPause && resumed, "the pad toggles Play/Pause once per press")
     }
 
-    /// MIDI-009-T15: the driver moves CC 21 and counts what the app sends back; `MIDI-FEEDBACK` and the driver's exit
-    /// status carry the verdict (no echo after the moves stop). On-screen changes producing CC out need an on-screen
-    /// control mapped to feedback; the stand-in for it is the glow following the moves.
-    func testMIDI009FeedbackWithoutEcho() throws {
+    /// MIDI-009-T15: the source moves CC 21 and the in-app destination (paired with the source by name, so the app's
+    /// feedback goes there) counts what the app sends back. The verdict is the Mac driver's: at most 60 messages and
+    /// none more than 1 s after the moves stop (no echo loop); the probe reports it 3 s after the last move. On-screen
+    /// changes producing CC out need an on-screen control mapped to feedback; the stand-in for it is the glow following
+    /// the moves.
+    func testMIDI009FeedbackWithoutEcho() {
         let task = "MIDI-009-T15"
-        try prepare(task, mappings: ["cc:0:21=effect.bloom.intensity;fb=1"])
+        prepare(task, mappings: ["cc:0:21=effect.bloom.intensity;fb=1"])
         closeSettingsPanel()
-        let moved = glow(after: "feedback-move", from: manualGlow())
-        pause(6)
-        report(task, "feedback", ["moved": moved == nil ? 0 : 1])
-        XCTAssertNotNil(moved, "the mapped control drives the glow")
+        let before = liveGlow()
+        send("feedback-move")
+        let moved = wait(10) { self.liveGlow().map { v in before.map { abs(v - $0) > 0.005 } ?? true } ?? false }
+        let verdict = { self.text("midiProbeFeedback") }
+        let judged = wait(12) { verdict().hasPrefix("received ") }
+        report(task, "feedback", ["moved": moved ? 1 : 0, "judged": judged ? 1 : 0])
+        print("MIDI-FEEDBACK \(verdict())")
+        XCTAssertTrue(moved, "the mapped control drives the glow")
+        XCTAssertTrue(judged, "the probe judged the feedback: \(verdict())")
+        XCTAssertTrue(verdict().hasSuffix("ok 1"), "bounded feedback, nothing after the moves stop: \(verdict())")
     }
 
-    func testMIDI010FollowClock() throws {
+    func testMIDI010FollowClock() {
         let task = "MIDI-010-T12"
-        try prepare(task, settings: ["settings.midi.followClock": true])
+        prepare(task, settings: ["settings.midi.followClock": true])
         func bpm() -> Double? {
             let s = text("midiClockStatus")
             guard let r = s.range(of: #"[0-9]+\.[0-9]"#, options: .regularExpression) else { return nil }
             return Double(s[r])
         }
         XCTAssertTrue(scrollTo(app.staticTexts["midiClockStatus"].firstMatch), "the clock status row")
-        ready("MIDI", "clock120")
-        let at120 = wait(30) { abs((bpm() ?? 0) - 120) <= 0.1 }
+        send("clock120")
+        let at120 = wait(10) { abs((bpm() ?? 0) - 120) <= 0.1 }
         report(task, "120", ["bpm": bpm() ?? -1])
-        ready("MIDI", "clock174")
-        let at174 = wait(30) { abs((bpm() ?? 0) - 174) <= 0.1 }
+        send("clock174")   // takes over at once (the source stops the 120 BPM clock)
+        let at174 = wait(10) { abs((bpm() ?? 0) - 174) <= 0.1 }
         report(task, "174", ["bpm": bpm() ?? -1])
-        ready("MIDI", "clockstop")
-        let fellBack = wait(30) { self.text("midiClockStatus") == "No MIDI clock" }
+        send("clockstop")
+        // Stop unlocks the clock and the tempo falls back (MIDI-010-S4); the status then reads "MIDI clock: stopped"
+        // (contracts/midi-clock.md C4; "No MIDI clock" is the state before any clock arrived).
+        let fellBack = wait(10) { self.text("midiClockStatus") == "MIDI clock: stopped" }
         report(task, "stop", ["fellBack": fellBack ? 1 : 0])
-        XCTAssertTrue(at120, "120 BPM within 0.1 over the network session")
+        XCTAssertTrue(at120, "120 BPM within 0.1 from the virtual source")
         XCTAssertTrue(at174, "174 BPM within 0.1")
         XCTAssertTrue(fellBack, "Stop falls back: \(text("midiClockStatus"))")
     }
 
     /// MIDI-012-T15 on D1: save the current mappings as "Profile 1" and export it to Documents (Profile 1.pmmidi).
-    func testMIDI012ProfileExport() throws {
+    func testMIDI012ProfileExport() {
         let task = "MIDI-012-T15"
-        try prepare(task, mappings: ["cc:0:21=effect.bloom.intensity"])
+        prepare(task, mappings: ["cc:0:21=effect.bloom.intensity"])
         openMappings()
         let save = app.buttons["midiProfileSaveCurrent"].firstMatch
         XCTAssertTrue(scrollTo(save), "Profiles")
@@ -267,11 +324,11 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         ready("PEER", "midi012-exported")
     }
 
-    /// MIDI-012-T15 on D2 (peer.py copied D1's Profile 1.pmmidi into D2's Documents): import, apply, and the Mac's
-    /// CC 21 moves the glow once.
-    func testMIDI012ProfileImport() throws {
+    /// MIDI-012-T15 on D2 (peer.py copied D1's Profile 1.pmmidi into D2's Documents): import, apply, and the virtual
+    /// source's CC 21 moves the glow.
+    func testMIDI012ProfileImport() {
         let task = "MIDI-012-T15"
-        try prepare(task, mappings: [])
+        prepare(task, mappings: [])
         openMappings()
         let importButton = app.buttons["midiProfileImport"].firstMatch
         XCTAssertTrue(scrollTo(importButton), "Import…")
@@ -283,30 +340,30 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         XCTAssertTrue(wait(5) { row.label.hasSuffix("in use") }, "applied: \(row.label)")
         goBack()
         closeSettingsPanel()
-        let low = glow(after: "cc21-low", from: manualGlow())
+        let low = glow(after: "cc21-low", from: liveGlow())
         let high = glow(after: "cc21-high", from: low)
         report(task, "import", ["low": low ?? -1, "high": high ?? -1])
         XCTAssertNotNil(low, "the imported mapping drives the glow")
         if let low, let high { XCTAssertGreaterThan(high, low) }
     }
 
-    func testMIDI013Panic() throws {
+    func testMIDI013Panic() {
         let task = "MIDI-013-T13"
-        try prepare(task, mappings: ["note:0:61=blackout;mode=hold"])
+        prepare(task, mappings: ["note:0:61=blackout;mode=hold"])
         closeSettingsPanel()
         let badge = element("blackoutBadge")
-        ready("MIDI", "hold61-long")
-        XCTAssertTrue(wait(25) { badge.exists }, "the held note blacks out")
+        send("hold61-long")
+        XCTAssertTrue(wait(10) { badge.exists }, "the held note blacks out")
         openSettingsPanel()
         let panic = app.buttons["midiPanicButton"].firstMatch
         XCTAssertTrue(scrollTo(panic), "MIDI Panic")
         panic.tap()
         closeSettingsPanel()
         let restored = wait(5) { !badge.exists }
-        ready("MIDI", "release61")
+        send("release61")
         pause(3)
-        ready("MIDI", "pad61")
-        let again = wait(25) { badge.exists }
+        send("pad61")
+        let again = wait(10) { badge.exists }
         let releasedAgain = wait(10) { !badge.exists }
         report(task, "panic", ["restored": restored ? 1 : 0, "nextPress": again && releasedAgain ? 1 : 0])
         XCTAssertTrue(restored, "MIDI Panic returns the output")

@@ -47,6 +47,9 @@ struct RootView: View {
             }
             #if DEBUG
             if UITestAudioProbes.isRequested { UITestAudioProbeView(coordinator: coordinator) }   // QA-011 audio device tests
+            if UITestVirtualMIDISource.isRequested {   // QA-011 B10: the in-app MIDI controller (2026-11-21)
+                UITestVirtualMIDIInstaller().frame(width: 0, height: 0).allowsHitTesting(false)
+            }
             if ProcessInfo.processInfo.arguments.contains("-uitestEncoderProbe"),   // REC-003-T23 diagnosis, every screen
                ProcessInfo.processInfo.arguments.contains("-uitestDiagnostics") {
                 let value = UITestEncoderProbe.shared.value
