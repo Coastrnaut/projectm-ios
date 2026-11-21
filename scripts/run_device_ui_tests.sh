@@ -1,7 +1,7 @@
 #!/bin/bash
 # run_device.sh <d1|d2|d3> <log name> <filter>... : xcodebuild test-without-building on one device, each filter its own
 # argument (bash arrays; zsh does not split an unquoted $VAR). Filters: "only:<id>" or "skip:<id>". With MAC_DRIVER=1 the
-# Mac driver follows the log.
+# Mac driver follows the log. PRODUCTS=<dir> runs another build (the B10 MIDI host: Build/device-acceptance-midi/Products).
 set -u
 cd /Users/coast/Documents/GIT/projectm-ios
 dev=$1; name=$2; shift 2
@@ -26,7 +26,7 @@ fi
 # TEST_RUNNER_* values reach the test runner only as environment variables of xcodebuild, not as build-setting
 # arguments (full run 13, 2026-11-20: FILE-001 and PERF-006 skipped "needs the Mac" with the driver running).
 TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" TEST_RUNNER_FILE001_FROM="${FILE001_FROM:-D1}" \
-xcodebuild test-without-building -xctestrun "Build/device-acceptance-$dev/Products/DeviceAcceptance_iphoneos27.2-arm64.xctestrun" \
+xcodebuild test-without-building -xctestrun "${PRODUCTS:-Build/device-acceptance-$dev/Products}/DeviceAcceptance_iphoneos27.2-arm64.xctestrun" \
   -destination "platform=iOS,id=$udid" -resultBundlePath "Build/device-acceptance-$dev/$name-$(date +%m%d%H%M%S).xcresult" \
   ${args[@]+"${args[@]}"} -test-timeouts-enabled YES -default-test-execution-time-allowance 600 \
   > "$log" 2>&1 &

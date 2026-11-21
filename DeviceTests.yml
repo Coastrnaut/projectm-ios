@@ -53,8 +53,10 @@ targets:
             # QA-011 device run 2026-11-21 (MIDI-001 Clarifications): B10MIDIDeviceTests drive the app from a DEBUG
             # CoreMIDI virtual source (Debug/UITestVirtualMIDISource.swift), and iOS creates virtual endpoints only for
             # an app with `audio` in UIBackgroundModes (-10844 otherwise). Only this Debug device-test host gets it;
-            # project.yml's app keeps `[screen-capture]` alone (ADR-0001 ruling 17).
-            if ! /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$plist" 2>/dev/null | grep -qx '[[:space:]]*audio'; then
+            # project.yml's app keeps `[screen-capture]` alone (ADR-0001 ruling 17). Only a MIDI host build
+            # (QA011_MIDI_HOST=YES on the xcodebuild command, Build/device-acceptance-midi) gets it: with `audio` the
+            # host would keep playing in the background and change what every background test measures.
+            if [ "${QA011_MIDI_HOST:-NO}" = "YES" ] && ! /usr/libexec/PlistBuddy -c "Print :UIBackgroundModes" "$plist" 2>/dev/null | grep -qx '[[:space:]]*audio'; then
               /usr/libexec/PlistBuddy -c "Add :UIBackgroundModes: string audio" "$plist"
             fi
           fi

@@ -278,8 +278,10 @@ python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build
   `midiProbeRuns`, `midiProbeFeedback` (MIDI-009's verdict: at most 60 messages back, none 1 s after the moves).
 - **Virtual MIDI endpoints need `audio` in UIBackgroundModes:** iOS refuses `MIDISourceCreate`/`MIDIDestinationCreate`
   with -10844 otherwise (CoreMIDI headers; seen on the simulator too). Only the Debug device-test host built from
-  `DeviceTests.yml` gets `audio` (post-build script); `project.yml`'s app and every shipping build keep
-  `[screen-capture]` alone (ADR-0001 ruling 17). A B10 test fails with "failed -10844" when the key is missing.
+  `DeviceTests.yml` gets `audio` (post-build script), and only when built with `QA011_MIDI_HOST=YES` into
+  `Build/device-acceptance-midi`: with `audio` the host keeps playing in the background, which would change what every
+  background test measures (AUD-006, PERF-011, CAM-011). `project.yml`'s app and every shipping build keep
+  `[screen-capture]` alone (ADR-0001 ruling 17). On the ordinary host B10 skips ("failed -10844") with the build command.
 - **A post-build Info.plist edit needs the plist as an input file:** without `inputFiles: [$(TARGET_BUILD_DIR)/
   $(INFOPLIST_PATH)]` the build system ran the device-test host's plist script before Info.plist processing on a
   rebuild, and the processed plist dropped its keys (the file-sharing keys too). Check the built plist with PlistBuddy.
