@@ -148,6 +148,23 @@ extension DeviceAcceptanceCase {
             }
         }
         let began = wait(25) { self.sessionCounts().began > before.began }
+        // A typed Siri request answers silently and never takes the audio session, so iOS sends no interruption
+        // (D2, iPadOS 27.2, 2026-11-21: began stayed at the clock timer's count in AUD-006 and AUD-014). That is a
+        // correct outcome, not a failure: the app must simply be undisturbed. The alarm (clock timer) covers the
+        // interruption path in both tests (AUD-006-T40: "an incoming call or alarm").
+        if kind == .siri && !began {
+            if app.state != .runningForeground { app.activate(); _ = wait(10) { self.app.state == .runningForeground } }
+            let label = "siri \(whilePaused ? "paused" : "playing")"
+            let expected = whilePaused ? "· Paused" : "· Active audio"
+            let undisturbed = waitForIndicator(expected, 5)
+            print("DEVICE-ACCEPT-NOTE \(task) \(label): Siri answered without an audio interruption; the app stays "
+                  + "\(whilePaused ? "paused" : "playing"): \(sourceIndicator)")
+            let result: [String: Double] = ["began": 0, "siriInterrupted": 0, "undisturbed": undisturbed ? 1 : 0,
+                                            "paused": whilePaused ? 1 : 0]
+            report(task, label, result)
+            XCTAssertTrue(undisturbed, "\(task) \(label): no interruption arrived, so the app is undisturbed: \(sourceIndicator)")
+            return result
+        }
         // A ringing timer holds its interruption until someone stops it (D3 pass 3, 2026-11-19: no `ended` in seven
         // runs, and its banner covered the session panel afterwards), so the test stops it as a person would.
         if kind == .clockTimer, began { pause(2); SystemUI(app: app).stopClockTimer() }

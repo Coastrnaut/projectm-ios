@@ -760,6 +760,10 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   - *A two-device check stays two devices.* FILE-001-B imports the archive A exported on another device
     (`FILE001_FROM=<D>`, default D1); with only D2 in use it waits for D3, it never imports D2's own archive on D2.
 
+  - *A typed Siri request does not interrupt audio.* With Siri on (D2, 2026-11-21) `siriService.activate(
+    voiceRecognitionText:)` answered silently and iOS sent no interruption, so AUD-006/AUD-014's Siri steps now record
+    `siriInterrupted=0` and check the app is undisturbed; the clock timer covers the interruption path.
+
 ### Xcode and the device test host
 
 - **Package tests cannot run on a device by themselves**: "Tool-hosted testing is unavailable on device destinations".
