@@ -23,10 +23,13 @@ if [ "${MAC_DRIVER:-0}" = 1 ]; then
   python3 scripts/mac_device_driver.py follow --log "$log" --device "$(echo "$dev" | tr a-z A-Z)" > ".autonomous/logs/macdriver-$name-$dev.log" 2>&1 &
   driver=$!
 fi
+# TEST_RUNNER_* values reach the test runner only as environment variables of xcodebuild, not as build-setting
+# arguments (full run 13, 2026-11-20: FILE-001 and PERF-006 skipped "needs the Mac" with the driver running).
+TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" TEST_RUNNER_FILE001_FROM="${FILE001_FROM:-D1}" \
 xcodebuild test-without-building -xctestrun "Build/device-acceptance-$dev/Products/DeviceAcceptance_iphoneos27.2-arm64.xctestrun" \
   -destination "platform=iOS,id=$udid" -resultBundlePath "Build/device-acceptance-$dev/$name-$(date +%m%d%H%M%S).xcresult" \
   ${args[@]+"${args[@]}"} -test-timeouts-enabled YES -default-test-execution-time-allowance 600 \
-  TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" > "$log" 2>&1 &
+  > "$log" 2>&1 &
 xcb=$!
 # Watchdog (2026-11-20): full run 12 waited two hours at "Waiting for the destination to become ready" after D2 left
 # the network. A log that has not grown for 10 minutes while xcodebuild waits for its destination ends the run.

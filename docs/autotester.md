@@ -727,6 +727,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     strobe fixture was sampled once and read no flash (run 44681007689); the test now counts its frames and skips
     with the numbers below 8 fps.
 
+  - *Pass TEST_RUNNER_ values in xcodebuild's environment.* `TEST_RUNNER_MAC_DRIVER=1` written as a build-setting
+    argument after `test-without-building -xctestrun` never reached the tests, so every `requireMac` test skipped
+    "needs the Mac" while the driver ran beside them (full runs 12-13). Tests that sent `MAC-DO` without checking the flag
+    hid it. `run_device_ui_tests.sh` now sets them in the environment; a skip reason is a finding, read every one.
+  - *devicectl sendMemoryWarning fails on iPadOS 27.2* ("No such file or directory", by hand too, 2026-11-21). PERF-006
+    now taps the DEBUG `memory:fill`: dirty memory in 64 MB steps until UIKit posts the system's own warning, never
+    below 200 MB of `os_proc_available_memory()`, freed at once (probe `memoryFill`).
+  - *A two-device check stays two devices.* FILE-001-B imports the archive A exported on another device
+    (`FILE001_FROM=<D>`, default D1); with only D2 in use it waits for D3, it never imports D2's own archive on D2.
+
 ### Xcode and the device test host
 
 - **Package tests cannot run on a device by themselves**: "Tool-hosted testing is unavailable on device destinations".

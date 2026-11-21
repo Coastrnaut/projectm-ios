@@ -502,13 +502,16 @@ final class B07FilesDeviceTests: B07Case {
         report(task, "export on \(deviceModel())", ["exported": text("scenePackStatus").hasPrefix("Exported") ? 1 : 0])
     }
 
-    /// FILE-001-T19 on D3: the Mac pushes D1's archive into Documents; Import Scene… picks it in Files, the preview
+    /// FILE-001-T19 on D3: the Mac pushes the other device's archive (D1, or `FILE001_FROM`) into Documents; Import Scene… picks it in Files, the preview
     /// lists the photo and the video, Import adds the cue, and applying it shows the video over the stored photo.
     /// "Offline" (Airplane Mode) is a USB-cable step: not required (owner ruling 2026-11-18); nothing here uses the network.
     func testFILE001_B_ImportSceneArchive() throws {
         let task = "FILE-001-T19"
         try requireMac(task)
-        MacDriver.request("files.push", ["from": "D1", "prefix": "projectM-iOS Scene ", "suffix": ".pmscene"])
+        // The exporting device (TEST_RUNNER_FILE001_FROM, default D1): D1 is not used in QA-011, so D2's archive (full
+        // run 13, 2026-11-21) is imported on D3. Never the importing device itself: the check is a second device.
+        let from = ProcessInfo.processInfo.environment["FILE001_FROM"] ?? "D1"
+        MacDriver.request("files.push", ["from": from, "prefix": "projectM-iOS Scene ", "suffix": ".pmscene"])
         launch(visual: "projectM", extra: ["-uitestSettingsSection", "show"])
         pause(10)   // the push lands while the app launches (the log reaches the Mac a few seconds late)
         openSceneFolders(addCurrentScene: true)   // Scene Folders shows once the show has a cue

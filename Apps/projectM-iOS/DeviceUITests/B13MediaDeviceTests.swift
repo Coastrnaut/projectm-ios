@@ -14,8 +14,8 @@
 // fixture from Documents, else a generated counter of that shape) and `long600` (HEVC 640 × 360, 10 minutes; never
 // played to the end) and read the clip's own rate from the `videoFrameRate` probe (distinct pictures per second,
 // Debug/UITestMediaDeviceProbes.swift), the footprint from `memoryProbe` and the device's thermal state from the test
-// runner's `ProcessInfo.thermalState` (the runner shares the device). PERF-006-T17 asks the Mac for a real memory
-// warning (`MAC-DO memory.warning`: devicectl sendMemoryWarning) and reads the recovery counter (`-uitestMemoryPressure`).
+// runner's `ProcessInfo.thermalState` (the runner shares the device). PERF-006-T17 fills memory until the system's
+// own warning arrives (DEBUG `memory:fill`) and reads the recovery counter (`-uitestMemoryPressure`).
 import UIKit
 import XCTest
 
@@ -174,19 +174,20 @@ final class B13MediaDeviceTests: DeviceAcceptanceCase {
 
     // MARK: PERF-006-T17 (QA-011 Batch 5)
 
-    /// PERF-006-T17 (D1, D3): a real memory warning from the Mac (devicectl sendMemoryWarning to the app's pid): the
-    /// app survives, counts a recovery, keeps rendering and the music keeps playing.
+    /// PERF-006-T17: a real memory warning from the system: the DEBUG `memory:fill` grows dirty memory until UIKit
+    /// posts its own warning (devicectl sendMemoryWarning fails with ENOENT on iPadOS 27.2, D2 2026-11-21); the app
+    /// survives, counts a recovery, keeps rendering and the music keeps playing.
     func testPERF006RealMemoryWarning() throws {
         let task = "PERF-006-T17"
-        guard MacDriver.isFollowing else {
-            throw XCTSkip("\(task) needs the Mac: python3 scripts/mac_device_driver.py follow --log <log> --device <D> & and "
-                          + "TEST_RUNNER_MAC_DRIVER=1 on the xcodebuild command")
-        }
         launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestMemoryPressure"])
         let starts = probe("sourceStarts")
         let before = Int(probe("memoryRecoveries")) ?? -1
         XCTAssertGreaterThanOrEqual(before, 0, "\(task): the recovery readout (-uitestMemoryPressure)")
-        MacDriver.request("memory.warning")
+        app.buttons["memory:fill"].firstMatch.tap()
+        let filled = wait(100) { !self.probe("memoryFill").hasPrefix("state=filling") && self.probe("memoryFill") != "state=idle" }
+        let fill = probe("memoryFill")
+        print("B13 \(task): \(fill)")
+        XCTAssertTrue(filled && fill.hasPrefix("state=warned"), "\(task): the system's own warning arrived while filling: \(fill)")
         let recovered = wait(45) { (Int(self.probe("memoryRecoveries")) ?? -1) > before }
         XCTAssertTrue(recovered, "\(task): a recovery after the real warning (\(before) → \(probe("memoryRecoveries")))")
         XCTAssertEqual(app.state, .runningForeground, "\(task): the app survives")

@@ -26,6 +26,8 @@ struct UITestMemoryPanel: View {
                 .accessibilityIdentifier("memory:warning")
                 Button("memory:critical") { coordinator.memoryPressure.handle(.critical) }
                     .accessibilityIdentifier("memory:critical")
+                Button("memory:fill") { UITestMemoryBallast.shared.fill() }   // a real warning (PERF-006-T17)
+                    .accessibilityIdentifier("memory:fill")
             }
             .font(.system(size: 9))
             .buttonStyle(.bordered)
@@ -37,6 +39,7 @@ struct UITestMemoryPanel: View {
                     value("memoryRetiredBytes", "\(SharedTexturePool.retiredBytes)")
                     value("memoryWarmUpContext", coordinator.warmUpHoldsContext ? "yes" : "no")
                     value("visualFrames", "\(coordinator.activeVisualFrames)")
+                    value("memoryFill", UITestMemoryBallast.shared.value)
                 }
                 .font(.caption2)
                 .opacity(0.01)
