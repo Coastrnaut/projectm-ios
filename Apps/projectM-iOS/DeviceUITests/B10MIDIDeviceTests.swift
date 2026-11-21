@@ -318,9 +318,13 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         save.tap()
         let row = element("midiProfile.Profile 1")
         XCTAssertTrue(wait(5) { row.exists }, "Profile 1 saved")
-        row.press(forDuration: 1.0)
+        // Export… is in the row's More menu (MIDIProfilesSection: Rename…, Export…, Link to Device, Delete…), not a
+        // long-press menu (D2 2026-11-21: the press opened nothing).
+        let more = app.buttons["midiProfileMore.Profile 1"].firstMatch
+        XCTAssertTrue(wait(5) { more.exists } && scrollTo(more), "the row's More menu")
+        more.tap()
         let export = app.buttons["Export…"].firstMatch
-        XCTAssertTrue(wait(5) { export.exists }, "Export… in the row's menu")
+        XCTAssertTrue(wait(5) { export.exists }, "Export… in the row's More menu")
         export.tap()
         bridgeSaveToDocuments()
         XCTAssertTrue(wait(10) { self.app.navigationBars["MIDI Mappings"].exists }, "back after saving")
