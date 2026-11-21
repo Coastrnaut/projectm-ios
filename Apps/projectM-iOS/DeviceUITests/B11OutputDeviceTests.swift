@@ -11,8 +11,9 @@
 // OUT-014-T13: an output profile exported on a 1080p display warns when imported on a 720p one.
 // VIS-018-T14: Tessellation 2 → 16 tiles, portrait and landscape: draws, holds the frame rate, centre symmetry and
 //   seam measurements are reported (thresholds set from the first D1 run), Reduce Motion moves less.
-// UIX-008-T16 (D2, D3): a scene editor window beside the visualizer (needs Windowed Apps on: skips otherwise); the
-//   edit saves and the output keeps running with its source started once.
+// UIX-008-T16 (D2, D3): a scene editor window beside the visualizer, tiled through springboard's window controls (needs
+//   Windowed Apps on: skips only when the editor replaced the visualizer); the edit saves and the output keeps running
+//   with its source started once.
 // SHOW-007-T16, SHOW-008-T14, SHOW-009-T13, SHOW-012-T14: run the simulator classes on the device (ShowTimelineUITests,
 //   ShowKeyframeUITests, ShowKeyframeEasingUITests, CueNoteUITests; commands in docs/autotester.md).
 import UIKit
@@ -209,15 +210,116 @@ final class B11OutputDeviceTests: ControlSurfaceCase {
         let name = app.textFields["sceneEditorName"].firstMatch
         XCTAssertTrue(wait(8) { name.exists }, "the editor window opened")
         let visualizer = app.otherElements["visualizerTapArea"].firstMatch
-        guard visualizer.exists && visualizer.isHittable else {
+        // iPadOS decides where a new window goes (UIX-008 Assumptions): with Windowed Apps on it opens on top of the
+        // visualizer's window (full size when that one is), so the output is covered, not replaced. Only one window of
+        // the app on screen is a replacement (Full Screen Apps); otherwise the windows are tiled as a person would.
+        let windows = arrangeBesideTheOutput()
+        guard windows.appWindows >= 2 || (visualizer.exists && visualizer.isHittable) else {
             throw XCTSkip("the editor replaced the visualizer: Windowed Apps is off (owner sets Settings › Multitasking once)")
         }
+        XCTAssertTrue(windows.beside, "the editor window is beside the visualizer's: \(windows.detail)")
+        // In a half-width (compact) window the visualizer's own Settings panel is a full sheet over the output; the
+        // performer closes it to watch the output beside the editor.
+        let settingsDone = app.navigationBars.buttons["Done"].firstMatch
+        if !(visualizer.exists && visualizer.isHittable), settingsDone.exists {
+            settingsDone.tap()
+            _ = wait(5) { !settingsDone.exists }
+        }
+        XCTAssertTrue(wait(5) { visualizer.exists && visualizer.isHittable }, "the visualizer is visible beside the editor")
         name.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
         name.typeText(" B8\n")
         app.buttons["sceneEditorSave"].firstMatch.tap()
         let saved = wait(5) { self.text("sceneEditorFileProbe").hasPrefix("name=Opening B8;") }
-        report(task, "editor window", ["saved": saved ? 1 : 0, "sourceStarts": Double(sourceStarts) ?? -1])
+        report(task, "editor window", ["saved": saved ? 1 : 0, "appWindows": Double(windows.appWindows),
+                                            "beside": windows.beside ? 1 : 0, "sourceStarts": Double(sourceStarts) ?? -1])
         XCTAssertTrue(saved, "the edit is saved: \(text("sceneEditorFileProbe"))")
         XCTAssertEqual(sourceStarts, "1", "the output kept running")
+    }
+
+    // MARK: UIX-008 windows (springboard's own window UI)
+
+    private static let bundleID = "org.projectmios.ProjectMiOS"
+
+    /// The app's windows on screen, front first, as springboard lists them (`card:<bundle>:sceneID:<id>`, framed in
+    /// screen points; minimised and off-screen windows excluded).
+    private func appWindowFrames(_ springboard: XCUIApplication) -> [CGRect] {
+        let screen = springboard.windows.firstMatch.frame
+        let cards = springboard.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "card:\(Self.bundleID):"))
+        return (0..<cards.count).map { cards.element(boundBy: $0).frame }
+            .filter { $0.width > 200 && $0.height > 200 && screen.contains(CGPoint(x: $0.midX, y: $0.midY)) }
+    }
+
+    /// Puts the editor window (the front one) beside the visualizer's with springboard's window menu: a full-size
+    /// editor is first made smaller with its resize handle (a full-size window shows no window controls), then
+    /// Window Controls › hold Zoom › Fill & Arrange › "Left and Right" (iPadOS 26 and later, Windowed Apps or Stage
+    /// Manager on). Returns the number of the app's windows on screen and whether the two no longer overlap.
+    private func arrangeBesideTheOutput() -> (appWindows: Int, beside: Bool, detail: String) {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let origin = springboard.windows.firstMatch.coordinate(withNormalizedOffset: .zero)
+        func point(_ p: CGPoint) -> XCUICoordinate { origin.withOffset(CGVector(dx: p.x, dy: p.y)) }
+        func state() -> (Int, Bool, String) {
+            let frames = appWindowFrames(springboard)
+            let overlap = frames.count >= 2 ? frames[0].intersection(frames[1]) : .null
+            let beside = frames.count >= 2 && (overlap.isNull || overlap.width * overlap.height < 1)
+            return (frames.count, beside, "windows \(frames.map { NSCoder.string(for: $0) })")
+        }
+        _ = wait(3) { self.appWindowFrames(springboard).count >= 2 }
+        var (count, beside, detail) = state()
+        print("UIX008 opened: \(detail)")
+        guard count >= 2, !beside else { return (count, beside, detail) }
+        let screen = springboard.windows.firstMatch.frame
+        let editor = appWindowFrames(springboard)[0]
+        if editor.width >= screen.width - 1 {
+            // A full-size window: drag its resize handle (bottom right) inwards; the window becomes a smaller one.
+            let grabber = springboard.descendants(matching: .any)
+                .matching(NSPredicate(format: "identifier == 'resize-grabber' AND label CONTAINS 'projectM'")).firstMatch
+            if grabber.exists {
+                point(CGPoint(x: grabber.frame.minX + 10, y: grabber.frame.minY + 10))
+                    .press(forDuration: 0.3, thenDragTo: point(CGPoint(x: screen.width * 0.45, y: screen.height * 0.95)),
+                           withVelocity: .slow, thenHoldForDuration: 0.3)
+                _ = wait(3) { (self.appWindowFrames(springboard).first?.width ?? screen.width) < screen.width - 1 }
+            }
+            print("UIX008 resized: \(state().2)")
+        }
+        let front = appWindowFrames(springboard).first ?? editor
+        let controls = springboard.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier == %@", "window-controls:\(Self.bundleID)"))
+        let frontControls = (0..<controls.count).map { controls.element(boundBy: $0) }
+            .first { front.contains(CGPoint(x: $0.frame.midX, y: $0.frame.midY)) }
+        // Springboard lists each window control twice (in the controls group and beside it), and the copies report
+        // isHittable false, so they are pressed by their frames.
+        let zoom = springboard.buttons.matching(identifier: "Zoom-button")
+        func frontZoom() -> CGRect? {
+            (0..<zoom.count).map { zoom.element(boundBy: $0).frame }
+                .first { !$0.isEmpty && front.contains(CGPoint(x: $0.midX, y: $0.midY)) }
+        }
+        if let frontControls {
+            let dots = frontControls.frame
+            point(CGPoint(x: dots.midX, y: dots.midY)).tap()   // the three dots open into Close, Minimize and Zoom
+            if wait(3, { frontZoom() != nil }), let button = frontZoom() {
+                // Holding Zoom opens Move & Resize / Fill & Arrange.
+                point(CGPoint(x: button.midX, y: button.midY)).press(forDuration: 1.2)
+                let leftAndRight = springboard.buttons["Left and Right"].firstMatch
+                if wait(3, { leftAndRight.exists && !leftAndRight.frame.isEmpty }) {
+                    let f = leftAndRight.frame
+                    point(CGPoint(x: f.midX, y: f.midY)).tap()
+                } else {
+                    print("UIX008 no Left and Right in the Zoom menu")
+                }
+            } else {
+                print("UIX008 no Zoom button in the front window's controls")
+            }
+        } else {
+            print("UIX008 no window controls in the front window \(NSCoder.string(for: front))")
+        }
+        _ = wait(5) { state().1 }
+        (count, beside, detail) = state()
+        print("UIX008 arranged: \(detail)")
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = beside ? "UIX-008 windows arranged" : "UIX-008 windows not arranged"
+        shot.lifetime = .keepAlways
+        add(shot)
+        return (count, beside, detail)
     }
 }

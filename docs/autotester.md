@@ -297,6 +297,22 @@ python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build
 - **Simulator classes cover device-only reruns:** SHOW-007/008/009 and SHOW-012's row label run as
   `projectM-iOSUITests/ShowTimelineUITests`, `ShowKeyframeUITests`, `ShowKeyframeEasingUITests`, `CueNoteUITests` on
   the device through the DeviceAcceptance scheme.
+- **Windowed Apps covers, it does not replace; the test tiles the windows itself (UIX-008-T16, 2026-11-21):** on D2
+  with Windowed Apps on, "Open in New Window" opened the editor window on top of the visualizer's (full size when the
+  visualizer's was, otherwise at the editor's remembered size), so `visualizerTapArea` existed but was not hittable and
+  the test skipped as if Windowed Apps were off. There is no public API to place a new iPadOS window (only orientation
+  in `UIWindowScene.GeometryPreferences.iOS`; the spec leaves placement to iPadOS), so the test arranges the windows
+  through springboard's own window UI, as a person would: the app's windows are springboard's
+  `card:<bundle>:sceneID:<id>` elements (front first, screen points); a full-size window shows no window controls, so
+  its `resize-grabber` ("Resize projectM") is dragged in first; then `window-controls:<bundle>` (the three dots) is
+  tapped and the Zoom button held for 1.2 s, which opens Move & Resize / Fill & Arrange; "Left and Right" tiles the two
+  windows. Springboard lists each control twice and the copies report `isHittable` false, so they are pressed at their
+  frames. One app window on screen is the real replacement (Full Screen Apps) and the only case that skips; two
+  windows that still overlap after arranging fail. In a half-width window the visualizer's Settings panel becomes a
+  full sheet over the output, so the test closes it (Done) before checking that the visualizer is hittable. Rehearsed
+  on iPad simulators with Windowed Apps on (`defaults write com.apple.springboard SBChamoisWindowingEnabled -bool YES`,
+  then reboot the simulator): iPad Pro 13-inch (M5) iOS 27.2 from a full-size and a remembered-size editor, iPad (A16)
+  iOS 26.5, and the skip with the key set to NO (never evidence).
 
 ## Camera (QA-011 Batch 4, 2026-11-18)
 
