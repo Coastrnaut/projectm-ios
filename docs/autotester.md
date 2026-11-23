@@ -1389,6 +1389,29 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   "OSC learn timed out"). `OSC=1 scripts/run_device_ui_tests.sh …` now starts the driver aimed at the device's LAN
   address (never its USB 169.254 one) and passes `TEST_RUNNER_MAC_IP` and `TEST_RUNNER_OSC_DRIVER=1`.
 
+- **D2 r12 (iPad Pro M5, iPadOS 27.2.1, 2026-11-23, with the OSC driver): four failures, three causes, none in the app.**
+  - *Read the value the visual shows, not the one the user set.* OSC-003 and OSC-004 read "manual" from the MOD-002
+    readout ("unbound, manual 0.50, effective 0.50"). MIDI-003 and OSC-003 write live values on top of the manual glow
+    (`NativeSpectrumHost.externalValues`), so "manual" stays 0.50 by design, as the app's unit test says ("the manual glow
+    is unchanged"). The driver log shows every send (`/projectm/param/glow.intensity` 0.2 and 0.9, `/b8/fader/9` 0.5,
+    0.1 and 0.95 to the device's LAN address, port 9000), and OSC-004 *learned* `/b8/fader/9`: the values arrived.
+    These two tests had never passed on any device (D1-D3 on 2026-11-18 failed them too, with no driver then). B10 had
+    switched to "effective" on 2026-11-21; the reader is now shared (`ControlSurfaceCase.liveGlow`), and the app test
+    pins the readout's format. When one control path passes and its sibling does not, diff what the two tests read.
+  - *Scroll the list that holds the row; on an iPad the root rows are in the sidebar.* FILE-012 had its own `open()`
+    that swiped the whole Settings app: on the iPad that scrolled the General page beside the sidebar twelve times and
+    never reached "Privacy & Security" (the result bundle's screenshots). It now goes through
+    `SystemUI.openSettings(path:)` with Settings' search as the fallback, and fails when the report page is not reached
+    (before, the domain check passed on whatever page was showing). Never write a private Settings walker in a test.
+  - *`app.windows.firstMatch` is not always the main window.* PERF-011's return after a rotation while away read the
+    window as 683 × 1032 (portrait) while the visual, its controls and the playback pill filled the 1376 × 1032 landscape
+    screen in the screenshots. The result bundle's log shows why: at launch the first window was the main one
+    (1032 × 1376, a window context), after the return it was another element of the app (window context 0, 683 × 1032),
+    probably a system window of iPadOS 27.2.1's windowing (not identified). `DeviceAcceptanceCase.interfaceFrame()`
+    reads the full-screen tap area (`visualizerTapArea`), which follows a smaller iPad window too; `settleOrientation`
+    uses it, and PERF-011 reports both frames. Other tests still read `windows.firstMatch` for coordinates; move them
+    to `interfaceFrame()` if they misplace taps after a background return.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

@@ -130,6 +130,9 @@ final class OSCRoutesCoordinatorTests: XCTestCase {
         live.update(.osc, [Self.intensity: 1])
         host.externalValues = live.merged
         XCTAssertEqual(host.effectiveGlow.intensity, 1, "Standard: OSC reaches the top of the range")
+        // The DEBUG readout B09/B10's device tests read: an OSC value shows as "effective", never as "manual" (QA-011 D2,
+        // 2026-11-23: OSC-003/OSC-004 read "manual" and saw 0.50 while the values arrived).
+        XCTAssertEqual(host.glowModulationReadout, "unbound, manual 0.50, effective 1.00")
         host.safetyClamp = SafetyClamp(profile: SensorySafetyProfile(preset: .strict), reduceFlashingSetting: false)
         let cap: Float = BloomParameters.intensityRange.upperBound * Float(SensorySafetyLimits.strict.intensityLimit)
         XCTAssertEqual(host.effectiveGlow.intensity, cap, accuracy: 1e-6, "ACC-012 Strict caps the OSC value")
