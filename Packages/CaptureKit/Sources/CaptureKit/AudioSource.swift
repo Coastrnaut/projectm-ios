@@ -23,6 +23,11 @@ public struct SourceError: Error, Equatable, Sendable {
         self.reason = reason
         self.detail = detail
     }
+
+    /// The detail of a resume that iOS refused because it would not activate the audio session (a
+    /// call or another app holds the audio). QA-011 D2 2026-11-23: on a return to the foreground this
+    /// keeps In-App Playback on hold as "Interrupted" instead of failing (AUD-014-R8, AUD-015-R10).
+    public static let audioSessionRefusedDetail = "audioSessionActivationRefused"
 }
 
 /// A selectable origin of audio.
@@ -47,8 +52,18 @@ public protocol AudioSource: AnyObject {
     func stop() async
     /// Suspends for backgrounding/lock (FR-050, FR-054). System/App Capture keeps running.
     func suspend() async
+    /// Suspends because the app is going away (background or lock; AUD-015). The default is
+    /// `suspend()`. In-App Playback also releases its audio session, so iOS has no active session
+    /// of a suspended app to interrupt (QA-011 D2 2026-11-23); `resume()` activates it again.
+    func suspendWhileAway() async
     /// Resumes after `suspend` or a lost route; re-checks permissions (FR-053). Throws `SourceError`.
     func resume() async throws
+}
+
+extension AudioSource {
+    public func suspendWhileAway() async {
+        await suspend()
+    }
 }
 
 /// Sources that may know which content the OS selected (FR-014). Shown only after Active audio

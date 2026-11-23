@@ -37,6 +37,19 @@ interaction); each answer is the conservative, local-first option using public A
 - Q: After iOS resets its media services while a track was playing, should playback continue by itself or wait for the user? → A: It is rebuilt and continues from the held position when it was playing and no interruption was open, because a reset is a fault inside iOS and not a request for silence; in every other state it stays on hold. If it cannot be rebuilt the session ends with "In-App Playback failed" (AUD-014-R16).
 - Q: iOS 27 introduces new notices for "session became inactive" and "resumption recommended" and marks the older interruption notice as deprecated from 27.0; which does the app rely on? → A: The older interruption notice with its type, option and reason values, because it is the only one available on every supported version (iOS 26.0 and later) and using both would report each interruption twice on iOS 27. The suspended-app marker is not relied on (the SDK documents that it is no longer sent from iOS 16). That the older notice still arrives on iOS 27 devices is checked in the device phase; moving to the new notices is a follow-up if it does not (Assumptions, AUD-014-S6).
 
+### Session 2026-11-23 (QA-011 D2)
+
+- Q: The Baseline row "Interruption began as a late notice that the app had been suspended" assumed
+  iOS no longer sends one. On D2 (iPadOS 27.2.1) an "interruption began" with no end reached the app
+  around a background round trip and left playback on hold after the return. Should such a notice be
+  told apart from a real one? → A: No; the app still cannot tell them apart (the reason value is
+  not documented for it), and the owner ruling of 2026-11-12 stays: an interruption that is open or
+  ended without a resume indication is not resumed by itself. Instead the app no longer gives iOS a
+  session to interrupt while it is away: In-App Playback releases its audio session when the app
+  goes to the background or locks and activates it again on the return (AUD-015 Clarifications
+  2026-11-23). A return whose activation iOS refuses is treated as an open interruption, on hold
+  with "Interrupted" (AUD-014-R6, R8).
+
 ## Baseline: what exists today (audit of 2026-11-12, commit `e40e578`)
 
 This is an extension row: most of the interruption handling exists. The audit below is per event

@@ -106,6 +106,28 @@ first.
   transition (`lifecycleEvents`, `transitions`); the schema stays unchanged, so earlier exports
   and `check_capturelab_export.py` keep working.
 
+### Session 2026-11-23 (QA-011 D2)
+
+Decided by Claude under owner rules 4 and 12 (best judgement, unattended), from device evidence.
+
+- Q: In-App Playback sometimes stayed "Paused" after a plain background and return on D2 (iPad Pro
+  M5, iPadOS 27.2.1; PERF-011-T22 and VIS-001-T36, background with a rotation while away; the
+  result bundle's screenshot shows the banner "Interrupted · Playback is on hold at its position").
+  Is that the policy? → A: No. The table above says In-App Playback resumes on a return unless the
+  user paused it or an interruption is open, and no other app played. The most likely cause (the notice's reason value is not logged): the app paused
+  its engine on background but kept its audio session active, iOS interrupted that session of the
+  suspended app, and the late "interruption began" (no end ever follows) opened an AUD-014
+  interruption that rightly blocks the return resume (AUD-014-R6). Going away now also releases
+  the audio session (`AudioSource.suspendWhileAway`, `AVInAppPlaybackBackend.releaseSessionWhileAway`;
+  the engine is paused, so no I/O runs) and the return's resume activates it again, so a plain round
+  trip has no session for iOS to interrupt. A user pause keeps its session. If iOS refuses the
+  activation at the return (a call that began while the app was away, whose interruption the
+  inactive session never hears of), playback stays on hold as an open interruption, "Interrupted"
+  with its track and position, and Play continues (AUD-014-R6, R8); any other resume failure still
+  ends as "In-App Playback failed". AUD-015-R2, R10 and AUD-014's rules are unchanged; tests
+  `InterruptionRecoveryTests` (QA-011 D2 section) and `InterruptionPipelineTests.testABackground
+  RoundTripWithAConfigurationChangeAwayResumesFromThePosition`.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The microphone never listens in the background (Priority: P1)

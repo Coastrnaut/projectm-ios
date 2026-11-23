@@ -388,6 +388,73 @@ final class InterruptionRecoveryTests: XCTestCase {
         XCTAssertEqual(rig.backend.resumeCount, 1, "AUD-006-R21: a user pause is not resumed")
     }
 
+    // MARK: - QA-011 D2 2026-11-23: the audio session while away (AUD-015-R2, R10; AUD-014-R6, R8)
+
+    /// D2 (iPadOS 27.2.1): after background, a rotation while away and the return, playback stayed
+    /// "Paused · Interrupted": the suspended app's still-active session was interrupted and iOS
+    /// never ended it. Going away now releases the session, so the plain round trip resumes.
+    func testGoingAwayReleasesTheAudioSessionAndThePlainReturnResumes() async {
+        for (leave, back) in [(AppLifecycleEvent.background, AppLifecycleEvent.foreground), (.lock, .unlock)] {
+            let rig = await playing()
+            await rig.manager.handle(leave)
+            XCTAssertEqual(rig.backend.pauseCount, 1, "\(leave)")
+            XCTAssertEqual(rig.backend.releaseCount, 1, "\(leave): no active session while away")
+            XCTAssertTrue(rig.backend.sessionReleased)
+            XCTAssertEqual(rig.manager.state, .paused)
+            XCTAssertNil(rig.manager.stopReason)
+            await rig.manager.handle(back)
+            XCTAssertEqual(rig.backend.resumeCount, 1, "\(leave): FR-050 resumes on the return")
+            XCTAssertFalse(rig.backend.sessionReleased, "the resume activates it again")
+            XCTAssertEqual(rig.transport.state, .playing)
+            XCTAssertEqual(rig.transport.position.seconds, 10)
+        }
+    }
+
+    func testAUserPauseKeepsItsSessionAndIsNotReleasedOrResumed() async {
+        let rig = await playing()
+        await rig.transport.pause()
+        await rig.manager.handle(.background)
+        XCTAssertEqual(rig.backend.releaseCount, 0, "only the lifecycle hold releases the session")
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.backend.resumeCount, 0, "AUD-006-R21")
+    }
+
+    /// A call that began while the app was away: its interruption never reaches the released
+    /// session, and iOS refuses the activation at the return. Playback stays on hold as an open
+    /// interruption ("Interrupted", track and position kept) instead of failing; Play continues.
+    func testARefusedSessionAtTheReturnStaysOnHoldAsInterrupted() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        rig.backend.resumeError = SourceError(.inAppPlaybackFailed, detail: SourceError.audioSessionRefusedDetail)
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.backend.refusedResumeCount, 1)
+        assertOnHold(rig, state: .paused, reason: .interrupted)
+        XCTAssertEqual(rig.backend.stopCount, 0)
+        XCTAssertEqual(rig.transport.current?.id, "a")
+        XCTAssertEqual(rig.transport.position.seconds, 10)
+
+        await rig.manager.handle(.background)         // away and back again: still on hold, no retry loop
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.backend.refusedResumeCount, 1)
+        assertOnHold(rig, state: .paused, reason: .interrupted)
+
+        rig.backend.resumeError = nil
+        await rig.transport.play()
+        XCTAssertEqual(rig.backend.resumeCount, 1)
+        XCTAssertEqual(rig.transport.state, .playing)
+        XCTAssertNil(rig.manager.stopReason)
+    }
+
+    func testAnotherResumeFailureAtTheReturnStillEndsAsFailed() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        rig.backend.resumeError = SourceError(.inAppPlaybackFailed)     // the engine, not the session
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.manager.state, .stopped)
+        XCTAssertEqual(rig.manager.stopReason, .inAppPlaybackFailed)
+        XCTAssertFalse(rig.transport.isAvailable)
+    }
+
     // MARK: - Microphone is unchanged (AUD-014-R9, S5)
 
     func testMicrophoneKeepsItsFeature001Behavior() async {
