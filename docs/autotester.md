@@ -1235,6 +1235,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   exit 65" before running. Any test that touches a DEBUG-only hook goes inside `#if DEBUG`; check with
   `xcodebuild build-for-testing -scheme DeviceTests -configuration Release ENABLE_TESTABILITY=YES`.
 
+- **Size a DEBUG storage reserve to the device** (D1, 2026-11-23). REC-009/REC-015 set an 8000 MB guard reserve (chosen
+  on the iPads); D1 had 3.6 GB free, so the app correctly refused to record ("refused: lowStorage").
+  `B08RecordingDeviceTests.guardReserveMB(above:)` reads the guard's free-space figure in the runner (same volume) and
+  keeps 8000 MB only when there is room, else 1000 MB below the free space.
+- **Read a vanishing label from one snapshot** (REC-007, D1, 2026-11-23). `countdown.exists` then `countdown.label`
+  raced the countdown's last second ("Failed to get matching snapshot"); `try? element.snapshot()` reads both at once.
+- **iOS 27 iPhone share sheets hide actions under "View More"** (REC-012, D1, 2026-11-23): the frame's sheet listed
+  Save to Files only there. `shareSheet` and REC-012 expand it. Never print a share sheet's whole label list: its first
+  rows are people and devices suggested from the owner's contacts; print only the asked labels.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

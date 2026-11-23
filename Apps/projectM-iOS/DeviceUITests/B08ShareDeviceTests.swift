@@ -202,6 +202,9 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
 
     private func sheetLabels() -> Set<String> {
         var labels = Set<String>()
+        // iOS 27 on the iPhone (D1, 2026-11-23): the frame's sheet lists Save to Files only under "View More" (the
+        // recording's sheet shows it directly). Expand it once when the asked actions are not all shown.
+        expandViewMoreIfNeeded()
         _ = wait(6) {
             labels = self.snapshotLabels()
             for label in Self.askedLabels where !labels.contains(label) {
@@ -212,6 +215,13 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
             return labels.contains("AirDrop") && labels.contains("Save to Files")
         }
         return labels
+    }
+
+    private func expandViewMoreIfNeeded() {
+        let save = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Save to Files")).firstMatch
+        guard !wait(3, { save.exists }) else { return }
+        let more = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "View More")).firstMatch
+        if more.exists, more.isHittable { more.tap(); _ = wait(3) { save.exists } }
     }
 
     private func snapshotLabels() -> Set<String> {
@@ -246,7 +256,8 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
         noPrompt("\(kind) share sheet")
         let labels = sheetLabels()
         let popover = app.otherElements["PopoverDismissRegion"].exists
-        print("B08 \(task) \(kind) sheet: \(labels.sorted()) popover=\(popover)")
+        // Only the asked actions: the sheet's other rows are people and devices suggested from the owner's contacts.
+        print("B08 \(task) \(kind) sheet: \(labels.intersection(Self.askedLabels).sorted()) popover=\(popover)")
         screen(task, "\(kind) share sheet")
         for wanted in ["AirDrop", "Save to Files"] + (pad ? [] : ["Messages"]) {
             XCTAssertTrue(labels.contains(wanted), "\(kind): the sheet offers \(wanted)")

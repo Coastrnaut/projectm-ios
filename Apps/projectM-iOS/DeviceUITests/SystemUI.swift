@@ -1290,9 +1290,9 @@ final class SystemUI {
     func shareSheet(_ activity: String) -> Bool {
         let target = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", activity)).firstMatch
         if !wait(5, { target.exists }) {
-            // The second row scrolls sideways; More lists every action.
-            let more = app.buttons["More"].firstMatch
-            if more.exists { more.tap() }
+            // The second row scrolls sideways; More (iOS 27 iPhone: "View More") lists every action.
+            let more = app.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["More", "View More"])).firstMatch
+            if more.exists, more.isHittable { more.tap() }
         }
         guard wait(5, { target.exists }) else {
             XCTFail("share sheet: no \(activity)")

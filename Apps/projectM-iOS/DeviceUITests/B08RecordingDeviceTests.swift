@@ -248,6 +248,24 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
     /// Waits for the disk ballast to settle (filled, capped, failed or out of time) and reports its readings. The fill
     /// writes the whole free space but the target (43 GB on D3 in pass 3), so it may take minutes; the app ends it
     /// "state=slow" after `UITestDiskBallast.fillBudgetSeconds` (360 s) and this waits 30 s longer.
+    /// The DEBUG guard reserve and ballast target for this device: 8000 MB (8 GB above full: D2 left the network twice
+    /// with the 200 MiB default) when the device has room, else 1000 MB below the guard's own free-space reading, so the
+    /// recording can start. D1 2026-11-23 had 3.6 GB free: with the fixed 8000 MB reserve the app refused to record
+    /// ("refused: lowStorage", correct for that reserve). The reading is the guard's (`VolumeStorageReading.guardBytes`,
+    /// the smaller of the important-use and plain capacities), taken in the runner, which shares the app's volume.
+    static func guardReserveMB(above: Int) throws -> (reserve: Int, target: Int) {
+        let keys: Set<URLResourceKey> = [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey]
+        let values = try URL(fileURLWithPath: NSHomeDirectory()).resourceValues(forKeys: keys)
+        let important = values.volumeAvailableCapacityForImportantUsage ?? Int64.max
+        let plain = Int64(values.volumeAvailableCapacity ?? Int.max)
+        let freeMB = Int(min(important, plain) / 1_000_000)
+        let reserve = freeMB >= 8000 + above + 1000 ? 8000 : freeMB - 1000 - above
+        guard reserve >= 500 else {
+            throw XCTSkip("only \(freeMB) MB free: too little room for a guard reserve and the ballast; free space first")
+        }
+        return (reserve, reserve + above)
+    }
+
     private func waitForBallast(_ task: String) -> String {
         let started = Date()
         var lastPrinted = Date.distantPast
@@ -300,12 +318,13 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
 
     /// REC-009-T11: the status lines (duration, dropped frames, storage, with a real low-storage reading from the disk
     /// ballast) show while recording the Photo visual, and none of their text is in the file (Vision OCR on the Mac).
-    func testREC009StatusLinesAreNotInTheFile() {
+    func testREC009StatusLinesAreNotInTheFile() throws {
         let task = "REC-009-T11"
         let folder = "QA011-REC009"
         usedBallast = true
+        let (reserve, _) = try Self.guardReserveMB(above: 390)
         launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestRecordingDirectory", folder,
-                                        "-uitestDiskBallast", "8390", "-uitestDiskGuardReserveMB", "8000"])
+                                        "-uitestDiskBallast", "\(reserve + 390)", "-uitestDiskGuardReserveMB", "\(reserve)"])
         let ballast = waitForBallast(task)
         guard let began = startRecording("status lines") else { return XCTFail("the recording did not start: \(videoProbe)") }
         let dropped = app.descendants(matching: .any)["recordingDroppedFrames"].firstMatch
@@ -338,11 +357,12 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         let task = "REC-015-T17"
         usedBallast = true
         // An 8 GB guard reserve (DEBUG): the ballast stops 8.5 GB above full, not 700 MB (D2 left the network twice).
-        launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestDiskBallast", "8490",
-                                        "-uitestDiskBallastGrowMBps", "20", "-uitestDiskGuardReserveMB", "8000"])
+        let (reserve, target) = try Self.guardReserveMB(above: 490)
+        launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestDiskBallast", "\(target)",
+                                        "-uitestDiskBallastGrowMBps", "20", "-uitestDiskGuardReserveMB", "\(reserve)"])
         let ballast = waitForBallast(task)
         if ballast.hasPrefix("state=capped") || ballast.hasPrefix("state=failed") {
-            throw XCTSkip("the ballast could not bring the guard's reading to 8490 MB (\(ballast)): purgeable storage keeps "
+            throw XCTSkip("the ballast could not bring the guard's reading to \(target) MB (\(ballast)): purgeable storage keeps "
                           + "it higher on this device; free space by hand for this check")
         }
         if ballast.hasPrefix("state=slow") {
@@ -402,9 +422,11 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         while Date().timeIntervalSince(tapped) < 8 {
             let said = (app.staticTexts["announcementProbe"].value as? String) ?? ""
             if spoken.last != said { spoken.append(said) }
-            if countdown.exists, shown.last != countdown.label {
-                shown.append(countdown.label)
-                if firstSeen[countdown.label] == nil { firstSeen[countdown.label] = Date() }
+            // One snapshot per poll: `exists` then `label` raced the countdown's last second (D1 2026-11-23: "Failed to
+            // get matching snapshot" for recordingCountdown as "1" went away between the two queries).
+            if let label = (try? countdown.snapshot())?.label, !label.isEmpty, shown.last != label {
+                shown.append(label)
+                if firstSeen[label] == nil { firstSeen[label] = Date() }
             }
             if recordingIndicator.exists { startedAt = Date(); break }
             pause(0.1)
