@@ -51,6 +51,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: How do pulses reach the main thread quickly enough? → A: They ride SHOW-011's existing tempo subscription (one bus reader app-wide, PERF-011 lifecycle). While the switch is on, the tempo poll runs every 40 ms instead of 250 ms and hands each drained event to the haptic coordinator; no second pipeline or subscription (`ACC-007-R7`, research D2).
 - Q: Stored, backed up, in scenes? → A: Three local preferences (`settings.haptics.beatPulses`, `.beatEvent`, `.strength`), included in the FILE-005 backup and erased with Settings (FILE-011), removed by the UI-test reset; never in scenes, cues, MIDI, OSC or modulation (`ACC-007-R8`, `R9`).
 
+### Session 2026-11-22 (QA-011 device run)
+
+- Q: ACC-007-T13 on D1 (full run 1, the first run on haptic hardware) counted 2 Beats pulses in 12 s (an earlier D1 run: Beats 2, Downbeats 1, Kicks 13); do pulses not fire? → A: The count window was the problem, not the app. It started about 8 s after launch, inside the music fixture's 10 s intro, which has no drums (scripts/make_music_fixture.py), so ANL-005's beats had not reached confidence 0.5 before the window ended, while kicks pulsed in the last seconds of it. Every count (and the Strict and switch-off zeros) now starts once playback reaches 20 s, in the chorus with drums. The fixture's kick falls on every beat, so in the chorus Kicks and Beats give about the same count: the device check for Kicks is now that they pulse with the drums (more than 12 in 12 s), and that only kicks pulse stays ACC-007-S3's host test (QA-011 device run 2026-11-22).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Feel the beat, only when asked (Priority: P1) — MVP

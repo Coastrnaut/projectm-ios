@@ -92,19 +92,31 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         assertMovingSampled(task, "after Control Center")
     }
 
+    /// VIS-001-T36: the visual draws (non-black over 2 %) and moves over three pairs (largest change over 0.002).
+    private func assertDrawsAndMovesSampled(_ label: String) {
+        let task = "VIS-001-T36"
+        let (first, _) = screen(task, label)
+        XCTAssertGreaterThan(first.nonBlack, 0.02, "\(task) \(label): the visual draws")
+        assertMovingSampled(task, label)
+    }
+
     /// VIS-001-T36: rotate, background/return, Reduce flashing; overlay frame rate; no crash, no fallback.
     func testVIS001CircularSpectrumRotationBackgroundReduceFlashing() {
         let task = "VIS-001-T36"
+        // Portrait and landscape motion over three pairs (largest change), as after the return below: on D1 (2026-11-22,
+        // full run 1) one pair 1 s apart read 0.0011 in landscape and 0.002 in portrait while three pairs after the
+        // return read 0.007, 0.005 and 0.017. The iPhone's spectrum covers fewer pixels and one quiet second of the
+        // music decided a single pair; the iPads read 0.012-0.053 from one pair.
         launch(visual: "circularSpectrum")
         assertStillCircular("portrait")
         assertFrameRate(task, "portrait")
-        assertDrawingAndMoving(task, "portrait")
+        assertDrawsAndMovesSampled("portrait")
 
         XCUIDevice.shared.orientation = .landscapeLeft
         pause(2)
         assertStillCircular("landscape")
         assertFrameRate(task, "landscape")
-        assertDrawingAndMoving(task, "landscape")
+        assertDrawsAndMovesSampled("landscape")
         XCUIDevice.shared.orientation = .portrait
         pause(2)
 

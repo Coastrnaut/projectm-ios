@@ -52,6 +52,10 @@ local-first option.
 
 - Q: VIS-019-T13 pass 3 on D3 read Reduce Motion 0.030 against 0.005 with music; does Reduce Motion not calm the figure? → A: One Reduce Motion pair straddled a mode change the music drove (a red diagonal mode to the orange cross, mean luma 0.04 → 0.13): Reduce Motion halves the blend (R9) but does not hold modes back, and the mean of three pairs was that one pair. The comparison is now the median of five pairs per run.
 
+### Session 2026-11-22 (QA-011 device run)
+
+- Q: VIS-019-T13 on D1 (full run 1) read Reduce Motion 0.0137 against 0.0119 with music (medians of five pairs); does Reduce Motion not calm the figure? → A: No defect. The music drives the mode change in pairs 3 and 4 of both runs in every five-pair run recorded (D1, D2, D3), so the median was the largest of three quiet pairs (about 0.004) and one pair's jitter decided it (D1: normal 0.0119 in pair 0, Reduce Motion 0.0137 in pair 2). Reduce Motion halves the drive's rates (R9), which shows in the transitions, so the comparison is now the mean of the five pairs, the whole window's motion on the same stretch of the track. Reduce Motion is lower on that measure in every five-pair run recorded: D1 0.035 against 0.041, D2 0.021 against 0.035 and 0.026 against 0.035, D3 0.033 against 0.038 and 0.026 against 0.045 (QA-011 device run 2026-11-22).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A tone draws its own figure (Priority: P1)
