@@ -64,6 +64,15 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
     }
 
     func closeSettingsPanel() {
+        // Done lives only on the root Settings screen: from a pushed screen (Show Editor › Scene Folders) go back first,
+        // or the panel stays open and covers the show controls (FILE-001-T19 on D3, 2026-11-23).
+        for _ in 0..<4 where !app.navigationBars["Settings"].exists {
+            // Only a real back button (never a sheet's Cancel or a toolbar item).
+            let back = app.navigationBars.buttons.matching(identifier: "BackButton").firstMatch
+            guard back.exists, back.isHittable else { break }
+            back.tap()
+            _ = wait(2) { self.app.navigationBars["Settings"].exists }
+        }
         let done = app.navigationBars["Settings"].buttons["Done"]
         if done.exists { done.tap() }
         _ = wait(5) { !self.app.navigationBars["Settings"].exists }

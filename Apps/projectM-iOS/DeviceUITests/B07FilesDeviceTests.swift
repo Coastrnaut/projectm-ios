@@ -480,6 +480,25 @@ final class B07FilesDeviceTests: B07Case {
         pause(1)
     }
 
+    /// From Scene Folders: back to the Show Editor, then the last cue's leading swipe › Go (the row's "Go to Cue").
+    private func goToLastCue(_ task: String) {
+        let back = app.navigationBars.buttons.matching(identifier: "BackButton").firstMatch
+        if back.exists { back.tap() }
+        let rows = app.descendants(matching: .any).matching(NSPredicate(format: "identifier MATCHES 'showCue[0-9]+'"))
+        XCTAssertTrue(wait(5) { rows.count > 0 }, "\(task): the show's cues are listed")
+        // Every row's value starts "Cue n of N": N names the last row.
+        let value = rows.firstMatch.value as? String ?? ""
+        let total = value.split(separator: " ").dropFirst(3).first.map { String($0).trimmingCharacters(in: .punctuationCharacters) }
+        guard let total, let count = Int(total) else { return XCTFail("\(task): cue count from \"\(value)\"") }
+        let last = app.descendants(matching: .any)["showCue\(count)"].firstMatch
+        XCTAssertTrue(scrollTo(last), "\(task): cue \(count) (the imported scene)")
+        last.swipeRight()
+        let go = app.buttons["Go"].firstMatch
+        XCTAssertTrue(wait(3) { go.exists }, "\(task): Go on cue \(count)")
+        go.tap()
+        pause(1)
+    }
+
     /// FILE-001-T19 on D1: a scene holding a photo and a video, exported as a .pmscene through the real share sheet
     /// into Documents; the Mac pulls it for D3. The scene is the DEBUG seed "Photo and Video" (`-uitestPhotoVideoScene`:
     /// the stored photo under the stored video, one cue): Add Current Scene records one visual's fixed stack, so under
@@ -527,8 +546,8 @@ final class B07FilesDeviceTests: B07Case {
         XCTAssertTrue(media.label.contains("1 photo") && media.label.contains("1 video"), "\(task): \(media.label)")
         app.buttons["scenePackImport"].firstMatch.tap()
         XCTAssertTrue(wait(15) { self.text("scenePackStatus").hasPrefix("Imported") }, "\(task): \(text("scenePackStatus"))")
+        goToLastCue(task)   // the imported cue is appended; D3's show keeps earlier runs' cues, so Next Cue can miss it
         closeSettingsPanel()
-        stepNextCue()
         XCTAssertTrue(wait(30) { self.photoValue == "Photo 64 × 48" }, "\(task): the imported photo shows: \(photoValue)")
         openSettingsPanel()
         _ = scrollTo(element("photoSummary"))
