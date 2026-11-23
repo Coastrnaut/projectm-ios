@@ -4,6 +4,10 @@ import AudioCore
 /// Events a running source reports to the CaptureManager.
 public enum SourceEvent: Sendable, Equatable {
     case interruptionBegan
+    /// "Interruption began" that iOS marked as not about the app's suspension: "was suspended" explicitly false, or a
+    /// reason other than default, app suspended or route disconnected. Never taken for a suspension notice
+    /// (QA-011 D2 2026-11-23, `CaptureManager.suspensionNoticeWindow`).
+    case interruptionBeganExternal
     case interruptionEnded(shouldResume: Bool)
     /// In-App Playback lost its output route (e.g. headphones unplugged); the source paused itself.
     case outputRouteLost

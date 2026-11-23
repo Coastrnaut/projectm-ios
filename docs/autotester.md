@@ -1435,6 +1435,12 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     PERF-011-T22 and VIS-001-T36 print it as `SESSION-TRACE <task> resumed|NOT resumed: …` after every return and
     put its last 1,500 characters in the failure message: grep the run log for `SESSION-TRACE`. The app also retries
     a refused return at didBecomeActive (AUD-015 Clarifications, r14).
+  - *The trace decided it in one run (r15).* `d2diag1` VIS-001: `session.deactivate ok` at 53.51 s, then
+    `notice interruption type=1 reason=0 options=- wasSuspended=-` at 53.52 s with `app=background`, no end, and the
+    return's `policy: stayPaused(interrupted) signal=pending`. iPadOS 27.2.1 posts a suspension notice as a plain
+    interruption about 10 ms after the app backgrounds; neither guessed cause was it. A plain "began" within 1.0 s of the
+    away hold (`CaptureManager.suspensionNoticeWindow`) is now recorded as `suspension notice: <n> ms after the away
+    hold` and opens nothing. Lesson: log first, then fix; two guesses cost two device rounds, the trace one.
 
 ## What still needs a person
 

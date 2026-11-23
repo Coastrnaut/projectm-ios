@@ -119,6 +119,19 @@ public final class CaptureManager {
     /// does while the app is still in the background state at "will enter foreground"). It is tried once more when
     /// the app becomes active (`noteAppBecameActive()`), unless something else happened meanwhile.
     @ObservationIgnored private var retryWhenActive = false
+    /// QA-011 D2 2026-11-23: when the app last held In-App Playback for being away (`holdWhileAway`); nil once the app
+    /// is presentable again or a new attempt starts.
+    @ObservationIgnored private var awayHoldAt: Double?
+    /// The clock of `awayHoldAt` and of the source events' arrival, in seconds (tests inject their own).
+    @ObservationIgnored public var lifecycleClock: @Sendable () -> Double = { MonotonicClock.nowSeconds() }
+
+    /// QA-011 D2 2026-11-23 (AUD-014 and AUD-015 Clarifications): on iPadOS 27.2.1 iOS posts "interruption began"
+    /// (default reason, no "was suspended" value) about 10 ms after the app enters the background and releases its
+    /// session, and never posts its end. A plain "began" (`SourceEvent.interruptionBegan`) that arrives within this
+    /// many seconds of the away hold, while the app is still away and playback is held only for being away, is that
+    /// suspension notice: it is recorded in the trace and opens no AUD-014 interruption, so the return resumes per
+    /// AUD-015. A later "began" while away (a call or an alarm) still opens one.
+    public static let suspensionNoticeWindow: Double = 1.0
     /// AUD-015-R5: in the background (until the next foreground) and locked (until an unlock or
     /// the next foreground), tracked independently.
     @ObservationIgnored private var isBackgrounded = false
@@ -336,6 +349,7 @@ public final class CaptureManager {
                 self.isLocked = false
             case .unlock: self.isLocked = false
             }
+            if self.isPresentable { self.awayHoldAt = nil }
             guard let source = self.current, let mode = self.activeMode else { return }
             switch event {
             case .background, .lock:
@@ -387,6 +401,16 @@ public final class CaptureManager {
         }
     }
 
+    /// Seconds between the away hold and a "began" received at `receivedAt`, when that "began" is the suspension
+    /// notice (`suspensionNoticeWindow`); nil otherwise.
+    private func suspensionNoticeDelay(receivedAt: Double) -> Double? {
+        guard !isPresentable, let held = awayHoldAt, activeMode == .inAppPlayback, state == .paused, pauseReason == nil,
+              !isPausedByUser, interruption == nil else { return nil }
+        let delay = receivedAt - held
+        // Received just before the hold finished (the release itself prompts it) also counts.
+        return abs(delay) <= Self.suspensionNoticeWindow ? delay : nil
+    }
+
     /// The manager's state for `AudioSessionTrace`.
     private var traceState: String {
         let open = interruption.map { "\($0.signal)\($0.openedByRefusedReturn ? "/refusedReturn" : "")" } ?? "none"
@@ -401,6 +425,7 @@ public final class CaptureManager {
             return
         }
         AudioSessionTrace.shared.record("hold: suspending while away")
+        awayHoldAt = lifecycleClock()
         // In-App Playback also releases its audio session while away (QA-011 D2 2026-11-23).
         await source.suspendWhileAway()
         // AUD-014: an open interruption of In-App Playback stays visible as the reason.
@@ -534,6 +559,7 @@ public final class CaptureManager {
         isPausedByUser = false
         userPauseIsStop = false
         interruption = nil
+        awayHoldAt = nil
         backgroundNotice = nil   // AUD-015-R7: a new attempt
         state = update.state
         stopReason = nil
@@ -618,21 +644,29 @@ public final class CaptureManager {
 
     private func handleSourceEvent(_ event: SourceEvent, from source: any AudioSource) async {
         switch event {
-        case .interruptionBegan: log("interruptionBegan")
+        case .interruptionBegan, .interruptionBeganExternal: log("interruptionBegan")
         case .interruptionEnded: log("interruptionEnded")
         case .outputRouteLost: log("routeChange")
         case .endedBySystem: log("streamStopped")
         case .formatChanged: log("formatChange")
         case .failed: break
         }
+        let receivedAt = lifecycleClock()
         await serialized {
             guard self.current === source, let mode = self.activeMode else { return }
             AudioSessionTrace.shared.record("source event \(event)")
             switch event {
-            case .interruptionBegan:
+            case .interruptionBegan, .interruptionBeganExternal:
                 // FR-051: for System/App Capture an interruption alone changes nothing.
                 guard mode != .systemAppCapture else { return }
-                if mode == .inAppPlayback { self.openInterruption() }
+                if mode == .inAppPlayback {
+                    if event == .interruptionBegan, let delay = self.suspensionNoticeDelay(receivedAt: receivedAt) {
+                        AudioSessionTrace.shared.record("suspension notice: \(Int((delay * 1000).rounded())) ms after the away hold, "
+                                                        + "no interruption opened")
+                        return
+                    }
+                    self.openInterruption()
+                }
                 self.apply(.interruptionBegan)
             case .interruptionEnded(let shouldResume):
                 if mode == .inAppPlayback {

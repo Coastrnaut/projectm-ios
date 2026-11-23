@@ -302,10 +302,10 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         guard let graph, let onEvent else { return }
         AudioSessionTrace.shared.record("backend signal \(signal) held=\(graph.isPaused ? 1 : 0)")
         switch signal {
-        case .interruptionBegan(let outputDisconnected):
+        case .interruptionBegan(let outputDisconnected, let external):
             // Hold the position of this moment (AUD-014-R10); iOS has stopped the audio.
             graph.pause()
-            onEvent(.interruptionBegan)
+            onEvent(external ? .interruptionBeganExternal : .interruptionBegan)
             if outputDisconnected { onEvent(.outputRouteLost) }
         case .interruptionEnded(let shouldResume):
             onEvent(.interruptionEnded(shouldResume: shouldResume))
