@@ -207,45 +207,85 @@ final class SystemUI {
         return preferences.cells.matching(byLabel).firstMatch
     }
 
-    /// Scrolls the Settings lists until `element` is hittable (at most `swipes` slow swipes each way per list): the
-    /// list that holds it when it exists, else the page list first (the sidebar first for a root row, `root`).
+    /// True when `element` can take a tap: it exists, is hittable and lies above the chrome floating over the list's
+    /// foot. On iOS 27 for iPhone Settings' search field floats over the bottom of the root list (D1, 2026-11-22/23); a
+    /// row under it has a frame inside the window, so `isHittable` is true while a tap opens the search instead.
+    func isReachable(_ element: XCUIElement, in application: XCUIApplication) -> Bool {
+        guard element.exists, element.isHittable else { return false }
+        let frame = element.frame
+        return frame.height > 0 && frame.maxY <= application.bottomChromeTop
+    }
+
+    /// Scrolls the Settings lists until `element` is reachable (at most `swipes` slow steps each way per list): the
+    /// list that holds it when it exists, else the page list first (the sidebar first for a root row, `root`). Steps
+    /// start clear of the list's edges and switches (`scrollStep`): a plain `swipeUp()` can start on the iPhone's
+    /// floating search field.
     @discardableResult
     func scrollTo(_ element: XCUIElement, in application: XCUIApplication, swipes: Int = 8, root: Bool = false) -> Bool {
-        if element.exists && element.isHittable { return true }
+        scrollTo({ element }, in: application, swipes: swipes, root: root) != nil
+    }
+
+    /// As `scrollTo(_:in:)`, resolving the element afresh before every check. A Settings row that is off screen does
+    /// not exist (lazy cells), so a query fixed before scrolling (`settingsRow` falls back to cells) never matched the
+    /// row when it came into view as a text or a button: D1 (iOS 27.0.1, 2026-11-23) never found Settings' root
+    /// "Accessibility" row in 16 swipes (ACC-001, ACC-003, ACC-008) and reached "Battery" only through the search.
+    func scrollTo(_ resolve: () -> XCUIElement, in application: XCUIApplication, swipes: Int = 8,
+                  root: Bool = false) -> XCUIElement? {
+        func ready() -> XCUIElement? {
+            let element = resolve()
+            return isReachable(element, in: application) ? element : nil
+        }
+        if let element = ready() { return element }
         var lists = settingsLists(in: application, root: root)
-        if element.exists {
-            let x = element.frame.midX
+        let current = resolve()
+        if current.exists {
+            let x = current.frame.midX
             lists = lists.filter { $0.frame.minX <= x && x <= $0.frame.maxX } + lists.filter { !($0.frame.minX <= x && x <= $0.frame.maxX) }
         }
         for list in lists.prefix(2) {
-            for _ in 0..<swipes where !(element.exists && element.isHittable) { list.swipeUp(velocity: .slow) }
-            for _ in 0..<swipes where !(element.exists && element.isHittable) { list.swipeDown(velocity: .slow) }
-            if element.exists && element.isHittable { return true }
+            for _ in 0..<swipes {
+                list.scrollStep(up: true)
+                if let element = ready() { return element }
+            }
+            for _ in 0..<swipes {
+                list.scrollStep(up: false)
+                if let element = ready() { return element }
+            }
         }
-        return element.exists && element.isHittable
+        return ready()
     }
 
     /// Taps the Settings row `label`, scrolling to it first; false when it cannot be found. `root`: a row of the
-    /// Settings root (the sidebar on an iPad).
+    /// Settings root (the sidebar on an iPad). A root row that scrolling does not reach is opened through Settings'
+    /// own search, as Low Power Mode was on D1 (2026-11-22).
     @discardableResult
     func tapSettingsRow(_ label: String, root: Bool = false) -> Bool {
         _ = wait(3) { self.settingsRow(label).exists }
-        var row = settingsRow(label)
-        if !scrollTo(row, in: preferences, root: root) {
-            row = settingsRow(label)   // re-resolve after scrolling (cells are reused)
-            guard row.exists, row.isHittable else { return false }
+        if let row = scrollTo({ self.settingsRow(label) }, in: preferences, root: root) {
+            row.tap()
+            pause(0.6)
+            return true
         }
-        row.tap()
-        pause(0.6)
-        return true
+        guard root else { return false }
+        print("SYSTEM-UI root row \(label) not reached by scrolling; trying Settings' search")
+        openSettingsRoot()
+        return searchSettings(for: label)
     }
 
-    /// Walks `rows` from the Settings root.
-    func openSettings(path rows: [String]) {
+    /// Walks `rows` from the Settings root. `assert` false: stops at the first row not found without failing the test
+    /// (the caller has a fallback); returns whether every row was tapped.
+    @discardableResult
+    func openSettings(path rows: [String], assert: Bool = true) -> Bool {
         openSettingsRoot()
         for (i, row) in rows.enumerated() {
-            XCTAssertTrue(tapSettingsRow(row, root: i == 0), "Settings row \(row)")
+            let tapped = tapSettingsRow(row, root: i == 0)
+            if assert { XCTAssertTrue(tapped, "Settings row \(row)") }
+            if !tapped {
+                print("SYSTEM-UI Settings row \(row) not found")
+                if !assert { return false }
+            }
         }
+        return true
     }
 
     /// The app's own page: Settings › Apps › projectM (iOS 18 and later), found by scrolling or the Apps search field.
@@ -420,15 +460,18 @@ final class SystemUI {
     /// iPhone (D1, 2026-11-22) Battery showed no Low Power Mode switch (it lives under Battery › Power Mode next to
     /// Adaptive Power since iOS 26), so that row is followed when the switch is missing, then Settings' own search.
     /// When the switch is still not found, the page is printed for the next run. Other settings: `path` as is.
+    /// Any other setting whose switch is not on the page the path reached is searched for by its switch label too
+    /// (D1, 2026-11-23: the Accessibility rows were not reached by scrolling).
     func openSettingPage(_ setting: SystemSetting) {
         let (rows, label) = setting.path
-        openSettings(path: rows)
-        guard setting == .lowPower, !wait(3, { self.settingsSwitch(label).exists }) else { return }
-        if tapSettingsRow("Power Mode"), wait(3, { self.settingsSwitch(label).exists }) { return }
+        openSettings(path: rows, assert: false)
+        guard !wait(3, { self.settingsSwitch(label).exists }) else { return }
+        if setting == .lowPower, tapSettingsRow("Power Mode"), wait(3, { self.settingsSwitch(label).exists }) { return }
         openSettingsRoot()
         if searchSettings(for: label) {
             if wait(3, { self.settingsSwitch(label).exists }) { return }
-            if tapSettingsRow("Power Mode"), wait(3, { self.settingsSwitch(label).exists }) { return }
+            let page = setting == .lowPower ? "Power Mode" : rows.last ?? label
+            if tapSettingsRow(page), wait(3, { self.settingsSwitch(label).exists }) { return }
         }
         print("SYSTEM-UI no \(label) switch; Settings shows:\n\(preferences.debugDescription.prefix(8000))")
     }
@@ -1310,8 +1353,12 @@ final class SystemUI {
         camera.launch()
         XCTAssertTrue(camera.wait(for: .runningForeground, timeout: 10), "Camera is in front")
         selectCameraMode(["PHOTO", "Photo"])
-        let shutter = camera.buttons["PhotoCapture"]
-        XCTAssertTrue(wait(5) { shutter.exists }, "the Camera shutter")
+        var shutter = cameraShutter(video: false)
+        var found = wait(5) { shutter = self.cameraShutter(video: false); return shutter.exists }
+        if !found { closeCameraControls(); found = wait(3) { shutter = self.cameraShutter(video: false); return shutter.exists } }
+        if !found { printCameraButtons() }
+        XCTAssertTrue(found, "the Camera shutter")
+        guard found else { app.activate(); return }
         shutter.tap()
         pause(2)
         app.activate()
@@ -1323,8 +1370,12 @@ final class SystemUI {
         camera.launch()
         XCTAssertTrue(camera.wait(for: .runningForeground, timeout: 10), "Camera is in front")
         selectCameraMode(["VIDEO", "Video"])
-        let shutter = camera.buttons["VideoCapture"].exists ? camera.buttons["VideoCapture"] : camera.buttons["PhotoCapture"]
-        XCTAssertTrue(wait(5) { shutter.exists }, "the Camera record button")
+        var shutter = cameraShutter(video: true)
+        var found = wait(5) { shutter = self.cameraShutter(video: true); return shutter.exists }
+        if !found { closeCameraControls(); found = wait(3) { shutter = self.cameraShutter(video: true); return shutter.exists } }
+        if !found { printCameraButtons() }
+        XCTAssertTrue(found, "the Camera record button")
+        guard found else { app.activate(); return }
         shutter.tap()
         pause(seconds)
         shutter.tap()
@@ -1332,12 +1383,47 @@ final class SystemUI {
         app.activate()
     }
 
+    /// Picks a Camera mode by its label. A tap on the mode that is already chosen opens the Camera Controls drawer on
+    /// iOS 26 and later, which takes the shutter off the accessibility tree: MED-014-T23 on D1 (iOS 27.0.1, 2026-11-23)
+    /// tapped "PhotoModeButton" while Photo was chosen, then found only the drawer's buttons ("Dismiss Camera
+    /// Controls", "Edit", Flash, Live Photo, Aspect Ratio…) and no "PhotoCapture" for 5 s. The chosen mode is left
+    /// alone and an open drawer is closed.
     private func selectCameraMode(_ labels: [String]) {
         let camera = Self.camera
         for label in labels {
             let mode = camera.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
-            if mode.exists { mode.tap(); pause(1); return }
+            if mode.exists {
+                if !mode.isSelected { mode.tap(); pause(1) }
+                break
+            }
         }
+        closeCameraControls()
+    }
+
+    /// Closes the Camera Controls drawer when it is open (its "Dismiss Camera Controls" button is hittable).
+    private func closeCameraControls() {
+        let dismiss = Self.camera.buttons.matching(NSPredicate(format: "label == %@", "Dismiss Camera Controls")).firstMatch
+        for _ in 0..<2 where dismiss.exists && dismiss.isHittable {
+            print("SYSTEM-UI Camera Controls drawer open: closing it")
+            dismiss.tap()
+            pause(0.8)
+        }
+    }
+
+    /// The Camera app's shutter (Photo) or record button (Video): by identifier first, then by label.
+    private func cameraShutter(video: Bool) -> XCUIElement {
+        let camera = Self.camera
+        let ids = video ? ["VideoCapture", "PhotoCapture", "CaptureButton", "ShutterButton"]
+                        : ["PhotoCapture", "CaptureButton", "ShutterButton"]
+        for id in ids where camera.buttons[id].exists { return camera.buttons[id] }
+        let labels = video ? ["Record", "Start Recording", "Record Video", "Shutter"] : ["Take Picture", "Take Photo", "Shutter"]
+        return camera.buttons.matching(NSPredicate(format: "label IN %@", labels)).firstMatch
+    }
+
+    /// The Camera app's buttons (identifier and label) for the next run, when no shutter was found.
+    private func printCameraButtons() {
+        let buttons = Self.camera.buttons.allElementsBoundByIndex.prefix(40).map { "\($0.identifier)|\($0.label)" }
+        print("SYSTEM-UI no Camera shutter; buttons: \(buttons)")
     }
 }
 

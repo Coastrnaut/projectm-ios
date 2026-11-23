@@ -144,6 +144,74 @@ class DeviceAcceptanceCase: XCTestCase {
         return condition()
     }
 
+    /// The label and value (as text) of each element in `ids` present in one snapshot of the app (every window). For
+    /// elements that come and go within a poll: a query on the element itself retries for about 2 s once it is gone
+    /// (REC-007, D1 2026-11-23), the app's own snapshot answers at once. Missing elements are absent from the result.
+    static func windowValues(_ app: XCUIApplication, _ ids: Set<String>) -> [String: (label: String, value: String)] {
+        guard let root = try? app.snapshot() else { return [:] }
+        var out: [String: (label: String, value: String)] = [:]
+        var pending: [any XCUIElementSnapshot] = [root]
+        while let node = pending.popLast() {
+            if ids.contains(node.identifier), out[node.identifier] == nil {
+                let value: String
+                switch node.value {
+                case let text as String: value = text
+                case let number as NSNumber: value = number.stringValue
+                default: value = ""
+                }
+                out[node.identifier] = (node.label, value)
+            }
+            pending.append(contentsOf: node.children)
+        }
+        return out
+    }
+
+    // MARK: Notification banners
+
+    /// Swipes away a notification banner that covers the top of the screen. MED-005-T20 on D1 (2026-11-23): a Messages
+    /// banner sat over Settings' Done button ({8, 56, 377, 66}); XCUITest saw the interruption but could not handle it
+    /// ("Failed to construct element query matching interruption"), the tap opened Messages and the app stayed in the
+    /// background for the rest of the test (reverse cache "preparing", state runningBackground).
+    func dismissNotificationBanner() {
+        let banner = SystemUI.springboard.descendants(matching: .any)["NotificationShortLookView"].firstMatch
+        for _ in 0..<3 where banner.exists {
+            print("DEVICE-ACCEPT notification banner over the app: swiped away")
+            banner.swipeUp()
+            _ = wait(2) { !banner.exists }
+        }
+    }
+
+    /// Brings the app back if something (a banner tap, a system sheet) sent it to the background. True when it was
+    /// in front already.
+    @discardableResult
+    func returnToAppIfLeft(_ step: String) -> Bool {
+        guard app.state != .runningForeground, app.state != .notRunning else { return true }
+        print("DEVICE-ACCEPT \(step): the app had left the front (state \(app.state.rawValue)); activated again")
+        app.activate()
+        _ = app.wait(for: .runningForeground, timeout: 10)
+        return false
+    }
+
+    /// The app's Settings is already open at its root: opening it again must not tap the controls' Settings button.
+    /// MED-001-T24 on D1 (2026-11-23): the second pick opened Settings while it was still open after the first; on an
+    /// iPhone the sheet covers the controls, the button was not hittable (hit point -1, -1) and XCUITest tapped its
+    /// visible frame, on a Settings row behind it, which presented a sheet over Settings. The Settings list shrank to the
+    /// stacked-sheet card ({16, 59, 361, 728}, its rows scaled to 0.92) and Choose from Files… was never reachable
+    /// again. On an iPad the panel leaves the button uncovered, which is why D2 and D3 passed.
+    func settingsAlreadyOpen() -> Bool {
+        app.navigationBars["Settings"].exists
+    }
+
+    /// Closes the app's Settings sheet with Done, clear of notification banners (Done sits under the banner's place on
+    /// an iPhone), and makes sure the app is still in front afterwards.
+    func tapSettingsDone() {
+        dismissNotificationBanner()
+        let done = app.navigationBars["Settings"].buttons["Done"]
+        if done.exists { done.tap() }
+        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        returnToAppIfLeft("Settings › Done")
+    }
+
     // MARK: Frame rate
 
     func overlayFPS() -> Double? {

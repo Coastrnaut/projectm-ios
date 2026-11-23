@@ -75,15 +75,14 @@ final class PromptFlowDeviceTests: DeviceAcceptanceCase {
     }
 
     private func openSettings() {
+        if settingsAlreadyOpen() { return }
         showControls()
         app.buttons["settings"].tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
     }
 
     private func closeSettings() {
-        let done = app.navigationBars["Settings"].buttons["Done"]
-        if done.exists { done.tap() }
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
     }
 
     private func reveal(_ element: XCUIElement) {

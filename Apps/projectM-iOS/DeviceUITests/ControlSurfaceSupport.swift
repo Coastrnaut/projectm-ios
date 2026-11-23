@@ -58,6 +58,7 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
     }
 
     func openSettingsPanel() {
+        if settingsAlreadyOpen() { return }
         showControlsBar()
         app.buttons["settings"].tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
@@ -73,9 +74,7 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
             back.tap()
             _ = wait(2) { self.app.navigationBars["Settings"].exists }
         }
-        let done = app.navigationBars["Settings"].buttons["Done"]
-        if done.exists { done.tap() }
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
     }
 
     /// Back one level in a pushed Settings screen.
@@ -97,16 +96,55 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
     }
 
     /// Swipes the frontmost list (slowly, never down at the top of a sheet) until `element` is reachable (`reachable`:
-    /// hittable and clear of the iPhone's floating search field). After `swipes` steps a hittable element still counts
-    /// (one outside a list, a bottom toolbar's button, can never clear that chrome).
+    /// hittable and clear of the iPhone's floating search field). After the steps a hittable element still counts (one
+    /// outside a list, a bottom toolbar's button, can never clear that chrome).
+    ///
+    /// Direction: `up` true searches towards the list's start first. While the element exists its frame decides (above
+    /// the navigation bar: towards the start; under the bottom chrome: towards the end). When it does not exist (a
+    /// lazy list builds no off-screen rows) and a step moved nothing (the list's end) or `swipes` steps found nothing,
+    /// the search turns round once. D1 2026-11-23: MED-006's Slideshow switch sits above the seven picture rows and the
+    /// Add buttons, so after two Files picks it was off screen above while every step went towards the end
+    /// ("slideshowToggle is reachable"); FILE-010's storage rows were above the Clear Caches result the same way (every
+    /// row read -1 after Clear Caches).
     @discardableResult
     func scrollTo(_ element: XCUIElement, up: Bool = false, swipes: Int = 10) -> Bool {
-        let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
-        for _ in 0..<swipes {
+        var towardsEnd = !up, turned = false
+        for step in 0..<(swipes * 2) {
             if reachable(element) { return true }
-            list.scrollStep(up: !up)   // inside the list, clear of the Home gesture (ListScrolling)
+            // The list that holds the element when it exists (an iPad's browser sheet is not the first collection view).
+            let list = app.listHolding(element.exists ? element : nil)
+            if element.exists, element.frame.height > 0 {
+                let frame = element.frame, bar = app.navigationBars.firstMatch
+                let top: CGFloat = bar.exists ? bar.frame.maxY : app.windows.firstMatch.frame.minY
+                if frame.maxY > app.bottomChromeTop { towardsEnd = true } else if frame.minY < top { towardsEnd = false }
+            } else if !turned, step == swipes {
+                towardsEnd.toggle()
+                turned = true
+            }
+            let before = Self.listSignature(list)
+            list.scrollStep(up: towardsEnd)   // inside the list, clear of the Home gesture (ListScrolling)
+            if !element.exists, !before.isEmpty, Self.listSignature(list) == before {
+                if turned { break }   // both ends reached
+                towardsEnd.toggle()   // this end of the list: nothing moved
+                turned = true
+            }
         }
-        return element.exists && element.isHittable
+        return reachable(element) || (element.exists && element.isHittable)
+    }
+
+    /// The labels and positions of the list's first visible rows (one snapshot): unchanged after a step means the list
+    /// did not move. Empty when no snapshot can be taken.
+    static func listSignature(_ list: XCUIElement) -> String {
+        guard let root = try? list.snapshot() else { return "" }
+        var parts: [String] = [], pending: [any XCUIElementSnapshot] = root.children
+        while !pending.isEmpty, parts.count < 8 {
+            let node = pending.removeFirst()
+            if !node.identifier.isEmpty || !node.label.isEmpty {
+                parts.append("\(node.identifier)|\(node.label)@\(Int(node.frame.minY))")
+            }
+            pending.append(contentsOf: node.children)
+        }
+        return parts.joined(separator: ";")
     }
 
     /// Sets a SwiftUI Toggle row by tapping its switch (the row's centre is its label; autotester lesson). Reads the

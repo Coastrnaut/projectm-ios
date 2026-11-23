@@ -415,20 +415,23 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         let beforeTap = Date()
         button.tap()
         let tapped = Date()
-        let countdown = app.descendants(matching: .any)["recordingCountdown"].firstMatch
         var spoken: [String] = [], shown: [String] = []
         var firstSeen: [String: Date] = [:]
         var startedAt: Date?
         while Date().timeIntervalSince(tapped) < 8 {
-            let said = (app.staticTexts["announcementProbe"].value as? String) ?? ""
+            // One snapshot of the app per poll, read for the countdown, the indicator and the announcement probe.
+            // `exists` then `label` raced the countdown's last second ("Failed to get matching snapshot", D1 rerun 5),
+            // and `snapshot()` of the countdown itself retried for 2.2 s once "1" had gone (D1 2026-11-23, r9: t 11.96 →
+            // 14.19 s, "Find the recordingCountdown (retry 1, retry 2)"), so the start was seen 3.48 s after "1" while
+            // the app had started it within about a second. The app always exists: its snapshot never retries.
+            let found = Self.windowValues(app, ["recordingCountdown", "recordingIndicator", "announcementProbe"])
+            let said = found["announcementProbe"]?.value ?? ""
             if spoken.last != said { spoken.append(said) }
-            // One snapshot per poll: `exists` then `label` raced the countdown's last second (D1 2026-11-23: "Failed to
-            // get matching snapshot" for recordingCountdown as "1" went away between the two queries).
-            if let label = (try? countdown.snapshot())?.label, !label.isEmpty, shown.last != label {
+            if let label = found["recordingCountdown"]?.label, !label.isEmpty, shown.last != label {
                 shown.append(label)
                 if firstSeen[label] == nil { firstSeen[label] = Date() }
             }
-            if recordingIndicator.exists { startedAt = Date(); break }
+            if found["recordingIndicator"] != nil { startedAt = Date(); break }
             pause(0.1)
         }
         let startedAfter = startedAt.map { $0.timeIntervalSince(tapped) }
@@ -460,6 +463,7 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(5) { button.exists && button.label == "Record" }, "Record is offered")
         button.tap()
         let cancelledAt = Date()
+        let countdown = app.descendants(matching: .any)["recordingCountdown"].firstMatch
         XCTAssertTrue(wait(3) { countdown.exists }, "the countdown shows")
         app.buttons["recordingCountdownCancel"].tap()
         pause(4)
@@ -590,8 +594,7 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         for _ in 0..<6 where !(start.exists && start.isHittable) { app.scrollFrontList(up: true, velocity: .fast) }
         XCTAssertTrue(start.exists, "the countdown's Start")
         start.tap()
-        app.navigationBars["Settings"].buttons["Done"].tap()
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
         guard let began = startRecording("countdown") else { return XCTFail("the recording did not start: \(videoProbe)") }
         var texts: [String] = [], spoken: [String] = []
         var finishedAt: Date?

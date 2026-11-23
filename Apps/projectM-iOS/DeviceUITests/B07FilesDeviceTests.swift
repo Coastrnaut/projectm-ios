@@ -667,7 +667,11 @@ final class B07FilesDeviceTests: B07Case {
         let result = clearCaches()
         pause(1)
         let refresh = app.buttons["storageRefresh"].firstMatch
-        if refresh.exists { refresh.tap(); pause(2) }
+        if refresh.exists { refresh.tap(); pause(1) }
+        // The rows sit above Clear Caches and its result: scroll towards the start (D1 2026-11-23 read -1 for every
+        // row after scrolling only towards the end), then let the new measurement finish ("Calculating…" at the top).
+        _ = scrollTo(element("storage.caches"), up: true, swipes: 8)
+        _ = wait(30) { !self.element("storageMeasuring").exists && Self.bytes(self.text("storage.caches")) != nil }
         let after = storageValues(["caches", "sharesAndExports", "photos", "scenes", "total"])
         report(task, "before", before)
         report(task, "after", after)

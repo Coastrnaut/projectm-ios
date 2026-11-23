@@ -112,21 +112,43 @@ extension XCUIApplication {
         return frame.height > 0 && frame.minY >= top && frame.maxY <= bottomChromeTop
     }
 
-    /// One held drag in the window's right margin that moves the content towards the list's end (as B07's `reveal`).
-    func dragContentUp() {
-        let window = windows.firstMatch
-        window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.7))
-            .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.3)),
-                   withVelocity: .default, thenHoldForDuration: 0.1)
+    /// The list that holds `reference` (the smallest collection view or table whose frame contains its centre), else
+    /// the frontmost list, else the window. On an iPad the preset browser is a form sheet in the middle of the window
+    /// ({140, …, 540 wide} on D3): a drag in the window's right margin lands on the dimmed background and moves nothing.
+    func listHolding(_ reference: XCUIElement?) -> XCUIElement {
+        if let reference, reference.exists {
+            let centre = CGPoint(x: reference.frame.midX, y: reference.frame.midY)
+            let lists = (collectionViews.allElementsBoundByIndex + tables.allElementsBoundByIndex)
+                .filter { $0.exists && $0.frame.width > 1 && $0.frame.contains(centre) }
+            if let list = lists.min(by: { $0.frame.width * $0.frame.height < $1.frame.width * $1.frame.height }) { return list }
+        }
+        let front = frontList
+        return front.exists && front.frame.width > 1 ? front : windows.firstMatch
+    }
+
+    /// One held drag inside the list that holds `reference` (`listHolding`), clear of its edges and switches
+    /// (`scrollStep`), that moves the content towards the list's end. D3 (iPad A16, iPadOS 26.5, 2026-11-23): ACC-002
+    /// at AX5 dragged twelve times in the window's right margin (x 787 of 820) beside the browser sheet (x 140-680),
+    /// so My Presets was never built and never opened; the iPhone's full-width list hid that.
+    func dragContentUp(near reference: XCUIElement? = nil) {
+        listHolding(reference).scrollStep(up: true)
+    }
+
+    /// One held drag like `dragContentUp`, towards the list's start.
+    func dragContentDown(near reference: XCUIElement? = nil) {
+        listHolding(reference).scrollStep(up: false)
     }
 
     /// Scrolls `row` clear of the bottom chrome, taps it and waits for `destination`; up to `attempts` taps, since a
     /// tap that met the chrome, or a list redrawn under the finger, leaves the list where it was. True once it shows.
+    /// A row above the top bar is brought down, one under the bottom chrome up.
     @discardableResult
     func openListRow(_ row: XCUIElement, destination: XCUIElement, attempts: Int = 3) -> Bool {
         for _ in 0..<attempts {
             if destination.exists { return true }
-            for _ in 0..<6 where row.exists && !isClearOfChrome(row) { dragContentUp() }
+            for _ in 0..<6 where row.exists && !isClearOfChrome(row) {
+                if row.frame.maxY > bottomChromeTop { dragContentUp(near: row) } else { dragContentDown(near: row) }
+            }
             if row.exists { row.tap() }
             if destination.waitForExistence(timeout: 3) { return true }
         }
