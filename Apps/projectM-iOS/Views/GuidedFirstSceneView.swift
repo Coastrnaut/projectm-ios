@@ -23,6 +23,10 @@ enum GuidedFirstScenePalette {
 }
 
 struct GuidedFirstSceneView: View {
+    /// The Next/Play button's fill, #0066D9: about 5.4:1 against its white label (GuidedFirstScenePaletteTests).
+    static let nextTintHex: UInt32 = 0x0066D9
+    static let nextTint = Color(red: Double((nextTintHex >> 16) & 0xFF) / 255, green: Double((nextTintHex >> 8) & 0xFF) / 255,
+                                blue: Double(nextTintHex & 0xFF) / 255)
     @Bindable var guide: GuidedFirstSceneCoordinator
     /// A source already plays (opened from Settings over the visualizer): Play keeps it.
     let soundIsPlaying: Bool
@@ -176,6 +180,9 @@ struct GuidedFirstSceneView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
+            // QA-011 prompt flow (D1, D2 2026-11-22): white on the system blue "nearly passed" the 4.5:1 contrast audit;
+            // this blue gives about 5.4:1 with the white label in light and dark appearance.
+            .tint(Self.nextTint)
             .accessibilityIdentifier("guide.next")
             if guide.flow.canGoBack {
                 Button {

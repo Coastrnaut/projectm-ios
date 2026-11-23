@@ -26,6 +26,14 @@ final class GuidedFirstScenePaletteTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(InterfacePalette.contrastRatio(entry.darkIncreased, 0x000000), InterfacePalette.increasedPageMinimum)
     }
 
+    /// The Next/Play button (QA-011 prompt flow, D1 and D2 2026-11-22: white on the system blue "nearly passed"):
+    /// its white label on #0066D9 reaches 4.5:1, while white on the system blue #007AFF does not (negative control).
+    func testNextButtonLabelMeetsWCAG() {
+        XCTAssertGreaterThanOrEqual(InterfacePalette.contrastRatio(0xFFFFFF, GuidedFirstSceneView.nextTintHex),
+                                    InterfacePalette.standardMinimum)
+        XCTAssertLessThan(InterfacePalette.contrastRatio(0xFFFFFF, 0x007AFF), InterfacePalette.standardMinimum)
+    }
+
     /// The system secondary label (#3C3C43 at 60%) over white composites to about #8A8A8E: below 4.5:1.
     func testTheReplacedSystemGreyFails() {
         XCTAssertLessThan(InterfacePalette.contrastRatio(0x8A8A8E, 0xFFFFFF), InterfacePalette.standardMinimum)
