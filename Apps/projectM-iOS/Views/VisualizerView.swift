@@ -446,6 +446,15 @@ struct VisualizerView: View {
                         .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                         .accessibilityIdentifier("cameraCaptureProbe")
                         .accessibilityValue(camera.captureProbe)
+                    #if DEBUG
+                    // QA-011 CAM-007-T15/T16: the drawn picture rectangle, from the layer's own geometry (DEBUG only).
+                    Text(camera.pictureRectProbe)
+                        .font(.caption2)
+                        .opacity(0.01)
+                        .allowsHitTesting(false)
+                        .accessibilityIdentifier("cameraPictureRect")
+                        .accessibilityValue(camera.pictureRectProbe)
+                    #endif
                 }
             }
             if let photo = coordinator.photoVisual {   // MED-001: frames that showed the photo

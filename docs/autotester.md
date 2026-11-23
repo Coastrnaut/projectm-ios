@@ -336,7 +336,7 @@ python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build
 ## Camera (QA-011 Batch 4, 2026-11-18)
 
 Tests: `B06CameraDeviceTests` (its Batch 4 extension: CAM-002-T21/T22, CAM-004-T08, CAM-005-T14, FX-009-T18,
-REC-003-T23 Camera, CAM-007-T15's Fit bars) and `B06CameraSystemDeviceTests` (CAM-001-T24/T26/T27, CAM-002-T21's
+REC-003-T23 Camera, CAM-007-T15/T16's crop modes from `cameraPictureRect`) and `B06CameraSystemDeviceTests` (CAM-001-T24/T26/T27, CAM-002-T21's
 indicator, CAM-012-T13, CAM-013-T17/T18, CAM-006-T09, CAM-011-T15). Camera access must be granted first
 (`PromptFlowDeviceTests` testZ); no Batch 4 test meets a prompt. They launch with `-uitestCameraDeviceProbes`.
 
@@ -1171,6 +1171,17 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   screen (status pill, Emergency blackout, the overlay), and from the upright picture (`uprightPixels` draws the
   screenshot's `UIImage`, applying `imageOrientation`; `rgba` reads `cgImage` as stored). Report a Fill value next to
   each Fit value so a band that cannot tell them apart shows at once.
+- **A pixel check of a live camera depends on the light; check the geometry instead** (2026-11-23). After the fix
+  above, D1 run 6 read the portrait band as 0.232 non-black in all three modes, with the whole picture's mean luma at
+  about 0.07: the camera faced a dark room, so a dark picture and a black bar were the same, and something constant
+  lay in the band. Unattended runs cannot light the scene. CAM-007-T15/T16 now read `cameraPictureRect` (DEBUG, under
+  `-uitestDiagnostics`): the crop, the source's upright aspect and the picture's drawn rectangle in window fractions,
+  taken from the geometry the camera layer drew with last frame (`CameraLayerSource.drawnLayout`,
+  `CameraPictureGeometry.pictureRect`), never recomputed in the view. Fit must keep the source's aspect, lie inside the
+  window and leave bars on one axis; Fill must cover it; Top must start at the window's top. The band is only
+  reported, and the screenshots stay for review by eye. A probe proves the renderer only if it reads the renderer's
+  own numbers; use a pixel assertion only when the test controls what is in front of the camera (the stand-in camera
+  on the simulator, `CameraCropLayerTests` on the GPU).
 - **A simulator test that reuses the exporting app cannot catch a fresh-install defect.** FILE-001-T19 passed on the
   simulator while D3 failed: the simulator test imported the pack into the same app that exported it, so the
   scene's photo and video were already the current ones (FILE-008: the pack's derived identifiers share their payload),

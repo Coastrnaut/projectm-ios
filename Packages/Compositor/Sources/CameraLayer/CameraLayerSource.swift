@@ -48,6 +48,9 @@ public final class CameraLayerSource: LayerSource {
     /// CAM-005-R2: the camera picture drawn last frame (size and rotation), nil when none is drawn; a
     /// touch is mapped against it (`CameraFocusMapping`). Three integers per frame, no allocation.
     public private(set) var drawnPicture: CameraDrawnPicture?
+    /// QA-011 CAM-007-T15/T16: the picture, crop, layer size and geometry drawn last frame (nil when none is drawn),
+    /// so a DEBUG probe reports the drawn rectangle from the geometry the shader used. Plain values, no allocation.
+    public private(set) var drawnLayout: CameraDrawnLayout?
     /// CAM-008-R1: the user's person mask choice (main thread; from the next frame).
     public var personMaskMode: CameraPersonMaskMode = .off {
         didSet { personMasker?.isEnabled = personMaskMode != .off }
@@ -79,6 +82,7 @@ public final class CameraLayerSource: LayerSource {
     public func stop() {
         held = nil
         drawnPicture = nil
+        drawnLayout = nil
         personMasker?.reset()   // CAM-008-R7
         provider.pictureAnalyzer?.reset()   // CAM-009: values back to neutral
         uploadedMaskSerial = nil
@@ -154,12 +158,14 @@ public final class CameraLayerSource: LayerSource {
         guard provider.state.showsPicture else {
             held = nil
             drawnPicture = nil
+            drawnLayout = nil
             throw .notReady
         }
         if let newest = provider.latestFrame() { held = newest }
         if let stale = held, stale.position != provider.position { held = nil; staleDropped += 1 }   // CAM-002-R7: never the previous camera
         guard let camera = held, let pipeline, let sampler, let maskPlaceholder else {
             drawnPicture = nil
+            drawnLayout = nil
             throw .notReady
         }
         let geometry = CameraPictureGeometry(pictureWidth: camera.width, pictureHeight: camera.height, rotation: camera.rotation,
@@ -187,7 +193,10 @@ public final class CameraLayerSource: LayerSource {
         encoder.endEncoding()
         framesShown += 1
         if mask != nil { framesMasked += 1 }
-        drawnPicture = CameraDrawnPicture(width: camera.width, height: camera.height, rotation: camera.rotation)   // CAM-005
+        let drawn = CameraDrawnPicture(width: camera.width, height: camera.height, rotation: camera.rotation)
+        drawnPicture = drawn   // CAM-005
+        drawnLayout = CameraDrawnLayout(picture: drawn, crop: crop, outputWidth: picture.width, outputHeight: picture.height,
+                                        geometry: geometry)   // QA-011 CAM-007-T15/T16
     }
 
     static let shaderSource = """

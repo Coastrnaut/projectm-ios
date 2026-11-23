@@ -188,6 +188,12 @@ final class CameraCropLayerTests: XCTestCase {
                 let g = geometry(o, crop: crop, mirrored: mirrored)
                 let lines = predictedCenterLines(g)
                 let where_: String = label + " " + o.name
+                // QA-011 CAM-007-T15/T16: the layer reports the geometry it drew with (the DEBUG picture rect probe).
+                let layout = try XCTUnwrap(layer.drawnLayout, where_ + ": drawn layout")
+                XCTAssertEqual(layout.geometry, g, where_ + ": the drawn layout's geometry is the one drawn")
+                XCTAssertEqual(layout.crop, crop)
+                XCTAssertEqual(layout.outputWidth, o.width)
+                XCTAssertEqual(layout.outputHeight, o.height)
                 XCTAssertEqual(outcome.mismatches, 0, where_ + ": pixels away from boundaries match the geometry")
                 // The anchor is on the vertical center line: the picture's vertical center line is at the
                 // output's horizontal center in every orientation (2 px tolerance).
