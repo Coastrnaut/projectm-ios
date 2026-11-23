@@ -3077,6 +3077,7 @@ class DeviceWatchTests(unittest.TestCase):
                 ps = (f"xcodebuild test-without-building -destination platform=iOS,id={self.watch.UDIDS['D1']}\n"
                       f"xcodebuild test-without-building -destination platform=iOS,id={self.watch.UDIDS['D3']}\n")
                 self.assertEqual(self.watch.check(["D1", "D3"], 300, now, ps), ["D1 SILENT 6 min: run-d1.log: last test testACC002"])
+                self.assertTrue(self.watch.running("D1", "python3 scripts/run_device_matrix.py --device D1 --build"))
                 alerts = self.watch.check(["D3"], 300, now, "")
                 self.assertTrue(alerts and alerts[0].startswith("D3 IDLE"), alerts)
             finally:

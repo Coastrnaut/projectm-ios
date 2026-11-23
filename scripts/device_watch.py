@@ -31,8 +31,15 @@ def live_runs() -> str:
 
 
 def running(device: str, ps: str) -> bool:
+    """A device test run (`xcodebuild test` on its UDID) or a matrix run (`run_device_matrix.py --device <D>`, which
+    launches through devicectl between its xcodebuild cases)."""
     udid = UDIDS[device]
-    return any("xcodebuild" in line and " test" in line and udid in line for line in ps.splitlines())
+    for line in ps.splitlines():
+        if "xcodebuild" in line and " test" in line and udid in line:
+            return True
+        if "run_device_matrix.py" in line and re.search(rf"--device(=| ){device}\b", line):
+            return True
+    return False
 
 
 def newest_log(device: str) -> Path | None:
