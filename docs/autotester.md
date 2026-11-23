@@ -1088,6 +1088,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **iPhone landscape: hide the controls outside the card.** The controls card fills most of the 393 pt landscape window,
   so `hideControls`' tap at 30 % of the height landed on the card, every tap counted as use and the controls never hid
   (ACC-010-T13 on D1, 2026-11-22). The helper now taps clear of the card's frame, or waits for the 5 s timeout.
+- **On an iPhone, "on screen" means above the bottom chrome.** D1's first full run (2026-11-22) failed ACC-002-T20,
+  ACC-012-T22 and PRE-015-T26 at "the fixture is listed": each dump, 30 s after tapping My Presets, still showed the
+  library home. The browser sheet's list runs to the bottom of the iPhone screen, iOS 26+ floats the `.searchable`
+  field over its foot, and with the colour and motion chip rows the home's last rows sit under it; `isHittable` and the
+  frames-only `reveal` both accepted the row, and the tap met the search field. PRE-009-T13's long press on the last
+  Calm row met the compare bar the same way. On an iPad the search field sits in the navigation bar, so D2 and D3 passed.
+  `XCUIApplication.bottomChromeTop` (ListScrolling.swift: a search field in the lower half, the compare and audition
+  bars, a tab bar) is now B07's `reveal` limit, and `openListRow` taps a navigation row until its destination's bar shows
+  (`openMyPresets`). Check that a navigation tap navigated before looking for the next screen's content.
 
 ### Policy and evidence
 

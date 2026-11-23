@@ -495,6 +495,9 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
             .map { String($0.identifier.dropFirst("preset:".count)) }
         guard names.count >= 2 else { return XCTFail("\(task): two Calm presets to compare: \(names)") }
         func menu(_ name: String, _ title: String) {
+            // D1 2026-11-22: after Compare… the compare bar (over the iPhone's floating search field) covered the last
+            // Calm row, so the press met the bar and no menu opened; `reveal` scrolls the row clear of that chrome.
+            XCTAssertTrue(reveal(app.buttons["preset:\(name)"]), "\(task): the row \(name) clear of the bottom bars")
             app.buttons["preset:\(name)"].press(forDuration: 0.7)
             let item = app.buttons[title]
             XCTAssertTrue(appears(item), "\(title) in the row's menu")
