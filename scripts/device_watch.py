@@ -39,6 +39,8 @@ def running(device: str, ps: str) -> bool:
             return True
         if "run_device_matrix.py" in line and re.search(rf"--device(=| ){device}\b", line):
             return True
+        if "run_device_ui_tests.sh" in line and re.search(rf"run_device_ui_tests\.sh {device.lower()}\b", line):
+            return True   # seeding fixtures before its xcodebuild starts
     return False
 
 
@@ -79,11 +81,16 @@ def main() -> int:
     args = parser.parse_args()
     devices = [d.strip().upper() for d in args.devices.split(",") if d.strip()]
     started = time.time()
+    idle_since: dict[str, float] = {}
     while True:
         now = time.time()
         alerts = check(devices, args.silent, now, live_runs())
+        # IDLE counts only after `--grace` seconds in a row: a queue between two runs (a retry's pause) is not idle.
+        idle = {a.split()[0] for a in alerts if " IDLE" in a}
+        idle_since = {d: idle_since.get(d, now) for d in idle}
+        alerts = [a for a in alerts if " IDLE" not in a or now - idle_since[a.split()[0]] >= args.grace]
         if now - started < args.grace:
-            alerts = [a for a in alerts if "IDLE" not in a]
+            alerts = [a for a in alerts if " IDLE" not in a]
         if alerts:
             print("\n".join(alerts), flush=True)
             return 1
