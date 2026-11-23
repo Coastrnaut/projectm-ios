@@ -1140,6 +1140,19 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   screen (status pill, Emergency blackout, the overlay), and from the upright picture (`uprightPixels` draws the
   screenshot's `UIImage`, applying `imageOrientation`; `rgba` reads `cgImage` as stored). Report a Fill value next to
   each Fit value so a band that cannot tell them apart shows at once.
+- **A simulator test that reuses the exporting app cannot catch a fresh-install defect.** FILE-001-T19 passed on the
+  simulator while D3 failed: the simulator test imported the pack into the same app that exported it, so the
+  scene's photo and video were already the current ones (FILE-008: the pack's derived identifiers share their payload),
+  and Go on the imported cue looked right. D3 imports into a fresh install, where the pack's media are adopted but not
+  current (SCN-014-R6), and Go showed "No photo": the cue apply never selected the scene's media (an app defect, fixed
+  in `AppCoordinator.applyShowScene`; SHOW-001 Clarification 2026-11-23). When a device test moves data between
+  installs, its simulator twin must relaunch with `-uitestResetNotice` between the two halves
+  (`ScenePackPhotoVideoUITests.testAnImportedSceneShowsItsPhotoAndPlaysItsVideoOnAFreshInstall`; fixture mode keeps the
+  pack in `tmp/ScenePackFixture`, which the reset leaves alone). Two more faults in the same D3 run were the test's:
+  it expected "Photo 64 × 48" although the exported photo is the `pattern` seed (256 × 192; check the seed's size,
+  not the solid PNG's), and `-uitestSettingsSection show` reopens *every* later Settings at Show, so the photo summary
+  and the visual rows above it were never found in 12 swipes each way. Add `-uitestSettingsSectionOnce` when a test
+  needs the top of Settings after the jump.
 
 ### Policy and evidence
 

@@ -536,7 +536,9 @@ final class B07FilesDeviceTests: B07Case {
         // run 13, 2026-11-21) is imported on D3. Never the importing device itself: the check is a second device.
         let from = ProcessInfo.processInfo.environment["FILE001_FROM"] ?? "D1"
         MacDriver.request("files.push", ["from": from, "prefix": "projectM-iOS Scene ", "suffix": ".pmscene"])
-        launch(visual: "projectM", extra: ["-uitestSettingsSection", "show"])
+        // Once: only the first Settings opens at Show; the later ones open at the top, where the photo summary and the
+        // visual rows are (D3, 2026-11-23: reopened at Show, neither was found in 12 swipes each way).
+        launch(visual: "projectM", extra: ["-uitestSettingsSection", "show", "-uitestSettingsSectionOnce"])
         pause(10)   // the push lands while the app launches (the log reaches the Mac a few seconds late)
         openSceneFolders(addCurrentScene: true)   // Scene Folders shows once the show has a cue
         tapControl("scenePackImportRow")
@@ -548,7 +550,8 @@ final class B07FilesDeviceTests: B07Case {
         XCTAssertTrue(wait(15) { self.text("scenePackStatus").hasPrefix("Imported") }, "\(task): \(text("scenePackStatus"))")
         goToLastCue(task)   // the imported cue is appended; D3's show keeps earlier runs' cues, so Next Cue can miss it
         closeSettingsPanel()
-        XCTAssertTrue(wait(30) { self.photoValue == "Photo 64 × 48" }, "\(task): the imported photo shows: \(photoValue)")
+        // The export seeds `-uitestSeedPhoto pattern` (UITestPhotoFixture.patternPNG: 256 × 192), not the 64 × 48 solid PNG.
+        XCTAssertTrue(wait(30) { self.photoValue == "Photo 256 × 192" }, "\(task): the imported photo shows: \(photoValue)")
         openSettingsPanel()
         _ = scrollTo(element("photoSummary"))
         XCTAssertFalse(summary("photoSummary").contains("No photo"), "\(task): the imported photo is stored: \(summary("photoSummary"))")

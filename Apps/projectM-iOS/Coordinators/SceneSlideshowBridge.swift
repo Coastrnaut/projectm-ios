@@ -27,6 +27,15 @@ enum SceneSlideshowBridge {
         return asset
     }
 
+    /// SHOW-001 Clarification 2026-11-23: the first photo layer's own photo (nil: no photo layer, or its asset names
+    /// only the slideshow's first picture, MED-006: a scene without a photo of its own).
+    static func photoStoreID(in document: SceneDocument) -> String? {
+        guard let key = document.layers.first(where: { (l: SceneLayer) -> Bool in l.kind == "photo" })?.content.assetKey,
+              let asset = document.assets[key], case let .photo(storeID) = asset.kind else { return nil }
+        if asset.photoSlideshow?.storeIDs.contains(storeID) == true { return nil }
+        return storeID
+    }
+
     /// The first photo layer's slideshow (nil: the document has no photo layer).
     static func restore(in document: SceneDocument) -> SceneSlideshowRestore? {
         guard let key = document.layers.first(where: { (l: SceneLayer) -> Bool in l.kind == "photo" })?.content.assetKey,

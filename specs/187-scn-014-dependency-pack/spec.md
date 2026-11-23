@@ -58,6 +58,10 @@ conservative, local-first option.
 - Q: Must re-imported pictures be byte-identical even though opaque pictures are JPEG? → A: Yes (research SCN-014-D9): the import keeps the pack's bytes when they carry no more metadata than a fresh sanitized copy, so export → import never re-encodes; any other picture is sanitized as before.
 - Q: How is long work shown? → A: Export and import run off the main actor; the row shows a progress indicator and is disabled until done. No time limit is promised (videos may be large).
 
+### Session 2026-11-23 (QA-011 FILE-001-T19 on D3)
+
+- Q: Import never makes the pack's media current (R6); how does the imported scene show its photo and video? → A: When its cue is applied: SHOW-001-R8 now makes the photo and video a cue's scene names current when they resolve, without releasing anything (SHOW-001 Clarification 2026-11-23). Import itself is unchanged.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Export a scene with its media (Priority: P1)

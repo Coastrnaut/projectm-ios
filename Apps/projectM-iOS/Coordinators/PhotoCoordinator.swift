@@ -132,6 +132,18 @@ final class PhotoCoordinator {
         announce("Photo removed.")
     }
 
+    /// SHOW-001 Clarification 2026-11-23: a cue's scene names `storeID` as its photo. When it resolves and is not the
+    /// current picture (an identifier sharing the current payload counts as current, FILE-008), it becomes the stored
+    /// photo without releasing anything. True when the photo changed.
+    @discardableResult
+    func selectStored(storeID: String?) -> Bool {
+        guard let storeID, let store, let id = UUID(uuidString: storeID), id.uuidString == storeID else { return false }
+        if let current = photo, current.id == id || store.folder.sharesPayload(current.id, id) { return false }
+        guard let selected = store.select(id) else { return false }
+        setPhoto(selected)
+        return true
+    }
+
     /// The photo layer could not load the stored copy (it keeps its identifier; R14).
     func storedCopyFailed() { show(Self.storedCopyUnreadableMessage) }
 
