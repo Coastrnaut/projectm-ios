@@ -1,0 +1,21 @@
+{
+  "activeAgainAt": 22.08818006515503,
+  "awaySamples": 5,
+  "backgroundedAt": 5.768602967262268,
+  "checks": {
+    "frames within 2 s of the return": true,
+    "less memory while away": true,
+    "no GPU intervals while away": true,
+    "no frames while away": true
+  },
+  "detail": "all pass: 0 frames away, footprint 186.7 -> 160.0 MB, first frame 0.028155922889709473 s after the return",
+  "firstFrameAfterReturnSeconds": 0.028155922889709473,
+  "footprintAwayMB": 160.0,
+  "footprintBeforeMB": 186.7,
+  "framesAway": 0,
+  "framesBeforeReturn": 0,
+  "gpuIntervalsApp": 34577,
+  "gpuIntervalsAway": 0,
+  "pass": true,
+  "returnedAt": 21.452808022499084
+}

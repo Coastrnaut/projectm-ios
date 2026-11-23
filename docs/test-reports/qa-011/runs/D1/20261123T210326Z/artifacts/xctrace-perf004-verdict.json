@@ -1,0 +1,4 @@
+{
+  "detail": "xctrace did not end by itself and was stopped (perf004: the trace has not changed for 180 s after the recording time); no os-signpost table exported (trace saved: True)",
+  "pass": false
+}

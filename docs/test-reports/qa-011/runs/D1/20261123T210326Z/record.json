@@ -1,0 +1,222 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "b539dacedabffd069038f1507c49a7f50cca1b2a",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": false,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 40310,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T210326Z/artifacts/RendererLab-angle-flashcost-2026-11-23T210441Z.json",
+          "sha256": "c5a70582f178f287bf9b40e35ffad60a3f1027ca3d3e6bad09f895fd783867c6"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "xcodebuild",
+          "-project",
+          "RendererLab.xcodeproj",
+          "-scheme",
+          "RendererLab",
+          "-configuration",
+          "Release",
+          "-derivedDataPath",
+          "Build/rendererlab",
+          "-destination",
+          "generic/platform=iOS",
+          "-allowProvisioningUpdates",
+          "build"
+        ],
+        [
+          "RL_BACKEND=angle",
+          "RL_MODE=flashcost",
+          "launch",
+          "org.projectmios.RendererLab"
+        ]
+      ],
+      "detail": "28 presets, median 1.37 ms, max 2.64 ms per frame (limit 2.0 ms); over: frontend-uwp/ORB - Mega Spectrum.milk; thermal nominal",
+      "durationSeconds": 181.4,
+      "id": "rendererlab-flashcost",
+      "kind": "rendererlab",
+      "partOf": [
+        "FX-019-T22"
+      ],
+      "status": "fail",
+      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, Reduce flashing on minus off, at most 2 ms per frame (FX-019-S6)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 354,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261123T210326Z/logs/xctrace-perf004-perf004.log",
+          "sha256": "56079683cac67031af3db9d40ca23c37a9a1a57f8332548a7c1ef97d0434071a"
+        },
+        {
+          "bytes": 376,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T210326Z/artifacts/xctrace-perf004-automation-perf004-2026-11-23T210809Z.json",
+          "sha256": "4aacc9c00ddbd3b0fa4a363c657bf10ea4ca081c9e11ba0b13c8d31cbc23b4c5"
+        },
+        {
+          "bytes": 204,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T210326Z/artifacts/xctrace-perf004-verdict.json",
+          "sha256": "87e1150c2fd440c1653637ad8ad08e59870556460266256a17a791ab67c24432"
+        }
+      ],
+      "closes": [
+        "PERF-004-T16"
+      ],
+      "commands": [
+        [
+          "xcrun",
+          "xctrace",
+          "record",
+          "--template",
+          "Logging",
+          "--device",
+          "00008120-001E4C5C3A42201E",
+          "--time-limit",
+          "40s",
+          "--output",
+          "Build/qa-011/D1/20261123T210326Z/traces/xctrace-perf004/perf004.trace",
+          "--no-prompt",
+          "--env",
+          "PROJECTM_AUTORUN=perf004",
+          "--env",
+          "PROJECTM_VISUAL=text",
+          "--launch",
+          "--",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "xctrace did not end by itself and was stopped (perf004: the trace has not changed for 180 s after the recording time); no os-signpost table exported (trace saved: True)",
+      "durationSeconds": 430.8,
+      "id": "xctrace-perf004",
+      "kind": "xctrace",
+      "partOf": [],
+      "status": "fail",
+      "title": "Instruments Logging (os_signpost): PERF-004 texture allocations only at the start and within 3 s of a rotation"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 298,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261123T210326Z/logs/xctrace-perf011-perf011.log",
+          "sha256": "50b0a3f28d83df8c973ae7dce3acad181a7890f951a02b73b78b777b71ae4845"
+        },
+        {
+          "bytes": 6260,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T210326Z/artifacts/xctrace-perf011-automation-perf011-2026-11-23T211527Z.json",
+          "sha256": "f13e576bb362f408e67649ad4047296cf683d696753b67d299050db2b728adc3"
+        },
+        {
+          "bytes": 660,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T210326Z/artifacts/xctrace-perf011-verdict.json",
+          "sha256": "fe601cd1acfb668c94d7c8a14a50595be0c6bd88b6a6eba6e7c7625e72aed4d3"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "xcrun",
+          "xctrace",
+          "record",
+          "--template",
+          "Metal System Trace",
+          "--device",
+          "00008120-001E4C5C3A42201E",
+          "--time-limit",
+          "70s",
+          "--output",
+          "Build/qa-011/D1/20261123T210326Z/traces/xctrace-perf011/perf011.trace",
+          "--no-prompt",
+          "--instrument",
+          "os_signpost",
+          "--env",
+          "PROJECTM_AUTORUN=perf011",
+          "--env",
+          "PROJECTM_SECONDS=40",
+          "--launch",
+          "--",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "all pass: 0 frames away, footprint 186.7 -> 160.0 MB, first frame 0.028155922889709473 s after the return",
+      "durationSeconds": 274.3,
+      "id": "xctrace-perf011",
+      "kind": "xctrace",
+      "partOf": [
+        "PERF-011-T21"
+      ],
+      "status": "pass",
+      "title": "Instruments Metal System Trace: no GPU intervals and a lower footprint 10 s after backgrounding (In-App Playback), frames within 2 s of the return"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-23T21:19:10Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "370a4df02be7976389e7ea785e74d41e72d9b8d79700f5912e048453c50e8df5",
+  "runId": "20261123T210326Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-23T21:03:26Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 2,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}
