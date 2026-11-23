@@ -55,9 +55,24 @@ def xctestrun(products: Path) -> Path:
 
 
 def test_command(run: Path, udid: str, test: str, env: dict[str, str]) -> list[str]:
-    return (["xcodebuild", "test-without-building", "-xctestrun", str(run), "-destination", f"platform=iOS,id={udid}",
-             f"-only-testing:{UI}/{test}", "-test-timeouts-enabled", "YES", "-default-test-execution-time-allowance", "300"]
-            + [f"TEST_RUNNER_{k}={v}" for k, v in sorted(env.items())])
+    # TEST_RUNNER_* values reach the test runner only through xcodebuild's environment, never as build-setting
+    # arguments after test-without-building -xctestrun (2026-11-22: requireMac tests skipped with the driver running).
+    return (["env"] + [f"TEST_RUNNER_{k}={v}" for k, v in sorted(env.items())]
+            + ["xcodebuild", "test-without-building", "-xctestrun", str(run), "-destination", f"platform=iOS,id={udid}",
+               f"-only-testing:{UI}/{test}", "-test-timeouts-enabled", "YES", "-default-test-execution-time-allowance", "300"])
+
+
+def remap(plan: dict, mapping: dict[str, str]) -> dict:
+    """The plan with each device named in `mapping` replaced (roles, the OSC driver's device)."""
+    out = dict(plan)
+    for key in ("first", "second"):
+        device, test = plan[key]
+        out[key] = (mapping.get(device, device), test)
+    if plan.get("osc"):
+        out["osc"] = mapping.get(plan["osc"], plan["osc"])
+    if out["first"][0] == out["second"][0]:
+        raise SystemExit(f"both roles on {out['first'][0]}: a peer test needs two devices")
+    return out
 
 
 def per_device_products(products: Path, device: str) -> Path:
@@ -113,8 +128,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("scenario", choices=sorted(PLANS))
     p.add_argument("--products", type=Path, default=ROOT / "Build" / "device-acceptance" / "Build" / "Products")
     p.add_argument("--dry-run", action="store_true", help="print the commands; run nothing")
+    p.add_argument("--as", dest="remap", action="append", default=[], metavar="D1=D3",
+                   help="give a role's device to another device (D1 is not used in QA-011: --as D1=D3 pairs D2 with D3)")
     args = p.parse_args(argv)
-    plan = PLANS[args.scenario]
+    plan = remap(PLANS[args.scenario], dict(r.split("=", 1) for r in args.remap))
     names = [plan["first"][0], plan["second"][0]]
     if args.dry_run:
         ids = {n: {"identifier": f"<{n} devicectl id>", "udid": f"<{n} UDID>"} for n in names}
@@ -176,8 +193,8 @@ def main(argv: list[str] | None = None) -> int:
                 if proc is not None:
                     status |= proc.wait()
         if plan.get("pair") and not args.dry_run:
-            steps = parse_marks(logs["D1"].read_text(errors="replace").splitlines(), "STEP")
-            seen = parse_marks(logs["D2"].read_text(errors="replace").splitlines(), "SEEN")
+            steps = parse_marks(logs[plan["second"][0]].read_text(errors="replace").splitlines(), "STEP")   # the lead
+            seen = parse_marks(logs[plan["first"][0]].read_text(errors="replace").splitlines(), "SEEN")   # the follower
             result = pair_latencies(steps, seen)
             print(f"PEER-LATENCY {json.dumps(result)}", flush=True)
             status |= 0 if result["ok"] else 1

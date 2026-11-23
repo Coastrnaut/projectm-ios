@@ -2875,8 +2875,18 @@ class Batch8DriverTests(unittest.TestCase):
         self.assertIn("-only-testing:projectM-iOSDeviceUITests/B09OSCPeerDeviceTests/testOSC012Lead", cmd)
         self.assertIn("TEST_RUNNER_PEER_IP=10.0.0.2", cmd)
         self.assertIn("platform=iOS,id=UDID", cmd)
+        self.assertEqual(cmd[0], "env", "runner values go in xcodebuild's environment, before it")
+        self.assertLess(cmd.index("TEST_RUNNER_PEER_IP=10.0.0.2"), cmd.index("xcodebuild"))
         for plan in self.peer.PLANS.values():
             self.assertNotEqual(plan["first"][0], plan["second"][0], "two devices")
+
+    def test_peer_remap_moves_a_role_to_another_device(self):
+        plan = self.peer.remap(self.peer.PLANS["osc008"], {"D1": "D3"})
+        self.assertEqual(plan["first"][0], "D3")
+        self.assertEqual(plan["second"][0], "D2")
+        self.assertEqual(plan["osc"], "D3")
+        with self.assertRaises(SystemExit):
+            self.peer.remap(self.peer.PLANS["osc008"], {"D1": "D2"})
 
     def test_devices_parse_listing_dscacheutil_and_newest(self):
         listing = {"result": {"devices": [{"identifier": "A", "hardwareProperties": {"productType": "iPhone15,4", "udid": "U1"}}]}}

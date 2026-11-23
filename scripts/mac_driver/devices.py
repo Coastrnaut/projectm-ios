@@ -19,7 +19,7 @@ BUNDLE = "org.projectmios.ProjectMiOS"
 DEVICES = {
     "D1": {"productType": "iPhone15,4", "host": "iPhone77.local"},
     "D2": {"productType": "iPad17,3", "host": "iPad77.local"},
-    "D3": {"productType": "iPad15,7", "host": None},
+    "D3": {"productType": "iPad15,7", "host": "iPadC.local"},
 }
 
 
