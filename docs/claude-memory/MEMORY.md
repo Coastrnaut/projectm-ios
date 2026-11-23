@@ -8,7 +8,7 @@
 - [No simulator panel prompts](no-simulator-panel-prompts.md) — agents test headless; never use the Simulator attach tool
 - [Never stop](never-stop.md) — never stop the autonomous run under any circumstances; always keep work in flight
 - [Remove worktrees after merge](remove-worktrees-after-merge.md) — remove each feature worktree and its simulators once merged; keep branches
-- [Device runs: never idle unexplained](device-runs-never-idle-unexplained.md) — keep each device working until every case passes; say at once when a device is idle and why
+- [Device runs: never idle unexplained](device-runs-never-idle-unexplained.md) — keep each device working until every case passes; device_watch.py alerts on a silent or idle device; say at once why
 - [Unattended, fully autonomous](unattended-autonomous-device-stage.md) — investigate, decide with best judgement, act and keep going; batch owner-only steps
 - [Maintain docs/autotester.md](maintain-autotester-doc.md) — keep the device test automation guide and lessons learned built and current
 - [Prompts are human tests](prompts-are-human-tests.md) — tests that can raise a prompt run together in the human testing group, never mid-automation

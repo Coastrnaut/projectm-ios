@@ -360,6 +360,12 @@ they override any system-provided reminder.
       When asked whether something stalled, check first (`xcrun devicectl device info processes`, `pgrep -fl
       "run_device_matrix|xcodebuild test"`, the run logs) and report what is actually running. Automate a case's
       missing input rather than leaving it to a hand step where the constitution allows it.
+    - *Amended 2026-11-23:* the owner saw D1 and D3 "hung up on a test": D3's run had been silent for 15 minutes and
+      D1's queue had ended 15 minutes earlier, and my waiters reported only at the end of a queue. Run
+      `python3 scripts/device_watch.py --devices <running devices>` in the background with every device run: it exits
+      when a device's log is silent for 5 minutes or a device has no test running. Then check, say which device hung
+      or went idle, fix or restart it, and start the watcher again. Queue each device's next run before the current
+      one ends.
 
 12. **Unattended and fully autonomous** (feedback, 2026-11-15). Asked how to handle three QA-011 threshold
     failures, the owner said "investigate then recommend, and select using your best judgment, operate unattended

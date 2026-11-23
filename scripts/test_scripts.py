@@ -3053,5 +3053,35 @@ class RecordingFrameCheckTests(unittest.TestCase):
                 self.assertIn(f'"{key}"', (Path(self.rfc.__file__)).read_text(), f"{name}: the check {key} exists")
 
 
+class DeviceWatchTests(unittest.TestCase):
+    """device_watch.py: a device run that went silent, or a device with no run, wakes the session (2026-11-23)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib
+        cls.watch = importlib.import_module("device_watch")
+
+    def test_silent_and_idle_devices_are_reported(self):
+        import tempfile, os, time
+        with tempfile.TemporaryDirectory() as tmp:
+            old = self.watch.LOGS
+            self.watch.LOGS = Path(tmp)
+            try:
+                d1 = Path(tmp) / "run-d1.log"
+                d1.write_text("Test Case '-[X.B04 testACC002]' started.\n")
+                d3 = Path(tmp) / "run-d3.log"
+                d3.write_text("Test Case '-[X.B04 testACC007]' started.\n")
+                now = time.time()
+                os.utime(d1, (now - 400, now - 400))
+                os.utime(d3, (now - 10, now - 10))
+                ps = (f"xcodebuild test-without-building -destination platform=iOS,id={self.watch.UDIDS['D1']}\n"
+                      f"xcodebuild test-without-building -destination platform=iOS,id={self.watch.UDIDS['D3']}\n")
+                self.assertEqual(self.watch.check(["D1", "D3"], 300, now, ps), ["D1 SILENT 6 min: run-d1.log: last test testACC002"])
+                alerts = self.watch.check(["D3"], 300, now, "")
+                self.assertTrue(alerts and alerts[0].startswith("D3 IDLE"), alerts)
+            finally:
+                self.watch.LOGS = old
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

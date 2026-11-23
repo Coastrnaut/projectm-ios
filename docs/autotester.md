@@ -1245,6 +1245,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   Save to Files only there. `shareSheet` and REC-012 expand it. Never print a share sheet's whole label list: its first
   rows are people and devices suggested from the owner's contacts; print only the asked labels.
 
+- **Watch every device run, not just the end of the queue** (D1 and D3, 2026-11-23). D3 sat in a silent run for 15
+  minutes until the runner's watchdog stopped it, and D1's queue had ended 15 minutes before the owner noticed the
+  app's last screen. `scripts/device_watch.py --devices D1,D3` runs beside the device runs and exits the moment a
+  device's log is silent for 5 minutes (`SILENT`) or a device has no `xcodebuild test` (`IDLE`).
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

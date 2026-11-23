@@ -1,6 +1,6 @@
 ---
 name: device-runs-never-idle-unexplained
-description: "During device runs, keep each device working until every case passes; say at once when a device is idle and why"
+description: "During device runs, keep each device working until every case passes; watch each run with device_watch.py and say at once when a device is idle or hung"
 metadata:
   node_type: memory
   type: feedback
@@ -25,5 +25,15 @@ device, and an idle device with no stated reason looks like a stall.
   "run_device_matrix|xcodebuild test"`, the run logs) and answer with what is actually running.
 - Prefer automating a case's missing input over leaving it for a hand step (the PERF-012 report got an automation
   mode for the QA-010 judge).
+
+**Amended 2026-11-23** ("d1 and d3 both look hung up on a test on the devices, learn the lesson and remember it"): D3's
+run had been silent 15 minutes before the runner's watchdog stopped it, and D1's queue had ended 15 minutes earlier with
+the app's last screen still up. My background waiters reported only when a whole queue ended, so I noticed neither.
+- Alongside every device run, keep `python3 scripts/device_watch.py --devices <the ones running>` going in the
+  background. It exits (and wakes me) the moment a device's log is silent for 5 minutes or a device has no
+  `xcodebuild test` running. Then check it (screenshot with `devicectl device capture screenshot`, the log's last
+  steps), say "D3 hung in <test>" or "D1 idle", fix or restart it at once, and start the watcher again.
+- Never rely on a waiter that only reports at the end of a queue, and never leave a device's queue empty: queue the
+  next run before the current one ends.
 
 Related: [[never-stop]], [[no-idle-waits-on-ci]].
