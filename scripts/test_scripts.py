@@ -2901,6 +2901,10 @@ class Batch8DriverTests(unittest.TestCase):
         listing = {"result": {"devices": [{"identifier": "A", "hardwareProperties": {"productType": "iPhone15,4", "udid": "U1"}}]}}
         self.assertEqual(self.dev.parse_device_list(listing), {"D1": {"identifier": "A", "udid": "U1"}})
         self.assertEqual(self.dev.parse_dscacheutil("name: iPhone77.local\nip_address: 192.168.1.7\n"), "192.168.1.7")
+        # A device plugged in by USB also has a link-local address; the Wi-Fi peer must get the LAN one.
+        self.assertEqual(self.dev.parse_dscacheutil("ip_address: 169.254.161.183\nip_address: 192.168.1.219\n"), "192.168.1.219")
+        self.assertEqual(self.dev.prefer_lan(["169.254.1.2"]), "169.254.1.2")
+        self.assertIsNone(self.dev.prefer_lan([]))
         names = ["Documents/projectM-osc-routes-20261118-100000Z.md", "projectM-osc-routes-20261118-110000Z.md", "a.md"]
         self.assertEqual(self.dev.newest(names, "projectM-osc-routes-", ".md"), "projectM-osc-routes-20261118-110000Z.md")
 

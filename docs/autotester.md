@@ -1169,6 +1169,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   Power restore found "Low Power Mode" but the tap resolved to Battery Percentage (the page was still moving after
   relaunch); the Battery Percentage display on D1 may have been toggled. Verify the switch's own state after a restore.
 
+- **A device on USB has a second, link-local address** (D2, 2026-11-23). After its iPadOS update D2 came back only
+  over the USB cable, and `<name>.local` then resolved to its 169.254.x.x USB address: `peer.py` gave D3 (on Wi-Fi)
+  that address for D2 and the Mac's USB-side address. `devices.resolve` now gathers every address and prefers a LAN
+  one (`prefer_lan`). Check the `TEST_RUNNER_PEER_IP` and `TEST_RUNNER_MAC_IP` values in a peer log's first lines.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

@@ -39,24 +39,35 @@ def identifiers() -> dict[str, dict[str, str]]:
         return parse_device_list(json.loads(out.read_text()))
 
 
+def parse_dscacheutil_all(out: str) -> list[str]:
+    return [line.split(":", 1)[1].strip() for line in out.splitlines() if line.startswith("ip_address:") and "." in line]
+
+
 def parse_dscacheutil(out: str) -> str | None:
-    for line in out.splitlines():
-        if line.startswith("ip_address:") and "." in line:
-            return line.split(":", 1)[1].strip()
-    return None
+    return prefer_lan(parse_dscacheutil_all(out))
+
+
+def prefer_lan(addresses: list[str]) -> str | None:
+    """The first address another device can reach: never a link-local 169.254.x.x, which a device plugged in by USB
+    also has (D2 after its iPadOS 27.2.1 update, 2026-11-23: the peer on Wi-Fi was given D2's USB address)."""
+    lan = [a for a in addresses if not a.startswith("169.254.")]
+    return (lan or addresses or [None])[0]
 
 
 def resolve(host: str) -> str:
     """The resolver, else macOS's Bonjour cache (`dscacheutil`), which resolves `<name>.local` when Python's
     resolver does not (seen 2026-11-16)."""
+    found: list[str] = []
     try:
-        return socket.gethostbyname(host)
+        found += socket.gethostbyname_ex(host)[2]
     except OSError:
-        out = subprocess.run(["dscacheutil", "-q", "host", "-a", "name", host], capture_output=True, text=True).stdout
-        address = parse_dscacheutil(out)
-        if address:
-            return address
-        raise
+        pass
+    out = subprocess.run(["dscacheutil", "-q", "host", "-a", "name", host], capture_output=True, text=True).stdout
+    found += [a for a in parse_dscacheutil_all(out) if a not in found]
+    address = prefer_lan(found)
+    if address:
+        return address
+    raise OSError(f"cannot resolve {host}")
 
 
 def mac_address_toward(peer_ip: str) -> str:
