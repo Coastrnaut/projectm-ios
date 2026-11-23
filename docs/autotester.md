@@ -1425,6 +1425,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     hold as "Interrupted" (AUD-015 Clarifications 2026-11-23). Lesson: an app without the audio background mode must
     not hold an active session while suspended; and the export/overlay should be read together with the status
     panel, whose reason line tells "paused by the lifecycle" from "interrupted".
+  - *A fix aimed at a guessed cause needs the evidence that tells the candidates apart.* The session release alone
+    did not fix D2 (r14: 1 of 6 returns resumed, the panel still read "Interrupted"), because the app could not tell
+    an iOS interruption from its own refused-activation path, and neither was logged. Now `-uitestSessionLog` adds
+    CaptureKit's `AudioSessionTrace` to the `sessionLog` probe after " || trace: ": raw interruption/route notices
+    (type, reason, options, wasSuspended), `session.activate`/`session.deactivate` with ok or the error's code and
+    four characters (e.g. '!pla'), `app didEnterBackground/willEnterForeground/didBecomeActive`, `lifecycle …`,
+    `hold: …`, `resume: ok|refused …`, `policy: …`, `active: retry=…`, each with `t=` seconds and `app=<state>`.
+    PERF-011-T22 and VIS-001-T36 print it as `SESSION-TRACE <task> resumed|NOT resumed: …` after every return and
+    put its last 1,500 characters in the failure message: grep the run log for `SESSION-TRACE`. The app also retries
+    a refused return at didBecomeActive (AUD-015 Clarifications, r14).
 
 ## What still needs a person
 

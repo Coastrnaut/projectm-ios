@@ -112,7 +112,13 @@ public final class CaptureManager {
     @ObservationIgnored private var lastSequence: UInt64 = 0
     @ObservationIgnored private var pauseReason: StopReason?
     /// The open interruption of In-App Playback (AUD-014); nil when there is none.
-    @ObservationIgnored private var interruption: OpenInterruption?
+    @ObservationIgnored private var interruption: OpenInterruption? {
+        didSet { if interruption == nil || !(interruption?.openedByRefusedReturn ?? false) { retryWhenActive = false } }
+    }
+    /// QA-011 D2 2026-11-23: the return's resume was refused by iOS (the session could not be activated, which iOS
+    /// does while the app is still in the background state at "will enter foreground"). It is tried once more when
+    /// the app becomes active (`noteAppBecameActive()`), unless something else happened meanwhile.
+    @ObservationIgnored private var retryWhenActive = false
     /// AUD-015-R5: in the background (until the next foreground) and locked (until an unlock or
     /// the next foreground), tracked independently.
     @ObservationIgnored private var isBackgrounded = false
@@ -135,6 +141,8 @@ public final class CaptureManager {
         var userChangedTransport = false
         /// The output route was lost since it began.
         var outputLost = false
+        /// Opened by the app because iOS refused the session at a return, not by an iOS notice.
+        var openedByRefusedReturn = false
     }
     @ObservationIgnored private var lastFormatChangeCount = 0
     @ObservationIgnored private var rmsSum: Double = 0
@@ -318,6 +326,7 @@ public final class CaptureManager {
     public func handle(_ event: AppLifecycleEvent) async {
         log(event.rawValue)
         await serialized {
+            AudioSessionTrace.shared.record("lifecycle \(event.rawValue) \(self.traceState)")
             switch event {
             case .background: self.isBackgrounded = true
             case .lock: self.isLocked = true
@@ -336,23 +345,62 @@ public final class CaptureManager {
                 await self.holdWhileAway(source, reason: decision.reason)
             case .foreground, .unlock:
                 // AUD-015-R5: only a real return (foreground and unlocked) resumes anything.
-                guard BackgroundPolicy.mayResumeAutomatically(self.backgroundContext(mode)) else { return }
+                guard BackgroundPolicy.mayResumeAutomatically(self.backgroundContext(mode)) else {
+                    AudioSessionTrace.shared.record("return: not presentable yet")
+                    return
+                }
                 // A user pause (AUD-006) stays until the user resumes.
-                guard !self.isPausedByUser else { return }
+                guard !self.isPausedByUser else {
+                    AudioSessionTrace.shared.record("return: user pause kept")
+                    return
+                }
                 if self.interruption != nil {
                     // AUD-014-R5, R6: only the policy resumes after an interruption.
+                    AudioSessionTrace.shared.record("return: interruption open, asking the policy")
                     await self.applyInterruptionPolicy()
                     return
                 }
-                guard self.state == .paused, self.pauseReason == nil else { return }
+                guard self.state == .paused, self.pauseReason == nil else {
+                    AudioSessionTrace.shared.record("return: nothing to resume")
+                    return
+                }
                 await self.resumeInner(onReturn: true)
             }
         }
     }
 
+    /// The app became active (UIApplication's didBecomeActive). QA-011 D2 2026-11-23: a return's resume that iOS
+    /// refused because the session could not be activated yet is tried once more now, if nothing changed since:
+    /// still presentable, no user pause or transport change, no iOS interruption notice, no lost output. A second
+    /// refusal stays on hold as "Interrupted" (AUD-014-R6, R8); Play continues.
+    public func noteAppBecameActive() async {
+        await serialized {
+            AudioSessionTrace.shared.record("active: retry=\(self.retryWhenActive ? 1 : 0) \(self.traceState)")
+            guard self.retryWhenActive else { return }
+            self.retryWhenActive = false
+            guard self.isPresentable, self.activeMode == .inAppPlayback, !self.isPausedByUser, self.state == .paused,
+                  let open = self.interruption, open.openedByRefusedReturn, !open.userChangedTransport,
+                  !open.outputLost else { return }
+            self.interruption = nil
+            self.pauseReason = nil
+            await self.resumeInner(onReturn: true)
+        }
+    }
+
+    /// The manager's state for `AudioSessionTrace`.
+    private var traceState: String {
+        let open = interruption.map { "\($0.signal)\($0.openedByRefusedReturn ? "/refusedReturn" : "")" } ?? "none"
+        return "state=\(state) reason=\(pauseReason.map { "\($0)" } ?? "-") userPaused=\(isPausedByUser ? 1 : 0) "
+            + "interruption=\(open) away=\(isPresentable ? 0 : 1)"
+    }
+
     /// AUD-015: pauses playback or stops the microphone engine because the app is away.
     private func holdWhileAway(_ source: any AudioSource, reason: BackgroundPolicy.Reason) async {
-        guard state.isRunning || state == .interrupted else { return }
+        guard state.isRunning || state == .interrupted else {
+            AudioSessionTrace.shared.record("hold: skipped, \(traceState)")
+            return
+        }
+        AudioSessionTrace.shared.record("hold: suspending while away")
         // In-App Playback also releases its audio session while away (QA-011 D2 2026-11-23).
         await source.suspendWhileAway()
         // AUD-014: an open interruption of In-App Playback stays visible as the reason.
@@ -532,17 +580,20 @@ public final class CaptureManager {
         if !isPresentable, let mode = activeMode, awayHolds(mode) != nil { return }
         do {
             try await source.resume()
+            AudioSessionTrace.shared.record("resume: ok\(onReturn ? " (return)" : "")")
             pauseReason = nil
             isPausedByUser = false
             userPauseIsStop = false
             interruption = nil
             apply(state == .interrupted ? .interruptionEnded(shouldResume: true) : .resumed)
         } catch let error as SourceError {
+            AudioSessionTrace.shared.record("resume: refused\(onReturn ? " (return)" : "") detail=\(error.detail ?? "-")")
             // AUD-014-R8: while the interruption is still open iOS may refuse to give the audio
             // back (a call is going on). The session stays as it was: track, position, state.
             if interruption?.signal == .pending { return }
             if onReturn, activeMode == .inAppPlayback, error.detail == SourceError.audioSessionRefusedDetail {
-                interruption = OpenInterruption(eligible: true)
+                interruption = OpenInterruption(eligible: true, openedByRefusedReturn: true)
+                retryWhenActive = true                // once more when the app is active
                 pauseReason = .interrupted
                 apply(.suspended)                     // no state change; shows the reason
                 return
@@ -576,6 +627,7 @@ public final class CaptureManager {
         }
         await serialized {
             guard self.current === source, let mode = self.activeMode else { return }
+            AudioSessionTrace.shared.record("source event \(event)")
             switch event {
             case .interruptionBegan:
                 // FR-051: for System/App Capture an interruption alone changes nothing.
@@ -622,6 +674,12 @@ public final class CaptureManager {
 
     /// "Interruption began" for In-App Playback: opens the record, or keeps the open one.
     private func openInterruption() {
+        AudioSessionTrace.shared.record("interruption: began, \(traceState)")
+        if interruption?.openedByRefusedReturn == true {
+            // A real notice now: it is iOS's interruption from here on (no retry when active).
+            interruption?.openedByRefusedReturn = false
+            retryWhenActive = false
+        }
         if var open = interruption {
             // A second "began" while it is open changes nothing. After an end, playback is on hold:
             // a new interruption can resume it only if the last one was told to resume and that
@@ -652,6 +710,7 @@ public final class CaptureManager {
         let decision = InterruptionPolicy.decide(InterruptionPolicy.Input(
             source: .inAppPlayback, before: before, pausedBy: pausedBy, signal: open.signal,
             isPresentable: isPresentable, userChangedTransport: open.userChangedTransport, sourceIsUsable: true))
+        AudioSessionTrace.shared.record("policy: \(decision) signal=\(open.signal)")
         switch decision {
         case .resume:
             await resumeInner()

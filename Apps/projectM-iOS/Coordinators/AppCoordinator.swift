@@ -463,6 +463,8 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private var hideTask: Task<Void, Never>?
     private let lifecycle: LifecycleObserver
     private var lifecycleForwarding: Task<Void, Never>?
+    /// QA-011 D2 2026-11-23: didBecomeActive, forwarded to CaptureManager (a return's refused resume is retried).
+    @ObservationIgnored private var activeObserver: (any NSObjectProtocol)?
     /// Presentation-bound resources (PERF-011): the renderer registers its own in prepareRenderer().
     @ObservationIgnored let presentation = PresentationResourceRegistry()
     /// PERF-005: the next cues' media decoded ahead (AppCoordinator+Prewarm).
@@ -867,6 +869,11 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
         lifecycleForwarding = Task { @MainActor in
             for await event in lifecycle.events { await lifecycleCoordinator.handle(event) }
         }
+        let manager: CaptureManager = manager
+        activeObserver = NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification,
+                                                                object: nil, queue: .main) { _ in
+            Task { @MainActor in await manager.noteAppBecameActive() }
+        }
     }
 
     /// The preset coordinator with its stores in `Application Support/PresetCollections` (split from `init` for the
@@ -1092,6 +1099,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     isolated deinit {
         lifecycleForwarding?.cancel()
+        if let activeObserver { NotificationCenter.default.removeObserver(activeObserver) }
     }
 
     // MARK: - Launch flow

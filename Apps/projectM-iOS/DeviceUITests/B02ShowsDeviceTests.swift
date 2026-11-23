@@ -11,6 +11,15 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
     private var circular: XCUIElement { app.descendants(matching: .any)["circularSpectrum"].firstMatch }
     private var fallbackShown: Bool { app.staticTexts["nativeVisualUnavailable"].exists }
 
+    /// QA-011 D2 2026-11-23: the app's audio session trace (`-uitestSessionLog`: raw interruption notices, session
+    /// activations and deactivations with their results, lifecycle events with the application state, CaptureManager's
+    /// hold and resume decisions), printed after every return so a run shows why playback did or did not resume.
+    private static let sessionTraceArguments = ["-uitestSessionLog"]
+
+    private func printSessionTrace(_ task: String, _ step: String) {
+        print("SESSION-TRACE \(task) \(step): \(probeValue("sessionLog"))")
+    }
+
     private func assertStillCircular(_ step: String) {
         XCTAssertTrue(wait(10) { self.circular.exists }, "\(step): the Circular Spectrum is shown")
         XCTAssertFalse(fallbackShown, "\(step): the fallback notice never shows")
@@ -22,7 +31,7 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
     /// Center: testPERF011SwitcherCardAndControlCenter; lock and unlock stay a person's step.
     func testPERF011ReturnAfterRotationWhileAway() {
         let task = "PERF-011-T22"
-        launch(visual: "circularSpectrum")
+        launch(visual: "circularSpectrum", extra: Self.sessionTraceArguments)
         assertFrameRate(task, "before")
         XCUIDevice.shared.press(.home)
         XCTAssertTrue(wait(10) { self.app.state != .runningForeground }, "in the background")
@@ -46,7 +55,9 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         // In-App Playback paused while away resumes on the return (AUD-006-R22, AUD-015-R5); the visual moves with the
         // music only once audio is active again (as VIS-001-T36 after background).
         let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
-        XCTAssertTrue(wait(15) { overlay.label.contains("Active audio") }, "playback resumes: \(overlay.label.prefix(160))")
+        let resumed = wait(15) { overlay.label.contains("Active audio") }
+        printSessionTrace(task, resumed ? "resumed" : "NOT resumed")
+        XCTAssertTrue(resumed, "playback resumes: \(overlay.label.prefix(160)); session trace: \(probeValue("sessionLog").suffix(1500))")
         assertFrameRate(task, "after the return")
         // D1 2026-11-18: one pair 1 s apart measured 0.00185 against 0.002 (a quiet passage): three pairs, the largest.
         let (first, _) = screen(task, "after the return")
@@ -112,7 +123,7 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         // full run 1) one pair 1 s apart read 0.0011 in landscape and 0.002 in portrait while three pairs after the
         // return read 0.007, 0.005 and 0.017. The iPhone's spectrum covers fewer pixels and one quiet second of the
         // music decided a single pair; the iPads read 0.012-0.053 from one pair.
-        launch(visual: "circularSpectrum")
+        launch(visual: "circularSpectrum", extra: Self.sessionTraceArguments)
         assertStillCircular("portrait")
         assertFrameRate(task, "portrait")
         assertDrawsAndMovesSampled("portrait")
@@ -139,7 +150,9 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         let resumed = wait(15) { overlay.label.contains("Active audio") }
         report(task, "audio after background", ["resumed": resumed ? 1 : 0, "seconds": Date().timeIntervalSince(returned)])
         print("VIS001-OVERLAY \(overlay.label.prefix(300))")
-        XCTAssertTrue(resumed, "playback resumes after the return: \(overlay.label.prefix(160))")
+        printSessionTrace(task, resumed ? "resumed" : "NOT resumed")
+        XCTAssertTrue(resumed, "playback resumes after the return: \(overlay.label.prefix(160)); session trace: "
+                      + "\(probeValue("sessionLog").suffix(1500))")
         _ = wait(8) { !self.app.otherElements["controls"].exists }   // screenshots need the controls hidden
         assertFrameRate(task, "after background")
         // Three motion samples over about 15 s: a slow recovery and a frozen visual look different.

@@ -167,7 +167,10 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
     /// is suspended; that late "interruption began" kept playback on hold after a plain return.
     /// `resume()` activates it again. Nothing happens unless the graph is held.
     public func releaseSessionWhileAway() {
-        guard let graph, graph.isPaused else { return }
+        guard let graph, graph.isPaused else {
+            AudioSessionTrace.shared.record("session.release skipped (graph \(self.graph == nil ? "none" : "not held"))")
+            return
+        }
         deactivateSession()
     }
 
@@ -231,18 +234,37 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         #if os(iOS)
         guard offline == nil else { return }
         let session = AVAudioSession.sharedInstance()
-        if setCategory { try session.setCategory(.playback, mode: .default) }
-        try session.setActive(true)
+        do {
+            if setCategory { try session.setCategory(.playback, mode: .default) }
+            try session.setActive(true)
+            AudioSessionTrace.shared.record("session.activate ok category=\(setCategory ? 1 : 0)")
+        } catch {
+            AudioSessionTrace.shared.record("session.activate failed \(Self.describe(error))")
+            throw error
+        }
         #endif
     }
 
-    /// Releases the session and lets interrupted apps resume. Used by stop() and by every
-    /// start() failure after activation.
+    /// Releases the session and lets interrupted apps resume. Used by stop(), by every start()
+    /// failure after activation and while the app is away.
     private func deactivateSession() {
         #if os(iOS)
         guard offline == nil else { return }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        do {
+            try AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            AudioSessionTrace.shared.record("session.deactivate ok")
+        } catch {
+            AudioSessionTrace.shared.record("session.deactivate failed \(Self.describe(error))")
+        }
         #endif
+    }
+
+    /// "code=<n> (<four characters>)" for an audio session error (e.g. '!pla', '!int', '!pri').
+    nonisolated static func describe(_ error: any Error) -> String {
+        let code = (error as NSError).code
+        let bytes = withUnsafeBytes(of: UInt32(truncatingIfNeeded: code).bigEndian) { Array($0) }
+        let printable = bytes.allSatisfy { $0 >= 32 && $0 < 127 }
+        return "code=\(code)" + (printable ? " '\(String(decoding: bytes, as: UTF8.self))'" : "")
     }
 
     // MARK: - Session and engine signals (AUD-014)
@@ -278,6 +300,7 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
     /// One signal from the audio session or the engine. No effect unless started.
     func handle(_ signal: AudioSessionSignal) {
         guard let graph, let onEvent else { return }
+        AudioSessionTrace.shared.record("backend signal \(signal) held=\(graph.isPaused ? 1 : 0)")
         switch signal {
         case .interruptionBegan(let outputDisconnected):
             // Hold the position of this moment (AUD-014-R10); iOS has stopped the audio.

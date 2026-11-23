@@ -31,6 +31,7 @@ import AVFAudio
 import CaptureKit
 import Foundation
 import SwiftUI
+import UIKit
 
 @MainActor
 enum UITestAudioProbes {
@@ -452,7 +453,30 @@ final class UITestSessionLog {
 
     func start() {
         guard observers.isEmpty else { return }
+        // QA-011 D2 2026-11-23: CaptureKit's session trace (activations, deactivations, raw notices, lifecycle and
+        // hold/resume decisions) on the same clock as the app's lifecycle notifications below.
+        let trace = AudioSessionTrace.shared
+        trace.isEnabled = true
+        trace.context = {
+            switch UIApplication.shared.applicationState {
+            case .active: "active"
+            case .inactive: "inactive"
+            case .background: "background"
+            @unknown default: "unknown"
+            }
+        }
         let center = NotificationCenter.default
+        let appEvents: [(Notification.Name, String)] = [
+            (UIApplication.didEnterBackgroundNotification, "didEnterBackground"),
+            (UIApplication.willEnterForegroundNotification, "willEnterForeground"),
+            (UIApplication.didBecomeActiveNotification, "didBecomeActive"),
+            (UIApplication.willResignActiveNotification, "willResignActive"),
+        ]
+        for (name, label) in appEvents {
+            observers.append(center.addObserver(forName: name, object: nil, queue: .main) { _ in
+                MainActor.assumeIsolated { AudioSessionTrace.shared.record("app \(label)") }
+            })
+        }
         let names: [Notification.Name] = [AVAudioSession.interruptionNotification, AVAudioSession.routeChangeNotification,
                                           AVAudioSession.mediaServicesWereLostNotification,
                                           AVAudioSession.mediaServicesWereResetNotification,
@@ -496,11 +520,12 @@ final class UITestSessionLog {
         if entries.count > 20 { entries.removeFirst() }
     }
 
-    /// "began=<n> ended=<n> resume=<n> routes=<n> | <entry> | …".
+    /// "began=<n> ended=<n> resume=<n> routes=<n> | <entry> | …", then "|| trace: <AudioSessionTrace entries>".
     var summary: String {
         let head = "began=\(counts["interruptionBegan", default: 0]) ended=\(counts["interruptionEnded", default: 0]) "
             + "resume=\(counts["resume", default: 0]) routes=\(counts["routeChange", default: 0])"
-        return ([head] + entries).joined(separator: " | ")
+        let trace = AudioSessionTrace.shared.entries
+        return ([head] + entries).joined(separator: " | ") + (trace.isEmpty ? "" : " || trace: " + trace.joined(separator: " | "))
     }
 }
 
