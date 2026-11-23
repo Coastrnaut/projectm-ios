@@ -73,7 +73,10 @@ class B07DeviceCase: DeviceAcceptanceCase {
     func showControls() {
         XCTAssertTrue(appears(tapArea, 15), "the visualizer is up")
         if !controls.exists { tapArea.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
-        if !appears(controls, 2) { tapArea.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() }
+        // The second try lands lower: on D1 (iPhone 15, 2026-11-22, PERF-014-T22) both taps at 30 % hit the DEBUG
+        // render-fault panel, whose readouts widened its backing across the phone's width (the backing no longer takes
+        // taps either).
+        if !appears(controls, 2) { tapArea.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.62)).tap() }
         XCTAssertTrue(appears(controls, 3), "the controls are shown")
     }
 

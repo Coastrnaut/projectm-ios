@@ -37,12 +37,13 @@ struct UITestCameraEventPanel: View {
                 Text(probe)
                     .font(.caption2)
                     .opacity(0.01)
+                    .allowsHitTesting(false)
                     .accessibilityIdentifier("cameraRecovery")
                     .accessibilityValue(probe)
             }
         }
         .padding(4)
-        .background(.black.opacity(0.6))
+        .background(Color.black.opacity(0.6).allowsHitTesting(false))   // only the buttons take taps
     }
 
     /// A short title (the panel fits a phone's width) and the identifier the UI test taps.
