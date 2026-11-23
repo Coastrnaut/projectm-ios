@@ -290,9 +290,12 @@ final class SystemUI {
         let exact = NSPredicate(format: "label == %@", text), prefix = NSPredicate(format: "label BEGINSWITH %@", text)
         for predicate in [exact, prefix] {
             for query in [preferences.cells, preferences.buttons, preferences.staticTexts] {
-                // Skip the search field itself, whose text is `text`.
+                // Skip the search field itself, whose text is `text`, wherever it sits: at the top on iPadOS, at the
+                // bottom of the screen on iOS 27 for iPhone (D1, 2026-11-22: every result sat above it, so the old
+                // "below the field" filter found none and FILE-013 stayed in Settings).
+                let field = search.frame
                 let match = query.matching(predicate).allElementsBoundByIndex
-                    .first { $0.elementType != .searchField && $0.isHittable && $0.frame.minY > search.frame.maxY }
+                    .first { $0.elementType != .searchField && $0.isHittable && !$0.frame.intersects(field) }
                 if let match {
                     match.tap()
                     pause(0.8)
