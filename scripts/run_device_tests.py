@@ -280,23 +280,31 @@ class Target:
                 print(f"!! {self.label} {why}; retrying in 15 s", flush=True)
                 time.sleep(15)
 
-    def terminate(self) -> None:
-        """Stops the app if a mode left it running."""
-        if self.simulator:
-            run(["xcrun", "simctl", "terminate", self.identifier, self.bundle], check=False, quiet=True)
-            return
-        if DRY_RUN:
-            return
+    def app_pids(self) -> list[int]:
+        """Process IDs of the app on the device (empty on a simulator, in a dry run, or when devicectl fails)."""
+        if self.simulator or DRY_RUN:
+            return []
         with tempfile.TemporaryDirectory() as tmp:
             out = Path(tmp) / "processes.json"
             run(["xcrun", "devicectl", "device", "info", "processes", "--device", self.identifier,
                  "--json-output", str(out)], capture=True, quiet=True, check=False)
             if not out.exists():
-                return
-            for process in json.loads(out.read_text())["result"].get("runningProcesses", []):
-                if f"/{self.app_name}.app/" in process.get("executable", ""):
-                    run(["xcrun", "devicectl", "device", "process", "terminate", "--device", self.identifier,
-                         "--pid", str(process["processIdentifier"])], check=False, capture=True)
+                return []
+            try:
+                processes = json.loads(out.read_text())["result"].get("runningProcesses", [])
+            except (ValueError, KeyError):
+                return []
+            return [p["processIdentifier"] for p in processes
+                    if f"/{self.app_name}.app/" in p.get("executable", "") and "processIdentifier" in p]
+
+    def terminate(self) -> None:
+        """Stops the app if a mode left it running."""
+        if self.simulator:
+            run(["xcrun", "simctl", "terminate", self.identifier, self.bundle], check=False, quiet=True)
+            return
+        for pid in self.app_pids():
+            run(["xcrun", "devicectl", "device", "process", "terminate", "--device", self.identifier,
+                 "--pid", str(pid)], check=False, capture=True)
 
     def container_files(self, subdirectory: str | None = None) -> list[str]:
         """Relative paths in the app's data container (or one folder of it)."""

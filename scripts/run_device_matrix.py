@@ -32,6 +32,7 @@ import json
 import os
 import platform
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -101,9 +102,12 @@ CASES: list[dict] = [
     case("xctrace-perf011", "xctrace", "Instruments Metal System Trace: no GPU intervals and a lower footprint 10 s "
          "after backgrounding (In-App Playback), frames within 2 s of the return", [], 900, partOf=["PERF-011-T21"],
          verdict="perf011",
-         runs=[{"name": "perf011", "template": "Metal System Trace", "seconds": 60, "mode": "perf011",
-                "env": {"PROJECTM_SECONDS": "50"}, "instruments": ["os_signpost"],
-                "tables": [xt.SIGNPOST_SCHEMA, xt.GPU_SCHEMA], "background": [15, 35]}]),
+         # Times count from the app's launch (`wait_for_launch`): 10 s in front, 16 s away (the check reads the
+         # last 6), 14 s back; the time limit leaves the app room to exit by itself first. Metal System Trace wrote
+         # 1.98 GB while the app drew for about 35 s on D1 (2026-11-23), so it draws for about 24 s now.
+         runs=[{"name": "perf011", "template": "Metal System Trace", "seconds": 70, "mode": "perf011",
+                "env": {"PROJECTM_SECONDS": "40"}, "instruments": ["os_signpost"],
+                "tables": [xt.SIGNPOST_SCHEMA, xt.GPU_SCHEMA], "background": [10, 26]}]),
     case("xctrace-perf008", "xctrace", "Instruments Power Profiler: 5 min Standard, then 5 min Battery saver "
          "(In-App Playback); frame time and energy per minute", [], 2400, partOf=["PERF-008-T16"], verdict="perf008",
          onDemand=True,
@@ -426,12 +430,15 @@ def redact_record_file(path: Path) -> bool:
     return True
 
 
-def capture(cmd: list[str], cwd: Path | None = None) -> subprocess.CompletedProcess:
-    """Run for facts only; a missing tool (xcodebuild, codesign and xcrun on Linux CI) gives an empty result."""
+def capture(cmd: list[str], cwd: Path | None = None, timeout: float | None = None) -> subprocess.CompletedProcess:
+    """Run for facts only; a missing tool (xcodebuild, codesign and xcrun on Linux CI) gives an empty result, and a
+    command past `timeout` exit status 124."""
     try:
-        return subprocess.run(cmd, cwd=cwd, text=True, capture_output=True, check=False)
+        return subprocess.run(cmd, cwd=cwd, text=True, capture_output=True, check=False, timeout=timeout)
     except FileNotFoundError:
         return subprocess.CompletedProcess(cmd, 127, stdout="", stderr=f"{cmd[0]}: not found")
+    except subprocess.TimeoutExpired:
+        return subprocess.CompletedProcess(cmd, 124, stdout="", stderr=f"{cmd[0]}: timed out after {timeout} s")
 
 
 def app_facts(app: Path, configuration: str) -> dict:
@@ -774,9 +781,23 @@ class Runner:
 
     # MARK: Instruments (PERF-004-T16, PERF-008-T16, PERF-011-T21)
 
-    def drive_background(self, at: list[float]) -> threading.Thread:
+    def wait_for_launch(self, before: set[int], timeout: float = 180) -> float:
+        """Seconds until a new process of the app appears on the device (xctrace's --launch), or -1 after `timeout`.
+
+        D1, 2026-11-23: Metal System Trace took about 18 s from the command to the app's launch, so Settings, opened
+        15 s after the command, came first; the app started in the background and was only brought to the front once
+        ("not backgrounded and brought back"). The background steps are now timed from the app's own launch."""
+        started = time.monotonic()
+        while time.monotonic() - started < timeout:
+            if set(self.target.app_pids()) - before:
+                return time.monotonic() - started
+            time.sleep(1)
+        return -1
+
+    def drive_background(self, at: list[float], before: set[int] | None = None) -> threading.Thread:
         """PERF-011: the Mac sends the app to the background by opening Settings at at[0] s, and brings it back at
-        at[1] s (a launch of a running app activates it; no --terminate-existing)."""
+        at[1] s (a launch of a running app activates it; no --terminate-existing). On a device both times count from
+        the moment the app's process appears (`wait_for_launch`); without it, from now."""
         t = self.target
         if t.simulator:
             away = ["xcrun", "simctl", "launch", t.identifier, "com.apple.Preferences"]
@@ -786,6 +807,10 @@ class Runner:
             back = ["xcrun", "devicectl", "device", "process", "launch", "--device", t.identifier, rdt.BUNDLE]
 
         def act() -> None:
+            if before is not None and not t.simulator and not self.dry_run:
+                waited = self.wait_for_launch(before)
+                print(f"   the app launched {waited:.0f} s after the recording command" if waited >= 0 else
+                      "   the app's process never appeared; sending it away on the fixed schedule", flush=True)
             time.sleep(0 if self.dry_run else at[0])
             rdt.run(away, check=False, capture=True)
             time.sleep(0 if self.dry_run else at[1] - at[0])
@@ -810,20 +835,26 @@ class Runner:
                                     run["seconds"], trace, rdt.BUNDLE, env=env, instruments=run.get("instruments", []))
             result["commands"].append(cmd)
             before = set(t.container_files("Documents"))
-            driver = self.drive_background(run["background"]) if run.get("background") else None
-            # Never a short timeout: saving a trace takes minutes, and a killed save leaves it unreadable.
-            proc = rdt.run(cmd, check=False, capture=True, timeout=run["seconds"] + 1800)
+            pids = set(t.app_pids())
+            driver = self.drive_background(run["background"], pids) if run.get("background") else None
+            log = self.work / "logs" / f"{c['id']}-{run['name']}.log"
+            if self.dry_run:
+                rdt.run(cmd, check=False, capture=True)
+                if driver:
+                    driver.join(timeout=5)
+                continue
+            # Never a short timeout (saving a trace takes minutes, and a killed save leaves it unreadable), but never
+            # unwatched: `xt.record` stops xctrace with SIGINT when the trace stops changing or a hard limit passes.
+            print("$ " + " ".join(shlex.quote(part) for part in cmd), flush=True)
+            proc = xt.record(cmd, trace, log, run["seconds"])
             if driver:
                 driver.join(timeout=5)
-            if self.dry_run:
-                continue
-            text = (proc.stdout or "") + (proc.stderr or "")
-            log = self.work / "logs" / f"{c['id']}-{run['name']}.log"
-            log.parent.mkdir(parents=True, exist_ok=True)
-            log.write_text(text)
+            text = proc["text"]
             self.add(result, log, False)
-            if proc.returncode != 0 and not t.simulator and is_locked(text):
+            if proc["exit"] != 0 and not t.simulator and is_locked(text):
                 raise Blocked(self.locked_message())
+            if proc["stopped"]:
+                print(f"!! {c['id']} {run['name']}: xctrace {proc['stopped']}; stopped it", flush=True)
             name = t.wait_for_report(f"automation-{run['mode']}", before, 120)
             report = None
             if name:
@@ -832,12 +863,16 @@ class Runner:
                 self.add(result, dest, dest.stat().st_size <= COMMIT_LIMIT)
                 report = json.loads(dest.read_text())
             tables = self.export_tables(trace, run, folder) if trace.exists() else {}
-            runs.append({"name": run["name"], "exit": proc.returncode, "report": report, "tables": tables,
-                         "traceSaved": trace.exists()})
+            runs.append({"name": run["name"], "exit": proc["exit"], "report": report, "tables": tables,
+                         "traceSaved": trace.exists(), "stopped": proc["stopped"], "recordSeconds": proc["seconds"]})
         if self.dry_run:
             result["status"] = "skipped"
             return
         verdict = XCTRACE_VERDICTS[c["verdict"]](runs)
+        stopped = [f"{r['name']}: {r['stopped']}" for r in runs if r.get("stopped")]
+        if stopped:   # a recording that had to be stopped never counts, whatever was salvaged from it
+            verdict["pass"] = False
+            verdict["detail"] = "xctrace did not end by itself and was stopped (" + "; ".join(stopped) + "); " + verdict["detail"]
         out = t.out_dir / f"{c['id']}-verdict.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(verdict, indent=2, sort_keys=True, default=str) + "\n")
@@ -846,7 +881,8 @@ class Runner:
 
     def export_tables(self, trace: Path, run: dict, folder: Path) -> dict[str, list]:
         """The run's tables as parsed rows (schema -> rows); the exported XML stays next to the trace."""
-        toc = capture(xt.toc_command(trace))
+        # A trace whose save was stopped can make `export` hang as well; each export gets 10 minutes.
+        toc = capture(xt.toc_command(trace), timeout=600)
         if toc.returncode != 0:
             return {}
         schemas = [e["schema"] for e in xt.parse_toc(toc.stdout) if e["run"] == 1]
@@ -855,7 +891,7 @@ class Runner:
         out = {}
         for schema in wanted:
             xml = folder / f"{run['name']}-{schema}.xml"
-            if capture(xt.export_command(trace, schema, xml)).returncode == 0 and xml.exists():
+            if capture(xt.export_command(trace, schema, xml), timeout=600).returncode == 0 and xml.exists():
                 out[schema] = xt.parse_table(xml.read_text(errors="replace"))
         return out
 

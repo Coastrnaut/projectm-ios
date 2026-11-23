@@ -44,7 +44,21 @@ class DeviceAcceptanceCase: XCTestCase {
     }
 
     override func tearDown() async throws {
+        dismissLeftoverFilesSheet()
         XCUIDevice.shared.orientation = .portrait
+    }
+
+    /// Cancels a Files picker or mover a failed (or falsely passed) step left up. QA-011 D2 r10 (iPadOS 27.2.1,
+    /// 2026-11-23): PRE-014's Save to Files mover stayed up after the test ended, and the next test's launch then
+    /// failed after 60 s with "Failed to terminate org.projectmios.ProjectMiOS" (MED-001), which also restarted the
+    /// runner. Only while the app is in front, so a test that ended elsewhere is not relaunched.
+    func dismissLeftoverFilesSheet() {
+        guard app.state == .runningForeground else { return }
+        let action = app.buttons["DOCPicker.actionButton"].firstMatch
+        guard action.exists || app.collectionViews["File View"].exists else { return }
+        print("DEVICE-ACCEPT-NOTE teardown: a Files sheet is still up; cancelling it")
+        SystemUI(app: app).cancelFilesPicker()
+        _ = wait(3) { !action.exists }
     }
 
     // MARK: Launch
