@@ -19,6 +19,12 @@ for f in "$@"; do
 done
 log=.autonomous/logs/$name-$dev.log
 rm -f "$log"; touch "$log"
+# The fixtures live in the app's Documents, which a reinstall (the device matrix) empties: seed what is missing before
+# every run (D2 and D3, 2026-11-23: every music test failed at launch after the matrix). FIXTURES=0 skips it.
+if [ "${FIXTURES:-1}" = 1 ]; then
+  python3 scripts/install_test_fixtures.py --device "$(echo "$dev" | tr a-z A-Z)" --media --if-missing \
+    > ".autonomous/logs/fixtures-$name-$dev.log" 2>&1 || echo "== $dev $name: fixture seeding reported a problem (see fixtures-$name-$dev.log)"
+fi
 # The driver ends with the test run (its end marker); its own 30-minute default left every Mac request after the
 # first half-hour of a full run unanswered (D3 full run 1, 2026-11-22: FILE-001-B's files.push), so it gets 12 h.
 if [ "${MAC_DRIVER:-0}" = 1 ]; then

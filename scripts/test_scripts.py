@@ -3084,5 +3084,17 @@ class DeviceWatchTests(unittest.TestCase):
                 self.watch.LOGS = old
 
 
+class FixtureSeedTests(unittest.TestCase):
+    """install_test_fixtures.py --if-missing reads devicectl's Documents listing (2026-11-23)."""
+
+    def test_parses_the_documents_listing(self):
+        import importlib
+        fx = importlib.import_module("install_test_fixtures")
+        data = {"result": {"files": [{"name": "music-fixture.m4a", "relativePath": "music-fixture.m4a"},
+                                     {"name": "x", "relativePath": "sub/photo.jpg"}, {}]}}
+        self.assertEqual(fx.parse_listing(data), {"music-fixture.m4a", "photo.jpg"})
+        self.assertEqual(fx.parse_listing({}), set())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

@@ -11,6 +11,11 @@ iPhone/iPad › projectM), so tests can pick them with the real document picker 
 
     python3 scripts/install_test_fixtures.py --device all [--media] [--only photo-gps.heic …]
     python3 scripts/install_test_fixtures.py --device-id <devicectl identifier> --media   # mac_device_driver.py
+    python3 scripts/install_test_fixtures.py --device D3 --media --if-missing   # run_device_ui_tests.sh, every run
+
+`--if-missing` lists the app's Documents first and copies only the files that are not there: the matrix runner
+reinstalls the app, which empties Documents, and the next UI run then failed at launch on every music test (D2 and D3,
+2026-11-23: "music-fixture.m4a is missing"), so run_device_ui_tests.sh seeds before every run.
 """
 from __future__ import annotations
 
@@ -47,6 +52,25 @@ def copy_command(device: str, source: Path) -> list[str]:
 MP3_FIXTURES = {"music-fixture-cbr.mp3": "cbr", "music-fixture-vbr.mp3": "vbr"}
 
 
+def documents(device: str) -> set[str] | None:
+    """The file names in the app's Documents on `device`, or None when the listing fails (then everything is copied)."""
+    with tempfile.NamedTemporaryFile(suffix=".json") as out:
+        result = subprocess.run(["xcrun", "devicectl", "device", "info", "files", "--device", device, "--domain-type",
+                                 "appDataContainer", "--domain-identifier", BUNDLE, "--subdirectory", "Documents",
+                                 "--json-output", out.name], capture_output=True, text=True)
+        if result.returncode != 0:
+            return None
+        try:
+            return parse_listing(json.loads(Path(out.name).read_text()))
+        except (ValueError, KeyError):
+            return None
+
+
+def parse_listing(data: dict) -> set[str]:
+    files = data.get("result", {}).get("files", [])
+    return {Path(f.get("relativePath") or f.get("name") or "").name for f in files} - {""}
+
+
 def identifiers() -> dict[str, str]:
     with tempfile.NamedTemporaryFile(suffix=".json") as out:
         subprocess.run(["xcrun", "devicectl", "list", "devices", "--json-output", out.name],
@@ -62,6 +86,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--device-id", help="a devicectl identifier instead of --device")
     p.add_argument("--media", action="store_true", help="also copy the media fixtures (Build/fixtures/media)")
     p.add_argument("--only", nargs="+", help="with --media: only these media fixtures")
+    p.add_argument("--if-missing", action="store_true", help="copy only the files not already in Documents")
     args = p.parse_args(argv)
     for name, variant in zip(FIXTURES, ["normal", "left", "inverted"]):
         if not (ROOT / "Build" / "fixtures" / name).exists():
@@ -88,7 +113,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"install_test_fixtures: {name} not found (paired and on the network?)")
             status = 1
             continue
-        for source in sources:
+        present = documents(ids[name]) if args.if_missing else None
+        todo = [s for s in sources if present is None or s.name not in present]
+        if args.if_missing:
+            print(f"install_test_fixtures: {name} {len(sources) - len(todo)} present, {len(todo)} to copy")
+        for source in todo:
             result = subprocess.run(copy_command(ids[name], source), capture_output=True, text=True)
             ok = result.returncode == 0
             print(f"install_test_fixtures: {name} {source.name} {'copied' if ok else 'FAILED: ' + result.stderr.strip()[-200:]}")

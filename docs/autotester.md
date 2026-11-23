@@ -1284,6 +1284,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     sheet (x 140-680), so My Presets was never built. `dragContentUp(near:)` drags inside the list holding a reference
     row; `openListRow` brings a row above the top bar down instead of pushing it further up.
 
+- **A matrix run reinstalls the app and empties its Documents** (D2 and D3, 2026-11-23). The UI regression run right
+  after the device matrix failed every music test at launch ("music-fixture.m4a is missing") and every Files pick
+  ("no photo-small.jpg"). `run_device_ui_tests.sh` now seeds the fixtures before every run
+  (`install_test_fixtures.py --media --if-missing`, only what Documents lacks; `FIXTURES=0` skips it).
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:
