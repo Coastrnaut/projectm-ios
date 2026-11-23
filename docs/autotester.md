@@ -787,6 +787,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     when it finds the resize handle, and a run that still ends with one window fails with the frames. Capture the
     device's screen with `xcrun devicectl device capture screenshot --device <id> --destination x.png`.
 
+  - *The Mac driver must outlive the run.* `mac_device_driver.py follow` stopped after its 30-minute default, silently,
+    so every `MAC-DO` after the first half-hour of a full run went unanswered (D3 full run 1, 2026-11-22: FILE-001-B's
+    `files.push`; the driver log was empty). `run_device_ui_tests.sh` now gives it 12 h and the driver says when it
+    times out.
+
 ### Xcode and the device test host
 
 - **Package tests cannot run on a device by themselves**: "Tool-hosted testing is unavailable on device destinations".

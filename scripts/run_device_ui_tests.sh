@@ -19,8 +19,10 @@ for f in "$@"; do
 done
 log=.autonomous/logs/$name-$dev.log
 rm -f "$log"; touch "$log"
+# The driver ends with the test run (its end marker); its own 30-minute default left every Mac request after the
+# first half-hour of a full run unanswered (D3 full run 1, 2026-11-22: FILE-001-B's files.push), so it gets 12 h.
 if [ "${MAC_DRIVER:-0}" = 1 ]; then
-  python3 scripts/mac_device_driver.py follow --log "$log" --device "$(echo "$dev" | tr a-z A-Z)" > ".autonomous/logs/macdriver-$name-$dev.log" 2>&1 &
+  python3 scripts/mac_device_driver.py follow --timeout 43200 --log "$log" --device "$(echo "$dev" | tr a-z A-Z)" > ".autonomous/logs/macdriver-$name-$dev.log" 2>&1 &
   driver=$!
 fi
 # TEST_RUNNER_* values reach the test runner only as environment variables of xcodebuild, not as build-setting

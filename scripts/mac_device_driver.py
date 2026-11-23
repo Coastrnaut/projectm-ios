@@ -83,6 +83,8 @@ def follow(log: Path, context: mac_driver.Context, timeout: float = 1800, out=pr
                     return 0
             seen = len(lines)
             time.sleep(poll)
+        if not (stop and stop.is_set()):
+            out(f"MAC-DRIVER timed out after {timeout:.0f} s without the run's end marker: later MAC-DO lines go unanswered")
         return 0 if stop and stop.is_set() else 1
     finally:
         context.cleanup()
