@@ -5,7 +5,7 @@
 `mutating func consider(_ cue: HapticCue, eventNanoseconds: UInt64, now: UInt64, playable: Bool) -> HapticPulseDecision`
 
 1. `.sessionBoundary` → beat count 0, `.filtered`.
-2. `.beat(c)` with c < rules' confidence → `.filtered`. A confident beat increments the beat count; it is a downbeat when `(count − 1) % beatsPerBar == 0`.
+2. `.beat(c)` with c below the threshold → `.filtered` (and the gate disengages). The threshold is `minimumBeatConfidence` (0.5), or `sustainBeatConfidence` (0.4) while engaged: a beat that passes engages the gate until a filtered beat or a session marker (Clarifications 2026-11-23). A confident beat increments the beat count; it is a downbeat when `(count − 1) % beatsPerBar == 0`.
 3. Choice: `beats` accepts confident beats, `downbeats` confident downbeats, `kicks` kicks; anything else → `.filtered`.
 4. `!playable` → `.suppressed`.
 5. `now > eventNanoseconds + stale` → `.stale`.

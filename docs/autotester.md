@@ -1119,6 +1119,27 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   The rerun (2026-11-22) added two more: a short list cannot scroll its last row above a bar (PRE-009's twelve drags
   bounced back), so press the row that is higher on screen, or the part of a row above the chrome; and at AX5 a row
   far down a lazy list does not exist until the list is scrolled towards it (My Presets), so scroll before waiting.
+- **A low device count can be the app's threshold, not the test's window.** ACC-007-T13's Beats counted 9 of 24 beats in
+  the chorus (D1 rerun, 2026-11-23) while Kicks counted 23. Feeding the fixture's own audio
+  (`scripts/make_music_fixture.py`) through the onset detector and beat tracker on the host (BeatTestSupport.pipeline)
+  showed why in a second: off-beat hi-hats hold ANL-005's confidence at 0.46-0.52, so a 0.5 cut passed a third of the
+  beats. Before tuning a device test's window, replay its fixture through the same package code on the host.
+- **"Not hittable" at AX5: dump the frames on a simulator first.** AUD-006-T41 failed on D1 for the fourth time with
+  every transport button "not hittable" and the scrubber "outside the window". A 10 s simulator dump (iPhone 17e,
+  AX5, the same launch arguments) showed the real cause at once: the controls were 495 pt wide on a 390 pt screen
+  (seven 66 pt icons in one row widened the whole layout; an app defect, fixed in TransportBar), and the DEBUG audio
+  panel lay over the buttons after the scroll. Compare every frame with the window's width as well as its height, and
+  launch layout tests without DEBUG panels they do not tap (`launchPlayback(..., panels: false)`).
+- **A segmented control's "other" segment is not a fixed index.** CAM-004-T08 tapped Lens segment 1 for "the other
+  lens", but the row lists lenses widest first (Ultra Wide, Wide) and the camera opens on Wide, so the tap chose the
+  running lens and nothing changed (`starts` stayed 1, the lock stayed). Tap a segment that is not `isSelected` and wait
+  for the control's value to change.
+- **A band that reads the same in every mode is measuring something else.** CAM-007-T15's landscape "Fit bar" band read
+  0.324 (back) and 0.802 (front) to three places for Fill center, Fill top 2x and Fit: the controls card, still shown a
+  few seconds after Settings closed, lay over it. Read such bands after `waitControlsHidden()`, away from what stays on
+  screen (status pill, Emergency blackout, the overlay), and from the upright picture (`uprightPixels` draws the
+  screenshot's `UIImage`, applying `imageOrientation`; `rgba` reads `cgImage` as stored). Report a Fill value next to
+  each Fit value so a band that cannot tell them apart shows at once.
 
 ### Policy and evidence
 

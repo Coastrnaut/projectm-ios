@@ -1,8 +1,13 @@
 // HapticPulseGate.swift — ACC-007: which beat events become haptic pulses, and how many
 // (specs/238-acc-007-haptic-beat-feedback; R3, R4; contract C1; research ACC-007-D3, D4).
 //
-// * Choice: Beats (ANL-005 beats with confidence ≥ 0.5, VIS-006's rule), Downbeats (every 4th such beat
-//   counted from a session marker; 4/4, no downbeat detection, as MOD-017's Bar) or Kicks (ANL-007).
+// * Choice: Beats (ANL-005 beats with confidence ≥ 0.5, VIS-006's rule, held while ≥ 0.4 once reached),
+//   Downbeats (every 4th such beat counted from a session marker; 4/4, no downbeat detection, as MOD-017's Bar)
+//   or Kicks (ANL-007).
+// * Hysteresis (QA-011 D1 2026-11-23, spec Clarifications): music with eighth-note hi-hats puts half its onsets
+//   off the beat grid, so ANL-005's precision is about 0.5 and a steady 120 BPM groove's confidence wavers
+//   between 0.46 and 0.52; a single 0.5 cut pulsed 9 of 24 beats. A beat at ≥ 0.5 engages the tracker's beats,
+//   which then stay selected while their confidence is ≥ 0.4; a weaker beat or a session marker disengages.
 // * Limits on the events' own bus times: ≥ 150 ms apart, ≤ 4 in any 1 s, ≤ 180 in any 60 s; an event
 //   delivered more than 200 ms after its bus time is stale and dropped (never played late).
 // * Beats that are throttled, stale or not playable still count, so the bar position never shifts.
@@ -52,7 +57,8 @@ public enum HapticCue: Sendable, Hashable {
 
 /// The gate's limits.
 public struct HapticPulseRules: Sendable, Hashable {
-    /// 150 ms, 4 per 1 s, 180 per 60 s, stale after 200 ms, 4 beats per bar, beat confidence ≥ 0.5.
+    /// 150 ms, 4 per 1 s, 180 per 60 s, stale after 200 ms, 4 beats per bar, beat confidence ≥ 0.5 to engage and
+    /// ≥ 0.4 to stay engaged.
     public static let standard = HapticPulseRules()
 
     public var minimumIntervalNanoseconds: UInt64
@@ -63,10 +69,13 @@ public struct HapticPulseRules: Sendable, Hashable {
     public var staleAfterNanoseconds: UInt64
     public var beatsPerBar: Int
     public var minimumBeatConfidence: Double
+    /// Once a beat reached `minimumBeatConfidence`, later beats stay selected down to this confidence.
+    public var sustainBeatConfidence: Double
 
     public init(minimumIntervalNanoseconds: UInt64 = 150_000_000, burstWindowNanoseconds: UInt64 = 1_000_000_000,
                 burstLimit: Int = 4, dutyWindowNanoseconds: UInt64 = 60_000_000_000, dutyLimit: Int = 180,
-                staleAfterNanoseconds: UInt64 = 200_000_000, beatsPerBar: Int = 4, minimumBeatConfidence: Double = 0.5) {
+                staleAfterNanoseconds: UInt64 = 200_000_000, beatsPerBar: Int = 4, minimumBeatConfidence: Double = 0.5,
+                sustainBeatConfidence: Double = 0.4) {
         self.minimumIntervalNanoseconds = minimumIntervalNanoseconds
         self.burstWindowNanoseconds = burstWindowNanoseconds
         self.burstLimit = max(burstLimit, 1)
@@ -75,6 +84,7 @@ public struct HapticPulseRules: Sendable, Hashable {
         self.staleAfterNanoseconds = staleAfterNanoseconds
         self.beatsPerBar = max(beatsPerBar, 1)
         self.minimumBeatConfidence = minimumBeatConfidence
+        self.sustainBeatConfidence = min(sustainBeatConfidence, minimumBeatConfidence)
     }
 }
 
@@ -101,6 +111,8 @@ public struct HapticPulseGate: Sendable {
     public private(set) var pulses = 0
     public private(set) var throttledCount = 0
     public private(set) var staleCount = 0
+    /// A beat reached `minimumBeatConfidence` and no weaker beat than `sustainBeatConfidence` or marker followed.
+    public private(set) var beatsEngaged = false
 
     /// The last `dutyLimit` pulse times, oldest first from `ringStart`.
     private var ring: [UInt64]
@@ -119,6 +131,7 @@ public struct HapticPulseGate: Sendable {
         pulses = 0
         throttledCount = 0
         staleCount = 0
+        beatsEngaged = false
         ringStart = 0
         ringCount = 0
     }
@@ -145,9 +158,15 @@ public struct HapticPulseGate: Sendable {
         switch cue {
         case .sessionBoundary:
             beatCount = 0
+            beatsEngaged = false
             return false
         case let .beat(confidence):
-            guard confidence >= rules.minimumBeatConfidence else { return false }
+            let threshold = beatsEngaged ? rules.sustainBeatConfidence : rules.minimumBeatConfidence
+            guard confidence >= threshold else {
+                beatsEngaged = false
+                return false
+            }
+            beatsEngaged = true
             beatCount += 1
             switch choice {
             case .beats: return true

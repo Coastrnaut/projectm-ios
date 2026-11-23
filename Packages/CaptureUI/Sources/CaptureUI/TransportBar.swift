@@ -101,23 +101,50 @@ public struct TransportBar: View {
                     remaining(shown, duration: duration)
                 }
             }
-            HStack(spacing: 0) {
-                button(UIStrings.previousTrack, icon: "backward.end.fill", id: "transportPrevious", action: onPrevious)
-                button(UIStrings.transportPlayPause(isPlaying: isPlaying), icon: isPlaying ? "pause.circle.fill" : "play.circle.fill",
-                       id: "transportPlayPause", action: onPlayPause)
-                button(UIStrings.transportStop, icon: "stop.circle", id: "transportStop", action: onStop)
-                button(UIStrings.nextTrack, icon: "forward.end.fill", id: "transportNext", action: onNext)
-                if let isShuffled, let onToggleShuffle {
-                    shuffleButton(isShuffled, toggle: onToggleShuffle)
+            // QA-011 D1 rerun (2026-11-23, AUD-006-T41): at AX5 each icon is about 66 pt wide, so the seven controls of
+            // imported audio (with Shuffle, Repeat and Queue) needed about 470 pt in one row. An HStack cannot shrink an
+            // image below its size, so the row widened the controls, and with them the whole screen's layout, past a
+            // 390 pt iPhone: Queue, half the scrubber and Emergency blackout lay outside the window. The row now
+            // moves Shuffle, Repeat and Queue to a second row when one row does not fit (any width, any text size).
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 0) {
+                    playbackButtons
+                    queueButtons
                 }
-                if let repeatMode, let onCycleRepeat {
-                    repeatButton(repeatMode, cycle: onCycleRepeat)
-                }
-                if let onShowQueue {
-                    button(UIStrings.queue, icon: "list.bullet", id: "transportQueue", action: onShowQueue)
+                VStack(spacing: 6) {
+                    HStack(spacing: 0) { playbackButtons }
+                    if hasQueueButtons {
+                        HStack(spacing: 0) { queueButtons }
+                    }
                 }
             }
             .font(.title2)
+        }
+    }
+
+    /// Previous, Play/Pause, Stop and Next.
+    @ViewBuilder private var playbackButtons: some View {
+        button(UIStrings.previousTrack, icon: "backward.end.fill", id: "transportPrevious", action: onPrevious)
+        button(UIStrings.transportPlayPause(isPlaying: isPlaying), icon: isPlaying ? "pause.circle.fill" : "play.circle.fill",
+               id: "transportPlayPause", action: onPlayPause)
+        button(UIStrings.transportStop, icon: "stop.circle", id: "transportStop", action: onStop)
+        button(UIStrings.nextTrack, icon: "forward.end.fill", id: "transportNext", action: onNext)
+    }
+
+    private var hasQueueButtons: Bool {
+        (isShuffled != nil && onToggleShuffle != nil) || (repeatMode != nil && onCycleRepeat != nil) || onShowQueue != nil
+    }
+
+    /// Shuffle, Repeat and Queue, for imported audio only (AUD-003, AUD-004, AUD-005).
+    @ViewBuilder private var queueButtons: some View {
+        if let isShuffled, let onToggleShuffle {
+            shuffleButton(isShuffled, toggle: onToggleShuffle)
+        }
+        if let repeatMode, let onCycleRepeat {
+            repeatButton(repeatMode, cycle: onCycleRepeat)
+        }
+        if let onShowQueue {
+            button(UIStrings.queue, icon: "list.bullet", id: "transportQueue", action: onShowQueue)
         }
     }
 
