@@ -1,0 +1,21 @@
+{
+  "cold": {
+    "chooserMs": 98.7,
+    "launches": 10,
+    "libraryLoadMs": 97.2,
+    "libraryOutcomes": [
+      "miss"
+    ],
+    "libraryReadyMs": 246.1
+  },
+  "evidence": true,
+  "warm": {
+    "chooserMs": 101.0,
+    "launches": 11,
+    "libraryLoadMs": 28.5,
+    "libraryOutcomes": [
+      "hit"
+    ],
+    "libraryReadyMs": 176.4
+  }
+}

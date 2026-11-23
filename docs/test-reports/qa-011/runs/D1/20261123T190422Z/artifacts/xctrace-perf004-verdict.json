@@ -1,0 +1,11 @@
+{
+  "allocations": 0,
+  "detail": "no PERF-004 texture allocation signposts: the visual used no pooled texture (choose one with effects: PROJECTM_VISUAL)",
+  "markers": {
+    "rotate": 13.663835833,
+    "rotate back": 23.667137833,
+    "start": 3.563135166
+  },
+  "pass": false,
+  "windowSeconds": 3.0
+}
