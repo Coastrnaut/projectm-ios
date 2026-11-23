@@ -1250,6 +1250,40 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   app's last screen. `scripts/device_watch.py --devices D1,D3` runs beside the device runs and exits the moment a
   device's log is silent for 5 minutes (`SILENT`) or a device has no `xcodebuild test` (`IDLE`).
 
+- **D1 rerun 6 and r9, D3 r9 (2026-11-23): eight failures, five causes, none in the app.**
+  - *A query fixed before scrolling never sees a lazy row.* `tapSettingsRow` resolved the row once; off screen it does
+    not exist, so `settingsRow` fell back to a cells query, and Settings' root "Accessibility" row (a text or a button
+    when it scrolled in) was never matched in 16 swipes (ACC-001, ACC-003, ACC-008; Battery had only been reached through
+    the search). The row is now resolved afresh after every step, must sit above the floating search field
+    (`isReachable`), steps use `scrollStep` (a plain `swipeUp()` can start on that field), a root row falls back to
+    Settings' own search, and `openSettingPage` searches the switch label when the path did not reach it.
+  - *Scroll towards the element, and turn round at the list's end.* `ControlSurfaceCase.scrollTo` only stepped towards
+    the end: MED-006's Slideshow switch sits above the seven picture rows (off screen after the Files picks) and
+    FILE-010's storage rows above the Clear Caches result (every row read -1). It now follows an existing element's
+    frame, turns round when a step moves nothing (`listSignature`) or after `swipes` steps, and drags in the list that
+    holds the element (`listHolding`).
+  - *Never tap the controls' Settings button while Settings is open.* MED-001's second pick called `openSettingsPanel`
+    with Settings still open; on an iPhone the sheet covers the button (hit point -1, -1) and XCUITest tapped its
+    visible frame, on a Settings row, which presented a sheet over Settings. The Settings list became the stacked-sheet
+    card ({16, 59, 361, 728}, rows scaled 0.92) and Choose from Files… was never reachable. Every open-Settings helper now
+    returns when the Settings bar shows (`settingsAlreadyOpen`). On an iPad the panel leaves the button uncovered.
+  - *A notification banner can take a tap meant for the app.* MED-005 on D1: a Messages banner lay over Settings' Done
+    ({8, 56, 377, 66}); XCUITest saw it but "Failed to construct element query matching interruption", tapped, and
+    Messages opened. The app sat in the background for two minutes (reverse cache "preparing", state 3), which looked
+    like a cache that never finished; D1 had passed twice before (preparation 4.3 s and 3.8 s). Every Settings Done now
+    goes through `tapSettingsDone` (swipes a `NotificationShortLookView` away, re-activates the app if it left).
+    Turn on a Focus (Do Not Disturb) on the devices for runs; never describe a banner's content in a report.
+  - *`snapshot()` of a vanished element retries for 2 s.* REC-007 read "Recording in 1" first at t 10.7 s, then the
+    countdown's own snapshot retried from 11.96 to 14.19 s once it had gone, so the start looked 3.48 s late. The poll
+    now reads the countdown, indicator and announcement from one snapshot of the app (`windowValues`), which never
+    retries. The app had started on time (countdown gone about 1.2 s after "1" first showed).
+  - *Tapping the chosen Camera mode opens Camera Controls* (iOS 26+). MED-014 tapped "PhotoModeButton" while Photo was
+    chosen; the drawer ("Dismiss Camera Controls", Edit, Flash, Live Photo…) hid "PhotoCapture". The chosen mode is left
+    alone, an open drawer is closed, and the shutter is found by identifier or label (buttons printed when missing).
+  - *An iPad sheet is not the window.* D3 ACC-002 at AX5 dragged twelve times at x 787 of 820, beside the browser form
+    sheet (x 140-680), so My Presets was never built. `dragContentUp(near:)` drags inside the list holding a reference
+    row; `openListRow` brings a row above the top bar down instead of pushing it further up.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

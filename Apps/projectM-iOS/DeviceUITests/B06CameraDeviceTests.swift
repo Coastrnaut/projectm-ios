@@ -43,8 +43,7 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     }
 
     private func closeSettings() {
-        app.navigationBars["Settings"].buttons["Done"].tap()
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
     }
 
     /// The camera is live: VoiceOver value "Live" and frames keep arriving (over 1 s).
@@ -79,6 +78,7 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     func testCAM002FrontCameraLiveThroughRotation() { liveThroughRotation("CAM-002-T21", "front") }
 
     private func openSettings() {
+        if settingsAlreadyOpen() { return }
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
@@ -156,7 +156,7 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
             pause(1)
             XCTAssertEqual(app.state, .runningForeground, "switch \(i + 1): no crash")
         }
-        app.navigationBars["Settings"].buttons["Done"].tap()
+        tapSettingsDone()
         assertLive(task, "after ten lens switches")
     }
 

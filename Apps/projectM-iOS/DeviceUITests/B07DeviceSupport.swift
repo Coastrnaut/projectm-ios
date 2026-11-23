@@ -116,14 +116,13 @@ class B07DeviceCase: DeviceAcceptanceCase {
     }
 
     func openSettings() {
+        if settingsAlreadyOpen() { return }
         tapFresh("settings")
         XCTAssertTrue(appears(app.navigationBars["Settings"], 5), "Settings opened")
     }
 
     func closeSettings() {
-        let done = app.navigationBars["Settings"].buttons["Done"]
-        if done.exists { done.tap() }
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
     }
 
     /// The list a drag scrolls: a side panel on an iPad, else the window (as UITestWaits' `scrollSurface`).
@@ -263,7 +262,10 @@ class B07DeviceCase: DeviceAcceptanceCase {
     func openMyPresets() -> Bool {
         let myPresets = app.buttons["node:myPresets"]
         guard appears(app.buttons["node:included"], 10) || appears(myPresets, 1) else { return false }
-        for _ in 0..<12 where !myPresets.exists { app.dragContentUp(); _ = appears(myPresets, 1) }
+        // Drags inside the browser's list (found by its Included row): on an iPad the browser is a sheet in the middle of
+        // the window (D3 2026-11-23, `dragContentUp(near:)`).
+        let home = app.buttons["node:included"]
+        for _ in 0..<12 where !myPresets.exists { app.dragContentUp(near: home.exists ? home : nil); _ = appears(myPresets, 1) }
         guard myPresets.exists else { return false }
         return app.openListRow(myPresets, destination: app.navigationBars["My Presets"])
     }

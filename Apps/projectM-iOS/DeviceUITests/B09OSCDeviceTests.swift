@@ -55,7 +55,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         let task = "OSC-007-T12"
         listen("test")
         XCTAssertTrue(wait(10) { self.testValue.contains("0.42") }, "delivered while listening")
-        app.navigationBars["Settings"].buttons["Done"].tap()
+        tapSettingsDone()
         let badge = app.descendants(matching: .any)["oscListenerBadge"].firstMatch
         XCTAssertTrue(wait(5) { badge.exists }, "the listener badge shows while listening")
         let stop = app.buttons["oscStopButton"].firstMatch
@@ -92,7 +92,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         let limited = rateLimited
         report(task, "flood", ["rateLimited": Double(limited)])
         XCTAssertGreaterThan(limited, 0, "Rate-limited grows")
-        app.navigationBars["Settings"].buttons["Done"].tap()
+        tapSettingsDone()
         assertFrameRate(task, "after the flood")
     }
 

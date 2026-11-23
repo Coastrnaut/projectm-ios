@@ -630,7 +630,7 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(mine.waitForExistence(timeout: 10), "library home")
         XCTAssertTrue(app.openListRow(mine, destination: app.navigationBars["My Presets"]), "My Presets opened")
         let row = app.buttons["preset:pre015-large"]
-        for _ in 0..<6 where !app.isClearOfChrome(row) { app.dragContentUp() }
+        for _ in 0..<6 where !app.isClearOfChrome(row) { app.dragContentUp(near: row.exists ? row : nil) }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the large preset was imported")
         row.press(forDuration: 1.2)
         let edit = app.buttons["editUserPreset"].exists ? app.buttons["editUserPreset"] : app.collectionViews.buttons["Edit"]

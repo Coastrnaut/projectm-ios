@@ -55,6 +55,7 @@ final class B13MediaDeviceTests: DeviceAcceptanceCase {
     }
 
     private func openSettings() {
+        if settingsAlreadyOpen() { return }
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
         app.buttons["settings"].tap()
@@ -62,8 +63,7 @@ final class B13MediaDeviceTests: DeviceAcceptanceCase {
     }
 
     private func closeSettings() {
-        app.navigationBars["Settings"].buttons["Done"].tap()
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
     }
 
     /// Opens Settings (at the Video section) and turns Reverse on; the switch's value reads 1.

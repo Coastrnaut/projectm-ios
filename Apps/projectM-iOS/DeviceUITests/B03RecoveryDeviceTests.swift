@@ -32,14 +32,14 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
     }
 
     private func openSettings() {
+        if settingsAlreadyOpen() { return }
         showControls()
         app.buttons["settings"].tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
     }
 
     private func closeSettings() {
-        app.navigationBars["Settings"].buttons["Done"].tap()
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
     }
 
     private func launchForRecovery(reset: Bool) {

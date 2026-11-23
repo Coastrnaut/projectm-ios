@@ -71,6 +71,7 @@ extension DeviceAcceptanceCase {
     /// Opens Settings from the controls. Controls that are fading out still exist when checked and are gone when their
     /// button is tapped (D2 2026-11-18, CAM-002-T21: no "settings" button to tap); then they are let go and shown fresh.
     func openSettingsForCamera() {
+        if settingsAlreadyOpen() { return }
         let controls = app.otherElements["controls"], settings = app.buttons["settings"]
         for attempt in 0..<2 {
             if attempt == 1 { _ = wait(8) { !controls.exists } }
@@ -89,9 +90,7 @@ extension DeviceAcceptanceCase {
     }
 
     func closeSettingsForCamera() {
-        let done = app.navigationBars["Settings"].buttons["Done"]
-        if done.exists { done.tap() }
-        _ = wait(5) { !self.app.navigationBars["Settings"].exists }
+        tapSettingsDone()
     }
 
     /// Scrolls the open Settings list until `element` is hittable.
