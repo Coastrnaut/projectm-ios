@@ -1314,6 +1314,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   ("no photo-small.jpg"). `run_device_ui_tests.sh` now seeds the fixtures before every run
   (`install_test_fixtures.py --media --if-missing`, only what Documents lacks; `FIXTURES=0` skips it).
 
+- **Order after a matrix run: matrix, then prompt-flow, then UI tests** (D1, 2026-11-23). The matrix reinstalls the
+  app, which resets every permission answer as well as Documents. D1's next UI run had a springboard permission alert
+  over the app: 51 taps reported "Interrupting element Alert" and 8 of 9 tests failed on "the controls are shown". After
+  every `run_device_matrix.py` run on a device, run `mac_device_driver.py prompt-flow` there before any UI test.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

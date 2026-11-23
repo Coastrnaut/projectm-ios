@@ -1074,6 +1074,10 @@ def run_target(label: str, args, devices_by_case: dict[str, list[str]], listing:
     path = write_record(record, record_dir)
     print(f"record: {display_path(path)} sha256 {record['recordSha256']}")
     print(", ".join(f"{k} {v}" for k, v in record["summary"].items() if v))
+    if not args.no_install:
+        # The reinstall reset Documents and every permission answer (D1, 2026-11-23: a springboard alert over the next
+        # UI run). UI tests on this device need the prompt-flow batch first; run_device_ui_tests.sh reseeds fixtures.
+        print(f"next on {label}: python3 scripts/mac_device_driver.py prompt-flow --device {label} before any UI test run")
     return 0 if record["summary"]["pass"] == len(cases) else 1
 
 
