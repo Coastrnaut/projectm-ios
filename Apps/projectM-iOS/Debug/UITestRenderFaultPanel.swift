@@ -30,10 +30,13 @@ struct UITestRenderFaultPanel: View {
                 }
                 .font(.caption2)
                 .opacity(0.01)
+                .allowsHitTesting(false)
             }
         }
         .padding(4)
-        .background(.black.opacity(0.6))
+        // QA-011 D1 (iPhone): the readouts' long values widened this backing across a phone's width, where it took the
+        // visualization's taps (PERF-014-T22: "the controls are shown" failed). Only the buttons take taps now.
+        .background(Color.black.opacity(0.6).allowsHitTesting(false))
     }
 
     private func value(_ id: String, _ text: String) -> some View {

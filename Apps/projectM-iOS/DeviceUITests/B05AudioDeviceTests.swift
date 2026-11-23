@@ -551,10 +551,22 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
                        extra: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
         revealControls()
         let controls = app.otherElements["controls"], playPause = app.buttons["transportPlayPause"]
-        for _ in 0..<4 where controls.exists && !(playPause.exists && playPause.isHittable) {
-            let from = controls.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-            from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: 0, dy: 300)), withVelocity: .default,
-                       thenHoldForDuration: 0.1)
+        // The drag starts inside the visible part of the controls. QA-011 D1 full run 1 (2026-11-22, iPhone 15): the
+        // `controls` element is the whole scroll content, taller than the phone's window at AX5 and anchored at the
+        // bottom, so its 25 % point lay above the window; the four drags scrolled nothing, the controls hid 5 s after
+        // the reveal and the next drag found no "controls". Start at 60 % of the visible part (below the DEBUG
+        // panels) and drag down by at most what stays inside the window; re-reveal if they hid meanwhile.
+        for _ in 0..<4 where !(playPause.exists && playPause.isHittable) {
+            if !controls.exists { revealControls() }
+            guard controls.exists else { break }
+            let windowFrame = app.windows.firstMatch.frame
+            let visible = controls.frame.intersection(windowFrame)
+            guard !visible.isNull, visible.height > 40 else { break }
+            let startY = visible.minY + visible.height * 0.6
+            let drag = min(300, windowFrame.maxY - 20 - startY)
+            let from = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: visible.midX, dy: startY))
+            from.press(forDuration: 0.05, thenDragTo: from.withOffset(CGVector(dx: 0, dy: max(drag, 60))),
+                       withVelocity: .default, thenHoldForDuration: 0.1)
         }
         let window = app.windows.firstMatch.frame
         for id in ["transportPrevious", "transportPlayPause", "transportStop", "transportNext"] {

@@ -48,12 +48,24 @@ extension DeviceAcceptanceCase {
 
     func cameraProbeText(_ id: String) -> String { (app.staticTexts[id].value as? String) ?? "" }
 
+    /// Shows the controls: shown means their Settings button is hittable, not only that the container exists (on D1 in
+    /// landscape the fading container stayed in the tree for 16 s after Settings closed).
+    ///
+    /// QA-011 D1 full run 1 (2026-11-22, iPhone 15): the tap at the tap area's centre never showed the controls in any
+    /// test launched with the camera probes (11 tests). On a phone the window's centre lies on the DEBUG probe readouts,
+    /// which the visualizer's ZStack centres in the safe area (12 pt below the window's centre) and which a phone's
+    /// width wraps into several lines; they took the tap. The probes no longer take taps (VisualizerView), and the
+    /// taps here land off-centre, below the DEBUG panels and above the bottom status, alternating two points.
     func showCameraControls() {
-        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
-        if controls.exists { return }
-        area.tap()
-        if !wait(2, { controls.exists }) { area.tap() }
-        XCTAssertTrue(wait(5) { controls.exists }, "the controls are shown")
+        let controls = app.otherElements["controls"], settings = app.buttons["settings"]
+        let area = app.otherElements["visualizerTapArea"].firstMatch
+        func shown() -> Bool { controls.exists && settings.exists && settings.isHittable }
+        if shown() { return }
+        for dy in [0.62, 0.3, 0.62, 0.3] where !shown() {
+            area.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: dy)).tap()
+            if wait(2, shown) { return }
+        }
+        XCTAssertTrue(wait(3, shown), "the controls are shown")
     }
 
     /// Opens Settings from the controls. Controls that are fading out still exist when checked and are gone when their

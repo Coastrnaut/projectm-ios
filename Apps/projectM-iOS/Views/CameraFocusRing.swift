@@ -189,6 +189,7 @@ struct CameraFocusLayer: View {
             Text(coordinator.cameraFocusProbe)
                 .font(.caption2)
                 .opacity(0.01)
+                .allowsHitTesting(false)
                 .accessibilityIdentifier("cameraFocusProbe")
                 .accessibilityValue(coordinator.cameraFocusProbe)
         }

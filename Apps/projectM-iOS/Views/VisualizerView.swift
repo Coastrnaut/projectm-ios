@@ -402,6 +402,7 @@ struct VisualizerView: View {
             Text(coordinator.visualCycleProbe)
                 .font(.caption2)
                 .opacity(0.01)
+                .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                 .accessibilityIdentifier("visualCycleProbe")
                 .accessibilityValue(coordinator.visualCycleProbe)
         }
@@ -410,6 +411,7 @@ struct VisualizerView: View {
             Text("\(coordinator.sourceStarts)")
                 .font(.caption2)
                 .opacity(0.01)
+                .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                 .accessibilityIdentifier("sourceStarts")
                 .accessibilityValue("\(coordinator.sourceStarts)")
             // OUT-010: whether the slot holding the visual is black, and whether the visual still draws.
@@ -420,11 +422,13 @@ struct VisualizerView: View {
                 Text(state)
                     .font(.caption2)
                     .opacity(0.01)
+                    .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                     .accessibilityIdentifier("outputBlackout")
                     .accessibilityValue(state)
                 Text(running)
                     .font(.caption2)
                     .opacity(0.01)
+                    .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                     .accessibilityIdentifier("visualRunning")
                     .accessibilityValue(running)
             }
@@ -433,11 +437,13 @@ struct VisualizerView: View {
                     Text("\(camera.framesShown)")
                         .font(.caption2)
                         .opacity(0.01)
+                        .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                         .accessibilityIdentifier("cameraFramesShown")
                         .accessibilityValue("\(camera.framesShown)")
                     Text(camera.captureProbe)   // QA-011: the capture path after a camera switch
                         .font(.caption2)
                         .opacity(0.01)
+                        .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                         .accessibilityIdentifier("cameraCaptureProbe")
                         .accessibilityValue(camera.captureProbe)
                 }
@@ -447,6 +453,7 @@ struct VisualizerView: View {
                     Text("\(photo.framesShown)")
                         .font(.caption2)
                         .opacity(0.01)
+                        .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                         .accessibilityIdentifier("photoFramesShown")
                         .accessibilityValue("\(photo.framesShown)")
                 }
@@ -467,6 +474,7 @@ struct VisualizerView: View {
                     }
                     .font(.caption2)
                     .opacity(0.01)
+                    .allowsHitTesting(false)
                 }
                 VideoLoopProbe(video: video)   // MED-003
             }
@@ -500,6 +508,7 @@ struct VisualizerView: View {
                 Text(value)
                     .font(.caption2)
                     .opacity(0.01)
+                    .allowsHitTesting(false)   // QA-011 D1: invisible probes never take the visualization's taps
                     .accessibilityIdentifier("textRendering")
                     .accessibilityValue(value)
             }
