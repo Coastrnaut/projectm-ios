@@ -208,4 +208,83 @@ final class CameraCropTests: XCTestCase {
         XCTAssertEqual(CameraCropAnchor(rawValue: "top"), .top)
         XCTAssertNil(CameraCropMode(rawValue: "Fill"))
     }
+
+    // MARK: QA-011 CAM-007-T15/T16: the drawn picture rectangle (spec 098 Clarifications 2026-11-23)
+
+    /// D1's portrait case by hand: a 1920 × 1440 picture turned 90° (upright 1440 × 1920, 3:4) in a 1179 × 2556
+    /// output. Fit: full width, 1920 × 0.81875 / 2556 = 0.61502 high, centred (bars above and below). Fill Top 2×:
+    /// twice the height, against the top edge, centred horizontally. Fill Center 1×: full height, centred.
+    func testPictureRectByHand() {
+        let fit: CameraPictureRect = CameraPictureGeometry(pictureWidth: 1920, pictureHeight: 1440, rotation: .clockwise90,
+                                                           outputWidth: 1179, outputHeight: 2556,
+                                                           crop: CameraCrop(mode: .fit, anchor: .center, zoom: 1)).pictureRect
+        XCTAssertEqual(fit.x, 0, accuracy: 1e-5)
+        XCTAssertEqual(fit.width, 1, accuracy: 1e-5)
+        XCTAssertEqual(fit.height, 0.61502, accuracy: 1e-4)
+        XCTAssertEqual(fit.y, (1 - 0.61502) / 2, accuracy: 1e-4)
+        let top: CameraPictureRect = CameraPictureGeometry(pictureWidth: 1920, pictureHeight: 1440, rotation: .clockwise90,
+                                                           outputWidth: 1179, outputHeight: 2556,
+                                                           crop: CameraCrop(mode: .fill, anchor: .top, zoom: 2)).pictureRect
+        XCTAssertEqual(top.y, 0, accuracy: 1e-5, "Fill Top sits against the top edge")
+        XCTAssertEqual(top.height, 2, accuracy: 1e-4)
+        XCTAssertEqual(top.x + top.width / 2, 0.5, accuracy: 1e-5, "centred horizontally")
+        let center: CameraPictureRect = CameraPictureGeometry(pictureWidth: 1920, pictureHeight: 1440, rotation: .clockwise90,
+                                                              outputWidth: 1179, outputHeight: 2556, crop: .fill).pictureRect
+        XCTAssertEqual(center.y, 0, accuracy: 1e-5)
+        XCTAssertEqual(center.height, 1, accuracy: 1e-5)
+        XCTAssertLessThan(center.x, 0, "Fill crops the sides")
+        XCTAssertEqual(center.x + center.width / 2, 0.5, accuracy: 1e-5)
+    }
+
+    /// For representative pictures, turns, outputs and crops: the rectangle keeps the upright picture's aspect in
+    /// output pixels, Fill covers the output, Fit lies inside it touching two opposite edges at 1×, the anchor sets
+    /// the top edge, and a point is inside the rectangle exactly where `contains` (the shader's bar test) says so.
+    func testPictureRectAgreesWithTheSamplingGeometry() {
+        let pictures: [(Int, Int, CameraRotation)] = [(1920, 1440, .clockwise90), (1920, 1080, .none), (1440, 1920, .clockwise270)]
+        let outputs: [(Int, Int)] = [(1179, 2556), (2556, 1179), (2064, 2752)]
+        let crops: [CameraCrop] = [.fill, CameraCrop(mode: .fill, anchor: .top, zoom: 2), CameraCrop(mode: .fill, anchor: .bottom, zoom: 1.5),
+                                   CameraCrop(mode: .fit, anchor: .center, zoom: 1), CameraCrop(mode: .fit, anchor: .top, zoom: 1)]
+        for (pw, ph, rotation) in pictures {
+            for (ow, oh) in outputs {
+                for crop in crops {
+                    checkPictureRect(pw, ph, rotation, ow, oh, crop)
+                }
+            }
+        }
+    }
+
+    private func checkPictureRect(_ pw: Int, _ ph: Int, _ rotation: CameraRotation, _ ow: Int, _ oh: Int, _ crop: CameraCrop) {
+        let g = CameraPictureGeometry(pictureWidth: pw, pictureHeight: ph, rotation: rotation,
+                                      outputWidth: ow, outputHeight: oh, mirrored: crop.anchor == .top, crop: crop)
+        let r: CameraPictureRect = g.pictureRect
+        let label: String = "\(pw)x\(ph) r\(rotation.rawValue) → \(ow)x\(oh) \(crop.mode.rawValue)/\(crop.anchor.rawValue)/\(crop.zoom)"
+        let uprightAspect: Double = rotation.swapsAxes ? Double(ph) / Double(pw) : Double(pw) / Double(ph)
+        let drawnWidth: Double = Double(r.width) * Double(ow)
+        let drawnHeight: Double = Double(r.height) * Double(oh)
+        XCTAssertEqual(drawnWidth / drawnHeight, uprightAspect, accuracy: uprightAspect * 1e-4, label + ": aspect kept")
+        let e: Float = 1e-4
+        let right: Float = r.x + r.width
+        let bottom: Float = r.y + r.height
+        if crop.mode == .fill {
+            XCTAssertTrue(r.x <= e && r.y <= e && right >= 1 - e && bottom >= 1 - e, label + ": covers the output")
+        } else {
+            XCTAssertTrue(r.x >= -e && r.y >= -e && right <= 1 + e && bottom <= 1 + e, label + ": inside the output")
+            let touches: Bool = abs(r.width - 1) < e || abs(r.height - 1) < e
+            XCTAssertTrue(touches, label + ": touches two opposite edges at 1×")
+        }
+        let expectedTop: Float = (1 - r.height) * crop.anchor.y
+        XCTAssertEqual(r.y, expectedTop, accuracy: 1e-4, label + ": the anchor places the top edge")
+        XCTAssertEqual(r.x + r.width / 2, 0.5, accuracy: 1e-4, label + ": centred horizontally")
+        for column in 0...20 {
+            for row in 0...20 {
+                let x: Float = Float(column) / 20
+                let y: Float = Float(row) / 20
+                let insideX: Float = min(x - r.x, right - x)
+                let insideY: Float = min(y - r.y, bottom - y)
+                let margin: Float = min(insideX, insideY)
+                guard abs(margin) > 1e-3 else { continue }   // on an edge: either answer
+                XCTAssertEqual(g.contains(x: x, y: y), margin > 0, label + " at (\(x), \(y))")
+            }
+        }
+    }
 }

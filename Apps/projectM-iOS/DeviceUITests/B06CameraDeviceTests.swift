@@ -232,9 +232,10 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     }
 
     /// CAM-007-T15 (D1) / T16 (D2, D3): back and front, Fill Center 1x, Fill Top 2x and Fit, portrait and landscape:
-    /// live, and Save Frame writes a frame of the screen's size in each mode (DEBUG `-uitestCaptureDirectory`). Fit
-    /// shows bars where the camera's 4:3 or 16:9 picture does not fill the screen; upright, undistorted and the anchor
-    /// are judged by eye from the attached screenshots.
+    /// live, and Save Frame writes a frame of the screen's size in each mode (DEBUG `-uitestCaptureDirectory`). The mode
+    /// is checked from the drawn rectangle (`assertPictureRect`, DEBUG `cameraPictureRect`; spec 098 Clarifications
+    /// 2026-11-23), independent of the light: Fit leaves bars, Fill covers the window, Top starts at its top. Upright,
+    /// undistorted and the anchor are also judged by eye from the attached screenshots.
     func testCAM007CropModesBothCamerasAndSaveFrame() {
         let task = UIDevice.current.userInterfaceIdiom == .pad ? "CAM-007-T16" : "CAM-007-T15"
         let modes: [(String, [String: Any])] = [
@@ -264,15 +265,21 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
                     // mean the screen as shown whatever rows the screenshot's `cgImage` keeps.
                     waitControlsHidden()
                     screen(task, step)
+                    // D1 run 6 (2026-11-23): the portrait band read nonBlack 0.232 in all three modes with a mean luma
+                    // of about 0.07 (the camera faced a dark room), so a dark picture and a black bar looked the same
+                    // and something constant lay in the band. The band is now only reported; the mode is checked
+                    // from the drawn rectangle (`cameraPictureRect`, DEBUG), read from the geometry the camera layer
+                    // drew with, which does not depend on the light (spec 098 Clarifications 2026-11-23).
                     if UIDevice.current.userInterfaceIdiom == .phone, let image = lastShot?.image {
                         let (upright, size) = Self.uprightPixels(image, step: sampleStep)
                         let band: (Double, Double, Double, Double) = orientation == .portrait ? (0.1, 0.825, 0.65, 0.04)
                             : (0.03, 0.35, 0.12, 0.3)
                         let lit = Self.region(upright, width: size.0, height: size.1, band).nonBlack
-                        report(task, "\(step) bar band", ["nonBlack": lit, "width": Double(size.0), "height": Double(size.1),
-                                                          "rawWidth": Double(lastSize.0), "rawHeight": Double(lastSize.1)])
-                        if label == "fit" { XCTAssertLessThan(lit, 0.15, "\(step): Fit shows a black bar there (\(lit))") }
+                        report(task, "\(step) bar band (report only)",
+                               ["nonBlack": lit, "width": Double(size.0), "height": Double(size.1),
+                                "rawWidth": Double(lastSize.0), "rawHeight": Double(lastSize.1)])
                     }
+                    assertPictureRect(task, step, settings: settings)
                 }
                 // Save Frame from the controls; the saved file is read back into the probe ("png WxH opaque").
                 // D1 2026-11-18: the controls still existed (fading out, 8 s after Settings closed) when checked, so
@@ -293,6 +300,65 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
                 app.terminate()
             }
         }
+    }
+
+    /// CAM-007-T15/T16 (spec 098 Clarifications 2026-11-23): the crop mode from the drawn rectangle, independent of
+    /// the light. `cameraPictureRect` (DEBUG, under `-uitestDiagnostics`) reports the whole upright picture's
+    /// rectangle in window fractions from the geometry the camera layer drew with last frame, plus the crop and the
+    /// source's upright aspect. Fit: the source's aspect, inside the window and short of it on one axis (bars).
+    /// Fill: covers the window. Top: the rectangle's top edge at the window's top.
+    private func assertPictureRect(_ task: String, _ step: String, settings: [String: Any]) {
+        let probe = app.staticTexts["cameraPictureRect"]
+        let mode = settings["settings.camera.cropMode"] as? String ?? "fill"
+        let anchor = settings["settings.camera.cropAnchor"] as? String ?? "center"
+        let portrait = XCUIDevice.shared.orientation.isPortrait
+        var fields: [String: String] = [:]
+        // Wait for a reading of this crop in this orientation (the probe refreshes every 0.5 s).
+        let ready = wait(10) {
+            fields = Self.probeFields((probe.value as? String) ?? "")
+            guard fields["mode"] == mode, fields["anchor"] == anchor, let window = fields["window"] else { return false }
+            let size = window.split(separator: "x").compactMap { Double($0) }
+            return size.count == 2 && (size[1] > size[0]) == portrait
+        }
+        let text = (probe.value as? String) ?? ""
+        XCTAssertTrue(ready, "\(step): cameraPictureRect reports \(mode)/\(anchor) in this orientation (\(text))")
+        guard ready, let rectText = fields["rect"], let windowText = fields["window"],
+              let sourceAspect = fields["sourceAspect"].flatMap(Double.init) else { return }
+        let r = rectText.split(separator: ",").compactMap { Double($0) }
+        let window = windowText.split(separator: "x").compactMap { Double($0) }
+        guard r.count == 4, window.count == 2, r[2] > 0, r[3] > 0 else {
+            XCTFail("\(step): unreadable cameraPictureRect (\(text))")
+            return
+        }
+        let (x, y, w, h) = (r[0], r[1], r[2], r[3])
+        let drawnAspect = (w * window[0]) / (h * window[1])
+        let e = 0.005
+        report(task, "\(step) picture rect", ["x": x, "y": y, "width": w, "height": h, "drawnAspect": drawnAspect,
+                                              "sourceAspect": sourceAspect, "windowWidth": window[0], "windowHeight": window[1]])
+        print("CAM-007 \(step) rect: \(text)")
+        XCTAssertEqual(drawnAspect, sourceAspect, accuracy: sourceAspect * 0.02, "\(step): the picture keeps the source's aspect (\(text))")
+        if mode == "fit" {
+            XCTAssertTrue(x >= -e && y >= -e && x + w <= 1 + e && y + h <= 1 + e, "\(step): Fit lies inside the window (\(text))")
+            XCTAssertLessThan(min(w, h), 0.98, "\(step): Fit is short of the window on one axis, leaving bars (\(text))")
+        } else {
+            XCTAssertTrue(x <= e && y <= e && x + w >= 1 - e && y + h >= 1 - e, "\(step): Fill covers the window (\(text))")
+        }
+        if anchor == "top" {
+            XCTAssertEqual(y, 0, accuracy: e, "\(step): Top anchors the picture at the window's top (\(text))")
+            if h > 1 + e { XCTAssertGreaterThan(y + h, 1 + e, "\(step): the overflow is below (\(text))") }
+        } else if anchor == "center" {
+            XCTAssertEqual(y + h / 2, 0.5, accuracy: e, "\(step): Center keeps the picture centred vertically (\(text))")
+        }
+    }
+
+    /// "key=value key=value" → [key: value].
+    private static func probeFields(_ text: String) -> [String: String] {
+        var fields: [String: String] = [:]
+        for part in text.split(separator: " ") {
+            let pair = part.split(separator: "=", maxSplits: 1)
+            if pair.count == 2 { fields[String(pair[0])] = String(pair[1]) }
+        }
+        return fields
     }
 }
 

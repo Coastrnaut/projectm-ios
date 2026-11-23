@@ -83,6 +83,20 @@ public struct CameraPictureGeometry: Sendable, Equatable {
         self.rotation = rotation
     }
 
+    /// QA-011 CAM-007-T15/T16 (spec 098 Clarifications 2026-11-23): where the whole upright picture lands in the
+    /// output, in output fractions (0…1, top-left), read from the same `visible`/`offset` the shader samples with:
+    /// output x shows upright a = offsetX + x × visibleWidth, so a = 0…1 spans x = −offsetX / visibleWidth over a
+    /// width of 1 / visibleWidth (y likewise). Fill covers 0…1 (and may extend past it); Fit lies inside it, with
+    /// bars where it does not reach. The mirror flips the picture within this rectangle and does not move it.
+    public var pictureRect: CameraPictureRect {
+        guard visibleWidth > 0, visibleHeight > 0, visibleWidth.isFinite, visibleHeight.isFinite else {
+            return CameraPictureRect(x: 0, y: 0, width: 1, height: 1)
+        }
+        let width: Float = 1 / visibleWidth
+        let height: Float = 1 / visibleHeight
+        return CameraPictureRect(x: -offsetX * width, y: -offsetY * height, width: width, height: height)
+    }
+
     /// CAM-007-R4: true when output point (`x`, `y`) (0…1, top-left) shows the picture; false in Fit's
     /// bars. The shader uses the same test and tolerance.
     public func contains(x: Float, y: Float) -> Bool {
@@ -108,5 +122,47 @@ public struct CameraPictureGeometry: Sendable, Equatable {
         case .clockwise180: return (1 - a, 1 - b)
         case .clockwise270: return (1 - b, a)
         }
+    }
+}
+
+/// A rectangle in output fractions (0…1, top-left; QA-011 CAM-007-T15/T16).
+public struct CameraPictureRect: Sendable, Equatable {
+    public var x: Float
+    public var y: Float
+    public var width: Float
+    public var height: Float
+
+    public init(x: Float, y: Float, width: Float, height: Float) {
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+    }
+}
+
+/// What the camera layer drew last frame (QA-011 CAM-007-T15/T16): the picture, the crop, the layer picture's size
+/// and the geometry the shader sampled with. Plain values, stored once per frame without allocating.
+public struct CameraDrawnLayout: Sendable, Equatable {
+    public let picture: CameraDrawnPicture
+    public let crop: CameraCrop
+    public let outputWidth: Int
+    public let outputHeight: Int
+    public let geometry: CameraPictureGeometry
+
+    public init(picture: CameraDrawnPicture, crop: CameraCrop, outputWidth: Int, outputHeight: Int,
+                geometry: CameraPictureGeometry) {
+        self.picture = picture
+        self.crop = crop
+        self.outputWidth = outputWidth
+        self.outputHeight = outputHeight
+        self.geometry = geometry
+    }
+
+    /// The upright picture's width over its height (the source's aspect after its rotation).
+    public var sourceAspect: Double {
+        let swaps: Bool = picture.rotation.swapsAxes
+        let w: Double = Double(swaps ? picture.height : picture.width)
+        let h: Double = Double(swaps ? picture.width : picture.height)
+        return h > 0 ? w / h : 0
     }
 }

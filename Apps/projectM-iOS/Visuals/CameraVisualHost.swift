@@ -158,6 +158,33 @@ final class CameraVisualHost: PresentationBoundResource, CompositorVisualHost {
     /// QA-011 (DEBUG): the capture path's counters and the layer's previous-camera drops, for the switch test.
     var captureProbe: String { camera.provider.debugCaptureSummary + " stale=\(camera.staleDropped) shown=\(camera.framesShown)" }
 
+    #if DEBUG
+    /// QA-011 CAM-007-T15/T16 (DEBUG; spec 098 Clarifications 2026-11-23): where the camera layer drew the picture
+    /// last frame, read from the layer's own `drawnLayout` (the geometry the shader sampled with), never recomputed
+    /// here. "mode=<fill|fit> anchor=<…> zoom=<z> source=<W>x<H> rot=<deg> sourceAspect=<upright w/h>
+    /// out=<layer W>x<H> window=<W>x<H> rect=<x>,<y>,<w>,<h>": `rect` is the whole upright picture in fractions of the
+    /// window (top-left origin; Fill may extend past 0…1), mapped from the layer picture's fractions through this
+    /// view's frame in its window. "none" while no picture is drawn.
+    var pictureRectProbe: String {
+        guard let layout = camera.drawnLayout else { return "none" }
+        let rect: CameraPictureRect = layout.geometry.pictureRect
+        let frame: CGRect = view.window == nil ? view.bounds : view.convert(view.bounds, to: nil)
+        let window: CGSize = view.window?.bounds.size ?? view.bounds.size
+        guard window.width > 0, window.height > 0 else { return "none" }
+        let x: Double = (Double(frame.minX) + Double(rect.x) * Double(frame.width)) / Double(window.width)
+        let y: Double = (Double(frame.minY) + Double(rect.y) * Double(frame.height)) / Double(window.height)
+        let w: Double = Double(rect.width) * Double(frame.width) / Double(window.width)
+        let h: Double = Double(rect.height) * Double(frame.height) / Double(window.height)
+        let f = { (value: Double) -> String in String(format: "%.4f", value) }
+        let crop: CameraCrop = layout.crop
+        return "mode=\(crop.mode.rawValue) anchor=\(crop.anchor.rawValue) zoom=\(crop.zoom)"
+            + " source=\(layout.picture.width)x\(layout.picture.height) rot=\(layout.picture.rotation.rawValue)"
+            + " sourceAspect=\(f(layout.sourceAspect)) out=\(layout.outputWidth)x\(layout.outputHeight)"
+            + " window=\(Int(window.width.rounded()))x\(Int(window.height.rounded()))"
+            + " rect=\(f(x)),\(f(y)),\(f(w)),\(f(h))"
+    }
+    #endif
+
     var recoveryProbe: String {
         let reason: String = stopReason?.rawValue ?? "none"
         let pending: String = retryPending ? "yes" : "no"
