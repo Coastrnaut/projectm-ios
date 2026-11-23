@@ -95,6 +95,8 @@ CASES: list[dict] = [
     case("xctrace-perf004", "xctrace", "Instruments Logging (os_signpost): PERF-004 texture allocations only at the "
          "start and within 3 s of a rotation", ["PERF-004-T16"], 900, verdict="perf004",
          runs=[{"name": "perf004", "template": "Logging", "seconds": 40, "mode": "perf004",
+                # The Text visual: a compositor visual (shared texture pool) that needs no permission (2026-11-23).
+                "env": {"PROJECTM_VISUAL": "text"},
                 "tables": [xt.SIGNPOST_SCHEMA]}]),
     case("xctrace-perf011", "xctrace", "Instruments Metal System Trace: no GPU intervals and a lower footprint 10 s "
          "after backgrounding (In-App Playback), frames within 2 s of the return", [], 900, partOf=["PERF-011-T21"],

@@ -127,8 +127,8 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 | `autorun-pre005` | part of PRE-005-T17 | 200 real thumbnails (evenly spaced) scored; percentiles and class counts for the threshold choice |
 | `autorun-sc009` | AUD-014-T32 (D1, D3) | the lifecycle scripts' end states; on demand, needs the microphone answered (see below) |
 | `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (builds RendererLab into `Build/rendererlab` when missing) |
-| `xctrace-perf004` | PERF-004-T16 | Logging template: "PERF-004 texture allocation" signposts only before start + 5 s and within 3 s of each rotation (perf004 rotates at 10 s and back at 20 s) |
-| `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; the Mac opens Settings at 15 s and relaunches the app at 35 s: no frames (and no GPU intervals of the app) from 10 s after backgrounding, a lower footprint, the first frame within 2 s of the return |
+| `xctrace-perf004` | PERF-004-T16 | Logging template on the Text visual (`PROJECTM_VISUAL=text`, the default since 2026-11-23): "PERF-004 texture allocation" signposts only before start + 5 s and within 3 s of each rotation (perf004 rotates at 10 s and back at 20 s) |
+| `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; the Mac opens Settings at 15 s and relaunches the app at 35 s: no frames (and no GPU intervals of the app) from 10 s after backgrounding until the return (willEnterForeground, marker `QA-011 return`), a lower footprint, the first frame within 2 s of the return |
 | `xctrace-perf008` | part of PERF-008-T16 | on demand (about 12 min): Power Profiler 5 min Standard then 5 min Battery saver; fps and frame time per minute from the app, energy per minute from any power table the trace exports |
 | `xctest-goldens-record` | part of QA-003-T17 | on demand: records this model's goldens and imports them; commit them, rebuild, then `xctest-goldens` compares |
 
@@ -147,12 +147,12 @@ python3 scripts/run_device_matrix.py --device D1 --only autorun-sc009 --no-insta
 - **Instruments through `xctrace --env`**: AutomationRunner modes run inside the trace
   (`--env PROJECTM_AUTORUN=perf004 --launch -- <bundle>`), so the measurement build (Release + `PROJECTM_AUTOMATION`)
   is traced without DEBUG hooks. The modes emit Points of Interest markers (`QA-011 start`, `rotate`, `rotate back`,
-  `background`, `foreground`) so trace times line up with the run; add `--instrument os_signpost` to templates that
+  `background`, `return`, `foreground`) so trace times line up with the run; add `--instrument os_signpost` to templates that
   lack it (Metal System Trace, Power Profiler). `xctrace record --show-recording-options` lists a template's
   configurable instruments.
 - **Backgrounding from the Mac**: `devicectl device process launch <id> com.apple.Preferences` sends the app away; a
   launch of the running app without `--terminate-existing` brings it back. The app holds a background task while
-  away so its sampler can read footprint and frame counts (perf011). Not yet run on a device: check the first run.
+  away so its sampler can read footprint and frame counts (perf011). First D1 run 2026-11-23: see the lessons below.
 - **Device goldens are per model** (`ios-device-iphone15-4`), outside `GoldenPlatformClass` (every generator suite
   iterates those classes and would demand goldens for them). The test bundle is read-only, so recording attaches JSON
   per capture and the Mac writes the folder.
@@ -1195,6 +1195,31 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   not the solid PNG's), and `-uitestSettingsSection show` reopens *every* later Settings at Show, so the photo summary
   and the visual rows above it were never found in 12 swipes each way. Add `-uitestSettingsSectionOnce` when a test
   needs the top of Settings after the jump.
+- **A "no work while away" window ends where the app may work again, not at `didBecomeActive`.** D1's first perf011
+  run (2026-11-23) failed "no frames while away" on one frame: the sample that counted it was taken in the inactive
+  state on the way back, and the trace's first GPU interval of the app came 16 ms before the `QA-011 foreground`
+  marker (didBecomeActive). PERF-011 lifts its gate at `willEnterForeground`, so that frame is the return's. perf011
+  now marks `QA-011 return` (willEnterForeground) and reports `returnedAt`, `framesAtReturn` and a running `total` per
+  sample; the verdict counts only samples taken in the background plus the frames between the last of them and the
+  return, and the GPU window ends at the return marker. Older reports and traces (no return time) keep the strict
+  didBecomeActive end.
+- **A check that matches nothing passes by accident: make "found nothing" a failure.** The same run's GPU check
+  passed vacuously: it looked for rows mentioning "projectM-iOS", but Metal System Trace names the process by its
+  display name ("projectM (2164)"), so 35,000 of the app's intervals matched none. The verdict now matches the name
+  before " (pid)" against `projectM-iOS` and `projectM`, and fails when the app has no interval in the trace at all
+  (it lists the processes it saw). Before trusting a zero, count what the filter matches in the whole table.
+- **Read a cost's distribution before blaming heat or noise.** D1's first `rendererlab-flashcost` run (2026-11-23)
+  failed at max 3.03 ms against 2 ms. Heat was ruled out by the report itself (`thermalStates: ["nominal"]`, Release),
+  and the method was T104's. The per-preset costs split into two groups, 1.0-1.4 ms and 2.1-2.4 ms, with an extra
+  ~1.1 ms that did not scale with the preset's own frame time: a fixed full-screen workload behind a content-dependent
+  branch (the envelope's exact sRGB decode/encode, only while it dims). The fix went into the pass (a per-frame tone
+  table), never into the 2.0 ms limit. A simulator run can rank such a branch at a larger size (4096 × 4096) but is
+  never the device result; the next D1 run is.
+- **Choose the subject a measurement needs inside the case.** PERF-004-T16's first D1 run used the circular spectrum
+  with the glow and got no "PERF-004 texture allocation" signpost at all: only the compositor visuals (Camera, Photo,
+  Video, Text) draw from the shared texture pool; the native spectra, their effects and projectM keep their own
+  textures (PERF-004 Clarification, 2026-11-13). perf004 now defaults to the Text visual (no permission, no import) and
+  the matrix case passes `PROJECTM_VISUAL=text` explicitly, so the unattended run measures the pool without a person.
 
 ### Policy and evidence
 

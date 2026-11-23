@@ -14,11 +14,16 @@
 //      step; GPU tests compare them) — then writes one slot of the updated state of one area
 //      (rows 0-15 tiles, row 16 the whole frame; columns 0-4 luminance, 5-9 redness). Row 17 holds
 //      the gain.
-//   3. Output: the frame x gain in linear light (exact sRGB decode/encode), never lifted; with
-//      gain 1 the scene is copied unchanged.
+//   3. Tone table (256 x 2 target, FX-019-T22, 2026-11-23): for every 8-bit level k, k/255 x gain in linear light
+//      (exact sRGB decode/encode) in row 0, then OUT-009's calibration in row 1. The scene is RGBA8, so every
+//      input is one of these levels: the output looks each channel up instead of evaluating six pow() per pixel.
+//      On D1 the per-pixel decode/encode cost about 1 ms per frame whenever the gain was below 1 (13 of 28 starter
+//      presets over the 2 ms budget, docs/test-reports/performance.md).
+//   4. Output: the frame x gain (the table's row 0), never lifted; with gain 1 and no calibration the scene is
+//      copied unchanged.
 //      OUT-009 (specs/268-out-009-output-color-calibration): then, only while a display calibration is set, each
-//      encoded channel becomes clamp(gain_c × c^exponent, 0, 1); `PMFlashLimiterDrawOutput` redraws this step from the
-//      current state (calibrated or not) for REC-001's read-back.
+//      encoded channel becomes clamp(gain_c × c^exponent, 0, 1) (the table's row 1); `PMFlashLimiterDrawOutput`
+//      redraws this step from the current state and table (calibrated or not) for REC-001's read-back.
 //      OUT-008 (specs/309-out-008-grid-warp, contract C3): while a grid warp is set, the output step for the display clears
 //      the target to black and draws the same output through the mesh (the warp program: `gl_VertexID` → lattice vertex,
 //      16 x 16 quads per control cell, placed on the Catmull-Rom surface through the control points; optional guide
@@ -29,6 +34,8 @@
 #define TILE_SIDE 4
 #define STATE_WIDTH 10
 #define STATE_HEIGHT 18
+#define LUT_WIDTH 256
+#define LUT_HEIGHT 2
 #include "CFlashLimiter.h"
 #include <stdlib.h>
 
@@ -324,24 +331,48 @@ static const char *stateSource =
     "    else color = vec4(pack(t.ages[4] / 2.0), pack(t.ages[5] / 2.0));\n"
     "}\n";
 
-static const char *outputSource =
+// FX-019-T22: the tone table, one fragment per 8-bit level (x) and row (y: 0 gain, 1 gain then calibration). The same
+// steps as the warp output below, evaluated 512 times per frame instead of once per pixel.
+static const char *lutSource =
     COMMON
-    "uniform sampler2D scene;\n"
     "uniform sampler2D state;\n"
     "uniform float calOn;\n"
     "uniform float calExponent;\n"
     "uniform vec3 calGain;\n"
+    "out vec4 color;\n"
+    "void main() {\n"
+    "    ivec2 p = ivec2(gl_FragCoord.xy);\n"
+    "    float g = unpack(texelFetch(state, ivec2(0, 17), 0).rg);\n"
+    "    vec3 c = vec3(float(p.x) / 255.0);\n"
+    "    if (g < 1.0) c = encodeSRGB(decodeSRGB(c) * g);\n"
+    "    if (p.y == 1 && calOn > 0.5) c = clamp(calGain * pow(clamp(c, 0.0, 1.0), vec3(calExponent)), 0.0, 1.0);\n"
+    "    color = vec4(c, 1.0);\n"
+    "}\n";
+
+// The output step: an 8-bit scene sampled at its own pixel centres gives exact levels k/255, so the table's entry k is
+// what the per-pixel steps would write.
+static const char *outputSource =
+    COMMON
+    "uniform sampler2D scene;\n"
+    "uniform sampler2D state;\n"
+    "uniform sampler2D lut;\n"
+    "uniform float calOn;\n"
     "in vec2 uv;\n"
     "out vec4 color;\n"
     "void main() {\n"
     "    float g = unpack(texelFetch(state, ivec2(0, 17), 0).rg);\n"
     "    vec3 c = texture(scene, uv).rgb;\n"
-    "    if (g < 1.0) c = encodeSRGB(decodeSRGB(c) * g);\n"
-    "    if (calOn > 0.5) c = clamp(calGain * pow(clamp(c, 0.0, 1.0), vec3(calExponent)), 0.0, 1.0);\n"
+    "    if (g < 1.0 || calOn > 0.5) {\n"
+    "        int row = calOn > 0.5 ? 1 : 0;\n"
+    "        ivec3 k = clamp(ivec3(c * 255.0 + 0.5), ivec3(0), ivec3(255));\n"
+    "        c = vec3(texelFetch(lut, ivec2(k.r, row), 0).r, texelFetch(lut, ivec2(k.g, row), 0).g,\n"
+    "                 texelFetch(lut, ivec2(k.b, row), 0).b);\n"
+    "    }\n"
     "    color = vec4(c, 1.0);\n"
     "}\n";
 
-// OUT-008: the output step through the mesh (same steps as outputSource), then the guides.
+// OUT-008: the output step through the mesh (the per-pixel steps the tone table holds: the mesh samples the scene
+// between pixel centres, so its inputs are not 8-bit levels), then the guides.
 static const char *warpOutputSource =
     COMMON
     "uniform sampler2D scene;\n"
@@ -368,17 +399,19 @@ static const char *warpOutputSource =
 
 struct PMFlashLimiter {
     GLTable gl;             // this limiter's entry points (from the caller's loader)
-    GLuint measureProgram, stateProgram, outputProgram, vertexArray;
+    GLuint measureProgram, stateProgram, lutProgram, outputProgram, vertexArray;
     GLuint sceneTexture, sceneFramebuffer;
     GLuint tileTexture, tileFramebuffer;
     GLuint stateTextures[2], stateFramebuffers[2];
+    GLuint lutTexture, lutFramebuffer;   // FX-019-T22: the tone table
     int current;            // index of the latest state
     int width, height;
     int needsReset;
     GLint measureScene;
     GLint stateTiles, statePrevious, stateDt, stateWindow, stateLum, stateRed, stateMargin, stateRise, stateBudget, stateReset;
-    GLint outputScene, outputState;
-    GLint outputCalOn, outputCalExponent, outputCalGain;   // OUT-009
+    GLint lutState, lutCalOn, lutCalExponent, lutCalGain;   // FX-019-T22
+    GLint outputScene, outputState, outputLut;
+    GLint outputCalOn;   // OUT-009 (the table's row)
     int calibrated;
     float calExponent, calGain[3];
     GLuint warpProgram;   // OUT-008
@@ -458,10 +491,11 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
     const GLTable *gl = &limiter->gl;
     limiter->measureProgram = link(gl, measureSource);
     limiter->stateProgram = link(gl, stateSource);
+    limiter->lutProgram = link(gl, lutSource);
     limiter->outputProgram = link(gl, outputSource);
     // OUT-008: a warp program that does not build only turns the warp off; the envelope never depends on it.
     limiter->warpProgram = linkWith(gl, warpVertexSource, warpOutputSource);
-    if (!limiter->measureProgram || !limiter->stateProgram || !limiter->outputProgram) {
+    if (!limiter->measureProgram || !limiter->stateProgram || !limiter->lutProgram || !limiter->outputProgram) {
         PMFlashLimiterDestroy(limiter);
         return 0;
     }
@@ -477,11 +511,14 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
     limiter->stateRise = gl->getUniformLocation(s, "rise");
     limiter->stateBudget = gl->getUniformLocation(s, "budget");
     limiter->stateReset = gl->getUniformLocation(s, "resetState");
+    limiter->lutState = gl->getUniformLocation(limiter->lutProgram, "state");
+    limiter->lutCalOn = gl->getUniformLocation(limiter->lutProgram, "calOn");
+    limiter->lutCalExponent = gl->getUniformLocation(limiter->lutProgram, "calExponent");
+    limiter->lutCalGain = gl->getUniformLocation(limiter->lutProgram, "calGain");
     limiter->outputScene = gl->getUniformLocation(limiter->outputProgram, "scene");
     limiter->outputState = gl->getUniformLocation(limiter->outputProgram, "state");
+    limiter->outputLut = gl->getUniformLocation(limiter->outputProgram, "lut");
     limiter->outputCalOn = gl->getUniformLocation(limiter->outputProgram, "calOn");
-    limiter->outputCalExponent = gl->getUniformLocation(limiter->outputProgram, "calExponent");
-    limiter->outputCalGain = gl->getUniformLocation(limiter->outputProgram, "calGain");
     limiter->calibrated = 0;
     limiter->calExponent = 1.0f;
     limiter->calGain[0] = limiter->calGain[1] = limiter->calGain[2] = 1.0f;
@@ -498,7 +535,9 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
     limiter->tileFramebuffer = makeTarget(gl, &limiter->tileTexture, TILE_SIDE, TILE_SIDE);
     limiter->stateFramebuffers[0] = makeTarget(gl, &limiter->stateTextures[0], STATE_WIDTH, STATE_HEIGHT);
     limiter->stateFramebuffers[1] = makeTarget(gl, &limiter->stateTextures[1], STATE_WIDTH, STATE_HEIGHT);
-    if (!limiter->tileFramebuffer || !limiter->stateFramebuffers[0] || !limiter->stateFramebuffers[1]) {
+    limiter->lutFramebuffer = makeTarget(gl, &limiter->lutTexture, LUT_WIDTH, LUT_HEIGHT);
+    if (!limiter->tileFramebuffer || !limiter->stateFramebuffers[0] || !limiter->stateFramebuffers[1]
+        || !limiter->lutFramebuffer) {
         PMFlashLimiterDestroy(limiter);
         return 0;
     }
@@ -517,9 +556,12 @@ void PMFlashLimiterDestroy(PMFlashLimiter *limiter) {
         if (limiter->stateFramebuffers[i]) gl->deleteFramebuffers(1, &limiter->stateFramebuffers[i]);
         if (limiter->stateTextures[i]) gl->deleteTextures(1, &limiter->stateTextures[i]);
     }
+    if (limiter->lutFramebuffer) gl->deleteFramebuffers(1, &limiter->lutFramebuffer);
+    if (limiter->lutTexture) gl->deleteTextures(1, &limiter->lutTexture);
     if (limiter->vertexArray) gl->deleteVertexArrays(1, &limiter->vertexArray);
     if (limiter->measureProgram) gl->deleteProgram(limiter->measureProgram);
     if (limiter->stateProgram) gl->deleteProgram(limiter->stateProgram);
+    if (limiter->lutProgram) gl->deleteProgram(limiter->lutProgram);
     if (limiter->outputProgram) gl->deleteProgram(limiter->outputProgram);
     if (limiter->warpProgram) gl->deleteProgram(limiter->warpProgram);   // OUT-008
     free(limiter);
@@ -600,7 +642,19 @@ void PMFlashLimiterFinish(PMFlashLimiter *limiter, unsigned int targetFramebuffe
     limiter->current = next;
     limiter->needsReset = 0;
 
-    // 3. Output: the scene × gain (then OUT-009's calibration, through OUT-008's mesh) into the target.
+    // 3. Tone table: every 8-bit level × the gain just written (row 0), then OUT-009's calibration (row 1).
+    gl->bindFramebuffer(GL_FRAMEBUFFER, limiter->lutFramebuffer);
+    gl->viewport(0, 0, LUT_WIDTH, LUT_HEIGHT);
+    gl->useProgram(limiter->lutProgram);
+    gl->activeTexture(GL_TEXTURE1);
+    gl->bindTexture(GL_TEXTURE_2D, limiter->stateTextures[limiter->current]);
+    gl->uniform1i(limiter->lutState, 1);
+    gl->uniform1f(limiter->lutCalOn, limiter->calibrated ? 1.0f : 0.0f);
+    gl->uniform1f(limiter->lutCalExponent, limiter->calExponent);
+    gl->uniform3f(limiter->lutCalGain, limiter->calGain[0], limiter->calGain[1], limiter->calGain[2]);
+    gl->drawArrays(GL_TRIANGLES, 0, 3);
+
+    // 4. Output: the scene × gain (then OUT-009's calibration, through OUT-008's mesh) into the target.
     drawOutput(limiter, targetFramebuffer, 1);
     finishBindings(gl);
 }
@@ -666,12 +720,13 @@ static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, 
     gl->activeTexture(GL_TEXTURE0);
     gl->bindTexture(GL_TEXTURE_2D, limiter->sceneTexture);
     gl->uniform1i(limiter->outputScene, 0);
+    gl->activeTexture(GL_TEXTURE2);   // before unit 1, so finishBindings unbinds all three
+    gl->bindTexture(GL_TEXTURE_2D, limiter->lutTexture);
+    gl->uniform1i(limiter->outputLut, 2);
     gl->activeTexture(GL_TEXTURE1);
     gl->bindTexture(GL_TEXTURE_2D, limiter->stateTextures[limiter->current]);
     gl->uniform1i(limiter->outputState, 1);
     gl->uniform1f(limiter->outputCalOn, calibrated ? 1.0f : 0.0f);
-    gl->uniform1f(limiter->outputCalExponent, limiter->calExponent);
-    gl->uniform3f(limiter->outputCalGain, limiter->calGain[0], limiter->calGain[1], limiter->calGain[2]);
     gl->drawArrays(GL_TRIANGLES, 0, 3);
 }
 

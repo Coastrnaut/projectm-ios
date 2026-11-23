@@ -59,7 +59,10 @@
 //           (default 200, evenly spaced over the library; "all" for every one) drawn through the real thumbnail path;
 //           the motion scores, their percentiles and the class counts at today's thresholds. Report:
 //           automation-pre005-*.json.
-//   perf004 PERF-004-T16: In-App Playback on PROJECTM_VISUAL (default circularSpectrum, glow on); at 10 s a rotation to
+//   perf004 PERF-004-T16: In-App Playback on PROJECTM_VISUAL (default text: only the compositor visuals, Camera, Photo,
+//           Video and Text, draw from the shared texture pool, and Text needs no permission or import; the native
+//           spectra and projectM allocate no pooled texture, so circularSpectrum gave no signpost on D1, 2026-11-23;
+//           glow on); at 10 s a rotation to
 //           landscape, at 20 s back to portrait (UIWindowScene.requestGeometryUpdate), each marked with a
 //           Points of Interest signpost ("QA-011 start", "QA-011 rotate", "QA-011 rotate back") for the trace; report
 //           at 28 s. Report: automation-perf004-*.json.
@@ -67,10 +70,11 @@
 //           (default 300) of In-App Playback; frame rate and mean frame time once a second, per-minute means; the stored
 //           profile is restored. Report: automation-perf008-*.json.
 //   perf011 PERF-011-T21: In-App Playback for PROJECTM_SECONDS (default 45); once a second the application state,
-//           frames presented since the last sample and the footprint. The Mac backgrounds the app (it opens Settings)
-//           and brings it back; a background task keeps the sampler running while away (about 30 s), and the first
-//           presented frame after the return is timed. Signposts "QA-011 background" and "QA-011 foreground" mark the
-//           trace. Report: automation-perf011-*.json.
+//           frames presented since the last sample (and the running total) and the footprint. The Mac backgrounds the
+//           app (it opens Settings) and brings it back; a background task keeps the sampler running while away (about
+//           30 s), and the first presented frame after the return is timed. Signposts "QA-011 background", "QA-011
+//           return" (willEnterForeground: drawing resumes here, PERF-011) and "QA-011 foreground" (didBecomeActive)
+//           mark the trace; the report has `returnedAt` and `framesAtReturn` too. Report: automation-perf011-*.json.
 #if DEBUG || PROJECTM_AUTOMATION
 import ANGLERendering
 import AudioCore
@@ -593,7 +597,7 @@ enum AutomationRunner {
     // MARK: - PERF-004: texture allocations at start and at size changes only (PERF-004-T16)
 
     private static func perf004(_ coordinator: AppCoordinator) async {
-        let restore = chooseVisualFromEnvironment(coordinator, defaultVisual: .circularSpectrum, defaultGlow: true)
+        let restore = chooseVisualFromEnvironment(coordinator, defaultVisual: .text, defaultGlow: true)
         signposter.emitEvent("QA-011 start")
         coordinator.select(.inAppPlayback)
         var marks: [String: Double] = ["start": 0]
@@ -670,13 +674,15 @@ enum AutomationRunner {
             let frames = renderer.presentedFrameCount
             let state: Double = UIApplication.shared.applicationState == .active ? 0 : (UIApplication.shared.applicationState == .inactive ? 1 : 2)
             samples.append(["t": Date().timeIntervalSince(start), "state": state, "frames": Double(frames - lastFrames),
-                            "footprintMB": Double(ProcessMemory.footprintBytes() ?? -1) / 1_048_576])
+                            "total": Double(frames), "footprintMB": Double(ProcessMemory.footprintBytes() ?? -1) / 1_048_576])
             lastFrames = frames
         }
         tracker.invalidate()
         write("perf011", ["samples": samples, "stateCodes": "0 active, 1 inactive, 2 background",
                           "backgroundedAt": tracker.backgroundedAt.map { $0.timeIntervalSince(start) } ?? -1,
                           "activeAgainAt": tracker.activeAgainAt.map { $0.timeIntervalSince(start) } ?? -1,
+                          "returnedAt": tracker.returnedAt.map { $0.timeIntervalSince(start) } ?? -1,
+                          "framesAtReturn": tracker.framesAtReturn.map { Double($0) } ?? -1,
                           "firstFrameAfterReturnSeconds": tracker.firstFrameAfterReturn ?? -1])
         exitSoon()
     }
@@ -686,6 +692,9 @@ enum AutomationRunner {
     private final class BackgroundTracker {
         private(set) var backgroundedAt: Date?
         private(set) var activeAgainAt: Date?
+        /// willEnterForeground, where PERF-011's background gate lifts and drawing resumes (before didBecomeActive).
+        private(set) var returnedAt: Date?
+        private(set) var framesAtReturn: Int?
         private(set) var firstFrameAfterReturn: Double?
         private var task: UIBackgroundTaskIdentifier = .invalid
         private var tokens: [any NSObjectProtocol] = []
@@ -696,6 +705,9 @@ enum AutomationRunner {
             let center = NotificationCenter.default
             tokens.append(center.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.enteredBackground() }
+            })
+            tokens.append(center.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.returning() }
             })
             tokens.append(center.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
                 MainActor.assumeIsolated { self?.becameActive() }
@@ -709,6 +721,14 @@ enum AutomationRunner {
             task = UIApplication.shared.beginBackgroundTask(withName: "QA-011 perf011") { [weak self] in
                 MainActor.assumeIsolated { self?.endTask() }
             }
+        }
+
+        /// The frame count here ends the "away" window: the frames drawn from now on are the return's (PERF-011-T21).
+        private func returning() {
+            guard backgroundedAt != nil, returnedAt == nil else { return }
+            framesAtReturn = renderer.presentedFrameCount
+            returnedAt = Date()
+            AutomationRunner.signposter.emitEvent("QA-011 return")
         }
 
         private func becameActive() {

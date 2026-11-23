@@ -2742,6 +2742,34 @@ class QA011Batch2Tests(unittest.TestCase):
         self.assertFalse(self.xt.perf011_verdict(late)["pass"])
         self.assertFalse(self.xt.perf011_verdict(dict(report, backgroundedAt=-1))["pass"], "never backgrounded")
 
+    def test_perf011_verdict_ends_the_away_window_at_the_return(self):
+        """D1 2026-11-23: the one frame "away" was the return's (sampled while inactive, after willEnterForeground), and
+        the GPU check matched no row ("projectM (2164)", not "projectM-iOS")."""
+        def gpu_row(t: float, name: str = "projectM (2164)") -> dict:
+            return {"start": {"raw": str(int(t * 1e9)), "fmt": "", "tag": "start-time"},
+                    "process": {"raw": name.split(" (")[0], "fmt": name, "tag": "process"}}
+        samples = [{"t": float(t), "state": 0 if t < 10 else 2, "frames": 60 if t < 10 else 0, "total": 600,
+                    "footprintMB": 300 if t < 10 else 180} for t in range(1, 31)]
+        samples.append({"t": 31.6, "state": 1, "frames": 1, "total": 601, "footprintMB": 290})
+        report = {"samples": samples, "backgroundedAt": 10.0, "activeAgainAt": 31.61, "firstFrameAfterReturnSeconds": 0.02}
+        self.assertTrue(self.xt.perf011_verdict(report)["pass"], "a sample taken after the return is not away")
+        self.assertTrue(self.xt.perf011_verdict(dict(report, returnedAt=31.59, framesAtReturn=600))["pass"])
+        drew = self.xt.perf011_verdict(dict(report, returnedAt=31.59, framesAtReturn=601))
+        self.assertFalse(drew["pass"], "a frame between the last background sample and the return counts")
+        self.assertEqual(drew["framesBeforeReturn"], 1)
+        events = [(10.0, "QA-011 background"), (31.59, "QA-011 return"), (31.61, "QA-011 foreground")]
+        gpu = [gpu_row(9.9), gpu_row(31.595), gpu_row(31.6), gpu_row(20.0, "backboardd (73)")]
+        verdict = self.xt.perf011_verdict(report, gpu, events)
+        self.assertTrue(verdict["pass"], verdict)
+        self.assertEqual((verdict["gpuIntervalsAway"], verdict["gpuIntervalsApp"]), (0, 3))
+        self.assertFalse(self.xt.perf011_verdict(report, gpu + [gpu_row(25.0)], events)["pass"], "drawing while away")
+        no_return = self.xt.perf011_verdict(report, gpu, [e for e in events if "return" not in e[1]])
+        self.assertFalse(no_return["pass"], "old traces: the window ends at didBecomeActive")
+        none = self.xt.perf011_verdict(report, [gpu_row(20.0, "backboardd (73)")], events)
+        self.assertFalse(none["pass"], "no interval of the app: nothing was checked")
+        self.assertIn("backboardd", none["detail"])
+        self.assertEqual(self.xt.process_name(gpu_row(1, "projectM-iOS (12)")), "projectM-iOS")
+
     def test_flashcost_and_perf008_verdicts(self):
         report = {"summary": {"presets": 2, "costMsMedian": 1.2, "costMsMax": 1.6},
                   "flashCost": [{"id": "a", "costMs": 1.2}, {"id": "b", "costMs": 1.6}], "thermalStates": ["nominal"]}
