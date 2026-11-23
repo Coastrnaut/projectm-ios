@@ -127,6 +127,19 @@ Decided by Claude under owner rules 4 and 12 (best judgement, unattended), from 
   ends as "In-App Playback failed". AUD-015-R2, R10 and AUD-014's rules are unchanged; tests
   `InterruptionRecoveryTests` (QA-011 D2 section) and `InterruptionPipelineTests.testABackground
   RoundTripWithAConfigurationChangeAwayResumesFromThePosition`.
+- Q: The release did not fix D2 (build r14, 2026-11-23: 1 of 6 returns resumed; the screenshots still show
+  "Interrupted"). Which path held it, and what now? → A: Not proven yet; the two candidates are (1) iOS refused the
+  re-activation, because "will enter foreground" arrives while the application state is still background and an app
+  without the audio background mode may not activate a playback session then, which the refused-return path shows as
+  "Interrupted"; (2) the deactivation failed and the suspended session was interrupted again. Decision: (a) a return
+  whose activation iOS refused is tried once more when the app becomes active (`CaptureManager.noteAppBecameActive()`,
+  from UIApplication's didBecomeActive in projectM-iOS), unless the user or iOS acted meanwhile (a pause, seek or
+  track change, an interruption notice, a lost output); a second refusal stays on hold as "Interrupted" and Play
+  continues (AUD-014-R6, R8). This only completes the FR-050 resume the return already asked for. (b) CaptureKit's
+  `AudioSessionTrace` records every session notice with its raw type, reason, options and "was suspended" values,
+  every activation and deactivation with its result and error code, every lifecycle event with the application
+  state, and every hold, resume and policy decision. The DEBUG `-uitestSessionLog` probe shows it, and PERF-011-T22
+  and VIS-001-T36 print it after the return (`SESSION-TRACE` lines), so the next D2 run shows which path it was.
 
 ## User Scenarios & Testing *(mandatory)*
 

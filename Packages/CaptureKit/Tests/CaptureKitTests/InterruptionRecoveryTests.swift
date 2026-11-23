@@ -445,6 +445,105 @@ final class InterruptionRecoveryTests: XCTestCase {
         XCTAssertNil(rig.manager.stopReason)
     }
 
+    /// QA-011 D2 r14 (2026-11-23): with the session released, the resume at "will enter foreground" can be refused
+    /// because the app is still in the background state then; it is tried again when the app becomes active.
+    func testARefusedReturnIsRetriedWhenTheAppBecomesActive() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        rig.backend.resumeError = SourceError(.inAppPlaybackFailed, detail: SourceError.audioSessionRefusedDetail)
+        await rig.manager.handle(.foreground)
+        assertOnHold(rig, state: .paused, reason: .interrupted)
+        rig.backend.resumeError = nil
+        await rig.manager.noteAppBecameActive()
+        XCTAssertEqual(rig.backend.resumeCount, 1, "resumed once the app is active")
+        XCTAssertEqual(rig.transport.state, .playing)
+        XCTAssertNil(rig.manager.stopReason)
+        XCTAssertEqual(rig.transport.position.seconds, 10)
+        await rig.manager.noteAppBecameActive()
+        XCTAssertEqual(rig.backend.resumeCount, 1, "one retry per refusal")
+    }
+
+    func testARefusalWhenActiveTooStaysOnHoldAndPlayContinues() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        rig.backend.resumeError = SourceError(.inAppPlaybackFailed, detail: SourceError.audioSessionRefusedDetail)
+        await rig.manager.handle(.foreground)
+        await rig.manager.noteAppBecameActive()
+        XCTAssertEqual(rig.backend.refusedResumeCount, 2)
+        assertOnHold(rig, state: .paused, reason: .interrupted)
+        XCTAssertEqual(rig.backend.stopCount, 0, "the session stays (AUD-014-R8)")
+        rig.backend.resumeError = nil
+        await rig.transport.play()
+        XCTAssertEqual(rig.backend.resumeCount, 1)
+        XCTAssertEqual(rig.transport.state, .playing)
+    }
+
+    func testNoRetryWhenActiveAfterTheUserOrIOSTookOver() async {
+        for takeOver in ["pause", "interruption", "seek", "routeLost"] {
+            let rig = await playing()
+            await rig.manager.handle(.background)
+            rig.backend.resumeError = SourceError(.inAppPlaybackFailed, detail: SourceError.audioSessionRefusedDetail)
+            await rig.manager.handle(.foreground)
+            rig.backend.resumeError = nil
+            switch takeOver {
+            case "pause": await rig.transport.pause()
+            case "interruption": await send(rig, began)
+            case "seek": rig.manager.noteUserTransportChange()
+            default: await send(rig, .outputRouteLost)
+            }
+            await rig.manager.noteAppBecameActive()
+            XCTAssertEqual(rig.backend.resumeCount, 0, "\(takeOver): nothing starts by itself")
+            XCTAssertNotEqual(rig.transport.state, .playing, "\(takeOver)")
+        }
+    }
+
+    func testBecomingActiveWithoutARefusedReturnChangesNothing() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        await rig.manager.noteAppBecameActive()       // still away: nothing
+        XCTAssertEqual(rig.backend.resumeCount, 0)
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.backend.resumeCount, 1)
+        await rig.manager.noteAppBecameActive()
+        XCTAssertEqual(rig.backend.resumeCount, 1)
+
+        await rig.transport.pause()
+        await rig.manager.noteAppBecameActive()
+        XCTAssertEqual(rig.backend.resumeCount, 1, "AUD-006-R21: a user pause is not resumed")
+    }
+
+    /// The trace the device tests print (`-uitestSessionLog`): lifecycle, hold, refusal, retry, in order.
+    func testTheSessionTraceRecordsTheReturnDecisions() async {
+        let trace = AudioSessionTrace.shared
+        trace.reset()
+        trace.isEnabled = true
+        defer { trace.isEnabled = false; trace.reset() }
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        rig.backend.resumeError = SourceError(.inAppPlaybackFailed, detail: SourceError.audioSessionRefusedDetail)
+        await rig.manager.handle(.foreground)
+        rig.backend.resumeError = nil
+        await rig.manager.noteAppBecameActive()
+        let text = trace.entries.joined(separator: "\n")
+        let expected = ["lifecycle background", "hold: suspending while away", "lifecycle foreground",
+                        "resume: refused (return) detail=\(SourceError.audioSessionRefusedDetail)", "active: retry=1",
+                        "resume: ok (return)"]
+        var from = text.startIndex
+        for step in expected {
+            guard let range = text.range(of: step, range: from..<text.endIndex) else {
+                XCTFail("missing or out of order: \(step)\n\(text)")
+                return
+            }
+            from = range.upperBound
+        }
+        XCTAssertTrue(trace.entries.allSatisfy { $0.hasPrefix("t=") })
+
+        trace.isEnabled = false
+        let count = trace.entries.count
+        await rig.manager.handle(.background)
+        XCTAssertEqual(trace.entries.count, count, "nothing is recorded while off")
+    }
+
     func testAnotherResumeFailureAtTheReturnStillEndsAsFailed() async {
         let rig = await playing()
         await rig.manager.handle(.background)

@@ -60,6 +60,26 @@ extension AudioSessionSignal {
     }
 }
 
+extension AudioSessionSignal {
+    /// The notice's raw values for `AudioSessionTrace`: type, reason, options, and the old "was suspended" value
+    /// read by its key's string (the SDK says it is no longer sent; the trace shows whether it is).
+    static func describe(_ note: Notification) -> String {
+        let info = note.userInfo ?? [:]
+        func value(_ key: String) -> String { (info[key] as? NSNumber).map { "\($0.intValue)" } ?? "-" }
+        switch note.name {
+        case AVAudioSession.interruptionNotification:
+            return "interruption type=\(value(AVAudioSessionInterruptionTypeKey)) reason=\(value(AVAudioSessionInterruptionReasonKey)) "
+                + "options=\(value(AVAudioSessionInterruptionOptionKey)) wasSuspended=\(value("AVAudioSessionInterruptionWasSuspendedKey"))"
+        case AVAudioSession.routeChangeNotification:
+            return "routeChange reason=\(value(AVAudioSessionRouteChangeReasonKey))"
+        case AVAudioSession.mediaServicesWereResetNotification:
+            return "mediaServicesReset"
+        default:
+            return note.name.rawValue
+        }
+    }
+}
+
 /// Observes one session's notifications on `center` and hands each to `handler` on the main actor.
 @MainActor
 final class AudioSessionObserver {
@@ -75,8 +95,12 @@ final class AudioSessionObserver {
                      AVAudioSession.mediaServicesWereResetNotification]
         for name in names {
             tokens.append(center.addObserver(forName: name, object: session, queue: .main) { [weak self] note in
-                guard let signal = AudioSessionSignal.parse(note) else { return }
-                MainActor.assumeIsolated { self?.handler(signal) }
+                let raw = AudioSessionSignal.describe(note)
+                let signal = AudioSessionSignal.parse(note)
+                MainActor.assumeIsolated {
+                    AudioSessionTrace.shared.record("notice \(raw)\(signal == nil ? " (ignored)" : "")")
+                    if let signal { self?.handler(signal) }
+                }
             })
         }
     }

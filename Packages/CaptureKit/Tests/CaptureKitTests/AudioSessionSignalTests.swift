@@ -75,5 +75,31 @@ final class AudioSessionSignalTests: XCTestCase {
         center.post(name: AVAudioSession.mediaServicesWereResetNotification, object: session)
         XCTAssertEqual(received.count, 4, "nothing after invalidate")
     }
+
+    /// QA-011 D2 2026-11-23: the trace keeps each notice's raw values, also the ones the parser ignores.
+    func testTheObserverRecordsRawNoticesInTheTrace() {
+        let trace = AudioSessionTrace.shared
+        trace.reset()
+        trace.isEnabled = true
+        defer { trace.isEnabled = false; trace.reset() }
+        let center = NotificationCenter()
+        let session = NSObject()
+        let observer = AudioSessionObserver(center: center, session: session) { _ in }
+        center.post(name: AVAudioSession.interruptionNotification, object: session,
+                    userInfo: [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue,
+                               AVAudioSessionInterruptionReasonKey: UInt(1), "AVAudioSessionInterruptionWasSuspendedKey": true])
+        center.post(name: AVAudioSession.routeChangeNotification, object: session,
+                    userInfo: [AVAudioSessionRouteChangeReasonKey: AVAudioSession.RouteChangeReason.categoryChange.rawValue])
+        observer.invalidate()
+        XCTAssertEqual(trace.entries.count, 2)
+        XCTAssertTrue(trace.entries[0].contains("notice interruption type=1 reason=1 options=- wasSuspended=1"), trace.entries[0])
+        XCTAssertTrue(trace.entries[1].contains("notice routeChange reason=3 (ignored)"), trace.entries[1])
+    }
+
+    func testSessionErrorsAreDescribedWithTheirFourCharacterCode() {
+        let pla = NSError(domain: NSOSStatusErrorDomain, code: 0x2170_6C61)   // '!pla'
+        XCTAssertEqual(AVInAppPlaybackBackend.describe(pla), "code=561015905 '!pla'")
+        XCTAssertEqual(AVInAppPlaybackBackend.describe(NSError(domain: "x", code: -50)), "code=-50")
+    }
 }
 #endif
