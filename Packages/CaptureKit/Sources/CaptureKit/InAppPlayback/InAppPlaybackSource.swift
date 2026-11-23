@@ -61,9 +61,15 @@ public protocol InAppPlaybackBackend: AnyObject {
     /// AUD-010: the monitoring balance, −1 (left) … +1 (right), already validated. Changes what is
     /// heard only, never what reaches the sink; applies at once and to every later track and graph.
     func setMonitorBalance(_ balance: Double)
+    /// AUD-015 (QA-011 D2 2026-11-23): playback is paused because the app is going away; the
+    /// backend gives up its audio session until the next `resume()`, which activates it again.
+    func releaseSessionWhileAway()
 }
 
 extension InAppPlaybackBackend {
+    /// For backends without an audio session (scripted test backends).
+    public func releaseSessionWhileAway() {}
+
     /// For backends without a live update (scripted test backends): the flag only.
     public func updateLooping(_ loops: Bool) {
         loopsCurrentTrack = loops
@@ -136,10 +142,21 @@ public final class InAppPlaybackSource: AudioSource {
         backend.pause()
     }
 
+    /// Pauses and releases the audio session while the app is away (AUD-015-R2): a suspended app
+    /// that keeps an active session is interrupted by iOS, and that late "interruption began" kept
+    /// playback on hold after a plain return (QA-011 D2 2026-11-23).
+    public func suspendWhileAway() async {
+        guard running else { return }
+        backend.pause()
+        backend.releaseSessionWhileAway()
+    }
+
     public func resume() async throws {
         guard running else { return }
         do {
             try backend.resume()
+        } catch let error as SourceError where error.reason == .inAppPlaybackFailed {
+            throw error                           // keeps the detail (a refused session activation)
         } catch {
             throw SourceError(.inAppPlaybackFailed)
         }

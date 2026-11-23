@@ -46,6 +46,10 @@
 //   pauses unless it is entitled (audio background mode) and intended (keep playing); System/App
 //   Capture follows the system. A start or resume that completes while away is held Paused.
 //   `backgroundNotice` keeps what the policy did for the return notice, until a user command.
+//   Away, In-App Playback also releases its audio session (`suspendWhileAway`), so iOS has no
+//   session of the suspended app to interrupt; a refused activation at the return keeps it on hold
+//   as "Interrupted" (QA-011 D2 2026-11-23: a late "interruption began" with no end had kept
+//   playback Paused after a plain background round trip on iPadOS 27.2.1).
 import AudioCore
 import Observation
 
@@ -341,7 +345,7 @@ public final class CaptureManager {
                     return
                 }
                 guard self.state == .paused, self.pauseReason == nil else { return }
-                await self.resumeInner()
+                await self.resumeInner(onReturn: true)
             }
         }
     }
@@ -349,7 +353,8 @@ public final class CaptureManager {
     /// AUD-015: pauses playback or stops the microphone engine because the app is away.
     private func holdWhileAway(_ source: any AudioSource, reason: BackgroundPolicy.Reason) async {
         guard state.isRunning || state == .interrupted else { return }
-        await source.suspend()
+        // In-App Playback also releases its audio session while away (QA-011 D2 2026-11-23).
+        await source.suspendWhileAway()
         // AUD-014: an open interruption of In-App Playback stays visible as the reason.
         pauseReason = interruption.map { $0.outputLost ? .audioRouteChanged : .interrupted }
         apply(.suspended)
@@ -516,7 +521,12 @@ public final class CaptureManager {
         analyzer.stopTimer()
     }
 
-    private func resumeInner() async {
+    /// `onReturn`: the automatic resume of a real return to the foreground (FR-050, AUD-015). If iOS
+    /// then refuses the audio session (a call that began while the app was away, whose interruption
+    /// an inactive session is never told about), playback stays on hold as "Interrupted" with its
+    /// track and position, as after an interruption that is still open (AUD-014-R6, R8), instead of
+    /// failing; Play continues it.
+    private func resumeInner(onReturn: Bool = false) async {
         guard let source = current, state == .paused || state == .interrupted else { return }
         // AUD-015-R6: nothing the policy holds resumes while the app is away.
         if !isPresentable, let mode = activeMode, awayHolds(mode) != nil { return }
@@ -531,6 +541,12 @@ public final class CaptureManager {
             // AUD-014-R8: while the interruption is still open iOS may refuse to give the audio
             // back (a call is going on). The session stays as it was: track, position, state.
             if interruption?.signal == .pending { return }
+            if onReturn, activeMode == .inAppPlayback, error.detail == SourceError.audioSessionRefusedDetail {
+                interruption = OpenInterruption(eligible: true)
+                pauseReason = .interrupted
+                apply(.suspended)                     // no state change; shows the reason
+                return
+            }
             await stopCurrent()
             apply(.failed(error.reason))
             if let detail = error.detail { stopDetail = detail }

@@ -149,11 +149,26 @@ public final class AVInAppPlaybackBackend: InAppPlaybackBackend {
         guard let graph else { throw SourceError(.inAppPlaybackFailed) }
         do {
             try activateSession(setCategory: sessionNeedsCategory)
+        } catch {
+            // iOS would not give the audio back (a call, or another app's session): the caller keeps
+            // the session on hold (AUD-014-R8) instead of failing it.
+            throw SourceError(.inAppPlaybackFailed, detail: SourceError.audioSessionRefusedDetail)
+        }
+        do {
             sessionNeedsCategory = false
             try graph.resume()
         } catch {
             throw SourceError(.inAppPlaybackFailed)
         }
+    }
+
+    /// AUD-015 (QA-011 D2 2026-11-23): the app is going away with playback paused. The session is
+    /// deactivated (the engine is paused, so no I/O runs), so iOS does not interrupt it while the app
+    /// is suspended; that late "interruption began" kept playback on hold after a plain return.
+    /// `resume()` activates it again. Nothing happens unless the graph is held.
+    public func releaseSessionWhileAway() {
+        guard let graph, graph.isPaused else { return }
+        deactivateSession()
     }
 
     // MARK: - Transport (AUD-006)

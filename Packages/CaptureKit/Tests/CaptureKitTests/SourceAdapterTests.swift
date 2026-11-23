@@ -144,7 +144,19 @@ final class FakePlaybackBackend: InAppPlaybackBackend {
         guard started else { callsAfterStop += 1; return }
         if let resumeError { refusedResumeCount += 1; throw resumeError }
         paused = false
+        sessionReleased = false
         resumeCount += 1
+    }
+
+    /// AUD-015 (QA-011 D2 2026-11-23): times the backend gave up its audio session while away.
+    private(set) var releaseCount = 0
+    /// True between a release and the next resume (the session is inactive).
+    private(set) var sessionReleased = false
+
+    func releaseSessionWhileAway() {
+        guard started, paused else { return }
+        releaseCount += 1
+        sessionReleased = true
     }
 
     func seek(to seconds: Double) {

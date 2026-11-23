@@ -233,6 +233,33 @@ final class InterruptionPipelineTests: XCTestCase {
         }
     }
 
+    // MARK: - QA-011 D2 2026-11-23: background, a hardware change while away (rotation), return
+
+    /// The real backend through a background round trip with an engine configuration change while
+    /// away (an iPad's speakers change with the orientation): the session is released (a no-op
+    /// offline), the held position survives, and the return continues from it with no stale frames.
+    func testABackgroundRoundTripWithAConfigurationChangeAwayResumesFromThePosition() async throws {
+        let a = try item("a")
+        let rig = await playing([a], current: a)
+        _ = try await pump(rig, renders: 10)
+        await rig.manager.handle(.background)
+        XCTAssertEqual(rig.manager.state, .paused)
+        let held = positionFrame(rig)
+        rig.backend.stopEngineForTesting()
+        postConfigurationChange(rig)
+        await settle()
+        XCTAssertEqual(rig.manager.state, .paused)
+        XCTAssertNil(rig.manager.stopReason)
+        XCTAssertEqual(positionFrame(rig), held)
+
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.manager.state, .waiting, "resumed; Active audio is verified again")
+        XCTAssertEqual(rig.transport.state, .playing)
+        assertRun(try await pump(rig, renders: 20), startsAt: held)
+        XCTAssertEqual(rig.manager.state, .active)
+        await rig.manager.stop()
+    }
+
     // MARK: - User Story 4: media-services reset
 
     func testAResetWhilePlayingRebuildsAndContinuesAndThePlayOrderStillWorks() async throws {

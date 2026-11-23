@@ -1411,6 +1411,20 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     reads the full-screen tap area (`visualizerTapArea`), which follows a smaller iPad window too; `settleOrientation`
     uses it, and PERF-011 reports both frames. Other tests still read `windows.firstMatch` for coordinates; move them
     to `interfaceFrame()` if they misplace taps after a background return.
+  - *"audio: Paused" after a return: read the banner in the screenshot before blaming the test.* PERF-011-T22 and
+    VIS-001-T36 on D2 (iPadOS 27.2.1, 2026-11-23) failed "playback resumes … audio: Paused" after a background round
+    trip with a rotation while away (d2rest, d2r13 and all three d2resume iterations; VIS-001 passed once in d2rest12),
+    while D1/D3 and the D2 runs of 2026-11-18 to 11-20 passed with no app change in that path since 11-19 (D2 now
+    runs iPadOS 27.2.1, so likely an OS behaviour change). The overlay prints
+    only the state; the result bundles' "after the return" screenshots (both tests) showed the status panel "Interrupted · Playback
+    is on hold at its position", so an AUD-014 interruption had opened. Nothing else played. Most likely cause (the
+    notice's reason value was not logged, so not proven on the device): the app had paused its engine but kept its
+    audio session active, iOS interrupted the suspended app's session and never ended it, and an open interruption
+    correctly blocks the return resume. Confirm with the next D2 rerun of both tests. A real app defect, fixed in the app (CaptureKit): going
+    away releases the session (`suspendWhileAway`), the return activates it again, and a refused activation stays on
+    hold as "Interrupted" (AUD-015 Clarifications 2026-11-23). Lesson: an app without the audio background mode must
+    not hold an active session while suspended; and the export/overlay should be read together with the status
+    panel, whose reason line tells "paused by the lifecycle" from "interrupted".
 
 ## What still needs a person
 
