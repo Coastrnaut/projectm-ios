@@ -643,6 +643,9 @@ class Runner:
         self.derived = work / "derived-data"
         self.fresh_install = False      # set when this run reinstalled the app (its permission answers are gone)
         self.rendererlab_app: Path | None = None
+        # --build rebuilds RendererLab too (an incremental build): built only when missing, it kept measuring the code of
+        # its first build (D1, 2026-11-23: the FX-019 lookup-table fix was measured with a 14:14 RendererLab).
+        self.rebuild_rendererlab = False
 
     def run_case(self, c: dict) -> dict:
         result = {"id": c["id"], "kind": c["kind"], "title": c["title"], "closes": c["closes"],
@@ -748,7 +751,7 @@ class Runner:
         lab = MatrixTarget(t.label, t.identifier, t.simulator, t.out_dir, t.udid)
         lab.bundle, lab.app_name = RENDERERLAB_BUNDLE, "RendererLab"
         app = self.rendererlab_path()
-        if not app.exists() or self.dry_run:
+        if not app.exists() or self.rebuild_rendererlab or self.dry_run:
             if not RENDERERLAB_PROJECT.exists():
                 result["commands"].append(["xcodegen", "generate", "--spec", "RendererLab.yml"])
                 rdt.run(["xcodegen", "generate", "--spec", str(ROOT / "RendererLab.yml")])
@@ -1034,6 +1037,7 @@ def run_target(label: str, args, devices_by_case: dict[str, list[str]], listing:
     target = MatrixTarget(label, identifier or "", simulator, record_dir / "artifacts", udid)
     runner = Runner(target, work, args.locked_wait, [Path(p) for p in args.perf012_report], rdt.DRY_RUN)
     runner.rendererlab_app = Path(args.rendererlab_app) if args.rendererlab_app else None
+    runner.rebuild_rendererlab = bool(args.build) and not args.rendererlab_app
 
     unavailable = (not simulator and not rdt.DRY_RUN and facts.get("state") in ("not listed", "unavailable"))
     if args.build:
@@ -1111,7 +1115,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--locked-wait", type=float, default=600, help="seconds a locked device is waited for")
     parser.add_argument("--work-dir", help="where xcresults and logs go (default Build/qa-011)")
     parser.add_argument("--inventory", default=str(INVENTORY))
-    parser.add_argument("--rendererlab-app", help="a built RendererLab.app for rendererlab-flashcost (default: built "
+    parser.add_argument("--rendererlab-app", help="a built RendererLab.app for rendererlab-flashcost (default: rebuilt with --build, else built "
                         "into Build/rendererlab when missing)")
     args = parser.parse_args(raw)
     if bool(args.device) == bool(args.simulator):
