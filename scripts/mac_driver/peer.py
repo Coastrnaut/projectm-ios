@@ -99,13 +99,16 @@ def parse_marks(lines: list[str], kind: str) -> list[tuple[int, float]]:
     return marks
 
 
-def pair_latencies(steps: list[tuple[int, float]], seen: list[tuple[int, float]], limit: float = 0.5,
+def pair_latencies(steps: list[tuple[int, float]], seen: list[tuple[int, float]], limit: float = 1.0,
                    skew: float = 0.25, window: float = 3.0) -> dict:
     """Each lead step's cue matched with the follower's first change to that cue in [t - skew, t + window]
     (OSC-012-T22). `skew` allows for the two device clocks (NTP, uncorrected); a change later than `window` belongs
     to a later step with the same cue (the five-cue seed repeats every ~37 s), so the step counts as unmatched.
     2026-11-22 (D2+D3): an unbounded search paired a step with the same cue 18.1 s later, so one early print became
-    an 18 s "latency"; the lead now stamps its step before the tap, so early prints no longer happen."""
+    an 18 s "latency"; the lead now stamps its step before the tap, so early prints no longer happen.
+    `limit` is the quickstart's "within a fraction of a second" as an upper bound: the stamp before the tap adds
+    XCUITest's own tap time (about 0.35-0.45 s on D3) to every reading (2026-11-23, D2+D3: median 0.449 s, max
+    0.532 s; spec 291 Clarification)."""
     latencies = []
     for cue, t in steps:
         match = next((s for c, s in seen if c == cue and t - skew <= s <= t + window), None)

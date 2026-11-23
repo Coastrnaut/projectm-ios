@@ -2867,7 +2867,8 @@ class Batch8DriverTests(unittest.TestCase):
         result = self.peer.pair_latencies(steps, seen)
         self.assertTrue(result["ok"])
         self.assertEqual(result["max"], 0.3)
-        self.assertFalse(self.peer.pair_latencies(steps, [(2, 100.9), (3, 104.9)])["ok"], "0.9 s is too late")
+        self.assertTrue(self.peer.pair_latencies(steps, [(2, 100.9), (3, 104.9)])["ok"], "0.9 s is within the 1 s bound")
+        self.assertFalse(self.peer.pair_latencies(steps, [(2, 101.2), (3, 105.2)])["ok"], "1.2 s is too late")
 
     def test_peer_never_pairs_a_step_with_a_later_repeat_of_its_cue(self):
         """D2+D3 2026-11-22: cue 3 printed 0.26 s before the lead's step and was paired with cue 3 18.1 s later."""

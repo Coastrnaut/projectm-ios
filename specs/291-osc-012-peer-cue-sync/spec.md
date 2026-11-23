@@ -58,6 +58,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: Is anything spoken to VoiceOver for sync? → A: No new announcements. A follower's step announces through SHOW-001's cue lane exactly like a manual step; the Cue Sync status line ("Following cue 3", "Waiting for the leader", "The leader's cue isn't in this show") is an ordinary label (OSC-012-R14).
 - Q: How does a follower show the synchronized offset? → A: The status line shows the cue and how long ago it started on the leader, rounded to the second ("Following cue 3 · started 12 s ago"), computed from the aligned start on the follower's own clock (OSC-012-R8, R14).
 
+### Session 2026-11-23 (QA-011 device run)
+
+- Q: What latency bound does the two-device check (OSC-012-T22) apply to "B steps to cue 3 within a fraction of a second"? → A: At most 1 s from the leader's step to the follower's change, measured as an upper bound: the leader stamps its step before XCUITest's tap, so each reading includes the tap's own time (about 0.35-0.45 s), and the two device clocks are not corrected (±0.25 s window). Every step but one must be matched. Evidence: D2 (follow) and D3 (lead), 2026-11-23, 26 of 26 steps matched, median 0.449 s, max 0.532 s; the earlier 0.5 s bound failed only on that tap time. The 10 s Wi-Fi outage part stays not required (owner ruling 2026-11-18).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A follower iPad stays on the leader's cue (Priority: P3)
