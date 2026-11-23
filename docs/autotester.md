@@ -430,7 +430,7 @@ prompt fails instead of waiting). Not yet run on a device when written: check th
 | `…/testPRE012ImportThroughFilesPicker` | PRE-012-T31 (VoiceOver listening: person) | D1, D2, D3 | media fixtures |
 | `…/testPRE014ExportZipToFiles` | PRE-014-T25 | D1, D3 | Mac driver (`files.pull` checks the ZIP) |
 | `…/testPRE001FPSWhileThumbnailsGenerate` | PRE-001-T14 | D1 | none (`-uitestMemoryPressure` frame counter) |
-| `…/testFILE001_A_ExportSceneArchive` (D1), then `…_B_ImportSceneArchive` (D3) | FILE-001-T19 (offline: not required) | D1 → D3 | Mac driver (`files.pull` on D1, `files.push` on D3) |
+| `…/testFILE001_A_ExportSceneArchive` (D1; DEBUG seed `-uitestPhotoVideoScene`), then `…_B_ImportSceneArchive` (D3) | FILE-001-T19 (offline: not required) | D1 → D3 | Mac driver (`files.pull` on D1, `files.push` on D3) |
 | `…/testFILE009StorageValuesWithRealMedia` | FILE-009-T12 | D1 | media fixtures |
 | `…/testFILE010ClearCaches` | FILE-010-T11 | D1 | media fixtures |
 | `B13MediaDeviceTests/testMED002UHD60PlaysAtItsRateWithFlatMemory`, `…/testMED002TenMinuteClipPlaysAtItsRateWithFlatMemory` | MED-002-T27 | D1, D3 | media fixtures (else generated clips) |
@@ -1061,6 +1061,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   (5-8 of 300); D2 drops 4-19 with no code change between runs (same render-frame count), so the bound is now D2's
   mean + 3 SD (27, REC-008 Clarifications 2026-11-20). Before moving a bound, check `git log` on the measured path and
   the raw counts behind it, so a real regression is not absorbed.
+- **Check that the app can build the state a test exports.** FILE-001-A launched the Video visual with a seeded photo
+  and video, tapped Add Current Scene and exported it; the archive held only `assets/video.mov` and D3's preview read
+  "1 video" (D2, 2026-11-22). Not an export defect: the app's scene captures (`ShowSceneSnapshot`,
+  `SceneAutosaveCapture`) record one visual's fixed stack (Video `[video, spectrum.circular]`), and no screen adds a
+  layer, so no captured scene holds both. Seeding "carried" layers did not help either: the snapshot never reads them.
+  The test now uses the DEBUG seed `-uitestPhotoVideoScene` (the stored photo under the stored video, saved through
+  `addScene`, a fixed scene ID so reruns overwrite one copy) and exports it through the real share sheet; B expects the
+  Photo visual after the cue (a scene with a photo layer applies Photo) and then plays the imported video under the
+  Video visual. Simulator rehearsal: `ScenePackPhotoVideoUITests` (with `-uitestScenePackKeepExport`). Before writing an
+  export test, open the exported file once (unzip it) and compare it with what the test claims it holds.
 
 ### Policy and evidence
 

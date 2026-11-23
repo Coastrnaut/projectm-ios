@@ -7,6 +7,7 @@ extension AppCoordinator {
         show.scenePacks = ScenePackCoordinator.makeDefault(show: show, defaults: defaults)
         #if DEBUG
         UITestScenePackFixture.seedIfRequested(self)   // SCN-014: ScenePackUITests
+        UITestPhotoVideoSceneFixture.seedIfRequested(self)   // FILE-001-T19: a scene with the photo and the video
         #endif
     }
 }
