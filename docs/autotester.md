@@ -735,6 +735,12 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   stacks ended AUD-016 before its restore, so the 5 s Clock timer it had started rang on D2 over and over until the
   owner stopped it. `startClockTimer` now stops a ringing timer first; after any forced kill, check for and stop
   leftover timers, Control Center, Settings toggles and Files pickers before the next batch.
+- **iPhone system apps differ from the iPad ones (D1, iOS 27.0.1, 2026-11-22).** Clock's Timers tab on the iPhone has
+  no "Start" button: the start control is a glyph button labelled "play" (next to "Close", "Edit" and a disabled
+  "chevron"), so `clockTimerStartButton` tries "Start", then "play", preferring a button outside list cells (a recent
+  timer's own play button would start its duration). Settings › Battery has no Low Power Mode switch any more: it sits
+  under Battery › Power Mode, which `openSettingPage(.lowPower)` follows, then Settings search; when the switch is
+  still missing it prints the page. Expect every system-app helper to need an iPhone path checked on D1.
 - **Wait on a run by its process ID, never with `pgrep -f <name>` from a shell (2026-11-19).** A wait loop
   `until ! pgrep -f round5.sh` matched its own command line, so it never ended and both iPads sat idle for an hour
   after their runs had finished. Save `$!` when starting the run and poll `kill -0 <pid>`.

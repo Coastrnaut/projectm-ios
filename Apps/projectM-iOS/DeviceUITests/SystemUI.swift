@@ -401,7 +401,7 @@ final class SystemUI {
     /// Grayscale turns on Color Filters and picks Grayscale (the filter's first choice).
     func toggleAccessibility(_ setting: SystemSetting, on: Bool, keep: Bool = false) {
         let (rows, label) = setting.path
-        openSettings(path: rows)
+        openSettingPage(setting)
         guard let before = setSwitch(label, on: on) else {
             XCTFail("no \(label) switch in Settings › \(rows.joined(separator: " › "))")
             return
@@ -409,11 +409,28 @@ final class SystemUI {
         if setting == .grayscale, on { tapSettingsRow("Grayscale") }
         if before != on {
             remember("\(label) \(before ? "on" : "off")", keep: keep) { [weak self] in
-                self?.openSettings(path: rows)
+                self?.openSettingPage(setting)
                 self?.setSwitch(label, on: before)
             }
         }
         backToApp()
+    }
+
+    /// Opens the Settings page that holds `setting`'s switch. Low Power Mode sat on Settings › Battery; on iOS 27 for
+    /// iPhone (D1, 2026-11-22) Battery showed no Low Power Mode switch (it lives under Battery › Power Mode next to
+    /// Adaptive Power since iOS 26), so that row is followed when the switch is missing, then Settings' own search.
+    /// When the switch is still not found, the page is printed for the next run. Other settings: `path` as is.
+    func openSettingPage(_ setting: SystemSetting) {
+        let (rows, label) = setting.path
+        openSettings(path: rows)
+        guard setting == .lowPower, !wait(3, { self.settingsSwitch(label).exists }) else { return }
+        if tapSettingsRow("Power Mode"), wait(3, { self.settingsSwitch(label).exists }) { return }
+        openSettingsRoot()
+        if searchSettings(for: label) {
+            if wait(3, { self.settingsSwitch(label).exists }) { return }
+            if tapSettingsRow("Power Mode"), wait(3, { self.settingsSwitch(label).exists }) { return }
+        }
+        print("SYSTEM-UI no \(label) switch; Settings shows:\n\(preferences.debugDescription.prefix(8000))")
     }
 
     /// Brings the app back to the front if it is running; a test that has not launched it yet launches it itself
@@ -631,12 +648,36 @@ final class SystemUI {
             print("SYSTEM-UI Clock has no timer wheels; Clock shows:\n\(clock.debugDescription.prefix(8000))")
             XCTFail("the Clock timer's wheels were not found")
         }
-        let start = clock.buttons["Start"]
-        XCTAssertTrue(wait(3) { start.exists }, "the timer's Start button")
+        var found: XCUIElement?
+        _ = wait(3) { found = self.clockTimerStartButton(); return found != nil }
+        guard let start = found else {
+            print("SYSTEM-UI Clock has no timer Start button; buttons: " + clock.buttons.allElementsBoundByIndex.prefix(30)
+                .map { "\($0.identifier)|\($0.label)|\($0.frame)" }.joined(separator: ", "))
+            XCTFail("the timer's Start button")
+            backToApp()
+            return
+        }
+        print("SYSTEM-UI timer start button \(start.identifier)|\(start.label) frame=\(start.frame)")
         start.tap()
         remember("Clock timer", keep: false) { [weak self] in self?.stopClockTimer() }
         app.activate()
         _ = app.wait(for: .runningForeground, timeout: 10)
+    }
+
+    /// The Timers tab's start button. "Start" on the iPads (iPadOS 26.5 and 27.2); on iOS 27 for iPhone (D1,
+    /// 2026-11-22) the tab had no "Start" button but a glyph button labelled "play" beside "Close", "Edit" and a
+    /// disabled "chevron", so the names are tried in that order. A recent timer's own play button sits in a list cell
+    /// and would start that timer's duration instead, so a button outside the cells is preferred.
+    func clockTimerStartButton() -> XCUIElement? {
+        let clock = Self.clock
+        for name in ["Start", "Start Timer", "play", "Play"] {
+            let named = NSPredicate(format: "label == %@ OR identifier == %@", name, name)
+            let found = clock.buttons.matching(named).allElementsBoundByIndex.filter { $0.exists && $0.isEnabled }
+            guard !found.isEmpty else { continue }
+            let inCells = Set(clock.cells.buttons.matching(named).allElementsBoundByIndex.map { "\($0.frame)" })
+            return found.first { !inCells.contains("\($0.frame)") } ?? found.first
+        }
+        return nil
     }
 
     /// Sets a timer wheel to `number`. The wheels' values carry their unit ("0 hours", "1 hour" on iPadOS 26.5, D3
