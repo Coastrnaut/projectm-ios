@@ -167,6 +167,9 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
     /// 2026-11-22 (D1 full run 1, the first run on haptic hardware): the 12 s count started about 8 s after launch, in
     /// the fixture's drumless intro, so Beats counted 2 pulses (an earlier D1 run: Beats 2, Downbeats 1, Kicks 13, the
     /// kicks being the last seconds' drums). Each count now starts in the chorus (`waitForChorus`).
+    /// 2026-11-23 (D1 rerun): Beats 9 in the chorus (Kicks 23). An app defect: the fixture's off-beat hi-hats hold
+    /// ANL-005's confidence at 0.46-0.52, so a 0.5 cut skipped most beats; the gate now holds Beats down to 0.4 once
+    /// engaged (ACC-007 Clarifications 2026-11-23, `HapticPulseGateTests`).
     func testACC007PulsesFollowTheChoice() throws {
         let task = "ACC-007-T13"
         // iPads have no haptic hardware (ACC-007 Clarifications: the switch is disabled with "This device has no

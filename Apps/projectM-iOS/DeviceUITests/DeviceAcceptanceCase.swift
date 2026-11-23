@@ -22,6 +22,8 @@ class DeviceAcceptanceCase: XCTestCase {
     let app = XCUIApplication()
     /// The sampled size (width, height) of the last screenshot.
     var lastSize: (Int, Int) = (0, 0)
+    /// The last screenshot `screen` took (for `uprightPixels`).
+    var lastShot: XCUIScreenshot?
     /// Screenshot sampling: every `sampleStep`-th pixel (8 by default; 2 for thin features such as scanlines).
     var sampleStep: Int = 8
 
@@ -184,6 +186,7 @@ class DeviceAcceptanceCase: XCTestCase {
     @discardableResult
     func screen(_ task: String, _ label: String) -> (ScreenStats, [UInt8]) {
         let shot = XCUIScreen.main.screenshot()
+        lastShot = shot
         let attachment = XCTAttachment(screenshot: shot)
         attachment.name = "\(task) \(label)"
         attachment.lifetime = .keepAlways
@@ -273,6 +276,20 @@ class DeviceAcceptanceCase: XCTestCase {
             ctx.draw(cg, in: CGRect(x: 0, y: 0, width: width, height: height))
         }
         return data
+    }
+
+    /// The screenshot's pixels the way the screen shows them (every `step`-th pixel) and their sampled size.
+    /// `rgba` reads `cgImage` as stored; a `UIImage` may carry a rotation in `imageOrientation` that `cgImage` does not
+    /// apply, and then fraction rectangles meant for the landscape screen land elsewhere. Drawing the `UIImage` applies
+    /// its orientation, so the rectangle means the screen as shown either way (CAM-007-T15 reports both sizes).
+    static func uprightPixels(_ image: UIImage, step: Int) -> ([UInt8], (Int, Int)) {
+        let width = max(Int(image.size.width * image.scale) / step, 1), height = max(Int(image.size.height * image.scale) / step, 1)
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let drawn = UIGraphicsImageRenderer(size: CGSize(width: width, height: height), format: format).image { _ in
+            image.draw(in: CGRect(x: 0, y: 0, width: width, height: height))
+        }
+        return (rgba(drawn, step: 1), (width, height))
     }
 
     static func stats(_ p: [UInt8]) -> ScreenStats {

@@ -69,6 +69,23 @@ final class HapticPulseGateTests: XCTestCase {
         XCTAssertEqual(pulses(.kicks), [2, 8])
     }
 
+    /// QA-011 D1 2026-11-23: the music fixture's 120 BPM chorus (eighth-note hi-hats) gives ANL-005 confidences that
+    /// waver between 0.46 and 0.52 (measured on the host from scripts/make_music_fixture.py). Beats engage at 0.5 and
+    /// then hold down to 0.4; nothing pulses before the first 0.5, a weak beat disengages, a marker does too.
+    func testBeatsHoldThroughConfidenceWaveringBelowTheEngageLevel() {
+        let confidences: [Double] = [0.46, 0.46, 0.52, 0.46, 0.46, 0.46, 0.52, 0.52, 0.46, 0.5, 0.46,
+                                     0.3, 0.46, 0.46, 0.5, 0.46]
+        var gate = HapticPulseGate(choice: .beats)
+        let times = run(&gate, cue: { .beat(confidence: confidences[$0]) }, count: confidences.count, periodMs: 500)
+        let hits = times.map { Int(($0 - Self.start) / (500 * Self.ms)) }
+        XCTAssertEqual(hits, [2, 3, 4, 5, 6, 7, 8, 9, 10, 14, 15], "engage at 0.5, hold at 0.46, drop at 0.3")
+        XCTAssertEqual(gate.beatCount, 11)
+        XCTAssertEqual(gate.consider(.sessionBoundary, eventNanoseconds: Self.start, now: Self.start, playable: true), .filtered)
+        XCTAssertFalse(gate.beatsEngaged, "a session marker disengages")
+        let t: UInt64 = Self.start + 20_000 * Self.ms
+        XCTAssertEqual(gate.consider(.beat(confidence: 0.46), eventNanoseconds: t, now: t, playable: true), .filtered)
+    }
+
     func testStaleSuppressedAndOutOfOrderEventsNeverPulse() {
         var gate = HapticPulseGate(choice: .beats)
         let t: UInt64 = Self.start

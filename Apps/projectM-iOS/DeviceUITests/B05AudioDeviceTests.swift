@@ -547,8 +547,14 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
     /// At AX5 the controls scroll and open at their bottom (ACC-006-R2), so the test drags them down to the transport.
     func testAUD006TransportAtLargestTextSize() throws {
         let task = "AUD-006-T41"
+        // QA-011 D1 rerun (2026-11-23): two causes, reproduced on an iPhone 17e simulator at AX5. (1) An app defect:
+        // imported audio's seven transport icons (about 66 pt each at AX5) did not fit one row, and the row widened
+        // the controls and the whole screen to about 550 pt on the 390 pt iPhone, so Queue and half the scrubber lay
+        // outside the window; TransportBar now moves Shuffle, Repeat and Queue to a second row when one does not fit.
+        // (2) The DEBUG audio panel (250 pt from the top, about 110 pt tall at AX5) lay over the transport's buttons
+        // once the controls were scrolled to their top, so they were never hittable: this test needs no panel.
         launchPlayback(task, files: ["ramp-seek.wav"], settings: ["settings.performanceOverlay": false],
-                       extra: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"])
+                       extra: ["-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"], panels: false)
         revealControls()
         let controls = app.otherElements["controls"], playPause = app.buttons["transportPlayPause"]
         // The drag starts inside the visible part of the controls. QA-011 D1 full run 1 (2026-11-22, iPhone 15): the
@@ -569,7 +575,10 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
                        withVelocity: .default, thenHoldForDuration: 0.1)
         }
         let window = app.windows.firstMatch.frame
-        for id in ["transportPrevious", "transportPlayPause", "transportStop", "transportNext"] {
+        // Imported audio adds Shuffle, Repeat and Queue: each must be inside the window too (the D1 rerun found Queue
+        // outside it).
+        let extras = ["transportShuffle", "transportRepeat", "transportQueue"].filter { app.buttons[$0].exists }
+        for id in ["transportPrevious", "transportPlayPause", "transportStop", "transportNext"] + extras {
             let button = app.buttons[id]
             XCTAssertTrue(button.exists && button.isHittable, "\(id) is shown and hittable at AX5")
             XCTAssertTrue(window.contains(button.frame), "\(id) is inside the window: \(button.frame) in \(window)")

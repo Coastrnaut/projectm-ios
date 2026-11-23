@@ -252,14 +252,25 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
                     pause(2)
                     let step = "\(position) \(label) \(orientation == .portrait ? "portrait" : "landscape")"
                     assertLive(task, step)
-                    let (_, pixels) = screen(task, step)
                     // QA-011 Batch 4: on an iPhone the camera's 4:3 picture leaves Fit's bars below it (portrait) or
-                    // beside it (landscape), away from the spectrum ring and the overlay; Fill covers them.
-                    if UIDevice.current.userInterfaceIdiom == .phone {
-                        let band: (Double, Double, Double, Double) = orientation == .portrait ? (0.1, 0.86, 0.8, 0.06)
-                            : (0.88, 0.45, 0.08, 0.4)
-                        let lit = Self.region(pixels, width: lastSize.0, height: lastSize.1, band).nonBlack
-                        report(task, "\(step) bar band", ["nonBlack": lit])
+                    // beside it (landscape); Fill covers them.
+                    // D1 rerun 2026-11-23: the landscape band read 0.324 (back) and 0.802 (front), identical to three
+                    // places for Fill center, Fill top 2x and Fit, so it measured no picture at all: the controls card
+                    // (shown until 5 s after Settings closed, and filling most of the 393 pt landscape window) lay
+                    // over it. The bands are now read with the controls hidden, clear of what stays on screen then (the
+                    // status pill at the bottom centre, Emergency blackout above it at the trailing side, the overlay
+                    // at the top trailing corner): portrait just under the picture's bottom edge (81 %), landscape in
+                    // the leading bar. They are read from the upright screenshot (`uprightPixels`), so the fractions
+                    // mean the screen as shown whatever rows the screenshot's `cgImage` keeps.
+                    waitControlsHidden()
+                    screen(task, step)
+                    if UIDevice.current.userInterfaceIdiom == .phone, let image = lastShot?.image {
+                        let (upright, size) = Self.uprightPixels(image, step: sampleStep)
+                        let band: (Double, Double, Double, Double) = orientation == .portrait ? (0.1, 0.825, 0.65, 0.04)
+                            : (0.03, 0.35, 0.12, 0.3)
+                        let lit = Self.region(upright, width: size.0, height: size.1, band).nonBlack
+                        report(task, "\(step) bar band", ["nonBlack": lit, "width": Double(size.0), "height": Double(size.1),
+                                                          "rawWidth": Double(lastSize.0), "rawHeight": Double(lastSize.1)])
                         if label == "fit" { XCTAssertLessThan(lit, 0.15, "\(step): Fit shows a black bar there (\(lit))") }
                     }
                 }
@@ -488,7 +499,17 @@ extension B06CameraDeviceTests {
             openSettingsForCamera()
             let lens = app.segmentedControls["cameraLensPicker"]
             XCTAssertTrue(revealCameraSetting(lens), "the Lens row")
-            lens.buttons.element(boundBy: 1).tap()
+            // Tap a lens that is not the running one. QA-011 D1 rerun (2026-11-23): the row lists the lenses widest first
+            // (Ultra Wide, Wide) and the camera opens on Wide, so segment 1 was the running lens: the tap changed nothing,
+            // the camera never restarted (`starts` stayed 1) and the lock stayed (the app releases it on a real switch,
+            // AVCameraFrameProvider.switchLens, CAM-004-R6).
+            let segments = lens.buttons.allElementsBoundByIndex
+            let shownBefore = lens.value as? String ?? ""
+            let other = segments.first { !$0.isSelected } ?? lens.buttons.element(boundBy: 0)
+            let otherTitle = other.label
+            other.tap()
+            XCTAssertTrue(wait(5) { (lens.value as? String ?? "") == otherTitle },
+                          "the Lens row shows the other lens: \(shownBefore) → \(lens.value as? String ?? "") (wanted \(otherTitle))")
             closeSettingsForCamera()
             XCTAssertTrue(waitCameraLive(), "the other lens: live")
             XCTAssertTrue(wait(5) { self.cameraState()["exposure"] == "continuousAuto" }, "a lens change releases it: \(cameraState())")
