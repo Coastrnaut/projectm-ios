@@ -491,14 +491,28 @@ final class B02ShowsProbeDeviceTests: B07DeviceCase {
         XCTAssertTrue(wait(5) { rows.count >= 3 }, "three Calm presets")
         // The playing preset's menu has no Compare… (D1-D3 2026-11-18: the first Calm row was the current preset; the
         // overlay's `currentPreset` text did not match its name). Its row label says "current preset".
+        // A is the lowest of the two rows, B the higher one (D1 2026-11-22 rerun): after Compare… the compare bar sits
+        // over the foot of the iPhone's sheet, and the short filtered list cannot scroll its last row above the bar
+        // (twelve drags each bounced back), so B, pressed while the bar shows, must be the row nearer the top.
         let names = rows.allElementsBoundByIndex.filter { !$0.label.contains("current preset") }
+            .sorted { $0.frame.minY > $1.frame.minY }
             .map { String($0.identifier.dropFirst("preset:".count)) }
         guard names.count >= 2 else { return XCTFail("\(task): two Calm presets to compare: \(names)") }
         func menu(_ name: String, _ title: String) {
             // D1 2026-11-22: after Compare… the compare bar (over the iPhone's floating search field) covered the last
-            // Calm row, so the press met the bar and no menu opened; `reveal` scrolls the row clear of that chrome.
-            XCTAssertTrue(reveal(app.buttons["preset:\(name)"]), "\(task): the row \(name) clear of the bottom bars")
-            app.buttons["preset:\(name)"].press(forDuration: 0.7)
+            // Calm row, so the press met the bar and no menu opened. `reveal` scrolls the row clear of that chrome;
+            // where the list is too short to scroll, the press goes to the part of the row above the chrome.
+            let row = app.buttons["preset:\(name)"]
+            if reveal(row, drags: 4) {
+                row.press(forDuration: 0.7)
+            } else {
+                let top = max(row.frame.minY, app.navigationBars.firstMatch.exists ? app.navigationBars.firstMatch.frame.maxY : 0)
+                let visible = min(row.frame.maxY, app.bottomChromeTop) - top
+                XCTAssertGreaterThan(visible, 12, "\(task): part of the row \(name) shows above the bottom bars")
+                row.coordinate(withNormalizedOffset: .zero)
+                    .withOffset(CGVector(dx: row.frame.width * 0.4, dy: top - row.frame.minY + max(visible, 0) / 2))
+                    .press(forDuration: 0.7)
+            }
             let item = app.buttons[title]
             XCTAssertTrue(appears(item), "\(title) in the row's menu")
             item.tap()
