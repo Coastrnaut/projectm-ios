@@ -819,6 +819,11 @@ final class SystemUI {
     static func fileItemPredicate(_ name: String) -> NSPredicate {
         let stem = (name as NSString).deletingPathExtension, ext = (name as NSString).pathExtension
         var options = [NSPredicate(format: "label == %@", name), NSPredicate(format: "label BEGINSWITH %@", name + ",")]
+        // A name ending in a space is a prefix: FILE-001-B picks "projectM-iOS Scene <date>.pmscene", whose date the
+        // exporting device chose (D3 2026-11-22: the prefix never matched a whole name and the pick failed).
+        if name.hasSuffix(" ") {
+            options += [NSPredicate(format: "label BEGINSWITH %@", name), NSPredicate(format: "identifier BEGINSWITH %@", name)]
+        }
         if !ext.isEmpty {
             let shown = "\(stem), \(ext)"
             options += [NSPredicate(format: "identifier == %@", shown), NSPredicate(format: "label BEGINSWITH %@", shown + ",")]
