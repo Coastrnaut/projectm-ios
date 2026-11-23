@@ -9,10 +9,12 @@ Gating) and is used for Gate 2, SC-005–SC-009, SC-013–SC-015, and ADR-0003.
 | ID | Device | Device name | Part number | OS version | OS build | Model identifier | Owner |
 |----|--------|-------------|-------------|------------|----------|------------------|-------|
 | D1 | iPhone 15 | iPhone77 | MTLV3LL/A | iOS 27.0.1 | 24A446 | iPhone15,4 | project owner |
-| D2 | iPad Pro 13-inch (M5) | iPad77 | MDYJ4LL/A | iPadOS 27.2 | 24B119 | iPad17,3 | project owner |
+| D2 | iPad Pro 13-inch (M5) | iPad77 | MDYJ4LL/A | iPadOS 27.2.1 | 24B156 | iPad17,3 | project owner |
 | D3 | iPad (A16) | iPadC | MD4A4LL/A | iPadOS 26.5 | 23F77 | iPad15,7 | project owner |
 
 OS build and model identifier recorded 2026-11-08 with `xcrun devicectl list devices` (Xcode 27.2)
+
+2026-11-23: the owner updated D2 from iPadOS 27.2 (24B119) to 27.2.1 (24B156) because it was not working right; after the update the Mac reached it again only once it was plugged in by USB (CoreDevice error 4016 over Wi-Fi). D2 results before this date are on 27.2.
 on the project Mac, with all three devices paired and Developer Mode enabled. This confirms D1 is the
 base iPhone 15 (`iPhone15,4`). If a device's OS is updated, re-record its row before the next run.
 
