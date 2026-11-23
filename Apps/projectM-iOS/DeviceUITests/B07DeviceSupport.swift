@@ -257,10 +257,14 @@ class B07DeviceCase: DeviceAcceptanceCase {
 
     /// Opens My Presets from the browser's home: the row scrolled clear of the bottom chrome (an iPhone's floating
     /// search field covered it on D1, 2026-11-22) and tapped until its list's navigation bar shows.
+    /// At AX5 (D1 2026-11-22 rerun) the home's rows are so tall that My Presets lies beyond the lazy list's built rows
+    /// and does not exist until the list is scrolled towards its end.
     @discardableResult
     func openMyPresets() -> Bool {
         let myPresets = app.buttons["node:myPresets"]
-        guard appears(myPresets, 10) else { return false }
+        guard appears(app.buttons["node:included"], 10) || appears(myPresets, 1) else { return false }
+        for _ in 0..<12 where !myPresets.exists { app.dragContentUp(); _ = appears(myPresets, 1) }
+        guard myPresets.exists else { return false }
         return app.openListRow(myPresets, destination: app.navigationBars["My Presets"])
     }
 

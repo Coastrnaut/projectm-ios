@@ -1116,6 +1116,9 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   `XCUIApplication.bottomChromeTop` (ListScrolling.swift: a search field in the lower half, the compare and audition
   bars, a tab bar) is now B07's `reveal` limit, and `openListRow` taps a navigation row until its destination's bar shows
   (`openMyPresets`). Check that a navigation tap navigated before looking for the next screen's content.
+  The rerun (2026-11-22) added two more: a short list cannot scroll its last row above a bar (PRE-009's twelve drags
+  bounced back), so press the row that is higher on screen, or the part of a row above the chrome; and at AX5 a row
+  far down a lazy list does not exist until the list is scrolled towards it (My Presets), so scroll before waiting.
 
 ### Policy and evidence
 
