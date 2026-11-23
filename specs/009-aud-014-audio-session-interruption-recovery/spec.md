@@ -50,6 +50,19 @@ interaction); each answer is the conservative, local-first option using public A
   2026-11-23). A return whose activation iOS refuses is treated as an open interruption, on hold
   with "Interrupted" (AUD-014-R6, R8).
 
+- Q (QA-011 D2 r15, 2026-11-23, coordinator decision recorded here): Is the "began" that leaves D2 on hold a real
+  interruption? → A: No; it is the suspension notice. The `-uitestSessionLog` trace of `d2diag1` VIS-001-T36 (5 of 6
+  returns not resumed in r15): `t=53.42 app didEnterBackground; t=53.5 lifecycle background, state=active; t=53.5 hold: suspending while away; t=53.51 session.deactivate ok; t=53.52 notice interruption type=1 reason=0 options=- wasSuspended=- app=background; backend signal interruptionBegan held=1; interruption: began, away=1; t=56.67 willEnterForeground; lifecycle foreground state=paused reason=interrupted interruption=pending; policy: stayPaused(interrupted) signal=pending; t=56.93 didBecomeActive; active: retry=0`. iOS posts "interruption began" (default reason, no "was suspended"
+  value) about 10 ms after the app enters the background and releases its session, and never posts its end. So a plain
+  "began" (`SourceEvent.interruptionBegan`) that arrives within `CaptureManager.suspensionNoticeWindow` (1.0 s) of the
+  away hold, while the app is still away and playback is held only for being away, opens no interruption: the trace
+  records "suspension notice" and the return resumes per AUD-015. A "began" with evidence of an external interruption
+  ("was suspended" explicitly false, or a reason other than default, app suspended or route disconnected;
+  `SourceEvent.interruptionBeganExternal`), a "began" after the window while away (a call or an alarm), and a "began"
+  while the app is presentable still open the interruption, and the owner ruling of 2026-11-12 (a never-ended
+  interruption stays on hold until Play) is unchanged for them. The session release and the retry at didBecomeActive
+  stay. Tests: `InterruptionRecoveryTests` (suspension notice section), `AudioSessionSignalTests.testExternalEvidenceOnABeganIsParsed`.
+
 ## Baseline: what exists today (audit of 2026-11-12, commit `e40e578`)
 
 This is an extension row: most of the interruption handling exists. The audit below is per event

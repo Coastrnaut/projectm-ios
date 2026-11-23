@@ -140,6 +140,10 @@ Decided by Claude under owner rules 4 and 12 (best judgement, unattended), from 
   every activation and deactivation with its result and error code, every lifecycle event with the application
   state, and every hold, resume and policy decision. The DEBUG `-uitestSessionLog` probe shows it, and PERF-011-T22
   and VIS-001-T36 print it after the return (`SESSION-TRACE` lines), so the next D2 run shows which path it was.
+- Q (r15, 2026-11-23): What did the trace show? → A: Neither candidate: the deactivation succeeded and iOS then posted
+  the suspended app's "interruption began" about 10 ms later with no end (trace and decision in the AUD-014
+  Clarifications 2026-11-23, r15). That notice no longer opens an AUD-014 interruption when it arrives within 1.0 s of
+  the away hold while the app is away, so a plain round trip resumes as this table says.
 
 ## User Scenarios & Testing *(mandatory)*
 

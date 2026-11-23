@@ -15,6 +15,8 @@ final class InterruptionRecoveryTests: XCTestCase {
         let mic: FakeAudioSource
         let manager: CaptureManager
         let transport: PlaybackTransport
+        /// The manager's lifecycle clock (suspension-notice window), frozen unless a test advances it.
+        let clock: ManualClock
     }
 
     private func item(_ id: String) -> PlaybackItem {
@@ -26,8 +28,10 @@ final class InterruptionRecoveryTests: XCTestCase {
         let source = InAppPlaybackSource(backend: backend)
         let mic = FakeAudioSource(mode: .microphone)
         let manager = CaptureManager(sources: [source, mic], runsAnalysisTimer: false)
+        let clock = ManualClock()
+        manager.lifecycleClock = { clock.now }
         return Rig(backend: backend, source: source, mic: mic, manager: manager,
-                   transport: PlaybackTransport(manager: manager, source: source))
+                   transport: PlaybackTransport(manager: manager, source: source), clock: clock)
     }
 
     /// A rig playing track a of [a, b], 10 seconds in.
@@ -314,6 +318,7 @@ final class InterruptionRecoveryTests: XCTestCase {
     func testAnInterruptionThatBeginsInTheBackgroundBlocksTheForegroundResume() async {
         let rig = await playing()
         await rig.manager.handle(.background)
+        rig.clock.advance(CaptureManager.suspensionNoticeWindow + 0.5)   // a call while away, not the suspension notice
         await send(rig, began)
         assertOnHold(rig, state: .paused, reason: .interrupted)
         await rig.manager.handle(.foreground)
@@ -552,6 +557,88 @@ final class InterruptionRecoveryTests: XCTestCase {
         XCTAssertEqual(rig.manager.state, .stopped)
         XCTAssertEqual(rig.manager.stopReason, .inAppPlaybackFailed)
         XCTAssertFalse(rig.transport.isAvailable)
+    }
+
+    // MARK: - QA-011 D2 2026-11-23: the suspension notice (AUD-014, AUD-015 Clarifications)
+
+    /// D2 r15 trace: "session.deactivate ok" at 53.51, "notice interruption type=1 reason=0" at 53.52 (app=background),
+    /// never an end; the return stayed "Interrupted". A plain "began" within the window after the away hold opens no
+    /// interruption, and the return resumes.
+    func testABeganJustAfterTheAwayHoldIsTheSuspensionNoticeAndTheReturnResumes() async {
+        for (leave, back) in [(AppLifecycleEvent.background, AppLifecycleEvent.foreground), (.lock, .unlock)] {
+            let rig = await playing()
+            await rig.manager.handle(leave)
+            rig.clock.advance(0.01)
+            await send(rig, began)
+            XCTAssertEqual(rig.manager.state, .paused, "\(leave)")
+            XCTAssertNil(rig.manager.stopReason, "\(leave): not shown as Interrupted")
+            await rig.manager.handle(back)
+            XCTAssertEqual(rig.backend.resumeCount, 1, "\(leave): AUD-015 resumes on the return")
+            XCTAssertEqual(rig.transport.state, .playing)
+            XCTAssertEqual(rig.transport.position.seconds, 10)
+        }
+    }
+
+    func testTheWindowEdges() async {
+        for (after, resumes) in [(CaptureManager.suspensionNoticeWindow - 0.01, 1), (CaptureManager.suspensionNoticeWindow + 0.01, 0),
+                                 (1.5, 0)] {
+            let rig = await playing()
+            await rig.manager.handle(.background)
+            rig.clock.advance(after)
+            await send(rig, began)
+            await rig.manager.handle(.foreground)
+            XCTAssertEqual(rig.backend.resumeCount, resumes, "began \(after) s after the away hold")
+            if resumes == 0 { assertOnHold(rig, state: .paused, reason: .interrupted) }
+        }
+    }
+
+    func testABeganWhileActiveIsAlwaysAnInterruption() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.backend.resumeCount, 1)
+        await send(rig, began)                        // within the window of the old hold, but the app is back
+        assertOnHold(rig, resumes: 1)
+    }
+
+    func testAnExternalBeganJustAfterTheAwayHoldStillOpensTheInterruption() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        await send(rig, .interruptionBeganExternal)
+        await rig.manager.handle(.foreground)
+        assertOnHold(rig, state: .paused, reason: .interrupted)
+    }
+
+    func testAnInterruptionThatBeginsAndEndsWhileAwayResumesAsBefore() async {
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        rig.clock.advance(2)
+        await send(rig, began, endedResume)
+        assertOnHold(rig, state: .paused, reason: .interrupted)
+        await rig.manager.handle(.foreground)
+        XCTAssertEqual(rig.backend.resumeCount, 1)
+        XCTAssertEqual(rig.transport.state, .playing)
+
+        // The same within the window: the notice opened nothing, the end changes nothing, the return resumes.
+        let quick = await playing()
+        await quick.manager.handle(.background)
+        await send(quick, began, endedResume)
+        await quick.manager.handle(.foreground)
+        XCTAssertEqual(quick.backend.resumeCount, 1)
+        XCTAssertEqual(quick.transport.state, .playing)
+    }
+
+    func testTheSuspensionNoticeIsRecordedInTheTrace() async {
+        let trace = AudioSessionTrace.shared
+        trace.reset()
+        trace.isEnabled = true
+        defer { trace.isEnabled = false; trace.reset() }
+        let rig = await playing()
+        await rig.manager.handle(.background)
+        rig.clock.advance(0.01)
+        await send(rig, began)
+        XCTAssertTrue(trace.entries.contains { $0.contains("suspension notice: 10 ms after the away hold, no interruption opened") },
+                      trace.entries.joined(separator: "\n"))
     }
 
     // MARK: - Microphone is unchanged (AUD-014-R9, S5)

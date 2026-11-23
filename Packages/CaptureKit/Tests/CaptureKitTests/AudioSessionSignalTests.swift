@@ -24,8 +24,8 @@ final class AudioSessionSignalTests: XCTestCase {
     func testInterruptionNotificationsAreParsed() {
         XCTAssertEqual(AudioSessionSignal.parse(interruption(.began)), .interruptionBegan(outputDisconnected: false))
         XCTAssertEqual(AudioSessionSignal.parse(interruption(.began, reason: 0)), .interruptionBegan(outputDisconnected: false))
-        XCTAssertEqual(AudioSessionSignal.parse(interruption(.began, reason: 2)), .interruptionBegan(outputDisconnected: false),
-                       "built-in microphone muted: an ordinary interruption for playback")
+        XCTAssertEqual(AudioSessionSignal.parse(interruption(.began, reason: 2)), .interruptionBegan(outputDisconnected: false, external: true),
+                       "built-in microphone muted: an ordinary interruption for playback, never a suspension notice")
         XCTAssertEqual(AudioSessionSignal.parse(interruption(.began, reason: 4)), .interruptionBegan(outputDisconnected: true),
                        "AVAudioSessionInterruptionReasonRouteDisconnected")
         XCTAssertEqual(AVAudioSession.InterruptionReason.routeDisconnected.rawValue, 4)
@@ -37,6 +37,19 @@ final class AudioSessionSignalTests: XCTestCase {
         XCTAssertNil(AudioSessionSignal.parse(interruption(nil)), "no type: ignored")
         XCTAssertNil(AudioSessionSignal.parse(Notification(name: AVAudioSession.interruptionNotification, object: nil,
                                                            userInfo: [AVAudioSessionInterruptionTypeKey: UInt(99)])))
+    }
+
+    func testExternalEvidenceOnABeganIsParsed() {
+        XCTAssertEqual(AudioSessionSignal.parse(interruption(.began, reason: 0)), .interruptionBegan(outputDisconnected: false, external: false))
+        XCTAssertEqual(AudioSessionSignal.parse(interruption(.began, reason: 1)), .interruptionBegan(outputDisconnected: false, external: false))
+        XCTAssertEqual(AudioSessionSignal.parse(interruption(.began, reason: 2)), .interruptionBegan(outputDisconnected: false, external: true))
+        var info: [AnyHashable: Any] = [AVAudioSessionInterruptionTypeKey: AVAudioSession.InterruptionType.began.rawValue,
+                                        "AVAudioSessionInterruptionWasSuspendedKey": false]
+        XCTAssertEqual(AudioSessionSignal.parse(Notification(name: AVAudioSession.interruptionNotification, object: nil, userInfo: info)),
+                       .interruptionBegan(outputDisconnected: false, external: true))
+        info["AVAudioSessionInterruptionWasSuspendedKey"] = true
+        XCTAssertEqual(AudioSessionSignal.parse(Notification(name: AVAudioSession.interruptionNotification, object: nil, userInfo: info)),
+                       .interruptionBegan(outputDisconnected: false, external: false))
     }
 
     func testRouteAndResetNotificationsAreParsed() {

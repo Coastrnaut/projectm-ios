@@ -20,8 +20,10 @@ import AVFAudio
 #endif
 
 enum AudioSessionSignal: Sendable, Equatable {
-    /// `outputDisconnected`: the interruption's reason is a disconnected route.
-    case interruptionBegan(outputDisconnected: Bool)
+    /// `outputDisconnected`: the interruption's reason is a disconnected route. `external`: the notice says it is not
+    /// about the app's suspension ("was suspended" explicitly false, or a reason other than default (0), app was
+    /// suspended (1) or route disconnected (4)); see `SourceEvent.interruptionBeganExternal`.
+    case interruptionBegan(outputDisconnected: Bool, external: Bool = false)
     case interruptionEnded(shouldResume: Bool)
     /// The output device became unavailable (for example headphones unplugged).
     case outputRouteLost
@@ -40,8 +42,12 @@ extension AudioSessionSignal {
             let type = (note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt).flatMap(AVAudioSession.InterruptionType.init)
             switch type {
             case .began:
-                let reason = (note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt).flatMap(AVAudioSession.InterruptionReason.init)
-                return .interruptionBegan(outputDisconnected: reason == .routeDisconnected)
+                let rawReason = note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt
+                let reason = rawReason.flatMap(AVAudioSession.InterruptionReason.init)
+                // Read by its key's string: the SDK deprecates it and says it is no longer sent.
+                let wasSuspended = (note.userInfo?["AVAudioSessionInterruptionWasSuspendedKey"] as? NSNumber)?.boolValue
+                let external = wasSuspended == false || (rawReason.map { ![0, 1, 4].contains($0) } ?? false)
+                return .interruptionBegan(outputDisconnected: reason == .routeDisconnected, external: external)
             case .ended:
                 let options = AVAudioSession.InterruptionOptions(rawValue: note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0)
                 return .interruptionEnded(shouldResume: options.contains(.shouldResume))
