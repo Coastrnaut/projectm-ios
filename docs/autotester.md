@@ -760,6 +760,37 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   timer's own play button would start its duration). Settings › Battery has no Low Power Mode switch any more: it sits
   under Battery › Power Mode, which `openSettingPage(.lowPower)` follows, then Settings search; when the switch is
   still missing it prints the page. Expect every system-app helper to need an iPhone path checked on D1.
+- **D1 rerun 5 (iPhone 15, iOS 27.0.1, 2026-11-23): what the iPhone does differently.**
+  - *Read an interrupted run's result bundle anyway.* It has no Info.plist, but `Data/data.0~*` are zstd blobs: the
+    HEIC/PNG screenshots, the "App UI hierarchy" text attached at each failure, and an activity summary that names each
+    attachment with its timestamp. Decompress them (`zstd -dqc`), map step times to screenshots, and look before
+    guessing; every cause below came from those files.
+  - *A row under the floating search field is "hittable".* iOS 27 floats Settings' and the preset browser's search
+    field over the foot of the list on an iPhone; the row's frame is inside the window, so `isHittable` is true and the
+    tap opens the search (MED-006's switch vanished, PRE-012/PRE-014's My Presets never opened). `ControlSurfaceCase
+    .scrollTo` and B07's `tapControl` now require `reachable` (clear of `bottomChromeTop`), and `openNode` taps again
+    until the row's list shows.
+  - *The iPhone's Files picker remembers its folder and its tab.* It opened on Shared, and Browse then showed projectM
+    itself, so "On My iPhone" was nowhere. Save to Files opens a mover already in projectM with Save at the top and no
+    tab bar; a "Browse" button existed for a moment while it came up and the tap on it failed. `filesPick`/`filesSave`
+    now act in the app's folder when its title shows (`pickerInAppFolder`), tap Browse only while it is still there
+    (`tapBrowseIfShown`), and tap Browse a second time to reach the locations from inside a folder.
+  - *The iPhone's Files picker is a sheet with a half-height detent.* A swipe down at the top of a folder lowers it
+    to half the screen; the grid left the tree for a moment, the pick "counted", and the picker covered Settings for the
+    rest of MED-001 ("choosePhotoFromFiles is reachable in Settings"). `expandFilesSheetIfShrunk` drags inside the
+    grid to raise it, and a single-selection pick counts only when the picker is still gone a second later.
+  - *The iPhone's Control Center has the iPad's green pill.* "projectM  Controls ›" with camera and location icons and
+    no "camera" label; the pill rules now apply on every device, scanning the whole width of the top 12 %. A second
+    open can show a compact header (green camera glyph and "projectM ›", no pill); read its label before deciding.
+  - *Reveal taps go off-centre on a phone.* After REC-003's 60 s recording, four taps at the tap area's centre (where
+    the DEBUG probes stack) never brought the controls back; `tapCameraControl` now taps at 62 % and 70 % of the height,
+    as `showCameraControls`. The run also showed the thermal notice "The device is getting hot…" at 30 fps.
+  - *Picture checks must leave out every always-shown pill.* MED-010's bottom-right "dark fringe" (87 pixels) was the
+    right end of the source status pill, which reaches the last 110 pt of a 393 pt screen; recomputed without it: 0.
+  - *A lost connection can leave xcodebuild silent for good.* D1 left the Mac while MED-014 set up its automation
+    session ("The connection was invalidated", Mercury 1001; nothing in the test or the app ran yet), diagnostics
+    failed three minutes later and xcodebuild then sat silent until stopped by hand. `run_device_ui_tests.sh` now ends
+    a run 5 silent minutes after such an error, or after 15 silent minutes of any kind.
 - **Wait on a run by its process ID, never with `pgrep -f <name>` from a shell (2026-11-19).** A wait loop
   `until ! pgrep -f round5.sh` matched its own command line, so it never ended and both iPads sat idle for an hour
   after their runs had finished. Save `$!` when starting the run and poll `kill -0 <pid>`.

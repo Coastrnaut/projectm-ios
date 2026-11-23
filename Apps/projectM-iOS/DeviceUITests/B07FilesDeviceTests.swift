@@ -47,11 +47,27 @@ final class B07FilesDeviceTests: B07Case {
         _ = wait(5) { !self.app.buttons["node:included"].exists && !self.app.buttons["importPreset"].exists }
     }
 
+    /// Opens the browser row `node:<id>` and waits until the list it opens shows (the row gone, or a navigation bar
+    /// named like the row). QA-011 D1 rerun (2026-11-23, PRE-012-T31, PRE-014-T25): on the iPhone My Presets is the
+    /// home's eighth row and sat under the floating search field (row 756-808 pt, field from 786 pt); the tap went to
+    /// the field, the home stayed (failure dump) and Import Preset… never appeared. `scrollTo` now requires the row
+    /// clear of that chrome, and a tap that left the row in place is repeated (as `openListRow`).
     func openNode(_ id: String, settle: Double = 0.8) {
         let node = app.buttons["node:\(id)"].firstMatch
         _ = wait(3) { node.exists }   // a push or pop animation still running
         XCTAssertTrue(scrollTo(node), "node:\(id) is listed")
-        node.tap()
+        let title = node.exists ? node.label.components(separatedBy: ",").first ?? "" : ""
+        let opened = { !node.exists || (!title.isEmpty && self.app.navigationBars[title].exists) }
+        for attempt in 0..<3 {
+            if attempt > 0 {
+                print("DEVICE-ACCEPT-NOTE node:\(id) is still listed after tap \(attempt); tapping again")
+                _ = scrollTo(node, swipes: 3)
+            }
+            guard node.exists else { break }
+            node.tap()
+            if wait(3, opened) { break }
+        }
+        XCTAssertTrue(opened(), "node:\(id) opens")
         pause(settle)
     }
 

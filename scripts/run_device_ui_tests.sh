@@ -45,6 +45,16 @@ while kill -0 "$xcb" 2>/dev/null; do
     kill "$xcb" 2>/dev/null; sleep 5; kill -9 "$xcb" 2>/dev/null
     break
   fi
+  # D1 rerun 5 (2026-11-23): the device's connection dropped while MED-014 set up its automation session ("The connection
+  # was invalidated", Mercury error 1001); xcodebuild's diagnostics collection failed three minutes later and xcodebuild
+  # then sat silent until it was interrupted by hand 13 minutes on. A connection error followed by 5 silent minutes, or
+  # 15 silent minutes after anything (no test step is silent that long; a test's own limit is 600 s), ends the run.
+  if { [ "$still" -ge 300 ] && tail -80 "$log" | grep -qE "connection was invalidated|Failure collecting diagnostics|Lost connection to"; } \
+     || [ "$still" -ge 900 ]; then
+    echo "== $dev $name: DEVICE LOST: the log has been silent for $((still / 60)) minutes after a lost connection or stall; stopping the run" | tee -a "$log"
+    kill "$xcb" 2>/dev/null; sleep 5; kill -9 "$xcb" 2>/dev/null
+    break
+  fi
 done
 wait "$xcb" 2>/dev/null
 [ -n "${driver:-}" ] && kill "$driver" 2>/dev/null

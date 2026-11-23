@@ -45,6 +45,13 @@ interaction); each answer is the conservative, local-first option.
 
 - Q: CAM-001-T24 found nothing in Control Center on D3 although its green pill "projectM  Controls ›" was on screen; is the attribution missing? → A: No. The pill's element is labelled "projectM, Settings" and its frame starts at the top of the screen, so the test's "ends within the top 10 %" left it out. It counts now when it starts in the top 10 % and is no taller than 20 % of the screen (not a container). The green status dot was seen in both runs.
 
+- (QA-011 D1 rerun 2026-11-23) CAM-001-T24 and CAM-002-T21 found "nothing" in the iPhone's Control Center while the
+  green camera dot was on; is the attribution missing on the iPhone? → A: No. iOS 27.0.1 on the iPhone shows the same
+  green "projectM  Controls ›" pill with camera and location icons as iPadOS (D1's screenshot), with no label naming
+  the camera, and the test accepted the pill only on an iPad. The pill rules (the app's name in the top band, or the
+  pill's system green in the screenshot, never "recently") now apply on every device; the green rule scans the whole
+  width of the top 12 % for runs of 10-70 % of the width (the iPhone's pill spans 54 %, the iPads' 18-22 %).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The live rear camera behind the music (Priority: P1)
