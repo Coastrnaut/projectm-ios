@@ -242,7 +242,13 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
     /// Control Center's privacy header for the camera: an element naming the app and the camera. Opens and closes
     /// Control Center; nil when nothing names both. (SystemUI.controlCenterPrivacyUser matches the app's name alone,
     /// which Now Playing also shows while the music plays; this private helper also requires "camera".)
-    private func controlCenterCameraUser(acceptPadPill: Bool = false) -> String? {
+    ///
+    /// `acceptPill`: the privacy pill counts without the word "camera" (its name in the top band, or its system green).
+    /// iPadOS showed it first; QA-011 D1 rerun (iPhone 15, iOS 27.0.1, 2026-11-23, CAM-001-T24, CAM-002-T21): the
+    /// iPhone's Control Center shows the same green "projectM  Controls ›" pill with camera and location icons above the
+    /// modules (screenshot "Control Center"), no label named the camera, and the iPad-only rule failed the test with
+    /// "nothing" while the green dot was on.
+    private func controlCenterCameraUser(acceptPill: Bool = false) -> String? {
         XCUIDevice.shared.orientation = .portrait
         guard system.openControlCenter() else {
             print("B06-SYSTEM Control Center did not open")
@@ -258,21 +264,20 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         // Pass 3 (2026-11-19, D3): the pill's element is "projectM, Settings" with its frame starting at the screen's
         // top (minY 0), so "ends within the top 10 %" left it out although the pill is drawn at 4-6 % of the height
         // (screenshot). The pill counts when it starts in the top 10 % and is no taller than 20 % (not a container).
-        if labels.isEmpty, acceptPadPill, UIDevice.current.userInterfaceIdiom == .pad {
+        if labels.isEmpty, acceptPill {
             let height = app.windows.firstMatch.frame.height > 0 ? app.windows.firstMatch.frame.height
                 : XCUIScreen.main.screenshot().image.size.height
             let named = SystemUI.springboard.descendants(matching: .any).matching(
                 NSPredicate(format: "label CONTAINS[c] %@", SystemUI.appDisplayName)).allElementsBoundByIndex
             labels = named.filter { $0.frame.minY >= 0 && $0.frame.minY < height * 0.1 && $0.frame.height < height * 0.2 }
                 .prefix(4).map(\.label)
-            print("B06-SYSTEM Control Center app-name labels (iPad): \(named.prefix(6).map { "\($0.label) @\($0.frame)" })")
+            print("B06-SYSTEM Control Center app-name labels: \(named.prefix(6).map { "\($0.label) @\($0.frame)" })")
         }
         let screenshot = XCUIScreen.main.screenshot()
         // Pass 4 (2026-11-19, D2 and D3): the pill is drawn (screenshots) but sits in a remote process XCUITest cannot
         // read, so only the full-screen app card matched. The pill's colour is the evidence there: system green while
         // the camera is in use, grey once it was only "recently" used (`controlCenterGreenPillVisible`).
-        if labels.isEmpty, acceptPadPill, UIDevice.current.userInterfaceIdiom == .pad,
-           system.controlCenterGreenPillVisible(in: screenshot) {
+        if labels.isEmpty, acceptPill, system.controlCenterGreenPillVisible(in: screenshot) {
             labels = ["\(SystemUI.appDisplayName) (green camera pill in Control Center's screenshot)"]
         }
         let shot = XCTAttachment(screenshot: screenshot)
@@ -327,7 +332,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         for (task, position) in [("CAM-001-T24", "back"), ("CAM-002-T21", "front")] {
             launchLiveCamera(position)
             let dot = system.statusIndicatorDotVisible()
-            let header = controlCenterCameraUser(acceptPadPill: true)
+            let header = controlCenterCameraUser(acceptPill: true)
             report(task, "\(position) indicator", ["greenDot": dot ? 1 : 0, "controlCenterInUse": Self.inUse(header) ? 1 : 0])
             XCTAssertTrue(Self.inUse(header), "\(position): Control Center shows the app using the camera: \(header ?? "nothing")")
             XCTAssertTrue(waitCameraLive(), "\(position): still live after Control Center")

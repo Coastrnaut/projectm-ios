@@ -90,7 +90,7 @@ class B07Case: ControlSurfaceCase {
         }
         if raised {
             raiseInList(id)
-            if !(target.exists && target.isHittable) && !scrollTo(target, swipes: 4) {
+            if !reachable(target) && !scrollTo(target, swipes: 4) {
                 XCTFail("\(id) is reachable in Settings after raising it")
                 return false
             }
@@ -104,7 +104,7 @@ class B07Case: ControlSurfaceCase {
     private func fastScrollTo(_ element: XCUIElement, up: Bool, swipes: Int = 15) -> Bool {
         let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
         for _ in 0..<swipes {
-            if element.exists && element.isHittable { return true }
+            if reachable(element) { return true }
             if element.exists { return scrollTo(element, up: up, swipes: 3) }
             list.scrollStep(up: !up, velocity: .fast)
             pause(0.4)
@@ -1011,14 +1011,23 @@ final class B07MediaDeviceTests: B07Case {
     /// The app's always-shown buttons (Emergency Blackout: a black disc with a white eye in the bottom-right corner)
     /// in sample coordinates, grown by 4 pt: on D2 and D3 its white symbol on black counted as the logo's "dark fringe"
     /// (QA-011 pass 4, 2026-11-19).
+    ///
+    /// QA-011 D1 rerun (iPhone 15, 2026-11-23): "Seeded Bottom right" and "Files Bottom right" read 87 dark of 330 edge
+    /// pixels (top and bottom-left corners: 0 of 200). The screenshot shows a clean white disc; the extra 146 bright
+    /// and 130 edge pixels are the right end of the source status pill ("In-App Playback · Active audio": white text on
+    /// a dark capsule, 79-314 pt wide at 774-801 pt), which a 393 pt screen's bottom-right sample square (the last
+    /// 110 pt) reaches. A sampling error, not a rendering defect: the pill is left out too. Its element is the text, and
+    /// the capsule adds 12 pt of padding each side and 6 pt above and below (SourceStatusIndicator), so it grows by
+    /// 16 pt and 10 pt.
     private func cornerButtons(sampleWidth: Int) -> [CGRect] {
         let window = app.windows.firstMatch.frame
         guard window.width > 0 else { return [] }
         let perPoint: CGFloat = CGFloat(sampleWidth) / window.width
-        return ["emergencyBlackout"].compactMap { (id: String) -> CGRect? in
+        let grown: [(String, CGFloat, CGFloat)] = [("emergencyBlackout", 4, 4), ("sourceIndicator", 16, 10)]
+        return grown.compactMap { (id: String, dx: CGFloat, dy: CGFloat) -> CGRect? in
             let e = app.descendants(matching: .any)[id].firstMatch
             guard e.exists, e.frame.width > 0 else { return nil }
-            let f = e.frame.insetBy(dx: -4, dy: -4)
+            let f = e.frame.insetBy(dx: -dx, dy: -dy)
             return CGRect(x: (f.minX - window.minX) * perPoint, y: (f.minY - window.minY) * perPoint,
                           width: f.width * perPoint, height: f.height * perPoint)
         }

@@ -84,25 +84,44 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
         pause(0.6)
     }
 
-    /// Swipes the frontmost list (slowly, never down at the top of a sheet) until `element` exists and is hittable.
+    /// Whether a tap on `element` reaches it: it exists, is hittable, and lies wholly between the navigation bar and the
+    /// chrome pinned over the list's foot (`XCUIApplication.isClearOfChrome`).
+    ///
+    /// QA-011 D1 rerun (iPhone 15, iOS 27.0.1, 2026-11-23): on an iPhone iOS 27 floats Settings' and the preset
+    /// browser's search field over the foot of the list. A row under it is inside the window, so `isHittable` was true
+    /// and the tap went to the search field: MED-006's Slideshow switch (the tap opened the search, the list redrew and
+    /// the switch was gone: "No matches found for slideshowToggle"), PRE-012 and PRE-014's My Presets row (the browser
+    /// stayed at its home, so no Import Preset…). A row now counts as reachable only above that chrome.
+    func reachable(_ element: XCUIElement) -> Bool {
+        element.exists && element.isHittable && app.isClearOfChrome(element)
+    }
+
+    /// Swipes the frontmost list (slowly, never down at the top of a sheet) until `element` is reachable (`reachable`:
+    /// hittable and clear of the iPhone's floating search field). After `swipes` steps a hittable element still counts
+    /// (one outside a list, a bottom toolbar's button, can never clear that chrome).
     @discardableResult
     func scrollTo(_ element: XCUIElement, up: Bool = false, swipes: Int = 10) -> Bool {
         let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app.tables.firstMatch
         for _ in 0..<swipes {
-            if element.exists && element.isHittable { return true }
+            if reachable(element) { return true }
             list.scrollStep(up: !up)   // inside the list, clear of the Home gesture (ListScrolling)
         }
         return element.exists && element.isHittable
     }
 
-    /// Sets a SwiftUI Toggle row by tapping its switch (the row's centre is its label; autotester lesson).
+    /// Sets a SwiftUI Toggle row by tapping its switch (the row's centre is its label; autotester lesson). Reads the
+    /// switch's value only while it exists: reading a missing element's value fails the test at once with "No matches
+    /// found" instead of saying which step went wrong (MED-006 on D1, 2026-11-23).
     func setSwitch(_ id: String, on: Bool) {
         let toggle = app.switches[id].firstMatch
+        let wanted = on ? "1" : "0"
+        func isSet() -> Bool { toggle.exists && (toggle.value as? String) == wanted }
         XCTAssertTrue(scrollTo(toggle), "\(id) is reachable")
-        guard (toggle.value as? String) != (on ? "1" : "0") else { return }
+        guard toggle.exists else { return XCTFail("\(id): no such switch on screen") }
+        guard !isSet() else { return }
         toggle.coordinate(withNormalizedOffset: CGVector(dx: 0.93, dy: 0.5)).tap()
-        if !wait(3, { (toggle.value as? String) == (on ? "1" : "0") }) { toggle.switches.firstMatch.tap() }
-        XCTAssertTrue(wait(3) { (toggle.value as? String) == (on ? "1" : "0") }, "\(id) is \(on ? "on" : "off")")
+        if !wait(3, isSet), toggle.exists { toggle.switches.firstMatch.tap() }
+        XCTAssertTrue(wait(3, isSet), "\(id) is \(on ? "on" : "off")\(toggle.exists ? "" : " (the switch left the screen)")")
     }
 
     /// The glow intensity the native host holds: "unbound, manual 0.50, effective 0.50" (MOD-002 DEBUG readout, shown

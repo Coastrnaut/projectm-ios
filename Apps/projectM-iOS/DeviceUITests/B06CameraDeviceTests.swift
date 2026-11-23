@@ -340,10 +340,17 @@ extension B06CameraDeviceTests {
     /// container says nothing about the button, so this waits for the button itself: a tap on the visualization
     /// shows the controls (or hides stale ones, and the next tap shows them fresh), as `tapFreshControl` does in the
     /// simulator suites.
+    ///
+    /// QA-011 D1 rerun (2026-11-23, REC-003-T23): after the 60 s recording the controls had hidden, and four taps at the
+    /// tap area's centre never brought them back ("No matches found for record"; the failure dump shows no controls,
+    /// only the camera probes, the recording indicator and a thermal notice). The window's centre is where the DEBUG
+    /// probe readouts stack on a phone (`showCameraControls`), so the reveal taps land off-centre like
+    /// `showCameraControls`: at 62 % and 70 % of the height, below the top status (the recording indicator and its
+    /// notice reach 35 %) and above the bottom status.
     @discardableResult
     private func tapCameraControl(_ id: String, ready: @escaping (XCUIElement) -> Bool = { _ in true }) -> Bool {
         let button = app.buttons[id].firstMatch, area = app.otherElements["visualizerTapArea"].firstMatch
-        for _ in 0..<4 {
+        for attempt in 0..<4 {
             var frame = CGRect.zero
             let found = wait(2) {
                 guard button.exists, button.isHittable, ready(button) else { return false }
@@ -354,7 +361,7 @@ extension B06CameraDeviceTests {
                 app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
                 return true
             }
-            if area.exists { area.tap() }
+            if area.exists { area.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: attempt % 2 == 0 ? 0.62 : 0.7)).tap() }
         }
         return false
     }

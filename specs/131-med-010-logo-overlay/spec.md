@@ -95,6 +95,13 @@ Five questions, each answered by Claude with the recommended option (owner rules
   them first, the controls; pass 4 on D2/D3 counted those as a 305-1400 pixel "dark fringe" while the drawn logo's own
   edge had none. The four-corner sweep uses the white disc imported at launch through the picked-logo path; the Files
   and Photos picks each check one corner. The 2 % fringe limit is unchanged.
+- (QA-011 D1 rerun 2026-11-23) Is the 87-pixel "dark fringe" in D1's bottom-right corner (Seeded and Files) a
+  rendering defect? → A: No, a sampling error. The screenshots show a clean white disc; the other three corners read 0
+  dark of 200 edge pixels, and the bottom-right's extra 146 bright and 130 edge pixels are the right end of the source
+  status pill ("In-App Playback · Active audio", white text on a dark capsule, 79-314 pt at 774-801 pt), which the last
+  110 pt of a 393 pt iPhone screen reach. Recomputed from the screenshot with the pill left out: 0 dark of 198. T25's
+  count now also leaves out the always-shown source status pill (its text frame grown by the capsule's padding); the
+  logo, its compositing and the 2 % limit are unchanged.
 
 ## User Scenarios & Testing *(mandatory)*
 

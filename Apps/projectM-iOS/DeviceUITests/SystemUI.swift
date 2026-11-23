@@ -524,10 +524,20 @@ final class SystemUI {
     /// right half, 31 (D2) and 53 (D3) pixel rows matching this rule; once the camera is no longer in use the pill
     /// turns grey with only a small green icon (longest run 35 px, 0 rows). True when at least 8 pixel rows in the top
     /// 8 % of the right half hold a green run of 10-30 % of the screen's width (in pixels, so the screenshot's scale does not matter).
+    ///
+    /// iPhone (D1, iOS 27.0.1, 2026-11-23): the same pill, centred, from 24 % to 78 % of the width (633 of 1179 px) at
+    /// 7-10 % of the height, with the camera and location icons at its left. The rule now scans the whole width of the
+    /// top 12 % for runs of 10-70 % of the width (`greenPillRows`); the iPads' 18-22 % pills are inside it.
     func controlCenterGreenPillVisible(in screenshot: XCUIScreenshot) -> Bool {
-        let image = screenshot.image
-        guard let cg = image.cgImage else { return false }
-        let width = cg.width, height = max(1, cg.height * 8 / 100)
+        guard let cg = screenshot.image.cgImage else { return false }
+        let rows = Self.greenPillRows(cg)
+        print("SYSTEM-UI Control Center green pill rows: \(rows) (width \(cg.width) px)")
+        return rows >= 8
+    }
+
+    /// Pixel rows in the top 12 % of `cg` whose longest system-green run spans 10-70 % of its width.
+    static func greenPillRows(_ cg: CGImage) -> Int {
+        let width = cg.width, height = max(1, cg.height * 12 / 100)
         var data = [UInt8](repeating: 0, count: width * height * 4)
         data.withUnsafeMutableBytes { (buffer: UnsafeMutableRawBufferPointer) -> Void in
             guard let ctx = CGContext(data: buffer.baseAddress, width: width, height: height, bitsPerComponent: 8,
@@ -535,19 +545,18 @@ final class SystemUI {
                                       bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return }
             ctx.draw(cg, in: CGRect(x: 0, y: height - cg.height, width: width, height: cg.height))
         }
-        let minRun = width / 10, maxRun = width * 3 / 10
+        let minRun = width / 10, maxRun = width * 7 / 10
         var rows = 0
         for y in 0..<height {
             var run = 0, longest = 0
-            for x in (width / 2)..<width {
+            for x in 0..<width {
                 let i = (y * width + x) * 4
                 let r = Int(data[i]), g = Int(data[i + 1]), b = Int(data[i + 2])
                 if g > 150 && g - r > 70 && g - b > 50 { run += 1; longest = max(longest, run) } else { run = 0 }
             }
             if longest >= minRun && longest <= maxRun { rows += 1 }
         }
-        print("SYSTEM-UI Control Center green pill rows: \(rows) (width \(width) px)")
-        return rows >= 8
+        return rows
     }
 
     // MARK: App switcher
@@ -772,12 +781,29 @@ final class SystemUI {
                 return false
             }
         }
-        let browse = app.buttons["Browse"].firstMatch   // the iPhone tab bar; iPadOS 26 nests a second Browse button
-        if wait(3, { browse.exists }) { browse.tap(); pause(0.5) }
+        tapBrowseIfShown(wait: 3)   // the iPhone tab bar; iPadOS 26 nests a second Browse button
+        // QA-011 D1 rerun (iOS 27.0.1, 2026-11-23, MED-001): the picker opened on its Shared tab, and Browse then showed
+        // the folder it used last, projectM itself, so "On My iPhone" was nowhere ("Files: no On My iPhone"). When
+        // Browse lands in the app's folder (or one level above it), the file is picked there.
+        if path.isEmpty {
+            enterAppFolderIfShown()
+            if pickerInAppFolder(), findFile(name, initialWait: 3, swipes: 10) {
+                if tapFile(name) { return true }
+                XCTFail("Files: the picker did not take \(name)")
+                cancelFilesPicker()
+                return false
+            }
+        }
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
                                      Self.appDisplayName] : path
-        for place in places {
-            guard let item = revealPlace(place, wait: 5) else {
+        for (index, place) in places.enumerated() {
+            var found = revealPlace(place, wait: 5)
+            if found == nil, index == 0 {
+                // Browse showed a folder, not its locations: a second tap on the selected tab returns to its root.
+                tapBrowseIfShown(wait: 1)
+                found = revealPlace(place, wait: 5)
+            }
+            guard let item = found else {
                 XCTFail("Files: no \(place)")
                 cancelFilesPicker()
                 return false
@@ -806,6 +832,46 @@ final class SystemUI {
         if own.exists { return own }
         let holding = grid.cells.containing(NSPredicate(format: "label == %@", place)).firstMatch
         return holding.exists ? holding : nil
+    }
+
+    /// Taps the Files picker's Browse tab once it has existed for `seconds` and is still there and hittable.
+    ///
+    /// QA-011 D1 rerun (iOS 27.0.1, 2026-11-23, FILE-010-T11): Save to Files on the iPhone opens a mover with no tab
+    /// bar; a "Browse" button was in the tree for a moment while the sheet came up, and the tap on it then failed the
+    /// test ("Failed to tap Browse: No matches found"). Never tap a Browse that may have gone.
+    func tapBrowseIfShown(wait seconds: Double) {
+        let browse = app.buttons["Browse"].firstMatch
+        guard wait(seconds, { browse.exists }) else { return }
+        pause(0.3)
+        guard browse.exists, browse.isHittable else { return }
+        browse.tap()
+        pause(0.5)
+    }
+
+    /// The Files picker or mover shows the app's own folder: its navigation title is the app's name (on the iPhone a
+    /// "projectM" title with a chevron, iOS 27.0.1; screenshots of MED-001 and FILE-010 on D1, 2026-11-23).
+    func pickerInAppFolder() -> Bool {
+        let name = Self.appDisplayName, bars = app.navigationBars
+        // Not a back button named after the folder above (a subfolder of projectM).
+        let titleButton = bars.buttons.matching(NSPredicate(format: "label == %@ AND identifier != %@", name, "BackButton"))
+        return bars[name].exists || bars.staticTexts[name].exists || titleButton.firstMatch.exists
+    }
+
+    /// iOS 27 shows the iPhone's Files picker as a sheet with a half-height detent: a downward swipe on its grid at the
+    /// top of a folder pulls it down to half the screen (MED-001 on D1, 2026-11-23: screenshots show the picker over
+    /// the lower half, with Settings above it). Its rows then sit low and a tap can land while the sheet still moves.
+    /// Drags upwards inside the grid, which first raises a sheet to its full-height detent (a sheet's scroll view at its
+    /// top expands the sheet before it scrolls); the press never counts as a tap on a file.
+    func expandFilesSheetIfShrunk() {
+        guard UIDevice.current.userInterfaceIdiom == .phone else { return }
+        let grid = app.collectionViews["File View"].firstMatch, window = app.windows.firstMatch.frame
+        guard grid.exists, !window.isEmpty, grid.frame.minY > window.minY + window.height * 0.35 else { return }
+        print("DEVICE-ACCEPT-NOTE Files: the picker sheet is at half height (grid at y \(Int(grid.frame.minY))); expanding it")
+        let start = grid.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+        let end = app.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: window.midX, dy: window.minY + window.height * 0.08))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .default, thenHoldForDuration: 0.2)
+        pause(0.8)
     }
 
     /// The location or folder `place`: its grid cell, else any element so labelled (the sidebar's locations).
@@ -838,6 +904,7 @@ final class SystemUI {
         if grid.exists {
             for down in [false, true] {   // first back to the top, then down through the folder
                 for _ in 0..<(down ? 8 : 4) {
+                    expandFilesSheetIfShrunk()   // a swipe down at the folder's top lowers the iPhone's sheet
                     if isFullyShown(placeItem(place)) {
                         settle(placeItem(place))
                         return placeItem(place)
@@ -894,10 +961,12 @@ final class SystemUI {
     /// (MED-001-T23, MED-001-T24 HEIC, MED-002 H.264, MED-014 panorama); later picks in the same test, with no swipe,
     /// worked. After any scroll the item's frame must now hold still before it counts as found (`settle`).
     func findFile(_ name: String, initialWait: Double, swipes: Int) -> Bool {
+        expandFilesSheetIfShrunk()
         if wait(initialWait, { self.isFullyShown(self.fileItem(name)) }) { return true }
         let grid = app.collectionViews["File View"].firstMatch
         guard grid.exists else { return fileItem(name).exists }
         for _ in 0..<swipes {
+            expandFilesSheetIfShrunk()   // a swipe down at the folder's top lowers the iPhone's sheet
             let item = fileItem(name)
             if isFullyShown(item) { return settle(item) }
             moveTowards(item, in: grid)
@@ -969,6 +1038,7 @@ final class SystemUI {
     func tapFile(_ name: String) -> Bool {
         let open = app.buttons["Open"].firstMatch
         for attempt in 0..<3 {
+            expandFilesSheetIfShrunk()
             settle(fileItem(name))
             tapItem(fileItem(name), name: name, attempt: attempt)
             if open.waitForExistence(timeout: 2) {
@@ -980,7 +1050,14 @@ final class SystemUI {
                 _ = findFile(name, initialWait: 0, swipes: 3)
                 continue
             }
-            if wait(3, { !self.pickerShows(name) }) { return true }   // a single-selection picker took the file
+            // A single-selection picker took the file once it is gone, and still gone a second later: on D1 (2026-11-23,
+            // MED-001-T24) the grid left the tree for a moment while the iPhone's sheet changed height, the pick
+            // counted, and the picker, still up, covered Settings for the rest of the test.
+            if wait(3, { !self.pickerShows(name) }) {
+                pause(1)
+                if !pickerShows(name) { return true }
+                print("DEVICE-ACCEPT-NOTE \(name): the picker is back after tap \(attempt + 1) (it was only redrawing)")
+            }
             print("DEVICE-ACCEPT-NOTE \(name): the picker is still up after tap \(attempt + 1); tapping again")
             _ = findFile(name, initialWait: 0, swipes: 2)
         }
@@ -1023,13 +1100,13 @@ final class SystemUI {
 
     /// Cancels a Files picker that is still up (after a failed pick or save), so the app is in front again.
     func cancelFilesPicker() {
-        for label in ["Cancel", "Close"] {
-            let button = app.buttons[label].firstMatch
-            if button.exists && button.isHittable {
-                button.tap()
-                pause(1)
-                return
-            }
+        // iOS 27's iPhone picker closes with an X button (screenshots, D1 2026-11-23); its name varies by release.
+        let names = ["Cancel", "Close", "Dismiss", "xmark"]
+        let candidates = app.buttons.matching(NSPredicate(format: "label IN %@ OR identifier IN %@", names, names))
+        for button in candidates.allElementsBoundByIndex where button.exists && button.isHittable {
+            button.tap()
+            pause(1)
+            return
         }
     }
 
@@ -1044,8 +1121,19 @@ final class SystemUI {
                 return true
             }
         }
-        let browse = app.buttons["Browse"].firstMatch   // iPadOS 26 nests a second Browse button (REC-003, D3)
-        if wait(5, { browse.exists }) { browse.tap(); pause(0.5) }
+        // QA-011 D1 rerun (iOS 27.0.1, 2026-11-23, FILE-010-T11): on the iPhone Save to Files opens a mover already in
+        // the folder it used last (projectM: its title, the grid of fixtures, Save at the top right, "Save as" at the
+        // foot) and has no tab bar. Saving there is saving to On My iPhone › projectM.
+        if path.isEmpty, wait(3, { self.pickerInAppFolder() }) {
+            for name in ["Save", "Move", "Done"] {
+                let button = app.buttons[name].firstMatch
+                if button.exists && button.isEnabled {
+                    button.tap()
+                    return true
+                }
+            }
+        }
+        tapBrowseIfShown(wait: 5)   // iPadOS 26 nests a second Browse button (REC-003, D3)
         let places = path.isEmpty ? [UIDevice.current.userInterfaceIdiom == .pad ? "On My iPad" : "On My iPhone",
                                      Self.appDisplayName] : path
         // QA-011 pass 9 (D2, iPadOS 27.2, 2026-11-19), a test bug: the mover opened in projectM, the test chose On My
