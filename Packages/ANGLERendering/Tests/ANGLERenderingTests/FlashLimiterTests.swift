@@ -83,6 +83,34 @@ final class FlashLimiterTests: XCTestCase {
         }
     }
 
+    /// FX-019-T22 (D1 matrix rerun, 2026-11-23): the dimmed output is the exact sRGB result encode(decode(c) × gain) for
+    /// every 8-bit level, within one level: the output step computes the power segment with one multiply-add, the toe as
+    /// c × gain, and reads the tone table only where a channel crosses between them. Each frame: a cut from black to
+    /// red with green rising through every level (and blue falling), so the rise limit dims it (gain well below 1).
+    func testEveryDimmedLevelIsTheExactSRGBResult() {
+        var worst = 0, dimmed = 0
+        for k in 0...255 {
+            PMFlashLimiterReset(limiter)
+            frame(0, 0, 0, .reduceFlashing, frameTime: 0.1)
+            let green = Float(k) / 255, blue = Float(255 - k) / 255
+            let gain = Double(frame(1, green, blue, .reduceFlashing, frameTime: 0.1))
+            guard gain < 1 else { continue }
+            dimmed += 1
+            let pixels = renderer.readPixels()
+            let centre = ((Int(size.height) / 2) * Int(size.width) + Int(size.width) / 2) * 4
+            guard pixels.count > centre + 2 else { return XCTFail("no read-back") }
+            for (channel, input) in [Float(1), green, blue].enumerated() {
+                let exact = FlashColor.encodeSRGB(FlashColor.decodeSRGB(Double(input)) * gain) * 255
+                let error = Int(abs(Double(pixels[centre + channel]) - exact).rounded(.up))
+                worst = max(worst, error)
+                XCTAssertLessThanOrEqual(error, 1, "level \(k), channel \(channel): \(pixels[centre + channel]) against "
+                                         + "\(exact) at gain \(gain)")
+            }
+        }
+        XCTAssertEqual(dimmed, 256, "every frame was dimmed")
+        print("FX-019-T22 dimmed levels: worst error \(worst) of 255")
+    }
+
     /// The acceptance sequences (owner rule 7: three representative cases, 2 s each at 60 fps).
     /// "N Hz" is the alternation rate: N changes of the picture per second.
     func testSyntheticStrobesObeyTheEnvelope() {

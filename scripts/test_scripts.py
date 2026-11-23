@@ -2773,6 +2773,42 @@ class QA011Batch2Tests(unittest.TestCase):
             done = self.xt.record([sys.executable, "-c", "print('Recording completed')"], trace, log, 0, poll=0.2)
             self.assertEqual((done["exit"], done["stopped"]), (0, None))
 
+    def test_xctrace_stops_a_save_that_hangs_after_the_app_exited(self):
+        """D1 matrix 2026-11-23 (perf004): "Target app exited, ending recording..." and then nothing; the startup
+        allowance (180 s) no longer delays the stop once the app has exited, and a bundle of only Trace1.run (the raw
+        .atrc) is not a saved trace."""
+        rule = dict(startup=180, save=900, stall=180)
+        self.assertIsNone(self.xt.stop_reason(60, 50, 40, exited_idle=30, **rule), "saving may take a while")
+        self.assertIn("after the app exited", self.xt.stop_reason(100, 61, 40, exited_idle=61, **rule))
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, log = Path(tmp) / "x.trace", Path(tmp) / "x.log"
+            (trace / "Trace1.run" / "Attachments").mkdir(parents=True)
+            self.assertFalse(self.xt.trace_complete(trace), "only the raw recording")
+            hung = [sys.executable, "-c", "import signal,sys,time\n"
+                    "signal.signal(signal.SIGINT, lambda *a: sys.exit(3))\n"
+                    "print('Target app exited, ending recording...', flush=True)\n"
+                    "time.sleep(60)"]
+            start = time.monotonic()
+            out = self.xt.record(hung, trace, log, 40, startup=180, stall=180, grace=5, poll=0.2, exit_stall=0.5)
+            self.assertLess(time.monotonic() - start, 10)
+            self.assertIn("after the app exited", out["stopped"])
+            self.assertEqual((out["appExited"], out["complete"]), (True, False))
+            (trace / "form.template").write_text("x")
+            self.assertTrue(self.xt.trace_complete(trace))
+
+    def test_a_stopped_recording_counts_only_when_whole(self):
+        base = {"name": "perf004", "stopped": "the trace has not changed for 61 s after the app exited"}
+        whole = dict(base, appExited=True, traceSaved=True, tables={"os-signpost": [{}]})
+        verdict = rdm.apply_stop_policy({"pass": True, "detail": "2 allocations"}, [whole])
+        self.assertTrue(verdict["pass"])
+        self.assertIn("stopped after the app had exited", verdict["detail"])
+        for broken in (dict(whole, traceSaved=False), dict(whole, appExited=False), dict(whole, tables={})):
+            self.assertFalse(rdm.apply_stop_policy({"pass": True, "detail": "x"}, [broken])["pass"])
+        retried = {"name": "perf004", "stopped": None, "firstAttempt": "hung"}
+        verdict = rdm.apply_stop_policy({"pass": True, "detail": "ok"}, [retried])
+        self.assertTrue(verdict["pass"])
+        self.assertIn("first attempt hung; recorded again", verdict["detail"])
+
     def test_perf011_background_steps_wait_for_the_launch(self):
         runner = rdm.Runner(rdm.MatrixTarget("D1", "ID", False, Path("/tmp/x"), "UDID"), Path("/tmp/w"), 1, [], True)
         seen = iter([[], [], [7]])
@@ -2824,6 +2860,10 @@ class QA011Batch2Tests(unittest.TestCase):
         verdict = rdm.flashcost_verdict(over, 2.0)
         self.assertFalse(verdict["pass"])
         self.assertEqual(verdict["over"], ["x"])
+        # 2026-11-23: an over-limit preset names its spread (ABBA round costs, dimmed share, IQRs).
+        over["flashCost"][0].update(roundCostsMs=[2.1, 2.7], dimmedFraction=0.5, offIqrMs=0.4, onIqrMs=0.5)
+        self.assertIn("x (2.40 ms, rounds 2.10-2.70, dimmed 50%, IQR off 0.40 on 0.50)",
+                      rdm.flashcost_verdict(over, 2.0)["detail"])
         self.assertFalse(rdm.flashcost_verdict({"summary": {}}, 2.0)["pass"])
         runs = [{"name": "perf008-standard", "report": {"profile": "standard", "fps": [60.0] * 9}, "tables": {}},
                 {"name": "perf008-batterySaver", "report": {"profile": "batterySaver", "fps": [30.0] * 9}, "tables": {}}]

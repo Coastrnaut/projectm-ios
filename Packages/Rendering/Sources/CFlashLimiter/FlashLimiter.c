@@ -19,8 +19,10 @@
 //      input is one of these levels: the output looks each channel up instead of evaluating six pow() per pixel.
 //      On D1 the per-pixel decode/encode cost about 1 ms per frame whenever the gain was below 1 (13 of 28 starter
 //      presets over the 2 ms budget, docs/test-reports/performance.md).
-//   4. Output: the frame x gain (the table's row 0), never lifted; with gain 1 and no calibration the scene is
-//      copied unchanged.
+//   4. Output: the frame x gain, never lifted; with gain 1 and no calibration the scene is copied unchanged. The gain
+//      is read once per vertex; a dimmed channel is one multiply-add in sRGB's power segment, c x gain in its toe, and
+//      the table's row 0 only where a channel crosses from one to the other (D1 rerun 2026-11-23: the table read for
+//      every channel still left dimmed presets about 0.7 ms above undimmed ones).
 //      OUT-009 (specs/268-out-009-output-color-calibration): then, only while a display calibration is set, each
 //      encoded channel becomes clamp(gain_c × c^exponent, 0, 1) (the table's row 1); `PMFlashLimiterDrawOutput`
 //      redraws this step from the current state and table (calibrated or not) for REC-001's read-back.
@@ -349,24 +351,58 @@ static const char *lutSource =
     "    color = vec4(c, 1.0);\n"
     "}\n";
 
-// The output step: an 8-bit scene sampled at its own pixel centres gives exact levels k/255, so the table's entry k is
-// what the per-pixel steps would write.
+// FX-019-T22 (D1 matrix rerun, 2026-11-23): the output step reads the frame's gain once per vertex, not once per pixel,
+// and passes it with g^(1/2.4) as flat values (the same for every pixel of the frame).
+static const char *outputVertexSource =
+    "#version 300 es\n"
+    "precision highp float;\n"
+    "uniform sampler2D state;\n"
+    "out vec2 uv;\n"
+    "flat out float gain;\n"
+    "flat out float scale;\n"
+    "void main() {\n"
+    "    vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));\n"
+    "    uv = p;\n"
+    "    vec4 t = texelFetch(state, ivec2(0, 17), 0);\n"
+    "    gain = clamp(t.r + t.g / 255.0, 0.0, 1.0);\n"
+    "    scale = pow(gain, 1.0 / 2.4);\n"
+    "    gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);\n"
+    "}\n";
+
+// The output step: an 8-bit scene sampled at its own pixel centres gives exact levels k/255.
+// While the gain is below 1 each channel is the exact sRGB result encode(decode(c) x g) without a pow() per pixel:
+//   - in the power segment (c > 0.04045 and a result >= 0.04045) encode(decode(c) x g) = (c + 0.055) x g^(1/2.4) - 0.055,
+//     one multiply-add with the frame's `scale`;
+//   - in the linear toe (c <= 0.04045, so decode(c) x g <= 0.0031308) it is c x g;
+//   - only a channel that leaves the power segment for the toe (a dim result under 0.04045, about 10 of 255 levels)
+//     reads the tone table (row 0), whose entry k is the exact steps for level k.
+// The previous step looked every channel of every pixel up in the table while dimming: three dependent reads per pixel
+// that left the dimmed starter presets at 1.7-1.9 ms against 1.0-1.2 ms for the undimmed ones on D1.
+// With a display calibration set, the table's row 1 (gain, then calibration) is read as before.
 static const char *outputSource =
     COMMON
     "uniform sampler2D scene;\n"
-    "uniform sampler2D state;\n"
     "uniform sampler2D lut;\n"
     "uniform float calOn;\n"
     "in vec2 uv;\n"
+    "flat in float gain;\n"
+    "flat in float scale;\n"
     "out vec4 color;\n"
+    "vec3 table(vec3 c, int row) {\n"
+    "    ivec3 k = clamp(ivec3(c * 255.0 + 0.5), ivec3(0), ivec3(255));\n"
+    "    return vec3(texelFetch(lut, ivec2(k.r, row), 0).r, texelFetch(lut, ivec2(k.g, row), 0).g,\n"
+    "                texelFetch(lut, ivec2(k.b, row), 0).b);\n"
+    "}\n"
     "void main() {\n"
-    "    float g = unpack(texelFetch(state, ivec2(0, 17), 0).rg);\n"
     "    vec3 c = texture(scene, uv).rgb;\n"
-    "    if (g < 1.0 || calOn > 0.5) {\n"
-    "        int row = calOn > 0.5 ? 1 : 0;\n"
-    "        ivec3 k = clamp(ivec3(c * 255.0 + 0.5), ivec3(0), ivec3(255));\n"
-    "        c = vec3(texelFetch(lut, ivec2(k.r, row), 0).r, texelFetch(lut, ivec2(k.g, row), 0).g,\n"
-    "                 texelFetch(lut, ivec2(k.b, row), 0).b);\n"
+    "    if (calOn > 0.5) {\n"
+    "        c = table(c, 1);\n"
+    "    } else if (gain < 1.0) {\n"
+    "        vec3 toe = step(c, vec3(0.04045));\n"
+    "        vec3 o = mix((c + 0.055) * scale - 0.055, c * gain, toe);\n"
+    "        vec3 crossed = (vec3(1.0) - toe) * (vec3(1.0) - step(vec3(0.04045), o));\n"
+    "        if (crossed.r + crossed.g + crossed.b > 0.0) o = mix(o, table(c, 0), crossed);\n"
+    "        c = o;\n"
     "    }\n"
     "    color = vec4(c, 1.0);\n"
     "}\n";
@@ -492,7 +528,7 @@ PMFlashLimiter *PMFlashLimiterCreate(PMFlashLoadProc load, void *user) {
     limiter->measureProgram = link(gl, measureSource);
     limiter->stateProgram = link(gl, stateSource);
     limiter->lutProgram = link(gl, lutSource);
-    limiter->outputProgram = link(gl, outputSource);
+    limiter->outputProgram = linkWith(gl, outputVertexSource, outputSource);
     // OUT-008: a warp program that does not build only turns the warp off; the envelope never depends on it.
     limiter->warpProgram = linkWith(gl, warpVertexSource, warpOutputSource);
     if (!limiter->measureProgram || !limiter->stateProgram || !limiter->lutProgram || !limiter->outputProgram) {

@@ -1354,6 +1354,35 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     `--time-limit` is longer than the app's own run so the app ends the recording by exiting.
   - *Keep a GPU trace short.* The app now draws for about 24 s of the run (10 s before, 14 s after the away time)
     instead of 35, which roughly halves the trace.
+- **"Target app exited" ends the recording; a save that hangs after it is xctrace's** (D1 matrix 20261123T210326Z,
+  `xctrace-perf004`). The app wrote its report and exited after 31 s, as designed, and xctrace printed "Target app
+  exited, ending recording..." and then nothing; two earlier runs that day saved within seconds. The stall rule waited
+  out its 180 s launch allowance before counting, so the case took about 7 minutes. Now `xctrace.record` stops a
+  recording 60 s after "Target app exited" once the bundle stops changing, and the case records once more when the
+  stop left no readable trace. *A directory is not a saved trace:* the stopped bundle held only `Trace1.run` with the
+  raw `trace-data.atrc`; `export --toc` fails on it, and `xctrace import --input trace-data.atrc --template Logging`
+  produces a trace whose os-signpost table is empty (the log stream arrives with the save). `trace_complete` checks for
+  `form.template`; a whole trace is exported even after a stop, and a stopped run counts only when the app had exited
+  and its tables exported.
+- **A sheet at its start closes on a full-height drag towards the start** (FILE-010-T11, D1 r10b). After Clear Caches
+  the Storage list was scrolled to its top, the first row ("storage.photos") still counted as above the navigation bar
+  (under the expanded large title), and `scrollTo` dragged the list's height towards the start: the Settings sheet
+  closed and every later row read -1 while 60 more drags moved the visual behind it. Read a value where the element is
+  (no scrolling for an element that exists), bring an element already on screen clear with one short held drag of
+  what it lacks (`nudge`, at most 160 pt), and stop when the list being scrolled leaves the screen. When a test reads
+  -1 for rows it read a minute earlier, look for the sheet in the screenshots first.
+- **"Failed to terminate" in setUp is the previous app instance, not the test** (D1 r10b, REC-007 and ACC-003). Both
+  failed in `launch()` after 60 s with the app alive and drawing in the screenshots, and the runner restarted 4-5
+  minutes later; neither reached its subject (REC-007's countdown poll was not exercised). XCUITest terminations of
+  the app are often slow on every device: in the UI logs of 2026-11-22/23, 71 of 1,082 took over 5 s and 8 failed at
+  60 s (count them from "Terminate org.projectmios.ProjectMiOS:<pid>" to the next step's time). The cause is not known
+  from the Mac; the next one needs a device log around the termination (RunningBoard, FrontBoard). Rerun such a test
+  before changing it.
+- **Measure a pass's cost in ABBA rounds and report its spread** (`rendererlab-flashcost`, D1 2026-11-23). After the
+  tone table one preset stayed over 2 ms in all three runs (3.03, 2.99, 2.64 ms) about 0.8 ms above its group, which the
+  dimming fix did not move. Measuring "on" always after "off" folds a preset's frame-time drift into the cost, so
+  RendererLab now runs 20 off, 40 on, 20 off per round and the report carries each round's cost, both IQRs, and how
+  often the envelope dimmed (the dimming path's share). Read those before calling a cost real or noise.
 
 ## What still needs a person
 

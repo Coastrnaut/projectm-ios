@@ -251,3 +251,24 @@ local-first option.
   matrix needs a person.
 - Q: Does the inventory list QA-011's own device-run tasks? → A: No; they are the matrix itself (excluded by the
   spec directory name).
+
+### Session 2026-11-23 (D1 r10b triage)
+
+- Q: D1's UI run r10b failed FILE-010-T11 ("photos are kept": -1 against 12000). Did Clear Caches remove photos? → A:
+  No. Every row after Clear Caches read -1 because the Settings sheet had closed: the result bundle's screenshots show
+  the Storage list at its top, then the visual with no sheet. `scrollTo` judged the first row ("storage.photos", under
+  the expanded large title) above the navigation bar and dragged the whole list height towards the start, which
+  pulls a sheet at its start down and closes it; the next 60 steps dragged the window behind it. Decision: a row that
+  exists is read where it is (reading a value needs no tap), an element already on screen is brought clear with one
+  short drag of what it lacks (at most 160 pt, held, too short to close a sheet), and the search stops when the list
+  it was scrolling leaves the screen; FILE-010 also asserts Storage is still open after the reads.
+- Q: REC-007-T13 and ACC-003-T17 failed the same run; is the countdown late? → A: Neither test reached its subject.
+  Both failed in `launch()` with "Failed to terminate org.projectmios.ProjectMiOS" after 60 s (REC-007 at its first
+  launch, after MED-014 had left the app in front from the Camera app; ACC-003 at its launch after the two Settings
+  toggles, which had worked), and the runner restarted 4-5 minutes later. The countdown poll reads one app snapshot
+  per poll (`windowValues`) and was not exercised. The app was alive and drawing in the failure screenshots. Slow
+  terminations are not new: in the D1-D3 UI-test logs of 2026-11-22 and 11-23, 71 of 1,082 XCUITest terminations of
+  the app took over 5 s (most 5-40 s, up to 58 s, once 397 s) and 8 failed at 60 s, on all three devices and in different tests. The cause is not found from the Mac
+  side (the app's willTerminate observers only write small records); it needs a device
+  log of one slow termination (RunningBoard and FrontBoard lines). Decision: no test change for it; both tests rerun
+  as they are.
