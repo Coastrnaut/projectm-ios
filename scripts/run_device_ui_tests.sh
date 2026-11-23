@@ -31,9 +31,20 @@ if [ "${MAC_DRIVER:-0}" = 1 ]; then
   python3 scripts/mac_device_driver.py follow --timeout 43200 --log "$log" --device "$(echo "$dev" | tr a-z A-Z)" > ".autonomous/logs/macdriver-$name-$dev.log" 2>&1 &
   driver=$!
 fi
+# OSC=1 (B09OSCDeviceTests): start scripts/osc_device_driver.py beside the run, aimed at the device's LAN address (never
+# its USB link-local one, devices.resolve), and pass the Mac's LAN address. D2 2026-11-23: a run without the driver
+# failed every Mac-to-device OSC test ("Test value, 0.00").
+mac_ip=""
+if [ "${OSC:-0}" = 1 ]; then
+  read -r dev_ip mac_ip < <(python3 -c "import sys; sys.path.insert(0,'scripts/mac_driver'); import devices as d; ip=d.resolve(d.DEVICES['$(echo "$dev" | tr a-z A-Z)']['host']); print(ip, d.mac_address_toward(ip))")
+  python3 scripts/osc_device_driver.py --log "$log" --host "$dev_ip" --listen-port 9100 --device "$(echo "$dev" | tr a-z A-Z)" \
+    > ".autonomous/logs/oscdriver-$name-$dev.log" 2>&1 &
+  osc_driver=$!
+  export TEST_RUNNER_MAC_IP="$mac_ip"   # only with OSC=1: an empty value would read as a set address
+fi
 # TEST_RUNNER_* values reach the test runner only as environment variables of xcodebuild, not as build-setting
 # arguments (full run 13, 2026-11-20: FILE-001 and PERF-006 skipped "needs the Mac" with the driver running).
-TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" TEST_RUNNER_FILE001_FROM="${FILE001_FROM:-D1}" \
+TEST_RUNNER_MAC_DRIVER="${MAC_DRIVER:-0}" TEST_RUNNER_SIRI="${SIRI:-0}" TEST_RUNNER_OSC_DRIVER="${OSC:-0}" TEST_RUNNER_FILE001_FROM="${FILE001_FROM:-D1}" \
 xcodebuild test-without-building -xctestrun "${PRODUCTS:-Build/device-acceptance-$dev/Products}/DeviceAcceptance_iphoneos27.2-arm64.xctestrun" \
   -destination "platform=iOS,id=$udid" -resultBundlePath "Build/device-acceptance-$dev/$name-$(date +%m%d%H%M%S).xcresult" \
   ${args[@]+"${args[@]}"} -test-timeouts-enabled YES -default-test-execution-time-allowance 600 \
@@ -64,5 +75,6 @@ while kill -0 "$xcb" 2>/dev/null; do
 done
 wait "$xcb" 2>/dev/null
 [ -n "${driver:-}" ] && kill "$driver" 2>/dev/null
+[ -n "${osc_driver:-}" ] && kill "$osc_driver" 2>/dev/null
 echo "== $dev $name: $(grep -cE 'Test Case.*passed' "$log") passed, $(grep -cE 'Test Case.*failed' "$log") failed, $(grep -cE 'Test Case.*skipped' "$log") skipped"
 grep -E "Test Case.*failed" "$log" | sed 's/.*Tests\.//; s/\]. failed.*//' | sort -u

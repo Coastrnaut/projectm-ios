@@ -1384,6 +1384,11 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   RendererLab now runs 20 off, 40 on, 20 off per round and the report carries each round's cost, both IQRs, and how
   often the envelope dimmed (the dimming path's share). Read those before calling a cost real or noise.
 
+- **B09 OSC tests need the OSC driver beside the run** (D2, 2026-11-23). A regression run through
+  `run_device_ui_tests.sh` without `osc_device_driver.py` failed every Mac-to-device OSC test ("Test value, 0.00",
+  "OSC learn timed out"). `OSC=1 scripts/run_device_ui_tests.sh …` now starts the driver aimed at the device's LAN
+  address (never its USB 169.254 one) and passes `TEST_RUNNER_MAC_IP` and `TEST_RUNNER_OSC_DRIVER=1`.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:
