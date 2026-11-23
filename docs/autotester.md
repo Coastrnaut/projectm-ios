@@ -1160,6 +1160,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   Amended 2026-11-18: the group is automated as the prompt-flow batch (`PromptFlowDeviceTests`, run alone after a
   fresh install by `mac_device_driver.py prompt-flow`); a new prompting test goes there.
 
+- **A frame rate of exactly 30 fps is the thermal cap, not a slow app** (D1, 2026-11-23). After an hour of camera tests
+  every frame-rate check on the iPhone read a median of exactly 30.0 fps; the reports showed thermal state 2 (serious),
+  where the app's QualityGovernor caps rendering at 30 fps (FR-049). `launch()` now cools a hot device at the Home Screen
+  (`coolDownIfHot`, up to 5 minutes, app not running) and `assertFrameRate` uses FR-049's floor while the device is
+  still capped, reporting `capped` and `thermal`. Check `thermal` in the report before chasing a frame-rate failure.
+- **A Settings restore can tap the wrong switch while Settings is still navigating** (D1, 2026-11-23). ACC-007's Low
+  Power restore found "Low Power Mode" but the tap resolved to Battery Percentage (the page was still moving after
+  relaunch); the Battery Percentage display on D1 may have been toggled. Verify the switch's own state after a restore.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

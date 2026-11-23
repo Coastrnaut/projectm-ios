@@ -464,7 +464,9 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
         }
         let median = Self.median(rates)
         report(task, "3 min", ["fpsMedian": median, "fpsMin": rates.min() ?? 0, "worstThermal": Double(worstThermal)])
-        XCTAssertGreaterThanOrEqual(median, Self.minimumFPS, "3 min median \(median) fps")
+        // Serious thermal state during the run caps the app at 30 fps by design (FR-049); launch() cooled the device first.
+        let floor = worstThermal >= ProcessInfo.ThermalState.serious.rawValue ? Self.cappedMinimumFPS : Self.minimumFPS
+        XCTAssertGreaterThanOrEqual(median, floor, "3 min median \(median) fps (worst thermal \(worstThermal))")
         XCTAssertLessThan(worstThermal, ProcessInfo.ThermalState.critical.rawValue, "never critical")
         XCTAssertEqual(app.state, .runningForeground, "no crash")
     }

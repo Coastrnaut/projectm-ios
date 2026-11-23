@@ -68,6 +68,7 @@ class DeviceAcceptanceCase: XCTestCase {
     func launch(visual: String, settings: [String: Any] = [:], extra: [String] = [],
                 orientation: UIDeviceOrientation = .portrait, music: Bool = true, fixture: String = "music-fixture.m4a",
                 playing: [String] = ["Active audio"]) {
+        coolDownIfHot()
         XCUIDevice.shared.orientation = orientation
         // `-uitestResetNotice` clears the app's settings, media and committed scene first: otherwise launch restores
         // the last committed scene (SCN-002) and its effect values replace the test's settings.
@@ -169,14 +170,43 @@ class DeviceAcceptanceCase: XCTestCase {
         return sorted[sorted.count / 2]
     }
 
-    /// Samples the frame rate and checks the median against the floor; returns the median.
+    /// The device is hot or in Low Power Mode: the app caps itself at 30 fps by design (FR-049, QualityGovernor), so
+    /// a 55 fps floor would measure the room, not the app. The test runner's `ProcessInfo` is the device's.
+    static var deviceIsCapped: Bool {
+        ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue
+            || ProcessInfo.processInfo.isLowPowerModeEnabled
+    }
+    /// FR-049's floor: capped, the visual never drops below 30 fps (a reading of 29.x is the overlay's rounding).
+    static let cappedMinimumFPS: Double = 28
+
+    /// Before a launch: a device at serious/critical thermal state cools at the Home Screen (the app not running) for
+    /// up to 5 minutes, so frame-rate floors measure the app (D1 2026-11-23: after an hour of camera tests every fps
+    /// check read exactly 30 at thermal 2, the FR-049 cap).
+    func coolDownIfHot(maxSeconds: Double = 300) {
+        guard ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue else { return }
+        let start = Date()
+        print("DEVICE-ACCEPT cool-down: thermal \(ProcessInfo.processInfo.thermalState.rawValue)")
+        if app.state != .notRunning { app.terminate() }
+        XCUIDevice.shared.press(.home)
+        while ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue,
+              Date().timeIntervalSince(start) < maxSeconds {
+            pause(10)
+        }
+        print("DEVICE-ACCEPT cool-down: thermal \(ProcessInfo.processInfo.thermalState.rawValue) after \(Int(Date().timeIntervalSince(start))) s")
+    }
+
+    /// Samples the frame rate and checks the median against the floor; returns the median. When the device is capped
+    /// (FR-049) while sampling, the floor is FR-049's 30 fps instead of `minimum`, and the report says so.
     @discardableResult
     func assertFrameRate(_ task: String, _ label: String, seconds: Int = 10, minimum: Double = minimumFPS) -> Double {
         let samples = sampleFPS(seconds: seconds)
         let median = Self.median(samples)
-        report(task, label, ["fpsMedian": median, "fpsMin": samples.min() ?? 0, "samples": Double(samples.count)])
+        let capped = Self.deviceIsCapped && minimum > Self.cappedMinimumFPS
+        report(task, label, ["fpsMedian": median, "fpsMin": samples.min() ?? 0, "samples": Double(samples.count),
+                             "thermal": Double(ProcessInfo.processInfo.thermalState.rawValue), "capped": capped ? 1 : 0])
         XCTAssertGreaterThanOrEqual(samples.count, seconds / 2, "\(task) \(label): the overlay was readable")
-        XCTAssertGreaterThanOrEqual(median, minimum, "\(task) \(label): median \(median) fps")
+        let floor = capped ? Self.cappedMinimumFPS : minimum
+        XCTAssertGreaterThanOrEqual(median, floor, "\(task) \(label): median \(median) fps\(capped ? " (FR-049 cap: thermal/Low Power)" : "")")
         return median
     }
 
