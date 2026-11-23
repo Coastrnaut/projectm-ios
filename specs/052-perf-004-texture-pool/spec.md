@@ -44,6 +44,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: Are the effect-chain and bloom images (VisualGenerators) and layers' own content textures pooled too? → A: No, not in this row. They are created once per size in a layer's `prepare` and released with the layer, so they cannot grow across switches; pooling them would make VisualGenerators depend on the Compositor package (or move the pool to a new package) for a small gain. The acceptance test also measures the GPU device's whole allocated size across the 100 switches, so growth there would be caught; a debug-only tally of textures created outside the pool is not built (it would need wrappers in five packages to see releases). Rejected for now: a shared lower-level pool package (revisit with PERF-006).
 - Q: What triggers a purge? → A: The system memory warning that the app already receives (`UIApplication.didReceiveMemoryWarningNotification`): the app purges its shared pool on it. A purge also happens implicitly when the pool is released. No separate memory-pressure source is added (one signal is enough; PERF-006 owns broader recovery). Rejected: purging on every visual switch (defeats reuse); a dispatch memory-pressure source (duplicate signal on iOS).
 
+### Session 2026-11-23 (QA-011 device run)
+
+- Q: PERF-004-T16's first D1 run (QA-011 matrix, `xctrace-perf004`) recorded no "PERF-004 texture allocation" signpost at all, on the circular spectrum with the glow. Is the pool unused? → A: The visual was the wrong subject: only compositor visuals draw from the app's shared pool (Camera, Photo, Video and, since MED-009, Text); the native spectra and their glow keep their own textures (the 2026-11-13 answers above). Decision: the automation mode `perf004` now defaults to the Text visual (a compositor visual that needs no permission and no imported media, so the matrix runs it unattended), and the matrix case passes `PROJECTM_VISUAL=text` explicitly; the verdict's hint names the compositor visuals. Re-run on D1 at the next matrix run.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Switching scenes many times does not grow memory (Priority: P1)

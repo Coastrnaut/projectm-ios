@@ -138,7 +138,7 @@ def perf004_verdict(events: list[tuple[float, str]], window: float = 3.0, start_
         return {**verdict, "pass": False, "detail": "no QA-011 start marker in the trace (was perf004 the launched mode?)"}
     if not allocations:
         return {**verdict, "pass": False, "detail": "no PERF-004 texture allocation signposts: the visual used no pooled "
-                "texture (choose one with effects: PROJECTM_VISUAL)"}
+                "texture (PROJECTM_VISUAL must be a compositor visual: text, photo, video or camera)"}
     allowed = [(float("-inf"), marks["start"] + start_window)]
     allowed += [(marks[k], marks[k] + window) for k in ("rotate", "rotate back") if k in marks]
     stray = [round(t, 3) for t in allocations if not any(lo <= t <= hi for lo, hi in allowed)]
@@ -163,20 +163,62 @@ def rows_in_window(rows: list[dict[str, dict[str, str]]], start: float, end: flo
     return n
 
 
+# The app's process as Instruments names it: the executable ("projectM-iOS") or, in Metal System Trace's GPU intervals,
+# the display name ("projectM (2164)" on D1, 2026-11-23). Matched on the name before " (pid)", never as a substring.
+APP_PROCESS_NAMES = ("projectM-iOS", "projectM")
+
+
+def process_name(cells: dict[str, dict[str, str]]) -> str:
+    """A row's process name without its " (pid)" suffix ("" without a process cell)."""
+    cell = cells.get("process")
+    if not cell:
+        return ""
+    return re.sub(r"\s*\(\d+\)\s*$", "", cell.get("fmt") or cell.get("raw") or "").strip()
+
+
+def app_rows_in_window(rows: list[dict[str, dict[str, str]]], start: float, end: float,
+                       names: tuple[str, ...] = APP_PROCESS_NAMES) -> tuple[int, int]:
+    """(rows of the app's process in [start, end], rows of the app's process in the whole table)."""
+    inside = total = 0
+    for cells in rows:
+        if process_name(cells) not in names:
+            continue
+        total += 1
+        t = _time_seconds(cells)
+        if t is not None and start <= t <= end:
+            inside += 1
+    return inside, total
+
+
 def perf011_verdict(report: dict, gpu_rows: list | None = None, events: list[tuple[float, str]] | None = None,
-                    process: str = "projectM-iOS") -> dict:
+                    names: tuple[str, ...] = APP_PROCESS_NAMES) -> dict:
     """PERF-011-T21 from the app's perf011 report (and the Metal System Trace GPU intervals when exported):
     no frames from 10 s after backgrounding until the return, a lower footprint then than before, and the first frame
-    within 2 s of the return."""
+    within 2 s of the return.
+
+    "The return" is UIKit's willEnterForeground (report `returnedAt`, trace marker "QA-011 return"): PERF-011 gates
+    drawing from didEnterBackground until willEnterForeground, so the app draws again a few ms before didBecomeActive
+    (`activeAgainAt`, marker "QA-011 foreground"); 16 ms on D1, 2026-11-23. Only samples taken in the background count
+    (a sample taken after the return also holds the return's first frames), plus the frames between the last of them
+    and the return (`framesAtReturn` minus that sample's running `total`). Reports and traces from before 2026-11-23
+    have no return time: the window then ends at didBecomeActive."""
     samples = report.get("samples") or []
     bg, fg = report.get("backgroundedAt", -1), report.get("activeAgainAt", -1)
     out: dict = {"backgroundedAt": bg, "activeAgainAt": fg, "firstFrameAfterReturnSeconds": report.get("firstFrameAfterReturnSeconds")}
     if bg is None or bg < 0 or fg is None or fg < 0:
         return {**out, "pass": False, "detail": "the app was not backgrounded and brought back during the run"}
+    ret = report.get("returnedAt", -1)
+    ret = ret if ret is not None and 0 <= ret <= fg else fg
+    out["returnedAt"] = ret
     before = [s["footprintMB"] for s in samples if s["t"] < bg and s.get("footprintMB", -1) > 0]
-    away = [s for s in samples if bg + 10 <= s["t"] <= fg]
+    away = [s for s in samples if bg + 10 <= s["t"] <= ret and s.get("state", 2) == 2]
     away_mb = [s["footprintMB"] for s in away if s.get("footprintMB", -1) > 0]
     frames_away = sum(s.get("frames", 0) for s in away)
+    at_return = report.get("framesAtReturn", -1)
+    if away and at_return is not None and at_return >= 0 and "total" in away[-1]:
+        tail = max(int(at_return - away[-1]["total"]), 0)
+        out["framesBeforeReturn"] = tail
+        frames_away += tail
 
     def median(values: list[float]) -> float:
         return sorted(values)[len(values) // 2] if values else -1
@@ -190,15 +232,21 @@ def perf011_verdict(report: dict, gpu_rows: list | None = None, events: list[tup
     if gpu_rows is not None and events is not None:
         marks = marker_times(events)
         if "background" in marks and "foreground" in marks:
-            n = rows_in_window(gpu_rows, marks["background"] + 10, marks["foreground"], contains=process)
-            out["gpuIntervalsAway"] = n
-            checks["no GPU intervals while away"] = n == 0
+            end = marks.get("return", marks["foreground"])
+            n, total = app_rows_in_window(gpu_rows, marks["background"] + 10, end, names)
+            out.update({"gpuIntervalsAway": n, "gpuIntervalsApp": total})
+            # Without any of the app's intervals the process match failed and nothing was checked (2026-11-23).
+            checks["no GPU intervals while away"] = total > 0 and n == 0
+            if total == 0:
+                out["gpuProcessesSeen"] = sorted({process_name(c) for c in gpu_rows} - {""})[:5]
     out["checks"] = checks
     out["pass"] = all(checks.values())
     failed = [k for k, ok in checks.items() if not ok]
     out["detail"] = ("all pass: " if not failed else "failed: " + ", ".join(failed) + "; ") + (
         f"{frames_away} frames away, footprint {out['footprintBeforeMB']} -> {out['footprintAwayMB']} MB, "
-        f"first frame {first} s after the return")
+        f"first frame {first} s after the return") + (
+        f"; no GPU intervals of {'/'.join(names)} in the trace (processes: {', '.join(out['gpuProcessesSeen'])})"
+        if "gpuProcessesSeen" in out else "")
     return out
 
 

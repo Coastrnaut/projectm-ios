@@ -164,6 +164,16 @@ describe the old pass; RendererLab's `flashcost` mode still compares the pass wi
 baseline, and the device re-measurement on D1 is FX-019-T22 `{device}`. (The GLES fallback also
 runs the pass since T119.)
 
+**FX-019-T22, first device measurement (QA-011 matrix, D1, 2026-11-23): fail, pass fixed.** Same method and presets,
+Release, thermal nominal throughout: median 1.86 ms, max 3.03 ms (`ORB - Mega Spectrum`), 13 of 28 presets over 2 ms
+(`qa-011/runs/D1/20261123T190422Z/artifacts/RendererLab-angle-flashcost-2026-11-23T191458Z.json`). The costs fall in two
+groups: 11 presets at 1.0-1.4 ms and 13 at 2.1-2.4 ms (+3.0), the extra ~1.1 ms nearly constant whatever the preset's
+own frame time (6.4-16.3 ms): a fixed full-screen workload that only some presets trigger. That is the output step's
+exact sRGB decode/encode (six `pow` per pixel), which ran only while the envelope's gain was below 1 (a simulator
+diagnostic, not evidence: about +0.65 ms at 4096 × 4096 on the Mac's GPU). Fix (FX-019 Clarification 2026-11-23): a
+256 × 2 tone table per frame (every 8-bit level × gain, then OUT-009's calibration) and a per-channel lookup in the
+output step; the limit stays 2.0 ms. Device re-measurement pending (next D1 matrix run).
+
 ## Budgets per device class (QA-010)
 
 The performance budgets are versioned in [`docs/performance/thresholds.json`](../performance/thresholds.json)
