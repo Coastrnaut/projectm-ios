@@ -179,6 +179,18 @@ final class VideoCoordinator {
         announce("Video removed.")
     }
 
+    /// SHOW-001 Clarification 2026-11-23: a cue's scene names `storeID` as its video. When it resolves and is not the
+    /// current movie (FILE-008: an identifier sharing the current payload counts as current), it becomes the stored
+    /// video without releasing anything. True when the video changed.
+    @discardableResult
+    func selectStored(storeID: String?) -> Bool {
+        guard let storeID, let store, let id = UUID(uuidString: storeID), id.uuidString == storeID else { return false }
+        if let current = video, store.isSameVideo(id, as: current.id) { return false }
+        guard let selected = store.select(id) else { return false }
+        setVideo(selected)
+        return true
+    }
+
     /// The video layer could not play the stored copy (it keeps its identifier; R18).
     func storedCopyFailed() { show(Self.storedCopyUnreadableMessage) }
 

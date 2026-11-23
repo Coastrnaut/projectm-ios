@@ -161,6 +161,16 @@ struct VideoStore: @unchecked Sendable {
         try? folder.trim(payloadOf: video.id, keeping: [video.id])
     }
 
+    /// SHOW-001 Clarification 2026-11-23: a cue's scene video, stored but not current, becomes the stored video.
+    /// Nothing is released (the previous video keeps its references); the loop, speed and reverse keys are keyed by
+    /// the video's identifier, so the selected video reads its own (the cue then restores the scene's loop and speed).
+    /// Nil when `id` does not resolve (nothing changes).
+    func select(_ id: UUID) -> StoredVideo? {
+        guard let url = existingFile(for: id) else { return nil }
+        defaults.set(id.uuidString, forKey: Self.idKey)
+        return StoredVideo(id: id, url: url)
+    }
+
     /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned). FILE-008:
     /// releases its reference; a payload another reference shares stays.
     func discard(_ video: StoredVideo) {

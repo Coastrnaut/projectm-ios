@@ -96,10 +96,22 @@ final class ScenePackCoordinator {
         }
     }
 
+    /// DEBUG fixture mode: the folder that keeps the last export (temporary, so it outlives `-uitestResetNotice`).
+    private static var fixtureFolder: URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent("ScenePackFixture", isDirectory: true)
+    }
+
+    /// DEBUG fixture mode after a relaunch (FILE-001-T19's fresh-install import on the simulator): the newest kept pack.
+    private static func keptExportFromEarlierLaunch() -> URL? {
+        let files = (try? FileManager.default.contentsOfDirectory(at: fixtureFolder, includingPropertiesForKeys: nil)) ?? []
+        return files.filter { (url: URL) -> Bool in url.pathExtension == "pmscene" }
+            .max { (a: URL, b: URL) -> Bool in a.lastPathComponent < b.lastPathComponent }   // names carry the export time
+    }
+
     private func exported(_ export: SceneArchiveExport, name: String) {
         if keepsExportForImport {
-            let copy = FileManager.default.temporaryDirectory.appendingPathComponent("ScenePackFixture", isDirectory: true)
-                .appendingPathComponent(export.fileName, isDirectory: false)
+            try? FileManager.default.removeItem(at: Self.fixtureFolder)   // one kept pack at a time
+            let copy = Self.fixtureFolder.appendingPathComponent(export.fileName, isDirectory: false)
             try? FileManager.default.createDirectory(at: copy.deletingLastPathComponent(), withIntermediateDirectories: true)
             try? FileManager.default.removeItem(at: copy)
             try? FileManager.default.copyItem(at: export.url, to: copy)
@@ -124,7 +136,7 @@ final class ScenePackCoordinator {
         guard !isBusy else { return }
         if show.refusedByLock() { return }   // SCN-015-R3: no picker, no media staged while locked
         if keepsExportForImport {
-            if let copy = lastExportCopy { picked(copy) }
+            if let copy = lastExportCopy ?? Self.keptExportFromEarlierLaunch() { picked(copy) }
             return
         }
         showPicker = true

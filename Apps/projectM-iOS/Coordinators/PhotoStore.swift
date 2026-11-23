@@ -142,6 +142,15 @@ struct PhotoStore: @unchecked Sendable {
         try? folder.trim(payloadOf: photo.id, keeping: slides.union([photo.id]))
     }
 
+    /// SHOW-001 Clarification 2026-11-23: a cue's scene photo, stored but not current (a scene pack's adopted copy,
+    /// an earlier reference), becomes the stored photo. Unlike `makeCurrent` nothing is released: the previous photo
+    /// keeps its references, so other cues naming it still find it. Nil when `id` does not resolve (nothing changes).
+    func select(_ id: UUID) -> StoredPhoto? {
+        guard let url = existingFile(for: id) else { return nil }
+        defaults.set(id.uuidString, forKey: Self.idKey)
+        return StoredPhoto(id: id, url: url)
+    }
+
     /// FILE-001: deletes a copy that never became current (staged or adopted, then abandoned). FILE-008:
     /// releases its reference; a payload another reference shares stays.
     func discard(_ photo: StoredPhoto) {

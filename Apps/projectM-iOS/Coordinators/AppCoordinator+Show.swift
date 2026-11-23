@@ -137,6 +137,10 @@ extension AppCoordinator {
         guard let registry = try? SceneArchiveService.appRegistry() else { return [] }
         let apply = ShowSceneSnapshot.apply(of: document, warnings: warnings, registry: registry)
         Self.set(apply, settings: settings, texts: texts)
+        // SHOW-001 Clarification 2026-11-23: the scene's own photo and video when stored (a scene pack's adopted media
+        // are not current after Import, SCN-014-R6); nothing is released.
+        photos.selectStored(storeID: apply.photoStoreID)
+        videos.selectStored(storeID: apply.videoStoreID)
         videos.restoreLoop(storeID: apply.videoStoreID, loop: apply.videoLoop)   // MED-003-R8
         videos.restoreSpeed(storeID: apply.videoStoreID, speedPercent: apply.videoSpeedPercent)   // MED-004-R7
         if let restore = apply.slideshow { restorePhotoMotion(restore) }   // MED-006-R12, MED-007-R10

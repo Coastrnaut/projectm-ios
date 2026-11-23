@@ -57,6 +57,8 @@ struct ShowSceneApply: Equatable, Sendable {
     var omittedKinds: [String]
     /// The scene names a photo or video that is no longer the stored one.
     var missingMedia: Bool
+    /// SHOW-001 Clarification 2026-11-23: the first photo layer's own stored-photo ID (nil: none, or only a slideshow).
+    var photoStoreID: String? = nil
     /// MED-003-R8: the first video layer's stored-video ID and loop (nil: none).
     var videoStoreID: String? = nil
     var videoLoop: SceneVideoLoop? = nil
@@ -192,6 +194,7 @@ enum ShowSceneSnapshot {
         let missingMedia = warnings.contains { (issue: SceneIssue) -> Bool in issue.code == .missingAsset }
         let video = SceneVideoLoopBridge.video(in: document)   // MED-003-R8
         return ShowSceneApply(visual: visual, parameters: parameters, text: text, omittedKinds: omitted, missingMedia: missingMedia,
+                              photoStoreID: SceneSlideshowBridge.photoStoreID(in: document),   // SHOW-001 Clarification 2026-11-23
                               videoStoreID: video?.storeID, videoLoop: video?.loop, videoSpeedPercent: video?.speedPercent,
                               slideshow: SceneSlideshowBridge.restore(in: document),   // MED-006
                               logo: document.logo,   // MED-010
