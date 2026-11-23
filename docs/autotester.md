@@ -267,6 +267,25 @@ python3 scripts/mac_driver/peer.py osc008|osc011|osc012|midi012 --products Build
 - **Two devices from one build:** `peer.py` copies the products per device (`Build/peer/<D>/Products`) and starts the
   waiting role first (receiver, announcer, follower), the acting role on its `PEER-READY` line. Latency across devices
   uses the two device clocks (NTP); `PEER-LATENCY` reports median and max without correcting the offset.
+- **First D2+D3 peer run (2026-11-22, `--as D1=D3`): all three failures were test or runner faults, plus one
+  accessibility-tree fault in the app.** `peer.py` delivered `TEST_RUNNER_PEER_IP`/`MAC_IP` through `env` to both
+  sides (the logs print them), Local Network was granted, and iPadOS 26.5 and 27.2 behaved alike. What went wrong:
+  - *A row container's label is empty.* Nearby Devices showed "projectM 76C7 / 192.168.1.219:9000" (IPv4, resolved;
+    screenshot), but the found row is `.accessibilityElement(children: .contain)`, so its `label` was `""`. Read a
+    row's child texts (`rowTexts` in `B09OSCPeerDeviceTests`), never the container's label.
+  - *A row identifier on a plain `HStack` replaces its buttons' identifiers.* Approved Devices' rows carried
+    `.accessibilityIdentifier("oscApprovedPeer_N")` without `.accessibilityElement(children: .contain)`, so
+    `oscRemovePeer_0` and `oscAllowPeer_N` never existed (OSC-008 on D3). Fixed in `OSCPeersView.swift`; the
+    simulator test `OSCPeersUITests.testApprovedRowKeepsItsRemoveButton` fails without the fix and passes with it.
+    Any row that carries an identifier and contains identified controls needs `.contain`.
+  - *Match addresses whole:* "192.168.1.2" is a prefix of "192.168.1.219"; the peer tests use `shows(text, address)`.
+  - *Stamp a lead step before the tap.* XCUITest's tap (idle wait, event synthesis) plus the readout query took
+    longer than the OSC hop, so D2 printed `PEER-SEEN` 0.1-0.26 s before D3's `PEER-STEP`. The follower stopped after
+    12 changes while the lead stepped 26 times, and `pair_latencies` searched without a bound, pairing a step with
+    the same cue 18.1 s later (the "max 18.1 s"). Now: the step time is taken before the tap (it can only overstate
+    latency), the follower runs until 20 s without a change (at most 240 s) and ignores a missing readout, and a
+    match must fall within [t - 0.25 s, t + 3 s] or the step is unmatched. Every cue the follower printed had followed
+    the lead within ±0.26 s, so the app's cue sync was not the fault.
 - **Network MIDI is excluded by the app's own policy, so B10 uses an in-app virtual source (2026-11-21):** the app
   drops network-attributed MIDI endpoints (MIDI-001-R2, R14; ADR-0038) and both compliance scans reject `MIDINetwork*`,
   DEBUG included, so the Mac's network session can never reach it and USB-cable tests are not required. With

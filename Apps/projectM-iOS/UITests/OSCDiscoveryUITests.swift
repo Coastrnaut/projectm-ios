@@ -48,6 +48,9 @@ final class OSCDiscoveryUITests: XCTestCase {
         XCTAssertTrue(first.appears(within: 5), "turning it on shows the devices found")
         XCTAssertTrue(app.staticTexts["Lighting Desk"].exists)
         XCTAssertTrue(app.staticTexts["192.168.1.40:9001"].exists)
+        // The row is a container: its address is a child text, not its label (B09OSCPeerDeviceTests reads it so;
+        // QA-011 OSC-011-T19 on D3, 2026-11-22, read the row's empty label).
+        XCTAssertTrue(first.staticTexts["192.168.1.40:9001"].exists, "the address is inside the found row: \(first.label)")
         XCTAssertEqual(app.staticTexts["oscDiscoveryStatus"].value as? String, "2 devices found")
 
         app.buttons["oscDiscoveryAllow_0"].tap()   // R9: an explicit tap

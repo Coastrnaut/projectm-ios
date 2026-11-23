@@ -284,7 +284,8 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
 /// (the other device's address) and `TEST_RUNNER_MAC_IP`, starts the waiting role first and the acting role on its
 /// `PEER-READY` line. Each role checks what it can see itself; peer.py pairs the `PEER-STEP`/`PEER-SEEN` lines.
 /// OSC-008-T13 (receiver on D1, sender on D2), OSC-011-T19 (find on D1, announce on D2), OSC-012-T22 (lead on D1,
-/// follow on D2; its Wi-Fi outage part is not required, owner ruling 2026-11-18).
+/// follow on D2; its Wi-Fi outage part is not required, owner ruling 2026-11-18). D1 and D2 name roles, not devices:
+/// `peer.py --as D1=D3` gives D1's part to the iPad D3, so no step depends on which device or layout plays a role.
 @MainActor
 final class B09OSCPeerDeviceTests: ControlSurfaceCase {
     private var testValue: String { text("oscTestValue") }
@@ -304,10 +305,31 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         XCTAssertTrue(wait(5) { self.app.navigationBars[title].exists }, title)
     }
 
+    /// Each row's text (its own label plus its children's): a row is an accessibility container whose own label is
+    /// empty, so its name and address sit in child texts (QA-011 OSC-011-T19 on D3, 2026-11-22: the found row read
+    /// "" although the screen showed "projectM 76C7 / 192.168.1.219:9000").
+    private func rowTexts(_ prefix: String) -> [String] {
+        app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
+            .allElementsBoundByIndex.map { (row: XCUIElement) -> String in
+                ([row.label] + row.staticTexts.allElementsBoundByIndex.map(\.label)).filter { !$0.isEmpty }
+                    .joined(separator: " ")
+            }
+    }
+
     /// The "Recently blocked" rows' addresses (Approved Devices).
-    private func blockedHosts() -> [String] {
-        app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'oscBlockedPeer_'"))
-            .allElementsBoundByIndex.map(\.label)
+    private func blockedHosts() -> [String] { rowTexts("oscBlockedPeer_") }
+
+    /// True when `text` shows `address` as a whole address: "192.168.1.2" is not in "192.168.1.219:9000", so a role
+    /// never matches another device whose address merely starts with its own.
+    private func shows(_ text: String, _ address: String) -> Bool {
+        var from = text.startIndex
+        while let r = text.range(of: address, range: from..<text.endIndex) {
+            let before = r.lowerBound == text.startIndex ? nil : text[text.index(before: r.lowerBound)]
+            let after = r.upperBound == text.endIndex ? nil : text[r.upperBound]
+            if !(before?.isNumber ?? false) && before != "." && !(after?.isNumber ?? false) && after != "." { return true }
+            from = r.upperBound
+        }
+        return false
     }
 
     // MARK: OSC-008-T13
@@ -324,17 +346,18 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         pause(12)
         XCTAssertFalse(testValue.contains("0.42"), "the Mac is not approved: its 0.42 does not apply (\(testValue))")
         openOSCScreen("oscPeersLink", title: "Approved Devices")
-        let macBlocked = wait(20) { self.blockedHosts().contains { $0.contains(mac) } }
-        let peerBlockedA = blockedHosts().contains { $0.contains(peer) }
-        report(task, "only D2 approved", ["macBlocked": macBlocked ? 1 : 0, "peerBlocked": peerBlockedA ? 1 : 0])
+        let macBlocked = wait(20) { self.blockedHosts().contains { self.shows($0, mac) } }
+        let peerBlockedA = blockedHosts().contains { shows($0, peer) }
+        report(task, "only the sender approved", ["macBlocked": macBlocked ? 1 : 0, "peerBlocked": peerBlockedA ? 1 : 0])
         XCTAssertTrue(macBlocked, "the Mac is listed as blocked: \(blockedHosts())")
-        XCTAssertFalse(peerBlockedA, "D2 is approved, never blocked: \(blockedHosts())")
-        // Only the Mac: remove D2, allow the Mac from Recently blocked.
+        XCTAssertFalse(peerBlockedA, "the sender is approved, never blocked: \(blockedHosts())")
+        // Only the Mac: remove the sender, allow the Mac from Recently blocked.
         let remove = app.buttons["oscRemovePeer_0"].firstMatch
-        XCTAssertTrue(scrollTo(remove, up: true), "D2's Remove")
+        XCTAssertTrue(scrollTo(remove, up: true), "the sender's Remove")
         remove.tap()
-        let rows = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'oscBlockedPeer_'"))
-        if let index = rows.allElementsBoundByIndex.firstIndex(where: { $0.label.contains(mac) }) {
+        let macRow = blockedHosts().firstIndex { shows($0, mac) }
+        XCTAssertNotNil(macRow, "the Mac is still listed under Recently blocked: \(blockedHosts())")
+        if let index = macRow {
             let allow = app.buttons["oscAllowPeer_\(index)"].firstMatch
             XCTAssertTrue(scrollTo(allow), "Allow beside the Mac")
             allow.tap()
@@ -343,10 +366,10 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         print("OSC-READY test2")
         let applied = wait(20) { self.testValue.contains("0.43") }
         openOSCScreen("oscPeersLink", title: "Approved Devices")
-        let peerBlocked = wait(25) { self.blockedHosts().contains { $0.contains(peer) } }
+        let peerBlocked = wait(25) { self.blockedHosts().contains { self.shows($0, peer) } }
         report(task, "only the Mac approved", ["macApplied": applied ? 1 : 0, "peerBlocked": peerBlocked ? 1 : 0])
         XCTAssertTrue(applied, "the approved Mac's 0.43 applies: \(testValue)")
-        XCTAssertTrue(peerBlocked, "D2, no longer approved, is blocked: \(blockedHosts())")
+        XCTAssertTrue(peerBlocked, "the sender, no longer approved, is blocked: \(blockedHosts())")
         ready("PEER", "osc008-done")
     }
 
@@ -366,10 +389,15 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         while Date() < end {
             showControlsBar()
             let button = app.buttons[up ? "showNextCue" : "showPreviousCue"].firstMatch
+            // The step's time is taken before the tap: XCUITest's tap (idle wait, event synthesis) and the readout
+            // query took longer than the OSC round trip, so the follower's change printed before the lead's step
+            // (QA-011 OSC-012-T22 on D2+D3, 2026-11-22: -0.1 to -0.26 s). Timing from before the tap can only
+            // overstate the latency, never hide it.
+            let sent = Date().timeIntervalSince1970
             if button.exists { button.tap() }
             n += up ? 1 : -1
             if n >= 5 { up = false } else if n <= 1 { up = true }
-            if log { print("PEER-STEP cue=\(appliedCue() ?? -1) t=\(Date().timeIntervalSince1970)") }
+            if log { print("PEER-STEP cue=\(appliedCue() ?? -1) t=\(sent)") }
             pause(interval)
         }
     }
@@ -386,9 +414,9 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         openOSCScreen("oscPeersLink", title: "Approved Devices")
         ready("PEER", "osc011-announce")
         let start = Date()
-        let received = wait(150) { self.blockedHosts().contains { $0.contains(peer) } }
-        report(task, "announce", ["receivedFromD1": received ? 1 : 0, "seconds": Date().timeIntervalSince(start)])
-        XCTAssertTrue(received, "D1 found this device and sent to it: \(blockedHosts())")
+        let received = wait(150) { self.blockedHosts().contains { self.shows($0, peer) } }
+        report(task, "announce", ["receivedFromFinder": received ? 1 : 0, "seconds": Date().timeIntervalSince(start)])
+        XCTAssertTrue(received, "the finding device found this one and sent to it: \(blockedHosts())")
     }
 
     /// D1: find D2 within 10 s with its address, Use as send destination, Send OSC on, step the show; Find off
@@ -400,11 +428,11 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         openOSCScreen("oscDiscoveryLink", title: "Nearby Devices")
         let start = Date()
         let peers = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'oscDiscoveredPeer_'"))
-        let found = wait(10) { peers.allElementsBoundByIndex.contains { $0.label.contains(peer) } }
+        let found = wait(10) { self.rowTexts("oscDiscoveredPeer_").contains { self.shows($0, peer) } }
         let seconds = Date().timeIntervalSince(start)
         report(task, "find", ["found": found ? 1 : 0, "seconds": seconds])
-        XCTAssertTrue(found, "D2 is listed with its address within 10 s: \(peers.allElementsBoundByIndex.map(\.label))")
-        guard let index = peers.allElementsBoundByIndex.firstIndex(where: { $0.label.contains(peer) }) else { return }
+        XCTAssertTrue(found, "the announcing device is listed with its address within 10 s: \(rowTexts("oscDiscoveredPeer_"))")
+        guard let index = rowTexts("oscDiscoveredPeer_").firstIndex(where: { shows($0, peer) }) else { return }
         let use = app.buttons["oscDiscoveryUseAsDestination_\(index)"].firstMatch
         XCTAssertTrue(scrollTo(use), "Use as send destination")
         use.tap()
@@ -446,19 +474,23 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         launchPeer(["settings.osc.cueSync.role": "follow", "settings.osc.peerAllowlist.enabled": true,
                     "settings.osc.approvedPeers": [peer]], showSeed: true, section: false)
         ready("PEER", "osc012-follow")
-        var last = appliedCue(), changes = 0
-        let end = Date().addingTimeInterval(150)
-        while Date() < end && changes < 12 {
-            let cue = appliedCue()
-            if cue != last {
+        // Follows the whole lead run (2026-11-22: stopping after 12 changes left 15 of the lead's 26 steps unseen):
+        // until 20 s pass with no change after the first one (the lead steps every ~4.6 s), at most 240 s. A missing
+        // readout (nil, between two scenes) is not a cue change.
+        var last = appliedCue(), changes = 0, lastChange: Date?
+        let end = Date().addingTimeInterval(240)
+        while Date() < end {
+            if let seen = lastChange, Date().timeIntervalSince(seen) > 20 { break }
+            if let cue = appliedCue(), cue != last {
                 changes += 1
                 last = cue
-                print("PEER-SEEN cue=\(cue ?? -1) t=\(Date().timeIntervalSince1970)")
+                lastChange = Date()
+                print("PEER-SEEN cue=\(cue) t=\(Date().timeIntervalSince1970)")
             }
             pause(0.05)
         }
         report(task, "follow", ["changes": Double(changes)])
-        XCTAssertGreaterThanOrEqual(changes, 4, "D2 follows D1's cue steps")
+        XCTAssertGreaterThanOrEqual(changes, 4, "the follower follows the lead's cue steps")
         ready("PEER", "osc012-done")
     }
 }

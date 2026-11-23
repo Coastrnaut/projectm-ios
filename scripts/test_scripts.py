@@ -2869,6 +2869,15 @@ class Batch8DriverTests(unittest.TestCase):
         self.assertEqual(result["max"], 0.3)
         self.assertFalse(self.peer.pair_latencies(steps, [(2, 100.9), (3, 104.9)])["ok"], "0.9 s is too late")
 
+    def test_peer_never_pairs_a_step_with_a_later_repeat_of_its_cue(self):
+        """D2+D3 2026-11-22: cue 3 printed 0.26 s before the lead's step and was paired with cue 3 18.1 s later."""
+        steps = [(3, 259.914), (2, 264.481)]
+        seen = [(3, 259.654), (2, 264.395), (3, 278.033)]
+        result = self.peer.pair_latencies(steps, seen)
+        self.assertEqual(result["matched"], 1, "the early change is outside the clock allowance: unmatched, not 18 s")
+        self.assertLess(result["max"], 1.0)
+        self.assertEqual(self.peer.pair_latencies([(3, 100.0)], [(3, 104.0)])["matched"], 0, "beyond the window")
+
     def test_peer_command_passes_each_filter_and_runner_value_separately(self):
         cmd = self.peer.test_command(Path("x.xctestrun"), "UDID", "B09OSCPeerDeviceTests/testOSC012Lead",
                                      {"PEER_IP": "10.0.0.2", "MAC_IP": "10.0.0.1"})

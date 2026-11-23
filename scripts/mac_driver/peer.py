@@ -99,11 +99,16 @@ def parse_marks(lines: list[str], kind: str) -> list[tuple[int, float]]:
     return marks
 
 
-def pair_latencies(steps: list[tuple[int, float]], seen: list[tuple[int, float]], limit: float = 0.5) -> dict:
-    """Each lead step's cue matched with the follower's first change to that cue after it (OSC-012-T22)."""
+def pair_latencies(steps: list[tuple[int, float]], seen: list[tuple[int, float]], limit: float = 0.5,
+                   skew: float = 0.25, window: float = 3.0) -> dict:
+    """Each lead step's cue matched with the follower's first change to that cue in [t - skew, t + window]
+    (OSC-012-T22). `skew` allows for the two device clocks (NTP, uncorrected); a change later than `window` belongs
+    to a later step with the same cue (the five-cue seed repeats every ~37 s), so the step counts as unmatched.
+    2026-11-22 (D2+D3): an unbounded search paired a step with the same cue 18.1 s later, so one early print became
+    an 18 s "latency"; the lead now stamps its step before the tap, so early prints no longer happen."""
     latencies = []
     for cue, t in steps:
-        match = next((s for c, s in seen if c == cue and s >= t - 0.25), None)
+        match = next((s for c, s in seen if c == cue and t - skew <= s <= t + window), None)
         if match is not None:
             latencies.append(round(match - t, 3))
     return {"steps": len(steps), "matched": len(latencies),

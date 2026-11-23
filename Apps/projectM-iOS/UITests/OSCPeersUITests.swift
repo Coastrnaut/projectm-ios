@@ -49,4 +49,31 @@ final class OSCPeersUITests: XCTestCase {
         app.navigationBars["Approved Devices"].buttons.firstMatch.tap()
         XCTAssertTrue(poll(5) { app.buttons["oscPeersLink"].label.contains("0 approved") }, "the row shows the count")
     }
+
+    /// QA-011 OSC-008-T13 on D3 (2026-11-22): an approved row's Remove button kept its own identifier only once the row
+    /// became an accessibility container; before, the row's identifier replaced it and `oscRemovePeer_0` never existed.
+    func testApprovedRowKeepsItsRemoveButton() {
+        XCUIDevice.shared.orientation = .portrait
+        let defaults = #"{"settings.osc.approvedPeers":["192.168.1.40"],"settings.osc.peerAllowlist.enabled":true}"#
+        app.launchArguments = ["-uitestResetNotice", "-uitestDiagnostics", "-autostart", "inAppPlayback",
+                               "-settings.osc.enabled", "NO", "-uitestSettingsSection", "osc",
+                               "-uitestDefaults", defaults] + Self.noStore
+        app.launch()
+        XCTAssertTrue(app.staticTexts["sourceStarts"].appears(within: 15))
+        openSettings()
+        let link = app.buttons["oscPeersLink"]
+        XCTAssertTrue(app.reveal(link, long: true), "Approved Devices is in the OSC section")
+        XCTAssertTrue(link.label.contains("1 approved"), "the launch's approved device: \(link.label)")
+        link.tap()
+        XCTAssertTrue(app.navigationBars["Approved Devices"].appears(within: 5))
+
+        let remove = app.buttons["oscRemovePeer_0"]
+        XCTAssertTrue(remove.appears(within: 5), "the approved row's Remove keeps its identifier")
+        XCTAssertEqual(remove.label, "Remove 192.168.1.40")
+        let row = app.descendants(matching: .any)["oscApprovedPeer_0"]
+        XCTAssertTrue(row.exists, "the row keeps its own identifier")
+        XCTAssertTrue(row.staticTexts["192.168.1.40"].exists, "the address is a child text of the row")
+        remove.tap()
+        XCTAssertTrue(poll(5) { !remove.exists }, "Remove takes the device off the list")
+    }
 }

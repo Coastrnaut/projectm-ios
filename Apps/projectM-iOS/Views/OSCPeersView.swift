@@ -54,6 +54,9 @@ private struct OSCApprovedPeersSection: View {
                         .accessibilityLabel("Remove " + peer.text)
                         .accessibilityIdentifier("oscRemovePeer_\(index)")
                 }
+                // A row identifier on a plain container replaces its button's own identifier in the
+                // accessibility tree (QA-011 OSC-008-T13 on D3, 2026-11-22: oscRemovePeer_0 never existed).
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("oscApprovedPeer_\(index)")
             }
         }
@@ -75,6 +78,9 @@ private struct OSCBlockedPeersSection: View {
                         .accessibilityLabel("Allow " + peer.text)
                         .accessibilityIdentifier("oscAllowPeer_\(index)")
                 }
+                // A row identifier on a plain container replaces its button's own identifier in the
+                // accessibility tree (QA-011 OSC-008-T13 on D3, 2026-11-22: oscRemovePeer_0 never existed).
+                .accessibilityElement(children: .contain)
                 .accessibilityIdentifier("oscBlockedPeer_\(index)")
             }
             LabeledContent("Blocked", value: String(peers.blockedCount))
