@@ -45,7 +45,8 @@ def running(device: str, ps: str) -> bool:
 
 
 def newest_log(device: str) -> Path | None:
-    logs = [p for p in LOGS.glob(f"*-{device.lower()}.log")]
+    # Any log naming the device: runner logs end "-d1.log", matrix logs are named freely ("matrix-d1b.log").
+    logs = [p for p in LOGS.glob("*.log") if re.search(rf"(^|[-_.]){device.lower()}[a-z0-9]*([-_.]|$)", p.stem)]
     return max(logs, key=lambda p: p.stat().st_mtime) if logs else None
 
 
