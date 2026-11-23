@@ -252,6 +252,7 @@ final class PresetWarmUpControllerTests: XCTestCase {
         XCTAssertEqual(renderer.prewarmedCount, 2, "the request made while suspended is warmed after resume")
     }
 
+    #if DEBUG   // uses DEBUG-only renderer hooks: the Release test bundle (QA-011 bench) must build
     /// QA-011 device run 2026-11-19 (D2, D3): an engine call that began before the app went to the
     /// background did not return (ANGLE waited in `-[MTLCommandBuffer waitUntilCompleted]`), and the
     /// suspension waited for it on the main thread for good. A stop and a suspension now return at
@@ -287,6 +288,7 @@ final class PresetWarmUpControllerTests: XCTestCase {
         XCTAssertTrue(prewarmer.waitUntilIdle(timeout: 90))
         prewarmer.afterLoadForTesting = nil
     }
+    #endif
 }
 
 private final class OnceFlag: @unchecked Sendable {

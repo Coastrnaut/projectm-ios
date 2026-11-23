@@ -162,6 +162,7 @@ final class FlashLimiterTests: XCTestCase {
         XCTAssertEqual(ANGLERenderer.flashLimitPerSecond, 0.25)
     }
 
+    #if DEBUG   // uses DEBUG-only renderer hooks: the Release test bundle (QA-011 bench) must build
     /// QA-011 FX-019-T23 (2026-11-19, D3 rerun 3): the device test's Flicker fixture
     /// (`UITestVisualProbes.flickerPreset`, keep the two texts the same) must really strobe through projectM. Its first
     /// version set `invert` and `gamma` in per-frame code, which projectM 4 never reads back (Filters and VideoEcho read
@@ -198,7 +199,9 @@ final class FlashLimiterTests: XCTestCase {
                                     "per-frame invert/gamma do not reach the picture in projectM 4 (the old fixture)")
         XCTAssertLessThan(flicker, ANGLEDebugFlashStats.clampedBelow, "the composite inversion strobes and is clamped")
     }
+    #endif
 
+    #if DEBUG   // uses DEBUG-only renderer hooks: the Release test bundle (QA-011 bench) must build
     /// QA-011 ACC-012-T22 (2026-11-19): the device tests' Strobe fixture (`UITestVisualProbes.strobePreset`, keep the
     /// two texts the same) must flash through projectM at a rate the always-on cap allows and Strict does not. Its
     /// first version (ACC-002's high-flash.milk) flashed only through per-frame `invert`/`gamma`, which projectM 4
@@ -268,6 +271,7 @@ final class FlashLimiterTests: XCTestCase {
         XCTAssertLessThan(strict.gain, standard.gain - 0.1, "Strict clamps the fixture well below Standard")
         XCTAssertLessThan(strict.gain, ANGLEDebugFlashStats.clampedBelow)
     }
+    #endif
 
     /// OUT-001-T12 (OUT-001-R8, S5): moving projectM's view to an external display re-lays out its
     /// window surface at the display's size. The envelope's history survives the new surface and size,

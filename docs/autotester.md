@@ -1218,6 +1218,12 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   that address for D2 and the Mac's USB-side address. `devices.resolve` now gathers every address and prefers a LAN
   one (`prefer_lan`). Check the `TEST_RUNNER_PEER_IP` and `TEST_RUNNER_MAC_IP` values in a peer log's first lines.
 
+- **A DEBUG-only hook in a package test breaks the Release benches** (D3 matrix, 2026-11-23). `bench-rec003-encoder`
+  builds the device test bundles in Release; two ANGLERendering tests had started using DEBUG-only renderer hooks
+  (`ANGLEDebugFlashStats`, `PresetPrewarmer.afterLoadForTesting`) without `#if DEBUG`, so the case ended "no test summary;
+  exit 65" before running. Any test that touches a DEBUG-only hook goes inside `#if DEBUG`; check with
+  `xcodebuild build-for-testing -scheme DeviceTests -configuration Release ENABLE_TESTABILITY=YES`.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:
