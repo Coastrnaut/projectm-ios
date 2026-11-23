@@ -77,11 +77,28 @@ class B07DeviceCase: DeviceAcceptanceCase {
         XCTAssertTrue(appears(controls, 3), "the controls are shown")
     }
 
+    /// Hides the controls with a tap on the picture outside the controls card.
+    /// D1 (iPhone landscape, 2026-11-22): the card filled the 393 pt window from y ≈ 84 down, so the tap at 30 % of the
+    /// height (118 pt) landed on the card. Every tap counted as use, the controls never hid (not even by their 5 s
+    /// timeout), and ACC-010 measured the emergency button above the card (midY 54). The tap now goes to 30 % of the
+    /// height when that is clear of the card (the iPads and iPhone portrait: unchanged), else midway between the top and
+    /// the card; with no room above the card it waits for the controls' own timeout instead.
     func hideControls() {
         for _ in 0..<4 where controls.exists {
-            tapArea.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap()
-            if wait(1.5, { !self.controls.exists }) { break }
+            let area = tapArea.frame, card = controls.frame
+            var y = area.minY + area.height * 0.3
+            if card.height > 0, y >= card.minY - 8 {
+                y = area.minY + (card.minY - area.minY) / 2
+                if card.minY - area.minY < 40 {
+                    _ = wait(7) { !self.controls.exists }   // the controls hide 5 s after the last use
+                    return
+                }
+            }
+            tapArea.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: area.width * 0.5, dy: y - area.minY)).tap()
+            if wait(1.5, { !self.controls.exists }) { return }
         }
+        if controls.exists { _ = wait(7) { !self.controls.exists } }   // a badge took the taps: the timeout
     }
 
     /// Taps a control with the controls freshly shown (they hide 5 s after the last use).

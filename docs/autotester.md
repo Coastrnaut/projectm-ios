@@ -1061,6 +1061,17 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   (5-8 of 300); D2 drops 4-19 with no code change between runs (same render-frame count), so the bound is now D2's
   mean + 3 SD (27, REC-008 Clarifications 2026-11-20). Before moving a bound, check `git log` on the measured path and
   the raw counts behind it, so a real regression is not absorbed.
+- **Start a count where the fixture has the content.** The music fixture opens with a 10 s intro without drums
+  (`scripts/make_music_fixture.py`); ACC-007-T13's 12 s haptic count started about 8 s after launch, so Beats counted 2
+  pulses on D1 (2026-11-22) while ANL-005's confidence was still building. Wait on the playback position
+  (`sectionChangeProbe` `position=`) before counting: ACC-007 waits for 20 s (the chorus with drums, until 40 s).
+- **A median of motion pairs can compare noise.** When the music's big change falls in the same pairs of both runs
+  (VIS-019-T13: pairs 3 and 4 of five, on D1, D2 and D3), the median is a quiet pair and jitter decides "Reduce Motion is
+  calmer". Compare the mean over the same stretch of the track instead, and leave the overlay's box out (VIS-017-T13 on
+  the iPhone: the overlay's counters set a floor of about 0.008 under both runs).
+- **iPhone landscape: hide the controls outside the card.** The controls card fills most of the 393 pt landscape window,
+  so `hideControls`' tap at 30 % of the height landed on the card, every tap counted as use and the controls never hid
+  (ACC-010-T13 on D1, 2026-11-22). The helper now taps clear of the card's frame, or waits for the 5 s timeout.
 
 ### Policy and evidence
 

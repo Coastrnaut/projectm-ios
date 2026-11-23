@@ -261,11 +261,26 @@ final class B01NativeVisualDeviceTests: B07DeviceCase {
 
     /// VIS-017-T13 (QA-011 B07): the SDF Shapes pipelines come from the PERF-009 binary archive on the second launch
     /// (`pipelineArchiveProbe` hits > 0), and Reduce Motion is calmer than without it.
+    /// 2026-11-22 (D1 full run 1): one whole-screen pair per run read 0.0089 with Reduce Motion against 0.0075 without on
+    /// the iPhone. The performance overlay's counters change every second and cover a far larger share of the iPhone's
+    /// screen than of an iPad's, so they set a floor of about 0.008 under both runs (the iPads' Reduce Motion pairs read
+    /// 0.008-0.009 too, against 0.012-0.060 without), and one pair lands wherever the music happens to be. Motion is now
+    /// the mean of three pairs at the same times after launch, with the overlay's box left out (as VIS-019 does).
     func testVIS017ArchiveHitOnSecondLaunchAndReduceMotion() {
         let task = "VIS-017-T13"
+        func motion(_ label: String) -> Double {
+            let box = overlayBox()
+            var pairs: [Double] = []
+            for i in 0..<3 {
+                let (_, a) = screen(task, "\(label) \(i) a"); pause(1); let (_, b) = screen(task, "\(label) \(i) b")
+                pairs.append(change(a, b, excluding: box))
+                if i < 2 { pause(1) }
+            }
+            print("VIS017-PAIRS \(label) \(pairs)")
+            return pairs.reduce(0, +) / Double(pairs.count)
+        }
         launchProbed(visual: "signedDistance")
-        let (_, a) = screen(task, "normal a"); pause(1); let (_, b) = screen(task, "normal b")
-        let normal = Self.change(a, b)
+        let normal = motion("normal")
         let first = probe("pipelineArchiveProbe")
         XCUIDevice.shared.press(.home)   // PERF-009-R6: the archive is written when the scene leaves the foreground
         pause(4)
@@ -273,8 +288,7 @@ final class B01NativeVisualDeviceTests: B07DeviceCase {
         launchProbed(visual: "signedDistance", extra: ["-uitestReduceMotion", "YES"])
         XCTAssertTrue(wait(10) { !self.probe("pipelineArchiveProbe").isEmpty && self.probe("pipelineArchiveProbe") != "none" })
         let second = probe("pipelineArchiveProbe")
-        let (_, c) = screen(task, "reduce motion a"); pause(1); let (_, d) = screen(task, "reduce motion b")
-        let calm = Self.change(c, d)
+        let calm = motion("reduce motion")
         print("VIS017-ARCHIVE first: \(first) second: \(second)")
         report(task, "archive", ["firstHits": Self.number(first, "hits") ?? -1, "firstMisses": Self.number(first, "misses") ?? -1,
                                  "secondHits": Self.number(second, "hits") ?? -1, "secondMisses": Self.number(second, "misses") ?? -1,
@@ -748,6 +762,13 @@ final class B01EffectOrderDeviceTests: B07DeviceCase {
     /// the orange cross, mean luma 0.04 → 0.13), which Reduce Motion slows (R9) but does not hold back, and the mean
     /// of three read 0.030 against 0.005. Motion with music is now the median of five pairs, so one mode change in
     /// either run does not decide the comparison.
+    /// 2026-11-22 (D1 full run 1): the median compared noise. The music drives the mode change in pairs 3 and 4 of
+    /// both runs (every five-pair run since: D1, D2, D3), so the median was the largest of three quiet pairs (about
+    /// 0.004), where one pair's jitter decides: D1 read normal [0.0119, 0.0045, 0.0042, 0.0839, 0.0990] against Reduce
+    /// Motion [0.0020, 0.0030, 0.0137, 0.0825, 0.0745]. Reduce Motion halves the drive's rates (CymaticDrive), which
+    /// shows in the transitions, so motion with music is now the mean of the five pairs (the whole window's motion on
+    /// the same stretch of the track): Reduce Motion is lower in every five-pair run recorded (D1 0.176 vs 0.204 summed,
+    /// D2 0.104 vs 0.176, D3 0.167 vs 0.188).
     func testVIS019CymaticTonesSilenceAndReduceMotion() {
         let task = "VIS-019-T13"
         launch(visual: "cymatic", music: false)
@@ -780,7 +801,7 @@ final class B01EffectOrderDeviceTests: B07DeviceCase {
             }
             app.terminate()
             print("VIS019-PAIRS \(label) \(pairs)")
-            return Self.median(pairs)
+            return pairs.reduce(0, +) / Double(max(pairs.count, 1))
         }
         let normal = musicMotion("music", [])
         let calm = musicMotion("reduce motion", ["-uitestReduceMotion", "YES"])

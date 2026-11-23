@@ -155,10 +155,21 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
 
     private func pulseTimes() -> [Double] { Self.numbers(probe("hapticProbe"), "times") }
 
+    /// Waits until the music fixture plays its chorus: drums from 10 s (the first 10 s are a quiet intro without them,
+    /// scripts/make_music_fixture.py), plus 10 s for ANL-005's 6 s window to fill so beats reach confidence 0.5 (the
+    /// Beats rule). The chorus with drums lasts until 40 s, so a 12 s count from here sees drums throughout.
+    private func waitForChorus(_ task: String, _ label: String) {
+        func position() -> Double { Self.number(probe("sectionChangeProbe"), "position") ?? 0 }
+        XCTAssertTrue(wait(25) { position() >= 20 }, "\(task) \(label): the fixture reached its chorus: \(probe("sectionChangeProbe"))")
+    }
+
     /// ACC-007-T13 (automated part): Haptics on with the 120 BPM music fixture: Beats pulse once per beat (median interval
-    /// 0.5 s ± 30 ms, `hapticProbe`); Downbeats give fewer pulses (about one per bar) and Kicks a different count;
+    /// 0.5 s ± 30 ms, `hapticProbe`); Downbeats give fewer pulses (about one per bar) and Kicks pulse with the drums;
     /// Strict and the switch off give none. Feeling the taps stays a person's check; Low Power Mode is
     /// `testACC007LowPowerGivesNone` (Batch 1's Settings helper).
+    /// 2026-11-22 (D1 full run 1, the first run on haptic hardware): the 12 s count started about 8 s after launch, in
+    /// the fixture's drumless intro, so Beats counted 2 pulses (an earlier D1 run: Beats 2, Downbeats 1, Kicks 13, the
+    /// kicks being the last seconds' drums). Each count now starts in the chorus (`waitForChorus`).
     func testACC007PulsesFollowTheChoice() throws {
         let task = "ACC-007-T13"
         // iPads have no haptic hardware (ACC-007 Clarifications: the switch is disabled with "This device has no
@@ -167,12 +178,15 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
         var counts: [String: Double] = [:]
         for choice in ["beats", "downbeats", "kicks"] {
             launchProbed(visual: "circularSpectrum", settings: hapticSettings(choice))
+            waitForChorus(task, choice)
             let start = Self.number(probe("hapticProbe"), "pulses") ?? 0
             pause(12)
             let end = Self.number(probe("hapticProbe"), "pulses") ?? 0
             counts[choice] = end - start
             if choice == "beats" {
-                let times = pulseTimes()
+                // The intervals of the pulses in the count window only (times are seconds after the first pulse).
+                let all = pulseTimes()
+                let times = Array(all.suffix(max(Int(end - start), 0)))
                 let intervals = zip(times, times.dropFirst()).map { $1 - $0 }.filter { $0 < 1.2 }
                 let median = Self.median(intervals)
                 let near = intervals.filter { abs($0 - 0.5) <= 0.03 }.count
@@ -185,11 +199,15 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
         report(task, "choices", ["beats": counts["beats"] ?? 0, "downbeats": counts["downbeats"] ?? 0, "kicks": counts["kicks"] ?? 0])
         XCTAssertGreaterThan(counts["beats"] ?? 0, 15, "\(task): Beats pulse with the music")
         XCTAssertLessThan(counts["downbeats"] ?? 0, (counts["beats"] ?? 0) * 0.6, "\(task): Downbeats pulse less often")
-        XCTAssertNotEqual(counts["kicks"] ?? 0, counts["beats"] ?? 0, "\(task): Kicks change the pulses")
+        // The fixture's kick falls on every beat, so in the chorus Kicks and Beats both give about 24 pulses in 12 s and
+        // "a different count" held only while the count window covered the drumless intro. Kicks must pulse with the
+        // drums (half of the 24 kicks or more; D1's earlier run counted 13 in about 8 s of drums).
+        XCTAssertGreaterThan(counts["kicks"] ?? 0, 12, "\(task): Kicks pulse with the drums")
 
         for (label, settings) in [("Strict", hapticSettings("beats", extra: ["settings.sensorySafety.profile": "strict"])),
                                   ("switch off", ["settings.haptics.beatPulses": false] as [String: Any])] {
             launchProbed(visual: "circularSpectrum", settings: settings)
+            waitForChorus(task, label)   // a zero counts only with drums playing (the intro has none)
             pause(8)
             let pulses = Self.number(probe("hapticProbe"), "pulses") ?? -1
             report(task, label, ["pulses": pulses])
@@ -292,6 +310,7 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
             // the show rows up it stood above the middle of D3's 1180 pt window (midY 556.5, 2026-11-18). Measure it
             // with the controls hidden, where the corner is the screen's.
             hideControls()
+            XCTAssertFalse(controls.exists, "\(task) \(label): the controls are hidden for the corner measurement")
             let emergency = app.buttons["emergencyBlackout"]
             XCTAssertTrue(appears(emergency, 5), "\(task) \(label): the emergency button")
             // Read once: the pad launch below has no emergency button (the pad's Blackout replaces it), and a frame
