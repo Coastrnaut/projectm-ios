@@ -480,16 +480,20 @@ final class B07FilesDeviceTests: B07Case {
         pause(1)
     }
 
-    /// FILE-001-T19 on D1: a scene holding a photo and a video (the visual Video over the stored photo), exported as a
-    /// .pmscene through the real share sheet into Documents; the Mac pulls it for D3.
+    /// FILE-001-T19 on D1: a scene holding a photo and a video, exported as a .pmscene through the real share sheet
+    /// into Documents; the Mac pulls it for D3. The scene is the DEBUG seed "Photo and Video" (`-uitestPhotoVideoScene`:
+    /// the stored photo under the stored video, one cue): Add Current Scene records one visual's fixed stack, so under
+    /// the Video visual it held the video only and D3's preview read "1 video" (D2, 2026-11-22; docs/autotester.md).
     func testFILE001_A_ExportSceneArchive() throws {
         let task = "FILE-001-T19"
         try requireMac(task)
-        launch(visual: "video", extra: ["-uitestSeedPhoto", "pattern", "-uitestSeedVideo", "counter", "-uitestSettingsSection", "show"])
+        launch(visual: "video", extra: ["-uitestSeedPhoto", "pattern", "-uitestSeedVideo", "counter", "-uitestPhotoVideoScene",
+                                        "-uitestSettingsSection", "show"])
         XCTAssertTrue(wait(30) { self.videoValue == "Video 64 × 48" }, "\(task): the seeded video plays: \(videoValue)")
-        openSceneFolders(addCurrentScene: true)
-        let row = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'sceneFolderScene.'")).firstMatch
-        XCTAssertTrue(wait(5) { row.exists }, "\(task): the new scene is listed")
+        pause(1)   // the seed saves the scene once both media are stored (polled every 0.25 s)
+        openSceneFolders(addCurrentScene: false)
+        let row = app.descendants(matching: .any)["sceneFolderScene.Photo and Video"].firstMatch
+        XCTAssertTrue(wait(5) { row.exists }, "\(task): the seeded scene \"Photo and Video\" is listed")
         let start = row.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
         start.press(forDuration: 0.05, thenDragTo: row.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)),
                     withVelocity: .fast, thenHoldForDuration: 0.05)
@@ -503,7 +507,8 @@ final class B07FilesDeviceTests: B07Case {
     }
 
     /// FILE-001-T19 on D3: the Mac pushes the other device's archive (D1, or `FILE001_FROM`) into Documents; Import Scene… picks it in Files, the preview
-    /// lists the photo and the video, Import adds the cue, and applying it shows the video over the stored photo.
+    /// lists the photo and the video, Import adds the cue, and applying it shows the imported photo (a scene with a photo
+    /// layer applies the Photo visual, `ShowSceneSnapshot.apply`); the Video visual then plays the imported video.
     /// "Offline" (Airplane Mode) is a USB-cable step: not required (owner ruling 2026-11-18); nothing here uses the network.
     func testFILE001_B_ImportSceneArchive() throws {
         let task = "FILE-001-T19"
@@ -524,11 +529,13 @@ final class B07FilesDeviceTests: B07Case {
         XCTAssertTrue(wait(15) { self.text("scenePackStatus").hasPrefix("Imported") }, "\(task): \(text("scenePackStatus"))")
         closeSettingsPanel()
         stepNextCue()
-        XCTAssertTrue(wait(30) { self.videoValue == "Video 64 × 48" }, "\(task): the imported video plays: \(videoValue)")
+        XCTAssertTrue(wait(30) { self.photoValue == "Photo 64 × 48" }, "\(task): the imported photo shows: \(photoValue)")
         openSettingsPanel()
         _ = scrollTo(element("photoSummary"))
         XCTAssertFalse(summary("photoSummary").contains("No photo"), "\(task): the imported photo is stored: \(summary("photoSummary"))")
         closeSettingsPanel()
+        chooseVisual("video")
+        XCTAssertTrue(wait(30) { self.videoValue == "Video 64 × 48" }, "\(task): the imported video plays: \(videoValue)")
         report(task, "import on \(deviceModel())", ["imported": 1])
     }
 

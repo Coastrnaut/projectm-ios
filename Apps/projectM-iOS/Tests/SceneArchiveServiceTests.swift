@@ -269,4 +269,39 @@ final class SceneArchiveServiceTests: XCTestCase {
         XCTAssertEqual(target.photos().current(), result.photo)
         XCTAssertEqual(target.videos().current(), result.video)
     }
+
+    // MARK: - FILE-001-T19: the device test's scene (QA-011, 2026-11-22)
+
+    /// The current-scene snapshot of the Video visual records the video only (the hosts' fixed stacks), which is why
+    /// FILE-001-T19's export on D2 held no photo; the DEBUG seed `-uitestPhotoVideoScene` builds the photo-under-video
+    /// scene from the same snapshot layers, and its archive carries both media (the import preview's "1 photo, 1 video").
+    func testThePhotoUnderVideoSeedSceneExportsThePhotoAndTheVideo() async throws {
+        let source = try makeSandbox("seed"), target = try makeSandbox("seedTarget")
+        defer { source.cleanUp(); target.cleanUp() }
+        let seeded = try await seed(source)
+        let look = ShowLook(visual: .video, bars: 64, orientation: .horizontal, spacing: 0.5, glowEnabled: false, glowIntensity: 0.7,
+                            glowRadius: 0.03, glowThreshold: 0.4, text: TextOverlaySpec(message: ""),
+                            photoID: seeded.photo.id, videoID: seeded.video.id)
+        XCTAssertEqual(ShowSceneSnapshot.document(look, id: UITestPhotoVideoSceneFixture.sceneID, name: "Video").layers.map(\.kind),
+                       ["video", "spectrum.circular"], "Add Current Scene under the Video visual records no photo")
+        var noVideo = look
+        noVideo.videoID = nil
+        XCTAssertNil(UITestPhotoVideoSceneFixture.document(noVideo), "the seed waits for both media")
+
+        let document = try XCTUnwrap(UITestPhotoVideoSceneFixture.document(look))
+        XCTAssertEqual(document.layers.map(\.kind), ["photo", "video", "spectrum.circular"])
+        let registry = try SceneArchiveService.appRegistry()
+        let issues = document.validate(registry: registry, assets: try source.service().availability())
+        XCTAssertTrue(issues.allSatisfy { (i: SceneIssue) -> Bool in !i.isError && i.code != .missingAsset }, "\(issues)")
+
+        let export = try source.service().export(document, modified: date)
+        defer { try? source.service().cleanUpExport() }
+        let targetService = try target.service()
+        let plan = await targetService.planImport(at: export.url)
+        XCTAssertNil(plan.refusal)
+        XCTAssertEqual(plan.media.map(\.type).sorted { (a, b) -> Bool in a.rawValue < b.rawValue }, [.photo, .video])
+        let result = try await target.service().importArchive(at: export.url)
+        XCTAssertNotNil(result.photo, "the photo arrives")
+        XCTAssertNotNil(result.video, "the video arrives")
+    }
 }
