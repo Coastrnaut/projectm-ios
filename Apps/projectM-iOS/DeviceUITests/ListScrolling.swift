@@ -38,6 +38,27 @@ extension XCUIElement {
                     thenHoldForDuration: velocity.rawValue <= XCUIGestureVelocity.slow.rawValue ? 0.1 : 0)
     }
 
+    /// One short, slow drag that moves this list's content by `distance` points (positive: down, towards the start;
+    /// negative: up, towards the end), at most 160 pt, starting in the list's middle band and held before the release.
+    /// Short enough that a sheet at its start springs back instead of closing (FILE-010-T11 on D1, 2026-11-23: a
+    /// full-height drag towards the start closed the Settings sheet). False when the list is too small to drag in.
+    @discardableResult
+    func nudge(by distance: CGFloat) -> Bool {
+        let frame = self.frame
+        let length = min(abs(distance), 160)
+        guard frame.width > 1, frame.height > length + 120, length > 0 else { return false }
+        let x = frame.minX + frame.width * 0.9
+        let planned = distance > 0 ? frame.midY - length / 2 : frame.midY + length / 2
+        let target = distance > 0 ? planned + length : planned - length
+        let from = Self.dragStart(x: x, from: planned, to: target, avoiding: dragSensitiveFrames())
+        let to = distance > 0 ? from + length : from - length
+        let origin = coordinate(withNormalizedOffset: .zero)
+        let start = origin.withOffset(CGVector(dx: x - frame.minX, dy: from - frame.minY))
+        let end = origin.withOffset(CGVector(dx: x - frame.minX, dy: to - frame.minY))
+        start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.2)
+        return true
+    }
+
     /// The first start point on the way from `from` towards `to` (steps of 22 pt, at most half the drag) that lies
     /// outside every frame in `avoiding` grown by 12 pt; `from` itself when none is clear.
     static func dragStart(x: CGFloat, from: CGFloat, to: CGFloat, avoiding: [CGRect]) -> CGFloat {

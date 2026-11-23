@@ -225,7 +225,10 @@ final class B07FilesDeviceTests: B07Case {
     func storageValues(_ ids: [String]) -> [String: Double] {
         var out: [String: Double] = [:]
         for id in ids {
-            _ = scrollTo(element("storage.\(id)"))
+            // Reading a value needs no tap: a row that exists is read where it is (D1 r10b, 2026-11-23: scrolling the
+            // first row clear of the navigation bar pulled the Settings sheet down and closed it).
+            let row = element("storage.\(id)")
+            if !row.exists { _ = scrollTo(row) }
             out[id] = storage(id)
         }
         return out
@@ -673,6 +676,7 @@ final class B07FilesDeviceTests: B07Case {
         _ = scrollTo(element("storage.caches"), up: true, swipes: 8)
         _ = wait(30) { !self.element("storageMeasuring").exists && Self.bytes(self.text("storage.caches")) != nil }
         let after = storageValues(["caches", "sharesAndExports", "photos", "scenes", "total"])
+        XCTAssertTrue(app.navigationBars["Storage"].exists, "\(task): Settings › Storage is still open after the reads")
         report(task, "before", before)
         report(task, "after", after)
         print("FILE-010-T11 \(result)")

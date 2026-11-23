@@ -589,11 +589,44 @@ def flashcost_verdict(report: dict, limit_ms: float) -> dict:
     over = [r["id"] for r in results if r.get("costMs", 0) > limit_ms]
     n = int(summary.get("presets", len(costs)))
     worst, median = summary.get("costMsMax", max(costs, default=0)), summary.get("costMsMedian", 0)
+    def spread(r: dict) -> str:
+        """2026-11-23: what a reader needs to tell a cost from noise (ABBA round costs, dimmed share, frame-time IQR)."""
+        parts = [f"{r.get('costMs', 0):.2f} ms"]
+        rounds = r.get("roundCostsMs") or []
+        if rounds:
+            parts.append(f"rounds {min(rounds):.2f}-{max(rounds):.2f}")
+        if r.get("dimmedFraction") is not None:
+            parts.append(f"dimmed {r['dimmedFraction']:.0%}")
+        if r.get("onIqrMs") is not None and r.get("offIqrMs") is not None:
+            parts.append(f"IQR off {r['offIqrMs']:.2f} on {r['onIqrMs']:.2f}")
+        return ", ".join(parts)
+
+    over_detail = [f"{r['id']} ({spread(r)})" for r in results if r.get("costMs", 0) > limit_ms]
     detail = (f"{n} presets, median {median:.2f} ms, max {worst:.2f} ms per frame (limit {limit_ms} ms)"
-              + (f"; over: {', '.join(over[:5])}" if over else "")
+              + (f"; over: {', '.join(over_detail[:5])}" if over else "")
               + (f"; thermal {', '.join(report['thermalStates'])}" if report.get("thermalStates") else ""))
     return {"pass": n > 0 and worst <= limit_ms, "detail": detail if n else "no presets measured", "presets": n,
             "medianMs": median, "maxMs": worst, "over": over}
+
+
+def apply_stop_policy(verdict: dict, runs: list[dict]) -> dict:
+    """A recording that had to be stopped counts only when its window was whole and its data readable: xctrace said
+    the app had exited (the app's run, and so the recording window, had ended) and the stopped trace was still saved
+    whole and exported (Clarification FX-019/PERF-004, 2026-11-23). Anything else fails, whatever was salvaged (the
+    perf011 trace stopped mid-save exported nothing). A first attempt that hung is named in the detail either way."""
+    notes = [f"{r['name']}: first attempt {r['firstAttempt']}; recorded again" for r in runs if r.get("firstAttempt")]
+    stopped = [r for r in runs if r.get("stopped")]
+    unusable = [r for r in stopped if not (r.get("appExited") and r.get("traceSaved") and r.get("tables"))]
+    if unusable:
+        verdict["pass"] = False
+        verdict["detail"] = ("xctrace did not end by itself and was stopped ("
+                             + "; ".join(f"{r['name']}: {r['stopped']}" for r in unusable) + "); " + verdict["detail"])
+    elif stopped:
+        verdict["detail"] = ("stopped after the app had exited, trace saved and exported ("
+                             + "; ".join(f"{r['name']}: {r['stopped']}" for r in stopped) + "); " + verdict["detail"])
+    if notes:
+        verdict["detail"] = "; ".join(notes) + "; " + verdict["detail"]
+    return verdict
 
 
 def verdict_perf004(runs: list[dict]) -> dict:
@@ -855,6 +888,22 @@ class Runner:
                 raise Blocked(self.locked_message())
             if proc["stopped"]:
                 print(f"!! {c['id']} {run['name']}: xctrace {proc['stopped']}; stopped it", flush=True)
+            if proc["stopped"] and not proc["complete"] and not run.get("background"):
+                # xctrace hung saving after the app's own exit and left no readable trace (D1 matrix 2026-11-23,
+                # perf004: two earlier runs of the same case saved within seconds). Record once more; a run driven
+                # from the Mac (background steps) is not repeated here.
+                name = t.wait_for_report(f"automation-{run['mode']}", before, 30)
+                if name:
+                    before.add(name)
+                print(f"!! {c['id']} {run['name']}: no readable trace; recording once more", flush=True)
+                shutil.rmtree(trace, ignore_errors=True)
+                retry_log = self.work / "logs" / f"{c['id']}-{run['name']}-retry.log"
+                first = proc["stopped"]
+                proc = xt.record(cmd, trace, retry_log, run["seconds"])
+                proc["firstAttempt"] = first
+                self.add(result, retry_log, False)
+                if proc["stopped"]:
+                    print(f"!! {c['id']} {run['name']}: xctrace {proc['stopped']} again; stopped it", flush=True)
             name = t.wait_for_report(f"automation-{run['mode']}", before, 120)
             report = None
             if name:
@@ -862,17 +911,18 @@ class Runner:
                 t.pull(f"Documents/{name}", dest)
                 self.add(result, dest, dest.stat().st_size <= COMMIT_LIMIT)
                 report = json.loads(dest.read_text())
-            tables = self.export_tables(trace, run, folder) if trace.exists() else {}
+            # Exported whenever the bundle was saved whole, also after a stop (`trace_complete`: a directory alone is
+            # not a saved trace; D1 2026-11-23 said "trace saved: True" for a bundle holding only the raw .atrc).
+            tables = self.export_tables(trace, run, folder) if proc.get("complete", trace.exists()) else {}
             runs.append({"name": run["name"], "exit": proc["exit"], "report": report, "tables": tables,
-                         "traceSaved": trace.exists(), "stopped": proc["stopped"], "recordSeconds": proc["seconds"]})
+                         "traceSaved": proc.get("complete", trace.exists()), "stopped": proc["stopped"],
+                         "appExited": proc.get("appExited", False), "firstAttempt": proc.get("firstAttempt"),
+                         "recordSeconds": proc["seconds"]})
         if self.dry_run:
             result["status"] = "skipped"
             return
         verdict = XCTRACE_VERDICTS[c["verdict"]](runs)
-        stopped = [f"{r['name']}: {r['stopped']}" for r in runs if r.get("stopped")]
-        if stopped:   # a recording that had to be stopped never counts, whatever was salvaged from it
-            verdict["pass"] = False
-            verdict["detail"] = "xctrace did not end by itself and was stopped (" + "; ".join(stopped) + "); " + verdict["detail"]
+        apply_stop_policy(verdict, runs)
         out = t.out_dir / f"{c['id']}-verdict.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(json.dumps(verdict, indent=2, sort_keys=True, default=str) + "\n")

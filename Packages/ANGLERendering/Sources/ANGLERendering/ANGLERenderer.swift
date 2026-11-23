@@ -648,6 +648,14 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// pass is bypassed, a measurement baseline only; the app always runs the pass, FX-019) to
     /// measure the post-pass cost (T104, FX-019-T22). Pause the display link first.
     public func timedFrames(_ frames: Int, reduceFlashing: Bool) -> [Double] {
+        var gains: [Float] = []
+        return timedFrames(frames, reduceFlashing: reduceFlashing, gains: &gains)
+    }
+
+    /// `timedFrames(_:reduceFlashing:)` that also appends each limited frame's gain to `gains`, read back after the
+    /// frame's time was taken (one texel; outside the timed window). FX-019-T22 (D1, 2026-11-23): RendererLab reports
+    /// how often a preset was dimmed, to tell the output step's dimming cost from the rest.
+    public func timedFrames(_ frames: Int, reduceFlashing: Bool, gains: inout [Float]) -> [Double] {
         let saved = self.reduceFlashing
         self.reduceFlashing = reduceFlashing
         envelopeBypassed = !reduceFlashing
@@ -662,6 +670,7 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
             guard renderFrame(present: false) else { break }
             PMANGLEFinish()
             times.append((CACurrentMediaTime() - start) * 1000)
+            if reduceFlashing, let gain = flashLimiterGain { gains.append(gain) }
         }
         return times
     }

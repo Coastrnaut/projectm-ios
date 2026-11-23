@@ -106,17 +106,45 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
     /// Add buttons, so after two Files picks it was off screen above while every step went towards the end
     /// ("slideshowToggle is reachable"); FILE-010's storage rows were above the Clear Caches result the same way (every
     /// row read -1 after Clear Caches).
+    ///
+    /// A sheet must never be pulled down at its start (D1 r10b, 2026-11-23, FILE-010-T11): after Clear Caches the
+    /// first step towards the start brought the Storage list to its top; "storage.photos" (the first row, under the
+    /// expanded large title) still counted as above the navigation bar, so a second full-height drag towards the start
+    /// pulled the Settings sheet down and closed it, and the next 60 steps dragged the visual behind it (every row read
+    /// -1). An element already on screen is now brought clear with one short drag of the distance it lacks (too short
+    /// to close a sheet), and the search stops when the list it was scrolling leaves the screen.
     @discardableResult
     func scrollTo(_ element: XCUIElement, up: Bool = false, swipes: Int = 10) -> Bool {
-        var towardsEnd = !up, turned = false
+        var towardsEnd = !up, turned = false, scrolledList = false
         for step in 0..<(swipes * 2) {
             if reachable(element) { return true }
             // The list that holds the element when it exists (an iPad's browser sheet is not the first collection view).
             let list = app.listHolding(element.exists ? element : nil)
+            if list.elementType == .window {
+                // The list this search was scrolling has gone (a sheet closed): dragging the window behind it would
+                // only move the visual or the app's other controls.
+                if scrolledList {
+                    print("DEVICE-ACCEPT-NOTE scrollTo: the list left the screen; stopping (a sheet closed?)")
+                    break
+                }
+            } else {
+                scrolledList = true
+            }
             if element.exists, element.frame.height > 0 {
                 let frame = element.frame, bar = app.navigationBars.firstMatch
                 let top: CGFloat = bar.exists ? bar.frame.maxY : app.windows.firstMatch.frame.minY
-                if frame.maxY > app.bottomChromeTop { towardsEnd = true } else if frame.minY < top { towardsEnd = false }
+                let bottom = app.bottomChromeTop
+                // On screen but partly under the bar or the bottom chrome: one short, slow drag of what it lacks.
+                let underBar = frame.minY < top, underChrome = frame.maxY > bottom
+                if frame.maxY > top, frame.minY < bottom, underBar != underChrome, list.elementType != .window,
+                   list.nudge(by: underBar ? top - frame.minY + 24 : -(frame.maxY - bottom + 24)) {
+                    if reachable(element) { return true }
+                    if element.exists, element.isHittable, element.frame.minY == frame.minY {
+                        return true   // it did not move: the list is at that end; as far into view as it goes
+                    }
+                    continue
+                }
+                if frame.maxY > bottom { towardsEnd = true } else if frame.minY < top { towardsEnd = false }
             } else if !turned, step == swipes {
                 towardsEnd.toggle()
                 turned = true

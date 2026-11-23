@@ -61,31 +61,53 @@ def trace_signature(trace: Path) -> tuple[int, float]:
     return (size, newest)
 
 
-def stop_reason(elapsed: float, idle: float, seconds: float, *, startup: float, save: float, stall: float) -> str | None:
+APP_EXITED = "Target app exited"
+
+
+def stop_reason(elapsed: float, idle: float, seconds: float, *, startup: float, save: float, stall: float,
+                exited_idle: float | None = None, exit_stall: float = 60) -> str | None:
     """Why a running `xctrace record` should be stopped now, or None to let it run.
 
     `elapsed`: seconds since the command started; `idle`: seconds since the trace bundle last changed. The recording
     itself may take `startup` (Metal System Trace took about 18 s to launch the app on D1) plus `seconds`; after that,
     a bundle unchanged for `stall` seconds, or a total past `startup + seconds + save`, stops it. D1, 2026-11-23:
     after "Target app exited, ending recording... Stopping recording..." xctrace wrote a 1.98 GB trace until 8
-    minutes after the app had exited, then nothing for 2 minutes until it was stopped by hand."""
+    minutes after the app had exited, then nothing for 2 minutes until it was stopped by hand.
+
+    `exited_idle`: seconds the bundle has stayed unchanged since xctrace printed "Target app exited" (None before).
+    The recording is over then, whatever `startup` still allows: a bundle unchanged for `exit_stall` seconds after it
+    is a hung save. D1 matrix 2026-11-23, `xctrace-perf004`: the Logging template never got past "ending
+    recording..." after the app's own exit and was stopped only about 6 minutes later; two earlier D1 runs of the same
+    case saved within seconds of the exit."""
     recording = startup + seconds
     if elapsed > recording + save:
         return f"still running {int(elapsed)} s after it started (limit {int(recording + save)} s)"
+    if exited_idle is not None and exited_idle > exit_stall:
+        return f"the trace has not changed for {int(exited_idle)} s after the app exited"
     if elapsed > recording and idle > stall:
         return f"the trace has not changed for {int(idle)} s after the recording time"
     return None
 
 
+def trace_complete(trace: Path) -> bool:
+    """Whether a trace bundle was saved whole: xctrace writes `form.template` when it finishes saving. A recording
+    stopped during "ending recording..." leaves only `Trace1.run` with the raw `trace-data.atrc` (D1 2026-11-23,
+    perf004): `export --toc` fails on it, and `xctrace import` of that .atrc gives a Logging trace whose os-signpost
+    table is empty (the log stream arrives with the save), so nothing can be salvaged from it."""
+    return (trace / "form.template").is_file()
+
+
 def record(cmd: list[str], trace: Path, log: Path, seconds: float, *, startup: float = 180, save: float = 900,
-           stall: float = 180, grace: float = 180, poll: float = 5) -> dict:
+           stall: float = 180, grace: float = 180, poll: float = 5, exit_stall: float = 60) -> dict:
     """Runs `xctrace record` with its output in `log`, and stops it if it never ends (`stop_reason`): SIGINT first
     (xctrace's own Ctrl-C, which ends the recording and saves what it has), then SIGTERM and SIGKILL after `grace`
-    seconds each. Returns {"exit", "text", "stopped": reason or None, "seconds"}."""
+    seconds each. Returns {"exit", "text", "stopped": reason or None, "seconds", "appExited", "complete"}:
+    `appExited` when xctrace said the app had exited (the recording window was whole), `complete` when the bundle was
+    saved whole (`trace_complete`)."""
     log.parent.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
     signature, changed = trace_signature(trace), started
-    stopped = None
+    stopped, exited_at = None, None
     with open(log, "w") as out:
         proc = subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT, text=True, start_new_session=True)
         while True:
@@ -98,7 +120,13 @@ def record(cmd: list[str], trace: Path, log: Path, seconds: float, *, startup: f
             current = trace_signature(trace)
             if current != signature:
                 signature, changed = current, now
-            reason = stop_reason(now - started, now - changed, seconds, startup=startup, save=save, stall=stall)
+            if exited_at is None:
+                out.flush()
+                if APP_EXITED in log.read_text(errors="replace"):
+                    exited_at = now
+            exited_idle = None if exited_at is None else now - max(exited_at, changed)
+            reason = stop_reason(now - started, now - changed, seconds, startup=startup, save=save, stall=stall,
+                                 exited_idle=exited_idle, exit_stall=exit_stall)
             if not reason:
                 continue
             stopped = reason
@@ -117,8 +145,9 @@ def record(cmd: list[str], trace: Path, log: Path, seconds: float, *, startup: f
                     out.flush()
             break
     proc.wait()
-    return {"exit": proc.returncode, "text": log.read_text(errors="replace"), "stopped": stopped,
-            "seconds": round(time.monotonic() - started, 1)}
+    text = log.read_text(errors="replace")
+    return {"exit": proc.returncode, "text": text, "stopped": stopped, "seconds": round(time.monotonic() - started, 1),
+            "appExited": APP_EXITED in text, "complete": trace_complete(trace)}
 
 
 def toc_command(trace: Path) -> list[str]:

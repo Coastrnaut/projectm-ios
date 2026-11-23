@@ -101,6 +101,14 @@ final class LabModel {
         var medianOffMs: Double
         var medianOnMs: Double
         var costMs: Double
+        /// Spread (2026-11-23): interquartile ranges of the off and on frame times, and each ABBA round's cost.
+        var offIqrMs: Double?
+        var onIqrMs: Double?
+        var roundCostsMs: [Double]?
+        /// The share of limited frames the envelope dimmed (gain < 0.999) and their median gain: the output step's
+        /// dimming path runs only on those frames.
+        var dimmedFraction: Double?
+        var medianGain: Double?
     }
 
     var config = Config.fromLaunchArguments()
@@ -305,7 +313,13 @@ final class LabModel {
         return windows
     }
 
-    /// Per starter preset: 30 warm-up frames, then 5 rounds of 40 frames off and 40 on.
+    /// Per starter preset: 30 warm-up frames off and 10 on, then 8 rounds of 20 frames off, 40 on, 20 off (ABBA).
+    ///
+    /// QA-011 D1 (2026-11-23): the earlier order (5 rounds of 40 off, then 40 on) always measured "on" half a second
+    /// after "off", so a preset whose own frame time drifts after its load (projectM's transition, a building
+    /// spectrum) put that drift into the cost. ABBA rounds cancel a linear drift in every round; `costMs` stays the
+    /// difference of the pooled medians (T104's statistic), and the report adds the per-round costs and both
+    /// interquartile ranges so a cost can be told from the preset's own spread, and how often the envelope dimmed.
     private func measureFlashCost(_ renderer: ANGLERenderer) async -> [FlashCostResult] {
         let presets = (try? PresetRepository(presetsFolder: Self.resource("Presets")).load().presets) ?? []
         renderer.pause()
@@ -315,24 +329,42 @@ final class LabModel {
             status = "Flash cost \(index + 1)/\(presets.count): \(preset.name)"
             guard (try? await renderer.setPreset(preset)) != nil else { continue }
             _ = renderer.timedFrames(30, reduceFlashing: false)
-            var off: [Double] = [], on: [Double] = []
-            for _ in 0..<5 {
-                off += renderer.timedFrames(40, reduceFlashing: false)
-                on += renderer.timedFrames(40, reduceFlashing: true)
+            _ = renderer.timedFrames(10, reduceFlashing: true)
+            var off: [Double] = [], on: [Double] = [], rounds: [Double] = [], gains: [Float] = []
+            for _ in 0..<Self.flashCostRounds {
+                let first = renderer.timedFrames(20, reduceFlashing: false)
+                let limited = renderer.timedFrames(40, reduceFlashing: true, gains: &gains)
+                let last = renderer.timedFrames(20, reduceFlashing: false)
+                off += first + last
+                on += limited
+                rounds.append(Self.median(limited) - Self.median(first + last))
                 await Task.yield()
             }
             thermalStates.insert(Self.thermalName())
             let medianOff = Self.median(off), medianOn = Self.median(on)
             results.append(FlashCostResult(id: preset.id, medianOffMs: medianOff, medianOnMs: medianOn,
-                                           costMs: medianOn - medianOff))
+                                           costMs: medianOn - medianOff,
+                                           offIqrMs: Self.quantile(off, 0.75) - Self.quantile(off, 0.25),
+                                           onIqrMs: Self.quantile(on, 0.75) - Self.quantile(on, 0.25),
+                                           roundCostsMs: rounds,
+                                           dimmedFraction: gains.isEmpty ? nil
+                                               : Double(gains.filter { $0 < 0.999 }.count) / Double(gains.count),
+                                           medianGain: gains.isEmpty ? nil : Self.median(gains.map(Double.init))))
         }
         status = "Flash cost done: \(results.count) presets"
         return results
     }
 
+    static let flashCostRounds = 8
+
     private static func median(_ values: [Double]) -> Double {
         let sorted = values.sorted()
         return sorted.isEmpty ? 0 : sorted[sorted.count / 2]
+    }
+
+    private static func quantile(_ values: [Double], _ q: Double) -> Double {
+        let sorted = values.sorted()
+        return sorted.isEmpty ? 0 : sorted[min(sorted.count - 1, Int(Double(sorted.count) * q))]
     }
 
     // MARK: - Helpers
