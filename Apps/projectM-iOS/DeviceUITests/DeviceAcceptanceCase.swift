@@ -127,9 +127,8 @@ class DeviceAcceptanceCase: XCTestCase {
     /// real change) until it does. Face-up and unknown requests are left alone.
     func settleOrientation(_ orientation: UIDeviceOrientation) {
         guard orientation.isPortrait || orientation.isLandscape else { return }
-        let window = app.windows.firstMatch
         func matches() -> Bool {
-            let f = window.frame
+            let f = interfaceFrame()
             guard f.width > 0, f.height > 0 else { return false }
             return orientation.isPortrait ? f.height > f.width : f.width > f.height
         }
@@ -140,7 +139,22 @@ class DeviceAcceptanceCase: XCTestCase {
             XCUIDevice.shared.orientation = orientation
         }
         XCTAssertTrue(wait(2, matches), "the interface turned to \(orientation.isPortrait ? "portrait" : "landscape") "
-                      + "(window \(window.frame.size))")
+                      + "(interface \(interfaceFrame().size))")
+    }
+
+    /// The frame the app's interface fills: the full-screen tap area under the visualization while it is shown (it
+    /// ignores the safe area, on the iPhone and the iPad alike, and follows a smaller iPad window), else the first
+    /// window. `app.windows.firstMatch` is not always the app's main window: after a rotation made while the app was
+    /// in the background (PERF-011, D2 on iPadOS 27.2.1, 2026-11-23) it matched another window of the app (window
+    /// context 0, 683 × 1032) while the visual and its controls filled the 1376 × 1032 landscape screen in the result
+    /// bundle's screenshots, and the test read the window as portrait.
+    func interfaceFrame() -> CGRect {
+        let area = app.otherElements["visualizerTapArea"].firstMatch
+        if area.exists {
+            let frame = area.frame
+            if frame.width > 0, frame.height > 0 { return frame }
+        }
+        return app.windows.firstMatch.frame
     }
 
     // MARK: Waiting

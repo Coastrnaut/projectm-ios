@@ -190,11 +190,14 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
         XCTAssertTrue(wait(3, isSet), "\(id) is \(on ? "on" : "off")\(toggle.exists ? "" : " (the switch left the screen)")")
     }
 
-    /// The glow intensity the native host holds: "unbound, manual 0.50, effective 0.50" (MOD-002 DEBUG readout, shown
-    /// with `-uitestBindGlowToLevel`; the test taps Unbind first so OSC and MIDI writes are read unmodulated).
-    func manualGlow() -> Double? {
+    /// The glow the visual shows: the "effective" value of the MOD-002 DEBUG readout ("unbound, manual 0.50, effective
+    /// 0.50", shown with `-uitestBindGlowToLevel`; the test taps Unbind first so OSC and MIDI writes are read
+    /// unmodulated). MIDI-003 and OSC-003 write live values on top of the manual glow (`NativeSpectrumHost.externalValues`),
+    /// so "manual" never moves with them: B09's OSC-003/OSC-004 read "manual" and saw 0.50 throughout on D1-D3 although
+    /// the Mac's values arrived (OSC-004 learned the address), while B10 already read "effective" (2026-11-21).
+    func liveGlow() -> Double? {
         let label = app.staticTexts["glowModulation"].firstMatch.label
-        guard let range = label.range(of: "manual ") else { return nil }
+        guard let range = label.range(of: "effective ") else { return nil }
         return Double(label[range.upperBound...].prefix(while: { $0.isNumber || $0 == "." }))
     }
 

@@ -64,15 +64,6 @@ final class B10MIDIDeviceTests: ControlSurfaceCase {
         print("MIDI-SENT \(scenario)")
     }
 
-    /// The glow the visual shows: the readout's "effective" value. MIDI mappings write live values on top of the manual
-    /// glow (`NativeSpectrumHost.externalValues`), so "manual" never moves with MIDI; with the glow unbound from MOD-002
-    /// (`unbindGlow()`), "effective" is the manual glow with the MIDI values applied (simulator rehearsal 2026-11-21).
-    private func liveGlow() -> Double? {
-        let label = app.staticTexts["glowModulation"].firstMatch.label
-        guard let range = label.range(of: "effective ") else { return nil }
-        return Double(label[range.upperBound...].prefix(while: { $0.isNumber || $0 == "." }))
-    }
-
     private func openMappings() {
         let link = app.buttons["midiMappingsLink"].firstMatch
         XCTAssertTrue(scrollTo(link), "MIDI Mappings")

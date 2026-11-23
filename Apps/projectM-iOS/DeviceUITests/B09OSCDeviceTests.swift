@@ -113,7 +113,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
 
     // MARK: Batch 8
 
-    /// OSC on, Settings closed, the glow readout unbound: a route's value is read from "manual …".
+    /// OSC on, Settings closed, the glow readout unbound: a route's value is read from "effective …" (`liveGlow`).
     private func launchForGlow() {
         launch(visual: "circularSpectrum",
                settings: Self.glowSettings.merging(["settings.osc.enabled": true, "settings.osc.port": 9000]) { a, _ in a },
@@ -126,12 +126,12 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
     private func glowChange(from: Double?, within seconds: Double) -> Double? {
         var seen: Double?
         let changed = wait(seconds) {
-            seen = self.manualGlow()
+            seen = self.liveGlow()
             guard let v = seen else { return false }
             return from.map { abs(v - $0) > 0.005 } ?? true
         }
         pause(1)   // the driver sends each value three times 50 ms apart
-        return changed ? manualGlow() : nil
+        return changed ? liveGlow() : nil
     }
 
     /// OSC-003-T15: the standard route moves the glow: 0.2 gives a lower value than 0.9 (normalized over the
@@ -139,7 +139,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
     func testOSC003GlowFollowsParamRoute() {
         let task = "OSC-003-T15"
         launchForGlow()
-        let start = manualGlow()
+        let start = liveGlow()
         print("OSC-READY glow-low")
         let low = glowChange(from: start, within: 30)
         print("OSC-READY glow-high")
@@ -173,7 +173,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         XCTAssertEqual(row.value as? String, "1", "on")
         closeSettingsPanel()
         unbindGlow()
-        let start = manualGlow()
+        let start = liveGlow()
         print("OSC-READY learn-low")
         let low = glowChange(from: start, within: 30)
         print("OSC-READY learn-high")
@@ -253,24 +253,28 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         listen("test")
         XCTAssertTrue(wait(10) { self.testValue.contains("0.42") }, "OSC traffic arrived")
         app.terminate()
-        let settings = bridgePreferences
-        settings.launch()
-        func open(_ label: String) -> Bool {
-            let cell = settings.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch
-            for _ in 0..<12 where !(cell.exists && cell.isHittable) { settings.swipeUp(velocity: .slow) }
-            guard cell.exists && cell.isHittable else { return false }
-            cell.tap()
-            pause(1)
-            return true
-        }
-        XCTAssertTrue(open("Privacy & Security"), "Settings › Privacy & Security")
-        XCTAssertTrue(open("App Privacy Report"), "App Privacy Report")
+        // SystemUI's Settings navigation: the root row in the sidebar on an iPad (D2, iPadOS 27.2.1, 2026-11-23: twelve
+        // swipes of the whole app scrolled the General page beside the sidebar and never reached "Privacy & Security"),
+        // lists scrolled where the row is, and Settings' own search when the path is not reached.
+        let system = self.system, settings = system.preferences
+        let viaPath = system.openSettings(path: ["Privacy & Security", "App Privacy Report"], assert: false)
+        let reached = viaPath || { system.openSettingsRoot(); return system.searchSettings(for: "App Privacy Report") }()
+        print("FILE012 App Privacy Report \(viaPath ? "by path" : reached ? "by search" : "not reached"); bars: "
+              + settings.navigationBars.allElementsBoundByIndex.map(\.identifier).joined(separator: ", "))
+        XCTAssertTrue(reached, "Settings › Privacy & Security › App Privacy Report")
+        guard reached else { return settings.terminate() }
         if settings.buttons["Turn On App Privacy Report"].exists {
             settings.terminate()
             throw XCTSkip("App Privacy Report is off on this device: the owner turns it on once (a device setting); "
                           + "then rerun after some OSC traffic")
         }
-        let page = open("projectM-iOS") || open("projectM")
+        // An app with no network activity may not be listed at all; then the report's own page is read.
+        let page = ["projectM-iOS", SystemUI.appDisplayName].contains { (name: String) -> Bool in
+            guard let row = system.scrollTo({ system.settingsRow(name) }, in: settings, swipes: 4) else { return false }
+            row.tap()
+            pause(1)
+            return true
+        }
         let texts = settings.staticTexts.allElementsBoundByIndex.map(\.label)
         let domain = try NSRegularExpression(pattern: #"\b[a-z0-9-]+\.(com|net|org|io|app|dev|cloud|apple)\b"#, options: [.caseInsensitive])
         let domains = texts.filter { domain.firstMatch(in: $0, range: NSRange($0.startIndex..., in: $0)) != nil }

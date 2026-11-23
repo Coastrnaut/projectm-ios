@@ -33,10 +33,15 @@ final class B02ShowsDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(wait(10) { self.app.state == .runningForeground }, "back")
         let drawing = wait(10) { (self.overlayFPS() ?? 0) > 0 }
         let seconds = Date().timeIntervalSince(t0)
-        let window = app.windows.firstMatch.frame
-        report(task, "return", ["secondsToFirstFrameReading": seconds, "landscape": window.width > window.height ? 1 : 0])
+        // The interface's own frame, not `app.windows.firstMatch` (another window of the app on iPadOS 27.2.1:
+        // `interfaceFrame`); given a few seconds, as the scene may resize just after the return.
+        _ = wait(5) { let f = self.interfaceFrame(); return f.width > f.height }
+        let shown = interfaceFrame(), window = app.windows.firstMatch.frame
+        report(task, "return", ["secondsToFirstFrameReading": seconds, "landscape": shown.width > shown.height ? 1 : 0,
+                                "interfaceWidth": shown.width, "interfaceHeight": shown.height,
+                                "firstWindowWidth": window.width, "firstWindowHeight": window.height])
         XCTAssertTrue(drawing, "the visual draws again after the return")
-        XCTAssertGreaterThan(window.width, window.height, "the window follows the rotation made while away")
+        XCTAssertGreaterThan(shown.width, shown.height, "the interface follows the rotation made while away (\(shown.size))")
         assertStillCircular("after the return")
         // In-App Playback paused while away resumes on the return (AUD-006-R22, AUD-015-R5); the visual moves with the
         // music only once audio is active again (as VIS-001-T36 after background).
