@@ -128,7 +128,7 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 | `autorun-sc009` | AUD-014-T32 (D1, D3) | the lifecycle scripts' end states; on demand, needs the microphone answered (see below) |
 | `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (builds RendererLab into `Build/rendererlab` when missing) |
 | `xctrace-perf004` | PERF-004-T16 | Logging template on the Text visual (`PROJECTM_VISUAL=text`, the default since 2026-11-23): "PERF-004 texture allocation" signposts only before start + 5 s and within 3 s of each rotation (perf004 rotates at 10 s and back at 20 s) |
-| `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; the Mac opens Settings at 15 s and relaunches the app at 35 s: no frames (and no GPU intervals of the app) from 10 s after backgrounding until the return (willEnterForeground, marker `QA-011 return`), a lower footprint, the first frame within 2 s of the return |
+| `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; counted from the moment the app's process appears, the Mac opens Settings at 10 s and relaunches the app at 26 s (app runs 40 s, time limit 70 s; a recording that never ends is stopped with SIGINT and fails the case): no frames (and no GPU intervals of the app) from 10 s after backgrounding until the return (willEnterForeground, marker `QA-011 return`), a lower footprint, the first frame within 2 s of the return |
 | `xctrace-perf008` | part of PERF-008-T16 | on demand (about 12 min): Power Profiler 5 min Standard then 5 min Battery saver; fps and frame time per minute from the app, energy per minute from any power table the trace exports |
 | `xctest-goldens-record` | part of QA-003-T17 | on demand: records this model's goldens and imports them; commit them, rebuild, then `xctest-goldens` compares |
 
@@ -606,7 +606,8 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **Instruments from the command line:** `xcrun xctrace record --template <name> --device <UDID> --time-limit 60s
   --output x.trace --launch -- <bundle id> <launch arguments>` launches the installed Debug app with test hooks. Never
   wrap it in a short `timeout`: saving a 60 s Allocations trace takes minutes (6.7 GB), and a killed save leaves an
-  unreadable trace. `xctrace export --toc` lists the tables; Metal System Trace exports `metal-gpu-intervals` and
+  unreadable trace. Never leave it unwatched either: `xctrace.record()` stops it with SIGINT once the trace bundle
+  has not changed for 3 minutes after the recording time, or 15 minutes past it (2026-11-23). `xctrace export --toc` lists the tables; Metal System Trace exports `metal-gpu-intervals` and
   `metal-current-allocated-size`, but Allocations exports no allocation table, so memory growth is checked with the
   DEBUG `memoryProbe` (`footprintMB=<n>` each second with `-uitestDiagnostics`) instead.
 - **Recording diagnosis hooks (DEBUG):** `recordingFacts` reports `busy=` (gate full), `notReady=` (the writer refused)
@@ -1318,6 +1319,41 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   app, which resets every permission answer as well as Documents. D1's next UI run had a springboard permission alert
   over the app: 51 taps reported "Interrupting element Alert" and 8 of 9 tests failed on "the controls are shown". After
   every `run_device_matrix.py` run on a device, run `mac_device_driver.py prompt-flow` there before any UI test.
+
+- **D2 r10 (iPad Pro M5, iPadOS 27.2.1, 2026-11-23): four failures, two causes, none in the app.**
+  - *A Save tapped as the mover comes up does nothing; check that the sheet closed.* Today's iPhone shortcut in
+    `filesSave` (Save at once when the mover opens in projectM) also ran on the iPad, whose mover opens there as well (pass 9); before it, the iPad went through On My iPad and
+    the folder first, which gave the sheet time to settle.
+    The tap on `DOCPicker.actionButton` came 0.5-1.2 s after the sheet appeared; the result bundle's screenshots 11 s
+    later still show the mover with "Save as" filled in. REC-001 ("PNG:" empty) and REC-003 ("the mover finished:"
+    empty) waited for a save that never happened, and PRE-014 *passed* with its ZIP mover still up, because
+    `filesSave` returned true on the tap. Every picker action now goes through `tapPickerAction`: it waits for the
+    sheet to settle, taps, and counts only when the button left the screen (or "Replace" came up); otherwise it taps
+    again by coordinate, then saves the long way (the location, then the folder), and fails honestly if the sheet
+    is still up.
+  - *A sheet left up blocks the next launch.* MED-001 failed in setUp after 60 s with "Failed to terminate
+    org.projectmios.ProjectMiOS" (and the runner restarted): PRE-014's mover was still over the app (MED-001's first
+    screenshots show it). `DeviceAcceptanceCase.tearDown` now cancels any Files sheet still up
+    (`dismissLeftoverFilesSheet`). When a test fails at launch, look at the previous test's last screenshot first.
+  - *Compare with the reference by the policy's outcome, not by what iOS delivered.* AUD-002-T26 failed "seed-aac.m4a
+    autoResumed: got 1, expected nil": the same 5 s Clock timer, stopped the same way, reached the reference track
+    and the MP3 as began=1 ended=0 (held, then Play continued) and the M4A as ended=1 shouldResume=1 (it continued by
+    itself). The app followed AUD-014 each time; iOS chose differently. The test now compares `policyOutcome` (did the
+    track do what the policy asks for what arrived), and the keys only when the delivery matched.
+- **An xctrace recording can say "Stopping recording..." and never end** (D1 matrix, `xctrace-perf011`,
+  2026-11-23). After "Target app exited, ending recording... Stopping recording..." xctrace wrote a 1.98 GB Metal
+  System Trace until 8 minutes after the app had exited, then nothing for 2 minutes, until it was stopped by hand; the
+  export then found no tables. `xctrace.record()` runs every recording with its output in the case's log and stops it
+  with SIGINT (then SIGTERM, SIGKILL) when the bundle stops changing for 3 minutes after the recording time or 15
+  minutes past it; the case then fails with the reason, and `export` gets 10 minutes per table.
+  - *Time steps from the app's launch, not from the command.* The same run's report shows the app in the background
+    (state 2, no frames) for its first 15 samples: Metal System Trace took about 18 s to launch the app, so Settings,
+    opened 15 s after the command, came first, and the "return" only brought the app to the front once ("not
+    backgrounded and brought back"). The background driver now waits for a new process of the app
+    (`Target.app_pids`) and counts from there. `--launch` stays (`--attach` did not find the app on D3), and
+    `--time-limit` is longer than the app's own run so the app ends the recording by exiting.
+  - *Keep a GPU trace short.* The app now draws for about 24 s of the run (10 s before, 14 s after the away time)
+    instead of 35, which roughly halves the trace.
 
 ## What still needs a person
 

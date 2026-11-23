@@ -12,6 +12,7 @@ import struct
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import wave
 from unittest import mock
@@ -2741,6 +2742,51 @@ class QA011Batch2Tests(unittest.TestCase):
         late = dict(report, firstFrameAfterReturnSeconds=3.5)
         self.assertFalse(self.xt.perf011_verdict(late)["pass"])
         self.assertFalse(self.xt.perf011_verdict(dict(report, backgroundedAt=-1))["pass"], "never backgrounded")
+        # D1, 2026-11-23: Settings opened before xctrace launched the app; it started in the background.
+        started_away = dict(report, backgroundedAt=-1, activeAgainAt=-1,
+                            samples=[dict(s, state=2) if s["t"] < 16 else s for s in samples])
+        self.assertIn("started in the background", self.xt.perf011_verdict(started_away)["detail"])
+
+    def test_xctrace_record_stop_rules(self):
+        """QA-011 D1 (2026-11-23): xctrace said "Stopping recording..." and never ended; the runner stops it."""
+        rule = dict(startup=180, save=900, stall=180)
+        self.assertIsNone(self.xt.stop_reason(100, 100, 70, **rule), "still in the recording time")
+        self.assertIsNone(self.xt.stop_reason(600, 10, 70, **rule), "saving: the trace still grows")
+        self.assertIn("not changed", self.xt.stop_reason(600, 200, 70, **rule))
+        self.assertIn("still running", self.xt.stop_reason(1200, 0, 70, **rule))
+
+    def test_xctrace_record_stops_a_hung_command_with_sigint(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            trace, log = Path(tmp) / "x.trace", Path(tmp) / "x.log"
+            # A stand-in for a hung xctrace: prints, then waits; exits 3 on SIGINT as xctrace's Ctrl-C would end it.
+            hung = [sys.executable, "-c", "import signal,sys,time\n"
+                    "signal.signal(signal.SIGINT, lambda *a: (print('interrupted', flush=True), sys.exit(3)))\n"
+                    "print('Stopping recording...', flush=True)\n"
+                    "time.sleep(60)"]
+            start = time.monotonic()
+            out = self.xt.record(hung, trace, log, 0, startup=0, save=60, stall=0.5, grace=5, poll=0.2)
+            self.assertLess(time.monotonic() - start, 10)
+            self.assertEqual(out["exit"], 3)
+            self.assertIn("not changed", out["stopped"])
+            self.assertIn("interrupted", out["text"])
+            self.assertIn("sending SIGINT", out["text"])
+            done = self.xt.record([sys.executable, "-c", "print('Recording completed')"], trace, log, 0, poll=0.2)
+            self.assertEqual((done["exit"], done["stopped"]), (0, None))
+
+    def test_perf011_background_steps_wait_for_the_launch(self):
+        runner = rdm.Runner(rdm.MatrixTarget("D1", "ID", False, Path("/tmp/x"), "UDID"), Path("/tmp/w"), 1, [], True)
+        seen = iter([[], [], [7]])
+        runner.target.app_pids = lambda: next(seen, [7])
+        with mock.patch.object(rdm.time, "sleep"):
+            self.assertGreaterEqual(runner.wait_for_launch(set(), timeout=5), 0)
+        runner.target.app_pids = lambda: [5]
+        with mock.patch.object(rdm.time, "sleep"):
+            self.assertEqual(runner.wait_for_launch({5}, timeout=0.05), -1, "an old process is not the launch")
+        case = next(c for c in rdm.CASES if c["id"] == "xctrace-perf011")
+        run = case["runs"][0]
+        self.assertLess(run["background"][1] + 5, int(run["env"]["PROJECTM_SECONDS"]), "frames after the return")
+        self.assertGreater(run["seconds"], int(run["env"]["PROJECTM_SECONDS"]), "the app exits before the time limit")
+        self.assertGreaterEqual(run["background"][1] - run["background"][0], 14, "at least 4 s past the 10 s grace")
 
     def test_perf011_verdict_ends_the_away_window_at_the_return(self):
         """D1 2026-11-23: the one frame "away" was the return's (sampled while inactive, after willEnterForeground), and

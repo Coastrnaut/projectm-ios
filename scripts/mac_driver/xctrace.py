@@ -10,12 +10,19 @@ in scripts/test_scripts.py with synthetic XML.
     xcrun xctrace export --input x.trace --xpath '/trace-toc/run[@number="1"]/data/table[@schema="os-signpost"]'
 
 Lessons (docs/autotester.md): never wrap `record` in a short timeout (saving a long trace takes minutes and a killed
-save leaves an unreadable trace); launch the app through xctrace (`--attach` did not find it on D3); Allocations
-exports no allocation table, so memory comes from the app's own report instead.
+save leaves an unreadable trace), but never let it run unwatched either: `record()` stops it with SIGINT when the
+trace stops changing or a hard limit passes (D1, 2026-11-23); launch the app through xctrace (`--attach` did not find
+it on D3), and time anything done to the app from the moment its process appears, not from the start of the command
+(Metal System Trace took about 18 s to launch it on D1); Allocations exports no allocation table, so memory comes
+from the app's own report instead.
 """
 from __future__ import annotations
 
+import os
 import re
+import signal
+import subprocess
+import time
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
@@ -35,6 +42,83 @@ def record_command(device: str, template: str, seconds: int, output: Path, bundl
     for key, value in (env or {}).items():
         cmd += ["--env", f"{key}={value}"]
     return cmd + ["--launch", "--", bundle, *arguments]
+
+
+def trace_signature(trace: Path) -> tuple[int, float]:
+    """(total bytes, newest modification time) of a trace bundle; (0, 0) while it does not exist."""
+    if not trace.exists():
+        return (0, 0.0)
+    paths = [trace, *trace.rglob("*")] if trace.is_dir() else [trace]
+    size, newest = 0, 0.0
+    for path in paths:
+        try:
+            st = path.stat()
+        except OSError:
+            continue
+        newest = max(newest, st.st_mtime)
+        if path.is_file():
+            size += st.st_size
+    return (size, newest)
+
+
+def stop_reason(elapsed: float, idle: float, seconds: float, *, startup: float, save: float, stall: float) -> str | None:
+    """Why a running `xctrace record` should be stopped now, or None to let it run.
+
+    `elapsed`: seconds since the command started; `idle`: seconds since the trace bundle last changed. The recording
+    itself may take `startup` (Metal System Trace took about 18 s to launch the app on D1) plus `seconds`; after that,
+    a bundle unchanged for `stall` seconds, or a total past `startup + seconds + save`, stops it. D1, 2026-11-23:
+    after "Target app exited, ending recording... Stopping recording..." xctrace wrote a 1.98 GB trace until 8
+    minutes after the app had exited, then nothing for 2 minutes until it was stopped by hand."""
+    recording = startup + seconds
+    if elapsed > recording + save:
+        return f"still running {int(elapsed)} s after it started (limit {int(recording + save)} s)"
+    if elapsed > recording and idle > stall:
+        return f"the trace has not changed for {int(idle)} s after the recording time"
+    return None
+
+
+def record(cmd: list[str], trace: Path, log: Path, seconds: float, *, startup: float = 180, save: float = 900,
+           stall: float = 180, grace: float = 180, poll: float = 5) -> dict:
+    """Runs `xctrace record` with its output in `log`, and stops it if it never ends (`stop_reason`): SIGINT first
+    (xctrace's own Ctrl-C, which ends the recording and saves what it has), then SIGTERM and SIGKILL after `grace`
+    seconds each. Returns {"exit", "text", "stopped": reason or None, "seconds"}."""
+    log.parent.mkdir(parents=True, exist_ok=True)
+    started = time.monotonic()
+    signature, changed = trace_signature(trace), started
+    stopped = None
+    with open(log, "w") as out:
+        proc = subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT, text=True, start_new_session=True)
+        while True:
+            try:
+                proc.wait(timeout=poll)
+                break
+            except subprocess.TimeoutExpired:
+                pass
+            now = time.monotonic()
+            current = trace_signature(trace)
+            if current != signature:
+                signature, changed = current, now
+            reason = stop_reason(now - started, now - changed, seconds, startup=startup, save=save, stall=stall)
+            if not reason:
+                continue
+            stopped = reason
+            out.write(f"\n[run_device_matrix] {reason}: sending SIGINT\n")
+            out.flush()
+            for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGKILL):
+                try:
+                    os.killpg(proc.pid, sig)
+                except ProcessLookupError:
+                    break
+                try:
+                    proc.wait(timeout=grace)
+                    break
+                except subprocess.TimeoutExpired:
+                    out.write(f"[run_device_matrix] still running {int(grace)} s after {sig.name}\n")
+                    out.flush()
+            break
+    proc.wait()
+    return {"exit": proc.returncode, "text": log.read_text(errors="replace"), "stopped": stopped,
+            "seconds": round(time.monotonic() - started, 1)}
 
 
 def toc_command(trace: Path) -> list[str]:
@@ -206,7 +290,13 @@ def perf011_verdict(report: dict, gpu_rows: list | None = None, events: list[tup
     bg, fg = report.get("backgroundedAt", -1), report.get("activeAgainAt", -1)
     out: dict = {"backgroundedAt": bg, "activeAgainAt": fg, "firstFrameAfterReturnSeconds": report.get("firstFrameAfterReturnSeconds")}
     if bg is None or bg < 0 or fg is None or fg < 0:
-        return {**out, "pass": False, "detail": "the app was not backgrounded and brought back during the run"}
+        detail = "the app was not backgrounded and brought back during the run"
+        # D1, 2026-11-23: Settings opened before xctrace had launched the app, so the app started in the background
+        # (state 2 for its first 15 samples) and the "return" only brought it to the front once.
+        early = [s.get("state") for s in samples[:3]]
+        if early and all(state == 2 for state in early):
+            detail += "; it started in the background (was Settings opened before the app had launched?)"
+        return {**out, "pass": False, "detail": detail}
     ret = report.get("returnedAt", -1)
     ret = ret if ret is not None and 0 <= ret <= fg else fg
     out["returnedAt"] = ret

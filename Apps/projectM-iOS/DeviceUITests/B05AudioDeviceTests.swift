@@ -312,12 +312,40 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
             routeLostThenPlay("\(task) \(file)")
             app.terminate()
         }
+        // QA-011 D2 r10 (iPadOS 27.2.1, 2026-11-23): the same 5 s timer, stopped the same way, reached the reference
+        // track and the MP3 as began=1 ended=0 (no end, so playback held and Play continued) and the M4A as began=1
+        // ended=1 shouldResume=1 (it continued by itself). The app followed AUD-014's policy each time; what differed
+        // was what iOS delivered, which the test cannot choose. So the files are compared with the reference by the
+        // policy's outcome for what each received (`policyOutcome`), and key by key only when iOS delivered the same.
         let reference = outcomes["reference"] ?? [:]
+        let referenceOutcome = Self.policyOutcome(reference)
+        XCTAssertEqual(referenceOutcome, 1, "the reference track follows the interruption policy: \(reference)")
         for file in ["music-fixture-vbr.mp3", "seed-aac.m4a"] {
-            for key in ["autoResumed", "held", "playResumes"] {
-                XCTAssertEqual(outcomes[file]?[key], reference[key], "\(file) \(key) as for the reference track")
+            let outcome = outcomes[file] ?? [:]
+            XCTAssertEqual(Self.policyOutcome(outcome), referenceOutcome,
+                           "\(file) follows the interruption policy as the reference track does: \(outcome) vs \(reference)")
+            if Self.delivery(outcome) == Self.delivery(reference) {
+                for key in ["autoResumed", "held", "playResumes"] {
+                    XCTAssertEqual(outcome[key], reference[key], "\(file) \(key) as for the reference track")
+                }
+            } else {
+                print("DEVICE-ACCEPT-NOTE \(task) \(file): iOS delivered \(Self.delivery(outcome)), the reference "
+                      + "\(Self.delivery(reference)); compared by the policy's outcome")
             }
         }
+    }
+
+    /// What iOS delivered for a clock-timer interruption: whether it ended and whether it said "should resume".
+    static func delivery(_ r: [String: Double]) -> String {
+        "ended=\(Int(r["ended"] ?? -1)) shouldResume=\(Int(r["shouldResume"] ?? -1))"
+    }
+
+    /// 1 when a playing track did what AUD-014's policy asks for what was delivered: with shouldResume it continued
+    /// by itself; without it, it held and Play continued. 0 otherwise.
+    static func policyOutcome(_ r: [String: Double]) -> Double {
+        guard r["began"] == 1 else { return 0 }
+        if r["shouldResume"] == 1 { return r["autoResumed"] == 1 ? 1 : 0 }
+        return r["held"] == 1 && r["playResumes"] == 1 ? 1 : 0
     }
 
     /// AUD-002-T27: a damaged M4A and a PDF named `.mp3` picked in Files show the contract messages, and the same

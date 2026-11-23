@@ -1160,19 +1160,28 @@ final class SystemUI {
     func filesSave(path: [String] = [], inCurrentLocation: Bool = false) -> Bool {
         if inCurrentLocation {
             for name in ["Save", "Move", "Done"] where app.buttons[name].firstMatch.waitForExistence(timeout: 3) {
-                app.buttons[name].firstMatch.tap()
-                return true
+                if tapPickerAction(app.buttons[name].firstMatch, name) { return true }
+                XCTFail("Files: \(name) did not close the exporter")
+                cancelFilesPicker()
+                return false
             }
         }
         // QA-011 D1 rerun (iOS 27.0.1, 2026-11-23, FILE-010-T11): on the iPhone Save to Files opens a mover already in
         // the folder it used last (projectM: its title, the grid of fixtures, Save at the top right, "Save as" at the
         // foot) and has no tab bar. Saving there is saving to On My iPhone › projectM.
+        // QA-011 D2 r10 (iPadOS 27.2.1, 2026-11-23): the iPad's mover opened in projectM too, and a Save tapped 0.5-1.2 s
+        // after it came up did nothing (screenshots 11 s later: the mover still up, "Save as" filled in), so REC-001's
+        // frame and REC-003's recording were never saved, PRE-014 passed with its ZIP sheet still up, and that
+        // out-of-process sheet then kept the next test's launch from terminating the app (MED-001). The tap now waits
+        // for the mover to settle and must close it (`tapPickerAction`); if it does not, the save goes the long way
+        // (the location, then the folder), which worked on 27.2.
         if path.isEmpty, wait(3, { self.pickerInAppFolder() }) {
             for name in ["Save", "Move", "Done"] {
                 let button = app.buttons[name].firstMatch
                 if button.exists && button.isEnabled {
-                    button.tap()
-                    return true
+                    if tapPickerAction(button, name) { return true }
+                    print("DEVICE-ACCEPT-NOTE Files: \(name) in the app's folder left the mover up; saving through the location")
+                    break
                 }
             }
         }
@@ -1204,13 +1213,35 @@ final class SystemUI {
         for name in ["Save", "Move", "Done", "Open"] {
             let button = app.buttons[name].firstMatch
             if button.exists && button.isEnabled {
-                button.tap()
-                return true
+                if tapPickerAction(button, name) { return true }
+                XCTFail("Files: \(name) did not close the mover")
+                cancelFilesPicker()
+                return false
             }
         }
         XCTFail("Files: no Save button")
         cancelFilesPicker()
         return false
+    }
+
+    /// Taps a Files picker's or mover's action (Save, Move, Done, Open) once the sheet has settled, and returns whether
+    /// it took: the button left the screen, or a "Replace" question came up (a file of that name exists; the caller
+    /// answers it). A tap that leaves the sheet up is repeated once at the button's centre by coordinate.
+    func tapPickerAction(_ found: XCUIElement, _ name: String) -> Bool {
+        let replace = app.buttons["Replace"].firstMatch
+        // The document picker's own action, when it has one: an app button labelled "Save" behind the sheet would
+        // otherwise make a sheet that stayed up look closed (or take the tap).
+        let docAction = app.buttons["DOCPicker.actionButton"].firstMatch
+        let button = docAction.exists ? docAction : found
+        for attempt in 0..<2 {
+            _ = wait(3) { button.exists && button.isHittable && button.isEnabled }
+            pause(attempt == 0 ? 1.0 : 1.5)   // the sheet finishes presenting before its action responds
+            guard button.exists else { return true }
+            if attempt == 0 { button.tap() } else { button.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+            if wait(5, { !button.exists || replace.exists }) { return true }
+            print("DEVICE-ACCEPT-NOTE Files: the \(name) tap left the sheet up (attempt \(attempt + 1))")
+        }
+        return !button.exists || replace.exists
     }
 
     /// In the app's Photos picker (PHPicker): taps the newest `count` items, then Add (or Done) when the picker allows
