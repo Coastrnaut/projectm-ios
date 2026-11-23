@@ -267,6 +267,14 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
                 // D1 2026-11-18: the controls still existed (fading out, 8 s after Settings closed) when checked, so
                 // nothing tapped them, and Save Frame was gone a moment later. Wait for them to hide, then show them
                 // fresh (as `saveFramePNG`, which the mirror tests use).
+                // D1 full run 1 (2026-11-22): in iPhone landscape (393 pt tall) the controls card holds the transport,
+                // the status, route and name rows and both button rows; Save Frame is taken in portrait there, where
+                // the compact card fits (the crop mode is the same; the frame has the portrait screen's size). The
+                // iPads keep saving in landscape. `saveFramePNG` waits for the button itself (`tapCameraControl`).
+                if UIDevice.current.userInterfaceIdiom == .phone {
+                    XCUIDevice.shared.orientation = .portrait
+                    pause(2)
+                }
                 saveFramePNG("\(position) \(label)")
                 let text = probe.value as? String ?? ""
                 print("CAM-007 \(position) \(label): \(text)")
@@ -298,6 +306,48 @@ extension B06CameraDeviceTests {
         closeSettingsForCamera()
     }
 
+    /// The mirror tests compare the camera's picture with its mirror image, so the screenshot must be mostly camera.
+    /// D1 full run 1 (2026-11-22): both cameras saw a dark scene (CAM-002-T21 front portrait: mean luma 0.075, 12 %
+    /// non-black; CAM-007 back: 0.064, 11 %). The grid's contrast then came from what does not mirror (the DEBUG probe
+    /// buttons, captions), the "asymmetry" read 0.80 and the tests ran: mirror on and off then matched directly (0.97)
+    /// and neither saved picture matched the screen either way round (0.13 vs 0.15), so the camera was not in the
+    /// comparison. A scene must now be lit (at least half the compared cells above 5 % luma, the `nonBlack` level of
+    /// `screen()`) as well as asymmetric, or the test skips saying which. D2's passing run (pass 4) was 99 % non-black.
+    private func skipUnlessMirrorScene(_ task: String, _ grid: [Double], _ mask: [Bool]) throws {
+        let asymmetry = CameraGrid.asymmetry(grid, mask), lit = CameraGrid.litShare(grid, mask)
+        report(task, "scene", ["asymmetry": asymmetry, "litShare": lit])
+        try XCTSkipIf(lit < 0.5, "the front camera sees a dark scene (\(Int(lit * 100)) % of the compared cells lit); "
+                      + "light the scene in front of the device")
+        try XCTSkipIf(asymmetry < 0.15, "the front camera sees a left-right symmetric scene (asymmetry \(asymmetry)); "
+                      + "place the device facing something asymmetric")
+    }
+
+    /// Taps the control `id` once it exists, is hittable and satisfies `ready`, showing the controls as needed; the tap
+    /// lands at the button's place read just before it. Returns whether it tapped.
+    /// D1 full run 1 (2026-11-22, CAM-007-T15 in landscape): `controls` still existed 16 s after Settings closed, so
+    /// `showCameraControls()` tapped nothing and no "saveFrame" button was in the tree ("No matches found"). The
+    /// container says nothing about the button, so this waits for the button itself: a tap on the visualization
+    /// shows the controls (or hides stale ones, and the next tap shows them fresh), as `tapFreshControl` does in the
+    /// simulator suites.
+    @discardableResult
+    private func tapCameraControl(_ id: String, ready: @escaping (XCUIElement) -> Bool = { _ in true }) -> Bool {
+        let button = app.buttons[id].firstMatch, area = app.otherElements["visualizerTapArea"].firstMatch
+        for _ in 0..<4 {
+            var frame = CGRect.zero
+            let found = wait(2) {
+                guard button.exists, button.isHittable, ready(button) else { return false }
+                frame = button.frame
+                return !frame.isEmpty
+            }
+            if found {
+                app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+                return true
+            }
+            if area.exists { area.tap() }
+        }
+        return false
+    }
+
     private func waitControlsHidden() {
         let controls = app.otherElements["controls"]
         _ = wait(8) { !controls.exists }
@@ -309,10 +359,7 @@ extension B06CameraDeviceTests {
         launchLiveCamera("front", settings: Self.noOverlay.merging(["settings.camera.mirrorFront": true]) { a, _ in a })
         pause(1)
         let (a, mask) = cameraScreenGrid(task, "mirror on")
-        let asymmetry = CameraGrid.asymmetry(a, mask)
-        report(task, "scene", ["asymmetry": asymmetry])
-        try XCTSkipIf(asymmetry < 0.15, "the front camera sees a left-right symmetric scene (asymmetry \(asymmetry)); "
-                      + "place the device facing something asymmetric")
+        try skipUnlessMirrorScene(task, a, mask)
         flipMirror()
         pause(1)
         let (b, _) = cameraScreenGrid(task, "mirror off")
@@ -324,9 +371,7 @@ extension B06CameraDeviceTests {
     }
 
     private func saveFramePNG(_ label: String) {
-        waitControlsHidden()
-        showCameraControls()
-        app.buttons["saveFrame"].firstMatch.tap()
+        XCTAssertTrue(tapCameraControl("saveFrame"), "\(label): Save Frame could be tapped")
         let png = app.buttons["PNG"].firstMatch
         if wait(5, { png.exists }) { png.tap() }
         let probe = app.staticTexts["frameCaptureProbe"]
@@ -335,16 +380,12 @@ extension B06CameraDeviceTests {
     }
 
     private func recordCamera(seconds: Double, _ label: String) {
-        waitControlsHidden()
-        showCameraControls()
         let button = app.buttons["record"]
-        XCTAssertTrue(wait(5) { button.exists && button.label == "Record" }, "\(label): Record is offered (\(button.label))")
-        button.tap()
+        XCTAssertTrue(tapCameraControl("record") { $0.label == "Record" }, "\(label): Record is offered (\(button.label))")
         let indicator = app.descendants(matching: .any)["recordingIndicator"].firstMatch
         XCTAssertTrue(wait(5) { indicator.exists }, "\(label): the recording indicator")
         pause(seconds)
-        showCameraControls()
-        app.buttons["record"].tap()
+        XCTAssertTrue(tapCameraControl("record") { $0.label == "Stop recording" }, "\(label): Stop recording (\(button.label))")
         XCTAssertTrue(wait(30) { !indicator.exists }, "\(label): the recording stopped")
         let probe = app.staticTexts["videoRecordingProbe"]
         XCTAssertTrue(wait(30) { ((probe.value as? String) ?? "").hasPrefix("video ") }, "\(label): read back: \(String(describing: probe.value))")
@@ -392,9 +433,7 @@ extension B06CameraDeviceTests {
                          extra: ["-uitestCaptureDirectory", "B06MirrorFrames", "-uitestRecordingDirectory", "B06MirrorRecordings"])
         pause(1)
         let (a, mask) = cameraScreenGrid(task, "mirror on")
-        let asymmetry = CameraGrid.asymmetry(a, mask)
-        report(task, "scene", ["asymmetry": asymmetry])
-        try XCTSkipIf(asymmetry < 0.15, "a left-right symmetric scene (asymmetry \(asymmetry)); face something asymmetric")
+        try skipUnlessMirrorScene(task, a, mask)
         flipMirror()
         let (b, _) = cameraScreenGrid(task, "right after the flip")
         pause(0.2)
@@ -646,5 +685,15 @@ extension B06CameraDeviceTests {
         XCTAssertGreaterThan(written, 0, "frames written")
         XCTAssertGreaterThan(facts["bytes"] ?? 0, 0, "the file exists")
         XCTAssertTrue(waitCameraLive(), "the camera still runs after the recording")
+    }
+}
+
+extension CameraGrid {
+    /// The share of the masked cells brighter than 5 % luma (the per-pixel `nonBlack` level of `screen()`).
+    static func litShare(_ g: [Double], _ mask: [Bool]) -> Double {
+        guard g.count == mask.count else { return 0 }
+        let idx = mask.indices.filter { mask[$0] }
+        guard !idx.isEmpty else { return 0 }
+        return Double(idx.filter { g[$0] > 0.05 * 255 }.count) / Double(idx.count)
     }
 }
