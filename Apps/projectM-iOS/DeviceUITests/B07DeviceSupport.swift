@@ -117,15 +117,11 @@ class B07DeviceCase: DeviceAcceptanceCase {
     /// navigation bar. Frames only, not `isHittable` (as UITestWaits' `reveal`): an ACC-005 slider row reports
     /// `isHittable` false even when it is fully on screen, so every slider reveal failed on D1-D3 (2026-11-18: Stop 2's
     /// position, the Warp amount and the emitter's Rate, each visible in the screenshots) and scrolled the list away.
+    /// The bottom limit is the top of the chrome over the list's foot (`bottomChromeTop`: an iPhone's floating search
+    /// field, the compare and audition bars), not the window's bottom (D1 2026-11-22, ListScrolling.swift).
     @discardableResult
     func reveal(_ e: XCUIElement, up: Bool = true, drags: Int = 12) -> Bool {
-        let window = app.windows.firstMatch
-        func visible() -> Bool {
-            guard e.exists else { return false }
-            let f = e.frame, bar = app.navigationBars.firstMatch
-            let top: CGFloat = bar.exists ? bar.frame.maxY : window.frame.minY
-            return f.height > 0 && f.minY >= top && f.maxY <= window.frame.maxY
-        }
+        func visible() -> Bool { app.isClearOfChrome(e) }
         var downward = !up
         for i in 0..<drags {
             if visible() { return true }
@@ -239,6 +235,15 @@ class B07DeviceCase: DeviceAcceptanceCase {
 
     // MARK: The strobing fixture (`-uitestImportPreset fixture:strobe`)
 
+    /// Opens My Presets from the browser's home: the row scrolled clear of the bottom chrome (an iPhone's floating
+    /// search field covered it on D1, 2026-11-22) and tapped until its list's navigation bar shows.
+    @discardableResult
+    func openMyPresets() -> Bool {
+        let myPresets = app.buttons["node:myPresets"]
+        guard appears(myPresets, 10) else { return false }
+        return app.openListRow(myPresets, destination: app.navigationBars["My Presets"])
+    }
+
     /// Plays the imported "Strobe" fixture from My Presets (Load Anyway when the May flash alert asks); true once the
     /// `presetFlashProbe` names it.
     @discardableResult
@@ -255,9 +260,7 @@ class B07DeviceCase: DeviceAcceptanceCase {
         dismissImport()
         tapFresh("presets")
         guard appears(app.buttons["node:included"], 10) else { XCTFail("library home"); return false }
-        let myPresets = app.buttons["node:myPresets"]
-        XCTAssertTrue(reveal(myPresets), "My Presets")
-        myPresets.tap()
+        XCTAssertTrue(openMyPresets(), "My Presets opened")
         let row = app.buttons["preset:\(name)"]
         XCTAssertTrue(wait(30) { dismissImport(); return row.exists }, "the imported fixture \(name) is listed")
         row.tap()

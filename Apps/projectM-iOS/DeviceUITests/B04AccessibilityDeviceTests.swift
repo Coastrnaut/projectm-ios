@@ -30,9 +30,7 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
                     settings: ["settings.reduceFlashing": true], unlocked: true)
         tapFresh("presets")
         XCTAssertTrue(appears(app.buttons["node:included"], 10), "library home")
-        let myPresets = app.buttons["node:myPresets"]
-        XCTAssertTrue(reveal(myPresets), "My Presets")
-        myPresets.tap()
+        XCTAssertTrue(openMyPresets(), "My Presets opened")
         let row = app.buttons["preset:Strobe"]
         XCTAssertTrue(wait(30) {
             if self.app.alerts["Import Preset"].exists { self.app.alerts["Import Preset"].buttons["OK"].firstMatch.tap() }
@@ -68,8 +66,7 @@ final class B04AccessibilityDeviceTests: B07DeviceCase {
                     settings: ["settings.reduceFlashing": true])
         tapFresh("presets")
         XCTAssertTrue(appears(app.buttons["node:included"], 10))
-        XCTAssertTrue(reveal(app.buttons["node:myPresets"]))
-        app.buttons["node:myPresets"].tap()
+        XCTAssertTrue(openMyPresets(), "My Presets opened at AX5")
         XCTAssertTrue(wait(30) {
             if self.app.alerts["Import Preset"].exists { self.app.alerts["Import Preset"].buttons["OK"].firstMatch.tap() }
             return self.app.buttons["preset:Strobe"].exists

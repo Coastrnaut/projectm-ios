@@ -77,3 +77,59 @@ extension XCUIApplication {
         frontList.scrollStep(up: up, velocity: velocity)
     }
 }
+
+// QA-011 D1 full run 1 (iPhone 15, iOS 27.0.1, 2026-11-22): ACC-002-T20, ACC-012-T22 and PRE-015-T26 tapped the preset
+// browser's "My Presets" row, and every failure dump still showed the library home ("My Presets, 1 preset" listed, no
+// preset row) 30 s later; PRE-009-T13 long-pressed the third Calm row right after "Compare…" put the compare bar up and
+// no menu opened. FX-019-T23 opened My Presets the same way in the same run. On an iPhone the browser sheet's list runs
+// to the bottom of the screen and iOS 26+ floats the `.searchable` field over its foot (as Settings' search, FILE-013),
+// with the PRE-009 compare bar and the PRE-010 audition bar above it; with the colour and motion chip rows in the list,
+// the home's last rows and a short filtered list's last row sit under that chrome. The element's frame lies inside the
+// window, so `isHittable` and a frames-only reveal accept it, and the tap lands on the chrome. On an iPad the search
+// field sits in the navigation bar at the top, which is why D2 and D3 pass. A row now counts as revealed only above the
+// bottom chrome, and a row that opens a list is tapped again until its destination shows.
+extension XCUIApplication {
+    /// The top edge of the chrome pinned over the foot of the frontmost list: the floating search field on an iPhone
+    /// (only a search field in the lower half of the window counts: an iPad's sits in the navigation bar), the PRE-009
+    /// compare bar, the PRE-010 audition bar and a tab bar. The window's bottom when none shows.
+    var bottomChromeTop: CGFloat {
+        let window = windows.firstMatch.frame
+        var top = window.maxY
+        let chrome: [XCUIElement] = [searchFields.firstMatch, descendants(matching: .any)["compareBar"].firstMatch,
+                                     descendants(matching: .any)["auditionBar"].firstMatch, tabBars.firstMatch]
+        for element in chrome where element.exists {
+            let frame = element.frame
+            if frame.height > 0, frame.minY > window.midY, frame.minY < top { top = frame.minY }
+        }
+        return top
+    }
+
+    /// True when `element` lies wholly between the navigation bar and the bottom chrome, where a tap reaches it.
+    func isClearOfChrome(_ element: XCUIElement) -> Bool {
+        guard element.exists else { return false }
+        let frame = element.frame, bar = navigationBars.firstMatch
+        let top: CGFloat = bar.exists ? bar.frame.maxY : windows.firstMatch.frame.minY
+        return frame.height > 0 && frame.minY >= top && frame.maxY <= bottomChromeTop
+    }
+
+    /// One held drag in the window's right margin that moves the content towards the list's end (as B07's `reveal`).
+    func dragContentUp() {
+        let window = windows.firstMatch
+        window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.7))
+            .press(forDuration: 0.05, thenDragTo: window.coordinate(withNormalizedOffset: CGVector(dx: 0.96, dy: 0.3)),
+                   withVelocity: .default, thenHoldForDuration: 0.1)
+    }
+
+    /// Scrolls `row` clear of the bottom chrome, taps it and waits for `destination`; up to `attempts` taps, since a
+    /// tap that met the chrome, or a list redrawn under the finger, leaves the list where it was. True once it shows.
+    @discardableResult
+    func openListRow(_ row: XCUIElement, destination: XCUIElement, attempts: Int = 3) -> Bool {
+        for _ in 0..<attempts {
+            if destination.exists { return true }
+            for _ in 0..<6 where row.exists && !isClearOfChrome(row) { dragContentUp() }
+            if row.exists { row.tap() }
+            if destination.waitForExistence(timeout: 3) { return true }
+        }
+        return destination.exists
+    }
+}

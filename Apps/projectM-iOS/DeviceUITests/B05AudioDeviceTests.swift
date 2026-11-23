@@ -603,12 +603,13 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         XCTAssertTrue(app.staticTexts["sourceStarts"].waitForExistence(timeout: 30))
         pause(5)   // the import runs after the renderer's preset trial
         tapTransport("presets")
+        // D1 2026-11-22: `isHittable` passed with the row under the iPhone's floating search field, and the tap left
+        // the home shown; `openListRow` scrolls it clear of that chrome and taps until My Presets shows.
         let mine = app.buttons["node:myPresets"]
-        for _ in 0..<4 where !mine.isHittable { app.swipeUp() }
         XCTAssertTrue(mine.waitForExistence(timeout: 10), "library home")
-        mine.tap()
+        XCTAssertTrue(app.openListRow(mine, destination: app.navigationBars["My Presets"]), "My Presets opened")
         let row = app.buttons["preset:pre015-large"]
-        for _ in 0..<6 where !row.exists { app.swipeUp() }
+        for _ in 0..<6 where !app.isClearOfChrome(row) { app.dragContentUp() }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the large preset was imported")
         row.press(forDuration: 1.2)
         let edit = app.buttons["editUserPreset"].exists ? app.buttons["editUserPreset"] : app.collectionViews.buttons["Edit"]

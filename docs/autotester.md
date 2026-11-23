@@ -1061,6 +1061,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   (5-8 of 300); D2 drops 4-19 with no code change between runs (same render-frame count), so the bound is now D2's
   mean + 3 SD (27, REC-008 Clarifications 2026-11-20). Before moving a bound, check `git log` on the measured path and
   the raw counts behind it, so a real regression is not absorbed.
+- **On an iPhone, "on screen" means above the bottom chrome.** D1's first full run (2026-11-22) failed ACC-002-T20,
+  ACC-012-T22 and PRE-015-T26 at "the fixture is listed": each dump, 30 s after tapping My Presets, still showed the
+  library home. The browser sheet's list runs to the bottom of the iPhone screen, iOS 26+ floats the `.searchable`
+  field over its foot, and with the colour and motion chip rows the home's last rows sit under it; `isHittable` and the
+  frames-only `reveal` both accepted the row, and the tap met the search field. PRE-009-T13's long press on the last
+  Calm row met the compare bar the same way. On an iPad the search field sits in the navigation bar, so D2 and D3 passed.
+  `XCUIApplication.bottomChromeTop` (ListScrolling.swift: a search field in the lower half, the compare and audition
+  bars, a tab bar) is now B07's `reveal` limit, and `openListRow` taps a navigation row until its destination's bar shows
+  (`openMyPresets`). Check that a navigation tap navigated before looking for the next screen's content.
 
 ### Policy and evidence
 
