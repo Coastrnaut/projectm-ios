@@ -901,6 +901,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 
 ### Making the tests measure the right thing
 
+- **A low frame rate: read the overlay's own lines first (QA-011 D3, 2026-11-24).** D3's camera checks read a steady
+  52 fps for two days; the result bundle's screenshot of the performance overlay already said why: "gpu 9.42/12.76"
+  and "frames device: presented 669, late 665, skipped 112". Skipped refreshes at a GPU time well under 16.7 ms mean
+  the frame loop missed ticks (main-thread work, a full output), not a slow camera or heat; the Photo visual on the
+  same build had 12 skipped. `assertFrameRate` now reports `gpuMedianMs`, `gpuP95Ms`, `framesPresented`,
+  `framesLate`, `framesSkipped`, `framesSubmitted` and `controlsShown` with every reading, and the camera tests report
+  `cameraPicturesPerSecond` (the capture probe's `stored=`) beside the shown frames. Compare these across runs before
+  suspecting the device: the skips rose 17 → 62 → 112 at the same GPU time as the controls card gained two
+  `ViewThatFits` layouts. Remember that a check run with the controls card up (it stays up after Settings closes, see
+  spec 033 Clarification 2026-11-24) measures the card's main-thread work too; say so in the report.
 - **Check the screenshots before trusting a pass.** The first B01 run "passed" frame-rate checks while the
   screenshots showed the visuals reacting to silence and the effects off. Look at one screenshot per test kind.
 - **The bundled reference track is a test signal, not music** (tones with an 8 s silent gap). Visuals that follow

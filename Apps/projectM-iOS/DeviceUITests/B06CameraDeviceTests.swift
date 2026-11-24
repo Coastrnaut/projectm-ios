@@ -21,6 +21,12 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
         guard let range = text.range(of: #"shown=(\d+)"#, options: .regularExpression) else { return -1 }
         return Int(text[range].dropFirst("shown=".count)) ?? -1
     }
+    /// Camera pictures the capture path stored (the capture probe's `stored=`, DEBUG); -1 when not shown.
+    private var stored: Int {
+        let text = (app.staticTexts["cameraCaptureProbe"].value as? String) ?? ""
+        guard let range = text.range(of: #"stored=(\d+)"#, options: .regularExpression) else { return -1 }
+        return Int(text[range].dropFirst("stored=".count)) ?? -1
+    }
     private var starts: String { (app.staticTexts["sourceStarts"].value as? String) ?? "" }
 
     /// Launches on the spectrum and chooses Camera in Settings: the camera never starts by itself at launch, only
@@ -50,10 +56,13 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     @discardableResult
     private func assertLive(_ task: String, _ step: String) -> Int {
         XCTAssertTrue(wait(10) { (self.camera.value as? String) == "Live" }, "\(step): Live (\(String(describing: camera.value)))")
-        let before = frames
+        let before = frames, storedBefore = stored
         pause(1)
         let delta = frames - before
-        report(task, step, ["framesPerSecond": Double(delta)])
+        // QA-011 D3 (2026-11-24): pictures the camera delivered in the same second (the probe's `stored=`), beside the
+        // frames that showed one; frames between two pictures reuse the layer picture (CMP-013).
+        report(task, step, ["framesPerSecond": Double(delta),
+                            "cameraPicturesPerSecond": storedBefore >= 0 && stored >= 0 ? Double(stored - storedBefore) : -1])
         XCTAssertGreaterThan(delta, 10, "\(step): camera pictures keep arriving (\(delta) in 1 s)")
         XCTAssertTrue(app.descendants(matching: .any)["cameraIndicatorStatus"].firstMatch.exists, "\(step): the camera badge")
         return delta

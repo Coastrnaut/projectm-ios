@@ -25,11 +25,18 @@
 // samples it where it samples the picture (texture space) or at the upright, unmirrored point (upright
 // space), so rotation, mirror and crop follow. Off, an unavailable masker, no mask yet, or a mask of the
 // other camera: the Off picture exactly (a 1×1 placeholder is bound, the mask term unused).
+// QA-011 D3 (CMP-013 render caching, spec 033 Clarification 2026-11-24): the layer declares itself still between camera
+// pictures (`LayerRenderCaching`): content = a generation bumped whenever a new camera picture is taken, parameters = a
+// generation bumped by `mirrored`, `crop` and `personMaskMode`. When the camera delivers fewer pictures than the display
+// shows frames (the 1280×720 preset keeps AVFoundation's default rate, expected 30 fps, fewer in low light), the
+// frames between two pictures reuse the layer picture instead of clearing and redrawing a full-screen rgba16Float
+// target (bit-identical: same picture, same geometry). Not running, no picture, or a person mask in use: dynamic (rendered every frame, as before). A reused
+// frame still counts in `framesShown` (it shows the camera picture).
 #if canImport(Metal) && !COMPOSITOR_NO_METAL
 import Compositor
 import Metal
 
-public final class CameraLayerSource: LayerSource {
+public final class CameraLayerSource: LayerSource, LayerRenderCaching {
     public let layerName = "camera"
     public let fallback = LayerFallback.transparent
     public let provider: any CameraFrameProvider
@@ -39,12 +46,16 @@ public final class CameraLayerSource: LayerSource {
     private var held: CameraFrame?
     /// Frames whose own camera picture was drawn (diagnostics, tests).
     public private(set) var framesShown = 0
-    /// Pictures dropped because they came from the other camera (CAM-002-R7); QA-011 switch diagnosis.
+    /// Pictures dropped because they came from the other camera (CAM-002-R7), each counted once; QA-011 switch diagnosis.
     public private(set) var staleDropped = 0
     /// CAM-002-R3, R5: flip the camera picture left to right (main thread; applies from the next frame).
-    public var mirrored = false
+    public var mirrored = false {
+        didSet { if mirrored != oldValue { parameterGeneration &+= 1 } }
+    }
     /// CAM-007-R1, R5: the user's crop (main thread; applies from the next frame; never touches the camera).
-    public var crop: CameraCrop = .fill
+    public var crop: CameraCrop = .fill {
+        didSet { if crop != oldValue { parameterGeneration &+= 1 } }
+    }
     /// CAM-005-R2: the camera picture drawn last frame (size and rotation), nil when none is drawn; a
     /// touch is mapped against it (`CameraFocusMapping`). Three integers per frame, no allocation.
     public private(set) var drawnPicture: CameraDrawnPicture?
@@ -53,7 +64,10 @@ public final class CameraLayerSource: LayerSource {
     public private(set) var drawnLayout: CameraDrawnLayout?
     /// CAM-008-R1: the user's person mask choice (main thread; from the next frame).
     public var personMaskMode: CameraPersonMaskMode = .off {
-        didSet { personMasker?.isEnabled = personMaskMode != .off }
+        didSet {
+            personMasker?.isEnabled = personMaskMode != .off
+            if personMaskMode != oldValue { parameterGeneration &+= 1 }
+        }
     }
     /// CAM-008: the masker fed by the provider (nil: no masking).
     public var personMasker: PersonMasker? {
@@ -70,6 +84,15 @@ public final class CameraLayerSource: LayerSource {
     private var maskRing: [MTLTexture] = []
     private var maskRingIndex = 0
     private var uploadedMaskSerial: UInt64?
+    /// QA-011 D3 (CMP-013): bumped whenever `held` takes a new camera picture.
+    private var pictureGeneration: UInt64 = 0
+    /// QA-011 D3 (CMP-013): bumped whenever a drawing parameter (mirror, crop, mask mode) changes.
+    private var parameterGeneration: UInt64 = 0
+    /// QA-011 D3: frames that reused the layer picture of the same camera picture (tests, diagnostics).
+    public private(set) var framesReused = 0
+    /// The last picture of the other camera counted in `staleDropped`.
+    private var lastStaleSequence: UInt64?
+    private weak var lastStaleTexture: MTLTexture?
 
     public init(provider: any CameraFrameProvider) {
         self.provider = provider
@@ -153,6 +176,39 @@ public final class CameraLayerSource: LayerSource {
         return (target, bitmap.space)
     }
 
+    /// Takes the provider's newest picture into `held` (a new one bumps `pictureGeneration`) and drops a picture of the
+    /// other camera (CAM-002-R7). Never waits: a busy slot keeps the held picture.
+    private func takeNewestPicture() {
+        if let newest = provider.latestFrame(), newest.sequence != held?.sequence || newest.texture !== held?.texture {
+            held = newest
+            pictureGeneration &+= 1
+        }
+        if let stale = held, stale.position != provider.position {   // CAM-002-R7: never the previous camera
+            held = nil
+            // Counted once per picture (the dependencies and the render both look at it in one frame).
+            if stale.sequence != lastStaleSequence || stale.texture !== lastStaleTexture {
+                staleDropped += 1
+                lastStaleSequence = stale.sequence
+                lastStaleTexture = stale.texture
+            }
+        }
+    }
+
+    /// CMP-013: still between camera pictures; dynamic while not running, without a picture or with a person mask.
+    /// Takes the newest picture first, so the reported generation is never newer than what `render` draws.
+    public var renderDependencies: LayerRenderDependencies {
+        guard provider.state.showsPicture else { return .dynamic }
+        takeNewestPicture()
+        guard held != nil, pipeline != nil, personMaskMode == .off || personMasker == nil else { return .dynamic }
+        return .still(content: pictureGeneration, parameters: parameterGeneration)
+    }
+
+    /// CMP-013: the layer picture of the held camera picture is shown again; it still shows the camera.
+    public func renderReused(frame: LayerFrameContext) {
+        framesShown += 1
+        framesReused += 1
+    }
+
     public func render(into picture: MTLTexture, commandBuffer: MTLCommandBuffer, frame: LayerFrameContext,
                        audio: LayerAudioContext) throws(LayerSourceError) {
         guard provider.state.showsPicture else {
@@ -161,8 +217,7 @@ public final class CameraLayerSource: LayerSource {
             drawnLayout = nil
             throw .notReady
         }
-        if let newest = provider.latestFrame() { held = newest }
-        if let stale = held, stale.position != provider.position { held = nil; staleDropped += 1 }   // CAM-002-R7: never the previous camera
+        takeNewestPicture()
         guard let camera = held, let pipeline, let sampler, let maskPlaceholder else {
             drawnPicture = nil
             drawnLayout = nil

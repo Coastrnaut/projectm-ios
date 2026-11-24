@@ -69,16 +69,11 @@ public struct TransportBar: View {
         self.onToggleShuffle = onToggleShuffle
     }
 
+    /// QA-011 D3 (2026-11-24): only the position row (elapsed, scrubber, remaining) is inside the 4 Hz `TimelineView`.
+    /// The title and the button rows were rebuilt and laid out again on every poll, the button rows twice since they
+    /// sit in a `ViewThatFits`; on the main thread that also drives the Metal visuals, so each poll could delay a frame
+    /// on a device with little GPU headroom (D3 iPad A16 with the camera). The tree and identifiers are unchanged.
     public var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { _ in
-            content(position())
-        }
-    }
-
-    @ViewBuilder
-    private func content(_ current: PlaybackPosition) -> some View {
-        let duration = current.durationSeconds
-        let shown = min(dragValue ?? current.seconds, duration)
         VStack(spacing: 6) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
@@ -86,40 +81,56 @@ public struct TransportBar: View {
                 .truncationMode(.middle)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("transportTitle")
-            if typeSize.isAccessibilitySize {
-                // Large text: the times get their own row, so neither is cut off (AUD-006-R26).
+            TimelineView(.periodic(from: .now, by: 0.25)) { _ in
+                positionRow(position())
+            }
+            buttonRows
+        }
+    }
+
+    /// The times and the scrubber at `current` (or at the dragged value while the scrubber is touched).
+    @ViewBuilder
+    private func positionRow(_ current: PlaybackPosition) -> some View {
+        let duration = current.durationSeconds
+        let shown = min(dragValue ?? current.seconds, duration)
+        if typeSize.isAccessibilitySize {
+            // Large text: the times get their own row, so neither is cut off (AUD-006-R26).
+            VStack(spacing: 6) {
                 scrubber(shown: shown, duration: duration)
                 HStack {
                     elapsed(shown)
                     Spacer(minLength: 8)
                     remaining(shown, duration: duration)
                 }
-            } else {
-                HStack(spacing: 8) {
-                    elapsed(shown)
-                    scrubber(shown: shown, duration: duration)
-                    remaining(shown, duration: duration)
-                }
             }
-            // QA-011 D1 rerun (2026-11-23, AUD-006-T41): at AX5 each icon is about 66 pt wide, so the seven controls of
-            // imported audio (with Shuffle, Repeat and Queue) needed about 470 pt in one row. An HStack cannot shrink an
-            // image below its size, so the row widened the controls, and with them the whole screen's layout, past a
-            // 390 pt iPhone: Queue, half the scrubber and Emergency blackout lay outside the window. The row now
-            // moves Shuffle, Repeat and Queue to a second row when one row does not fit (any width, any text size).
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: 0) {
-                    playbackButtons
-                    queueButtons
-                }
-                VStack(spacing: 6) {
-                    HStack(spacing: 0) { playbackButtons }
-                    if hasQueueButtons {
-                        HStack(spacing: 0) { queueButtons }
-                    }
-                }
+        } else {
+            HStack(spacing: 8) {
+                elapsed(shown)
+                scrubber(shown: shown, duration: duration)
+                remaining(shown, duration: duration)
             }
-            .font(.title2)
         }
+    }
+
+    private var buttonRows: some View {
+        // QA-011 D1 rerun (2026-11-23, AUD-006-T41): at AX5 each icon is about 66 pt wide, so the seven controls of
+        // imported audio (with Shuffle, Repeat and Queue) needed about 470 pt in one row. An HStack cannot shrink an
+        // image below its size, so the row widened the controls, and with them the whole screen's layout, past a
+        // 390 pt iPhone: Queue, half the scrubber and Emergency blackout lay outside the window. The row now
+        // moves Shuffle, Repeat and Queue to a second row when one row does not fit (any width, any text size).
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 0) {
+                playbackButtons
+                queueButtons
+            }
+            VStack(spacing: 6) {
+                HStack(spacing: 0) { playbackButtons }
+                if hasQueueButtons {
+                    HStack(spacing: 0) { queueButtons }
+                }
+            }
+        }
+        .font(.title2)
     }
 
     /// Previous, Play/Pause, Stop and Next.

@@ -52,6 +52,36 @@ interaction); each answer is the conservative, local-first option.
   pill's system green in the screenshot, never "recently") now apply on every device; the green rule scans the whole
   width of the top 12 % for runs of 10-70 % of the width (the iPhone's pill spans 54 %, the iPads' 18-22 %).
 
+### Session 2026-11-24 (QA-011 D3 camera frame rate)
+
+- Q: On D3 (iPad A16, iPadOS 26.5, 60 Hz) every camera frame-rate check reads a steady 52-53 fps median (floor 55),
+  effects on and off, both cameras, both orientations, thermal 0, in r9b (2026-11-23) and r19 (2026-11-24); D1
+  (iPhone 15, the same A16 chip) and D2 pass. Is the camera delivering fewer pictures, is it heat, or is it the app?
+  → A: Not the camera's rate and not heat. The meter counts presented frames of the display link (the camera layer
+  redraws its held picture every frame whatever the camera delivers), thermal stayed 0, and the overlay in the
+  result bundles names the mechanism: "frames device: presented 669, late 665, skipped 112" in 13 s (about 8.6
+  refreshes a second without a new frame) at a camera GPU frame time of 9.4 ms median and 12.8 ms p95. The Photo
+  visual on the same build read 60 fps (GPU 7.7/8.6 ms, 12 skipped in 15 s) because CMP-013 reuses its still layer
+  picture, while the camera layer was rendered every frame; a camera frame left about 4 ms of slack, so any delay of
+  the main-thread frame loop cost a refresh. The skips grew from 17 (2026-11-18, 60 fps) to 62 (2026-11-22, 57 fps)
+  to 112 (2026-11-24, 52 fps) at the same GPU time (10.6, 10.2, 9.4 ms median), with each change to the controls card
+  that is up during these checks: the regular/compact `ViewThatFits` (2026-11-19) and the transport's two-row
+  `ViewThatFits` (2026-11-23), whose 4 Hz position poll rebuilt and measured both button layouts on the main thread.
+  Decisions (no threshold changed): (1) the camera layer declares itself still between camera pictures (CMP-013,
+  `LayerRenderCaching`: content = a generation bumped by each new camera picture; parameters = mirror, crop, mask
+  mode; dynamic while not running, without a picture or with a person mask), so frames between two pictures reuse
+  the layer picture, bit-identical, without the full-screen camera pass (the 1280×720 preset sets no frame duration,
+  so AVFoundation's default applies, expected 30 fps and fewer in low light; not yet measured on D3: CAM-001-T24 and
+  CAM-002-T21 now report `camera.stored` per second beside the shown count); `framesShown` still counts every frame that shows the camera, `framesReused` the reused
+  ones (package test `testFramesBetweenCameraPicturesReuseTheLayerPicture`). (2) The transport's poll redraws only
+  its position row (AUD-006 Clarification 2026-11-24). (3) Every frame-rate check reports the overlay's GPU times,
+  presented/late/skipped/submitted counts and whether the controls card was up, so a low reading names its cause.
+  D3 must show a median of at least 55 fps in these checks with `framesReused` growing; until it does, the checks stay
+  failing on D3. Found, not changed here: the controls never hide again when their 5 s timer fires while Settings,
+  the preset browser or the queue is open (`hideControls` returns and nothing restarts the timer), which is why the
+  card stays up for the whole camera checks; changing it would change what every device test finds on screen after
+  closing Settings, so it needs its own run on D1-D3.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - The live rear camera behind the music (Priority: P1)

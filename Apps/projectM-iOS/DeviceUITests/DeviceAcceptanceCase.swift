@@ -263,6 +263,31 @@ class DeviceAcceptanceCase: XCTestCase {
         return Double(label[range].replacingOccurrences(of: " fps", with: ""))
     }
 
+    /// QA-011 D3 (2026-11-24): what the overlay says beside the frame rate, so a low reading names its cause in the
+    /// report: the shown visual's GPU frame time ("gpu <median>/<p95>", ms) and the device output's frame-drop counts
+    /// ("frames device: presented P, late L, skipped S, submitted N, …"; skipped = display refreshes without a new frame).
+    /// -1 when the overlay does not show the line (no stage timer, another visual kind).
+    static func overlayDiagnostics(_ label: String) -> [String: Double] {
+        var values: [String: Double] = [:]
+        if let range = label.range(of: #"gpu [0-9]+(\.[0-9]+)?/[0-9]+(\.[0-9]+)?"#, options: .regularExpression) {
+            let parts = label[range].dropFirst("gpu ".count).split(separator: "/")
+            values["gpuMedianMs"] = Double(parts.first ?? "") ?? -1
+            values["gpuP95Ms"] = Double(parts.last ?? "") ?? -1
+        } else {
+            values["gpuMedianMs"] = -1
+            values["gpuP95Ms"] = -1
+        }
+        if let range = label.range(of: #"frames device: [^\n]*"#, options: .regularExpression) {
+            let line = String(label[range])
+            for key in ["presented", "late", "skipped", "submitted"] {
+                if let r = line.range(of: key + #" [0-9]+"#, options: .regularExpression) {
+                    values["frames" + key.prefix(1).uppercased() + key.dropFirst()] = Double(line[r].dropFirst(key.count + 1)) ?? -1
+                }
+            }
+        }
+        return values
+    }
+
     /// One overlay reading per second.
     func sampleFPS(seconds: Int = 10) -> [Double] {
         var samples: [Double] = []
@@ -311,8 +336,16 @@ class DeviceAcceptanceCase: XCTestCase {
         let samples = sampleFPS(seconds: seconds)
         let median = Self.median(samples)
         let capped = Self.deviceIsCapped && minimum > Self.cappedMinimumFPS
-        report(task, label, ["fpsMedian": median, "fpsMin": samples.min() ?? 0, "samples": Double(samples.count),
-                             "thermal": Double(ProcessInfo.processInfo.thermalState.rawValue), "capped": capped ? 1 : 0])
+        // QA-011 D3 (2026-11-24): the overlay's GPU time and frame-drop counts, and whether the controls card was up
+        // (its SwiftUI work shares the main thread with the Metal visuals' frame loop), reported with every reading.
+        let overlay = app.descendants(matching: .any)["performanceOverlay"].firstMatch
+        var values: [String: Double] = ["fpsMedian": median, "fpsMin": samples.min() ?? 0, "samples": Double(samples.count),
+                                        "thermal": Double(ProcessInfo.processInfo.thermalState.rawValue), "capped": capped ? 1 : 0,
+                                        "controlsShown": app.otherElements["controls"].exists ? 1 : 0]
+        if overlay.exists {
+            values.merge(Self.overlayDiagnostics(overlay.label)) { (a: Double, _: Double) -> Double in a }
+        }
+        report(task, label, values)
         XCTAssertGreaterThanOrEqual(samples.count, seconds / 2, "\(task) \(label): the overlay was readable")
         let floor = capped ? Self.cappedMinimumFPS : minimum
         XCTAssertGreaterThanOrEqual(median, floor, "\(task) \(label): median \(median) fps\(capped ? " (FR-049 cap: thermal/Low Power)" : "")")

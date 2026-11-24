@@ -4,6 +4,7 @@
 // never device evidence (Constitution X).
 import FrameRecording
 import Metal
+import Observation
 import UIKit
 import XCTest
 @testable import projectM_iOS
@@ -146,7 +147,7 @@ final class VideoRecordingAppTests: XCTestCase {
         // Live writer: a frame dropped under load is counted (REC-006-R4); the 3 slots and the 0.1 s end are exact.
         let video = try XCTUnwrap(recording.lastRecording, file: file, line: line)
         XCTAssertEqual(video.frameCount + video.droppedFrames, 3, "\(video.statistics)", file: file, line: line)
-        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=\(video.frameCount) duration=0.10 audio=0"), "probe: \(recording.probe)",
+        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=\(video.frameCount) duration=0.10 audio=0 offGrid=0"), "probe: \(recording.probe)",
                       file: file, line: line)
     }
 
@@ -344,7 +345,7 @@ final class VideoRecordingAppTests: XCTestCase {
         XCTAssertEqual(recording.notice, "Recording stopped because storage is almost full.")
         let video = try XCTUnwrap(recording.lastRecording)
         XCTAssertEqual(video.frameCount + video.droppedFrames, 3, "frames + dropped slots (live writer); \(video.statistics)")
-        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=\(video.frameCount) duration=0.10 audio=0"), recording.probe)
+        XCTAssertTrue(recording.probe.hasSuffix("64x48 frames=\(video.frameCount) duration=0.10 audio=0 offGrid=0"), recording.probe)
     }
 
     /// REC-015-R6: outside the DEBUG folder mode, the low-storage recording is offered (REC-012).
@@ -394,6 +395,33 @@ final class VideoRecordingAppTests: XCTestCase {
         XCTAssertEqual(VideoRecordingCoordinator.elapsedText(0), "0:00")
         XCTAssertEqual(VideoRecordingCoordinator.elapsedText(5.9), "0:05")
         XCTAssertEqual(VideoRecordingCoordinator.elapsedText(600), "10:00")
+        XCTAssertEqual(VideoRecordingCoordinator.elapsedText(-.infinity), "0:00")
+        XCTAssertEqual(VideoRecordingCoordinator.elapsedText(.nan), "0:00")
+    }
+
+    /// QA-011 D3 (REC-006, 2026-11-24): the context check updates the recorded time four times a second, but observers of
+    /// the shown time (the controls card reads the Record button's value) hear of it only when the whole second changes.
+    func testShownTimeNotifiesObserversOnlyWhenTheSecondChanges() throws {
+        let source = try FakeRecordingSource(device: try device())
+        let context = RecordingContextBox(.init(source: source, visualShown: true, outputLive: true, paused: false))
+        let recording = makeCoordinator(context)
+        recording.toggle()
+        XCTAssertEqual(recording.state, .recording)
+        final class Changes: @unchecked Sendable { var count = 0 }
+        let changes = Changes()
+        withObservationTracking { _ = recording.elapsedText } onChange: { changes.count += 1 }
+        for _ in 0..<12 { try source.feed() }   // 0.4 s at 30 fps
+        waitUntil("part of a second recorded") { recording.checkContext(); return recording.elapsedSeconds > 0.2 }
+        recording.checkContext()
+        XCTAssertLessThan(recording.elapsedSeconds, 1)
+        XCTAssertEqual(changes.count, 0, "no observer hears of a time that does not change what is shown")
+        XCTAssertEqual(recording.elapsedText, "0:00")
+        for _ in 0..<24 { try source.feed() }   // past 1 s
+        waitUntil("a second recorded") { recording.checkContext(); return recording.elapsedSeconds >= 1 }
+        XCTAssertEqual(changes.count, 1, "the second's change is heard")
+        XCTAssertEqual(recording.elapsedText, "0:01")
+        recording.toggle()
+        waitUntil("finished") { recording.state == .idle }
     }
 
     // MARK: - A real host (simulator GPU)
@@ -426,7 +454,7 @@ final class VideoRecordingAppTests: XCTestCase {
         let size = photo.view.metalLayer.drawableSize
         let even = "\(Int(size.width) - Int(size.width) % 2)x\(Int(size.height) - Int(size.height) % 2)"
         XCTAssertTrue(recording.probe.contains(" \(even) "), "probe: \(recording.probe), drawable \(size)")
-        XCTAssertTrue(recording.probe.hasSuffix("audio=0"), recording.probe)
+        XCTAssertTrue(recording.probe.hasSuffix("audio=0 offGrid=0"), recording.probe)   // the probe ends with the REC-006 grid count
         XCTAssertEqual(recording.lastStopReason, .background)
         XCTAssertNil(photo.videoRecording)
     }

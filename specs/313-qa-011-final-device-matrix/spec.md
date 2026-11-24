@@ -272,3 +272,23 @@ local-first option.
   side (the app's willTerminate observers only write small records); it needs a device
   log of one slow termination (RunningBoard and FrontBoard lines). Decision: no test change for it; both tests rerun
   as they are.
+
+### Session 2026-11-24 (D3 r19 triage: camera frame rate, REC-006)
+
+- Q: D3 r19 failed nine UI tests: six B06 camera tests and the two B06CameraSystem tests at `assertFrameRate`
+  (median 51-53 fps against 55, thermal 0, both cameras, both orientations, effects on and off; CAM-001-T26's
+  3-minute run 53 fps), and REC-006-T15 (24 fps recording: 14 dropped slots of 140 against a bound of 7). Different
+  causes? → A: One class. The camera checks lose about 8.6 display refreshes a second in the frame loop at a GPU time
+  of 9.4/12.8 ms (overlay: "skipped 112" in 13 s; the Photo visual on the same build: 60 fps, 12 skipped); the full
+  analysis and the fixes (the camera layer reuses its picture between camera pictures under CMP-013; the transport's
+  4 Hz poll redraws only its position row) are spec 033's Clarification 2026-11-24, and the frame-rate checks now
+  report the overlay's GPU times, frame counts and whether the controls card was up. REC-006-T15 records the Photo
+  visual from the same main-thread frame loop with the controls up: Record is on the card, and the Record button's
+  value reads the recorded time, which the recording's context check updated four times a second, so the whole card
+  (both of its `ViewThatFits` layouts on an iPad in portrait) was rebuilt four times a second. D3 dropped 1-2 slots in
+  every run up to 2026-11-19, 9 on 2026-11-23 and 14 on 2026-11-24, the same dates as the camera skips. Decisions: the
+  recorded time stays exact but unobserved, and observers follow its whole seconds (`elapsedWholeSeconds`, what the
+  indicator and the button show), so the card is rebuilt once a second while recording (app test
+  `testShownTimeNotifiesObserversOnlyWhenTheSecondChanges`); no threshold changes. D3 reruns B06, B06CameraSystem
+  and REC-006 on a build with these changes; if REC-006 still drops more than 5 %, the next step is the Record button
+  as its own view (its time is only an accessibility value, so it need not rebuild the card at all).
