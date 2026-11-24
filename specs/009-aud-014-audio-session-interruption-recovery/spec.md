@@ -61,7 +61,9 @@ interaction); each answer is the conservative, local-first option using public A
   `SourceEvent.interruptionBeganExternal`), a "began" after the window while away (a call or an alarm), and a "began"
   while the app is presentable still open the interruption, and the owner ruling of 2026-11-12 (a never-ended
   interruption stays on hold until Play) is unchanged for them. The session release and the retry at didBecomeActive
-  stay. Tests: `InterruptionRecoveryTests` (suspension notice section), `AudioSessionSignalTests.testExternalEvidenceOnABeganIsParsed`.
+  stay. Tests: `InterruptionRecoveryTests` (suspension notice section), `AudioSessionSignalTests.testExternalEvidenceOnABeganIsParsed`. Verified 2026-11-24 on D2
+  (iPadOS 27.2.1, build r16): PERF-011-T22 and VIS-001-T36 passed in 3 of 3 runs (`d2susp1-3`); each return logged
+  `suspension notice: 22-33 ms after the away hold, no interruption opened` and `resume: ok (return)`.
 
 ## Baseline: what exists today (audit of 2026-11-12, commit `e40e578`)
 

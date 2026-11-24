@@ -1441,6 +1441,7 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     interruption about 10 ms after the app backgrounds; neither guessed cause was it. A plain "began" within 1.0 s of the
     away hold (`CaptureManager.suspensionNoticeWindow`) is now recorded as `suspension notice: <n> ms after the away
     hold` and opens nothing. Lesson: log first, then fix; two guesses cost two device rounds, the trace one.
+    Verified on D2 2026-11-24: PERF-011 and VIS-001 passed 3 of 3 runs on r16 (notice 22-33 ms after the hold).
 
 ## What still needs a person
 
