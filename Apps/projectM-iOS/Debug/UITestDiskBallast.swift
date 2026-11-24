@@ -17,6 +17,14 @@
 // held at freeMB=606 realFreeMB=209 and the guard never stopped. The guard now reads the smaller of the two
 // (`VolumeStorageReading.guardBytes`), and so does the ballast: it fills and grows against `guardMB`, the figure the
 // guard reads, and checks its time budget between 16 MB chunks, so one slow write cannot hold it in "filling".
+// QA-011 D3 (2026-11-24): every launch after a ballast test took 5-7 minutes on D3 (iPadOS 26.5, 128 GB), never on
+// D1 or D2. Killing the app that held a 66 GB ballast took 2 s, but the next launch reached its process 295 s later
+// and the ballast was still there minutes after that: the synchronous delete at launch sat in front of every launch.
+// Now (1) the tests ask the running app to drop its ballast before it is ended (the Darwin notification
+// `dropNotification`, posted by the test runner; the app closes the file and deletes it off the main actor and
+// reports "state=dropped … dropSeconds=<s>"), and (2) a launch renames any leftover ballast at once and deletes it
+// off the main actor (before a requested fill). Each delete appends its timing to `QA011-DiskBallast-timing.log` in
+// Caches (process age at launch, MB deleted, seconds), which `scripts/clear_disk_ballast.py` prints.
 // Not compiled into Release builds.
 #if DEBUG
 import Foundation
@@ -61,18 +69,78 @@ final class UITestDiskBallast {
         return !((try? FileManager.default.contentsOfDirectory(atPath: folder.path)) ?? []).isEmpty
     }
 
-    /// Every DEBUG launch: delete an earlier ballast, then fill when asked.
+    /// The Darwin notification the device tests post to make the running app drop its ballast (B08 tearDown).
+    nonisolated static let dropNotification = "org.projectmios.uitest.dropDiskBallast"
+
+    /// Timings of every ballast delete (Caches, so `clear_disk_ballast.py` can copy it; DEBUG only).
+    nonisolated static var timingLog: URL { file.deletingLastPathComponent().appendingPathComponent("QA011-DiskBallast-timing.log") }
+
+    nonisolated static func appendTiming(_ line: String) {
+        let text = "\(ISO8601DateFormatter().string(from: Date())) \(line)\n"
+        guard let data = text.data(using: .utf8) else { return }
+        if let handle = try? FileHandle(forWritingTo: timingLog) {
+            _ = try? handle.seekToEnd()
+            try? handle.write(contentsOf: data)
+            try? handle.close()
+        } else {
+            try? data.write(to: timingLog)
+        }
+    }
+
+    /// Seconds since this process started (sysctl's p_starttime); -1 when unknown.
+    nonisolated static func processAgeSeconds() -> Double {
+        var info = kinfo_proc()
+        var size = MemoryLayout<kinfo_proc>.stride
+        var mib: [Int32] = [CTL_KERN, KERN_PROC, KERN_PROC_PID, getpid()]
+        guard sysctl(&mib, 4, &info, &size, nil, 0) == 0 else { return -1 }
+        let start = info.kp_proc.p_starttime
+        return Date().timeIntervalSince1970 - (Double(start.tv_sec) + Double(start.tv_usec) / 1e6)
+    }
+
+    /// Renames the ballast (and any earlier renamed one) out of the way at once; returns the files to delete.
+    nonisolated static func retireLeftovers() -> [URL] {
+        let folder = file.deletingLastPathComponent()
+        let manager = FileManager.default
+        if manager.fileExists(atPath: file.path) {
+            try? manager.moveItem(at: file, to: folder.appendingPathComponent("QA011-DiskBallast-old-\(UUID().uuidString).bin"))
+        }
+        let names = (try? manager.contentsOfDirectory(atPath: folder.path)) ?? []
+        return names.filter { $0.hasPrefix("QA011-DiskBallast-old-") }.map { folder.appendingPathComponent($0) }
+    }
+
+    /// Deletes `urls`, timing it; returns (MB deleted, seconds).
+    nonisolated static func delete(_ urls: [URL], context: String) -> (mb: Int64, seconds: Double) {
+        guard !urls.isEmpty else { return (0, 0) }
+        let started = Date()
+        var bytes: Int64 = 0
+        for url in urls {
+            bytes += Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
+            try? FileManager.default.removeItem(at: url)
+        }
+        let seconds = Date().timeIntervalSince(started)
+        appendTiming("\(context): deleted \(bytes / 1_000_000) MB in \(String(format: "%.1f", seconds)) s")
+        return (bytes / 1_000_000, seconds)
+    }
+
+    /// Every DEBUG launch: move an earlier ballast aside at once and delete it off the main actor, then fill when asked.
     func startAtLaunch() {
-        try? FileManager.default.removeItem(at: Self.file)
+        let age = Self.processAgeSeconds()
+        let leftovers = Self.retireLeftovers()
+        if !leftovers.isEmpty { Self.appendTiming("launch: process age \(String(format: "%.1f", age)) s, \(leftovers.count) leftover ballast file(s)") }
+        Self.observeDropRequests()
         let arguments = ProcessInfo.processInfo.arguments
-        guard let i = arguments.firstIndex(of: Self.argument), i + 1 < arguments.count,
-              let freeMB = Int64(arguments[i + 1]), freeMB > 0 else { return }
-        var grow: Int64 = 0
+        var target: Int64 = 0, grow: Int64 = 0
+        if let i = arguments.firstIndex(of: Self.argument), i + 1 < arguments.count, let freeMB = Int64(arguments[i + 1]), freeMB > 0 {
+            target = freeMB * 1_000_000
+            value = "state=filling ballastMB=0 targetMB=\(freeMB)"
+        }
         if let g = arguments.firstIndex(of: Self.growArgument), g + 1 < arguments.count { grow = Int64(arguments[g + 1]) ?? 0 }
-        let target = freeMB * 1_000_000
-        value = "state=filling ballastMB=0 targetMB=\(freeMB)"
+        guard target > 0 || !leftovers.isEmpty else { return }
         Task.detached(priority: .userInitiated) {
+            _ = Self.delete(leftovers, context: "launch")   // before the fill reads the free space
+            guard target > 0 else { return }
             let worker = BallastWriter(url: Self.file)
+            BallastControl.shared.attach(worker)
             let filled = worker.fill(toFree: target, budgetSeconds: Self.fillBudgetSeconds) { (line: String) in
                 Task { @MainActor in   // a late progress line never replaces the final one
                     if UITestDiskBallast.shared.value.hasPrefix("state=filling") { UITestDiskBallast.shared.value = line }
@@ -82,12 +150,56 @@ final class UITestDiskBallast {
             guard grow > 0, !filled.hasPrefix("state=failed") else { return }
             for _ in 0..<1_200 {   // at most 10 minutes
                 try? await Task.sleep(for: .milliseconds(500))
+                if BallastControl.shared.isDropped { return }
                 guard Self.recordingFileExists() else { continue }   // grows only while a recording is being made
                 let line = worker.grow(by: grow * 500_000, floor: Self.guardReserveBytes)
                 await MainActor.run { UITestDiskBallast.shared.value = line }
                 if line.hasPrefix("state=failed") { return }   // at the floor: keep topping up while recording
             }
         }
+    }
+
+    // MARK: Drop on request (the device tests, before the app is ended)
+
+    private static var observing = false
+
+    private static func observeDropRequests() {
+        guard !observing else { return }
+        observing = true
+        CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), nil, { _, _, _, _, _ in
+            Task { @MainActor in UITestDiskBallast.shared.drop() }
+        }, dropNotification as CFString, nil, .deliverImmediately)
+    }
+
+    /// Stops any fill or growth, closes the ballast and deletes it off the main actor; "state=dropped … dropSeconds=<s>".
+    func drop() {
+        value = "state=dropping"
+        Task.detached(priority: .userInitiated) {
+            BallastControl.shared.dropAndClose()
+            let leftovers = [Self.file] + Self.retireLeftovers().filter { $0 != Self.file }
+            let (mb, seconds) = Self.delete(leftovers.filter { FileManager.default.fileExists(atPath: $0.path) }, context: "drop")
+            let r = BallastWriter.readings(Self.file)
+            let line = "state=dropped ballastMB=0 droppedMB=\(mb) dropSeconds=\(String(format: "%.1f", seconds)) "
+                + "freeMB=\(r.important / 1_000_000) realFreeMB=\(r.real / 1_000_000) guardMB=\(r.reading / 1_000_000)"
+            await MainActor.run { UITestDiskBallast.shared.value = line }
+        }
+    }
+}
+
+/// The live ballast writer, so a drop request can stop it and close its file (any thread).
+final class BallastControl: @unchecked Sendable {
+    static let shared = BallastControl()
+    private let lock = NSLock()
+    private var writer: BallastWriter?
+    private var dropped = false
+
+    var isDropped: Bool { lock.withLock { dropped } }
+
+    func attach(_ writer: BallastWriter) { lock.withLock { self.writer = writer; dropped = false } }
+
+    func dropAndClose() {
+        let writer = lock.withLock { () -> BallastWriter? in dropped = true; defer { self.writer = nil }; return self.writer }
+        writer?.close()
     }
 }
 
@@ -100,6 +212,12 @@ final class BallastWriter: @unchecked Sendable {
     private var target: Int64 = 0
 
     init(url: URL) { self.url = url }
+
+    /// Closes the file (a drop request); a write in progress then fails and the fill or growth ends.
+    func close() {
+        try? handle?.close()
+        handle = nil
+    }
 
     /// `reading` is what the disk guard reads (`VolumeStorageReading.guardBytes`: the smaller of the two); -1 unknown.
     static func readings(_ url: URL) -> (important: Int64, real: Int64, reading: Int64) {
@@ -171,6 +289,7 @@ final class BallastWriter: @unchecked Sendable {
         guard handle != nil else { return line("failed") }
         let started = Date()
         for _ in 0..<1_000 {   // 1 TB at most
+            if BallastControl.shared.isDropped { return line("dropped") }
             let r = Self.readings(url)
             guard r.important > 0, r.real > 0 else { return line("failed") }
             let wanted = r.reading - free

@@ -3292,6 +3292,10 @@ class DiskBallastTests(unittest.TestCase):
         self.assertEqual(cb.ballast_size(data), 66989000000)
         self.assertIsNone(cb.ballast_size({"result": {"files": [{"relativePath": "x.png"}]}}))
         self.assertIsNone(cb.ballast_size({}))
+        renamed = {"result": {"files": [{"relativePath": "QA011-DiskBallast-old-1.bin", "metadata": {"size": 3}},
+                                        {"relativePath": "QA011-DiskBallast.bin", "metadata": {"size": 4}},
+                                        {"relativePath": "QA011-DiskBallast-timing.log", "metadata": {"size": 9}}]}}
+        self.assertEqual(cb.ballast_size(renamed), 7)   # leftovers renamed at launch count; the timing log does not
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

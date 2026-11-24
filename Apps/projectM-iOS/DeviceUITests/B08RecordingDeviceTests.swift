@@ -11,7 +11,7 @@
 // Microphone audio track); MED-011-T13 and MED-012-T14 (clock and countdown in the file). Files the Mac must read are
 // named by `RECORDING-CHECK` lines (RecordingCheckSupport.swift); after the run:
 //     python3 scripts/recording_frame_check.py run --log <xcodebuild log> --device D1
-// Ballast tests relaunch the app once in tearDown (a DEBUG launch deletes the ballast).
+// Ballast tests ask the app to drop its ballast in tearDown, then relaunch once (a DEBUG launch sweeps a leftover).
 import UIKit
 import XCTest
 
@@ -24,7 +24,19 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
 
     override func tearDown() async throws {
         if usedBallast {
-            app.launchArguments = ["-uitestDiagnostics", "-uitestUnlocked", "NO"]   // a DEBUG launch deletes the ballast
+            // D3 2026-11-24: a launch after a ballast test took 5-7 minutes (the delete sat in front of it). The running
+            // app now drops its ballast on request first (Darwin notification; it reports "state=dropped … dropSeconds"),
+            // and the relaunch only sweeps a leftover off the main actor.
+            if app.state == .runningForeground || app.state == .runningBackground {
+                let started = Date()
+                CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+                                                     CFNotificationName("org.projectmios.uitest.dropDiskBallast" as CFString),
+                                                     nil, nil, true)
+                let dropped = wait(240) { self.probeText("diskBallast").hasPrefix("state=dropped") }
+                print("B08 ballast drop: \(probeText("diskBallast")) after \(Int(Date().timeIntervalSince(started))) s"
+                      + (dropped ? "" : " (not confirmed; the relaunch deletes it)"))
+            }
+            app.launchArguments = ["-uitestDiagnostics", "-uitestUnlocked", "NO"]   // a DEBUG launch sweeps a leftover
             app.launch()
             pause(2)
             app.terminate()
