@@ -207,8 +207,17 @@ final class VideoRecordingCoordinator {
     }
     /// OUT-002: told of every state change (AppCoordinator holds the visual's placement while recording).
     @ObservationIgnored var onStateChange: ((State) -> Void)?
-    /// Seconds of video recorded so far (media time, shown by the indicator).
-    private(set) var elapsedSeconds: Double = 0
+    /// Seconds of video recorded so far (media time). Not observed: the context check updates it four times a second,
+    /// and every observer (the controls card reads the Record button's value) was rebuilt each time; the shown time
+    /// follows `elapsedWholeSeconds` (QA-011 D3 2026-11-24, REC-006).
+    @ObservationIgnored private(set) var elapsedSeconds: Double = 0 {
+        didSet {
+            let whole: Int = Self.wholeSeconds(elapsedSeconds)
+            if whole != elapsedWholeSeconds { elapsedWholeSeconds = whole }
+        }
+    }
+    /// The whole seconds the indicator and the Record button show; changes once a second while recording.
+    private(set) var elapsedWholeSeconds = 0
     /// The latest user-visible notice, nil when none.
     private(set) var notice: String?
     /// The system file mover is shown with `fileToMove`.
@@ -355,11 +364,16 @@ final class VideoRecordingCoordinator {
 
     /// The indicator's text: "0:05", "1:02:03" never (10-minute limit).
     nonisolated static func elapsedText(_ seconds: Double) -> String {
-        let whole = max(Int(seconds), 0)
+        let whole = wholeSeconds(seconds)
         return "\(whole / 60):" + String(format: "%02d", whole % 60)
     }
 
-    var elapsedText: String { Self.elapsedText(elapsedSeconds) }
+    /// The whole seconds of `seconds` the indicator shows (0 for negative or non-finite values).
+    nonisolated static func wholeSeconds(_ seconds: Double) -> Int {
+        seconds.isFinite ? max(Int(min(seconds, Double(Int.max / 2))), 0) : 0
+    }
+
+    var elapsedText: String { Self.elapsedText(Double(elapsedWholeSeconds)) }
 
     /// REC-008-R8: the indicator's text, "0:07 / 0:10" with a length, else "0:07".
     var indicatorText: String {

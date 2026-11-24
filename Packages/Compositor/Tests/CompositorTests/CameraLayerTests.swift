@@ -55,6 +55,40 @@ final class CameraLayerTests: XCTestCase {
         XCTAssertEqual(layer.framesShown, 2, "every frame shows the camera picture")
     }
 
+    /// QA-011 D3 (CMP-013): frames between two camera pictures reuse the layer picture (no camera pass), bit-identical;
+    /// a new picture, a mirror or crop change, or a stop renders again.
+    func testFramesBetweenCameraPicturesReuseTheLayerPicture() throws {
+        let rig = try GPURig()
+        let (stub, layer, compositor) = try make(rig, .granted, pattern: .columns([red, green, blue]), width: 30, height: 10)
+        layer.start()
+        let output = try rig.output()
+        try rig.frame(compositor, into: output, time: 1)
+        let first = try rig.read(output)
+        try rig.frame(compositor, into: output, time: 16_666_667)
+        XCTAssertEqual(compositor.renderCacheHits, 1, "no new camera picture: the layer picture is reused")
+        XCTAssertEqual(layer.framesReused, 1)
+        XCTAssertEqual(layer.framesShown, 2, "a reused frame still shows the camera picture")
+        XCTAssertEqual(try rig.read(output), first, "reuse is bit-identical")
+
+        stub.deliverNextPicture()
+        try rig.frame(compositor, into: output, time: 33_333_333)
+        XCTAssertEqual(compositor.renderCacheHits, 0, "a new camera picture renders")
+        layer.mirrored = true
+        try rig.frame(compositor, into: output, time: 50_000_000)
+        XCTAssertEqual(compositor.renderCacheHits, 0, "the mirror renders")
+        XCTAssertNotEqual(try rig.read(output), first, "and shows the mirrored picture")
+        layer.crop = CameraCrop(mode: .fit, anchor: layer.crop.anchor, zoom: layer.crop.zoom)
+        try rig.frame(compositor, into: output, time: 66_666_667)
+        XCTAssertEqual(compositor.renderCacheHits, 0, "the crop renders")
+        try rig.frame(compositor, into: output, time: 83_333_333)
+        XCTAssertEqual(compositor.renderCacheHits, 1, "then reuses again")
+
+        layer.stop()
+        try rig.frame(compositor, into: output, time: 100_000_000)
+        XCTAssertEqual(compositor.outcome(ofLayer: 0), .fallbackTransparent(.notReady), "stopped: never the cached picture")
+        assertAll(try rig.read(output), equal: .zero, "nothing of the camera after a stop")
+    }
+
     func testWidePictureFillsASquareWithItsMiddleStripe() throws {
         let rig = try GPURig()
         let (_, layer, compositor) = try make(rig, .granted, pattern: .columns([red, green, blue]), width: 30, height: 10)
@@ -279,6 +313,9 @@ final class CameraLayerTests: XCTestCase {
         try rig.frame(compositor, into: output, time: 2)
         XCTAssertEqual(compositor.outcome(ofLayer: 0), .fallbackTransparent(.notReady), "the old camera's picture is not drawn")
         assertAll(try rig.read(output), equal: .zero, "nothing of the previous camera")
+        try rig.frame(compositor, into: output, time: 3)
+        XCTAssertEqual(compositor.outcome(ofLayer: 0), .fallbackTransparent(.notReady), "nor the next frame (never from the cache)")
+        XCTAssertEqual(layer.staleDropped, 1, "the old camera's picture is counted once")
     }
 
     func testMissingFrontCameraIsUnavailableWithoutAskingAndBackStillWorks() throws {
