@@ -157,6 +157,19 @@ class DeviceAcceptanceCase: XCTestCase {
         return app.windows.firstMatch.frame
     }
 
+    /// Taps the visualization to show or hide the controls, at a fixed point below the DEBUG probe readouts: 62 % of
+    /// the height on even attempts, 70 % on odd ones. Never `visualizerTapArea.tap()`: XCUITest taps an element at
+    /// its accessibility hit point, the part of it no other element covers, and on a phone the session panel, the
+    /// performance overlay and the audio panel cover the middle of the tap area. QA-011 D1 r16 (2026-11-24, AUD-006-T40
+    /// and AUD-014-T29): the result bundle's synthesized events put both reveal taps at (5, 1), the top-left corner
+    /// in the hidden status bar's band, which iOS kept, so the controls never appeared; an earlier tap in the same run
+    /// landed at (39, 767). The bottom status (source indicator, Emergency black out) starts below 85 %.
+    func tapVisualizer(attempt: Int = 0) {
+        let area = app.otherElements["visualizerTapArea"].firstMatch
+        let target: XCUIElement = area.exists ? area : app
+        target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: attempt % 2 == 0 ? 0.62 : 0.7)).tap()
+    }
+
     // MARK: Waiting
 
     func pause(_ seconds: Double) {

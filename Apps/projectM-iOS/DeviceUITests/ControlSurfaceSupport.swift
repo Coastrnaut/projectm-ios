@@ -50,10 +50,10 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
 
     /// The controls bar, shown with a fresh auto-hide.
     func showControlsBar() {
-        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
+        let controls = app.otherElements["controls"]
         if controls.exists { return }
-        area.tap()
-        if !wait(2, { controls.exists }) { area.tap() }
+        tapVisualizer(attempt: 0)   // below the probe readouts, never at the tap area's hit point (D1 r16)
+        if !wait(2, { controls.exists }) { tapVisualizer(attempt: 1) }
         XCTAssertTrue(wait(5) { controls.exists }, "the controls are shown")
     }
 

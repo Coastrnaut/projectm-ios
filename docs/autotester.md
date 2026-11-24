@@ -988,6 +988,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     PRE-014-T25, 2026-11-20) preset-512k.milk's cell reported (11.8, 19), its empty top-left margin: three taps picked
     nothing. Find it in the session log (`Computing hit point for Cell, {{x, y}, {w, h}}` then `Computed hit point`).
     `SystemUI.tapItem` taps by coordinate where a person would: the thumbnail, then the name, then the cell's middle.
+  - *Never `visualizerTapArea.tap()` to show the controls.* The full-screen tap area's hit point is the app's
+    accessibility "visible point": a part of it that no other element covers, and on a phone the DEBUG session panel,
+    performance overlay and audio panel cover its middle. In D1 r16 (2026-11-24, AUD-006-T40, AUD-014-T29) the session
+    log showed `Computed hit point {5.0, 1.0}` for the 393 × 852 tap area: both reveal taps went to the top-left
+    corner, in the hidden status bar's band, and the controls never came ("the controls are shown", then no
+    `transportPlayPause`); 37 s earlier in the same test it was {39.3, 766.8} and worked. `tapVisualizer(attempt:)`
+    (DeviceAcceptanceCase) taps at 62 % / 70 % of the height, below the probes and above the bottom status;
+    `revealControls` and `showControlsBar` use it. Other helpers that still call `area.tap()` should move to it when
+    they fail the same way.
   - *Settings sections that swipes cannot reach:* on the iPad panel neither slow nor full-speed swipes reached
     Settings › Storage below the photo visual's sections (D2, D3). Tests that also use the top of Settings launch
     with `-uitestSettingsJump storage` (DEBUG): a navigation bar button `uitestSettingsJump.storage` scrolls to the
