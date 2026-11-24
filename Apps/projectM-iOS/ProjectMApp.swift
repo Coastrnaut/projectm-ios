@@ -39,8 +39,16 @@ struct RootView: View {
 
     var body: some View {
         ZStack {
-            screenContent
-                .accessibilityHidden(coordinator.guide.isPresented)
+            // QA-011 D1 (UIX-001-T14): the opaque tutorial covers the chooser completely, yet the accessibility audit
+            // still measured the chooser's texts (its list is UIKit-hosted: neither accessibilityHidden nor opacity 0
+            // keeps its cells out of the audit) against the tutorial's pixels drawn over them, "Contrast failed" on
+            // the Visual step, where the visual rows lie over the chooser's rows. While the tutorial covers the notice
+            // or the chooser, that screen is not built at all; nothing visible changes. The visualizer stays under
+            // the tutorial (its source and engine keep running when the tutorial is opened from Settings).
+            if !coversScreen {
+                screenContent
+                    .accessibilityHidden(coordinator.guide.isPresented)
+            }
             if coordinator.guide.isPresented {   // UIX-001 (research D1: an overlay, never animated)
                 GuidedFirstSceneView(guide: coordinator.guide, soundIsPlaying: coordinator.screen == .visualizer,
                                      onPlay: { coordinator.finishGuidedFirstScene() })
@@ -81,6 +89,9 @@ struct RootView: View {
         }
         .uitestStorageSheet(coordinator)   // FILE-005-T16: DEBUG `-uitestStorageSheet` only
     }
+
+    /// UIX-001: the tutorial covers a screen that is then not built (QA-011 D1 audit; the visualizer is kept).
+    private var coversScreen: Bool { coordinator.guide.isPresented && coordinator.screen != .visualizer }
 
     @ViewBuilder
     private var screenContent: some View {

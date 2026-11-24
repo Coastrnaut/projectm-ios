@@ -86,3 +86,29 @@ reports DNS-SD's `kDNSServiceErr_PolicyDenied` (-65570), which the app already m
    - To confirm on D2 with the prompt-flow batch. If the probe then shows a fresh browse that reports `browsing` and
      no denial after Don't Allow, a browse alone cannot report a denial on iPadOS 27.2 and this ADR needs another
      signal.
+3. **2026-11-24, prompt-flow on D1 (iPhone 15, iOS 27.0.1), testC failing on every D1 run (2026-11-22 to 2026-11-24):**
+   iOS showed the prompt, the test tapped Don't Allow, and the probe reported
+   `access=granted runs=1 running=no | start 1, browsing, stop, settled → granted`. No `inactive` entry: on iOS 27.0.1
+   the Local Network prompt left the application active, so the 2 s settle ran out with the prompt still on screen
+   (Continue at 11.99 s, prompt read at 13.1 s, Don't Allow tapped at 14.46 s) and the browse was cancelled before the
+   answer. The same evidence shows what does report a denial: on D2 the browse still running reported
+   `failed policyDenied` after Don't Allow, and on D3 a fresh browse after the answer did (`start 2, browsing, failed
+   policyDenied`). Decided (owner rules 4 and 12):
+   - A grant that rests only on the settle is **unconfirmed**. It is published at once (no notice, no explainer
+     change), but a fresh browse follows after 2 s of active time, and again after each unconfirmed settle, until
+     30 s have passed since the first browse of the launch; a settle after that is final. A policy denial or a found
+     service is final at once. A denial after a provisional grant changes the answer to denied, which shows the
+     notice (D1's test waits 15 s; the first recheck comes about 4 s after the first browse).
+   - Still bounded: each browse stops after 5 s of active time at most; the rechecks stop with the receiver (OSC
+     off, the app inactive or in the background) and resume with it only while the answer is not final; at most
+     about ten 2 s browses per launch when access is granted and no projectM device answers. A browse remains a
+     multicast DNS query for projectM's own service type, so Decision 6 holds; the privacy policy's "for a few
+     seconds at most" now reads "in a few short looks over half a minute at most, once each time the app is opened".
+   - `LocalNetworkAccessProbe.isFinal` tells the two states apart; the DEBUG trace writes
+     `settled → granted (unconfirmed)` and `recheck`. Host tests: `LocalNetworkAccessProbeTests` (an unconfirmed
+     grant is rechecked and a later denial decides; rechecks end with a final grant after the window; stopping
+     cancels a pending recheck and a found service is final).
+   - To confirm on D1 with the prompt-flow batch: the expected trace is `start 1, browsing, stop, settled → granted
+     (unconfirmed), recheck, start 2, browsing?, failed policyDenied, stop, event → denied`. If a fresh browse on
+     iOS 27.0.1 reports only `browsing` after Don't Allow, a browse cannot report the denial there and this ADR needs
+     another signal.

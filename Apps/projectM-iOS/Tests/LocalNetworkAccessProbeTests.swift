@@ -20,9 +20,11 @@ final class LocalNetworkAccessProbeTests: XCTestCase {
         func deliver(_ event: OSCBrowserEvent) { events.withLock { $0 }?(event) }
     }
 
-    /// Fast timings so no test waits long (owner rule 7).
-    private func makeProbe(_ browser: FakeBrowser, settle: Double = 0.1, maximum: Double = 0.5) -> LocalNetworkAccessProbe {
-        LocalNetworkAccessProbe(settleSeconds: settle, maximumSeconds: maximum) { browser }
+    /// Fast timings so no test waits long (owner rule 7). `confirm: 0` makes a settle final at once (the
+    /// follow-up 3 rechecks have their own tests below).
+    private func makeProbe(_ browser: FakeBrowser, settle: Double = 0.1, maximum: Double = 0.5,
+                           confirm: Double = 0) -> LocalNetworkAccessProbe {
+        LocalNetworkAccessProbe(settleSeconds: settle, maximumSeconds: maximum, confirmSeconds: confirm) { browser }
     }
 
     private func settle(_ seconds: Double = 0.05) async { try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000)) }
@@ -169,6 +171,91 @@ final class LocalNetworkAccessProbeTests: XCTestCase {
         XCTAssertFalse(probe.isRunning, "a few seconds at most")
         XCTAssertEqual(probe.access, .unknown)
         XCTAssertEqual(browser.cancels.withLock { $0 }, 1)
+    }
+
+    // MARK: Follow-up 3: unconfirmed grants are rechecked (D1, iOS 27.0.1)
+
+    /// A fresh fake browser per run.
+    private final class BrowserFactory: Sendable {
+        let made = Mutex<[FakeBrowser]>([])
+        func make() -> FakeBrowser {
+            let browser = FakeBrowser()
+            made.withLock { $0.append(browser) }
+            return browser
+        }
+        var count: Int { made.withLock { $0.count } }
+        var last: FakeBrowser? { made.withLock { $0.last } }
+    }
+
+    private func makeRecheckingProbe(_ factory: BrowserFactory, confirm: Double, recheck: Double = 0.05) -> LocalNetworkAccessProbe {
+        LocalNetworkAccessProbe(settleSeconds: 0.05, maximumSeconds: 0.5, confirmSeconds: confirm, recheckSeconds: recheck) {
+            factory.make()
+        }
+    }
+
+    /// D1 (iOS 27.0.1, QA-011 2026-11-24): iOS's prompt left the app active, the first browse settled with the prompt
+    /// still up ("start 1, browsing, stop, settled → granted") and Don't Allow was never seen. The settle's grant is
+    /// unconfirmed; the fresh browse that follows reports the denial, which is final.
+    func testAnUnconfirmedGrantIsRecheckedAndADenialAfterThePromptDecides() async {
+        let factory = BrowserFactory()
+        let probe = makeRecheckingProbe(factory, confirm: 30)
+        probe.start()
+        factory.last?.deliver(.browsing)   // iOS's prompt is up; the app stays active
+        await settle(0.15)
+        XCTAssertEqual(probe.access, .granted, "published, so no notice while undecided")
+        XCTAssertFalse(probe.isFinal, "a settle inside the window is unconfirmed")
+        XCTAssertTrue(probe.history.contains("settled → granted (unconfirmed)"), "\(probe.history)")
+        await settle(0.15)
+        XCTAssertEqual(probe.runs, 2, "a fresh browse follows")
+        XCTAssertTrue(probe.isRunning)
+        factory.last?.deliver(.failed(.localNetworkDenied))   // Don't Allow was tapped meanwhile
+        await settle()
+        XCTAssertEqual(probe.access, .denied)
+        XCTAssertTrue(probe.isFinal)
+        await settle(0.2)
+        XCTAssertEqual(probe.runs, 2, "no browse after a final answer")
+        for entry in ["recheck", "start 2", "failed policyDenied", "event → denied"] {
+            XCTAssertTrue(probe.history.contains(entry), "\(entry) in \(probe.history)")
+        }
+    }
+
+    /// Allowed (or asked before): the rechecks keep settling and the grant becomes final once the window has
+    /// passed; the browses then stop.
+    func testRechecksEndWithAFinalGrantAfterTheWindow() async {
+        let factory = BrowserFactory()
+        let probe = makeRecheckingProbe(factory, confirm: 0.3)
+        probe.start()
+        for _ in 0..<40 where !probe.isFinal {
+            if probe.isRunning { factory.last?.deliver(.browsing) }
+            await settle(0.05)
+        }
+        XCTAssertTrue(probe.isFinal)
+        XCTAssertEqual(probe.access, .granted)
+        XCTAssertGreaterThanOrEqual(probe.runs, 2, "rechecked inside the window")
+        let runs = probe.runs
+        await settle(0.25)
+        XCTAssertEqual(probe.runs, runs, "no browse after the final grant")
+        XCTAssertFalse(probe.isRunning)
+    }
+
+    /// The rechecks follow the receiver: stopping cancels the pending one, the next start browses again while the
+    /// answer is not final, and a found service is final at once.
+    func testStoppingCancelsThePendingRecheckAndAFoundServiceIsFinal() async {
+        let factory = BrowserFactory()
+        let probe = makeRecheckingProbe(factory, confirm: 30, recheck: 0.5)
+        probe.start()
+        factory.last?.deliver(.browsing)
+        await settle(0.12)
+        XCTAssertEqual(probe.access, .granted)
+        probe.stop()   // OSC off, or the app left the foreground
+        await settle(0.6)
+        XCTAssertEqual(probe.runs, 1, "no recheck while stopped")
+        probe.start()
+        XCTAssertEqual(probe.runs, 2, "not final: the next start browses again")
+        factory.last?.deliver(.peers([OSCDiscoveredPeer(name: "projectM 1A2B")]))
+        await settle()
+        XCTAssertTrue(probe.isFinal)
+        XCTAssertEqual(probe.access, .granted)
     }
 
     // MARK: Through the OSC receiver coordinator

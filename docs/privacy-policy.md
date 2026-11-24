@@ -370,9 +370,10 @@ network) send control messages to the app. It is off until you turn it on.
   over cellular data; the receiver itself never connects to anything: it only receives.
 - So that iOS can ask for (and report) the Local Network permission, when the receiver starts and the
   app does not yet know the answer since it was opened, it looks for projectM's own OSC service on your
-  local network with Bonjour for a few seconds at most (multicast DNS on your network only: no server,
-  never the internet or cellular data). It connects to nothing it finds, keeps nothing it finds and
-  announces nothing; it uses the result only to tell whether local network access is on.
+  local network with Bonjour in a few short looks over half a minute at most, once each time the app is
+  opened (multicast DNS on your network only: no server, never the internet or cellular data). It
+  connects to nothing it finds, keeps nothing it finds and announces nothing; it uses the result only to
+  tell whether local network access is on.
 - A received message can change only the visual parameters listed under Settings › OSC › OSC Routes
   (today the glow's intensity, radius, threshold and knee) and a test value shown in Settings, so you
   can check that your controller reaches the app. These changes are kept in memory only and end when

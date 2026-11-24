@@ -54,6 +54,18 @@ interaction); each answer is the conservative, local-first option.
 
 - Q: How does the receiver obtain and know the Local Network permission? (QA-011 device run 2026-11-19) → A: On D2 (iPadOS 27.2) and D3 (iPadOS 26.5) the UDP listener reached "Listening" without iOS ever asking, so Local Network never appeared on the app's Settings page and "listening" could not mean "granted". Decided (ADR-0125, amending ADR-0100's scope): when the receiver starts and the answer is unknown this launch, it runs one short Bonjour browse for the app's own declared type `_projectm-osc._udp` (`NetworkOSCPeerBrowser(resolves: false)`: no resolution, no connection, nothing announced), which makes iOS ask. A policy denial from the browse or the listener means denied; a found service, or browsing for 2 s while the app stays active, means granted; otherwise the state stays unknown. The browse stops when it decides and after 5 s at most, and runs again only at the next start while the answer is still unknown (iOS's prompt makes the app inactive, which stops it). The denied notice shows only while OSC is on. Host tests: `LocalNetworkAccessProbeTests`, `PermissionCatalogTests.testLocalNetworkMapping`, `PermissionStatusSourceTests.testLocalNetworkStatus`.
 
+### Session 2026-11-24
+
+- Q: On D1 (iPhone 15, iOS 27.0.1) Don't Allow at the Local Network prompt still showed no denied notice on every
+  prompt-flow run; why, and what decides "granted"? (QA-011, OSC-001-T26, UIX-015-T14) → A: The probe's trace was
+  `start 1, browsing, stop, settled → granted` with no `inactive`: iOS 27.0.1 keeps the app active while its prompt
+  shows, so the 2 s settle granted before the answer and cancelled the only browse. Decided (ADR-0125 follow-up 3,
+  owner rules 4 and 12): a grant from the settle alone is unconfirmed; fresh browses follow every 2 s of active time
+  until 30 s after the first browse, and a policy denial from any of them turns the answer to denied (shown by the
+  notice); a found service, a denial or a settle after the window is final. Bounded as before (5 s per browse, only
+  while OSC is on and the app active); privacy policy wording updated. Host tests in `LocalNetworkAccessProbeTests`;
+  to confirm on D1 with the prompt-flow batch.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Turn OSC on and control the test value (Priority: P1)

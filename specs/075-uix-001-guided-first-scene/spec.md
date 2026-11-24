@@ -55,6 +55,21 @@ interaction); each answer is the conservative, local-first option.
   "Hello" (a short, neutral word that shows the visual working); an empty message is allowed and
   shows the spectrum without text (MED-009) (UIX-001-R3).
 
+### Session 2026-11-24 (QA-011 D1)
+
+- Q: UIX-001-T14 failed on every D1 run (iPhone 15, iOS 27.0.1) with `[uix001-visual] type=1 id="" label="":
+  Contrast failed`, an issue with no element; which element, and what is fixed? → A: The covered source chooser.
+  RootView marked it accessibility-hidden under the opaque tutorial, but its UIKit-hosted list cells stayed in the
+  audit, which measured their texts against the tutorial's pixels drawn over them; on the Visual step the visual
+  rows lie over the chooser's rows, so the measurement failed (on D1 for an element XCUITest could not resolve). An
+  iPhone 15 simulator on iOS 27.2 reproduced it ("In-App Playback" and "Requires a newer iOS version" failed contrast
+  on the Visual step only) and `opacity(0)` did not remove them. Decided (owner rules 4 and 12): while the tutorial
+  covers the notice or the chooser, that screen is not built (the visualizer stays under it, so a source opened
+  before Settings › Guided first scene keeps running). The tutorial's own colours are unchanged and the test's
+  classification is unchanged (nothing is suppressed). Regression test:
+  `GuidedFirstSceneUITests.testNoStepFailsTheContrastAuditThroughTheCoveredChooser` (zero contrast issues on four
+  steps; failed before the fix). To confirm on D1 with the prompt-flow batch.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - A new user makes and plays a first scene in a few taps (Priority: P1)
