@@ -64,6 +64,32 @@ final class ANGLERendererTests: XCTestCase {
         XCTAssertGreaterThan(litPixels(pixels), 0, "the preset drew something")
     }
 
+    /// FX-019-T22 (2026-11-24): RendererLab's paired pass timing gives one sample and one gain per limited frame, draws
+    /// the frame through the pass (it is on screen afterwards), restores the setting, and both measurement calls read
+    /// the gain back (bypassed frames too) without reporting a bypassed frame's gain.
+    func testPairedPassTimingSamplesEveryLimitedFrame() async throws {
+        let renderer = try makeLaidOut()
+        try await renderer.setPreset(preset("100-square.milk"))
+        for _ in 0..<10 { XCTAssertTrue(renderer.renderFrame(present: false)) }
+        var gains: [Float] = []
+        let passes = renderer.timedPassFrames(5, gains: &gains)
+        XCTAssertEqual(passes.count, 5)
+        XCTAssertEqual(gains.count, 5)
+        XCTAssertTrue(passes.allSatisfy { $0 > 0 && $0 < 1_000 }, "\(passes)")
+        XCTAssertTrue(gains.allSatisfy { $0 > 0 && $0 <= 1 }, "\(gains)")
+        XCTAssertFalse(renderer.reduceFlashing, "the setting is restored")
+        XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0, "the paired frames are drawn")
+
+        var none: [Float] = []
+        XCTAssertEqual(renderer.timedFrames(3, reduceFlashing: false, gains: &none).count, 3)
+        XCTAssertEqual(none, [], "a bypassed frame's gain is read back but not reported")
+        XCTAssertEqual(renderer.timedFrames(3, reduceFlashing: true, gains: &none).count, 3)
+        XCTAssertEqual(none.count, 3)
+        // Without a second timing call the paired mode is off again: plain frames record nothing more.
+        XCTAssertTrue(renderer.renderFrame(present: false))
+        XCTAssertEqual(renderer.timedPassFrames(0, gains: &gains), [])
+    }
+
     func testPresentsFramesAndDrainsTheReader() throws {
         let renderer = try makeLaidOut()
         let ring = NormalizedPCMRing()

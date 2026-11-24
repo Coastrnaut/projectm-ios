@@ -116,6 +116,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public static let flashLimitPerSecond = Float(FlashEnvelopeConfiguration.reduceFlashing.riseRatePerSecond ?? 0)
     /// RendererLab's T104 baseline: frames bypass the pass (`timedFrames(_:reduceFlashing: false)`).
     private var envelopeBypassed = false
+    /// FX-019-T22 (RendererLab, 2026-11-24): while set, every limited frame waits for the engine's GPU work before the
+    /// pass and appends the pass's own time (its four steps encoded, submitted and finished on the GPU) in ms.
+    private var pairedPassTimes: [Double]?
     public let supportsReduceFlashing = true
     /// OUT-009: the calibration the next frames apply (the view's, set by the slot that holds it).
     public var displayCalibration: DisplayCalibration { layerView.displayCalibration }
@@ -381,7 +384,9 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                 var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
                 applyCalibration(to: limiter)   // OUT-009
         applyWarp(to: limiter)   // OUT-008
+                let passStart = pairedPassTimes == nil ? 0 : Self.finishedGPUTime()   // RendererLab only
                 PMFlashLimiterFinish(limiter, 0, &parameters)
+                if pairedPassTimes != nil { pairedPassTimes?.append((Self.finishedGPUTime() - passStart) * 1000) }
                 #if DEBUG
                 if debugFlashProbe { recordDebugFlashGain(limiter) }   // QA-011 B07
                 #endif
@@ -649,13 +654,22 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// measure the post-pass cost (T104, FX-019-T22). Pause the display link first.
     public func timedFrames(_ frames: Int, reduceFlashing: Bool) -> [Double] {
         var gains: [Float] = []
-        return timedFrames(frames, reduceFlashing: reduceFlashing, gains: &gains)
+        return timedFrames(frames, reduceFlashing: reduceFlashing, readsGain: false, gains: &gains)
     }
 
     /// `timedFrames(_:reduceFlashing:)` that also appends each limited frame's gain to `gains`, read back after the
     /// frame's time was taken (one texel; outside the timed window). FX-019-T22 (D1, 2026-11-23): RendererLab reports
     /// how often a preset was dimmed, to tell the output step's dimming cost from the rest.
+    ///
+    /// FX-019-T22 (D1, 2026-11-24): the read-back runs after **every** frame, bypassed ones too (their texel is
+    /// discarded), so both arms of RendererLab's comparison carry the same extra GPU round trip between frames. The
+    /// 2026-11-23 version read back only after limited frames: one more wait per frame on one side only, which changes
+    /// how long the GPU idles between frames (and so its clock) and lands in the measured cost, not in the pass.
     public func timedFrames(_ frames: Int, reduceFlashing: Bool, gains: inout [Float]) -> [Double] {
+        timedFrames(frames, reduceFlashing: reduceFlashing, readsGain: true, gains: &gains)
+    }
+
+    private func timedFrames(_ frames: Int, reduceFlashing: Bool, readsGain: Bool, gains: inout [Float]) -> [Double] {
         let saved = self.reduceFlashing
         self.reduceFlashing = reduceFlashing
         envelopeBypassed = !reduceFlashing
@@ -670,9 +684,38 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
             guard renderFrame(present: false) else { break }
             PMANGLEFinish()
             times.append((CACurrentMediaTime() - start) * 1000)
-            if reduceFlashing, let gain = flashLimiterGain { gains.append(gain) }
+            if readsGain, let gain = flashLimiterGain, reduceFlashing { gains.append(gain) }
         }
         return times
+    }
+
+    /// FX-019-T22 (QA-011 D1, 2026-11-24): the pass's own cost on the frame it processes. Renders `frames` limited frames
+    /// without presenting; in each, the engine's frame is finished on the GPU first (`glFinish`), then the pass is
+    /// encoded, submitted and finished, and that span is the frame's sample in ms (the gain is read back after it, as
+    /// in `timedFrames(_:reduceFlashing:gains:)`). Each sample is paired with the very frame it dims, so it carries none
+    /// of the preset's own frame-to-frame variation, which the on-minus-off medians of separate frames do; it includes
+    /// one extra submit-and-wait, so it errs high. Pause the display link first.
+    public func timedPassFrames(_ frames: Int, gains: inout [Float]) -> [Double] {
+        let saved = reduceFlashing
+        reduceFlashing = true
+        envelopeBypassed = false
+        pairedPassTimes = []
+        pairedPassTimes?.reserveCapacity(frames)
+        defer {
+            reduceFlashing = saved
+            pairedPassTimes = nil
+        }
+        for _ in 0..<frames {
+            guard renderFrame(present: false) else { break }
+            if let gain = flashLimiterGain { gains.append(gain) }
+        }
+        return pairedPassTimes ?? []
+    }
+
+    /// Waits for every GL command so far to finish on the GPU; returns the time after it.
+    private static func finishedGPUTime() -> Double {
+        PMANGLEFinish()
+        return CACurrentMediaTime()
     }
 
     /// The window surface size in pixels (RendererLab reports).

@@ -126,7 +126,7 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 | `autorun-perf001-glow` | part of PERF-003-T15 | perf001 on the circular spectrum with the glow on (`PROJECTM_VISUAL`, `PROJECTM_GLOW`); the export has `frameTimings.effectQuality` |
 | `autorun-pre005` | part of PRE-005-T17 | 200 real thumbnails (evenly spaced) scored; percentiles and class counts for the threshold choice |
 | `autorun-sc009` | AUD-014-T32 (D1, D3) | the lifecycle scripts' end states; on demand, needs the microphone answered (see below) |
-| `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (builds RendererLab into `Build/rendererlab` when missing) |
+| `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (judged on the pass timed alone on the frame it processes, `passMedianMs`, since 2026-11-24; on minus off reported) (builds RendererLab into `Build/rendererlab` when missing) |
 | `xctrace-perf004` | PERF-004-T16 | Logging template on the Text visual (`PROJECTM_VISUAL=text`, the default since 2026-11-23): "PERF-004 texture allocation" signposts only before start + 5 s and within 3 s of each rotation (perf004 rotates at 10 s and back at 20 s) |
 | `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; counted from the moment the app's process appears, the Mac opens Settings at 10 s and relaunches the app at 26 s (app runs 40 s, time limit 70 s; a recording that never ends is stopped with SIGINT and fails the case): no frames (and no GPU intervals of the app) from 10 s after backgrounding until the return (willEnterForeground, marker `QA-011 return`), a lower footprint, the first frame within 2 s of the return |
 | `xctrace-perf008` | part of PERF-008-T16 | on demand (about 12 min): Power Profiler 5 min Standard then 5 min Battery saver; fps and frame time per minute from the app, energy per minute from any power table the trace exports |
@@ -1415,6 +1415,22 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   dimming fix did not move. Measuring "on" always after "off" folds a preset's frame-time drift into the cost, so
   RendererLab now runs 20 off, 40 on, 20 off per round and the report carries each round's cost, both IQRs, and how
   often the envelope dimmed (the dimming path's share). Read those before calling a cost real or noise.
+- **Pair a pass's cost with the frame it processes; never judge a max over presets of unpaired medians**
+  (`rendererlab-flashcost`, D1 2026-11-24). Two D1 runs of identical code (2026-11-23, 200159Z and 210326Z) gave
+  per-preset on-minus-off costs up to 2 ms apart (`Martin - The Beast Mandala Chaser` -0.29 and 1.73 ms, `Goody -
+  Vertigo` 2.24 and 1.04 ms), and the ABBA run of 2026-11-24 put `ORB - Saturns Rings` at 4.39 ms (0.84-1.14 ms the day
+  before) with an "on" IQR of 3.5 ms against 1.0 ms "off". "On" and "off" are different frames of a moving picture,
+  so a preset whose frame time swings with its content puts that swing into the difference, and the maximum over 28
+  presets picks the worst swing. RendererLab now also times the pass alone on each frame (the engine's frame finished
+  first, then the pass encoded, submitted and finished: `timedPassFrames`, 160 frames per preset) and the matrix
+  verdict uses those paired medians; on-minus-off stays in the report. Also keep every extra wait symmetric: the
+  2026-11-23 version read the gain texel back after "on" frames only, an extra GPU round trip on one side.
+- **Discard what a full-screen pass overwrites** (FX-019 output step, 2026-11-24). ANGLE's Metal backend starts a
+  render pass with `MTLLoadActionLoad` unless the attachment was invalidated (`glInvalidateFramebuffer`) or cleared
+  (`FramebufferMtl::setLoadStoreActionOnRenderPassFirstStart`), and projectM never clears its target. The strobe pass's
+  output wrote every pixel of the window yet loaded it first: 12 MB read per frame at 1179 × 2556 on D1, in the app
+  too. A GL test fills the window with magenta first and checks no pixel survives (red with a half-height viewport).
+  The Mac's GPU shows no difference (its bandwidth hides 12 MB), so only the device run can size the saving.
 
 - **B09 OSC tests need the OSC driver beside the run** (D2, 2026-11-23). A regression run through
   `run_device_ui_tests.sh` without `osc_device_driver.py` failed every Mac-to-device OSC test ("Test value, 0.00",

@@ -111,6 +111,37 @@ final class FlashLimiterTests: XCTestCase {
         print("FX-019-T22 dimmed levels: worst error \(worst) of 255")
     }
 
+    /// FX-019-T22 (QA-011 D1, 2026-11-24): the output step invalidates its target before drawing (no load of the old
+    /// window contents), so it must still write every pixel: a surface left magenta shows no magenta afterwards, both
+    /// shown as it is (gain 1) and dimmed, and the REC-001 redraw (`PMFlashLimiterDrawOutput`) matches the frame.
+    func testTheOutputWritesEveryPixelOfAnInvalidatedTarget() {
+        func assertEveryPixel(_ expected: (Int, Int, Int), _ label: String, file: StaticString = #filePath, line: UInt = #line) {
+            let pixels = renderer.readPixels()
+            XCTAssertEqual(pixels.count, Int(size.width) * Int(size.height) * 4, file: file, line: line)
+            var wrong = 0
+            for i in stride(from: 0, to: pixels.count, by: 4)
+            where abs(Int(pixels[i]) - expected.0) > 1 || abs(Int(pixels[i + 1]) - expected.1) > 1
+                || abs(Int(pixels[i + 2]) - expected.2) > 1 {
+                wrong += 1
+            }
+            XCTAssertEqual(wrong, 0, "\(label): \(wrong) pixels differ from \(expected)", file: file, line: line)
+        }
+        renderer.makeSurfaceCurrent()
+        PMANGLEClearFramebuffer(0, 1, 0, 1)
+        XCTAssertEqual(frame(0.5, 0.5, 0.5, .reduceFlashing), 1)
+        assertEveryPixel((128, 128, 128), "gain 1")
+
+        PMANGLEClearFramebuffer(0, 1, 0, 1)
+        let gain = Double(frame(1, 1, 1, .reduceFlashing, frameTime: 0.1))
+        XCTAssertLessThan(gain, 1, "a cut to white is dimmed")
+        let level = Int((FlashColor.encodeSRGB(gain) * 255).rounded())
+        assertEveryPixel((level, level, level), "dimmed at \(gain)")
+
+        PMANGLEClearFramebuffer(0, 1, 0, 1)
+        PMFlashLimiterDrawOutput(limiter, 0, 0)
+        assertEveryPixel((level, level, level), "REC-001 redraw")
+    }
+
     /// The acceptance sequences (owner rule 7: three representative cases, 2 s each at 60 fps).
     /// "N Hz" is the alternation rate: N changes of the picture per second.
     func testSyntheticStrobesObeyTheEnvelope() {
