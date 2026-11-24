@@ -37,10 +37,15 @@ fi
 mac_ip=""
 if [ "${OSC:-0}" = 1 ]; then
   read -r dev_ip mac_ip < <(python3 -c "import sys; sys.path.insert(0,'scripts/mac_driver'); import devices as d; ip=d.resolve(d.DEVICES['$(echo "$dev" | tr a-z A-Z)']['host']); print(ip, d.mac_address_toward(ip))")
-  python3 scripts/osc_device_driver.py --log "$log" --host "$dev_ip" --listen-port 9100 --device "$(echo "$dev" | tr a-z A-Z)" \
-    > ".autonomous/logs/oscdriver-$name-$dev.log" 2>&1 &
+  # Full runs 2026-11-24 (D2 full17, D3 full20): the driver's default 900 s limit ended it long before B09 ran, and a
+  # second device's listener on the shared port 9100 died ("Address already in use"). The driver now lives as long
+  # as the run (killed at its end), and each device listens on its own port (D1 9101, D2 9102, D3 9103).
+  osc_port=$((9100 + ${dev#d}))
+  python3 scripts/osc_device_driver.py --log "$log" --host "$dev_ip" --listen-port "$osc_port" --timeout 43200 \
+    --device "$(echo "$dev" | tr a-z A-Z)" > ".autonomous/logs/oscdriver-$name-$dev.log" 2>&1 &
   osc_driver=$!
   export TEST_RUNNER_MAC_IP="$mac_ip"   # only with OSC=1: an empty value would read as a set address
+  export TEST_RUNNER_MAC_OSC_PORT="$osc_port"
 fi
 # TEST_RUNNER_* values reach the test runner only as environment variables of xcodebuild, not as build-setting
 # arguments (full run 13, 2026-11-20: FILE-001 and PERF-006 skipped "needs the Mac" with the driver running).

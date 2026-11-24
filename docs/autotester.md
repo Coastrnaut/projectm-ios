@@ -259,10 +259,11 @@ outages) are not required (owner ruling 2026-11-18).
 
 ```bash
 # Single device, OSC (D1): start the driver, then the tests (each -only-testing is its own argument).
-python3 scripts/osc_device_driver.py --log Build/b09-D1.log --host iPhone77.local --listen-port 9100 --device D1 &
+# (OSC=1 scripts/run_device_ui_tests.sh does this for you: listen port 9100 + device number, driver lives the whole run.)
+python3 scripts/osc_device_driver.py --log Build/b09-D1.log --host iPhone77.local --listen-port 9101 --timeout 43200 --device D1 &
 xcodebuild test-without-building -xctestrun <copy>/…xctestrun -destination platform=iOS,id=<D1 UDID> \
   -only-testing:projectM-iOSDeviceUITests/B09OSCDeviceTests -test-timeouts-enabled YES \
-  -default-test-execution-time-allowance 300 TEST_RUNNER_MAC_IP=<Mac LAN address> > Build/b09-D1.log 2>&1
+  -default-test-execution-time-allowance 300 TEST_RUNNER_MAC_IP=<Mac LAN address> TEST_RUNNER_MAC_OSC_PORT=9101 > Build/b09-D1.log 2>&1
 # MIDI (D1, D2): -only-testing:projectM-iOSDeviceUITests/B10MIDIDeviceTests, no Mac driver (the in-app virtual source).
 # Rehearse on a simulator first (never evidence): copy music-fixture.m4a into the app's Documents, then
 #   TEST_RUNNER_SIMULATOR_REHEARSAL=1 xcodebuild test-without-building -xctestrun <simulator xctestrun> …
@@ -861,6 +862,13 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     so every `MAC-DO` after the first half-hour of a full run went unanswered (D3 full run 1, 2026-11-22: FILE-001-B's
     `files.push`; the driver log was empty). `run_device_ui_tests.sh` now gives it 12 h and the driver says when it
     times out.
+
+- **A side driver must live as long as the run it serves** (2026-11-24). D2's full17 and D3's full20 suites failed every
+  B09 OSC test: `osc_device_driver.py` had a 900 s default limit and had quietly exited long before B09 started, hours
+  into the suite; and the second device's listener died on the shared Mac port 9100 ("Address already in use").
+  `run_device_ui_tests.sh` now gives the driver `--timeout 43200` (it is killed when the run ends) and a port per device
+  (9100 + device number), passed to OSC-005 as `TEST_RUNNER_MAC_OSC_PORT`. Any new side driver: no limit shorter than
+  the run, and no fixed Mac port shared between devices.
 
 ### Xcode and the device test host
 

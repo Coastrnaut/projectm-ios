@@ -183,14 +183,16 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         if let low, let high { XCTAssertGreaterThan(high, low + 0.05, "0.95 gives more glow than 0.1") }
     }
 
-    /// OSC-005-T16: Send OSC to the Mac. The driver's listener (`--listen-port 9100`) records what arrives between
+    /// OSC-005-T16: Send OSC to the Mac. The driver's listener (`--listen-port`, `TEST_RUNNER_MAC_OSC_PORT`: 9101-9103 per
+    /// device since 2026-11-24 so two devices' runs never share a port; 9100 when unset) records what arrives between
     /// `OSC-READY listen` and `OSC-READY listen-done` and fails the run unless /projectm/status and two
     /// /projectm/scene messages came; the device checks its own counter ("N sent, 0 dropped").
     func testOSC005Send() throws {
         let task = "OSC-005-T16"
         let mac = try requireRunnerValue("MAC_IP", "Send OSC needs the Mac's LAN address")
+        let port = runnerValue("MAC_OSC_PORT").flatMap { Int($0) } ?? 9100
         listen("listen", settings: ["settings.osc.send.enabled": true, "settings.osc.send.host": mac,
-                                    "settings.osc.send.port": 9100, "settings.osc.send.kinds": ["scene", "status"]],
+                                    "settings.osc.send.port": port, "settings.osc.send.kinds": ["scene", "status"]],
                extra: ["-uitestShowSeed"])
         closeSettingsPanel()
         pause(4)   // the log reaches the driver a few seconds late; its listener is already up (started with the driver)
