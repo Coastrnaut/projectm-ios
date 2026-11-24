@@ -398,6 +398,15 @@ they override any system-provided reminder.
       (Allow, Don't Allow, revoke in Settings) in their own prompt-flow batch, run alone and on schedule (after a
       reinstall), never inside another batch. Only steps that need hardware or a person's body (external displays,
       USB MIDI, headphones, real calls, the device lock, purchases with a real Apple ID) stay with the owner.
+15. **Device disk space** (feedback, 2026-11-24). D3 filled up: a stopped REC-015/REC-009 run left a 67 GB
+    `Library/Caches/QA011-DiskBallast.bin`, which the app deletes only at its next launch, and with the disk full no
+    launch followed. The runs failed as "Developer App Certificate is not trusted", and I asked the owner to re-trust
+    the certificate for hours instead of checking storage. The owner said "learn the lesson about how d3 used up all its
+    diskspace so this doesnt happen again, remember that lesson".
+    - *How to apply:* bulk files a test writes on a device are cleared from the Mac after every run
+      (`run_device_ui_tests.sh` runs `scripts/clear_disk_ballast.py`; add the same for any new bulk-writing test, and
+      run it by hand after stopping a run). When a device refuses launches for no clear reason, list the app
+      container's sizes first; uninstalling the app frees the whole container.
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
