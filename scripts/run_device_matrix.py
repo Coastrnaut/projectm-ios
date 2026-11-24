@@ -588,8 +588,12 @@ def flashcost_verdict(report: dict, limit_ms: float) -> dict:
     """FX-019-T22: RendererLab's flashcost summary against the 2 ms per frame budget (FX-019-S6).
 
     The statistic, newest first, used when every preset has it (FX-019 Clarifications, 2026-11-24):
-    - `passCostMedianMs`: the pass's own cost on the frame it processes, GPU time from a timer query plus CPU encoding
-      time, per frame; every preset's median at most the limit.
+    - `passIsolatedCostMedianMs`: the pass's own cost on the frame it processes, GPU time from a timer query begun after
+      the engine's frame has finished on the GPU, plus CPU encoding time, per frame; every preset's median at most the
+      limit.
+    - `passCostMedianMs` (second version, D1 run 20261124T222416Z): the same timer without that wait. ANGLE's Metal
+      timer is GPUEndTime - GPUStartTime of the pass's command buffer, which started while the engine's frame was still
+      drawing, so it counted most of that frame (GPU 7.73 ms median); still judged as written, for old reports.
     - `passMedianMs` (first paired version, D1 run 20261124T191740Z): glFinish -> pass -> glFinish on the wall clock,
       which also counts a submit-and-wait round trip the app never pays; still judged as written, for old reports.
     - `costMs`: on minus off of separate frames (T104), whose per-preset values moved by up to 2 ms between two runs of
@@ -598,7 +602,7 @@ def flashcost_verdict(report: dict, limit_ms: float) -> dict:
     results = report.get("flashCost") or []
     costs = [r.get("costMs", 0) for r in results]
     key = "costMs"
-    for candidate in ("passCostMedianMs", "passMedianMs"):
+    for candidate in ("passIsolatedCostMedianMs", "passCostMedianMs", "passMedianMs"):
         if results and all(r.get(candidate) is not None for r in results):
             key = candidate
             break
@@ -606,12 +610,14 @@ def flashcost_verdict(report: dict, limit_ms: float) -> dict:
     over = [r["id"] for r in results if r.get(key, 0) > limit_ms]
     n = int(summary.get("presets", len(costs)))
     worst, median = summary.get("costMsMax", max(costs, default=0)), summary.get("costMsMedian", 0)
-    label = {"passCostMedianMs": "pass", "passMedianMs": "pass wall"}.get(key, "")
+    timed = key in ("passIsolatedCostMedianMs", "passCostMedianMs")
+    label = {"passIsolatedCostMedianMs": "pass", "passCostMedianMs": "pass unisolated",
+             "passMedianMs": "pass wall"}.get(key, "")
 
     def spread(r: dict) -> str:
         """2026-11-23: what a reader needs to tell a cost from noise (ABBA round costs, dimmed share, frame-time IQR)."""
         parts = [f"{label} {r[key]:.2f} ms" if paired else f"{r.get('costMs', 0):.2f} ms"]
-        if key == "passCostMedianMs":
+        if timed:
             parts.append(f"GPU {r.get('passGpuMedianMs') or 0:.2f}, CPU {r.get('passCpuMedianMs') or 0:.2f}")
         if paired:
             parts.append(f"on - off {r.get('costMs', 0):.2f} ms")
@@ -633,14 +639,21 @@ def flashcost_verdict(report: dict, limit_ms: float) -> dict:
     if paired:
         passes = sorted(r[key] for r in results)
         pass_median, pass_worst = passes[len(passes) // 2], passes[-1]
-        if key == "passCostMedianMs":
+        if timed:
             gpu = middle([r["passGpuMedianMs"] for r in results if r.get("passGpuMedianMs") is not None])
             cpu = middle([r["passCpuMedianMs"] for r in results if r.get("passCpuMedianMs") is not None])
             trip = middle([r["roundTripMedianMs"] for r in results if r.get("roundTripMedianMs") is not None])
-            detail = (f"{n} presets, pass (GPU timer + CPU encoding) median {pass_median:.2f} ms, max {pass_worst:.2f} ms "
+            what = ("GPU timer after the engine's frame + CPU encoding" if key == "passIsolatedCostMedianMs"
+                    else "GPU timer + CPU encoding, engine frame not excluded")
+            detail = (f"{n} presets, pass ({what}) median {pass_median:.2f} ms, max {pass_worst:.2f} ms "
                       f"per frame (limit {limit_ms} ms; medians GPU {gpu:.2f}, CPU {cpu:.2f}, excluded round trip "
-                      f"{trip:.2f} ms); on - off of separate frames median {median:.2f}, max {worst:.2f} ms")
+                      f"{trip:.2f} ms")
             result.update(gpuMedianMs=gpu, cpuMedianMs=cpu, roundTripMedianMs=trip)
+            waits = [r["engineWaitMedianMs"] for r in results if r.get("engineWaitMedianMs") is not None]
+            if waits:
+                detail += f", excluded engine wait {middle(waits):.2f} ms"
+                result.update(engineWaitMedianMs=middle(waits))
+            detail += f"); on - off of separate frames median {median:.2f}, max {worst:.2f} ms"
         else:
             detail = (f"{n} presets, pass alone median {pass_median:.2f} ms, max {pass_worst:.2f} ms per frame (limit "
                       f"{limit_ms} ms); on - off of separate frames median {median:.2f}, max {worst:.2f} ms")

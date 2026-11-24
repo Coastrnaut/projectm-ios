@@ -191,6 +191,8 @@ submit-and-wait round trip, not the pass. RendererLab now times the pass with a 
 (`passCostMedianMs`, with `passGpuMedianMs`, `passCpuMedianMs` and the excluded `roundTripMedianMs`); FX-019
 Clarification 2026-11-24 (second). Device re-measurement pending (next D1 matrix run).
 
+**FX-019-T22, D1 20261124T222416Z: pass (GPU timer + CPU) 8.11 / 9.98 ms, on minus off median 1.63 ms (fail, measurement).** The GPU time (median 7.73 ms) followed each preset's own frame time (correlation 0.87 with the off frame time): ANGLE's Metal timer query is GPUEndTime - GPUStartTime of the pass's command buffer, which started on the GPU while the engine's frame was still drawing and waited on it. RendererLab now finishes the engine's frame before the query begins (`passIsolatedCostMedianMs`, with the excluded `engineWaitMedianMs`); FX-019 Clarification 2026-11-24 (third). Device re-measurement pending (next D1 matrix run).
+
 ## Budgets per device class (QA-010)
 
 The performance budgets are versioned in [`docs/performance/thresholds.json`](../performance/thresholds.json)

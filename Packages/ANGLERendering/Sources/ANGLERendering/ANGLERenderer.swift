@@ -116,10 +116,11 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public static let flashLimitPerSecond = Float(FlashEnvelopeConfiguration.reduceFlashing.riseRatePerSecond ?? 0)
     /// RendererLab's T104 baseline: frames bypass the pass (`timedFrames(_:reduceFlashing: false)`).
     private var envelopeBypassed = false
-    /// FX-019-T22 (RendererLab, 2026-11-24): while true, every limited frame brackets the pass with a GPU timer query
-    /// and times its encoding on the CPU; the frame leaves both in `passProbeResult` (query, CPU ms).
+    /// FX-019-T22 (RendererLab, 2026-11-24): while true, every limited frame waits for the engine's frame on the GPU,
+    /// then brackets the pass with a GPU timer query and times its encoding on the CPU; the frame leaves them in
+    /// `passProbeResult` (query, CPU ms, the wait for the engine's frame in ms).
     private var passProbe = false
-    private var passProbeResult: (query: UInt32, cpuMs: Double)?
+    private var passProbeResult: (query: UInt32, cpuMs: Double, engineWaitMs: Double)?
     public let supportsReduceFlashing = true
     /// OUT-009: the calibration the next frames apply (the view's, set by the slot that holds it).
     public var displayCalibration: DisplayCalibration { layerView.displayCalibration }
@@ -385,12 +386,20 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                 var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
                 applyCalibration(to: limiter)   // OUT-009
         applyWarp(to: limiter)   // OUT-008
-                let query = passProbe ? PMANGLETimerBegin() : 0   // RendererLab only (FX-019-T22)
+                // RendererLab only (FX-019-T22, third version): the engine's frame is finished on the GPU before the
+                // timer starts, so the timed command buffer holds the pass alone and cannot start early and wait on it.
+                var engineWaitMs = 0.0
+                if passProbe {
+                    let waitStart = CACurrentMediaTime()
+                    PMANGLEFinish()
+                    engineWaitMs = (CACurrentMediaTime() - waitStart) * 1000
+                }
+                let query = passProbe ? PMANGLETimerBegin() : 0
                 let passStart = passProbe ? CACurrentMediaTime() : 0
                 PMFlashLimiterFinish(limiter, 0, &parameters)
                 if passProbe {
                     PMANGLETimerEnd()
-                    passProbeResult = (query, (CACurrentMediaTime() - passStart) * 1000)
+                    passProbeResult = (query, (CACurrentMediaTime() - passStart) * 1000, engineWaitMs)
                 }
                 #if DEBUG
                 if debugFlashProbe { recordDebugFlashGain(limiter) }   // QA-011 B07
@@ -697,26 +706,39 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     /// One limited frame of `timedPassFrames`: the pass's own cost, split the way RendererLab reports it.
     public struct FlashPassSample: Sendable, Equatable {
         /// GPU time of the pass's command buffer (GL_EXT_disjoint_timer_query: GPUEndTime - GPUStartTime), or nil when
-        /// the query gave no result.
+        /// the query gave no result. The engine's frame has finished on the GPU before the query begins, so the buffer
+        /// holds the pass alone and starts on an idle GPU (third version, 2026-11-24).
         public var gpuMs: Double?
         /// CPU time to encode and submit the pass's four steps (`PMFlashLimiterFinish` and the query's end).
         public var cpuMs: Double
         /// A 1 × 1 clear submitted and waited for right after the frame: the submit-and-wait round trip that a
         /// wall-clock bracket around the pass alone would add (and the 2026-11-24 bracket did).
         public var roundTripMs: Double
+        /// Wall time of the glFinish before the pass: what was left of the engine's frame on the GPU, plus one
+        /// submit-and-wait. Context only; the second version's timer had absorbed the GPU part of it.
+        public var engineWaitMs: Double = 0
         /// The pass's cost: GPU plus CPU time, as if the two never overlapped (in the app they do), so it errs high.
         public var costMs: Double? { gpuMs.map { $0 + cpuMs } }
     }
 
     /// FX-019-T22 (QA-011 D1, 2026-11-24): the pass's own cost on the frame it processes. Renders `frames` limited frames
-    /// without presenting, as the app does but with the pass in its own command buffer: a GPU timer query brackets the
-    /// pass (ANGLE ends the engine's command buffer at the query's start and the pass's at its end, and reports the
-    /// pass's GPUEndTime - GPUStartTime), and its encoding is timed on the CPU. Nothing waits before the pass, so the GPU
-    /// runs it right after the engine's frame as in the app. After each frame (outside both times) it waits for the GPU,
-    /// times one 1 × 1 clear's submit-and-wait as the round trip it excludes, and reads the gain back.
-    /// The 2026-11-24 version timed glFinish → pass → glFinish on the wall clock instead: 2.6-3.1 ms on every D1 preset,
-    /// against 1.2-2.1 ms on minus off, i.e. mostly the round trip. Each sample is paired with the very frame it dims.
-    /// Pause the display link first.
+    /// without presenting, as the app does but with the pass in its own command buffer: the engine's frame is finished
+    /// on the GPU first (`glFinish`, timed as `engineWaitMs`), then a GPU timer query brackets the pass and its encoding
+    /// is timed on the CPU. After each frame (outside both times) it waits for the GPU, times one 1 × 1 clear's
+    /// submit-and-wait as the round trip it excludes, and reads the gain back. Each sample is paired with the very frame
+    /// it dims. Pause the display link first.
+    ///
+    /// How ANGLE's Metal backend times the query (Vendor/angle, src/libANGLE/renderer/metal): `QueryMtl::begin` and
+    /// `QueryMtl::end` flush the command buffer being encoded (QueryMtl.mm, TimeElapsed cases), every MTLCommandBuffer
+    /// created while the query is active joins it (`CommandQueue::makeMetalCommandBuffer`, mtl_command_buffer.mm), and
+    /// the result sums `GPUEndTime - GPUStartTime` of those buffers (`onCommandBufferCompleted`). That interval starts
+    /// when the GPU starts the buffer, not when its work can run: the pass's buffer, committed right behind the
+    /// engine's and reading its texture, can start while the engine's frame is still drawing and wait inside the
+    /// interval. The second version (no wait before the pass) reported 7.73 ms median GPU time on D1, far above the
+    /// 1.2-2.1 ms on-minus-off of whole frames, i.e. mostly the engine's frame
+    /// (20261124T222416Z). The first version timed glFinish → pass → glFinish on the wall clock: 2.6-3.1 ms, mostly
+    /// the submit-and-wait round trip.
+    /// The cost is judged per FX-019 Clarifications (2026-11-24, third version).
     public func timedPassFrames(_ frames: Int, gains: inout [Float]) -> [FlashPassSample] {
         let saved = reduceFlashing
         reduceFlashing = true
@@ -742,7 +764,8 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
             PMANGLEClearRect(probe, 0, 0, 1, 1, 0, 0, 0, 1)
             PMANGLEFinish()
             let roundTrip = (CACurrentMediaTime() - start) * 1000
-            samples.append(FlashPassSample(gpuMs: gpu >= 0 ? gpu : nil, cpuMs: result.cpuMs, roundTripMs: roundTrip))
+            samples.append(FlashPassSample(gpuMs: gpu >= 0 ? gpu : nil, cpuMs: result.cpuMs, roundTripMs: roundTrip,
+                                           engineWaitMs: result.engineWaitMs))
             if let gain = flashLimiterGain { gains.append(gain) }
         }
         return samples
