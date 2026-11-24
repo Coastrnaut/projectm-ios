@@ -227,3 +227,56 @@ void PMANGLEFenceDelete(void *fence) {
         deleteSync(fence);
     }
 }
+
+#define GL_TIME_ELAPSED_EXT 0x88BF
+#define GL_QUERY_RESULT_EXT 0x8866
+#define GL_GPU_DISJOINT_EXT 0x8FBB
+
+unsigned int PMANGLETimerBegin(void) {
+    typedef void (*GenQueries)(int, unsigned int *);
+    typedef void (*BeginQuery)(unsigned int, unsigned int);
+    GenQueries gen = (GenQueries)eglGetProcAddress("glGenQueriesEXT");
+    BeginQuery begin = (BeginQuery)eglGetProcAddress("glBeginQueryEXT");
+    if (gen == 0 || begin == 0) {
+        return 0;
+    }
+    unsigned int query = 0;
+    gen(1, &query);
+    if (query != 0) {
+        begin(GL_TIME_ELAPSED_EXT, query);
+    }
+    return query;
+}
+
+void PMANGLETimerEnd(void) {
+    typedef void (*EndQuery)(unsigned int);
+    EndQuery end = (EndQuery)eglGetProcAddress("glEndQueryEXT");
+    if (end) {
+        end(GL_TIME_ELAPSED_EXT);
+    }
+}
+
+double PMANGLETimerResultMs(unsigned int query) {
+    typedef void (*GetQueryObjectU64)(unsigned int, unsigned int, unsigned long long *);
+    typedef void (*GetIntegerv)(unsigned int, int *);
+    typedef void (*DeleteQueries)(int, const unsigned int *);
+    typedef unsigned int (*GetError)(void);
+    GetQueryObjectU64 get = (GetQueryObjectU64)eglGetProcAddress("glGetQueryObjectui64vEXT");
+    GetIntegerv getIntegerv = (GetIntegerv)eglGetProcAddress("glGetIntegerv");
+    DeleteQueries deleteQueries = (DeleteQueries)eglGetProcAddress("glDeleteQueriesEXT");
+    GetError getError = (GetError)eglGetProcAddress("glGetError");
+    if (query == 0 || get == 0 || getIntegerv == 0 || deleteQueries == 0 || getError == 0) {
+        return -1;
+    }
+    while (getError() != 0) {}
+    unsigned long long nanoseconds = 0;
+    get(query, GL_QUERY_RESULT_EXT, &nanoseconds);
+    int disjoint = 0;
+    getIntegerv(GL_GPU_DISJOINT_EXT, &disjoint);
+    unsigned int error = getError();
+    deleteQueries(1, &query);
+    if (error != 0 || disjoint != 0) {
+        return -1;
+    }
+    return (double)nanoseconds / 1.0e6;
+}

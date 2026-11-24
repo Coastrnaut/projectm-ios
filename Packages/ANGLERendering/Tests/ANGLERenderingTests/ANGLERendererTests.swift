@@ -4,6 +4,7 @@
 import UIKit
 import XCTest
 import AudioCore
+import CANGLE
 import PresentationLifecycle
 import ProjectMBridge
 import Rendering
@@ -64,9 +65,10 @@ final class ANGLERendererTests: XCTestCase {
         XCTAssertGreaterThan(litPixels(pixels), 0, "the preset drew something")
     }
 
-    /// FX-019-T22 (2026-11-24): RendererLab's paired pass timing gives one sample and one gain per limited frame, draws
-    /// the frame through the pass (it is on screen afterwards), restores the setting, and both measurement calls read
-    /// the gain back (bypassed frames too) without reporting a bypassed frame's gain.
+    /// FX-019-T22 (2026-11-24): RendererLab's paired pass timing gives one sample and one gain per limited frame: a GPU
+    /// time from the timer query (GL_EXT_disjoint_timer_query on ANGLE's Metal backend), the CPU encoding time and the
+    /// separately timed round trip. It draws the frame through the pass (it is on screen afterwards), restores the
+    /// setting, and both measurement calls read the gain back (bypassed frames too) without reporting a bypassed one.
     func testPairedPassTimingSamplesEveryLimitedFrame() async throws {
         let renderer = try makeLaidOut()
         try await renderer.setPreset(preset("100-square.milk"))
@@ -75,7 +77,13 @@ final class ANGLERendererTests: XCTestCase {
         let passes = renderer.timedPassFrames(5, gains: &gains)
         XCTAssertEqual(passes.count, 5)
         XCTAssertEqual(gains.count, 5)
-        XCTAssertTrue(passes.allSatisfy { $0 > 0 && $0 < 1_000 }, "\(passes)")
+        for sample in passes {
+            let gpu = try XCTUnwrap(sample.gpuMs, "the timer query gives the pass's GPU time")
+            XCTAssertTrue(gpu > 0 && gpu < 1_000, "\(sample)")
+            XCTAssertTrue(sample.cpuMs > 0 && sample.cpuMs < 1_000, "\(sample)")
+            XCTAssertTrue(sample.roundTripMs > 0 && sample.roundTripMs < 1_000, "\(sample)")
+            XCTAssertEqual(try XCTUnwrap(sample.costMs), gpu + sample.cpuMs, accuracy: 1e-9)
+        }
         XCTAssertTrue(gains.allSatisfy { $0 > 0 && $0 <= 1 }, "\(gains)")
         XCTAssertFalse(renderer.reduceFlashing, "the setting is restored")
         XCTAssertGreaterThan(litPixels(renderer.readPixels()), 0, "the paired frames are drawn")
@@ -85,9 +93,28 @@ final class ANGLERendererTests: XCTestCase {
         XCTAssertEqual(none, [], "a bypassed frame's gain is read back but not reported")
         XCTAssertEqual(renderer.timedFrames(3, reduceFlashing: true, gains: &none).count, 3)
         XCTAssertEqual(none.count, 3)
-        // Without a second timing call the paired mode is off again: plain frames record nothing more.
-        XCTAssertTrue(renderer.renderFrame(present: false))
+        XCTAssertTrue(renderer.renderFrame(present: false), "plain frames draw after the probe")
         XCTAssertEqual(renderer.timedPassFrames(0, gains: &gains), [])
+    }
+
+    /// The timer query measures GPU work, not the wait for it: a 1 × 1 clear reads a small, non-negative time, and a
+    /// missing query (0) gives no result.
+    func testTheTimerQueryMeasuresTheBracketedWork() throws {
+        let renderer = try makeLaidOut()
+        renderer.makeSurfaceCurrent()
+        var texture: UInt32 = 0
+        let framebuffer = PMANGLECreateBGRAFramebuffer(1, 1, &texture)
+        XCTAssertNotEqual(framebuffer, 0)
+        defer { PMANGLEDeleteFramebuffer(framebuffer, texture) }
+        let query = PMANGLETimerBegin()
+        XCTAssertNotEqual(query, 0, "GL_EXT_disjoint_timer_query is available")
+        PMANGLEClearRect(framebuffer, 0, 0, 1, 1, 1, 0, 0, 1)
+        PMANGLETimerEnd()
+        PMANGLEFinish()
+        let ms = PMANGLETimerResultMs(query)
+        XCTAssertGreaterThanOrEqual(ms, 0)
+        XCTAssertLessThan(ms, 50)
+        XCTAssertEqual(PMANGLETimerResultMs(0), -1)
     }
 
     func testPresentsFramesAndDrainsTheReader() throws {

@@ -91,7 +91,8 @@ CASES: list[dict] = [
          "(watchdog: a partial report names the stalled phase)", ["AUD-014-T32"], 300, mode="sc009",
          prefix="automation-sc009", wait=240, prompts="microphone", onDemand=True),
     case("rendererlab-flashcost", "rendererlab", "RendererLab flashcost: strobe safety pass cost per starter preset, "
-         "the pass alone on the frame it processes (paired; on minus off reported), at most 2 ms per frame (FX-019-S6)", [], 1200, partOf=["FX-019-T22"],
+         "the pass on the frame it processes (GPU timer query plus CPU encoding; on minus off reported), at most 2 ms "
+         "per frame (FX-019-S6)", [], 1200, partOf=["FX-019-T22"],
          wait=1080, limitMs=2.0),
     case("xctrace-perf004", "xctrace", "Instruments Logging (os_signpost): PERF-004 texture allocations only at the "
          "start and within 3 s of a rotation", ["PERF-004-T16"], 900, verdict="perf004",
@@ -586,22 +587,32 @@ def dig(data, path: str):
 def flashcost_verdict(report: dict, limit_ms: float) -> dict:
     """FX-019-T22: RendererLab's flashcost summary against the 2 ms per frame budget (FX-019-S6).
 
-    2026-11-24 (FX-019 Clarification): a report with paired pass times (`passMedianMs`, the pass timed alone on the
-    frame it processes) is judged on them: every preset's median pass time at most the limit. The on-minus-off cost of
-    separate frames (`costMs`) stays in the detail but no longer decides: on D1 it moved by up to 2 ms per preset
-    between two runs of identical code (the presets' own frame-to-frame variation), half the budget. A report without
-    paired times is judged on `costMs` as before."""
+    The statistic, newest first, used when every preset has it (FX-019 Clarifications, 2026-11-24):
+    - `passCostMedianMs`: the pass's own cost on the frame it processes, GPU time from a timer query plus CPU encoding
+      time, per frame; every preset's median at most the limit.
+    - `passMedianMs` (first paired version, D1 run 20261124T191740Z): glFinish -> pass -> glFinish on the wall clock,
+      which also counts a submit-and-wait round trip the app never pays; still judged as written, for old reports.
+    - `costMs`: on minus off of separate frames (T104), whose per-preset values moved by up to 2 ms between two runs of
+      identical code; decides only for reports without paired times. It stays in the detail either way."""
     summary = report.get("summary") or {}
     results = report.get("flashCost") or []
     costs = [r.get("costMs", 0) for r in results]
-    paired = bool(results) and all(r.get("passMedianMs") is not None for r in results)
-    key = "passMedianMs" if paired else "costMs"
+    key = "costMs"
+    for candidate in ("passCostMedianMs", "passMedianMs"):
+        if results and all(r.get(candidate) is not None for r in results):
+            key = candidate
+            break
+    paired = key != "costMs"
     over = [r["id"] for r in results if r.get(key, 0) > limit_ms]
     n = int(summary.get("presets", len(costs)))
     worst, median = summary.get("costMsMax", max(costs, default=0)), summary.get("costMsMedian", 0)
+    label = {"passCostMedianMs": "pass", "passMedianMs": "pass wall"}.get(key, "")
+
     def spread(r: dict) -> str:
         """2026-11-23: what a reader needs to tell a cost from noise (ABBA round costs, dimmed share, frame-time IQR)."""
-        parts = [f"pass {r['passMedianMs']:.2f} ms" if paired else f"{r.get('costMs', 0):.2f} ms"]
+        parts = [f"{label} {r[key]:.2f} ms" if paired else f"{r.get('costMs', 0):.2f} ms"]
+        if key == "passCostMedianMs":
+            parts.append(f"GPU {r.get('passGpuMedianMs') or 0:.2f}, CPU {r.get('passCpuMedianMs') or 0:.2f}")
         if paired:
             parts.append(f"on - off {r.get('costMs', 0):.2f} ms")
         rounds = r.get("roundCostsMs") or []
@@ -613,22 +624,34 @@ def flashcost_verdict(report: dict, limit_ms: float) -> dict:
             parts.append(f"IQR off {r['offIqrMs']:.2f} on {r['onIqrMs']:.2f}")
         return ", ".join(parts)
 
+    def middle(values: list[float]) -> float:
+        values = sorted(values)
+        return values[len(values) // 2] if values else 0.0
+
     over_detail = [f"{r['id']} ({spread(r)})" for r in results if r.get(key, 0) > limit_ms]
+    result = {"presets": n, "medianMs": median, "maxMs": worst, "over": over, "statistic": key}
     if paired:
-        passes = sorted(r["passMedianMs"] for r in results)
+        passes = sorted(r[key] for r in results)
         pass_median, pass_worst = passes[len(passes) // 2], passes[-1]
-        detail = (f"{n} presets, pass alone median {pass_median:.2f} ms, max {pass_worst:.2f} ms per frame (limit "
-                  f"{limit_ms} ms); on - off of separate frames median {median:.2f}, max {worst:.2f} ms")
+        if key == "passCostMedianMs":
+            gpu = middle([r["passGpuMedianMs"] for r in results if r.get("passGpuMedianMs") is not None])
+            cpu = middle([r["passCpuMedianMs"] for r in results if r.get("passCpuMedianMs") is not None])
+            trip = middle([r["roundTripMedianMs"] for r in results if r.get("roundTripMedianMs") is not None])
+            detail = (f"{n} presets, pass (GPU timer + CPU encoding) median {pass_median:.2f} ms, max {pass_worst:.2f} ms "
+                      f"per frame (limit {limit_ms} ms; medians GPU {gpu:.2f}, CPU {cpu:.2f}, excluded round trip "
+                      f"{trip:.2f} ms); on - off of separate frames median {median:.2f}, max {worst:.2f} ms")
+            result.update(gpuMedianMs=gpu, cpuMedianMs=cpu, roundTripMedianMs=trip)
+        else:
+            detail = (f"{n} presets, pass alone median {pass_median:.2f} ms, max {pass_worst:.2f} ms per frame (limit "
+                      f"{limit_ms} ms); on - off of separate frames median {median:.2f}, max {worst:.2f} ms")
         decisive = pass_worst
+        result.update(passMedianMs=pass_median, passMaxMs=pass_worst)
     else:
         detail = f"{n} presets, median {median:.2f} ms, max {worst:.2f} ms per frame (limit {limit_ms} ms)"
         decisive = worst
     detail += ((f"; over: {', '.join(over_detail[:5])}" if over else "")
                + (f"; thermal {', '.join(report['thermalStates'])}" if report.get("thermalStates") else ""))
-    result = {"pass": n > 0 and decisive <= limit_ms, "detail": detail if n else "no presets measured", "presets": n,
-              "medianMs": median, "maxMs": worst, "over": over, "statistic": key}
-    if paired:
-        result.update(passMedianMs=pass_median, passMaxMs=pass_worst)
+    result.update({"pass": n > 0 and decisive <= limit_ms, "detail": detail if n else "no presets measured"})
     return result
 
 

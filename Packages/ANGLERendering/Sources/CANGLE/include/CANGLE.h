@@ -160,3 +160,17 @@ void PMANGLEDeleteFramebuffer(unsigned int framebuffer, unsigned int texture);
 /// PRE-001: glBindFramebuffer(GL_FRAMEBUFFER, framebuffer) through eglGetProcAddress, so the next
 /// PMANGLEReadPixelsRGBA reads that framebuffer (thumbnail read-back).
 void PMANGLEBindFramebuffer(unsigned int framebuffer);
+
+/// FX-019-T22 (RendererLab, 2026-11-24): GPU time of the commands between `PMANGLETimerBegin` and `PMANGLETimerEnd`
+/// (GL_EXT_disjoint_timer_query, GL_TIME_ELAPSED_EXT, through eglGetProcAddress). ANGLE's Metal backend ends the
+/// command buffer being encoded at both calls and sums GPUEndTime - GPUStartTime of the command buffers in between, so
+/// the result is the GPU's own time for that work, without the CPU's submit-and-wait. Begin returns the query, or 0
+/// when the extension is missing; only one query may be active. Needs a current context.
+unsigned int PMANGLETimerBegin(void);
+
+/// Ends the active timer query (see PMANGLETimerBegin).
+void PMANGLETimerEnd(void);
+
+/// The query's elapsed GPU time in milliseconds (waits for the GPU if needed), or -1 when it is not available or the
+/// GPU reported a disjoint event; deletes the query.
+double PMANGLETimerResultMs(unsigned int query);

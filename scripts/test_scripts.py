@@ -2912,10 +2912,30 @@ class QA011Batch2Tests(unittest.TestCase):
         verdict = rdm.flashcost_verdict(paired, 2.0)
         self.assertFalse(verdict["pass"])
         self.assertEqual(verdict["over"], ["b"])
-        self.assertIn("b (pass 2.30 ms, on - off 1.00 ms)", verdict["detail"])
+        self.assertIn("b (pass wall 2.30 ms, on - off 1.00 ms)", verdict["detail"])
         del paired["flashCost"][0]["passMedianMs"]   # one preset without a paired time: the old statistic decides
         self.assertEqual(rdm.flashcost_verdict(paired, 2.0)["statistic"], "costMs")
         self.assertFalse(rdm.flashcost_verdict(paired, 2.0)["pass"])
+        # 2026-11-24, second version: GPU timer plus CPU encoding decides; the wall time with its round trip does not.
+        timed = {"summary": {"presets": 2, "costMsMedian": 1.39, "costMsMax": 4.24},
+                 "flashCost": [{"id": "a", "costMs": 4.24, "passCostMedianMs": 0.9, "passGpuMedianMs": 0.7,
+                                "passCpuMedianMs": 0.2, "roundTripMedianMs": 1.4},
+                               {"id": "b", "costMs": 1.2, "passCostMedianMs": 1.1, "passGpuMedianMs": 0.8,
+                                "passCpuMedianMs": 0.3, "roundTripMedianMs": 1.5}]}
+        verdict = rdm.flashcost_verdict(timed, 2.0)
+        self.assertTrue(verdict["pass"])
+        self.assertEqual((verdict["statistic"], verdict["passMaxMs"], verdict["roundTripMedianMs"]), ("passCostMedianMs", 1.1, 1.5))
+        self.assertIn("pass (GPU timer + CPU encoding) median 1.10 ms, max 1.10 ms", verdict["detail"])
+        self.assertIn("excluded round trip 1.50 ms", verdict["detail"])
+        timed["flashCost"][0].update(passCostMedianMs=2.2, passGpuMedianMs=1.9)
+        verdict = rdm.flashcost_verdict(timed, 2.0)
+        self.assertFalse(verdict["pass"])
+        self.assertIn("a (pass 2.20 ms, GPU 1.90, CPU 0.20, on - off 4.24 ms)", verdict["detail"])
+        # The first paired version's report (D1 20261124T191740Z: wall pass 2.80 / 3.09 ms) is judged as it was.
+        wall = {"summary": {"presets": 1, "costMsMedian": 1.39, "costMsMax": 1.39},
+                "flashCost": [{"id": "w", "costMs": 1.39, "passMedianMs": 3.09}]}
+        verdict = rdm.flashcost_verdict(wall, 2.0)
+        self.assertEqual((verdict["statistic"], verdict["pass"]), ("passMedianMs", False))
         runs = [{"name": "perf008-standard", "report": {"profile": "standard", "fps": [60.0] * 9}, "tables": {}},
                 {"name": "perf008-batterySaver", "report": {"profile": "batterySaver", "fps": [30.0] * 9}, "tables": {}}]
         self.assertTrue(rdm.verdict_perf008(runs)["pass"])
