@@ -202,7 +202,9 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         link.tap()
         XCTAssertTrue(wait(5) { self.app.navigationBars["Send OSC"].exists })
         let status = text("oscSendStatus"), counts = text("oscSendCounts")
-        let sent = Int(counts.split(separator: " ").first ?? "") ?? -1
+        // QA-011 D1 r18 (2026-11-24): the row reads "Messages, 5 sent, 0 dropped" (its label comes first), so the
+        // number is the one before " sent", not the first word.
+        let sent = counts.firstMatch(of: /(\d+) sent/).flatMap { Int($0.1) } ?? -1
         report(task, "send", ["sent": Double(sent), "sendingToMac": status.contains(mac) ? 1 : 0])
         XCTAssertTrue(status.hasPrefix("Sending to"), "Send OSC is active: \(status)")
         XCTAssertGreaterThanOrEqual(sent, 3, "the status and three cue steps were sent: \(counts)")
