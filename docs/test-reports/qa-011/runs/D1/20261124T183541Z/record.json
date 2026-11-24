@@ -1,0 +1,169 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "288df54f0f41d310ed60a601ea6421eb25e12ff7",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": false,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 51415,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261124T183541Z/artifacts/RendererLab-angle-flashcost-2026-11-24T183732Z.json",
+          "sha256": "05f46336ce5097ee3c1f7bc73cfa5ff8cd027478425299252b9fb05d10ba6ed8"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "xcodebuild",
+          "-project",
+          "RendererLab.xcodeproj",
+          "-scheme",
+          "RendererLab",
+          "-configuration",
+          "Release",
+          "-derivedDataPath",
+          "Build/rendererlab",
+          "-destination",
+          "generic/platform=iOS",
+          "-allowProvisioningUpdates",
+          "build"
+        ],
+        [
+          "RL_BACKEND=angle",
+          "RL_MODE=flashcost",
+          "launch",
+          "org.projectmios.RendererLab"
+        ]
+      ],
+      "detail": "28 presets, median 1.75 ms, max 4.39 ms per frame (limit 2.0 ms); over: frontend-uwp/Martin N AdamFX Infusion = Phat+Yin+EoS_Mandala Chaser Ft AdamFX n Martin - The Beast Mandala Chaser FX H.milk (2.56 ms, rounds 0.99-5.42, dimmed 100%, IQR off 4.63 on 4.90), frontend-uwp/ORB - Mega Spectrum.milk (3.56 ms, rounds 2.38-4.75, dimmed 74%, IQR off 1.29 on 2.55), frontend-uwp/ORB - Saturns Rings.milk (4.39 ms, rounds 2.12-5.04, dimmed 54%, IQR off 0.97 on 3.51), frontend-uwp/Rovastar & StudioMusic - More Cherished Desires.milk (2.09 ms, rounds 1.90-4.41, dimmed 100%, IQR off 0.21 on 0.24), frontend-uwp/Stahlregen + Geiss + Martin - Ouboros (Metal Finish 2).milk (2.03 ms, rounds 0.88-2.91, dimmed 99%, IQR off 0.72 on 1.00); thermal nominal",
+      "durationSeconds": 273.7,
+      "id": "rendererlab-flashcost",
+      "kind": "rendererlab",
+      "partOf": [
+        "FX-019-T22"
+      ],
+      "status": "fail",
+      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, Reduce flashing on minus off, at most 2 ms per frame (FX-019-S6)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 349,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261124T183541Z/logs/xctrace-perf004-perf004.log",
+          "sha256": "941dd89f8c6d9ebf86b9ce4cac4316db91cbbd5d890156c05e92de05255946e4"
+        },
+        {
+          "bytes": 349,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261124T183541Z/logs/xctrace-perf004-perf004-retry.log",
+          "sha256": "941dd89f8c6d9ebf86b9ce4cac4316db91cbbd5d890156c05e92de05255946e4"
+        },
+        {
+          "bytes": 376,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261124T183541Z/artifacts/xctrace-perf004-automation-perf004-2026-11-24T184714Z.json",
+          "sha256": "60b624de44b1368320596ff2cca3c1f8e4fe120d07f63d7a91b1d2a00cf19364"
+        },
+        {
+          "bytes": 296,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261124T183541Z/artifacts/xctrace-perf004-verdict.json",
+          "sha256": "bc716d25c47600d5928c8b85fc99b68a898c266974f95438b9f823abe4a9eb9a"
+        }
+      ],
+      "closes": [
+        "PERF-004-T16"
+      ],
+      "commands": [
+        [
+          "xcrun",
+          "xctrace",
+          "record",
+          "--template",
+          "Logging",
+          "--device",
+          "00008120-001E4C5C3A42201E",
+          "--time-limit",
+          "40s",
+          "--output",
+          "Build/qa-011/D1/20261124T183541Z/traces/xctrace-perf004/perf004.trace",
+          "--no-prompt",
+          "--env",
+          "PROJECTM_AUTORUN=perf004",
+          "--env",
+          "PROJECTM_VISUAL=text",
+          "--launch",
+          "--",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "perf004: first attempt the trace has not changed for 60 s after the app exited; recorded again; xctrace did not end by itself and was stopped (perf004: the trace has not changed for 60 s after the app exited); no os-signpost table exported (trace saved: False)",
+      "durationSeconds": 601.1,
+      "id": "xctrace-perf004",
+      "kind": "xctrace",
+      "partOf": [],
+      "status": "fail",
+      "title": "Instruments Logging (os_signpost): PERF-004 texture allocations only at the start and within 3 s of a rotation"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-24T18:52:06Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "8041a46891c76e564dafe67a1a2e8cc79d03fb6e2fd73fd5a7d54a7d2f443a91",
+  "runId": "20261124T183541Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-24T18:35:41Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 2,
+    "not-run": 0,
+    "pass": 0,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}

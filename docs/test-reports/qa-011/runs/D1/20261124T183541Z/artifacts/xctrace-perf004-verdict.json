@@ -1,0 +1,4 @@
+{
+  "detail": "perf004: first attempt the trace has not changed for 60 s after the app exited; recorded again; xctrace did not end by itself and was stopped (perf004: the trace has not changed for 60 s after the app exited); no os-signpost table exported (trace saved: False)",
+  "pass": false
+}

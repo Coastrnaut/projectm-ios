@@ -1,0 +1,207 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "3c11fc11083f037b68b5e5852a93ba0691817b51",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": false,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 40313,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T200159Z/artifacts/RendererLab-angle-flashcost-2026-11-23T200319Z.json",
+          "sha256": "494071a06adae463f84380bc39ff9659367b000d89025e0da868ea034f147df2"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "RL_BACKEND=angle",
+          "RL_MODE=flashcost",
+          "launch",
+          "org.projectmios.RendererLab"
+        ]
+      ],
+      "detail": "28 presets, median 1.66 ms, max 2.99 ms per frame (limit 2.0 ms); over: frontend-uwp/EoS - dark side of the moon (plus a few more hits and a pill).milk, frontend-uwp/EoS+Phat - Arm_upgrades - transformer.milk, frontend-uwp/Fvese - Snowflake Like 2.milk, frontend-uwp/Geiss - Mega Swirl 3.milk, frontend-uwp/Goody - Vertigo.milk; thermal nominal",
+      "durationSeconds": 168.2,
+      "id": "rendererlab-flashcost",
+      "kind": "rendererlab",
+      "partOf": [
+        "FX-019-T22"
+      ],
+      "status": "fail",
+      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, Reduce flashing on minus off, at most 2 ms per frame (FX-019-S6)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 260,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261123T200159Z/logs/xctrace-perf004-perf004.log",
+          "sha256": "961302523de875e89f55e50cdea8e2aab389c6ba960a082aa88090834775fa52"
+        },
+        {
+          "bytes": 376,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T200159Z/artifacts/xctrace-perf004-automation-perf004-2026-11-23T200643Z.json",
+          "sha256": "6510ca381a65634f57cb941b0eb0d02aebf47d4984dccb24aff5ea336bfb59ea"
+        },
+        {
+          "bytes": 500,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T200159Z/artifacts/xctrace-perf004-verdict.json",
+          "sha256": "1c65248fb3dd429b8ced77351a030a9e5d7af2fa5388dceff69d00c1f2695784"
+        }
+      ],
+      "closes": [
+        "PERF-004-T16"
+      ],
+      "commands": [
+        [
+          "xcrun",
+          "xctrace",
+          "record",
+          "--template",
+          "Logging",
+          "--device",
+          "00008120-001E4C5C3A42201E",
+          "--time-limit",
+          "40s",
+          "--output",
+          "Build/qa-011/D1/20261123T200159Z/traces/xctrace-perf004/perf004.trace",
+          "--no-prompt",
+          "--env",
+          "PROJECTM_AUTORUN=perf004",
+          "--env",
+          "PROJECTM_VISUAL=text",
+          "--launch",
+          "--",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "42 allocations: 0 at start, 28 at size changes, 14 elsewhere (at [8.911, 8.911, 8.911, 8.911, 8.911] s)",
+      "durationSeconds": 373.4,
+      "id": "xctrace-perf004",
+      "kind": "xctrace",
+      "partOf": [],
+      "status": "fail",
+      "title": "Instruments Logging (os_signpost): PERF-004 texture allocations only at the start and within 3 s of a rotation"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 241,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261123T200159Z/logs/xctrace-perf011-perf011.log",
+          "sha256": "5c91ea38bea8aac855e08c72d7ccd4bf0c1962a934d6d50923729c1663e0dff8"
+        },
+        {
+          "bytes": 7643,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T200159Z/artifacts/xctrace-perf011-automation-perf011-2026-11-23T201346Z.json",
+          "sha256": "48fe1e480eb1580799ac28a2243122b8ec596639ff2aaf41efe49925733db852"
+        },
+        {
+          "bytes": 248,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261123T200159Z/artifacts/xctrace-perf011-verdict.json",
+          "sha256": "22b478bbe0bf4dafca04b850a5c4e8804da4c93fd9b7eb6f054385a83a4f7b4d"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "xcrun",
+          "xctrace",
+          "record",
+          "--template",
+          "Metal System Trace",
+          "--device",
+          "00008120-001E4C5C3A42201E",
+          "--time-limit",
+          "60s",
+          "--output",
+          "Build/qa-011/D1/20261123T200159Z/traces/xctrace-perf011/perf011.trace",
+          "--no-prompt",
+          "--instrument",
+          "os_signpost",
+          "--env",
+          "PROJECTM_AUTORUN=perf011",
+          "--env",
+          "PROJECTM_SECONDS=50",
+          "--launch",
+          "--",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "the app was not backgrounded and brought back during the run; GPU intervals not checked (no metal-gpu-intervals table exported)",
+      "durationSeconds": 695.2,
+      "id": "xctrace-perf011",
+      "kind": "xctrace",
+      "partOf": [
+        "PERF-011-T21"
+      ],
+      "status": "fail",
+      "title": "Instruments Metal System Trace: no GPU intervals and a lower footprint 10 s after backgrounding (In-App Playback), frames within 2 s of the return"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-23T20:23:58Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "569c7c7f5ba78c6fcfafc67133ce975c3894b291020cc83a275108b50e4b7fc1",
+  "runId": "20261123T200159Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-23T20:01:59Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 3,
+    "not-run": 0,
+    "pass": 0,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}

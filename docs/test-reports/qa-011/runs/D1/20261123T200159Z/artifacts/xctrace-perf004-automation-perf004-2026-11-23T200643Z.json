@@ -1,0 +1,16 @@
+{
+  "build" : "2",
+  "device" : "iPhone15,4",
+  "finishedAt" : "2026-11-23T20:06:43Z",
+  "fps" : 60.098712134726135,
+  "glow" : true,
+  "markSeconds" : {
+    "rotate" : 10.000568985939026,
+    "rotateBack" : 20.010715007781982,
+    "start" : 0
+  },
+  "rotationRequested" : true,
+  "signpost" : "PERF-004 texture allocation",
+  "systemVersion" : "27.0.1",
+  "visual" : "text"
+}

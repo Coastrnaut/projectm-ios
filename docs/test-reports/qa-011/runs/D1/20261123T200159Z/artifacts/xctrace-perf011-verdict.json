@@ -1,0 +1,7 @@
+{
+  "activeAgainAt": -1,
+  "backgroundedAt": -1,
+  "detail": "the app was not backgrounded and brought back during the run; GPU intervals not checked (no metal-gpu-intervals table exported)",
+  "firstFrameAfterReturnSeconds": -1,
+  "pass": false
+}
