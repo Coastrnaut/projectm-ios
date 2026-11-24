@@ -653,10 +653,12 @@ final class B05AudioDeviceTests: DeviceAcceptanceCase {
         pause(5)   // the import runs after the renderer's preset trial
         tapTransport("presets")
         // D1 2026-11-22: `isHittable` passed with the row under the iPhone's floating search field, and the tap left
-        // the home shown; `openListRow` scrolls it clear of that chrome and taps until My Presets shows.
-        let mine = app.buttons["node:myPresets"]
-        XCTAssertTrue(mine.waitForExistence(timeout: 10), "library home")
-        XCTAssertTrue(app.openListRow(mine, destination: app.navigationBars["My Presets"]), "My Presets opened")
+        // the home shown; `openListRow` scrolls it clear of that chrome and taps until My Presets shows. D2 r17/r21 and
+        // D3 r20 (2026-11-24): with the colour and motion chip rows shown, My Presets lies below the iPad popover's foot
+        // and the lazy list has not built it, so the home is found by its Included row and the list dragged until
+        // My Presets exists (`openMyPresets`).
+        XCTAssertTrue(app.buttons["node:included"].waitForExistence(timeout: 10), "library home")
+        XCTAssertTrue(app.openMyPresets(), "My Presets opened")
         let row = app.buttons["preset:pre015-large"]
         for _ in 0..<6 where !app.isClearOfChrome(row) { app.dragContentUp(near: row.exists ? row : nil) }
         XCTAssertTrue(row.waitForExistence(timeout: 10), "the large preset was imported")

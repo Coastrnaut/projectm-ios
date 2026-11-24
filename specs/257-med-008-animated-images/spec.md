@@ -50,6 +50,21 @@ interaction); each answer is the conservative, local-first option, recommended o
 - Q: Any new settings or UI? → A: None. No new UserDefaults key, no new Settings row. The Photo visual's VoiceOver value says "Animated photo W × H, N frames" for an animation (MED-008-R12).
 - Q: How is acceptance proven? → A: On the Mac with injected frame times through the real compositor: a generated 4-frame GIF (ImageIO `CGImageDestination`, no binary assets) imported to APNG loops (the frame at t + total equals the frame at t) and follows the clamped delays; a generated 200-frame 2048 × 2048 APNG (hand-written chunks, tiny file) plays through every frame while the cache's peak accounted bytes stay under a 16 MB test budget and no frame is decoded at full size; Reduce Motion shows the first frame; plus plain-Swift timing and cache tests, a scene archive check, and one app test on the private simulator (MED-008-S1 to S6).
 
+### Session 2026-11-24 (QA-011 device stage)
+
+- Q: MED-008-T12 failed on D2 (iPad Pro M5, iPadOS 27.2.1) in builds r17 and r21 ("bar seen at" one position in r17,
+  none in r21) after passing in r9: did the photo layer stop animating? → A: No; the test sampled stroboscopically. The
+  fixture's bar repeats every 40 frames (4 px a frame over 160 px at 40 ms a frame: a 1.6 s cycle), and a 3 s pause plus
+  the screenshot put every picture 3.21 s apart, two cycles less 10 ms, so all 20 pictures caught the bar at almost the
+  same phase. Evidence (bar column in the 12-20 % band, exported screenshots): r9 walked 0.12 → 0.48 of the width over
+  the minute (the alias of a playing bar), D3 r19 walked off the edge after picture 7, and r21 sat for the whole minute
+  in the part of the 160-pixel frame that the aspect fill crops on a portrait iPad (about 44 %); photoFramesShown kept
+  counting and the r21 pictures show the fixture's grey (value 20) over the whole screen. Decision: the check keeps its
+  meaning (at least 3 bar positions in 20 pictures; a frozen frame shows at most one), and each picture is timed from
+  the start at 3.2 s × s plus 0.08 s × (7s mod 20), which puts the 20 pictures at 20 distinct phases 80 ms apart over
+  the cycle; a simulation with the screenshot's jitter gives fewer than 3 positions in 0 of 20,000 runs on an iPad's crop
+  and 0.03 % on an iPhone's. No app change.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - An animated GIF plays behind the spectrum (Priority: P1)

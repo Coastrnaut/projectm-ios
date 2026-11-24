@@ -1273,6 +1273,21 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   textures (PERF-004 Clarification, 2026-11-13). perf004 now defaults to the Text visual (no permission, no import) and
   the matrix case passes `PROJECTM_VISUAL=text` explicitly, so the unattended run measures the pool without a person.
 
+- **A row below a lazy list's foot does not exist until the list is scrolled** (D2 r17/r21, D3 r20, 2026-11-24,
+  PRE-015-T26). `app.buttons["node:myPresets"].waitForExistence(timeout: 10)` failed while a later dump showed the row:
+  the first dump listed the iPad popover's home only down to Collections, scroll bar 0 %; the PRE-004/005 chip rows
+  (shown once thumbnails exist, so after earlier runs on that device) had pushed My Presets below the 660 pt popover,
+  and the later dump came after the test's own drags. Wait for a row near the top (Included), then drag the list until
+  the target exists; `XCUIApplication.openMyPresets()` does this for every device test. Read the first failure's dump,
+  not the last one: a dump taken after scrolling shows a different list.
+- **Sampling a periodic animation at a fixed interval can freeze it** (D2 r17/r21, 2026-11-24, MED-008-T12). The GIF
+  fixture's bar repeats every 1.6 s; a 3 s pause plus a 0.21 s screenshot spaced pictures 3.21 s apart, two cycles less
+  10 ms, so all 20 caught the same phase: one position when that phase was on screen, none when it was in the part the
+  aspect fill crops. The app was playing (r9's bar crept 0.12 → 0.48 of the width, the alias). Time each picture from
+  the start at a whole number of cycles plus a distinct phase offset (3.2 s × s + 0.08 s × (7s mod 20)); a frozen frame
+  still shows one position. Before blaming the renderer for a "frozen" animation, check the picture spacing against the
+  content's period.
+
 ### Policy and evidence
 
 - **Record decisions with their evidence** (ADR-0124: budgets corrected from the first device measurements; never

@@ -64,6 +64,18 @@ Each answer is the conservative, local-first choice.
   copy in Quarantine, where it could never be fixed because quarantined files are not editable.)
   Applied in R5, US1 scenario 4.
 
+### Session 2026-11-24 (QA-011 device stage)
+
+- Q: PRE-015-T26 failed on D2 (r17, r21) and D3 (r20) waiting 10 s for the browser's `node:myPresets` row although the
+  popover showed My Presets in a later dump: did the app's accessibility structure regress? → A: No. The first failure
+  dump lists the iPad popover's home (580 × 660 pt, ending at y 1018) down to Collections at y 1000 with the scroll bar
+  at 0 %: the PRE-004/PRE-005 colour and motion chip rows (two 75.5 pt rows, shown once any preset has a thumbnail, so
+  after earlier runs on the device) push My Presets below the popover's foot, and the lazy list has not built that row,
+  so no query finds it. The later dump, taken after the test's drags, held the row at y 894 with the bar at 100 %.
+  Decision: the test opens My Presets with the shared `XCUIApplication.openMyPresets()` (the home found by its Included
+  row, the list dragged until My Presets exists, then `openListRow`), the helper B04 and B07 already used; the S7
+  timing (editor open under 2 s) is unchanged. No app change.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Duplicate a bundled preset into My Presets (Priority: P1)

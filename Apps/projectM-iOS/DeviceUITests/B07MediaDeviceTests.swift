@@ -901,8 +901,17 @@ final class B07MediaDeviceTests: B07Case {
         pause(3)
         let baseline = footprintMB() ?? -1
         var footprints: [Int] = [], columns: Set<Int> = [], seen = 0
-        for s in 0..<20 {   // 60 s
-            pause(3)
+        // The bar's position repeats every 40 frames (4 px a frame over 160 px, 40 ms a frame): a 1.6 s cycle. QA-011 D2
+        // r17/r21 (2026-11-24): a 3 s pause plus the screenshot made every picture 3.21 s apart, two cycles less 10 ms,
+        // so all 20 pictures caught the bar at almost the same phase (r9: 0.12 → 0.48 of the width over the minute,
+        // D3 r19: off the cropped edge after picture 7, r21: inside the 44 % of the 160-pixel frame that an aspect fill
+        // crops on a portrait iPad in every picture). The app played (photoFramesShown counted, and r9's slow walk is
+        // the alias of a playing bar). Each picture is now timed from the start at 3.2 s × s plus 0.08 s × (7s mod 20):
+        // 20 distinct phases 80 ms (8 px) apart over the cycle, about a minute in all; a frozen frame still shows one.
+        let start = Date()
+        for s in 0..<20 {   // about 62 s
+            let due = 3.2 * Double(s + 1) + 0.08 * Double((7 * s) % 20)
+            pause(max(0.1, due - Date().timeIntervalSince(start)))
             if let mb = footprintMB() { footprints.append(mb) }
             if let c = barColumn(screen(task, "gif \(s)").1) { columns.insert(Int(c * 20)); seen += 1 }
         }
