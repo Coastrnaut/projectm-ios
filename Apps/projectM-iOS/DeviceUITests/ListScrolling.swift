@@ -160,6 +160,28 @@ extension XCUIApplication {
         listHolding(reference).scrollStep(up: false)
     }
 
+    /// Opens My Presets from the browser's home: the list is dragged towards its end until the row exists, then the
+    /// row is scrolled clear of the bottom chrome and tapped until its list's navigation bar shows (`openListRow`).
+    /// The home is a lazy list: a row below its visible part is not built and does not exist for a query. At AX5 (D1
+    /// 2026-11-22 rerun) the rows are that tall; on an iPad the browser is a 660 pt popover, and once the PRE-004/005
+    /// colour and motion chip rows show (they appear when any preset has a thumbnail, so after earlier runs on the
+    /// device) My Presets sits below its foot: PRE-015-T26 on D2 r17/r21 and D3 r20 (2026-11-24) waited 10 s for
+    /// `node:myPresets` while the failure dump listed the home down to Collections at y 1000 of a popover ending at
+    /// 1018, scroll bar 0 %; the later dump, after the test's drags, held the row at y 894 with the bar at 100 %.
+    @discardableResult
+    func openMyPresets(timeout: TimeInterval = 10) -> Bool {
+        let myPresets = buttons["node:myPresets"], home = buttons["node:included"]
+        guard home.waitForExistence(timeout: timeout) || myPresets.exists else { return false }
+        // Drags inside the browser's list (found by its Included row): on an iPad the browser sits in the middle of the
+        // window (D3 2026-11-23, `dragContentUp(near:)`).
+        for _ in 0..<12 where !myPresets.exists {
+            dragContentUp(near: home.exists ? home : nil)
+            _ = myPresets.waitForExistence(timeout: 1)
+        }
+        guard myPresets.exists else { return false }
+        return openListRow(myPresets, destination: navigationBars["My Presets"])
+    }
+
     /// Scrolls `row` clear of the bottom chrome, taps it and waits for `destination`; up to `attempts` taps, since a
     /// tap that met the chrome, or a list redrawn under the finger, leaves the list where it was. True once it shows.
     /// A row above the top bar is brought down, one under the bottom chrome up.

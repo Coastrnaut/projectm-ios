@@ -254,21 +254,9 @@ class B07DeviceCase: DeviceAcceptanceCase {
 
     // MARK: The strobing fixture (`-uitestImportPreset fixture:strobe`)
 
-    /// Opens My Presets from the browser's home: the row scrolled clear of the bottom chrome (an iPhone's floating
-    /// search field covered it on D1, 2026-11-22) and tapped until its list's navigation bar shows.
-    /// At AX5 (D1 2026-11-22 rerun) the home's rows are so tall that My Presets lies beyond the lazy list's built rows
-    /// and does not exist until the list is scrolled towards its end.
+    /// Opens My Presets from the browser's home (`XCUIApplication.openMyPresets`, shared with B05's PRE-015-T26).
     @discardableResult
-    func openMyPresets() -> Bool {
-        let myPresets = app.buttons["node:myPresets"]
-        guard appears(app.buttons["node:included"], 10) || appears(myPresets, 1) else { return false }
-        // Drags inside the browser's list (found by its Included row): on an iPad the browser is a sheet in the middle of
-        // the window (D3 2026-11-23, `dragContentUp(near:)`).
-        let home = app.buttons["node:included"]
-        for _ in 0..<12 where !myPresets.exists { app.dragContentUp(near: home.exists ? home : nil); _ = appears(myPresets, 1) }
-        guard myPresets.exists else { return false }
-        return app.openListRow(myPresets, destination: app.navigationBars["My Presets"])
-    }
+    func openMyPresets() -> Bool { app.openMyPresets() }
 
     /// Plays the imported "Strobe" fixture from My Presets (Load Anyway when the May flash alert asks); true once the
     /// `presetFlashProbe` names it.
