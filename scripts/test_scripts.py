@@ -7,6 +7,7 @@ import contextlib
 import io
 import json
 import math
+import os
 import re
 import struct
 import subprocess
@@ -2748,12 +2749,26 @@ class QA011Batch2Tests(unittest.TestCase):
         self.assertIn("started in the background", self.xt.perf011_verdict(started_away)["detail"])
 
     def test_xctrace_record_stop_rules(self):
-        """QA-011 D1 (2026-11-23): xctrace said "Stopping recording..." and never ended; the runner stops it."""
-        rule = dict(startup=180, save=900, stall=180)
+        """QA-011 D1: a recording is stopped only at the hard limit, or once the save allowance has passed with the
+        bundle unchanged; a bundle still being written is left alone."""
+        rule = dict(startup=60, save=480, quiet=420, stall=60)
         self.assertIsNone(self.xt.stop_reason(100, 100, 70, **rule), "still in the recording time")
-        self.assertIsNone(self.xt.stop_reason(600, 10, 70, **rule), "saving: the trace still grows")
-        self.assertIn("not changed", self.xt.stop_reason(600, 200, 70, **rule))
-        self.assertIn("still running", self.xt.stop_reason(1200, 0, 70, **rule))
+        self.assertIsNone(self.xt.stop_reason(400, 300, 70, **rule), "no exit seen: 270 s after the recording time")
+        self.assertIn("no saved trace", self.xt.stop_reason(560, 300, 70, **rule))
+        self.assertIsNone(self.xt.stop_reason(560, 10, 70, **rule), "saving: the trace still grows")
+        self.assertIn("still running", self.xt.stop_reason(611, 0, 70, **rule))
+
+    def test_xctrace_waits_out_the_silent_save_after_the_app_exited(self):
+        """D1 2026-11-23/24 (perf004, Logging): after "Target app exited" nothing on disk changed for 196 s and 307 s
+        before xctrace saved by itself (matrix 20261123T190422Z, 20261123T200159Z); the 180 s and 60 s idle stops
+        killed that phase and destroyed the trace (20261123T210326Z, 20261124T183541Z)."""
+        rule = dict(startup=60, save=480)
+        for silent in (61, 181, 196, 307):
+            self.assertIsNone(self.xt.stop_reason(35 + silent, silent, 50, ended=silent, **rule), f"{silent} s")
+        self.assertIn("after the recording ended", self.xt.stop_reason(35 + 421, 421, 50, ended=421, **rule))
+        self.assertIsNone(self.xt.stop_reason(35 + 421, 5, 50, ended=421, **rule), "still writing")
+        self.assertGreaterEqual(self.xt.SAVE_QUIET, 307 * 1.3)
+        self.assertLessEqual(60 + 50 + 480 + 60 * 1.5, 600 + 90, "one check stays near its 10-minute budget")
 
     def test_xctrace_record_stops_a_hung_command_with_sigint(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -2761,53 +2776,73 @@ class QA011Batch2Tests(unittest.TestCase):
             # A stand-in for a hung xctrace: prints, then waits; exits 3 on SIGINT as xctrace's Ctrl-C would end it.
             hung = [sys.executable, "-c", "import signal,sys,time\n"
                     "signal.signal(signal.SIGINT, lambda *a: (print('interrupted', flush=True), sys.exit(3)))\n"
-                    "print('Stopping recording...', flush=True)\n"
-                    "time.sleep(60)"]
-            start = time.monotonic()
-            out = self.xt.record(hung, trace, log, 0, startup=0, save=60, stall=0.5, grace=5, poll=0.2)
-            self.assertLess(time.monotonic() - start, 10)
-            self.assertEqual(out["exit"], 3)
-            self.assertIn("not changed", out["stopped"])
-            self.assertIn("interrupted", out["text"])
-            self.assertIn("sending SIGINT", out["text"])
-            done = self.xt.record([sys.executable, "-c", "print('Recording completed')"], trace, log, 0, poll=0.2)
-            self.assertEqual((done["exit"], done["stopped"]), (0, None))
-
-    def test_xctrace_stops_a_save_that_hangs_after_the_app_exited(self):
-        """D1 matrix 2026-11-23 (perf004): "Target app exited, ending recording..." and then nothing; the startup
-        allowance (180 s) no longer delays the stop once the app has exited, and a bundle of only Trace1.run (the raw
-        .atrc) is not a saved trace."""
-        rule = dict(startup=180, save=900, stall=180)
-        self.assertIsNone(self.xt.stop_reason(60, 50, 40, exited_idle=30, **rule), "saving may take a while")
-        self.assertIn("after the app exited", self.xt.stop_reason(100, 61, 40, exited_idle=61, **rule))
-        with tempfile.TemporaryDirectory() as tmp:
-            trace, log = Path(tmp) / "x.trace", Path(tmp) / "x.log"
-            (trace / "Trace1.run" / "Attachments").mkdir(parents=True)
-            self.assertFalse(self.xt.trace_complete(trace), "only the raw recording")
-            hung = [sys.executable, "-c", "import signal,sys,time\n"
-                    "signal.signal(signal.SIGINT, lambda *a: sys.exit(3))\n"
                     "print('Target app exited, ending recording...', flush=True)\n"
                     "time.sleep(60)"]
             start = time.monotonic()
-            out = self.xt.record(hung, trace, log, 40, startup=180, stall=180, grace=5, poll=0.2, exit_stall=0.5)
+            out = self.xt.record(hung, trace, log, 0, startup=0, save=60, quiet=0.5, stall=0.3, grace=5, poll=0.1,
+                                 heartbeat=0.2)
             self.assertLess(time.monotonic() - start, 10)
-            self.assertIn("after the app exited", out["stopped"])
+            self.assertEqual(out["exit"], 3)
+            self.assertIn("no saved trace", out["stopped"])
+            self.assertIn("interrupted", out["text"])
+            self.assertIn("sending SIGINT", out["text"])
+            self.assertIn("s after the app exited: bundle 0 bytes", out["text"], "the heartbeat line")
             self.assertEqual((out["appExited"], out["complete"]), (True, False))
+            done = self.xt.record([sys.executable, "-c", "print('Target app exited'); print('Output file saved')"],
+                                  trace, log, 0, poll=0.1)
+            self.assertEqual((done["exit"], done["stopped"]), (0, None))
+            self.assertIsNone(done["saveSeconds"], "exited before the first poll saw the line")
+
+    def test_xctrace_trace_complete_and_cpu_time(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            trace = Path(tmp) / "x.trace"
+            (trace / "Trace1.run" / "Attachments").mkdir(parents=True)
+            self.assertFalse(self.xt.trace_complete(trace), "only the raw recording")
             (trace / "form.template").write_text("x")
             self.assertTrue(self.xt.trace_complete(trace))
+        self.assertEqual(self.xt.parse_cpu_time("  0:01.50\n"), 1.5)
+        self.assertEqual(self.xt.parse_cpu_time("1:02:03.00"), 3723.0)
+        self.assertEqual(self.xt.parse_cpu_time("1-00:00:01.00"), 86401.0)
+        self.assertIsNone(self.xt.parse_cpu_time(""))
+        self.assertIsNotNone(self.xt.cpu_seconds(os.getpid()))
 
     def test_a_stopped_recording_counts_only_when_whole(self):
-        base = {"name": "perf004", "stopped": "the trace has not changed for 61 s after the app exited"}
+        base = {"name": "perf004", "stopped": "no saved trace 421 s after the recording ended"}
         whole = dict(base, appExited=True, traceSaved=True, tables={"os-signpost": [{}]})
         verdict = rdm.apply_stop_policy({"pass": True, "detail": "2 allocations"}, [whole])
         self.assertTrue(verdict["pass"])
         self.assertIn("stopped after the app had exited", verdict["detail"])
         for broken in (dict(whole, traceSaved=False), dict(whole, appExited=False), dict(whole, tables={})):
             self.assertFalse(rdm.apply_stop_policy({"pass": True, "detail": "x"}, [broken])["pass"])
-        retried = {"name": "perf004", "stopped": None, "firstAttempt": "hung"}
-        verdict = rdm.apply_stop_policy({"pass": True, "detail": "ok"}, [retried])
+        saved = {"name": "perf004", "stopped": None, "saveSeconds": 307.2}
+        verdict = rdm.apply_stop_policy({"pass": True, "detail": "ok"}, [saved])
         self.assertTrue(verdict["pass"])
-        self.assertIn("first attempt hung; recorded again", verdict["detail"])
+        self.assertEqual(verdict["detail"], "ok (perf004: saved 307 s after the app exited)")
+
+    def test_perf004_first_cycle_starts_when_the_visual_is_up(self):
+        """D1 matrix 20261123T200159Z: playback start on the Text visual hung the main thread 5.0 s; the first cycle's
+        14 allocations at 8.911/8.976 s (5.3 s after "QA-011 start") are the start, not stray."""
+        alloc = "PERF-004 texture allocation"
+        events = sorted([(3.655, "QA-011 start"), (18.653, "QA-011 rotate"), (28.663, "QA-011 rotate back")]
+                        + [(8.911, alloc)] * 10 + [(8.976, alloc)] * 4 + [(18.717, alloc)] * 14 + [(28.708, alloc)] * 14)
+        old = self.xt.perf004_verdict(events)
+        self.assertFalse(old["pass"], "without the ready time the first cycle counts as stray")
+        self.assertEqual(len(old["stray"]), 14)
+        report = {"markSeconds": {"start": 0, "rotate": 10.000568985939026, "rotateBack": 20.010715007781982}}
+        ready = rdm.perf004_ready(events, report)
+        self.assertAlmostEqual(ready, 8.652, places=3)
+        verdict = self.xt.perf004_verdict(events, ready=ready)
+        self.assertTrue(verdict["pass"], verdict)
+        self.assertEqual((verdict["atStart"], verdict["atSizeChanges"]), (14, 28))
+        self.assertIn("the visual was up 5.0 s after the start marker", verdict["detail"])
+        marked = sorted(events + [(8.652, "QA-011 ready")])
+        self.assertTrue(self.xt.perf004_verdict(marked)["pass"], "the app's own ready marker")
+        steady = sorted(marked + [(14.0, alloc)])
+        self.assertEqual(self.xt.perf004_verdict(steady)["stray"], [14.0], "steady state still fails")
+        self.assertEqual(self.xt.perf004_verdict(steady, ready=100.0)["stray"], [14.0], "ready never passes rotate")
+        self.assertIsNone(rdm.perf004_ready(events, None))
+        run = {"tables": {self.xt.SIGNPOST_SCHEMA: []}, "report": dict(report, rotationRequested=True)}
+        self.assertFalse(rdm.verdict_perf004([run])["pass"], "no rows: no start marker")
 
     def test_perf011_background_steps_wait_for_the_launch(self):
         runner = rdm.Runner(rdm.MatrixTarget("D1", "ID", False, Path("/tmp/x"), "UDID"), Path("/tmp/w"), 1, [], True)

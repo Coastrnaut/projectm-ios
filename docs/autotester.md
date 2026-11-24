@@ -127,7 +127,7 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 | `autorun-pre005` | part of PRE-005-T17 | 200 real thumbnails (evenly spaced) scored; percentiles and class counts for the threshold choice |
 | `autorun-sc009` | AUD-014-T32 (D1, D3) | the lifecycle scripts' end states; on demand, needs the microphone answered (see below) |
 | `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (builds RendererLab into `Build/rendererlab` when missing) |
-| `xctrace-perf004` | PERF-004-T16 | Logging template on the Text visual (`PROJECTM_VISUAL=text`, the default since 2026-11-23): "PERF-004 texture allocation" signposts only before start + 5 s and within 3 s of each rotation (perf004 rotates at 10 s and back at 20 s) |
+| `xctrace-perf004` | PERF-004-T16 | Logging template on the Text visual (`PROJECTM_VISUAL=text`, the default since 2026-11-23): "PERF-004 texture allocation" signposts only before the visual is up + 5 s (marker `QA-011 ready`, after playback start returned) and within 3 s of each rotation (perf004 rotates 10 s after `ready` and back at 20 s; time limit 50 s; xctrace then takes 3-5 min on D1 to save) |
 | `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; counted from the moment the app's process appears, the Mac opens Settings at 10 s and relaunches the app at 26 s (app runs 40 s, time limit 70 s; a recording that never ends is stopped with SIGINT and fails the case): no frames (and no GPU intervals of the app) from 10 s after backgrounding until the return (willEnterForeground, marker `QA-011 return`), a lower footprint, the first frame within 2 s of the return |
 | `xctrace-perf008` | part of PERF-008-T16 | on demand (about 12 min): Power Profiler 5 min Standard then 5 min Battery saver; fps and frame time per minute from the app, energy per minute from any power table the trace exports |
 | `xctest-goldens-record` | part of QA-003-T17 | on demand: records this model's goldens and imports them; commit them, rebuild, then `xctest-goldens` compares |
@@ -618,8 +618,9 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
 - **Instruments from the command line:** `xcrun xctrace record --template <name> --device <UDID> --time-limit 60s
   --output x.trace --launch -- <bundle id> <launch arguments>` launches the installed Debug app with test hooks. Never
   wrap it in a short `timeout`: saving a 60 s Allocations trace takes minutes (6.7 GB), and a killed save leaves an
-  unreadable trace. Never leave it unwatched either: `xctrace.record()` stops it with SIGINT once the trace bundle
-  has not changed for 3 minutes after the recording time, or 15 minutes past it (2026-11-23). `xctrace export --toc` lists the tables; Metal System Trace exports `metal-gpu-intervals` and
+  unreadable trace. Never leave it unwatched either: `xctrace.record()` stops it with SIGINT once 7 minutes have
+  passed since the recording ended and the bundle has not changed for 1 minute, or at launch + time limit + 8 minutes
+  (2026-11-24; an idle bundle right after the recording is not a hang, see the lesson below). `xctrace export --toc` lists the tables; Metal System Trace exports `metal-gpu-intervals` and
   `metal-current-allocated-size`, but Allocations exports no allocation table, so memory growth is checked with the
   DEBUG `memoryProbe` (`footprintMB=<n>` each second with `-uitestDiagnostics`) instead.
 - **Recording diagnosis hooks (DEBUG):** `recordingFacts` reports `busy=` (gate full), `notReady=` (the writer refused)
@@ -1395,7 +1396,28 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   raw `trace-data.atrc`; `export --toc` fails on it, and `xctrace import --input trace-data.atrc --template Logging`
   produces a trace whose os-signpost table is empty (the log stream arrives with the save). `trace_complete` checks for
   `form.template`; a whole trace is exported even after a stop, and a stopped run counts only when the app had exited
-  and its tables exported.
+  and its tables exported. (Corrected 2026-11-24 in the next lesson: the save had not hung; the 60 s stop and the
+  retry are gone.)
+- **xctrace's save is silent for minutes; read the file times before calling it hung** (D1 matrix 20261124T183541Z,
+  `xctrace-perf004`, PERF-004 Clarifications 2026-11-24). Both attempts were stopped "60 s after the app exited" and
+  left only the raw `trace-data.atrc`. The bundles' birth and modification times (`stat -f "%SB %Sm"`) settled it: in
+  the two D1 runs that saved, xctrace wrote the raw recording within a second of "Target app exited", then changed
+  nothing on disk, neither the bundle nor `$TMPDIR/instruments*.ktrace`, for 196 s and 307 s, then wrote the whole
+  trace in 8 s by itself. Every failed run had been stopped inside that phase (183 s, 60 s, 60 s), and SIGINT there
+  only prints "Stopping recording..." and leaves xctrace running, so SIGTERM ended it and destroyed the trace.
+  `xctrace.record` now treats an idle bundle as a hang only after `SAVE_QUIET` (420 s, the slowest save seen plus a
+  third) from the app's exit and 60 s unchanged, writes a heartbeat line each minute while it saves (bundle bytes,
+  seconds unchanged, xctrace CPU time) and returns `saveSeconds`, which the verdict names. There is no second attempt,
+  because two saves would pass the 10-minute check budget. Lessons for any repository: a progress watchdog must watch
+  something the tool really updates in that phase; measure that phase on a run that succeeded before choosing a
+  timeout; never retry what your own stop broke. xctrace also leaves `$TMPDIR/instruments*.ktrace` behind (1.3-2 GB
+  each after a Metal System Trace run), so check that folder when the Mac's disk fills.
+  - *Judge a window from the event that starts it, not from the command.* The run that did save failed with "14 elsewhere
+    (at 8.911 s)". Those 14 were the first allocations in the trace: starting playback on the Text visual held the main
+    thread 5.0 s (a hangtracer `HangInterval` in the same os-signpost table), so the first cycle came 5.3 s after
+    "QA-011 start", just past the start + 5 s window. perf004 now emits "QA-011 ready" once playback start returns, and
+    older traces infer it from the report (`markSeconds` count from that moment). A gap between the app's own times
+    and the trace's markers is the clue: the rotation was 10.0 s after the start in the report and 15.0 s in the trace.
 - **A sheet at its start closes on a full-height drag towards the start** (FILE-010-T11, D1 r10b). After Clear Caches
   the Storage list was scrolled to its top, the first row ("storage.photos") still counted as above the navigation bar
   (under the expanded large title), and `scrollTo` dragged the list's height towards the start: the Settings sheet

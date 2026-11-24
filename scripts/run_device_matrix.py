@@ -95,7 +95,9 @@ CASES: list[dict] = [
          wait=1080, limitMs=2.0),
     case("xctrace-perf004", "xctrace", "Instruments Logging (os_signpost): PERF-004 texture allocations only at the "
          "start and within 3 s of a rotation", ["PERF-004-T16"], 900, verdict="perf004",
-         runs=[{"name": "perf004", "template": "Logging", "seconds": 40, "mode": "perf004",
+         # 50 s: the app ends the recording by exiting (about 33 s, 38 s when its playback start hung 5 s on D1),
+         # never the time limit; xctrace then needs 3-5 minutes on D1 to save (`xt.SAVE_QUIET`, 2026-11-24).
+         runs=[{"name": "perf004", "template": "Logging", "seconds": 50, "mode": "perf004",
                 # The Text visual: a compositor visual (shared texture pool) that needs no permission (2026-11-23).
                 "env": {"PROJECTM_VISUAL": "text"},
                 "tables": [xt.SIGNPOST_SCHEMA]}]),
@@ -613,8 +615,9 @@ def apply_stop_policy(verdict: dict, runs: list[dict]) -> dict:
     """A recording that had to be stopped counts only when its window was whole and its data readable: xctrace said
     the app had exited (the app's run, and so the recording window, had ended) and the stopped trace was still saved
     whole and exported (Clarification FX-019/PERF-004, 2026-11-23). Anything else fails, whatever was salvaged (the
-    perf011 trace stopped mid-save exported nothing). A first attempt that hung is named in the detail either way."""
-    notes = [f"{r['name']}: first attempt {r['firstAttempt']}; recorded again" for r in runs if r.get("firstAttempt")]
+    perf011 trace stopped mid-save exported nothing). How long each save took after the app exited is named too."""
+    notes = [f"{r['name']}: saved {r['saveSeconds']:.0f} s after the app exited" for r in runs
+             if not r.get("stopped") and isinstance(r.get("saveSeconds"), (int, float))]
     stopped = [r for r in runs if r.get("stopped")]
     unusable = [r for r in stopped if not (r.get("appExited") and r.get("traceSaved") and r.get("tables"))]
     if unusable:
@@ -625,8 +628,19 @@ def apply_stop_policy(verdict: dict, runs: list[dict]) -> dict:
         verdict["detail"] = ("stopped after the app had exited, trace saved and exported ("
                              + "; ".join(f"{r['name']}: {r['stopped']}" for r in stopped) + "); " + verdict["detail"])
     if notes:
-        verdict["detail"] = "; ".join(notes) + "; " + verdict["detail"]
+        verdict["detail"] = verdict["detail"] + " (" + "; ".join(notes) + ")"
     return verdict
+
+
+def perf004_ready(events: list[tuple[float, str]], report: dict | None) -> float | None:
+    """Trace seconds at which perf004's playback start had returned, for traces without a "QA-011 ready" marker: the
+    app times its marks from that moment (`markSeconds.rotate`), so "QA-011 rotate" in the trace minus that offset is
+    it (D1 20261123T200159Z: 18.653 - 10.001 = 8.652 s, 5.0 s after "QA-011 start")."""
+    rotate = xt.marker_times(events).get("rotate")
+    offset = ((report or {}).get("markSeconds") or {}).get("rotate")
+    if rotate is None or not isinstance(offset, (int, float)):
+        return None
+    return rotate - offset
 
 
 def verdict_perf004(runs: list[dict]) -> dict:
@@ -634,7 +648,8 @@ def verdict_perf004(runs: list[dict]) -> dict:
     rows = (run.get("tables") or {}).get(xt.SIGNPOST_SCHEMA)
     if rows is None:
         return {"pass": False, "detail": f"no {xt.SIGNPOST_SCHEMA} table exported (trace saved: {run.get('traceSaved')})"}
-    verdict = xt.perf004_verdict(xt.signpost_events(rows))
+    events = xt.signpost_events(rows)
+    verdict = xt.perf004_verdict(events, ready=perf004_ready(events, run.get("report")))
     if run.get("report") and not run["report"].get("rotationRequested"):
         verdict["pass"], verdict["detail"] = False, "the app could not request the rotation; " + verdict["detail"]
     return verdict
@@ -877,7 +892,9 @@ class Runner:
                     driver.join(timeout=5)
                 continue
             # Never a short timeout (saving a trace takes minutes, and a killed save leaves it unreadable), but never
-            # unwatched: `xt.record` stops xctrace with SIGINT when the trace stops changing or a hard limit passes.
+            # unwatched: `xt.record` stops xctrace with SIGINT only after the measured save allowance or a hard limit.
+            # No second attempt: on D1 the save itself takes 3-5 minutes, and two attempts would pass the 10-minute
+            # budget for one check (2026-11-24; the 2026-11-23 retry only repeated a stop that destroyed the trace).
             print("$ " + " ".join(shlex.quote(part) for part in cmd), flush=True)
             proc = xt.record(cmd, trace, log, run["seconds"])
             if driver:
@@ -888,22 +905,8 @@ class Runner:
                 raise Blocked(self.locked_message())
             if proc["stopped"]:
                 print(f"!! {c['id']} {run['name']}: xctrace {proc['stopped']}; stopped it", flush=True)
-            if proc["stopped"] and not proc["complete"] and not run.get("background"):
-                # xctrace hung saving after the app's own exit and left no readable trace (D1 matrix 2026-11-23,
-                # perf004: two earlier runs of the same case saved within seconds). Record once more; a run driven
-                # from the Mac (background steps) is not repeated here.
-                name = t.wait_for_report(f"automation-{run['mode']}", before, 30)
-                if name:
-                    before.add(name)
-                print(f"!! {c['id']} {run['name']}: no readable trace; recording once more", flush=True)
-                shutil.rmtree(trace, ignore_errors=True)
-                retry_log = self.work / "logs" / f"{c['id']}-{run['name']}-retry.log"
-                first = proc["stopped"]
-                proc = xt.record(cmd, trace, retry_log, run["seconds"])
-                proc["firstAttempt"] = first
-                self.add(result, retry_log, False)
-                if proc["stopped"]:
-                    print(f"!! {c['id']} {run['name']}: xctrace {proc['stopped']} again; stopped it", flush=True)
+            elif proc.get("saveSeconds") is not None:
+                print(f"   xctrace saved {proc['saveSeconds']:.0f} s after the app exited", flush=True)
             name = t.wait_for_report(f"automation-{run['mode']}", before, 120)
             report = None
             if name:
@@ -916,8 +919,8 @@ class Runner:
             tables = self.export_tables(trace, run, folder) if proc.get("complete", trace.exists()) else {}
             runs.append({"name": run["name"], "exit": proc["exit"], "report": report, "tables": tables,
                          "traceSaved": proc.get("complete", trace.exists()), "stopped": proc["stopped"],
-                         "appExited": proc.get("appExited", False), "firstAttempt": proc.get("firstAttempt"),
-                         "recordSeconds": proc["seconds"]})
+                         "appExited": proc.get("appExited", False), "recordSeconds": proc["seconds"],
+                         "saveSeconds": proc.get("saveSeconds")})
         if self.dry_run:
             result["status"] = "skipped"
             return

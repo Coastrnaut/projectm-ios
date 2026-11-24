@@ -10,8 +10,9 @@ in scripts/test_scripts.py with synthetic XML.
     xcrun xctrace export --input x.trace --xpath '/trace-toc/run[@number="1"]/data/table[@schema="os-signpost"]'
 
 Lessons (docs/autotester.md): never wrap `record` in a short timeout (saving a long trace takes minutes and a killed
-save leaves an unreadable trace), but never let it run unwatched either: `record()` stops it with SIGINT when the
-trace stops changing or a hard limit passes (D1, 2026-11-23); launch the app through xctrace (`--attach` did not find
+save leaves an unreadable trace), and never read an unchanged bundle right after the recording as a hang: on D1 the
+Logging template wrote nothing for 3-5 minutes after the app exited, then saved by itself (2026-11-24); `record()`
+stops it only after that allowance (`SAVE_QUIET`) or a hard limit; launch the app through xctrace (`--attach` did not find
 it on D3), and time anything done to the app from the moment its process appears, not from the start of the command
 (Metal System Trace took about 18 s to launch it on D1); Allocations exports no allocation table, so memory comes
 from the app's own report instead.
@@ -63,29 +64,35 @@ def trace_signature(trace: Path) -> tuple[int, float]:
 
 APP_EXITED = "Target app exited"
 
+# Seconds xctrace may stay silent after the recording ended before it is stopped (`stop_reason`). D1 (iPhone 15,
+# iOS 27.0.1), Logging template, perf004: after "Target app exited, ending recording..." xctrace wrote the raw
+# `trace-data.atrc` within about a second and then changed nothing on disk (neither the bundle nor $TMPDIR) for 196 s
+# (matrix 20261123T190422Z) and 307 s (20261123T200159Z) before it saved the whole trace by itself. The idle stops of
+# 2026-11-23/24 (180 s, then 60 s) killed exactly that phase, and SIGINT does not shorten it ("Stopping recording..."
+# and still running 180 s later), so each stop destroyed the trace. 420 s is the slowest save seen plus a third.
+SAVE_QUIET = 420
 
-def stop_reason(elapsed: float, idle: float, seconds: float, *, startup: float, save: float, stall: float,
-                exited_idle: float | None = None, exit_stall: float = 60) -> str | None:
+
+def stop_reason(elapsed: float, idle: float, seconds: float, *, startup: float, save: float, ended: float | None = None,
+                quiet: float = SAVE_QUIET, stall: float = 60) -> str | None:
     """Why a running `xctrace record` should be stopped now, or None to let it run.
 
-    `elapsed`: seconds since the command started; `idle`: seconds since the trace bundle last changed. The recording
-    itself may take `startup` (Metal System Trace took about 18 s to launch the app on D1) plus `seconds`; after that,
-    a bundle unchanged for `stall` seconds, or a total past `startup + seconds + save`, stops it. D1, 2026-11-23:
-    after "Target app exited, ending recording... Stopping recording..." xctrace wrote a 1.98 GB trace until 8
-    minutes after the app had exited, then nothing for 2 minutes until it was stopped by hand.
+    `elapsed`: seconds since the command started; `idle`: seconds since the trace bundle last changed; `ended`: seconds
+    since xctrace printed "Target app exited" (None before). The recording may take `startup` (Metal System Trace took
+    about 18 s to launch the app on D1) plus `seconds`; a recording whose app never exited counts as ended then.
 
-    `exited_idle`: seconds the bundle has stayed unchanged since xctrace printed "Target app exited" (None before).
-    The recording is over then, whatever `startup` still allows: a bundle unchanged for `exit_stall` seconds after it
-    is a hung save. D1 matrix 2026-11-23, `xctrace-perf004`: the Logging template never got past "ending
-    recording..." after the app's own exit and was stopped only about 6 minutes later; two earlier D1 runs of the same
-    case saved within seconds of the exit."""
-    recording = startup + seconds
-    if elapsed > recording + save:
-        return f"still running {int(elapsed)} s after it started (limit {int(recording + save)} s)"
-    if exited_idle is not None and exited_idle > exit_stall:
-        return f"the trace has not changed for {int(exited_idle)} s after the app exited"
-    if elapsed > recording and idle > stall:
-        return f"the trace has not changed for {int(idle)} s after the recording time"
+    After the recording has ended, xctrace collects and saves the trace with nothing to watch on disk for minutes
+    (`SAVE_QUIET`), so an idle bundle is no sign of a hang before `quiet` seconds have passed; after that, a bundle
+    unchanged for `stall` seconds is a hung save (a trace still being written, like the 1.98 GB Metal System Trace on
+    D1, 2026-11-23, keeps changing and is left alone). `startup + seconds + save` is the hard limit either way."""
+    limit = startup + seconds + save
+    if elapsed > limit:
+        return f"still running {int(elapsed)} s after it started (limit {int(limit)} s)"
+    if ended is None and elapsed > startup + seconds:
+        ended = elapsed - (startup + seconds)
+    if ended is not None and ended > quiet and idle > stall:
+        return (f"no saved trace {int(ended)} s after the recording ended (bundle unchanged for {int(idle)} s; "
+                f"allowance {int(quiet)} s)")
     return None
 
 
@@ -97,17 +104,45 @@ def trace_complete(trace: Path) -> bool:
     return (trace / "form.template").is_file()
 
 
-def record(cmd: list[str], trace: Path, log: Path, seconds: float, *, startup: float = 180, save: float = 900,
-           stall: float = 180, grace: float = 180, poll: float = 5, exit_stall: float = 60) -> dict:
+def parse_cpu_time(text: str) -> float | None:
+    """Seconds from `ps -o time=` output ("[[dd-]hh:]mm:ss.cc"); None for empty output (the process is gone)."""
+    text = text.strip()
+    if not text:
+        return None
+    days, _, rest = text.rpartition("-")
+    total = 0.0
+    try:
+        for part in rest.split(":"):
+            total = total * 60 + float(part)
+        return total + (float(days) * 86400 if days else 0)
+    except ValueError:
+        return None
+
+
+def cpu_seconds(pid: int) -> float | None:
+    """CPU time of a process, None when it is gone or `ps` fails."""
+    try:
+        out = subprocess.run(["ps", "-o", "time=", "-p", str(pid)], capture_output=True, text=True, timeout=10).stdout
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return parse_cpu_time(out)
+
+
+def record(cmd: list[str], trace: Path, log: Path, seconds: float, *, startup: float = 60, save: float = 480,
+           quiet: float = SAVE_QUIET, stall: float = 60, grace: float = 60, poll: float = 5,
+           heartbeat: float = 60) -> dict:
     """Runs `xctrace record` with its output in `log`, and stops it if it never ends (`stop_reason`): SIGINT first
-    (xctrace's own Ctrl-C, which ends the recording and saves what it has), then SIGTERM and SIGKILL after `grace`
-    seconds each. Returns {"exit", "text", "stopped": reason or None, "seconds", "appExited", "complete"}:
+    (xctrace's own Ctrl-C, which ends the recording and saves what it has), then SIGTERM after `grace` seconds and
+    SIGKILL a quarter of that later. While xctrace saves, a line every `heartbeat` seconds records the bundle's size,
+    how long it has been unchanged and xctrace's CPU time, so a slow save shows what it was doing.
+
+    Returns {"exit", "text", "stopped": reason or None, "seconds", "appExited", "complete", "saveSeconds"}:
     `appExited` when xctrace said the app had exited (the recording window was whole), `complete` when the bundle was
-    saved whole (`trace_complete`)."""
+    saved whole (`trace_complete`), `saveSeconds` from "Target app exited" to xctrace's end (None without it)."""
     log.parent.mkdir(parents=True, exist_ok=True)
     started = time.monotonic()
     signature, changed = trace_signature(trace), started
-    stopped, exited_at = None, None
+    stopped, exited_at, beat = None, None, started
     with open(log, "w") as out:
         proc = subprocess.Popen(cmd, stdout=out, stderr=subprocess.STDOUT, text=True, start_new_session=True)
         while True:
@@ -123,31 +158,39 @@ def record(cmd: list[str], trace: Path, log: Path, seconds: float, *, startup: f
             if exited_at is None:
                 out.flush()
                 if APP_EXITED in log.read_text(errors="replace"):
-                    exited_at = now
-            exited_idle = None if exited_at is None else now - max(exited_at, changed)
-            reason = stop_reason(now - started, now - changed, seconds, startup=startup, save=save, stall=stall,
-                                 exited_idle=exited_idle, exit_stall=exit_stall)
+                    exited_at = beat = now
+            ended = None if exited_at is None else now - exited_at
+            if ended is not None and now - beat >= heartbeat:
+                beat = now
+                cpu = cpu_seconds(proc.pid)
+                out.write(f"[run_device_matrix] {int(ended)} s after the app exited: bundle {signature[0]} bytes, "
+                          f"unchanged for {int(now - changed)} s, xctrace CPU {'?' if cpu is None else f'{cpu:.1f}'} s\n")
+                out.flush()
+            reason = stop_reason(now - started, now - changed, seconds, startup=startup, save=save, ended=ended,
+                                 quiet=quiet, stall=stall)
             if not reason:
                 continue
             stopped = reason
             out.write(f"\n[run_device_matrix] {reason}: sending SIGINT\n")
             out.flush()
-            for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGKILL):
+            for sig, wait in ((signal.SIGINT, grace), (signal.SIGTERM, grace / 4), (signal.SIGKILL, grace / 4)):
                 try:
                     os.killpg(proc.pid, sig)
                 except ProcessLookupError:
                     break
                 try:
-                    proc.wait(timeout=grace)
+                    proc.wait(timeout=wait)
                     break
                 except subprocess.TimeoutExpired:
-                    out.write(f"[run_device_matrix] still running {int(grace)} s after {sig.name}\n")
+                    out.write(f"[run_device_matrix] still running {int(wait)} s after {sig.name}\n")
                     out.flush()
             break
     proc.wait()
+    finished = time.monotonic()
     text = log.read_text(errors="replace")
-    return {"exit": proc.returncode, "text": text, "stopped": stopped, "seconds": round(time.monotonic() - started, 1),
-            "appExited": APP_EXITED in text, "complete": trace_complete(trace)}
+    return {"exit": proc.returncode, "text": text, "stopped": stopped, "seconds": round(finished - started, 1),
+            "appExited": APP_EXITED in text, "complete": trace_complete(trace),
+            "saveSeconds": None if exited_at is None else round(finished - exited_at, 1)}
 
 
 def toc_command(trace: Path) -> list[str]:
@@ -241,9 +284,16 @@ def marker_times(events: list[tuple[float, str]], prefix: str = "QA-011 ") -> di
     return out
 
 
-def perf004_verdict(events: list[tuple[float, str]], window: float = 3.0, start_window: float = 5.0) -> dict:
-    """PERF-004-T16: texture allocations only at the first cycle (before "start" + start_window) and within `window` s of a
-    size change ("rotate", "rotate back"). Fails without markers or without any allocation (nothing measured)."""
+def perf004_verdict(events: list[tuple[float, str]], window: float = 3.0, start_window: float = 5.0,
+                    ready: float | None = None) -> dict:
+    """PERF-004-T16: texture allocations only at the first cycle (before the visual is up + start_window) and within
+    `window` s of a size change ("rotate", "rotate back"). Fails without markers or without any allocation.
+
+    "The visual is up" is the "QA-011 ready" marker (perf004 emits it when starting In-App Playback has returned), else
+    `ready` (trace seconds, inferred by the caller for older traces), else "QA-011 start". D1 matrix 20261123T200159Z:
+    starting playback on the Text visual held the main thread 5.0 s (hangtracer "HangInterval" 3.652-8.653 s), so the
+    first cycle's 14 allocations came at 8.911 and 8.976 s, 5.3 s after "start", and counted as stray although nothing
+    was allocated between them and the rotations."""
     marks = marker_times(events)
     allocations = [t for t, name in events if name == ALLOCATION_SIGNPOST]
     verdict = {"allocations": len(allocations), "markers": marks, "windowSeconds": window}
@@ -252,14 +302,22 @@ def perf004_verdict(events: list[tuple[float, str]], window: float = 3.0, start_
     if not allocations:
         return {**verdict, "pass": False, "detail": "no PERF-004 texture allocation signposts: the visual used no pooled "
                 "texture (PROJECTM_VISUAL must be a compositor visual: text, photo, video or camera)"}
-    allowed = [(float("-inf"), marks["start"] + start_window)]
+    up = marks.get("ready", ready if ready is not None else marks["start"])
+    up = max(up, marks["start"])
+    if "rotate" in marks:   # the first size change ends the first cycle whatever `ready` says
+        up = min(up, marks["rotate"] - start_window)
+        up = max(up, marks["start"])
+    verdict["readySeconds"] = round(up - marks["start"], 3)
+    allowed = [(float("-inf"), up + start_window)]
     allowed += [(marks[k], marks[k] + window) for k in ("rotate", "rotate back") if k in marks]
     stray = [round(t, 3) for t in allocations if not any(lo <= t <= hi for lo, hi in allowed)]
     at_sizes = sum(1 for t in allocations if any(lo <= t <= hi for lo, hi in allowed[1:]))
     verdict.update({"stray": stray, "atStart": len(allocations) - at_sizes - len(stray), "atSizeChanges": at_sizes,
                     "pass": not stray})
     verdict["detail"] = (f"{len(allocations)} allocations: {verdict['atStart']} at start, {at_sizes} at size changes"
-                         + (f", {len(stray)} elsewhere (at {stray[:5]} s)" if stray else ""))
+                         + (f", {len(stray)} elsewhere (at {stray[:5]} s)" if stray else "")
+                         + (f"; the visual was up {verdict['readySeconds']:.1f} s after the start marker"
+                            if verdict["readySeconds"] >= 1 else ""))
     return verdict
 
 
