@@ -64,14 +64,15 @@ extension DeviceAcceptanceCase {
 
     /// Shows the controls. Controls that still exist but are fading out (they hide 5 s after the last use) are let go
     /// first and shown fresh: on D3 (2026-11-18) `controls` existed when checked and was gone when its buttons were
-    /// tapped, so the transport checks after a quiet moment failed.
+    /// tapped, so the transport checks after a quiet moment failed. The taps land below the probe readouts
+    /// (`tapVisualizer`): on D1 (r16, 2026-11-24) `visualizerTapArea.tap()` hit the top-left corner and did nothing.
     func revealControls() {
-        let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
+        let controls = app.otherElements["controls"]
         let anchor = app.buttons["transportPlayPause"]
         if controls.exists, anchor.exists, anchor.isHittable { return }
         if controls.exists { _ = wait(8) { !controls.exists } }
-        area.tap()
-        if !wait(2, { controls.exists }) { area.tap() }
+        tapVisualizer(attempt: 0)
+        if !wait(2, { controls.exists }) { tapVisualizer(attempt: 1) }
         XCTAssertTrue(wait(5) { controls.exists }, "the controls are shown")
     }
 
