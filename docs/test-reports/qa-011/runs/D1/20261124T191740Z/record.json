@@ -1,0 +1,162 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "c01a032ff0a9c437f68e7b4ee5ba8f8eb628f382",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": false,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 53766,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261124T191740Z/artifacts/RendererLab-angle-flashcost-2026-11-24T191925Z.json",
+          "sha256": "1881475e938d844c771b898481f884e22334cf2b5cc8f486cc56f1461ca16802"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "xcodebuild",
+          "-project",
+          "RendererLab.xcodeproj",
+          "-scheme",
+          "RendererLab",
+          "-configuration",
+          "Release",
+          "-derivedDataPath",
+          "Build/rendererlab",
+          "-destination",
+          "generic/platform=iOS",
+          "-allowProvisioningUpdates",
+          "build"
+        ],
+        [
+          "RL_BACKEND=angle",
+          "RL_MODE=flashcost",
+          "launch",
+          "org.projectmios.RendererLab"
+        ]
+      ],
+      "detail": "28 presets, pass alone median 2.80 ms, max 3.09 ms per frame (limit 2.0 ms); on - off of separate frames median 1.39, max 4.24 ms; over: frontend-uwp/EoS - dark side of the moon (plus a few more hits and a pill).milk (pass 3.01 ms, on - off 1.93 ms, rounds 1.13-2.62, dimmed 80%, IQR off 0.24 on 0.50), frontend-uwp/EoS - pointfield 04 arcs demon_phat edit_v3.milk (pass 2.67 ms, on - off 1.38 ms, rounds 1.29-2.34, dimmed 9%, IQR off 1.30 on 0.24), frontend-uwp/EoS+Phat - Arm_upgrades - transformer.milk (pass 3.04 ms, on - off 2.03 ms, rounds 1.67-3.43, dimmed 99%, IQR off 0.13 on 0.35), frontend-uwp/fed - slowfast 1.1 (geiss composite remix).milk (pass 2.68 ms, on - off 1.17 ms, rounds 1.13-2.47, dimmed 2%, IQR off 0.13 on 0.16), frontend-uwp/fiShbRaiN - toffee cream and icing sugar.milk (pass 2.77 ms, on - off 1.35 ms, rounds -1.83-1.43, dimmed 0%, IQR off 0.39 on 0.35); thermal nominal",
+      "durationSeconds": 318.9,
+      "id": "rendererlab-flashcost",
+      "kind": "rendererlab",
+      "partOf": [
+        "FX-019-T22"
+      ],
+      "status": "fail",
+      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, the pass alone on the frame it processes (paired; on minus off reported), at most 2 ms per frame (FX-019-S6)"
+    },
+    {
+      "artifacts": [
+        {
+          "bytes": 585,
+          "committed": false,
+          "kind": "file",
+          "path": "Build/qa-011/D1/20261124T191740Z/logs/xctrace-perf004-perf004.log",
+          "sha256": "eccd8aea3b27b15ac32b045d17cf889fd2d27007edab5c2b3a9bafcbee031dc1"
+        },
+        {
+          "bytes": 415,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261124T191740Z/artifacts/xctrace-perf004-automation-perf004-2026-11-24T192516Z.json",
+          "sha256": "2f244510f076d5773279dd4ae2189025fd6440e6685edbb013b34935424e47f2"
+        },
+        {
+          "bytes": 431,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261124T191740Z/artifacts/xctrace-perf004-verdict.json",
+          "sha256": "be97376e5a18eed38a06e8bdb60cb580b1e023014b4257ee8b9521e597daae84"
+        }
+      ],
+      "closes": [
+        "PERF-004-T16"
+      ],
+      "commands": [
+        [
+          "xcrun",
+          "xctrace",
+          "record",
+          "--template",
+          "Logging",
+          "--device",
+          "00008120-001E4C5C3A42201E",
+          "--time-limit",
+          "50s",
+          "--output",
+          "Build/qa-011/D1/20261124T191740Z/traces/xctrace-perf004/perf004.trace",
+          "--no-prompt",
+          "--env",
+          "PROJECTM_AUTORUN=perf004",
+          "--env",
+          "PROJECTM_VISUAL=text",
+          "--launch",
+          "--",
+          "org.projectmios.ProjectMiOS"
+        ]
+      ],
+      "detail": "42 allocations: 14 at start, 28 at size changes; the visual was up 5.1 s after the start marker (perf004: saved 223 s after the app exited)",
+      "durationSeconds": 278.0,
+      "id": "xctrace-perf004",
+      "kind": "xctrace",
+      "partOf": [],
+      "status": "pass",
+      "title": "Instruments Logging (os_signpost): PERF-004 texture allocations only at the start and within 3 s of a rotation"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-24T19:29:14Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "3cd106a3be039ac977cdf8d28ed8efb6710beafbf7058c526f351a03d4e04dad",
+  "runId": "20261124T191740Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-24T19:17:40Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 1,
+    "not-run": 0,
+    "pass": 1,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "connected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "allocations": 42,
+  "atSizeChanges": 28,
+  "atStart": 14,
+  "detail": "42 allocations: 14 at start, 28 at size changes; the visual was up 5.1 s after the start marker (perf004: saved 223 s after the app exited)",
+  "markers": {
+    "ready": 8.837137833,
+    "rotate": 18.838824208,
+    "rotate back": 28.848242666,
+    "start": 3.780272708
+  },
+  "pass": true,
+  "readySeconds": 5.057,
+  "stray": [],
+  "windowSeconds": 3.0
+}
