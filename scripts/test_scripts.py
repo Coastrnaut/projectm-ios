@@ -3210,5 +3210,17 @@ class FixtureSeedTests(unittest.TestCase):
         self.assertEqual(fx.parse_listing({}), set())
 
 
+class DiskBallastTests(unittest.TestCase):
+    """clear_disk_ballast.py finds a leftover ballast in devicectl's Library/Caches listing (D3, 2026-11-24)."""
+
+    def test_finds_the_ballast_and_its_size(self):
+        import importlib
+        cb = importlib.import_module("clear_disk_ballast")
+        data = {"result": {"files": [{"relativePath": "WarmStart/preset-library.bin", "metadata": {"size": 5}},
+                                     {"relativePath": "QA011-DiskBallast.bin", "metadata": {"size": 66989000000}}]}}
+        self.assertEqual(cb.ballast_size(data), 66989000000)
+        self.assertIsNone(cb.ballast_size({"result": {"files": [{"relativePath": "x.png"}]}}))
+        self.assertIsNone(cb.ballast_size({}))
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

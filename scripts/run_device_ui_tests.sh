@@ -76,5 +76,11 @@ done
 wait "$xcb" 2>/dev/null
 [ -n "${driver:-}" ] && kill "$driver" 2>/dev/null
 [ -n "${osc_driver:-}" ] && kill "$osc_driver" 2>/dev/null
+# A REC-015/REC-009 disk ballast left by a stopped run fills the device (D3, 2026-11-24: 67 GB, and the next runs could not
+# launch the test runner): clear it after every run (scripts/clear_disk_ballast.py; BALLAST=0 skips it).
+if [ "${BALLAST:-1}" = 1 ]; then
+  python3 scripts/clear_disk_ballast.py --device "$(echo "$dev" | tr a-z A-Z)" >> ".autonomous/logs/fixtures-$name-$dev.log" 2>&1 \
+    || echo "== $dev $name: a disk ballast is still on the device (see fixtures-$name-$dev.log)"
+fi
 echo "== $dev $name: $(grep -cE 'Test Case.*passed' "$log") passed, $(grep -cE 'Test Case.*failed' "$log") failed, $(grep -cE 'Test Case.*skipped' "$log") skipped"
 grep -E "Test Case.*failed" "$log" | sed 's/.*Tests\.//; s/\]. failed.*//' | sort -u

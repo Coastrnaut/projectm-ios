@@ -1475,6 +1475,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
     hold` and opens nothing. Lesson: log first, then fix; two guesses cost two device rounds, the trace one.
     Verified on D2 2026-11-24: PERF-011 and VIS-001 passed 3 of 3 runs on r16 (notice 22-33 ms after the hold).
 
+- **A test that fills the disk must be cleaned up from the Mac too** (D3, 2026-11-24). D3 ran out of space and every
+  run was refused ("Developer App Certificate is not trusted"; even a plain `devicectl` launch hung). The app container
+  held a 67 GB `Library/Caches/QA011-DiskBallast.bin` from a REC-015/REC-009 run the evening before: the app deletes an
+  old ballast at every DEBUG launch and the tests relaunch in tearDown, but that run was stopped, so no launch followed,
+  and with the disk full none could. devicectl cannot delete a file in a container, so `scripts/clear_disk_ballast.py
+  --device DX` launches the app once (its launch deletes the ballast) and checks; `run_device_ui_tests.sh` runs it after
+  every run (`BALLAST=0` skips it). If the launch cannot clear it, uninstall the app (`devicectl device uninstall app`):
+  that frees the whole container. When a device starts refusing launches for no clear reason, check its free space and
+  list the app container's sizes first.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:
