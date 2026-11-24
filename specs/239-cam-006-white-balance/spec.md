@@ -44,6 +44,10 @@ interaction); each answer is the conservative, local-first option.
 - Q: How does an unsupported camera explain its limit? → A: The "Lock white balance" switch stays visible but disabled with "This camera can't lock white balance."; while the camera is not running it is disabled with "White balance can be locked while the camera is running." The note is also the switch's VoiceOver hint (CAM-006-R3, R13), matching CAM-004's row.
 - Q: What does the switch show: the choice or the camera's state? → A: The mode read back from the camera after every change (CAM-006-R6); a refused lock (busy camera or invalid gains) leaves the switch showing the real state with no notice, as CAM-004-R5.
 
+### Session 2026-11-24 (QA-011 D1 r16)
+
+- Q: CAM-006-T09 on D1 (iPhone 15, iOS 27.0.1): after the lens change the camera still reported "wb: locked"; does a lens switch keep the lock (CAM-006-R8)? → A: No lens switch happened. The test tapped the Lens row's segment 1, which is Wide (the row lists the lenses widest first, Ultra Wide then Wide) and the lens the back camera opens on, so nothing changed: the log shows the tap on the "Wide" button and the probe kept `starts` 1 (the camera never restarted). The app releases white balance, exposure and focus before every input removal (`AVCameraFrameProvider.releaseExposure`, run by `switchLens`). CAM-004-T08 had the same fault and was fixed on 2026-11-23 (it then passed on D1); CAM-006-T09 kept the fixed index. Decision: both tests use one helper (`chooseOtherLens`) that taps the segment that is not selected and waits for the row to show it; the checks are unchanged. CAM-006-T09 stays open until D1 reruns it.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Hold the colors steady (Priority: P1)

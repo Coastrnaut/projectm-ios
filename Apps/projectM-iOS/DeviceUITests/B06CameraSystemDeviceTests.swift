@@ -116,6 +116,23 @@ extension DeviceAcceptanceCase {
         closeSettingsForCamera()
     }
 
+    /// In the open Settings: taps the Lens segment that is not the running lens and waits for the row to show it
+    /// (CAM-004-T08, CAM-006-T09). The row lists the lenses widest first (Ultra Wide, Wide) and the back camera opens
+    /// on Wide, so a fixed segment 1 is the running lens on an iPhone 15: the tap changes nothing, the camera never
+    /// restarts (`starts` stays 1) and a lock stays (QA-011 D1 rerun 2026-11-23 for CAM-004; D1 r16 2026-11-24 for
+    /// CAM-006, which still tapped segment 1: "Tap ... 'Wide' Button", then "wb: locked", "starts: 1").
+    func chooseOtherLens() {
+        let lens = app.segmentedControls["cameraLensPicker"]
+        XCTAssertTrue(revealCameraSetting(lens), "the Lens row")
+        let segments = lens.buttons.allElementsBoundByIndex
+        let shownBefore = lens.value as? String ?? ""
+        let other = segments.first { !$0.isSelected } ?? lens.buttons.element(boundBy: 0)
+        let otherTitle = other.label
+        other.tap()
+        XCTAssertTrue(wait(5) { (lens.value as? String ?? "") == otherTitle },
+                      "the Lens row shows the other lens: \(shownBefore) → \(lens.value as? String ?? "") (wanted \(otherTitle))")
+    }
+
     /// A Settings switch flipped at its knob (a centre tap can hit the label); returns its new value.
     @discardableResult
     func flipCameraSettingSwitch(_ toggle: XCUIElement) -> String {
@@ -540,9 +557,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
 
         if UIDevice.current.userInterfaceIdiom == .phone {   // D1 has a lens row
             openSettingsForCamera()
-            let lens = app.segmentedControls["cameraLensPicker"]
-            XCTAssertTrue(revealCameraSetting(lens), "the Lens row")
-            lens.buttons.element(boundBy: 1).tap()
+            chooseOtherLens()   // not segment 1: that is the running Wide lens (D1 r16, 2026-11-24)
             XCTAssertTrue(wait(5) { (self.whiteBalanceSwitch.value as? String) == "0" || !self.whiteBalanceSwitch.exists },
                           "a lens change releases the lock")
             closeSettingsForCamera()

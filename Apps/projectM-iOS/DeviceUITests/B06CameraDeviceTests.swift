@@ -570,19 +570,10 @@ extension B06CameraDeviceTests {
 
         if UIDevice.current.userInterfaceIdiom == .phone {
             openSettingsForCamera()
-            let lens = app.segmentedControls["cameraLensPicker"]
-            XCTAssertTrue(revealCameraSetting(lens), "the Lens row")
-            // Tap a lens that is not the running one. QA-011 D1 rerun (2026-11-23): the row lists the lenses widest first
-            // (Ultra Wide, Wide) and the camera opens on Wide, so segment 1 was the running lens: the tap changed nothing,
-            // the camera never restarted (`starts` stayed 1) and the lock stayed (the app releases it on a real switch,
-            // AVCameraFrameProvider.switchLens, CAM-004-R6).
-            let segments = lens.buttons.allElementsBoundByIndex
-            let shownBefore = lens.value as? String ?? ""
-            let other = segments.first { !$0.isSelected } ?? lens.buttons.element(boundBy: 0)
-            let otherTitle = other.label
-            other.tap()
-            XCTAssertTrue(wait(5) { (lens.value as? String ?? "") == otherTitle },
-                          "the Lens row shows the other lens: \(shownBefore) → \(lens.value as? String ?? "") (wanted \(otherTitle))")
+            // Tap a lens that is not the running one (`chooseOtherLens`): QA-011 D1 rerun (2026-11-23), segment 1 was the
+            // running Wide lens and the lock stayed (the app releases it on a real switch, AVCameraFrameProvider.switchLens,
+            // CAM-004-R6).
+            chooseOtherLens()
             closeSettingsForCamera()
             XCTAssertTrue(waitCameraLive(), "the other lens: live")
             XCTAssertTrue(wait(5) { self.cameraState()["exposure"] == "continuousAuto" }, "a lens change releases it: \(cameraState())")
