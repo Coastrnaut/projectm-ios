@@ -64,8 +64,9 @@
 //           spectra and projectM allocate no pooled texture, so circularSpectrum gave no signpost on D1, 2026-11-23;
 //           glow on); at 10 s a rotation to
 //           landscape, at 20 s back to portrait (UIWindowScene.requestGeometryUpdate), each marked with a
-//           Points of Interest signpost ("QA-011 start", "QA-011 rotate", "QA-011 rotate back") for the trace; report
-//           at 28 s. Report: automation-perf004-*.json.
+//           Points of Interest signpost ("QA-011 start", "QA-011 ready" once starting playback has returned,
+//           "QA-011 rotate", "QA-011 rotate back") for the trace; times count from "ready" (`selectSeconds` is the
+//           start itself); report at 28 s. Report: automation-perf004-*.json.
 //   perf008 PERF-008-T16: PROJECTM_POWER_PROFILE (standard, batterySaver, followLowPowerMode) for PROJECTM_SECONDS
 //           (default 300) of In-App Playback; frame rate and mean frame time once a second, per-minute means; the stored
 //           profile is restored. Report: automation-perf008-*.json.
@@ -599,9 +600,14 @@ enum AutomationRunner {
     private static func perf004(_ coordinator: AppCoordinator) async {
         let restore = chooseVisualFromEnvironment(coordinator, defaultVisual: .text, defaultGlow: true)
         signposter.emitEvent("QA-011 start")
+        let selecting = Date()
         coordinator.select(.inAppPlayback)
+        // The marks count from here: on D1 (2026-11-23) starting playback on the Text visual held the main thread
+        // 5.0 s, and the first cycle's allocations came after it; the verdict's first-cycle window starts at "ready".
+        signposter.emitEvent("QA-011 ready")
         var marks: [String: Double] = ["start": 0]
         let start = Date()
+        let selectSeconds = start.timeIntervalSince(selecting)
         try? await Task.sleep(for: .seconds(10))
         signposter.emitEvent("QA-011 rotate")
         marks["rotate"] = Date().timeIntervalSince(start)
@@ -613,7 +619,8 @@ enum AutomationRunner {
         try? await Task.sleep(for: .seconds(8))
         let metrics = coordinator.activeVisualMetrics
         write("perf004", ["visual": coordinator.settings.visual.rawValue, "glow": coordinator.settings.glowEnabled,
-                          "markSeconds": marks, "rotationRequested": landscape && portrait,
+                          "markSeconds": marks, "selectSeconds": selectSeconds,
+                          "rotationRequested": landscape && portrait,
                           "fps": metrics.framesPerSecond, "signpost": "PERF-004 texture allocation"])
         restore()
         exitSoon()
