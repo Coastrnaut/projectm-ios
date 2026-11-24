@@ -126,7 +126,7 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 | `autorun-perf001-glow` | part of PERF-003-T15 | perf001 on the circular spectrum with the glow on (`PROJECTM_VISUAL`, `PROJECTM_GLOW`); the export has `frameTimings.effectQuality` |
 | `autorun-pre005` | part of PRE-005-T17 | 200 real thumbnails (evenly spaced) scored; percentiles and class counts for the threshold choice |
 | `autorun-sc009` | AUD-014-T32 (D1, D3) | the lifecycle scripts' end states; on demand, needs the microphone answered (see below) |
-| `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (judged on the pass timed alone on the frame it processes, `passMedianMs`, since 2026-11-24; on minus off reported) (builds RendererLab into `Build/rendererlab` when missing) |
+| `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (judged on the pass's GPU timer-query time plus CPU encoding on the frame it processes, `passCostMedianMs`, since 2026-11-24; on minus off reported) (builds RendererLab into `Build/rendererlab` when missing) |
 | `xctrace-perf004` | PERF-004-T16 | Logging template on the Text visual (`PROJECTM_VISUAL=text`, the default since 2026-11-23): "PERF-004 texture allocation" signposts only before the visual is up + 5 s (marker `QA-011 ready`, after playback start returned) and within 3 s of each rotation (perf004 rotates 10 s after `ready` and back at 20 s; time limit 50 s; xctrace then takes 3-5 min on D1 to save) |
 | `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; counted from the moment the app's process appears, the Mac opens Settings at 10 s and relaunches the app at 26 s (app runs 40 s, time limit 70 s; a recording that never ends is stopped with SIGINT and fails the case): no frames (and no GPU intervals of the app) from 10 s after backgrounding until the return (willEnterForeground, marker `QA-011 return`), a lower footprint, the first frame within 2 s of the return |
 | `xctrace-perf008` | part of PERF-008-T16 | on demand (about 12 min): Power Profiler 5 min Standard then 5 min Battery saver; fps and frame time per minute from the app, energy per minute from any power table the trace exports |
@@ -1447,6 +1447,14 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   first, then the pass encoded, submitted and finished: `timedPassFrames`, 160 frames per preset) and the matrix
   verdict uses those paired medians; on-minus-off stays in the report. Also keep every extra wait symmetric: the
   2026-11-23 version read the gain texel back after "on" frames only, an extra GPU round trip on one side.
+- **Time GPU work with GPU timestamps, not a wall clock between two glFinish calls** (`rendererlab-flashcost`, D1
+  20261124T191740Z). Timing the pass alone as glFinish → pass → glFinish read 2.6-3.1 ms on every preset, 1.0-1.5 ms
+  above on minus off and nearly constant: the CPU's submit, the GPU waking from idle and the completion wait, which the
+  app never pays. A sign it was overhead: the presets with the largest on-minus-off cost had the smallest paired time.
+  ANGLE's Metal backend implements GL_EXT_disjoint_timer_query (public, via eglGetProcAddress): `glBeginQueryEXT(
+  GL_TIME_ELAPSED_EXT)` and `glEndQueryEXT` end the command buffer at each call and report GPUEndTime - GPUStartTime
+  of the buffers in between (`PMANGLETimerBegin`/`End`/`ResultMs` in CANGLE). RendererLab now adds that GPU time to
+  the pass's CPU encoding time and reports the round trip it excludes (a 1 × 1 clear's submit-and-wait) beside it.
 - **Discard what a full-screen pass overwrites** (FX-019 output step, 2026-11-24). ANGLE's Metal backend starts a
   render pass with `MTLLoadActionLoad` unless the attachment was invalidated (`glInvalidateFramebuffer`) or cleared
   (`FramebufferMtl::setLoadStoreActionOnRenderPassFirstStart`), and projectM never clears its target. The strobe pass's

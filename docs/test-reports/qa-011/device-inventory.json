@@ -145,7 +145,7 @@
     {
       "id": "rendererlab-flashcost",
       "kind": "rendererlab",
-      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, the pass alone on the frame it processes (paired; on minus off reported), at most 2 ms per frame (FX-019-S6)",
+      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, the pass on the frame it processes (GPU timer query plus CPU encoding; on minus off reported), at most 2 ms per frame (FX-019-S6)",
       "closes": [],
       "partOf": [
         "FX-019-T22"

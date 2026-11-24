@@ -116,9 +116,10 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
     public static let flashLimitPerSecond = Float(FlashEnvelopeConfiguration.reduceFlashing.riseRatePerSecond ?? 0)
     /// RendererLab's T104 baseline: frames bypass the pass (`timedFrames(_:reduceFlashing: false)`).
     private var envelopeBypassed = false
-    /// FX-019-T22 (RendererLab, 2026-11-24): while set, every limited frame waits for the engine's GPU work before the
-    /// pass and appends the pass's own time (its four steps encoded, submitted and finished on the GPU) in ms.
-    private var pairedPassTimes: [Double]?
+    /// FX-019-T22 (RendererLab, 2026-11-24): while true, every limited frame brackets the pass with a GPU timer query
+    /// and times its encoding on the CPU; the frame leaves both in `passProbeResult` (query, CPU ms).
+    private var passProbe = false
+    private var passProbeResult: (query: UInt32, cpuMs: Double)?
     public let supportsReduceFlashing = true
     /// OUT-009: the calibration the next frames apply (the view's, set by the slot that holds it).
     public var displayCalibration: DisplayCalibration { layerView.displayCalibration }
@@ -384,9 +385,13 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
                 var parameters = flashConfiguration.limiterParameters(frameTime: frameTime)
                 applyCalibration(to: limiter)   // OUT-009
         applyWarp(to: limiter)   // OUT-008
-                let passStart = pairedPassTimes == nil ? 0 : Self.finishedGPUTime()   // RendererLab only
+                let query = passProbe ? PMANGLETimerBegin() : 0   // RendererLab only (FX-019-T22)
+                let passStart = passProbe ? CACurrentMediaTime() : 0
                 PMFlashLimiterFinish(limiter, 0, &parameters)
-                if pairedPassTimes != nil { pairedPassTimes?.append((Self.finishedGPUTime() - passStart) * 1000) }
+                if passProbe {
+                    PMANGLETimerEnd()
+                    passProbeResult = (query, (CACurrentMediaTime() - passStart) * 1000)
+                }
                 #if DEBUG
                 if debugFlashProbe { recordDebugFlashGain(limiter) }   // QA-011 B07
                 #endif
@@ -689,33 +694,58 @@ public final class ANGLERenderer: NSObject, VisualizerRenderer, PresentationBoun
         return times
     }
 
+    /// One limited frame of `timedPassFrames`: the pass's own cost, split the way RendererLab reports it.
+    public struct FlashPassSample: Sendable, Equatable {
+        /// GPU time of the pass's command buffer (GL_EXT_disjoint_timer_query: GPUEndTime - GPUStartTime), or nil when
+        /// the query gave no result.
+        public var gpuMs: Double?
+        /// CPU time to encode and submit the pass's four steps (`PMFlashLimiterFinish` and the query's end).
+        public var cpuMs: Double
+        /// A 1 × 1 clear submitted and waited for right after the frame: the submit-and-wait round trip that a
+        /// wall-clock bracket around the pass alone would add (and the 2026-11-24 bracket did).
+        public var roundTripMs: Double
+        /// The pass's cost: GPU plus CPU time, as if the two never overlapped (in the app they do), so it errs high.
+        public var costMs: Double? { gpuMs.map { $0 + cpuMs } }
+    }
+
     /// FX-019-T22 (QA-011 D1, 2026-11-24): the pass's own cost on the frame it processes. Renders `frames` limited frames
-    /// without presenting; in each, the engine's frame is finished on the GPU first (`glFinish`), then the pass is
-    /// encoded, submitted and finished, and that span is the frame's sample in ms (the gain is read back after it, as
-    /// in `timedFrames(_:reduceFlashing:gains:)`). Each sample is paired with the very frame it dims, so it carries none
-    /// of the preset's own frame-to-frame variation, which the on-minus-off medians of separate frames do; it includes
-    /// one extra submit-and-wait, so it errs high. Pause the display link first.
-    public func timedPassFrames(_ frames: Int, gains: inout [Float]) -> [Double] {
+    /// without presenting, as the app does but with the pass in its own command buffer: a GPU timer query brackets the
+    /// pass (ANGLE ends the engine's command buffer at the query's start and the pass's at its end, and reports the
+    /// pass's GPUEndTime - GPUStartTime), and its encoding is timed on the CPU. Nothing waits before the pass, so the GPU
+    /// runs it right after the engine's frame as in the app. After each frame (outside both times) it waits for the GPU,
+    /// times one 1 × 1 clear's submit-and-wait as the round trip it excludes, and reads the gain back.
+    /// The 2026-11-24 version timed glFinish → pass → glFinish on the wall clock instead: 2.6-3.1 ms on every D1 preset,
+    /// against 1.2-2.1 ms on minus off, i.e. mostly the round trip. Each sample is paired with the very frame it dims.
+    /// Pause the display link first.
+    public func timedPassFrames(_ frames: Int, gains: inout [Float]) -> [FlashPassSample] {
         let saved = reduceFlashing
         reduceFlashing = true
         envelopeBypassed = false
-        pairedPassTimes = []
-        pairedPassTimes?.reserveCapacity(frames)
+        passProbe = true
+        var probeTexture: UInt32 = 0
+        let probe = PMANGLECreateBGRAFramebuffer(1, 1, &probeTexture)
         defer {
             reduceFlashing = saved
-            pairedPassTimes = nil
+            passProbe = false
+            passProbeResult = nil
+            if probe != 0 { PMANGLEDeleteFramebuffer(probe, probeTexture) }
         }
+        var samples: [FlashPassSample] = []
+        samples.reserveCapacity(frames)
         for _ in 0..<frames {
+            passProbeResult = nil
             guard renderFrame(present: false) else { break }
+            PMANGLEFinish()
+            guard let result = passProbeResult else { continue }
+            let gpu = PMANGLETimerResultMs(result.query)
+            let start = CACurrentMediaTime()
+            PMANGLEClearRect(probe, 0, 0, 1, 1, 0, 0, 0, 1)
+            PMANGLEFinish()
+            let roundTrip = (CACurrentMediaTime() - start) * 1000
+            samples.append(FlashPassSample(gpuMs: gpu >= 0 ? gpu : nil, cpuMs: result.cpuMs, roundTripMs: roundTrip))
             if let gain = flashLimiterGain { gains.append(gain) }
         }
-        return pairedPassTimes ?? []
-    }
-
-    /// Waits for every GL command so far to finish on the GPU; returns the time after it.
-    private static func finishedGPUTime() -> Double {
-        PMANGLEFinish()
-        return CACurrentMediaTime()
+        return samples
     }
 
     /// The window surface size in pixels (RendererLab reports).

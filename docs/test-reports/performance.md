@@ -184,6 +184,13 @@ swings. FX-019 Clarification 2026-11-24: the output step invalidates the window 
 (`passMedianMs`); the matrix verdict uses those paired medians, the limit stays 2.0 ms. Device re-measurement
 pending (next D1 matrix run).
 
+**FX-019-T22, D1 20261124T191740Z: on minus off median 1.39 ms, max 4.24 ms; paired wall time 2.80 / 3.09 ms (fail).**
+The paired wall bracket (glFinish → pass → glFinish) sat 1.0-1.5 ms above on minus off on almost every preset, the
+same for all of them, and lowest on the two on-minus-off outliers (Saturns Rings 2.42, Mega Spectrum 2.32 ms): a
+submit-and-wait round trip, not the pass. RendererLab now times the pass with a GPU timer query plus its CPU encoding
+(`passCostMedianMs`, with `passGpuMedianMs`, `passCpuMedianMs` and the excluded `roundTripMedianMs`); FX-019
+Clarification 2026-11-24 (second). Device re-measurement pending (next D1 matrix run).
+
 ## Budgets per device class (QA-010)
 
 The performance budgets are versioned in [`docs/performance/thresholds.json`](../performance/thresholds.json)
