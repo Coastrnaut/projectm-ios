@@ -216,6 +216,18 @@ First run on D2 (iPadOS 27.2) and D3 (iPadOS 26.5), 2026-11-19:
 - **iPadOS 26.5 audits what the tutorial covers:** the accessibility audit reported the source chooser behind the
   opaque tutorial although RootView hides it from accessibility; testA logs issues of covered (not hittable) elements
   without counting them, and waits 0.8 s before each audit (a just-tapped Next/Play button "failed" contrast).
+- **An audit issue with no element can be a covered view** (D1, 2026-11-24): `type=1 id="" label=""` on the
+  tutorial's Visual step was the source chooser under the opaque tutorial. `accessibilityHidden` (and `opacity(0)`)
+  does not keep UIKit-hosted list cells out of `performAccessibilityAudit`, which then measures their texts against
+  whatever is drawn over them. To find such an element, run the same audit on a simulator of the same size class
+  and print `issue.element` snapshots with frames (the iPhone 15 simulator reproduced it). Fix in the app: don't
+  build a screen that is fully covered.
+- **iOS 27.0.1 (D1) keeps the app active while the Local Network prompt shows** (2026-11-24): the probe trace
+  `start 1, browsing, stop, settled → granted` has no `inactive`, so a settle timed in active time granted before
+  Don't Allow and the denied notice never came, on every D1 run, while D2 and D3 passed. Never infer "the prompt is
+  answered" from the app's activity: a grant without positive evidence is unconfirmed and rechecked by fresh browses
+  (ADR-0125 follow-up 3); a fresh browse reports `failed policyDenied` once denied. Read the probe trace the test
+  prints before changing the test: here the test had tapped iOS's real "Don’t Allow" correctly.
 
 ### Tests that wait for a person
 

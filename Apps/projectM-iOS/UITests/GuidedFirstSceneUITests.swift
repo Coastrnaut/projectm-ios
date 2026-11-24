@@ -127,6 +127,27 @@ final class GuidedFirstSceneUITests: XCTestCase {
         XCTAssertTrue(skip.isHittable)
     }
 
+    /// QA-011 D1 (UIX-001-T14, 2026-11-24): the contrast audit of each step finds nothing, in particular none of the
+    /// covered chooser's texts. They were measured against the tutorial's pixels drawn over them ("Contrast failed" on
+    /// the Visual step on D1, and on this simulator before the fix: "In-App Playback", "Requires a newer iOS version").
+    /// The covered chooser is no longer built while the tutorial shows. Simulator only; D1 is the evidence.
+    func testNoStepFailsTheContrastAuditThroughTheCoveredChooser() throws {
+        launch(reset: true)
+        acknowledgeNotice()
+        XCTAssertTrue(guide.appears(within: 5))
+        for step in ["welcome", "sound", "visual", "look"] {
+            XCTAssertTrue(stepTitle(step).appears(within: 5), "step \(step) is shown")
+            var issues: [String] = []
+            try app.performAccessibilityAudit(for: .contrast) { (issue: XCUIAccessibilityAuditIssue) -> Bool in
+                let label = (try? issue.element?.snapshot())?.label ?? "(no element)"
+                issues.append("[\(step)] \(label): \(issue.compactDescription)")
+                return true
+            }
+            XCTAssertTrue(issues.isEmpty, issues.joined(separator: "\n"))
+            next.tap()
+        }
+    }
+
     /// UIX-001-T09: Settings › Guided first scene over the running visualizer applies the new visual
     /// and keeps the running source (no second start).
     func testReopenFromSettingsKeepsTheRunningSource() {

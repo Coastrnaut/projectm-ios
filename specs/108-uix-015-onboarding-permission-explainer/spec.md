@@ -76,6 +76,15 @@ Five questions, each answered by Claude with the recommended option (owner rule 
   is the flag; FR-005's in-memory acknowledgement is kept. Only camera and local network store a flag
   (two keys). Applied to UIX-015-R9, R11.
 
+### Session 2026-11-24 (QA-011 D1)
+
+- Q: The local network denied notice never appeared on D1 (iOS 27.0.1) after Don't Allow; does the explainer or the
+  notice change? → A: No; the detection was wrong (ADR-0125 follow-up 3, OSC-001 Clarifications 2026-11-24): the
+  prompt left the app active and the probe granted before the answer. A settle-only grant is now unconfirmed and
+  rechecked by fresh browses for 30 s, so a denial after the prompt shows the notice; the explainer still reads the
+  same state and never returns after a denial. The test was checked too: its screenshot and log show it tapped
+  iOS's own "Don’t Allow" button (`SYSTEM-UI alert: … -> Don't Allow`).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - I know why the app wants the camera or the network before iOS asks (Priority: P1)
