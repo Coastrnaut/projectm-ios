@@ -187,29 +187,41 @@ struct UITestCameraDeviceProbes: View {
         }
     }
 
+    /// The readouts' place: one line each, in a fixed strip at the leading edge just under the probe buttons
+    /// (top 280), where no app control sits.
+    /// QA-011 D1 r16 (2026-11-24, CAM-002-T22): they wrapped at the window's width at the bottom-leading corner. Once
+    /// Save Frame wrote a file, `cameraOrientationGrid` held a 384-digit hex grid and the readouts grew several lines
+    /// over the iPhone's controls card; XCUITest's hit test finds invisible text too, so Record and Save Frame read
+    /// "not hittable" (shown in the screenshots, never tapped) and the test failed at Record, then at Save Frame for
+    /// mirror on, and compared the old mirror-off frame with the mirror-on screen. The test reads only the values
+    /// (`accessibilityValue`), never the drawn text, so the text is clipped to one line in a 40 × 30 pt strip.
+    static let readoutStrip = CGSize(width: 40, height: 30)
+
     private var readouts: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Spacer()
+        VStack(alignment: .leading, spacing: 0) {
             TimelineView(.periodic(from: .now, by: 0.25)) { _ in
                 let value: String = state
-                Text(value)
-                    .font(.caption2)
-                    .opacity(0.01)
-                    .allowsHitTesting(false)
-                    .accessibilityIdentifier("cameraDeviceState")
-                    .accessibilityValue(value)
+                readout(value, id: "cameraDeviceState")
             }
-            Text(grid)
-                .font(.caption2)
-                .opacity(0.01)
-                .allowsHitTesting(false)
-                .accessibilityIdentifier("cameraOrientationGrid")
-                .accessibilityValue(grid)
+            readout(grid, id: "cameraOrientationGrid")
         }
+        .frame(width: Self.readoutStrip.width, height: Self.readoutStrip.height, alignment: .topLeading)
+        .clipped()
+        .padding(.top, 310)
         .padding(.leading, 4)
-        .padding(.bottom, 30)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .allowsHitTesting(false)
+    }
+
+    private func readout(_ value: String, id: String) -> some View {
+        Text(value)
+            .font(.caption2)
+            .lineLimit(1)
+            .dynamicTypeSize(.large)   // one size at every text size (autotester: invisible probes at AX5)
+            .opacity(0.01)
+            .allowsHitTesting(false)
+            .accessibilityIdentifier(id)
+            .accessibilityValue(value)
     }
 
     private var state: String {

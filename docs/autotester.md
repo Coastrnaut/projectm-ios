@@ -934,6 +934,17 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   the element's centre. At AX5 the performance overlay and a DEBUG probe text (opacity 0.01) grew over the transport,
   which was drawn whole, and every button read "not hittable" (AUD-006-T41, D1-D3). DEBUG probes keep one text size
   (`.dynamicTypeSize(.large)`); a test of a control's layout at AX5 runs without the overlay.
+  - *A probe whose value grows grows over the controls too.* CAM-002-T22 on D1 (r16, 2026-11-24): the camera
+    probes' readouts wrapped at the window's width; after Save Frame the 384-digit orientation grid made them about
+    100 pt tall over the iPhone's controls card, and Record and Save Frame read "not hittable" while the screenshots
+    showed them. The iPads passed (wider lines). Probe texts the tests read by value are one line (`.lineLimit(1)`)
+    in a small fixed frame where no control sits; `CameraProbeReachUITests` (iPhone 15 simulator, 11 s) shows the
+    controls hittable with the grid filled. When a control is on screen but "not hittable" only on the iPhone, look
+    for a DEBUG text that grew since the last step.
+- **Tap the lens that is not running.** The Lens row lists the lenses widest first and the back camera opens on
+  Wide, so a fixed `buttons.element(boundBy: 1)` re-taps the running lens: nothing restarts and a lock "survives the
+  lens change" (CAM-004-T08 on 2026-11-23, CAM-006-T09 again in D1 r16). `chooseOtherLens()` taps the unselected
+  segment and waits for the row to show it; check `starts` grew before blaming the app.
 - **A probe's delivered positions lag the audio by up to one tap block** (100 ms): compare a resume with the held,
   shown position, not with the last delivered sample (AUD-006-T39).
 - **Compare two runs over the same part of the fixture.** The music fixture has a quiet intro, a verse and a loud
