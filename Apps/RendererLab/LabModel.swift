@@ -109,15 +109,18 @@ final class LabModel {
         /// dimming path runs only on those frames.
         var dimmedFraction: Double?
         var medianGain: Double?
-        /// FX-019-T22 (2026-11-24, second version): the pass's own cost on the frame it processes (`timedPassFrames`,
-        /// 20 frames after each ABBA round): per frame GPU time (timer query) plus CPU encoding time; median and IQR of
-        /// that sum, the medians of its parts, the round trip a wall-clock bracket would add, and how many frames gave a
-        /// GPU time. (The first version's `passMedianMs`, a glFinish-to-glFinish wall time, is no longer written.)
-        var passCostMedianMs: Double?
-        var passCostIqrMs: Double?
+        /// FX-019-T22 (2026-11-24, third version): the pass's own cost on the frame it processes (`timedPassFrames`,
+        /// 20 frames after each ABBA round): per frame GPU time (timer query, started after the engine's frame has
+        /// finished on the GPU) plus CPU encoding time; median and IQR of that sum, the medians of its parts, the round
+        /// trip a wall-clock bracket would add, the wait for the engine's frame, and how many frames gave a GPU time.
+        /// No longer written: the first version's `passMedianMs` (glFinish-to-glFinish wall time) and the second's
+        /// `passCostMedianMs` (timer query without the wait, so it counted the engine's frame too).
+        var passIsolatedCostMedianMs: Double?
+        var passIsolatedCostIqrMs: Double?
         var passGpuMedianMs: Double?
         var passCpuMedianMs: Double?
         var roundTripMedianMs: Double?
+        var engineWaitMedianMs: Double?
         var passSamples: Int?
     }
 
@@ -218,10 +221,10 @@ final class LabModel {
             summary["presets"] = Double(results.count)
             summary["costMsMedian"] = costs.isEmpty ? 0 : costs[costs.count / 2]
             summary["costMsMax"] = costs.last ?? 0
-            let passes = results.compactMap(\.passCostMedianMs).sorted()   // FX-019-T22 (2026-11-24): the verdict's statistic
+            let passes = results.compactMap(\.passIsolatedCostMedianMs).sorted()   // FX-019-T22: the verdict's statistic
             if !passes.isEmpty {
-                summary["passCostMsMedian"] = passes[passes.count / 2]
-                summary["passCostMsMax"] = passes.last ?? 0
+                summary["passIsolatedCostMsMedian"] = passes[passes.count / 2]
+                summary["passIsolatedCostMsMax"] = passes.last ?? 0
             }
             let trips = results.compactMap(\.roundTripMedianMs).sorted()
             if !trips.isEmpty { summary["roundTripMsMedian"] = trips[trips.count / 2] }
@@ -331,8 +334,8 @@ final class LabModel {
     }
 
     /// Per starter preset: 30 warm-up frames off and 10 on, then 8 rounds of 20 frames off, 40 on, 20 off (ABBA), each
-    /// followed by 20 paired frames that time the pass alone on the frame it processes: GPU timer query plus CPU
-    /// encoding, without the submit-and-wait round trip (FX-019-T22, 2026-11-24).
+    /// followed by 20 paired frames that time the pass alone on the frame it processes: GPU timer query (after the
+    /// engine's frame has finished) plus CPU encoding, without the submit-and-wait round trip (FX-019-T22, 2026-11-24).
     ///
     /// QA-011 D1 (2026-11-23): the earlier order (5 rounds of 40 off, then 40 on) always measured "on" half a second
     /// after "off", so a preset whose own frame time drifts after its load (projectM's transition, a building
@@ -373,11 +376,12 @@ final class LabModel {
                                            dimmedFraction: gains.isEmpty ? nil
                                                : Double(gains.filter { $0 < 0.999 }.count) / Double(gains.count),
                                            medianGain: gains.isEmpty ? nil : Self.median(gains.map(Double.init)),
-                                           passCostMedianMs: costs.isEmpty ? nil : Self.median(costs),
-                                           passCostIqrMs: costs.isEmpty ? nil : Self.quantile(costs, 0.75) - Self.quantile(costs, 0.25),
+                                           passIsolatedCostMedianMs: costs.isEmpty ? nil : Self.median(costs),
+                                           passIsolatedCostIqrMs: costs.isEmpty ? nil : Self.quantile(costs, 0.75) - Self.quantile(costs, 0.25),
                                            passGpuMedianMs: costs.isEmpty ? nil : Self.median(pass.compactMap(\.gpuMs)),
                                            passCpuMedianMs: pass.isEmpty ? nil : Self.median(pass.map(\.cpuMs)),
                                            roundTripMedianMs: pass.isEmpty ? nil : Self.median(pass.map(\.roundTripMs)),
+                                           engineWaitMedianMs: pass.isEmpty ? nil : Self.median(pass.map(\.engineWaitMs)),
                                            passSamples: costs.count))
         }
         status = "Flash cost done: \(results.count) presets"

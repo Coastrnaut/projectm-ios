@@ -126,7 +126,7 @@ identifier. Both come from `xcrun devicectl list devices --json-output <file>`.
 | `autorun-perf001-glow` | part of PERF-003-T15 | perf001 on the circular spectrum with the glow on (`PROJECTM_VISUAL`, `PROJECTM_GLOW`); the export has `frameTimings.effectQuality` |
 | `autorun-pre005` | part of PRE-005-T17 | 200 real thumbnails (evenly spaced) scored; percentiles and class counts for the threshold choice |
 | `autorun-sc009` | AUD-014-T32 (D1, D3) | the lifecycle scripts' end states; on demand, needs the microphone answered (see below) |
-| `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (judged on the pass's GPU timer-query time plus CPU encoding on the frame it processes, `passCostMedianMs`, since 2026-11-24; on minus off reported) (builds RendererLab into `Build/rendererlab` when missing) |
+| `rendererlab-flashcost` | part of FX-019-T22 | RendererLab `RL_MODE=flashcost`: strobe pass cost ≤ 2 ms per frame on every starter preset (judged on the pass's GPU timer-query time, begun after the engine's frame has finished, plus CPU encoding on the frame it processes, `passIsolatedCostMedianMs`, since 2026-11-24; on minus off reported) (builds RendererLab into `Build/rendererlab` when missing) |
 | `xctrace-perf004` | PERF-004-T16 | Logging template on the Text visual (`PROJECTM_VISUAL=text`, the default since 2026-11-23): "PERF-004 texture allocation" signposts only before the visual is up + 5 s (marker `QA-011 ready`, after playback start returned) and within 3 s of each rotation (perf004 rotates 10 s after `ready` and back at 20 s; time limit 50 s; xctrace then takes 3-5 min on D1 to save) |
 | `xctrace-perf011` | part of PERF-011-T21 | Metal System Trace + os_signpost; counted from the moment the app's process appears, the Mac opens Settings at 10 s and relaunches the app at 26 s (app runs 40 s, time limit 70 s; a recording that never ends is stopped with SIGINT and fails the case): no frames (and no GPU intervals of the app) from 10 s after backgrounding until the return (willEnterForeground, marker `QA-011 return`), a lower footprint, the first frame within 2 s of the return |
 | `xctrace-perf008` | part of PERF-008-T16 | on demand (about 12 min): Power Profiler 5 min Standard then 5 min Battery saver; fps and frame time per minute from the app, energy per minute from any power table the trace exports |
@@ -1488,6 +1488,15 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   GL_TIME_ELAPSED_EXT)` and `glEndQueryEXT` end the command buffer at each call and report GPUEndTime - GPUStartTime
   of the buffers in between (`PMANGLETimerBegin`/`End`/`ResultMs` in CANGLE). RendererLab now adds that GPU time to
   the pass's CPU encoding time and reports the round trip it excludes (a 1 × 1 clear's submit-and-wait) beside it.
+- **A GPU timer query times command buffers from when the GPU starts them, so finish the earlier work first**
+  (`rendererlab-flashcost`, D1 20261124T222416Z). The timer bracket around the pass read 7.7 ms of GPU time for a
+  64 × 64 measure step and one full-screen output step. ANGLE's Metal backend gives each GL_TIME_ELAPSED query the
+  command buffers created while it is active (`QueryMtl::begin`/`end` flush, `CommandQueue::makeMetalCommandBuffer`)
+  and sums their `GPUEndTime - GPUStartTime` (`onCommandBufferCompleted`, `mtl_command_buffer.mm`). A buffer
+  committed right behind another and reading its output starts early and waits inside that interval, so the pass's
+  time held most of the engine's frame. The giveaway: a fixed-size pass's GPU time followed each preset's own frame
+  time (correlation 0.87). `timedPassFrames` now calls glFinish before the query begins and reports that wait apart
+  (`engineWaitMedianMs`). Sanity-check any GPU timing against what cannot depend on the content.
 - **Discard what a full-screen pass overwrites** (FX-019 output step, 2026-11-24). ANGLE's Metal backend starts a
   render pass with `MTLLoadActionLoad` unless the attachment was invalidated (`glInvalidateFramebuffer`) or cleared
   (`FramebufferMtl::setLoadStoreActionOnRenderPassFirstStart`), and projectM never clears its target. The strobe pass's

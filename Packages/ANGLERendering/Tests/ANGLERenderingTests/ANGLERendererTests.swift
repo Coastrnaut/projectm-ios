@@ -82,6 +82,9 @@ final class ANGLERendererTests: XCTestCase {
             XCTAssertTrue(gpu > 0 && gpu < 1_000, "\(sample)")
             XCTAssertTrue(sample.cpuMs > 0 && sample.cpuMs < 1_000, "\(sample)")
             XCTAssertTrue(sample.roundTripMs > 0 && sample.roundTripMs < 1_000, "\(sample)")
+            // Third version (2026-11-24): the engine's frame is waited for before the timer begins, so the timed
+            // command buffer holds the pass alone.
+            XCTAssertTrue(sample.engineWaitMs > 0 && sample.engineWaitMs < 1_000, "\(sample)")
             XCTAssertEqual(try XCTUnwrap(sample.costMs), gpu + sample.cpuMs, accuracy: 1e-9)
         }
         XCTAssertTrue(gains.allSatisfy { $0 > 0 && $0 <= 1 }, "\(gains)")

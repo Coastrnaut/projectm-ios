@@ -2916,21 +2916,33 @@ class QA011Batch2Tests(unittest.TestCase):
         del paired["flashCost"][0]["passMedianMs"]   # one preset without a paired time: the old statistic decides
         self.assertEqual(rdm.flashcost_verdict(paired, 2.0)["statistic"], "costMs")
         self.assertFalse(rdm.flashcost_verdict(paired, 2.0)["pass"])
-        # 2026-11-24, second version: GPU timer plus CPU encoding decides; the wall time with its round trip does not.
+        # 2026-11-24, third version: GPU timer begun after the engine's frame has finished, plus CPU encoding, decides;
+        # the wall time with its round trip and the engine wait do not.
         timed = {"summary": {"presets": 2, "costMsMedian": 1.39, "costMsMax": 4.24},
-                 "flashCost": [{"id": "a", "costMs": 4.24, "passCostMedianMs": 0.9, "passGpuMedianMs": 0.7,
-                                "passCpuMedianMs": 0.2, "roundTripMedianMs": 1.4},
-                               {"id": "b", "costMs": 1.2, "passCostMedianMs": 1.1, "passGpuMedianMs": 0.8,
-                                "passCpuMedianMs": 0.3, "roundTripMedianMs": 1.5}]}
+                 "flashCost": [{"id": "a", "costMs": 4.24, "passIsolatedCostMedianMs": 0.9, "passGpuMedianMs": 0.7,
+                                "passCpuMedianMs": 0.2, "roundTripMedianMs": 1.4, "engineWaitMedianMs": 3.0},
+                               {"id": "b", "costMs": 1.2, "passIsolatedCostMedianMs": 1.1, "passGpuMedianMs": 0.8,
+                                "passCpuMedianMs": 0.3, "roundTripMedianMs": 1.5, "engineWaitMedianMs": 4.0}]}
         verdict = rdm.flashcost_verdict(timed, 2.0)
         self.assertTrue(verdict["pass"])
-        self.assertEqual((verdict["statistic"], verdict["passMaxMs"], verdict["roundTripMedianMs"]), ("passCostMedianMs", 1.1, 1.5))
-        self.assertIn("pass (GPU timer + CPU encoding) median 1.10 ms, max 1.10 ms", verdict["detail"])
-        self.assertIn("excluded round trip 1.50 ms", verdict["detail"])
-        timed["flashCost"][0].update(passCostMedianMs=2.2, passGpuMedianMs=1.9)
+        self.assertEqual((verdict["statistic"], verdict["passMaxMs"], verdict["roundTripMedianMs"]),
+                         ("passIsolatedCostMedianMs", 1.1, 1.5))
+        self.assertIn("pass (GPU timer after the engine's frame + CPU encoding) median 1.10 ms, max 1.10 ms",
+                      verdict["detail"])
+        self.assertIn("excluded round trip 1.50 ms, excluded engine wait 4.00 ms)", verdict["detail"])
+        timed["flashCost"][0].update(passIsolatedCostMedianMs=2.2, passGpuMedianMs=1.9)
         verdict = rdm.flashcost_verdict(timed, 2.0)
         self.assertFalse(verdict["pass"])
         self.assertIn("a (pass 2.20 ms, GPU 1.90, CPU 0.20, on - off 4.24 ms)", verdict["detail"])
+        # The second version's report (D1 20261124T222416Z: timer without the wait, GPU 7.73 ms median because the
+        # pass's command buffer started during the engine's frame) is judged as written, and named as such.
+        unisolated = {"summary": {"presets": 1, "costMsMedian": 1.63, "costMsMax": 1.63},
+                      "flashCost": [{"id": "u", "costMs": 1.63, "passCostMedianMs": 8.11, "passGpuMedianMs": 7.73,
+                                     "passCpuMedianMs": 0.35, "roundTripMedianMs": 0.86}]}
+        verdict = rdm.flashcost_verdict(unisolated, 2.0)
+        self.assertEqual((verdict["statistic"], verdict["pass"]), ("passCostMedianMs", False))
+        self.assertIn("engine frame not excluded", verdict["detail"])
+        self.assertIn("u (pass unisolated 8.11 ms, GPU 7.73, CPU 0.35", verdict["detail"])
         # The first paired version's report (D1 20261124T191740Z: wall pass 2.80 / 3.09 ms) is judged as it was.
         wall = {"summary": {"presets": 1, "costMsMedian": 1.39, "costMsMax": 1.39},
                 "flashCost": [{"id": "w", "costMs": 1.39, "passMedianMs": 3.09}]}
