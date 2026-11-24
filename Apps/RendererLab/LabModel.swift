@@ -109,6 +109,10 @@ final class LabModel {
         /// dimming path runs only on those frames.
         var dimmedFraction: Double?
         var medianGain: Double?
+        /// FX-019-T22 (2026-11-24): the pass's own time on the frame it processes (`timedPassFrames`, 20 frames after
+        /// each ABBA round): median and interquartile range. Paired per frame, so free of the preset's own variation.
+        var passMedianMs: Double?
+        var passIqrMs: Double?
     }
 
     var config = Config.fromLaunchArguments()
@@ -208,6 +212,11 @@ final class LabModel {
             summary["presets"] = Double(results.count)
             summary["costMsMedian"] = costs.isEmpty ? 0 : costs[costs.count / 2]
             summary["costMsMax"] = costs.last ?? 0
+            let passes = results.compactMap(\.passMedianMs).sorted()   // FX-019-T22 (2026-11-24): the verdict's statistic
+            if !passes.isEmpty {
+                summary["passMsMedian"] = passes[passes.count / 2]
+                summary["passMsMax"] = passes.last ?? 0
+            }
             summary["surfaceWidth"] = Double(angle.currentSurfaceSizeForLab.width)
             summary["surfaceHeight"] = Double(angle.currentSurfaceSizeForLab.height)
         }
@@ -313,7 +322,8 @@ final class LabModel {
         return windows
     }
 
-    /// Per starter preset: 30 warm-up frames off and 10 on, then 8 rounds of 20 frames off, 40 on, 20 off (ABBA).
+    /// Per starter preset: 30 warm-up frames off and 10 on, then 8 rounds of 20 frames off, 40 on, 20 off (ABBA), each
+    /// followed by 20 paired frames that time the pass alone on the frame it processes (FX-019-T22, 2026-11-24).
     ///
     /// QA-011 D1 (2026-11-23): the earlier order (5 rounds of 40 off, then 40 on) always measured "on" half a second
     /// after "off", so a preset whose own frame time drifts after its load (projectM's transition, a building
@@ -330,14 +340,17 @@ final class LabModel {
             guard (try? await renderer.setPreset(preset)) != nil else { continue }
             _ = renderer.timedFrames(30, reduceFlashing: false)
             _ = renderer.timedFrames(10, reduceFlashing: true)
-            var off: [Double] = [], on: [Double] = [], rounds: [Double] = [], gains: [Float] = []
+            var off: [Double] = [], on: [Double] = [], rounds: [Double] = [], gains: [Float] = [], none: [Float] = []
+            var pass: [Double] = []
             for _ in 0..<Self.flashCostRounds {
-                let first = renderer.timedFrames(20, reduceFlashing: false)
+                // Both arms read the gain texel back after every frame (2026-11-24): the same round trip on each side.
+                let first = renderer.timedFrames(20, reduceFlashing: false, gains: &none)
                 let limited = renderer.timedFrames(40, reduceFlashing: true, gains: &gains)
-                let last = renderer.timedFrames(20, reduceFlashing: false)
+                let last = renderer.timedFrames(20, reduceFlashing: false, gains: &none)
                 off += first + last
                 on += limited
                 rounds.append(Self.median(limited) - Self.median(first + last))
+                pass += renderer.timedPassFrames(20, gains: &none)
                 await Task.yield()
             }
             thermalStates.insert(Self.thermalName())
@@ -349,7 +362,9 @@ final class LabModel {
                                            roundCostsMs: rounds,
                                            dimmedFraction: gains.isEmpty ? nil
                                                : Double(gains.filter { $0 < 0.999 }.count) / Double(gains.count),
-                                           medianGain: gains.isEmpty ? nil : Self.median(gains.map(Double.init))))
+                                           medianGain: gains.isEmpty ? nil : Self.median(gains.map(Double.init)),
+                                           passMedianMs: pass.isEmpty ? nil : Self.median(pass),
+                                           passIqrMs: pass.isEmpty ? nil : Self.quantile(pass, 0.75) - Self.quantile(pass, 0.25)))
         }
         status = "Flash cost done: \(results.count) presets"
         return results

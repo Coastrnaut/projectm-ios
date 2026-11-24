@@ -69,6 +69,7 @@
 #define GL_CULL_FACE 0x0B44
 #define GL_STENCIL_TEST 0x0B90
 #define GL_COLOR_BUFFER_BIT 0x00004000
+#define GL_COLOR 0x1800
 #define WARP_MAX_SIDE 9
 #define WARP_SUBDIVISIONS 16
 
@@ -118,6 +119,7 @@ typedef struct GLTable {
     void (*colorMask)(GLboolean, GLboolean, GLboolean, GLboolean);
     void (*drawArrays)(GLenum, GLint, GLsizei);
     void (*readPixels)(GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, void *);
+    void (*invalidateFramebuffer)(GLenum, GLsizei, const GLenum *);   // FX-019-T22 (optional: 0 = always load)
 } GLTable;
 
 #define LOAD(field, name) if ((*(void **)&gl->field = load(name, user)) == 0) return 0;
@@ -143,6 +145,7 @@ static int loadGL(GLTable *gl, PMFlashLoadProc load, void *user) {
     LOAD(bindVertexArray, "glBindVertexArray") LOAD(viewport, "glViewport")
     LOAD(disable, "glDisable") LOAD(colorMask, "glColorMask") LOAD(drawArrays, "glDrawArrays")
     LOAD(readPixels, "glReadPixels")
+    *(void **)&gl->invalidateFramebuffer = load("glInvalidateFramebuffer", user);   // optional
     return 1;
 }
 
@@ -748,6 +751,14 @@ static void drawOutput(PMFlashLimiter *limiter, unsigned int targetFramebuffer, 
     int calibrated = display && limiter->calibrated;
     gl->bindFramebuffer(GL_FRAMEBUFFER, targetFramebuffer);
     gl->viewport(0, 0, limiter->width, limiter->height);
+    // FX-019-T22 (QA-011 D1, 2026-11-24): every pixel of the target is written below (a full-screen triangle, or the
+    // warp's clear then its mesh; blending, scissor and depth off), so its old contents are never needed. Without the
+    // invalidation ANGLE's Metal backend starts this render pass with MTLLoadActionLoad and reads the whole target
+    // first (the window surface: 1179 x 2556 x 4 bytes, 12 MB per frame on D1); with it the load action is DontCare.
+    if (gl->invalidateFramebuffer) {
+        const GLenum attachment = targetFramebuffer == 0 ? GL_COLOR : GL_COLOR_ATTACHMENT0;
+        gl->invalidateFramebuffer(GL_FRAMEBUFFER, 1, &attachment);
+    }
     if (display && limiter->warpColumns >= 2) {   // OUT-008
         drawWarpedOutput(limiter, calibrated);
         return;

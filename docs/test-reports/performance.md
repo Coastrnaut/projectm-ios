@@ -174,6 +174,16 @@ diagnostic, not evidence: about +0.65 ms at 4096 × 4096 on the Mac's GPU). Fix 
 256 × 2 tone table per frame (every 8-bit level × gain, then OUT-009's calibration) and a per-channel lookup in the
 output step; the limit stays 2.0 ms. Device re-measurement pending (next D1 matrix run).
 
+**FX-019-T22, D1 reruns (2026-11-23 and 2026-11-24): measurement changed, one read removed from the pass.** With the tone
+table: median 1.52 / 1.27 ms, max 2.99 / 2.64 ms (two runs of the same code, 20261123T200159Z and T210326Z; per preset
+up to 2 ms apart). With the ABBA rounds and the output step's per-vertex gain (20261124T183541Z): median 1.71 ms, max
+4.39 ms (`ORB - Saturns Rings`, 0.84-1.14 ms the day before; "on" IQR 3.51 ms). Undimmed presets cost 1.05-1.24 ms,
+fully dimmed ones 1.75-2.09 ms, both with tight rounds; the outliers are partly dimmed presets whose own frame time
+swings. FX-019 Clarification 2026-11-24: the output step invalidates the window before drawing (ANGLE loaded the
+12 MB it then overwrote), the gain read-back runs in both arms, and RendererLab times the pass alone on each frame
+(`passMedianMs`); the matrix verdict uses those paired medians, the limit stays 2.0 ms. Device re-measurement
+pending (next D1 matrix run).
+
 ## Budgets per device class (QA-010)
 
 The performance budgets are versioned in [`docs/performance/thresholds.json`](../performance/thresholds.json)

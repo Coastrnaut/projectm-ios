@@ -2900,6 +2900,22 @@ class QA011Batch2Tests(unittest.TestCase):
         self.assertIn("x (2.40 ms, rounds 2.10-2.70, dimmed 50%, IQR off 0.40 on 0.50)",
                       rdm.flashcost_verdict(over, 2.0)["detail"])
         self.assertFalse(rdm.flashcost_verdict({"summary": {}}, 2.0)["pass"])
+        # 2026-11-24: paired pass times decide when every preset has one; on - off stays in the detail.
+        paired = {"summary": {"presets": 2, "costMsMedian": 1.7, "costMsMax": 4.39},
+                  "flashCost": [{"id": "a", "costMs": 4.39, "passMedianMs": 1.1}, {"id": "b", "costMs": 1.0, "passMedianMs": 0.9}]}
+        verdict = rdm.flashcost_verdict(paired, 2.0)
+        self.assertTrue(verdict["pass"])
+        self.assertEqual((verdict["statistic"], verdict["passMaxMs"]), ("passMedianMs", 1.1))
+        self.assertIn("pass alone median 1.10 ms, max 1.10 ms", verdict["detail"])
+        self.assertIn("on - off of separate frames median 1.70, max 4.39 ms", verdict["detail"])
+        paired["flashCost"][1]["passMedianMs"] = 2.3
+        verdict = rdm.flashcost_verdict(paired, 2.0)
+        self.assertFalse(verdict["pass"])
+        self.assertEqual(verdict["over"], ["b"])
+        self.assertIn("b (pass 2.30 ms, on - off 1.00 ms)", verdict["detail"])
+        del paired["flashCost"][0]["passMedianMs"]   # one preset without a paired time: the old statistic decides
+        self.assertEqual(rdm.flashcost_verdict(paired, 2.0)["statistic"], "costMs")
+        self.assertFalse(rdm.flashcost_verdict(paired, 2.0)["pass"])
         runs = [{"name": "perf008-standard", "report": {"profile": "standard", "fps": [60.0] * 9}, "tables": {}},
                 {"name": "perf008-batterySaver", "report": {"profile": "batterySaver", "fps": [30.0] * 9}, "tables": {}}]
         self.assertTrue(rdm.verdict_perf008(runs)["pass"])
