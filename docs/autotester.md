@@ -879,6 +879,13 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   is brought near full (REC-009 29.7 s, REC-015 40.7 s on D3). The app logs each delete's timing in
   `Library/Caches/QA011-DiskBallast-timing.log`, which `clear_disk_ballast.py` prints. Measure where the time goes
   (the app's own timing log, devicectl terminate and launch times) before redesigning.
+- **A lost device mid-run resumes by itself (2026-11-24).** About once per full run on every device, `app.launch()`
+  fails after 60 s with "Failed to terminate" (always right after a heavy media or camera test: MED-001's 45 MB HEIC
+  panorama, MED-014, CAM-003/004), and xcodebuild then loses the device ("An error occurred while communicating with a
+  remote process"). D2 full28 stopped at test 117 of about 180 that way. `run_device_ui_tests.sh` now resumes such a run
+  (up to `RESUME=3` times): every test that passed or was skipped is left out, a failed one runs again, each attempt's
+  log is appended to the run's log, and the summary counts each test's last result. No crash or hang report was
+  written for the stuck terminate, so the cause on the device is still unknown.
 
 ### Xcode and the device test host
 
