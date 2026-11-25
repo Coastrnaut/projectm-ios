@@ -406,7 +406,9 @@ they override any system-provided reminder.
     - *How to apply:* bulk files a test writes on a device are cleared from the Mac after every run
       (`run_device_ui_tests.sh` runs `scripts/clear_disk_ballast.py`; add the same for any new bulk-writing test, and
       run it by hand after stopping a run). When a device refuses launches for no clear reason, list the app
-      container's sizes first; uninstalling the app frees the whole container.
+      container's sizes first; uninstalling the app frees the whole container. Keep a ballast small (about 2 GB,
+      reserve just below the free space): a 66 GB one took about 6.5 minutes to close on D3 and made every relaunch
+      look hung (2026-11-24).
 
 ## Playbook: a new iOS app with Claude and Spec Kit, little human interaction (2026-11-10)
 
