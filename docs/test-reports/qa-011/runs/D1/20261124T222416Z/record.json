@@ -1,0 +1,104 @@
+{
+  "app": {
+    "build": "2",
+    "bundleID": "org.projectmios.ProjectMiOS",
+    "commit": "634ce4dab3246e054ed0317e03be8a11d1a88f53",
+    "configuration": "Release+PROJECTM_AUTOMATION",
+    "dirty": false,
+    "path": "Build/automation/Build/Products/Release-iphoneos/projectM-iOS.app",
+    "version": "1.1"
+  },
+  "cases": [
+    {
+      "artifacts": [
+        {
+          "bytes": 58438,
+          "committed": true,
+          "kind": "file",
+          "path": "docs/test-reports/qa-011/runs/D1/20261124T222416Z/artifacts/RendererLab-angle-flashcost-2026-11-24T222612Z.json",
+          "sha256": "38c577c52ab664db4ceed7fcf2b1aecfa5e5eef8586d93dcc47eb3104db2a542"
+        }
+      ],
+      "closes": [],
+      "commands": [
+        [
+          "xcodebuild",
+          "-project",
+          "RendererLab.xcodeproj",
+          "-scheme",
+          "RendererLab",
+          "-configuration",
+          "Release",
+          "-derivedDataPath",
+          "Build/rendererlab",
+          "-destination",
+          "generic/platform=iOS",
+          "-allowProvisioningUpdates",
+          "build"
+        ],
+        [
+          "RL_BACKEND=angle",
+          "RL_MODE=flashcost",
+          "launch",
+          "org.projectmios.RendererLab"
+        ]
+      ],
+      "detail": "28 presets, pass (GPU timer + CPU encoding) median 8.11 ms, max 9.98 ms per frame (limit 2.0 ms; medians GPU 7.73, CPU 0.35, excluded round trip 0.86 ms); on - off of separate frames median 1.63, max 4.54 ms; over: frontend-uwp/EoS - dark side of the moon (plus a few more hits and a pill).milk (pass 8.46 ms, GPU 8.08, CPU 0.36, on - off 1.85 ms, rounds 0.99-3.68, dimmed 89%, IQR off 0.43 on 0.57), frontend-uwp/EoS - pointfield 04 arcs demon_phat edit_v3.milk (pass 6.99 ms, GPU 6.64, CPU 0.35, on - off 1.36 ms, rounds -0.99-2.27, dimmed 5%, IQR off 1.28 on 0.31), frontend-uwp/EoS+Phat - Arm_upgrades - transformer.milk (pass 9.08 ms, GPU 8.71, CPU 0.36, on - off 2.03 ms, rounds -12.25-2.16, dimmed 98%, IQR off 0.15 on 0.31), frontend-uwp/fed - slowfast 1.1 (geiss composite remix).milk (pass 4.98 ms, GPU 4.62, CPU 0.35, on - off 1.17 ms, rounds 0.45-1.31, dimmed 6%, IQR off 0.09 on 0.22), frontend-uwp/fiShbRaiN - toffee cream and icing sugar.milk (pass 8.78 ms, GPU 8.42, CPU 0.35, on - off 1.34 ms, rounds -10.31-2.52, dimmed 0%, IQR off 0.71 on 0.21); thermal nominal",
+      "durationSeconds": 330.2,
+      "id": "rendererlab-flashcost",
+      "kind": "rendererlab",
+      "partOf": [
+        "FX-019-T22"
+      ],
+      "status": "fail",
+      "title": "RendererLab flashcost: strobe safety pass cost per starter preset, the pass on the frame it processes (GPU timer query plus CPU encoding; on minus off reported), at most 2 ms per frame (FX-019-S6)"
+    }
+  ],
+  "dryRun": false,
+  "evidence": true,
+  "evidenceNote": "physical device run",
+  "finishedAt": "2026-11-24T22:31:28Z",
+  "host": {
+    "macOS": "27.2.1",
+    "xcode": "Xcode 27.2 Build version 27B52"
+  },
+  "kind": "projectM-iOS.qa011.deviceRun",
+  "label": "D1",
+  "recordSha256": "3ab1cf685a64d748fa7867ff6e28fb9ccd3dc87eeb992c533d78f0871e2422d9",
+  "runId": "20261124T222416Z",
+  "schemaVersion": 1,
+  "signing": {
+    "adhoc": false,
+    "identity": "Apple Development",
+    "raw": [
+      "Authority=Apple Development",
+      "Authority=Apple Worldwide Developer Relations Certification Authority",
+      "Authority=Apple Root CA",
+      "TeamIdentifier=WX58SV9Y9J"
+    ],
+    "redaction": "certificate holder name and certificate ID withheld; team ID kept (owner ruling 2026-11-15)",
+    "signed": true,
+    "team": "WX58SV9Y9J"
+  },
+  "startedAt": "2026-11-24T22:24:16Z",
+  "stopReason": null,
+  "summary": {
+    "blocked": 0,
+    "error": 0,
+    "fail": 1,
+    "not-run": 0,
+    "pass": 0,
+    "skipped": 0,
+    "timeout": 0
+  },
+  "target": {
+    "identifier": "45E00675-C85D-52C3-A97F-50025FC56F38",
+    "kind": "device",
+    "name": "iPhone77",
+    "osBuild": "24A446",
+    "osVersion": "27.0.1",
+    "productType": "iPhone15,4",
+    "state": "disconnected",
+    "udid": "00008120-001E4C5C3A42201E"
+  }
+}
