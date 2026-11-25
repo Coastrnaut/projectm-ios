@@ -58,6 +58,15 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 
 - Q: PRE-009-T13 found no "Compare…" in the first Calm row's menu on D1-D3; is the action missing? → A: No: that row was the playing preset, whose menu offers no comparison (R1). The device test leaves out the row whose label says "current preset".
 
+### Session 2026-11-24 (QA-011 D3 r27: main visual after Close)
+
+- Q: PRE-009-T13's "main visual after Close" read 52 fps on D3 (floor 55) with the controls card up
+  (`controlsShown=1`), although the test waits 8 s for the controls to hide. Is the main visual slow after a
+  comparison? → A: The reading was taken with the controls up only because of the auto-hide defect (FR-042
+  Clarification 2026-11-24): the browser was open for over 60 s, its auto-hide fired meanwhile and was never
+  restarted, so the 8 s wait ran out with the card still up. With the fix the controls hide 5 s after Done, inside
+  the existing wait; the test and its 55 fps floor are unchanged. Rerun PRE-009-T13 on D3.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Compare two presets live (Priority: P1) — MVP

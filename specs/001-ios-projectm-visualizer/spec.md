@@ -60,6 +60,17 @@ approved."
 
 - Q: A device test's 55 fps floor (QA-011) is read while the device is at serious/critical thermal state or in Low Power Mode, where FR-049 lets the app cap itself at 30 fps. Pass or fail? → A: Neither by accident: the device tests first cool a hot device at the Home Screen (app not running, up to 5 minutes) before each launch; if the device is still capped while sampling, the floor is FR-049's 30 fps (28 allowing the overlay's rounding) and the report records `capped: 1` and the thermal state, so evidence review can tell capped readings from full-rate ones. Evidence: D1 2026-11-23, every frame-rate check after an hour of camera tests read exactly 30 fps at thermal state 2 (FX-009, FX-010, FX-014, CAM-001).
 
+### Session 2026-11-24 (QA-011 D3: controls auto-hide)
+
+- Q: Settings, the preset browser and the queue keep the controls up while open (FR-042). When the 5 s auto-hide
+  fires while one of them is open, what happens after it closes? → A: Closing the last of them restarts the 5 s
+  delay, so the controls hide 5 s after the user's last use, as after any other control. Before, `hideControls`
+  returned while a panel was open and nothing restarted the timer, so the controls stayed up until the next tap
+  (found in CAM-001's Clarification 2026-11-24; QA-011 D3 r27 measured every camera and PRE-009 frame-rate check with
+  the card up). Controls already hidden stay hidden; the chooser is unaffected. `AppCoordinator.controlsPanelClosed`
+  (didSet of `showSettings`, `showPresetBrowser`, `showQueue`); UI test
+  `SettingsUITests.testControlsAutoHideAfterSettingsCloses` (red without the fix, green with it, iOS 27.2 simulator).
+
 ## Delivery Gating *(mandatory for this feature)*
 
 This feature is delivered in stages. Each stage maps to the constitution's phases and gates:

@@ -71,11 +71,13 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     private func liveThroughRotation(_ task: String, _ position: String) {
         launchCamera(position)
         assertLive(task, "\(position) portrait")
+        waitForControlsAutoHide(task, "\(position) portrait")   // the visual's rate, as seen 5 s after Settings closed
         assertFrameRate(task, "\(position) portrait")
         _ = screen(task, "\(position) portrait")
         XCUIDevice.shared.orientation = .landscapeLeft
         pause(2)
         assertLive(task, "\(position) landscape")
+        waitForControlsAutoHide(task, "\(position) landscape")
         assertFrameRate(task, "\(position) landscape")
         _ = screen(task, "\(position) landscape")
     }
@@ -176,11 +178,13 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
     private func effectOverCamera(_ task: String, _ label: String, on settings: [String: Any], minimumChange: Double = 0.003) {
         launchCamera("back")
         assertLive(task, "\(label) off")
+        waitForControlsAutoHide(task, "\(label) off")   // the effect's cost on the visual, not the controls card's
         let off = assertFrameRate(task, "\(label) off")
         let (_, a) = screen(task, "\(label) off")
         app.terminate()
         launchCamera("back", settings: settings)
         assertLive(task, "\(label) on")
+        waitForControlsAutoHide(task, "\(label) on")
         let on = assertFrameRate(task, "\(label) on")
         let (_, b) = screen(task, "\(label) on")
         let change = Self.change(a, b)
@@ -718,6 +722,7 @@ extension B06CameraDeviceTests {
                 } else {
                     launch(visual: "photo", settings: settings, extra: ["-uitestSeedPhoto", "pattern"])
                 }
+                waitForControlsAutoHide(task, "\(visual) trails \(trails ? "on" : "off")")   // the camera path opened Settings
                 rates[trails] = assertFrameRate(task, "\(visual) trails \(trails ? "on" : "off")")
                 app.terminate()
             }

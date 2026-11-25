@@ -67,6 +67,22 @@ final class SettingsUITests: XCTestCase {
                       "frame rate and audio state: \(overlay.label)")
     }
 
+    /// FR-042, CAM-001 Clarification 2026-11-24: Settings keeps the controls up while open; when the 5 s auto-hide
+    /// fires meanwhile, closing Settings restarts it, so the controls hide about 5 s later (they stayed up for good).
+    func testControlsAutoHideAfterSettingsCloses() {
+        launch(reset: true)
+        openSettings()
+        Thread.sleep(forTimeInterval: 6)   // the auto-hide fires while Settings is open
+        closeSettings()
+        XCTAssertTrue(app.navigationBars["Settings"].disappears(within: 3), "Settings closed")
+        let controls = app.otherElements["controls"]
+        XCTAssertTrue(controls.exists, "the controls are still up right after closing Settings")
+        let closed = Date()
+        XCTAssertTrue(controls.disappears(within: 8), "the controls auto-hide after Settings closes")
+        let seconds = Date().timeIntervalSince(closed)
+        XCTAssertGreaterThan(seconds, 3, "a fresh 5 s delay, not the old timer: hid after \(seconds) s")
+    }
+
     func testReduceFlashingFollowsReduceMotionAndPersists() {
         launch(reset: true, section: "reduceFlashing")
         openSettings()
