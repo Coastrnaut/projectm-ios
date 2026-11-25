@@ -329,6 +329,18 @@ class DeviceAcceptanceCase: XCTestCase {
         print("DEVICE-ACCEPT cool-down: thermal \(ProcessInfo.processInfo.thermalState.rawValue) after \(Int(Date().timeIntervalSince(start))) s")
     }
 
+    /// Waits (at most 8 s) until the controls have auto-hidden, as a viewer sees the visual 5 s after their last touch
+    /// (FR-042), and reports how long that took. For frame-rate checks whose requirement is the visual's rate, after a
+    /// step that revealed the controls (Settings to choose a visual, a sheet). It asserts nothing: `assertFrameRate`
+    /// reports `controlsShown` either way. QA-011 D3 r27 (2026-11-24): every camera and PRE-009 reading taken with the
+    /// card up was 52-55 fps, every one without it 60 fps at a higher GPU time (CAM-001 Clarification 2026-11-24).
+    func waitForControlsAutoHide(_ task: String, _ label: String) {
+        let controls = app.otherElements["controls"]
+        let start = Date()
+        let hidden = wait(8) { !controls.exists }
+        report(task, "\(label) controls auto-hide", ["seconds": Date().timeIntervalSince(start), "hidden": hidden ? 1 : 0])
+    }
+
     /// Samples the frame rate and checks the median against the floor; returns the median. When the device is capped
     /// (FR-049) while sampling, the floor is FR-049's 30 fps instead of `minimum`, and the report says so.
     @discardableResult

@@ -47,6 +47,10 @@ final class TempoCoordinator: PresentationBoundResource {
     private(set) var tapsInSequence = 0
     /// What the readout shows (ANL-006).
     private(set) var readout: TempoReadout = .searching
+    /// The controls' texts (TempoControls), changed only when one of them changes. QA-011 D3 (2026-11-24): `readout`
+    /// carries the unrounded BPM and `snapshot` the latest beat, so both change on nearly every 4 Hz poll; a view that
+    /// read them was rebuilt four times a second (25 with haptic beats) while the shown words stayed the same.
+    private(set) var display = TempoDisplay(readout: .searching, origin: .none, tapValue: TempoCoordinator.accessibilityValue(.searching))
 
     @ObservationIgnored private var source = TempoSource()
     @ObservationIgnored private let clock: () -> UInt64
@@ -148,6 +152,8 @@ final class TempoCoordinator: PresentationBoundResource {
         let nextReadout = TempoReadout(snapshot: next, indicator: indicator)
         if nextReadout != readout { readout = nextReadout }
         if source.tapsInSequence != tapsInSequence { tapsInSequence = source.tapsInSequence }
+        let nextDisplay = TempoDisplay(readout: nextReadout, origin: next.origin, tapValue: tapValue)
+        if nextDisplay != display { display = nextDisplay }
     }
 
     // MARK: - Texts (contracts/tempo-confidence.md "App"; SHOW-011 contracts/tempo-source.md)
@@ -340,4 +346,26 @@ final class TempoCoordinator: PresentationBoundResource {
         }
     }
     #endif
+}
+
+/// The tempo group's texts as shown (TempoControls); equal when the controls would show the same thing.
+struct TempoDisplay: Equatable {
+    /// "120 BPM", "≈120 BPM" or "— BPM".
+    let number: String
+    /// "Manual", "Stable", "Uncertain", "Searching" or "MIDI clock".
+    let word: String
+    /// The readout's VoiceOver value.
+    let spoken: String
+    /// The Tap control's value.
+    let tapValue: String
+    /// Reset tempo is offered only for a manual tempo.
+    let isManual: Bool
+
+    @MainActor init(readout: TempoReadout, origin: TempoOrigin, tapValue: String) {
+        number = TempoCoordinator.readoutText(readout)
+        word = TempoCoordinator.stateText(readout)
+        spoken = TempoCoordinator.accessibilityValue(readout)
+        self.tapValue = tapValue
+        isManual = origin == .manual
+    }
 }

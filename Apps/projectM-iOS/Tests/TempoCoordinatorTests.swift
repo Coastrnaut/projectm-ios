@@ -165,4 +165,27 @@ final class TempoCoordinatorTests: XCTestCase {
         tempo.stopAnalysis()
         XCTAssertEqual(tempo.snapshot.origin, .manual)
     }
+
+    /// QA-011 D3 (2026-11-24): the controls observe `display`, which changes only when a shown text does; estimates
+    /// that move the unrounded BPM (and so `readout`) within one whole BPM change nothing the controls show.
+    func testDisplayChangesOnlyWithTheShownTexts() {
+        let (tempo, _) = make()
+        tempo.resumeForPresentation()
+        feed(tempo, bpm: 120, confidence: 0.9, polls: 9)
+        XCTAssertEqual(tempo.display.number, "120 BPM")
+        XCTAssertEqual(tempo.display.word, "Stable")
+        XCTAssertEqual(tempo.display.spoken, "120 BPM, stable")
+        XCTAssertFalse(tempo.display.isManual)
+        let before: TempoReadout = tempo.readout
+        let shown: TempoDisplay = tempo.display   // `publish` assigns `display` only when it differs
+        for bpm in [120.2, 119.8, 120.3, 120.1] { feed(tempo, bpm: bpm, confidence: 0.9, polls: 1) }
+        XCTAssertNotEqual(tempo.readout, before, "the unrounded readout moved")
+        XCTAssertEqual(tempo.display, shown, "the shown texts did not, so the controls are not rebuilt")
+        feed(tempo, bpm: 128, confidence: 0.9, polls: 9)
+        XCTAssertNotEqual(tempo.display, shown, "a jump changes the shown state (searching again)")
+        for _ in 0..<4 { tempo.tap() }
+        XCTAssertTrue(tempo.display.isManual)
+        XCTAssertEqual(tempo.display.tapValue, tempo.tapValue)
+        tempo.stopAnalysis()
+    }
 }

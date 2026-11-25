@@ -1583,6 +1583,18 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   that frees the whole container. When a device starts refusing launches for no clear reason, check its free space and
   list the app container's sizes first.
 
+- **Split a failing reading by what was on screen before blaming the GPU** (D3 r27, 2026-11-24). Every D3 frame-rate
+  reading with the controls card up read 52-55 fps and every one without it 60 fps, even at a higher GPU time; the
+  `controlsShown` field that `assertFrameRate` reports made this a one-line grep of the run log. The card was up
+  because of an app defect, not the test: Settings suspends the 5 s auto-hide, and a timer that fired while Settings
+  was open was never restarted, so every test that chose a visual in Settings measured with the card up for good.
+  Fixed in the app (closing a panel restarts the delay); frame-rate checks about the visual's rate now call
+  `waitForControlsAutoHide(task, step)` (at most 8 s, reported) after a step that revealed the controls, which is what
+  a viewer sees 5 s later. Lessons: report the screen state with every measurement; when a check measures the visual,
+  wait for the view a viewer has, not the one the test's own taps left; and count SwiftUI body rebuilds on the
+  simulator (a temporary per-view counter logged every 5 s, `-uitestKeepControls` to keep the card up) before guessing
+  which view is busy: here only the tempo group (4 Hz, same words) and the transport's position row were.
+
 ## What still needs a person
 
 Headphones and Bluetooth routes, real phone and FaceTime calls, Airplane Mode and Wi-Fi off (they need the USB cable:

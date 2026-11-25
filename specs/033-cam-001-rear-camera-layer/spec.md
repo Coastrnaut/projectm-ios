@@ -81,6 +81,28 @@ interaction); each answer is the conservative, local-first option.
   the preset browser or the queue is open (`hideControls` returns and nothing restarts the timer), which is why the
   card stays up for the whole camera checks; changing it would change what every device test finds on screen after
   closing Settings, so it needs its own run on D1-D3.
+- Q: D3 r27 (build aa273f12, 2026-11-24) still read 52-55 fps in every camera check. What separates the passing and
+  failing readings? → A: The controls card, not the GPU load. Every r27 frame-rate reading with `controlsShown=1`
+  read 52-55 fps (CAM-001-T24/T26, CAM-002-T21, FX-009/010/014/016 over the camera, PRE-009-T13), every one with
+  `controlsShown=0` read 60 fps, including FX-001-T27 at a higher GPU time (10.6 ms median against the camera's
+  8.9 ms) and Photo with Trails (9.7 ms); OSC-009-T15 with the card up and 1.7 ms of GPU read 58 fps. The camera
+  checks had the card up only because of the auto-hide defect above: `launchCamera` opens Settings to choose
+  Camera, the 5 s timer fired while Settings was open, and the card stayed for the whole test. Decisions (no
+  threshold or assertion changed): (1) closing Settings, the preset browser or the queue restarts the 5 s auto-hide
+  (FR-042 Clarification 2026-11-24); (2) the frame-rate checks whose requirement is the visual's rate (CAM-001-T24,
+  CAM-001-T26 after the Camera app and the 3-minute run, CAM-002-T21, FX-009-T18, FX-010-T17, FX-014-T18,
+  FX-016-T17) wait up to 8 s for the controls to auto-hide before sampling (`waitForControlsAutoHide`, reported as
+  `<step> controls auto-hide`), which is what a viewer sees 5 s after closing Settings; (3) the tempo group in the
+  card observed `TempoCoordinator.snapshot` and `readout`, which carry the latest beat and the unrounded BPM and
+  change on nearly every 4 Hz analysis poll (25 Hz with haptic beats), so it was rebuilt four times a second with
+  the same words (simulator count: 18 rebuilds per 5 s, 4 per 30 s after the change); it now observes
+  `TempoCoordinator.display`, which changes only with the shown texts. The remaining per-poll work while the card
+  is up is the transport's 4 Hz position row (needed: the scrubber moves). Not changed, a candidate if D3 still
+  misses refreshes with the card up: the card's backing blurs the live visual (`.thickMaterial` under an 84 %
+  black scrim, ACC-008), which the system compositor redraws every frame over a Metal layer; it contributes about
+  16 % of the card's look, so removing it changes what the user sees and needs its own decision and contrast
+  check. The card's own cost stays measurable: checks that keep it up (PRE-009 before the fix, OSC-009-T15) report
+  `controlsShown`.
 
 ## User Scenarios & Testing *(mandatory)*
 

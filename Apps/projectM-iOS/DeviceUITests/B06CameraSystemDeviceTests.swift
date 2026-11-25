@@ -458,6 +458,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
                                     "stoppedWhileAway": cameraCount("stopsAway") > away ? 1 : 0])
         pause(3)
         XCTAssertFalse(cameraNoticeElement.exists, "no notice left once the picture is back")
+        waitForControlsAutoHide(task, "after the Camera app")   // the camera visual's rate, not the controls card's
         assertFrameRate(task, "after the Camera app")
     }
 
@@ -465,6 +466,7 @@ final class B06CameraSystemDeviceTests: DeviceAcceptanceCase {
     func testCAM001ThreeMinutesRunning() {
         let task = "CAM-001-T26"
         launchLiveCamera("back")
+        waitForControlsAutoHide(task, "3 min")   // the controls hide 5 s after Settings closed, as for a viewer
         func shown() -> Int {
             let text = cameraProbeText("cameraCaptureProbe")
             guard let r = text.range(of: #"shown=(\d+)"#, options: .regularExpression) else { return -1 }

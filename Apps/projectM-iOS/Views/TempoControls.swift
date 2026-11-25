@@ -18,12 +18,12 @@ struct TempoControls: View {
     @Environment(\.dynamicTypeSize) private var typeSize
 
     var body: some View {
-        let tempo = coordinator.tempo
-        let snapshot = tempo.snapshot
-        let readout: TempoReadout = tempo.readout
-        let number: String = TempoCoordinator.readoutText(readout)
-        let word: String = TempoCoordinator.stateText(readout)
-        let spoken: String = TempoCoordinator.accessibilityValue(readout)
+        // QA-011 D3 (2026-11-24): only the shown texts are observed (`display`), not `snapshot` or `readout`, which
+        // change on nearly every analysis poll; the card was rebuilt 4 times a second with the same words.
+        let display: TempoDisplay = coordinator.tempo.display
+        let number: String = display.number
+        let word: String = display.word
+        let spoken: String = display.spoken
         HStack(spacing: 8) {
             VStack(alignment: .trailing, spacing: 0) {
                 Text(number)
@@ -42,9 +42,9 @@ struct TempoControls: View {
             .accessibilityAddTraits(.isStaticText)   // ACC-004: a readout, not a control (hit-region audit)
             .accessibilityIdentifier("tempoReadout")
 
-            if showsTap { tapButton(tempo) }
+            if showsTap { tapButton(display.tapValue) }
 
-            if snapshot.origin == .manual {
+            if display.isManual {
                 Button { coordinator.resetTempo() } label: {
                     if compact {
                         Image(systemName: "arrow.counterclockwise").frame(minWidth: 36, minHeight: 36)
@@ -61,7 +61,7 @@ struct TempoControls: View {
         .accessibilityIdentifier("tempoControls")
     }
 
-    private func tapButton(_ tempo: TempoCoordinator) -> some View {
+    private func tapButton(_ value: String) -> some View {
         Button { coordinator.tapTempo() } label: {
             if compact {
                 Image(systemName: "hand.tap").frame(minWidth: 36, minHeight: 36)
@@ -71,7 +71,7 @@ struct TempoControls: View {
         }
         .buttonStyle(.bordered)
         .accessibilityLabel("Tap tempo")
-        .accessibilityValue(tempo.tapValue)
+        .accessibilityValue(value)
         .accessibilityHint("Tap in time with the music, four times, to set the tempo")
         .accessibilityIdentifier("tapTempo")
     }

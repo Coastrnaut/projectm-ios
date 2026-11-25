@@ -132,7 +132,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     let audioLibrary: AudioLibraryCoordinator
     var showAudioImporter = false
     /// The queue sheet (AUD-003), over the chooser or the visualizer.
-    var showQueue = false
+    var showQueue = false {
+        didSet { if oldValue && !showQueue { controlsPanelClosed() } }
+    }
     /// AUD-012: the "Switch Source" list over the visualizer.
     var showSourceSwitcher = false
     @ObservationIgnored private let inAppPlayback: InAppPlaybackSource
@@ -165,7 +167,9 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
     private(set) var appIsActive = true
     /// Number of source starts (UI tests check that rotation does not restart capture).
     private(set) var sourceStarts = 0
-    var showPresetBrowser = false
+    var showPresetBrowser = false {
+        didSet { if oldValue && !showPresetBrowser { controlsPanelClosed() } }
+    }
     /// The preset library finished loading (feature 002).
     private(set) var libraryReady = false
     /// PRE-006: the recent presets over their stored history.
@@ -181,6 +185,7 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
             guard oldValue && !showSettings else { return }
             sceneHistory.endCoalescing()   // SCN-010-R4: closing Settings is a boundary
             sceneAutosave?.commitNow()     // SCN-002-R3
+            controlsPanelClosed()
         }
     }
     /// SCN-010: undo and redo of scene edits (in memory only).
@@ -2482,8 +2487,19 @@ final class AppCoordinator: VisualizationControlling, MemoryPressureResponder {
 
     private func hideControls() {
         hideTask?.cancel()
-        guard !showPresetBrowser, !showSettings, !showQueue else { return }
+        guard !controlsAutoHideSuspended else { return }
         controlsVisible = false
+    }
+
+    /// Settings, the preset browser and the queue keep the controls up while open (FR-042).
+    var controlsAutoHideSuspended: Bool { showPresetBrowser || showSettings || showQueue }
+
+    /// Closing the last panel that suspends the auto-hide restarts its 5 s delay, so the controls hide as they do
+    /// after any other use (CAM-001 Clarification 2026-11-24: a timer that fired while a panel was open was never
+    /// restarted, and the controls stayed up until the next tap). Hidden controls stay hidden.
+    private func controlsPanelClosed() {
+        guard screen == .visualizer, controlsVisible, !controlsAutoHideSuspended else { return }
+        showControls()
     }
 
     /// Scene activity drives the idle timer (FR-084); rendering follows the lifecycle events.
