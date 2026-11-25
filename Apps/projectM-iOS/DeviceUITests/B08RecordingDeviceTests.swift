@@ -248,13 +248,13 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         stride(from: from, through: max(from, to), by: step).map { ($0 * 10).rounded() / 10 }
     }
 
-    /// Waits for the disk ballast to settle (filled, capped, failed or out of time) and reports its readings. The fill
-    /// writes the whole free space but the target (43 GB on D3 in pass 3), so it may take minutes; the app ends it
-    /// "state=slow" after `UITestDiskBallast.fillBudgetSeconds` (360 s) and this waits 30 s longer.
-    /// The DEBUG guard reserve and ballast target for this device: 8000 MB (8 GB above full: D2 left the network twice
-    /// with the 200 MiB default) when the device has room, else 1000 MB below the guard's own free-space reading, so the
-    /// recording can start. D1 2026-11-23 had 3.6 GB free: with the fixed 8000 MB reserve the app refused to record
-    /// ("refused: lowStorage", correct for that reserve). The reading is the guard's (`VolumeStorageReading.guardBytes`,
+    /// The ballast's size: the guard's reading is brought this far down (plus the growth while recording, REC-015).
+    static let ballastMB = 2000
+
+    /// The DEBUG guard reserve and ballast target for this device: the reserve sits `ballastMB` + `above` below the
+    /// guard's own free-space reading (since 2026-11-24; before, a fixed 8000 MB reserve, which made the ballast 66 GB
+    /// on D3 and each ballast test 7 minutes there). The 200 MiB default reserve made D2 leave the network twice, so the
+    /// device is never brought near full. The reading is the guard's (`VolumeStorageReading.guardBytes`,
     /// the smaller of the important-use and plain capacities), taken in the runner, which shares the app's volume.
     static func guardReserveMB(above: Int) throws -> (reserve: Int, target: Int) {
         let keys: Set<URLResourceKey> = [.volumeAvailableCapacityForImportantUsageKey, .volumeAvailableCapacityKey]
@@ -262,13 +262,20 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         let important = values.volumeAvailableCapacityForImportantUsage ?? Int64.max
         let plain = Int64(values.volumeAvailableCapacity ?? Int.max)
         let freeMB = Int(min(important, plain) / 1_000_000)
-        let reserve = freeMB >= 8000 + above + 1000 ? 8000 : freeMB - 1000 - above
+        // D3 2026-11-24: with the 8000 MB reserve the ballast was 66 GB on D3 (75 GB free), and closing that preallocated
+        // file took about 6.5 minutes there (at the app's end, or right after the fill once it was closed early), so
+        // every ballast test took 7 minutes. The reserve now sits `ballastMB` below the guard's current reading: the
+        // ballast is about 2 GB on every device, the device is never brought near full, and the real guard still reads
+        // the real volume crossing its reserve as real bytes are written.
+        let reserve = freeMB - above - Self.ballastMB
         guard reserve >= 500 else {
             throw XCTSkip("only \(freeMB) MB free: too little room for a guard reserve and the ballast; free space first")
         }
         return (reserve, reserve + above)
     }
 
+    /// Waits for the disk ballast to settle (filled, capped, failed or out of time) and reports its readings; the app
+    /// ends a fill "state=slow" after `UITestDiskBallast.fillBudgetSeconds` (360 s) and this waits 30 s longer.
     private func waitForBallast(_ task: String) -> String {
         let started = Date()
         var lastPrinted = Date.distantPast
@@ -359,7 +366,7 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
     func testREC015RealDiskGuardStopsTheRecording() throws {
         let task = "REC-015-T17"
         usedBallast = true
-        // An 8 GB guard reserve (DEBUG): the ballast stops 8.5 GB above full, not 700 MB (D2 left the network twice).
+        // A DEBUG guard reserve just below the current free space (`guardReserveMB`): the ballast is about 2 GB.
         let (reserve, target) = try Self.guardReserveMB(above: 490)
         launch(visual: "photo", extra: ["-uitestSeedPhoto", "pattern", "-uitestDiskBallast", "\(target)",
                                         "-uitestDiskBallastGrowMBps", "20", "-uitestDiskGuardReserveMB", "\(reserve)"])

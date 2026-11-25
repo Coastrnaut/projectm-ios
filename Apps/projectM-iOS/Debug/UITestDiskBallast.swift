@@ -20,9 +20,9 @@
 // QA-011 D3 (2026-11-24): every launch after a ballast test took 5-7 minutes on D3 (iPadOS 26.5, 128 GB), never on
 // D1 or D2, and a launch of the old build had still not deleted a 66 GB ballast 24 minutes later: the delete sat on the
 // main actor in front of the launch. A launch now renames any leftover ballast at once and deletes it off the main
-// actor (before a requested fill): 0.9-2.5 s for 66 GB on D3. Asking the running app to delete its own open ballast
-// (a Darwin notification, tried the same day) never finished within 240 s on D3 and held up the app's end, so the tests
-// only relaunch. Each delete appends its timing to `QA011-DiskBallast-timing.log` in Caches (process age at launch, MB
+// actor (before a requested fill): 0.9-2.5 s for 66 GB on D3. The slow step was closing the preallocated 66 GB file
+// (about 6.5 minutes on D3, at the app's end or wherever it was closed; a Darwin-notification "drop" tried the same day
+// hung on it), so the tests now make a ballast of about 2 GB (B08 `ballastMB`) and the file is closed after each step. Each delete appends its timing to `QA011-DiskBallast-timing.log` in Caches (process age at launch, MB
 // deleted, seconds), which `scripts/clear_disk_ballast.py` prints.
 // Not compiled into Release builds.
 #if DEBUG
@@ -231,6 +231,7 @@ final class BallastWriter: @unchecked Sendable {
         FileManager.default.createFile(atPath: url.path, contents: nil)
         handle = try? FileHandle(forWritingTo: url)
         guard handle != nil else { return line("failed") }
+        defer { closeFile() }   // never left open: see `closeFile`
         let started = Date()
         for _ in 0..<1_000 {   // 1 TB at most
             let r = Self.readings(url)
@@ -275,7 +276,18 @@ final class BallastWriter: @unchecked Sendable {
         let bytes = Self.growthStep(step: step, reading: r.reading, real: r.real, floor: floor,
                                     realFloor: UITestDiskBallast.realFloorBytes)
         guard bytes >= 4_096 else { return line("floor") }
+        handle = try? FileHandle(forWritingTo: url)
+        defer { closeFile() }
         return extend(by: bytes) == .done ? line("growing") : line("failed")
+    }
+
+    /// Closes the ballast after each fill or growth step, so the app's end never pays for it. QA-011 D3 (2026-11-24):
+    /// closing a 66 GB preallocated ballast took about 6.5 minutes there (387-404 s at the app's end in r25; the same
+    /// right after the fill once it was closed early in r26), while a fresh launch deleted the closed file in about
+    /// 1 s. The tests now make a ballast of about 2 GB (B08 `ballastMB`), and the cost of a close follows the size.
+    private func closeFile() {
+        try? handle?.close()
+        handle = nil
     }
 }
 #endif

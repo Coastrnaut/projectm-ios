@@ -870,6 +870,16 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   (9100 + device number), passed to OSC-005 as `TEST_RUNNER_MAC_OSC_PORT`. Any new side driver: no limit shorter than
   the run, and no fixed Mac port shared between devices.
 
+- **Keep test ballast small; a huge preallocated file is slow to close** (D3, 2026-11-24). REC-009 and REC-015 took
+  7 minutes each on D3 only (iPadOS 26.5, 128 GB): with a fixed 8 GB guard reserve the disk ballast was 66 GB, and
+  closing that F_PREALLOCATE'd file took about 6.5 minutes. It happened at the app's end, so every relaunch looked hung.
+  Moving the delete off the main actor fixed the launch (0.9-2.5 s for 66 GB), but closing early only moved the wait,
+  and a Darwin-notification "drop" hung on the same close. The fix was the size: the DEBUG guard reserve now sits 2 GB
+  below the current free space, so the ballast is about 2 GB, the real guard still trips on real writes, and no device
+  is brought near full (REC-009 29.7 s, REC-015 40.7 s on D3). The app logs each delete's timing in
+  `Library/Caches/QA011-DiskBallast-timing.log`, which `clear_disk_ballast.py` prints. Measure where the time goes
+  (the app's own timing log, devicectl terminate and launch times) before redesigning.
+
 ### Xcode and the device test host
 
 - **Package tests cannot run on a device by themselves**: "Tool-hosted testing is unavailable on device destinations".

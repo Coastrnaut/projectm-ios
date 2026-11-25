@@ -25,4 +25,7 @@ error (trust, launch timeout) hid the cause.
   sizes (`devicectl device info files --domain-type appDataContainer …`, sum `metadata.size`) before asking the owner
   to act. Uninstalling the app frees its whole container.
 - When stopping a run mid-test, run `clear_disk_ballast.py --device DX` for that device.
+- Keep any disk ballast small (about 2 GB, B08 `ballastMB`): put the DEBUG guard reserve just below the current free
+  space instead of filling the device. On D3 a 66 GB preallocated ballast took about 6.5 minutes to close, which made
+  every relaunch look hung (2026-11-24).
 - Related: [[device-runs-never-idle-unexplained]], [[maintain-autotester-doc]].

@@ -49,6 +49,10 @@ Answered by Claude under owner rules 4 and 9 (recommended option first).
 - Q: Is a warning that clears (storage freed, a falling percentage) announced? → A: No. The line updates silently; only rising levels are announced (REC-009-R4), so a value hovering at a threshold never repeats the announcement within the recording.
 - Q: How does VoiceOver read the overlay? → A: The indicator keeps its label ("Recording, 0:07 of 0:10"); the dropped-frames line and the storage line are one element each, labelled with their text and prefixed "Warning:" when warned. Nothing is announced each refresh.
 
+### Session 2026-11-24 (QA-011 D3)
+
+- Q: How big may REC-015-T17's and REC-009-T11's DEBUG disk ballast be? (QA-011 D3, 2026-11-24) → A: About 2 GB on every device (B08 `ballastMB`): the DEBUG guard reserve sits 2 GB plus the test's margin below the guard's current free-space reading, so the real guard still reads the real volume crossing its reserve as real bytes are written, and no device is brought near full. With the earlier fixed 8000 MB reserve the ballast was 66 GB on D3, and closing that preallocated file took about 6.5 minutes there (at the app's end, or wherever it was closed), so each ballast test took 7 minutes (REC-009 414-420 s, REC-015 432-445 s). Leftovers are renamed at launch and deleted off the main actor (0.9-2.5 s for 66 GB on D3), and the file is closed after each fill or growth step. Verified on D3 2026-11-24 (build r27): REC-009 29.7 s, REC-015 40.7 s with the guard's stop notice, ballast 1,983-2,441 MB, app end 1.6 s.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See how the recording is going (Priority: P1)
