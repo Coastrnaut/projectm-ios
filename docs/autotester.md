@@ -892,6 +892,13 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   person unlocked it, and the next start failed with "Authentication canceled": after a restart iOS asks on the device
   for the passcode before it enables UI automation. `lockState`'s `passcodeRequired: false` does not mean the device
   has no passcode. A reboot therefore needs a person at the device; ask first and batch it with other owner steps.
+- **Start each session with prompt-flow on every device (2026-11-27).** After three days away, D1 and D3 had lost the app's
+  camera and Local Network access (cause unknown; nothing in these runs reinstalled the app there). On D3 every camera
+  test failed with "Camera access is off"; on D1 the OSC tests then raised iOS's Local Network prompt in the middle of
+  the full run, and the prompt covered the screen for the rest of it, so about 45 later tests failed with "the controls
+  are shown" or "Failed to tap settings". A failure screenshot from the result bundle showed the prompt. Before the
+  first full run of a session, run `mac_device_driver.py prompt-flow` on each device; when many unrelated tests suddenly
+  fail at the controls, look at a failure screenshot first.
 
 ### Xcode and the device test host
 
