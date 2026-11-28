@@ -35,8 +35,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         launch(visual: "circularSpectrum", settings: values, extra: ["-uitestSettingsSection", "osc"] + extra)
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
         let status = app.descendants(matching: .any)["oscStatus"].firstMatch
         XCTAssertTrue(wait(10) { (status.value as? String ?? "").localizedCaseInsensitiveContains("listening") },
                       "OSC listens: \(String(describing: status.value))")
@@ -66,7 +65,7 @@ final class B09OSCDeviceTests: ControlSurfaceCase {
         pause(3)
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
-        app.buttons["settings"].tap()
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
         let toggle = app.switches["oscReceiverToggle"].firstMatch
         XCTAssertTrue(wait(5) { toggle.exists }, "the OSC switch")
         report(task, "stop", ["switchOff": (toggle.value as? String) == "0" ? 1 : 0, "badgeGone": badge.exists ? 0 : 1])
@@ -395,14 +394,13 @@ final class B09OSCPeerDeviceTests: ControlSurfaceCase {
         let end = Date().addingTimeInterval(seconds)
         var up = true, n = 1
         while Date() < end {
-            showControlsBar()
-            let button = app.buttons[up ? "showNextCue" : "showPreviousCue"].firstMatch
+            let id = up ? "showNextCue" : "showPreviousCue"
             // The step's time is taken before the tap: XCUITest's tap (idle wait, event synthesis) and the readout
             // query took longer than the OSC round trip, so the follower's change printed before the lead's step
             // (QA-011 OSC-012-T22 on D2+D3, 2026-11-22: -0.1 to -0.26 s). Timing from before the tap can only
             // overstate the latency, never hide it.
             let sent = Date().timeIntervalSince1970
-            if button.exists { button.tap() }
+            tapControl(id, attempts: 2)   // the card may hide between a check and the tap (tapControl)
             n += up ? 1 : -1
             if n >= 5 { up = false } else if n <= 1 { up = true }
             if log { print("PEER-STEP cue=\(appliedCue() ?? -1) t=\(sent)") }

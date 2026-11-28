@@ -339,8 +339,7 @@ final class B08ShareDeviceTests: DeviceAcceptanceCase {
                       "Keep: \(notice("videoRecordingNoticeText"))")
         // Settings › Storage › Recordings.
         revealRecordingControls()
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings")
+        XCTAssertTrue(openSettingsFromControls(), "Settings")
         let storage = app.buttons["storageLink"]
         for _ in 0..<6 where !(storage.exists && storage.isHittable) { app.scrollFrontList(up: true, velocity: .fast) }
         storage.tap()

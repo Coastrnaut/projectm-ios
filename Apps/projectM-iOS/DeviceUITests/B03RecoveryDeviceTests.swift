@@ -34,8 +34,7 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
     private func openSettings() {
         if settingsAlreadyOpen() { return }
         showControls()
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
     }
 
     private func closeSettings() {
@@ -104,8 +103,7 @@ final class B03RecoveryDeviceTests: DeviceAcceptanceCase {
     /// Opens Settings and scrolls (slowly, the list itself) to the Bars picker below the visual rows.
     private func openBars() {
         showControls()
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
         let list = app.collectionViews.firstMatch
         for _ in 0..<8 where !(bars.exists && bars.isHittable) { list.scrollStep(up: true) }
         XCTAssertTrue(bars.isHittable, "the Bars picker")

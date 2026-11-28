@@ -598,8 +598,7 @@ final class B08RecordingDeviceTests: DeviceAcceptanceCase {
         launch(visual: "text", settings: ["settings.countdown.overlay": countdown],
                extra: ["-uitestSettingsSection", "countdown", "-uitestRecordingDirectory", folder])
         revealRecordingControls()
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
         let start = app.buttons["countdownStartButton"]
         for _ in 0..<6 where !(start.exists && start.isHittable) { app.scrollFrontList(up: true, velocity: .fast) }
         XCTAssertTrue(start.exists, "the countdown's Start")

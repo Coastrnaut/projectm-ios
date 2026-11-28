@@ -58,8 +58,7 @@ final class B13MediaDeviceTests: DeviceAcceptanceCase {
         if settingsAlreadyOpen() { return }
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
     }
 
     private func closeSettings() {

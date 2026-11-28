@@ -60,8 +60,7 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
     func openSettingsPanel() {
         if settingsAlreadyOpen() { return }
         showControlsBar()
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
     }
 
     func closeSettingsPanel() {
@@ -226,10 +225,10 @@ class ControlSurfaceCase: DeviceAcceptanceCase {
 
     /// Next cue from the show controls (`showNextCue`).
     func stepNextCue() {
-        showControlsBar()
-        let next = app.buttons["showNextCue"].firstMatch
-        XCTAssertTrue(wait(5) { next.exists }, "Next cue (show controls)")
-        next.tap()
+        // Done when the applied scene changes; without that readout one tap on the button counts (`tapControl`).
+        let before = appliedScene
+        XCTAssertTrue(tapControl("showNextCue", until: before.isEmpty ? nil : { self.appliedScene != before }),
+                      "Next cue (show controls)")
     }
 
     // MARK: SystemUI bridge (Batch 1's SystemUI.swift; adjust here only)

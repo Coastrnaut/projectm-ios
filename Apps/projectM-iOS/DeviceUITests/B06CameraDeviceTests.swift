@@ -93,8 +93,7 @@ final class B06CameraDeviceTests: DeviceAcceptanceCase {
         let controls = app.otherElements["controls"], area = app.otherElements["visualizerTapArea"].firstMatch
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
         if !controls.exists { area.tap(); _ = wait(3) { controls.exists } }
-        app.buttons["settings"].tap()
-        XCTAssertTrue(wait(5) { self.app.navigationBars["Settings"].exists }, "Settings opens")
+        XCTAssertTrue(openSettingsFromControls(), "Settings opens")
     }
 
     /// Settings scrolled to the camera rows (below the visual rows).

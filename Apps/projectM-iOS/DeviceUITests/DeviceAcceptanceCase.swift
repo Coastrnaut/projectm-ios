@@ -170,6 +170,35 @@ class DeviceAcceptanceCase: XCTestCase {
         target.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: attempt % 2 == 0 ? 0.62 : 0.7)).tap()
     }
 
+    /// Taps a button on the controls card, which hides itself 5 s after its last use (FR-042). Since 2026-11-24 closing
+    /// Settings, the preset browser or the queue restarts that delay, so a card that is up can hide between a check and
+    /// the tap (QA-011 D3 r28, 2026-11-27: CAM-002-T23's Settings tap at 46.0 s on a card shown at 41 s; OSC-005's
+    /// Next cue 4 s after Settings closed). The tap goes to the point where the button was (no element lookup at tap
+    /// time): if the card hid meanwhile it lands on the visualization, which shows the card again, and the next attempt
+    /// taps the button. `done` says when the tap took effect; without it one tap on a hittable button counts.
+    @discardableResult
+    func tapControl(_ id: String, attempts: Int = 3, until done: (() -> Bool)? = nil) -> Bool {
+        let controls = app.otherElements["controls"]
+        for attempt in 0..<attempts {
+            if !controls.exists {
+                tapVisualizer(attempt: attempt)
+                _ = wait(3) { controls.exists }
+            }
+            let button = app.buttons[id].firstMatch
+            guard wait(2, { button.exists && button.isHittable }) else { continue }
+            let frame = button.frame
+            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: frame.midY)).tap()
+            guard let done else { return true }
+            if wait(3, done) { return true }
+        }
+        return false
+    }
+
+    /// Opens Settings from the controls card (`tapControl`).
+    func openSettingsFromControls() -> Bool {
+        tapControl("settings") { self.app.navigationBars["Settings"].exists }
+    }
+
     // MARK: Waiting
 
     func pause(_ seconds: Double) {
