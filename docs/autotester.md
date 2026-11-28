@@ -886,6 +886,12 @@ xcrun devicectl device install app --device <id> Build/device-acceptance/Build/P
   (up to `RESUME=3` times): every test that passed or was skipped is left out, a failed one runs again, each attempt's
   log is appended to the run's log, and the summary counts each test's last result. No crash or hang report was
   written for the stuck terminate, so the cause on the device is still unknown.
+- **Never reboot a device from the Mac without the owner (2026-11-24).** After that lost connection D2 failed every
+  start with "Timed out while enabling automation mode", and `devicectl device process terminate` had no effect on
+  testmanagerd or the AutomationMode helpers. `devicectl device reboot` cleared it, but D2 stayed unavailable until a
+  person unlocked it, and the next start failed with "Authentication canceled": after a restart iOS asks on the device
+  for the passcode before it enables UI automation. `lockState`'s `passcodeRequired: false` does not mean the device
+  has no passcode. A reboot therefore needs a person at the device; ask first and batch it with other owner steps.
 
 ### Xcode and the device test host
 
